@@ -1246,7 +1246,7 @@ there is no last compilation job."
 	(coq-unlock-all-ancestors-of-span ,span)))
     ;; add a compilation job for all required modules
     (while (string-match coq-require-id-regexp string start)
-      (message "Found Require Id %s%s" prefix (match-string 1 string))
+      (message "Found Require Id %s" (concat prefix (match-string 1 string)))
       (setq start (match-end 0))
       (coq-par-handle-module (concat prefix (match-string 1 string)) span))
     ;; add the asserted items to the last compilation job
