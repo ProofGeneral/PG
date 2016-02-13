@@ -382,7 +382,8 @@ compilation (if necessary) of the dependencies."
             (when (and string
                        (string-match coq-require-command-regexp string))
               (let ((span (car item))
-                    (start (match-end 0)))
+                    (start (match-end 0))
+                    (prefix (if (match-string 2 string) (concat (match-string 2 string) ".") "")))
                 (span-add-delete-action
                  span
                  `(lambda ()
@@ -391,8 +392,9 @@ compilation (if necessary) of the dependencies."
                 ;; now process all required modules
                 (while (string-match coq-require-id-regexp string start)
                   (setq start (match-end 0))
+                  (message "Found Require Id %s" (concat prefix (match-string 1 string)))
                   (coq-seq-check-module 'coq-object-hash-symbol span
-                                    (match-string 1 string))))))))))
+                                    (concat prefix (match-string 1 string)))))))))))
 
 
 (provide 'coq-seq-compile)
