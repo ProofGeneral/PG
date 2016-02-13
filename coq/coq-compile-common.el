@@ -301,11 +301,12 @@ the latter condition into an error, then set this variable to
   :group 'coq-auto-compile)
 
 (defconst coq-require-command-regexp
-  "^Require[ \t\n]+\\(Import\\|Export\\)?[ \t\n]*"
+  "^\\(From[ \t\n]+\\([A-Za-z0-9_']+\\)[ \t\n]+\\)?Require[ \t\n]+\\(Import\\|Export\\)?[ \t\n]*"
   "Regular expression matching Require commands in Coq.
 Should match \"Require\" with its import and export variants up to (but not
 including) the first character of the first required module. The required
-modules are matched separately with `coq-require-id-regexp'")
+modules are matched separately with `coq-require-id-regexp'. Group number 2
+must match a prefix that is prepended to all module identifiers.")
 
 (defconst coq-require-id-regexp
   "[ \t\n]*\\([A-Za-z0-9_']+\\(\\.[A-Za-z0-9_']+\\)*\\)[ \t\n]*"
