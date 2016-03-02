@@ -1231,19 +1231,24 @@ there is no last compilation job."
   (let* ((item (car require-items))
 	 (string (mapconcat 'identity (nth 1 item) " "))
 	 (span (car item))
-	 start)
+	 start
+	 prefix)
     ;; We know there is a require in string. But we have to match it
     ;; again in order to get the end position.
     (string-match coq-require-command-regexp string)
     (setq start (match-end 0))
+    (if (match-string 2 string)
+      (setq prefix (concat (match-string 2 string) "."))
+      (setq prefix ""))
     (span-add-delete-action
      span
      `(lambda ()
 	(coq-unlock-all-ancestors-of-span ,span)))
     ;; add a compilation job for all required modules
     (while (string-match coq-require-id-regexp string start)
+      (message "Found Require Id %s" (concat prefix (match-string 1 string)))
       (setq start (match-end 0))
-      (coq-par-handle-module (match-string 1 string) span))
+      (coq-par-handle-module (concat prefix (match-string 1 string)) span))
     ;; add the asserted items to the last compilation job
     (if coq-last-compilation-job
 	(progn
