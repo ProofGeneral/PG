@@ -89,8 +89,7 @@
 (require 'cl)
 
 (eval-when (compile)
-  (require 'proof-shell))
-
+  (require 'proof-resolve-calls))
 
 ;;
 ;; User options
@@ -1216,7 +1215,7 @@ position of the current proof."
 	       (equal proof-script-buffer (current-buffer)))
     (error
      "Enabling prooftree inside a proof outside the current scripting buffer"))
-  (proof-shell-ready-prover)
+  (proof-ready-prover)
   (assert proof-locked-span)
   (message "Start proof-tree display for current proof")
   (save-excursion

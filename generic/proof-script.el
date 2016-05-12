@@ -1244,7 +1244,7 @@ activation is considered to have failed and an error is given."
       (setq proof-script-buffer (current-buffer))
 
       ;; Fire up the prover (or check it's going the right way).
-      (proof-shell-ready-prover queuemode)
+      (proof-ready-prover queuemode)
 
       (if (proof-locked-region-empty-p) ; leave alone if non-empty
 	  (proof-init-segmentation))
@@ -2230,7 +2230,7 @@ query saves here."
     ;; enforce not busy to avoid retracting items from the queue region,
     ;; which is not supported currently, see #443
     ;; (future: may allow retracting from queue in progress)
-    (proof-shell-ready-prover)
+    (proof-ready-prover)
     (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
       (let ((span (span-at (point) 'type)))
 	;; If no span at point, retracts the last span in the buffer.

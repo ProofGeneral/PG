@@ -17,11 +17,12 @@
 ;;
 ;;  1. Menus, user-level commands, toolbar
 ;;  2. Script mode configuration
-;;  3. Shell mode configuration
-;;     3a.  commands
-;;     3b.  regexps
-;;     3c.  tokens
-;;     3d.  hooks and others
+;;  3. Interaction mode
+;;  4. Shell mode configuration
+;;     4a.  commands
+;;     4b.  regexps
+;;     4c.  tokens
+;;     4d.  hooks and others
 ;;  4. Goals buffer configuration
 ;;
 ;; The remaining variables in should be set for each proof assistant.
@@ -796,13 +797,56 @@ See pg-user.el: `pg-create-in-span-context-menu' for more hints."
   :type 'function
   :group 'proof-script)
 
+
+;;
+;;  3. Interaction mode
+;;     
+;;  Most provers will provide a REPL to Proof General, which looks for a REPL prompt 
+;;   In that case, Proof General uses a proof shell customized for each prover
+;;  Some provers (like Coq), also offer a client/server operation
+;;   In that case, Proof General reads and writes data via pipes or sockets
+;;  There are some regexps that are common to both modes
 
+(defgroup proof-interaction nil
+  "How Proof General interacts with the prover."
+  :group 'prover-config
+  :prefix "proof-interaction-")
 
+; default is 'repl so most provers don't have to configure this
+(defcustom proof-interaction-mode 'repl
+  "REPL or server choice"
+  :type 'symbol ; 'repl or 'server
+  :group 'proof-interaction)
+
+; for the following function variables, the default function is for 'repl mode
+; so don't need to worry about them in configuration unless in 'server mode
+
+(defcustom proof-ready-prover-fun 'proof-shell-ready-prover
+  "Function to see if prover ready"
+  :type 'function
+  :group 'proof-interaction)
+
+(defcustom proof-invisible-command-fun 'proof-shell-invisible-command
+  "Function to send a command to server"
+  :type 'function
+  :group 'proof-interaction)
+
+(defcustom proof-invisible-cmd-get-result-fun 'proof-shell-invisible-cmd-get-result
+  "Function to send a command to server, return result"
+  :type 'function
+  :group 'proof-interaction)
+
+(defcustom proof-invisible-command-invisible-result-fun 'proof-shell-invisible-command-invisible-result
+  "Function to send a command to server, save result"
+  :type 'function
+  :group 'proof-interaction)
+
+;; TODO: move proof shell and server common regexps here
 
 
 
 ;;
-;;  3. Configuration for proof shell
+;;  4. Configuration for proof shell
 ;;
 ;; The variables in this section concern the proof shell mode.
 ;; The first group of variables are hooks invoked at various points.
@@ -822,7 +866,7 @@ See pg-user.el: `pg-create-in-span-context-menu' for more hints."
 
 
 ;;
-;; 3a. commands
+;; 4a. commands
 ;;
 
 (defcustom proof-prog-name nil
@@ -1011,7 +1055,7 @@ scripting (to do undo operations), the whole history is discarded."
 ;; (defcustom  proof-shell-adjust-line-width-cmd nil
 
 ;;
-;; 3b. Regexp variables for matching output from proof process.
+;; 4b. Regexp variables for matching output from proof process.
 ;;
 
 (defcustom proof-shell-annotated-prompt-regexp nil
@@ -1476,7 +1520,7 @@ on `proof-shell-eager-annotation-start' and
 
 
 ;;
-;; 3c. tokens mode: turning on/off tokens output
+;; 4c. tokens mode: turning on/off tokens output
 ;;
 
 (defcustom proof-tokens-activate-command nil
@@ -1505,7 +1549,7 @@ tokens (for example, editing documentation or source code files)."
 
 
 ;;
-;; 3d. hooks and other miscellaneous customizations
+;; 4d. hooks and other miscellaneous customizations
 ;;
 
 (defcustom proof-shell-unicode t
@@ -1743,7 +1787,7 @@ At present this is used only by the `proof-easy-config' macro."
 
 
 ;;
-;; 4. Goals buffer
+;; 5. Goals buffer
 ;;
 
 (defgroup proof-goals nil

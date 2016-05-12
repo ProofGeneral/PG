@@ -41,6 +41,11 @@ See also `coq-prog-env' to adjust the environment."
   :type 'string
   :group 'coq)
 
+(defcustom coq-force-emacs-mode t   ; TODO: change to nil for production
+  "Use prompt shell for Proof General in emacs, regardless of Coq version"
+  :type 'boolean
+  :group 'coq)
+
 (defcustom coq-dependency-analyzer
   (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin"))
   "Command to invoke coqdep."
@@ -333,17 +338,34 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
           (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
             (coq-coqdep-prog-args coq-load-path current-directory pre-v85))))
 
+(defun coq-use-proof-shell ()
+  "Use proof shell, depending on Coq version, or if we've forced it"
+  (or coq-force-emacs-mode (coq--version< (coq-version t) "8.5")))
+
+(defvar coq-coqtop-proof-shell-flags
+  '("-emacs"))
+
+(defvar coq-coqtop-server-flags
+   ; TODO allow ports for main-channel
+   ; TODO add control-channel ports
+  '("-toploop" "coqide" "-main-channel" "stdfds")) 
+
 ;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
 ;; Coq process, see 'defpacustom prog-args' in pg-custom.el for
 ;; documentation.
 
 (defun coq-coqtop-prog-args (load-path &optional current-directory pre-v85)
-  ;; coqtop always adds the current directory to the LoadPath, so don't
-  ;; include it in the -Q options. This is not true for coqdep.
-  "Build a list of options for coqc.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (cons "-emacs" (coq-coqc-prog-args load-path current-directory pre-v85)))
+  ;; coqtop always adds the current directory to the LoadPath, so don't                                                                                                
+  ;; include it in the -Q options. This is not true for coqdep.                                                                                                        
+  "Build a list of options for coqc. 
+   LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
+  (let ((coqc-args (coq-coqc-prog-args load-path current-directory pre-v85))
+        (ide-args
+         (if (coq-use-proof-shell)
+	     coq-coqtop-proof-shell-flags
+	     coq-coqtop-server-flags)))
+    (append ide-args coqc-args)))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."

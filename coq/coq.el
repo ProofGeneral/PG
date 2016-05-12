@@ -32,6 +32,7 @@
   (proof-ready-for-assistant 'coq))     ; compile for coq
 
 (require 'proof)
+(require 'proof-resolve-calls)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
 (require 'coq-local-vars)               ; setting coq args via file variables 
@@ -802,9 +803,9 @@ the *goals* buffer."
        (all (string-equal s "")))
     (cond
      ((and (string-equal mods "Print Scope(s)") (string-equal s ""))
-      (proof-shell-invisible-command (format "Print Scopes.")))
+      (proof-invisible-command (format "Print Scopes.")))
      (t
-      (proof-shell-invisible-command (format "%s %s ." mods s)))
+      (proof-invisible-command (format "%s %s ." mods s)))
      )
     )
   )
@@ -908,7 +909,7 @@ is nil (t by default)."
                      (if (and ctrl shft) (if id "Check" "Locate")
                        (if shft (if id "About" "Locate")
                          (if ctrl (if id "Print" "Locate")))))))
-         (proof-shell-invisible-command
+         (proof-invisible-command
           (format (concat  cmd " %s . ")
                   ;; Notation need to be surrounded by ""
                   (if id id (concat "\"" notat "\"")))))))))
@@ -934,15 +935,15 @@ Otherwise propose identifier at point if any."
 (defun coq-ask-do (ask do &optional dontguess postformatcmd)
   "Ask for an ident and print the corresponding term."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    (proof-shell-ready-prover)
+    (proof-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (proof-shell-invisible-command
+    (proof-invisible-command
      (format (concat do " %s . ") (funcall postform cmd)))))
 
 
 (defun coq-flag-is-on-p (testcmd)
-  (proof-shell-ready-prover)
-  (proof-shell-invisible-command (format testcmd) 'wait)
+  (proof-ready-prover)
+  (proof-invisible-command (format testcmd) 'wait)
   (let ((resp proof-shell-last-response-output))
     (string-match "is on\\>" resp)))
 
@@ -950,11 +951,11 @@ Otherwise propose identifier at point if any."
   "Play commands SETCMD then CMD and then silently UNSETCMD."
   (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
          (flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
-    (unless flag-is-on (proof-shell-invisible-command
+    (unless flag-is-on (proof-invisible-command
                         (format " %s . " (funcall postform setcmd)) 'wait))
-    (proof-shell-invisible-command
+    (proof-invisible-command
      (format " %s . " (funcall postform cmd)) 'wait)
-    (unless flag-is-on (proof-shell-invisible-command-invisible-result
+    (unless flag-is-on (proof-invisible-command-invisible-result
                         (format " %s . " (funcall postform unsetcmd))))))
 
 (defun coq-ask-do-set-unset (ask do setcmd unsetcmd
@@ -962,7 +963,7 @@ Otherwise propose identifier at point if any."
   "Ask for an ident id and execute command DO in SETCMD mode.
 More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd tescmd)))
-    (proof-shell-ready-prover)
+    (proof-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
     (coq-command-with-set-unset setcmd (concat do " " cmd) unsetcmd postformatcmd)))
 
@@ -987,7 +988,7 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
     
 
-  ;;   (proof-shell-ready-prover)
+  ;;   (proof-ready-prover)
   ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
   ;;   (coq-command-with-set-unset
   ;;    "Set Printing Implicit"
@@ -1097,12 +1098,12 @@ This is specific to `coq-mode'."
    ))
 
 (defun coq-set-undo-limit (undos)
-  (proof-shell-invisible-command (format "Set Undo %s . " undos)))
+  (proof-invisible-command (format "Set Undo %s . " undos)))
 
 (defun coq-Pwd ()
   "Display the current Coq working directory."
   (interactive)
-  (proof-shell-invisible-command "Pwd."))
+  (proof-invisible-command "Pwd."))
 
 (defun coq-Inspect ()
   (interactive)
@@ -1296,11 +1297,11 @@ goal is redisplayed."
   (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
     ;; if no available width, or unchanged, do nothing
     (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-      (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
+      (proof-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
       (setq coq-shell-current-line-width wdth)
       ;; Show iff show non nil and some proof is under way
       (when (and show (not (null (caddr (coq-last-prompt-info-safe)))))
-        (proof-shell-invisible-command (format "Show.") t nil 'no-error-display)))))
+        (proof-invisible-command (format "Show.") t nil 'no-error-display)))))
 
 (defun coq-adapt-printing-width-and-show(&optional show width)
   (interactive)
@@ -1522,7 +1523,7 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
-  ;; We manage file saveing via coq-compile-auto-save and for coq
+  ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
   
@@ -1585,6 +1586,21 @@ Near here means PT is either inside or just aside of a comment."
   ;; FIXME: have abbreviation without holes
   ;(if coq-use-editing-holes (holes-mode 1))
   (holes-mode 1)
+
+  ;; REPL or server mode
+  (setq
+   proof-interaction-mode
+   (if (coq-use-proof-shell)
+       'repl
+     'server))
+
+  ;; for server mode, update mode-dependent function variables
+  (when (eq proof-interaction-mode 'server)
+    (setq 
+     proof-ready-prover-fun 'proof-server-ready-prover
+     proof-invisible-command-fun 'proof-server-invisible-command
+     proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
+     proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result))
 
   ;; prooftree config
   (setq
@@ -1959,11 +1975,11 @@ mouse activation."
       (let ((thm (span-property span 'name)))
         (list (vector
                "Check" ; useful?
-               `(proof-shell-invisible-command
+               `(proof-invisible-command
                  ,(format "Check %s." thm)))
               (vector
                "Print"
-               `(proof-shell-invisible-command
+               `(proof-invisible-command
                  ,(format "Print %s." thm)))))))
 
 
@@ -2073,7 +2089,7 @@ mouse activation."
   "Insert an intros command with names given by Show Intros.
 Based on idea mentioned in Coq reference manual."
   (interactive)
-  (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
+  (let* ((output (proof-invisible-cmd-get-result "Show Intros.")))
     (indent-region (point)
                    (progn (insert (coq--format-intros output))
                           (save-excursion
@@ -2127,7 +2143,7 @@ Warning: this makes the error messages (and location) wrong.")
                        nil
                      (coq-hack-cmd-for-infoH cmd))))
       (when newcmd ; FIXME: we stop if as already there, replace it instead?
-        (proof-shell-invisible-command newcmd t)
+        (proof-invisible-command newcmd t)
         (let* ((str (string-match "<infoH>\\([^<]*\\)</infoH>"
                                   ;; proof-shell-last-response-output would be
                                   ;; smaller/faster but since this message is output
@@ -2167,14 +2183,14 @@ Warning: this makes the error messages (and location) wrong.")
 Based on idea mentioned in Coq reference manual.
 Also insert holes at insertion positions."
   (interactive)
-  (proof-shell-ready-prover)
+  (proof-ready-prover)
   (let* ((cmd))
     (setq cmd (read-string "Build match for type: "))
     (let* ((thematch
-           (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
+           (proof-invisible-cmd-get-result (concat "Show Match " cmd ".")))
            (match (replace-regexp-in-string "=> \n" "=> #\n" thematch)))
       ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-shell-invisible-cmd-get-result), otherwise:
+      ;; proof-invisible-cmd-get-result), otherwise:
       (unless (proof-string-match coq-error-regexp match)
         (let ((start (point)))
           (insert match)
@@ -2227,7 +2243,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
     (if showall
         (coq-command-with-set-unset
          "Set Printing All" q "Unset Printing All" nil "Test Printing All")
-      (proof-shell-invisible-command q))))
+      (proof-invisible-command q))))
 
 
 ;; Insertion commands

@@ -35,6 +35,8 @@
 (defvar proof-marker nil
   "Marker in proof shell buffer pointing to previous command input.")
 
+;;; *****************************
+
 (defvar proof-action-list nil
   "The main queue of things to do: spans, commands and actions.
 The value is a list of lists of the form
@@ -76,6 +78,9 @@ are non-empty, interactive cues will be surpressed. (E.g.,
 printing hints).
 
 See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
+
+
+;;; ****************************
 
 (defsubst proof-shell-invoke-callback (listitem)
   "From `proof-action-list' LISTITEM, invoke the callback on the span."
@@ -878,8 +883,6 @@ used in `proof-add-to-queue' when we start processing a queue, and in
 
       (scomint-send-input))))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Code for manipulating proof queue
@@ -950,6 +953,33 @@ Comments are not sent to the prover."
       (setq proof-action-list (cdr proof-action-list)))
     (nreverse cbitems)))
 
+
+;;;###autoload
+(defun proof-start-queue (start end queueitems &optional queuemode)
+  "Begin processing a queue of commands in QUEUEITEMS.
+If START is non-nil, START and END are buffer positions in the
+active scripting buffer for the queue region.
+
+This function calls `proof-add-to-queue'."
+  (if start
+      (proof-set-queue-endpoints start end))
+  (proof-add-to-queue queueitems queuemode))
+
+
+;;;###autoload
+(defun proof-extend-queue (end queueitems)
+  "Extend the current queue with QUEUEITEMS, queue end END.
+To make sense, the commands should correspond to processing actions
+for processing a region from (buffer-queue-or-locked-end) to END.
+The queue mode is set to 'advancing"
+  (proof-set-queue-endpoints (proof-unprocessed-begin) end)
+  (condition-case err
+      (run-hooks 'proof-shell-extend-queue-hook)
+    ((error quit)
+     (proof-detach-queue)
+     (signal (car err) (cdr err))))
+  (proof-add-to-queue queueitems 'advancing))
+
 (defun proof-add-to-queue (queueitems &optional queuemode)
   "Chop off the vacuous prefix of the QUEUEITEMS and queue them.
 For each item with a nil command at the head of the list, invoke its
@@ -1014,33 +1044,6 @@ being processed."
 	  (proof-grab-lock queuemode)
       ;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
-
-
-;;;###autoload
-(defun proof-start-queue (start end queueitems &optional queuemode)
-  "Begin processing a queue of commands in QUEUEITEMS.
-If START is non-nil, START and END are buffer positions in the
-active scripting buffer for the queue region.
-
-This function calls `proof-add-to-queue'."
-  (if start
-      (proof-set-queue-endpoints start end))
-  (proof-add-to-queue queueitems queuemode))
-
-
-;;;###autoload
-(defun proof-extend-queue (end queueitems)
-  "Extend the current queue with QUEUEITEMS, queue end END.
-To make sense, the commands should correspond to processing actions
-for processing a region from (buffer-queue-or-locked-end) to END.
-The queue mode is set to 'advancing"
-  (proof-set-queue-endpoints (proof-unprocessed-begin) end)
-  (condition-case err
-      (run-hooks 'proof-shell-extend-queue-hook)
-    ((error quit)
-     (proof-detach-queue)
-     (signal (car err) (cdr err))))
-  (proof-add-to-queue queueitems 'advancing))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
