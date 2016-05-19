@@ -40,7 +40,7 @@
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-
+(require 'coq-server)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")
@@ -60,6 +60,8 @@
   (if (fboundp 'prettify-symbols-mode)
       (defvar coq-may-use-prettify t)
     (defvar prettify-symbols-alist nil)))
+
+;; ----- coq-server configuration options
 
 
 ;; ----- coq-shell configuration options
@@ -1597,10 +1599,13 @@ Near here means PT is either inside or just aside of a comment."
   ;; for server mode, update mode-dependent function variables
   (when (eq proof-interaction-mode 'server)
     (setq 
+     proof-server-init-cmd coq-server-init
+     proof-server-filter-fun 'coq-server-filter
      proof-ready-prover-fun 'proof-server-ready-prover
      proof-invisible-command-fun 'proof-server-invisible-command
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
-     proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result))
+     proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result
+     proof-add-to-queue-fun 'proof-server-add-to-queue))
 
   ;; prooftree config
   (setq

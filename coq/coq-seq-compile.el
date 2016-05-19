@@ -366,7 +366,7 @@ queue."
                                  span module-obj-file)))))
 
 (defun coq-seq-preprocess-require-commands ()
-  "Coq function for `proof-shell-extend-queue-hook'.
+  "Coq function for `proof-extend-queue-hook'.
 If `coq-compile-before-require' is non-nil, this function performs the
 compilation (if necessary) of the dependencies."
   (if coq-compile-before-require

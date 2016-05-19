@@ -41,7 +41,7 @@ See also `coq-prog-env' to adjust the environment."
   :type 'string
   :group 'coq)
 
-(defcustom coq-force-emacs-mode t   ; TODO: change to nil for production
+(defcustom coq-force-emacs-mode nil   ; TODO: change to nil for production
   "Use prompt shell for Proof General in emacs, regardless of Coq version"
   :type 'boolean
   :group 'coq)
@@ -348,7 +348,7 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
    ; TODO allow ports for main-channel
    ; TODO add control-channel ports
-  '("-toploop" "coqide" "-main-channel" "stdfds")) 
+  '("-ideslave" "-main-channel" "stdfds")) 
 
 ;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to

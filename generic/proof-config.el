@@ -18,12 +18,13 @@
 ;;  1. Menus, user-level commands, toolbar
 ;;  2. Script mode configuration
 ;;  3. Interaction mode
-;;  4. Shell mode configuration
-;;     4a.  commands
-;;     4b.  regexps
-;;     4c.  tokens
-;;     4d.  hooks and others
-;;  4. Goals buffer configuration
+;;  4. Server mode configuration
+;;  5. Shell mode configuration
+;;     5a.  commands
+;;     5b.  regexps
+;;     5c.  tokens
+;;     5d.  hooks and others
+;;  6. Goals buffer configuration
 ;;
 ;; The remaining variables in should be set for each proof assistant.
 ;; You don't need to set every variable for basic functionality;
@@ -841,12 +842,59 @@ See pg-user.el: `pg-create-in-span-context-menu' for more hints."
   :type 'function
   :group 'proof-interaction)
 
-;; TODO: move proof shell and server common regexps here
+(defcustom proof-add-to-queue-fun 'proof-shell-add-to-queue
+  "Function to add item to the queue of items to be processed by the proof shell or server"
+  :type 'function
+  :group 'proof-interaction)
 
+(defcustom proof-extend-queue-hook nil
+  "Hooks run by proof-extend-queue before extending `proof-action-list'.
+Can be used to run additional actions before items are added to
+the queue \(such as compiling required modules for Coq) or to
+modify the items that are going to be added to
+`proof-action-list'. The items that are about to be added are
+bound to `queueitems'."
+  :type '(repeat function)
+  :group 'proof-interaction)  
+
+;; TODO: move proof shell and server common regexps here
 
 
 ;;
-;;  4. Configuration for proof shell
+;;  4. Configuration for proof server
+;;
+;; The variables in this section concern the proof server mode.
+;; The first group of variables are hooks invoked at various points.
+;; The second group of variables are concerned with matching the output
+;; from the proof assistant.
+;;
+;; Variables here are put into the customize group 'proof-server'.
+;;
+;; These should be set in the server mode configuration, again,
+;; before proof-server-config-done is called.
+
+(defgroup proof-server nil
+  "Settings for output from the proof assistant in proof server mode."
+  :group 'prover-config
+  :prefix "proof-server-")
+
+(defcustom proof-server-init-cmd nil
+   "The command(s) for initially configuring the proof process.
+This command is sent to the process as soon as it started. It can be used to configure
+the proof assistant in some way."
+   :type '(choice (list string) string (const nil))
+   :group 'proof-server)
+
+(defcustom proof-server-filter-fun nil
+   "The Emacs process filter to receive data from the prover. 
+It takes two arguments: the first is the Elisp process object, the second is a 
+string, the output from the prover."
+   :type 'function
+   :group 'proof-server)
+
+
+;;
+;;  5. Configuration for proof shell
 ;;
 ;; The variables in this section concern the proof shell mode.
 ;; The first group of variables are hooks invoked at various points.
@@ -866,7 +914,7 @@ See pg-user.el: `pg-create-in-span-context-menu' for more hints."
 
 
 ;;
-;; 4a. commands
+;; 5a. commands
 ;;
 
 (defcustom proof-prog-name nil
@@ -1055,7 +1103,7 @@ scripting (to do undo operations), the whole history is discarded."
 ;; (defcustom  proof-shell-adjust-line-width-cmd nil
 
 ;;
-;; 4b. Regexp variables for matching output from proof process.
+;; 5b. Regexp variables for matching output from proof process.
 ;;
 
 (defcustom proof-shell-annotated-prompt-regexp nil
@@ -1520,7 +1568,7 @@ on `proof-shell-eager-annotation-start' and
 
 
 ;;
-;; 4c. tokens mode: turning on/off tokens output
+;; 5c. tokens mode: turning on/off tokens output
 ;;
 
 (defcustom proof-tokens-activate-command nil
@@ -1549,7 +1597,7 @@ tokens (for example, editing documentation or source code files)."
 
 
 ;;
-;; 4d. hooks and other miscellaneous customizations
+;; 5d. hooks and other miscellaneous customizations
 ;;
 
 (defcustom proof-shell-unicode t
@@ -1606,16 +1654,6 @@ This is enabled for cygwin32 systems by default.  You should turn it off
 if you don't need it (slight speed penalty)."
   :type 'boolean
   :group 'proof-shell)
-
-(defcustom proof-shell-extend-queue-hook nil
-  "Hooks run by proof-extend-queue before extending `proof-action-list'.
-Can be used to run additional actions before items are added to
-the queue \(such as compiling required modules for Coq) or to
-modify the items that are going to be added to
-`proof-action-list'. The items that are about to be added are
-bound to `queueitems'."
-  :type '(repeat function)
-  :group 'proof-shell)  
 
 (defcustom proof-shell-insert-hook nil
   "Hooks run by `proof-shell-insert' before inserting a command.
@@ -1787,7 +1825,7 @@ At present this is used only by the `proof-easy-config' macro."
 
 
 ;;
-;; 5. Goals buffer
+;; 6. Goals buffer
 ;;
 
 (defgroup proof-goals nil

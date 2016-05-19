@@ -1339,7 +1339,7 @@ the maximal number of background compilation jobs is started."
 	  (message "return control, no background jobs")))))
 
 (defun coq-par-preprocess-require-commands ()
-  "Coq function for `proof-shell-extend-queue-hook' doing parallel compilation.
+  "Coq function for `proof-extend-queue-hook' doing parallel compilation.
 If `coq-compile-before-require' is non-nil, this function starts
 the compilation (if necessary) of the dependencies
 ansynchronously in parallel in the background. This function only

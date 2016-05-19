@@ -38,7 +38,7 @@
 (defun coq-par-enable ()
   "Enable parallel compilation.
 Must be used together with `coq-seq-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-par-preprocess-require-commands)
   (add-hook 'proof-shell-signal-interrupt-hook
 	    'coq-par-emergency-cleanup)
@@ -48,7 +48,7 @@ Must be used together with `coq-seq-disable'."
 (defun coq-par-disable ()
   "Disable parallel compilation.
 Must be used together with `coq-seq-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-par-preprocess-require-commands)
   (remove-hook 'proof-shell-signal-interrupt-hook
 	       'coq-par-emergency-cleanup)
@@ -58,13 +58,13 @@ Must be used together with `coq-seq-enable'."
 (defun coq-seq-enable ()
   "Enable sequential synchronous compilation.
 Must be used together with `coq-par-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-seq-preprocess-require-commands))
 
 (defun coq-seq-disable ()
   "Disable sequential synchronous compilation.
 Must be used together with `coq-par-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-seq-preprocess-require-commands))
 
 

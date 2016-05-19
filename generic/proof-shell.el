@@ -26,6 +26,8 @@
 (require 'pg-goals)
 (require 'pg-user)			; proof-script, new-command-advance
 (require 'proof-tree)
+(require 'proof-queue)
+(require 'proof-proverargs)
 
 
 ;;
@@ -34,53 +36,6 @@
 
 (defvar proof-marker nil
   "Marker in proof shell buffer pointing to previous command input.")
-
-;;; *****************************
-
-(defvar proof-action-list nil
-  "The main queue of things to do: spans, commands and actions.
-The value is a list of lists of the form
-
-   (SPAN COMMANDS ACTION [DISPLAYFLAGS])
-
-which is the queue of things to do.
-
-SPAN is a region in the sources, where COMMANDS come from. Often,
-additional properties are recorded as properties of SPAN.
-
-COMMANDS is a list of strings, holding the text to be send to the
-prover. It might be the empty list if nothing needs to be sent to
-the prover, such as, for comments. Usually COMMANDS
-contains just 1 string, but it might also contains more elements.
-The text should be obtained with
-`(mapconcat 'identity COMMANDS \" \")', where the last argument
-is a space.
-
-ACTION is the callback to be invoked when this item has been
-processed by the prover. For normal scripting items it is
-`proof-done-advancing', for retract items
-`proof-done-retracting', but there are more possibilities (e.g.
-`proof-done-invisible', `proof-shell-set-silent',
-`proof-shell-clear-silent' and `proof-tree-show-goal-callback').
-
-The DISPLAYFLAGS are set
-for non-scripting commands or for when scripting should not
-bother the user.  They may include
-
-  'invisible		    non-script command (`proof-shell-invisible-command')
-  'no-response-display      do not display messages in *response* buffer
-  'no-error-display         do not display errors/take error action
-  'no-goals-display         do not goals in *goals* buffer
-  'proof-tree-show-subgoal  item inserted by the proof-tree package
-
-Note that 'invisible does not imply any of the others. If flags
-are non-empty, interactive cues will be surpressed. (E.g.,
-printing hints).
-
-See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
-
-
-;;; ****************************
 
 (defsubst proof-shell-invoke-callback (listitem)
   "From `proof-action-list' LISTITEM, invoke the callback on the span."
@@ -304,25 +259,10 @@ process command."
 	((proc (downcase proof-assistant)))
 
       ;; Starting the inferior process (asynchronous)
-      (let* ((prog-name-list1
-	      (if (functionp (proof-ass-sym prog-args))
-		  ;; complex assistants define <PA>-prog-args as function
-		  ;; that computes the argument list.
-		  (cons proof-prog-name (funcall  (proof-ass-sym prog-args)))
-		(if (proof-ass prog-args)
-		    ;; Intermediate complex assistants set the value
-		    ;; of <PA>-prog-args to the argument list.
-		    (cons proof-prog-name (proof-ass prog-args))
-		  ;; Trivial assistants simply set proof-prog-name
-		  (split-string proof-prog-name))))
-	     (prog-name-list
-	      ;; Splice in proof-rsh-command if it's non-nil
-	      (if (and proof-rsh-command
-		       (> (length proof-rsh-command) 0))
-		  (append (split-string proof-rsh-command)
-			  prog-name-list1)
-		prog-name-list1))
-	     (prog-command-line (mapconcat 'identity prog-name-list " "))
+      (let* ((command-line-and-names (prover-command-line-and-names))
+
+	     (prog-command-line (cdr command-line-and-names))
+	     (prog-name-list (car command-line-and-names))
 
 	     (process-connection-type
 	      proof-shell-process-connection-type)
@@ -937,7 +877,6 @@ track what happens in the proof queue."
 	  ;; More efficient: keep track of size of queue as modified.
 	  (< (length proof-action-list) proof-shell-silent-threshold)))
 
-
 (defsubst proof-shell-insert-action-item (item)
   "Insert ITEM from `proof-action-list' into the proof shell."
   (proof-shell-insert (nth 1 item) (nth 2 item) (nth 0 item)))
@@ -953,34 +892,7 @@ Comments are not sent to the prover."
       (setq proof-action-list (cdr proof-action-list)))
     (nreverse cbitems)))
 
-
-;;;###autoload
-(defun proof-start-queue (start end queueitems &optional queuemode)
-  "Begin processing a queue of commands in QUEUEITEMS.
-If START is non-nil, START and END are buffer positions in the
-active scripting buffer for the queue region.
-
-This function calls `proof-add-to-queue'."
-  (if start
-      (proof-set-queue-endpoints start end))
-  (proof-add-to-queue queueitems queuemode))
-
-
-;;;###autoload
-(defun proof-extend-queue (end queueitems)
-  "Extend the current queue with QUEUEITEMS, queue end END.
-To make sense, the commands should correspond to processing actions
-for processing a region from (buffer-queue-or-locked-end) to END.
-The queue mode is set to 'advancing"
-  (proof-set-queue-endpoints (proof-unprocessed-begin) end)
-  (condition-case err
-      (run-hooks 'proof-shell-extend-queue-hook)
-    ((error quit)
-     (proof-detach-queue)
-     (signal (car err) (cdr err))))
-  (proof-add-to-queue queueitems 'advancing))
-
-(defun proof-add-to-queue (queueitems &optional queuemode)
+(defun proof-shell-add-to-queue (queueitems &optional queuemode)
   "Chop off the vacuous prefix of the QUEUEITEMS and queue them.
 For each item with a nil command at the head of the list, invoke its
 callback and remove it from the list.
@@ -989,6 +901,7 @@ Append the result onto `proof-action-list', and if the proof
 shell isn't already busy, grab the lock with QUEUEMODE and
 start processing the queue.
 
+
 If the proof shell is busy when this function is called,
 then QUEUEMODE must match the mode of the queue currently
 being processed."
@@ -996,12 +909,11 @@ being processed."
   (when (and queueitems proof-action-list)
     ;; internal check: correct queuemode in force if busy
     ;; (should have proof-action-list<>nil -> busy)
-    (and proof-shell-busy queuemode
+    (and proof-shell-busy queuemode                            ;;; PROOF-SHELL
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
 	   (assert (eq proof-shell-busy queuemode)))))
-
 
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
@@ -1009,34 +921,34 @@ being processed."
 	  (nconc proof-action-list queueitems))
     
     (when nothingthere ; process comments immediately
-      (let ((cbitems  (proof-shell-slurp-comments)))
-	(mapc 'proof-shell-invoke-callback cbitems)))
+      (let ((cbitems  (proof-shell-slurp-comments)))           ;;; PROOF-SHELL 
+	(mapc 'proof-shell-invoke-callback cbitems)))          ;;; PROOF-SHELL 
   
     (if proof-action-list ;; something to do
 	(progn
-	  (when (proof-shell-should-be-silent)
+	  (when (proof-shell-should-be-silent)                 ;;; PROOF-SHELL
 	      ;; do this ASAP, either first or just after current command
 	      (setq proof-action-list
 		    (if nothingthere ; the first thing
-			(cons (proof-shell-start-silent-item)
+			(cons (proof-shell-start-silent-item)  ;;; PROOF-SHELL
 			      proof-action-list)
 		      (cons (car proof-action-list) ; after current
-			    (cons (proof-shell-start-silent-item)
+			    (cons (proof-shell-start-silent-item) ;;; PROOF-SHELL
 				  (cdr proof-action-list))))))
 	  ;; Sometimes the non silent mode needs to be set because a
 	  ;; previous error prevented to go back to non silent mode
-	  (when (proof-shell-should-not-be-silent)
+	  (when (proof-shell-should-not-be-silent)        ;;; PROOF-SHELL
 	      ;; do this ASAP, either first or just after current command
 	      (setq proof-action-list
 		    (if nothingthere ; the first thing
-			(cons (proof-shell-stop-silent-item)
+			(cons (proof-shell-stop-silent-item)  ;;; PROOF-SHELL
 			      proof-action-list)
 		      (cons (car proof-action-list) ; after current
 			    (cons (proof-shell-stop-silent-item)
 				  (cdr proof-action-list))))))	  
 	  (when nothingthere  ; start sending commands
 	    (proof-grab-lock queuemode)
-	    (setq proof-shell-last-output-kind nil)
+	    (setq proof-shell-last-output-kind nil)            ;;; PROOF-SHELL
 	    (proof-shell-insert-action-item (car proof-action-list))))
       (if proof-second-action-list-active
 	  ;; primary action list is empty, but there are items waiting
@@ -1044,7 +956,6 @@ being processed."
 	  (proof-grab-lock queuemode)
       ;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1133,7 +1044,6 @@ contains only invisible elements for Prooftree synchronization."
 		 (every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
-
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
   "Insert command string CMD sent from prover into script buffer.

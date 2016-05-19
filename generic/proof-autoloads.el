@@ -648,30 +648,59 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads (proof-invisible-command-invisible-result proof-invisible-cmd-get-result
-;;;;;;  proof-invisible-command proof-ready-prover) "proof-resolve-calls"
-;;;;;;  "proof-resolve-calls.el" (22324 30587 826896 721000))
+;;;### (autoloads (proof-extend-queue proof-start-queue) "proof-queue"
+;;;;;;  "proof-queue.el" (22324 43374 918941 756000))
+;;; Generated autoloads from proof-queue.el
+
+(autoload 'proof-start-queue "proof-queue" "\
+Begin processing a queue of commands in QUEUEITEMS.
+If START is non-nil, START and END are buffer positions in the
+active scripting buffer for the queue region.
+
+This function calls `proof-add-to-queue'.
+
+\(fn START END QUEUEITEMS &optional QUEUEMODE)" nil nil)
+
+(autoload 'proof-extend-queue "proof-queue" "\
+Extend the current queue with QUEUEITEMS, queue end END.
+To make sense, the commands should correspond to processing actions
+for processing a region from (buffer-queue-or-locked-end) to END.
+The queue mode is set to 'advancing
+
+\(fn END QUEUEITEMS)" nil nil)
+
+;;;***
+
+;;;### (autoloads (proof-add-to-queue proof-invisible-command-invisible-result
+;;;;;;  proof-invisible-cmd-get-result proof-invisible-command proof-ready-prover)
+;;;;;;  "proof-resolve-calls" "proof-resolve-calls.el" (22324 43568
+;;;;;;  258942 437000))
 ;;; Generated autoloads from proof-resolve-calls.el
 
 (autoload 'proof-ready-prover "proof-resolve-calls" "\
-Choose procedure according to proof-interaction-mode
+Call procedure according to proof-interaction-mode
 
 \(fn &optional QUEUEMODE)" nil nil)
 
 (autoload 'proof-invisible-command "proof-resolve-calls" "\
-Choose procedure according to proof-interaction-mode
+Call procedure according to proof-interaction-mode
 
 \(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
 
 (autoload 'proof-invisible-cmd-get-result "proof-resolve-calls" "\
-Choose procedure according to proof-interaction-mode
+Call procedure according to proof-interaction-mode
 
 \(fn CMD)" nil nil)
 
 (autoload 'proof-invisible-command-invisible-result "proof-resolve-calls" "\
-Choose procedure according to proof-interaction-mode
+Call procedure according to proof-interaction-mode
 
 \(fn CMD)" nil nil)
+
+(autoload 'proof-add-to-queue "proof-resolve-calls" "\
+Call procedure according to proof-interaction-mode
+
+\(fn QUEUEITEMS &optional QUEUEMODE)" nil nil)
 
 ;;;***
 
@@ -769,39 +798,52 @@ finish setup which depends on specific proof assistant configuration.
 
 ;;;***
 
-;;;### (autoloads (proof-server-invisible-command-get-invisible-result
-;;;;;;  proof-server-invisible-command-get-result proof-server-invisible-command
-;;;;;;  proof-server-ready-prover) "proof-server" "proof-server.el"
-;;;;;;  (22324 30010 102894 687000))
+;;;### (autoloads (proof-server-add-to-queue proof-server-invisible-command-invisible-result
+;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
+;;;;;;  proof-server-start proof-server-ready-prover) "proof-server"
+;;;;;;  "proof-server.el" (22331 30141 377520 401000))
 ;;; Generated autoloads from proof-server.el
 
 (autoload 'proof-server-ready-prover "proof-server" "\
-
+Compare with proof-shell-ready-prover, for proof shells. 
+Make sure the proof assistant is ready for a command.
+We ignore QUEUEMODE, which is used just to give calling compatibility 
+with proof-shell-ready-prover.
 
 \(fn QUEUEMODE)" nil nil)
+
+(autoload 'proof-server-start "proof-server" "\
+
+
+\(fn)" nil nil)
 
 (autoload 'proof-server-invisible-command "proof-server" "\
 
 
 \(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
 
-(autoload 'proof-server-invisible-command-get-result "proof-server" "\
+(autoload 'proof-server-invisible-cmd-get-result "proof-server" "\
 
 
 \(fn CMD)" nil nil)
 
-(autoload 'proof-server-invisible-command-get-invisible-result "proof-server" "\
+(autoload 'proof-server-invisible-command-invisible-result "proof-server" "\
 
 
 \(fn CMD)" nil nil)
+
+(autoload 'proof-server-add-to-queue "proof-server" "\
+add item to queue for 'server mode
+
+\(fn QUEUEITEMS &optional QUEUEMODE)" nil nil)
 
 ;;;***
 
 ;;;### (autoloads (proof-shell-config-done proof-shell-mode proof-shell-invisible-command-invisible-result
 ;;;;;;  proof-shell-invisible-cmd-get-result proof-shell-invisible-command
-;;;;;;  proof-shell-wait proof-extend-queue proof-start-queue proof-shell-insert
-;;;;;;  proof-shell-available-p proof-shell-ready-prover) "proof-shell"
-;;;;;;  "proof-shell.el" (22324 14658 662840 620000))
+;;;;;;  proof-shell-wait proof-shell-insert proof-shell-available-p
+;;;;;;  proof-shell-ready-prover) "proof-shell" "proof-shell.el"
+;;;;;;  (22331 30032 573520 18000))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -848,23 +890,6 @@ used in `proof-add-to-queue' when we start processing a queue, and in
 `proof-shell-exec-loop', to process the next item.
 
 \(fn STRINGS ACTION &optional SCRIPTSPAN)" nil nil)
-
-(autoload 'proof-start-queue "proof-shell" "\
-Begin processing a queue of commands in QUEUEITEMS.
-If START is non-nil, START and END are buffer positions in the
-active scripting buffer for the queue region.
-
-This function calls `proof-add-to-queue'.
-
-\(fn START END QUEUEITEMS &optional QUEUEMODE)" nil nil)
-
-(autoload 'proof-extend-queue "proof-shell" "\
-Extend the current queue with QUEUEITEMS, queue end END.
-To make sense, the commands should correspond to processing actions
-for processing a region from (buffer-queue-or-locked-end) to END.
-The queue mode is set to 'advancing
-
-\(fn END QUEUEITEMS)" nil nil)
 
 (autoload 'proof-shell-wait "proof-shell" "\
 Busy wait for `proof-shell-busy' to become nil, reading from prover.
@@ -1113,8 +1138,9 @@ Return a unicode encoded version presentation of STR.
 ;;;### (autoloads nil nil ("../lib/local-vars-list.el" "../lib/pg-fontsets.el"
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
-;;;;;;  "proof-config.el" "proof-faces.el" "proof-tree.el" "proof-useropts.el"
-;;;;;;  "proof.el") (22324 30593 172948 312000))
+;;;;;;  "proof-config.el" "proof-faces.el" "proof-proverargs.el"
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22331 30168
+;;;;;;  974719 970000))
 
 ;;;***
 

@@ -1,4 +1,4 @@
-;;; tree-tree.el --- Proof General prooftree communication.
+;;; proof-tree.el --- Proof General prooftree communication.
 ;;
 ;; Copyright (C) 2012 Hendrik Tews
 ;; Authors:   Hendrik Tews
@@ -89,7 +89,9 @@
 (require 'cl)
 
 (eval-when (compile)
-  (require 'proof-resolve-calls))
+  (require 'proof-resolve-calls)
+  (require 'proof-queue)
+  (require 'proof-shell))
 
 ;;
 ;; User options

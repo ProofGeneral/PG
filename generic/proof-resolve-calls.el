@@ -3,8 +3,6 @@
 ;;; Code:
 
 (require 'proof-config)
-(require 'proof-shell)
-(require 'proof-server)
 
 ;;;###autoload
 (defun proof-ready-prover (&optional queuemode)
@@ -26,6 +24,11 @@
 (defun proof-invisible-command-invisible-result (cmd)
   "Call procedure according to proof-interaction-mode"
   (funcall proof-invisible-command-invisible-result-fun cmd))
+
+;;;###autoload
+(defun proof-add-to-queue (queueitems &optional queuemode)
+  "Call procedure according to proof-interaction-mode"
+  (funcall proof-add-to-queue-fun queueitems queuemode))
 
 (provide 'proof-resolve-calls)
 ;;; proof-resolve-calls.el ends here
