@@ -1599,8 +1599,8 @@ Near here means PT is either inside or just aside of a comment."
   ;; for server mode, update mode-dependent function variables
   (when (eq proof-interaction-mode 'server)
     (setq 
+     proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd coq-server-init
-     proof-server-filter-fun 'coq-server-filter
      proof-ready-prover-fun 'proof-server-ready-prover
      proof-invisible-command-fun 'proof-server-invisible-command
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
@@ -1710,9 +1710,8 @@ Near here means PT is either inside or just aside of a comment."
    proof-tree-show-sequent-command 'coq-show-sequent-command
    proof-tree-find-undo-position 'coq-proof-tree-find-undo-position
    )
-        
-  (proof-shell-config-done))
 
+  (proof-shell-config-done))
 
 (proof-eval-when-ready-for-assistant
     (easy-menu-define proof-goals-mode-aux-menu
@@ -2154,8 +2153,8 @@ Warning: this makes the error messages (and location) wrong.")
                                   ;; smaller/faster but since this message is output
                                   ;; *before* resulting goals, it is not detected as
                                   ;; a response message.
-                                  proof-shell-last-output))
-               (substr  (or (and str (match-string 1 proof-shell-last-output)) ""))
+                                  proof-prover-last-output))
+               (substr  (or (and str (match-string 1 proof-prover-last-output)) ""))  ;; TODO match 1 in server mode?
                ;; emptysubstr = t if substr is empty or contains only spaces and |
                (emptysubstr (and (string-match "\\(\\s-\\||\\)*" substr)
                                  (eq (length substr) (length (match-string 0 substr)))))) ; idem
@@ -2382,7 +2381,7 @@ buffer."
           ;; parsed above. Don't kill the first \n
           (let ((inhibit-read-only t))
             (when clean (delete-region (match-beginning 0) (match-end 0))))
-          (when proof-shell-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
+          (when proof-prover-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
             ;; `pos' and `len' are actually specified in bytes, apparently. So
             ;; let's convert them, assuming the encoding used is utf-8.
             ;; Presumably in Emacs-23 we could use `string-bytes' for that
@@ -2527,7 +2526,7 @@ number of hypothesis displayed, without hiding the goal"
 (add-hook 'proof-shell-handle-delayed-output-hook
           (lambda ()
             (if (proof-string-match coq-shell-proof-completed-regexp
-                                    proof-shell-last-output)
+                                    proof-prover-last-output)
                 (proof-clean-buffer proof-goals-buffer))))
 
 

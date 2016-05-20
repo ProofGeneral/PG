@@ -1344,7 +1344,7 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	       no-goals-display))))
 	(proof-shell-wait t) ; interruptible
 	(cond
-	 ((eq proof-shell-last-output-kind 'error)
+	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Sending commands to prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
 	  (proof-interrupt-process)
@@ -1370,7 +1370,7 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	(let ((proof-sticky-errors t))
 	  (proof-shell-wait t)) ; interruptible
 	(cond
-	 ((eq proof-shell-last-output-kind 'error)
+	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Trying next commands in prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
 	  (proof-interrupt-process)

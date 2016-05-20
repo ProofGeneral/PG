@@ -857,6 +857,16 @@ bound to `queueitems'."
   :type '(repeat function)
   :group 'proof-interaction)  
 
+(defcustom proof-prover-unicode t
+  "Whether communication between PG and prover is 8bit clean.
+If non-nil, no special non-ASCII characters must be used in markup.
+If so, the process coding system will be set to UTF-8.
+With old systems that may use unsafe unicode prefix sequences
+\(i.e., lead to hanging in C-libraries), this should be set to nil."
+  :type 'boolean
+  :group 'proof-interaction)
+
+
 ;; TODO: move proof shell and server common regexps here
 
 
@@ -885,12 +895,73 @@ the proof assistant in some way."
    :type '(choice (list string) string (const nil))
    :group 'proof-server)
 
-(defcustom proof-server-filter-fun nil
-   "The Emacs process filter to receive data from the prover. 
-It takes two arguments: the first is the Elisp process object, the second is a 
-string, the output from the prover."
+(defcustom proof-server-process-response-fun nil
+  "Take response from prover, parse it and produce items suitable to place on proof-action list."
    :type 'function
    :group 'proof-server)
+
+(defcustom proof-server-handle-output-system-specific nil
+  "Set this variable to handle system specific output.
+Errors and interrupts are recognised in the function
+`proof-shell-handle-immediate-output'.  Later output is
+handled by `proof-shell-handle-delayed-output', which
+displays messages to the user in *goals* and *response*
+buffers.
+
+This hook can run between the two stages to take some effect.
+
+It should be a function which is passed (cmd string) as
+arguments, where `cmd' is a string containing the currently
+processed command and `string' is the response from the proof
+system.  If action is taken and goals/response display should
+be prevented, the function should update the variable
+`proof-prover-last-output-kind' to some non-nil symbol.
+
+The symbol will be compared against standard ones, see documentation
+of `proof-prover-last-output-kind'.  A suggested canonical non-standard
+symbol is 'systemspecific."
+  :type '(repeat function)
+  :group 'proof-server)
+
+(defcustom proof-server-interruptp-fun nil
+   "Predicate that returns true if a prover response is an interrupt."
+   :type '(choice function (const nil))
+   :group 'proof-server)
+
+(defcustom proof-server-errorp-fun nil
+   "Predicate that returns true if a prover response indicates an error."
+   :type '(choice function (const nil))
+   :group 'proof-server)
+
+(defcustom proof-server-proof-completedp-fun nil
+   "Predicate that returns true if a prover response indicates a proof has been completed."
+   :type '(choice function (const nil))
+   :group 'proof-server)
+
+(defcustom proof-server-start-silent-cmd nil
+  "Command to turn prover goals output off when sending many script commands.
+If non-nil, Proof General will automatically issue this command
+to help speed up processing of long proof scripts.
+See also `proof-server-stop-silent-cmd'."
+  :type '(choice string (const nil))
+  :group 'proof-server)
+
+(defcustom proof-server-stop-silent-cmd nil
+  "Command to turn prover output on.
+If non-nil, Proof General will automatically issue this command
+to help speed up processing of long proof scripts.
+See also `proof-server-start-silent-cmd'."
+  :type '(choice string (const nil))
+  :group 'proof-server)
+
+(defcustom proof-server-silent-threshold 2
+  "Number of waiting commands in the proof queue needed to trigger silent mode.
+Default is 2, but you can raise this in case switching silent mode
+on or off is particularly expensive (or make it ridiculously large
+to disable silent mode altogether)."
+  :type 'integer
+  :group 'proof-server)
+
 
 
 ;;
@@ -1599,15 +1670,6 @@ tokens (for example, editing documentation or source code files)."
 ;;
 ;; 5d. hooks and other miscellaneous customizations
 ;;
-
-(defcustom proof-shell-unicode t
-  "Whether communication between PG and prover is 8bit clean.
-If non-nil, no special non-ASCII characters must be used in markup.
-If so, the process coding system will be set to UTF-8.
-With old systems that may use unsafe unicode prefix sequences
-\(i.e., lead to hanging in C-libraries), this should be set to nil."
-  :type 'boolean
-  :group 'proof-shell)
 
 (defcustom proof-shell-filename-escapes nil
   "A list of escapes that are applied to %s for filenames.

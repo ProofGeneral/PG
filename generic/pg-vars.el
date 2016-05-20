@@ -156,7 +156,7 @@ assistant during the last group of commands.")
 (defvar pg-response-next-error nil
   "Error counter in response buffer to count for next error message.")
 
-(defvar proof-shell-proof-completed nil
+(defvar proof-prover-proof-completed nil
   "Flag indicating that a completed proof has just been observed.
 If non-nil, the value counts the commands from the last command
 of the proof (starting from 1).")
@@ -170,18 +170,18 @@ of the proof (starting from 1).")
 ;; -- here to avoid compiler warnings and minimise requires.
 ;;
 
-(defvar proof-shell-silent nil
-  "A flag, non-nil if PG thinks the prover is silent.")
-
 (defvar proof-shell-last-prompt ""
   "A raw record of the last prompt seen from the proof system.
 This is the string matched by `proof-shell-annotated-prompt-regexp'.")
 
-(defvar proof-shell-last-output ""
-  "A record of the last string seen from the proof system.
-This is raw string, for internal use only.")
+(defvar proof-prover-silent nil
+  "A flag, non-nil if PG thinks the prover is silent.")
 
-(defvar proof-shell-last-output-kind nil
+(defvar proof-prover-last-output ""
+  "A record of the last string seen from the proof system. 
+This is a raw string, for internal use only.")
+
+(defvar proof-prover-last-output-kind nil
   "A symbol denoting the type of the last output string from the proof system.
 Specifically:
 
@@ -191,15 +191,15 @@ Specifically:
  'response	 A response message
  'goals		 A goals (proof state) display
  'systemspecific Something specific to a particular system,
-		  -- see `proof-shell-handle-output-system-specific'
+		  -- see `proof-handle-output-system-specific'
 
-The output corresponding to this will be in `proof-shell-last-output'.
+The output corresponding to this will be in `proof-prover-last-output'.
 
-See also `proof-shell-proof-completed' for further information about
+See also `proof-prover-proof-completed' for further information about
 the proof process output, when ends of proofs are spotted.
 
 This variable can be used for instance specific functions which want
-to examine `proof-shell-last-output'.")
+to examine `proof-prover-last-output'.")
 
 (defvar proof-assistant-settings nil
  "Settings kept in Proof General for current proof assistant.

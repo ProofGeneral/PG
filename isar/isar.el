@@ -535,7 +535,7 @@ selected.")
   "Use Isabelle's pretty printing facilities to adjust output line width.
 Checks the width in the `proof-goals-buffer'"
   (let ((ans ""))
-    (and (not proof-shell-silent)
+    (and (not proof-prover-silent)
 	 (proof-with-current-buffer-if-exists proof-goals-buffer
 	   (let ((current-width
 		  ;; Actually, one might want the width of the

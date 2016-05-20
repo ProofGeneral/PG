@@ -1,5 +1,11 @@
 ;;; coq-xml.el -- XML functions for Coq when run in server mode
-;;; mostly non-overlapping with Proof General XML code, which uses Emacs' XML format
+;;;
+;;; XML represented in same way as Emacs does, using grammar shown at
+;;;
+;;;   https://www.emacswiki.org/emacs/XmlParserExamples
+;;;
+
+(require 'xml)
 
 (defvar edit-id-counter 0)
 
@@ -8,7 +14,7 @@
 (defvar coq-xml-escape-table
   #s(hash-table size 8
                 data 
-                (" " "&nbsp;"
+                ( ; " " "&nbsp;" ; probably bogus
                  "<" "&lt;"
                  ">" "&gt;"
                  "\\" "&apos;"
@@ -59,6 +65,17 @@
         (concat "<" tag fmt-spaced-attrs ">"
                 cstr
                 "</" tag ">\n")))) ;; newline so Coq sees it
+
+(defun coq-xml-attr-value (xml attr-name)
+  (let* ((attrs (xml-node-attributes xml))
+	 (attr (assq attr-name attrs)))
+    (and attr (cdr attr))))
+
+; does this XML have this outermost tag
+(defun coq-xml-tagp (xml tag)
+  (and (not (null xml))
+       (listp xml)
+       (eq (car xml) tag)))
 
 ;; use these functions for specific tags, so we don't make silly mistakes 
 
@@ -207,6 +224,7 @@
   (message (format "Wrapped string is: %s\n" (coq-xml-add-item s))))
 
 (add-hook 'proof-server-insert-hook 'coq-xml-wrap)
+
 
 (provide 'coq-xml)
 

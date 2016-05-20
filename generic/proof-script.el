@@ -463,7 +463,7 @@ Does nothing if there is no active scripting buffer, or if
 Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
   (interactive)
   (unless (eq proof-follow-mode 'ignore)
-    (if (eq proof-shell-last-output-kind 'error)
+    (if (eq proof-prover-last-output-kind 'error)
 	(proof-goto-end-of-locked-if-pos-not-visible-in-window)))
   (proof-with-current-buffer-if-exists
    proof-script-buffer
@@ -700,16 +700,16 @@ Each span has a 'type property, one of:
     "Keymap for the span context menu.")
 
 (defun pg-last-output-displayform ()
-  "Return displayable form of `proof-shell-last-output'.
+  "Return displayable form of `proof-prover-last-output'.
 This is used to annotate the buffer with the result of proof steps."
   ;; NOTE: Isabelle/Isar uses urgent messages (sigh) in its ordinary output.
   ;; ("Successful attempt...").  This loses here.
-  (if (string= proof-shell-last-output "") ""
+  (if (string= proof-prover-last-output "") ""
     (let* ((text (proof-shell-strip-output-markup
 		  (if (and (boundp 'unicode-tokens-mode)
 			   unicode-tokens-mode)
-		      (unicode-tokens-encode-str proof-shell-last-output)
-		    proof-shell-last-output))))
+		      (unicode-tokens-encode-str proof-prover-last-output)
+		    proof-prover-last-output))))
 
       ;; HACK: for Isabelle which puts ugly leading \n's around proofstate.
       (if (and (> (length text) 0)
@@ -1267,14 +1267,14 @@ activation is considered to have failed and an error is given."
       (if proof-activate-scripting-hook
 	  (let
 	      ((activated-interactively	(called-interactively-p 'any)))
-	    (setq proof-shell-last-output-kind nil)
+	    (setq proof-prover-last-output-kind nil)
 	    (run-hooks 'proof-activate-scripting-hook)
 	    ;; If activate scripting functions caused an error,
 	    ;; prevent switching to another buffer.  Might be better
 	    ;; to leave to specific instances, or simply run the hooks
 	    ;; as the last step before turning on scripting properly.
-	    (when (or (eq 'error proof-shell-last-output-kind)
-		      (eq 'interrupt proof-shell-last-output-kind))
+	    (when (or (eq 'error proof-prover-last-output-kind)
+		      (eq 'interrupt proof-prover-last-output-kind))
 	      (proof-deactivate-scripting) ;; turn off again!
 	      ;; Give an error to prevent further actions.
 	      (error 
@@ -1361,11 +1361,11 @@ Argument SPAN has just been processed."
      ;; "unclosed" proofs, then you can safely set
      ;; proof-completed-proof-behaviour.
      ((and
-       proof-shell-proof-completed
+       proof-prover-proof-completed
        (or (and (eq proof-completed-proof-behaviour 'extend)
-		(>= proof-shell-proof-completed 0))
+		(>= proof-prover-proof-completed 0))
 	   (and (eq proof-completed-proof-behaviour 'closeany)
-		(> proof-shell-proof-completed 0))
+		(> proof-prover-proof-completed 0))
 	   (and (eq proof-completed-proof-behaviour 'closegoal)
 		(funcall proof-goal-command-p span))))
       (proof-done-advancing-autosave span))
@@ -1405,7 +1405,7 @@ Argument SPAN has just been processed."
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
-    (let ((proof-shell-last-output "")) ; comments not sent, no last output 
+    (let ((proof-prover-last-output "")) ; comments not sent, no last output 
       (pg-set-span-helphighlights bodyspan))
 
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
@@ -1424,16 +1424,16 @@ Argument SPAN has just been processed."
 
 (defun proof-done-advancing-save (span)
   "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
-  (unless (or (eq proof-shell-proof-completed 1)
+  (unless (or (eq proof-prover-proof-completed 1)
 	      (eq proof-assistant-symbol 'isar))
     ;; We expect saves to succeed only for recently completed top-level proofs.
     ;; NB: not true in Isar, because save commands can perform proof.
     (proof-debug
      (format
-      "PG: save command with proof-shell-proof-completed=%s, proof-nesting-depth=%s"
-      proof-shell-proof-completed proof-nesting-depth)))
+      "PG: save command with proof-prover-proof-completed=%s, proof-nesting-depth=%s"
+      proof-prover-proof-completed proof-nesting-depth)))
 
-  (setq proof-shell-proof-completed nil)
+  (setq proof-prover-proof-completed nil)
 
   ;; FIXME: need subroutine here:
   (let ((gspan     span)		  ; putative goal span
@@ -1554,8 +1554,8 @@ Subroutine of `proof-done-advancing-save'."
   ;; In the extend case, the context of proof grows until hit a save
   ;; or new goal.
   (if (eq proof-completed-proof-behaviour 'extend)
-      (incf proof-shell-proof-completed)
-    (setq proof-shell-proof-completed nil))
+      (incf proof-prover-proof-completed)
+    (setq proof-prover-proof-completed nil))
 
   (let* ((swallow  (eq proof-completed-proof-behaviour 'extend))
 	 (gspan    (if swallow span (prev-span span 'type)))
@@ -1590,7 +1590,7 @@ Subroutine of `proof-done-advancing-save'."
       (pg-set-span-helphighlights span))
      ((and swallow newgoal)
       ;; If extending the region, goalsave already there; just highlight new region
-      (setq proof-shell-proof-completed nil)
+      (setq proof-prover-proof-completed nil)
       (pg-set-span-helphighlights span))
      (t
       ;; If, search back through spans, we haven't hit a save or the
@@ -1625,8 +1625,8 @@ Subroutine of `proof-done-advancing-save'."
    (t
     (pg-add-element 'command id bodyspan)))
 
-  (if proof-shell-proof-completed
-      (incf proof-shell-proof-completed))
+  (if proof-prover-proof-completed
+      (incf proof-prover-proof-completed))
 
   (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
 
@@ -2048,7 +2048,7 @@ is that undoing never leaves prover in a \"proof just completed\"
 state, which is true for some proof assistants (but probably not
 others)."
   ;; TODO: need to fixup proof-nesting-depth
-  (setq proof-shell-proof-completed nil)
+  (setq proof-prover-proof-completed nil)
   (if (span-live-p span)
       (let ((start (span-start span))
 	    (end (span-end span))

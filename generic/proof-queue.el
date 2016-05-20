@@ -1,6 +1,6 @@
 ;;; proof-queue.el -- queue management
 ;;;
-;;; this code should be independent of 'repl or 'server mode
+;; this code should be independent of 'repl or 'server mode
 
 (require 'proof-script)
 (require 'proof-resolve-calls)
@@ -22,7 +22,8 @@ the prover, such as, for comments. Usually COMMANDS
 contains just 1 string, but it might also contains more elements.
 The text should be obtained with
 `(mapconcat 'identity COMMANDS \" \")', where the last argument
-is a space.
+is a space. For server mode, the COMMANDS may be more complex than 
+the raw text from the proof script, such as XML.
 
 ACTION is the callback to be invoked when this item has been
 processed by the prover. For normal scripting items it is
@@ -48,6 +49,31 @@ printing hints).
 See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
 
 
+(defvar proof-second-action-list-active nil
+  "Signals that some items are waiting outside of `proof-action-list'.
+If this is t it means that some items from the queue region are
+waiting for being processed in a place different from
+`proof-action-list'. In this case Proof General must behave as if
+`proof-action-list' would be non-empty, when it is, in fact,
+empty.
+
+This is used, for instance, for parallel background compilation
+for Coq: The Require command and the following items are not put
+into `proof-action-list' and are stored somewhere else until the
+background compilation finishes. Then those items are put into
+`proof-action-list' for getting processed.")
+
+(defsubst proof-prover-slurp-comments ()
+  "Strip comments at front of `proof-action-list', returning items stripped.
+Comments are not sent to the prover."
+  (let (cbitems nextitem)
+    (while (and proof-action-list
+		(not (nth 1 (setq nextitem
+				  (car proof-action-list)))))
+      (setq cbitems (cons nextitem cbitems))
+      (setq proof-action-list (cdr proof-action-list)))
+    (nreverse cbitems)))
+
 ;;;###autoload
 (defun proof-start-queue (start end queueitems &optional queuemode)
   "Begin processing a queue of commands in QUEUEITEMS.
@@ -72,7 +98,6 @@ The queue mode is set to 'advancing"
      (proof-detach-queue)
      (signal (car err) (cdr err))))
   (proof-add-to-queue queueitems 'advancing))
-
 
 (provide 'proof-queue)
 

@@ -219,7 +219,7 @@ back the default toolbar."
 (defun proof-toolbar-qed-enable-p ()
   (proof-with-script-buffer
    (and proof-save-command
-	proof-shell-proof-completed
+	proof-prover-proof-completed
 	(proof-shell-available-p))))
 
 ;; State
