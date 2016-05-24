@@ -134,11 +134,17 @@ This can be used to help multiple file handling.")
 (defvar proof-shell-buffer nil
   "Process buffer where the proof assistant is run.")
 
+(defvar proof-server-buffer nil
+  "Process buffer where the proof assistant is run.")
+
 (defvar proof-goals-buffer nil
   "The goals buffer.")
 
 (defvar proof-response-buffer nil
   "The response buffer.")
+
+(defvar proof-server-log-buffer nil
+  "In server mode, where traffic may be logged.")
 
 (defvar proof-trace-buffer nil
   "A tracing buffer for storing tracing output from the proof shell.

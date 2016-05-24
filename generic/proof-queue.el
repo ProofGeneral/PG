@@ -91,12 +91,17 @@ This function calls `proof-add-to-queue'."
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to END.
 The queue mode is set to 'advancing"
+  (message "proof-extend-queue 1")
   (proof-set-queue-endpoints (proof-unprocessed-begin) end)
+  (message "proof-extend-queue 2")
   (condition-case err
+      (message "proof-extend-queue 3")
       (run-hooks 'proof-extend-queue-hook)
     ((error quit)
-     (proof-detach-queue)
-     (signal (car err) (cdr err))))
+      (message "proof-extend-queue 4")
+      (proof-detach-queue)
+      (signal (car err) (cdr err))))
+  (message "proof-extend-queue 5")
   (proof-add-to-queue queueitems 'advancing))
 
 (provide 'proof-queue)

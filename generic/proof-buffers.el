@@ -2,6 +2,7 @@
 
 (require 'pg-vars)
 (require 'pg-response)
+(require 'proof-config)
 
 (defun proof-prover-set-text-representation ()
   "Adjust representation for current buffer, to match `proof-shell-unicode'."
@@ -18,6 +19,12 @@
 	(thms	"*thms*"))
     (setq proof-goals-buffer    (get-buffer-create goals))
     (setq proof-response-buffer (get-buffer-create resp))
+
+    (if (and (eq proof-interaction-mode 'server)
+	     proof-server-log-traffic)
+	(let ((logger (concat "*" proof-assistant "-log*")))
+	  (setq proof-server-log-buffer (get-buffer-create logger))))
+
     ;; currently, repl-mode only, relies on regexps
     (if proof-shell-trace-output-regexp
 	(setq proof-trace-buffer (get-buffer-create trace)))
@@ -44,7 +51,6 @@
       (proof-prover-set-text-representation)
       (funcall proof-mode-for-response)
       (setq pg-response-eagerly-raise nil))))
-
 
 (provide 'proof-buffers)
 

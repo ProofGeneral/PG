@@ -41,6 +41,7 @@
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
 (require 'coq-server)
+(require 'coq-xml)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")
@@ -77,6 +78,11 @@
 ;;  "Maximum number of Undo's possible when doing a proof."
 ;;  :type 'number
 ;;  :group 'coq)
+
+(defcustom coq-server-log-traffic t
+  "In server mode, log traffic between emacs and coqtop to a buffer"
+  :type 'boolean
+  :group 'coq)
 
 (defcustom coq-user-init-cmd nil
   "user defined init commands for Coq.
@@ -1596,9 +1602,12 @@ Near here means PT is either inside or just aside of a comment."
        'repl
      'server))
 
+  (message (format "proof-interaction-mode: %s" proof-interaction-mode))
+
   ;; for server mode, update mode-dependent function variables
   (when (eq proof-interaction-mode 'server)
     (setq 
+     proof-server-send-to-prover-fun 'coq-server-send-to-prover
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd coq-server-init
      proof-ready-prover-fun 'proof-server-ready-prover
@@ -1779,7 +1788,17 @@ Near here means PT is either inside or just aside of a comment."
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which dots are displayed."
   :type 'integer
-  :setting "Set Printing Depth %i . ")
+  :setting (lambda (depth) 
+             (if (eq proof-interaction-mode 'repl) 
+                 (format "Set Printing Depth %i . " depth)
+               ; server
+               (let ((xml (coq-xml-setoptions 
+                           '("Printing" "Depth") 
+                           (coq-xml-option_value '((val . intvalue))
+                                             (coq-xml-option '((val . some))
+                                                             (coq-xml-int depth))))))
+                 (message "XML: %s" xml)
+                 xml))))
 
 ;;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit

@@ -5,17 +5,21 @@
 (require 'proof-config)
 (require 'proof-proverargs)
 (require 'proof-queue)
-(require 'proof-resolve-calls)
 (require 'proof-buffers)
 
 (defvar proof-server-process nil)
 
 (defconst proof-server-important-settings
-  '(proof-server-process-response-fun
+  '(proof-server-send-to-prover-fun
+    proof-server-process-response-fun
     ))
 
 (defvar proof-server-delayed-output-flags nil
   "A copy of the `proof-action-list' flags for `proof-server-delayed-output'.")
+
+(defun proof-server-log (src str)
+  (with-current-buffer proof-server-log-buffer
+    (insert "*" src ">>>" str "<<<" src "*\n")))
 
 ;;;###autoload
 (defun proof-server-config-done ()
@@ -60,9 +64,12 @@ The first argument is the process object, the second is the response from the pr
   (message "Called server filter")
   (message (concat "Message is " response))
 
+  (if proof-server-log-traffic
+      (proof-server-log proof-assistant response))
+
   ; parse response in prover-specific way
   (proof-server-process-response response)
-
+  ; take care of display buffers
   (proof-server-filter-manage-output response))
 
 ;; use proof-action-list to create output 
@@ -114,11 +121,13 @@ with proof-shell-ready-prover."
     (message "Proof assistant: %s" proof-assistant)
     (message "Prog name list: %s" prog-name-list)
     (unless proof-server-process
-      (let ((the-process (apply 'start-process (cons proof-assistant (cons (concat "*" proof-assistant "*") prog-command-line)))))
+      (let* ((server-buffer (get-buffer-create (concat "*" proof-assistant "*")))
+	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
 	(if the-process
 	  (progn 
 	    (message "Started prover process")
-	    (setq proof-server-process the-process)
+	    (setq proof-server-process the-process
+		  proof-server-buffer server-buffer)
 	    (set-process-filter proof-server-process 'proof-server-filter)
 	    (proof-prover-make-associated-buffers)
 	    (proof-server-config-done))
@@ -177,11 +186,9 @@ For interrupts, a warning message is displayed.
 
 In both cases we then sound a beep, clear the queue and spans."
   (unless (memq 'no-error-display flags)
-    (message "proof-server-handle-interrupt")
-    (pg-response-maybe-erase t t t) ; force cleaned now & next
-    (pg-response-warning
-     "Interrupt: script management may be in an inconsistent state
-	   (but it's probably okay)")))     
+    (message "proof-server-handle-output")
+    ;; TODO this is where we parse XML, dispatch to goals and response
+))
 
 ;;;###autoload
 (defun proof-server-handle-immediate-output (cmd flags)
@@ -237,27 +244,35 @@ after a completed proof."
   (message "Called proof-server-handle-delayed-output")
 )
 
+;;; assume that cmd is already formatted appropriately 
 ;;;###autoload
 (defun proof-server-invisible-command (cmd &optional wait invisiblecallback
 					   &rest flags)
-  ;; TODO prover-specific wrapping function for cmd
-  ;; e.g. in Coq, wrap cmd in XML
-  (message "Called proof-server-invisible-command")
-  t)
+  (message (format "Called proof-server-invisible-command: %s" cmd))
+  (proof-server-send-to-prover cmd)
+  ;; TODO deal with wait, callback, flags
+)
 
 ;;;###autoload
 (defun proof-server-invisible-cmd-get-result (cmd)
   ;; TODO prover-specific wrapping function for cmd and result
   ;; e.g. in Coq, wrap cmd in XML
   (message "Called proof-server-invisible-command-get-result")
-  t)
+  (proof-server-invisible-command cmd 'waitforit
+				 nil
+				 'no-response-display
+				 'no-error-display)
+  proof-prover-last-output)
 
 ;;;###autoload
 (defun proof-server-invisible-command-invisible-result (cmd)
   ;; TODO prover-specific wrapping function for cmd
   ;; e.g. in Coq, wrap cmd in XML
   (message "Called proof-server-invisible-command-get-invisible-result")
-  t)
+  (proof-server-invisible-command cmd 'waitforit
+				 nil
+				 'no-response-display
+				 'no-error-display))
 
 ;;;###autoload
 (defun proof-server-add-to-queue (queueitems &optional queuemode)

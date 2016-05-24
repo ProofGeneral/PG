@@ -2,6 +2,7 @@
 ;;
 ;;; Code:
 
+;(require 'proof-server)
 (require 'proof-config)
 
 ;;;###autoload
@@ -39,6 +40,14 @@
 (defun proof-server-proof-completedp (resp)
   (and proof-server-proof-completedp-fun 
        (funcall proof-server-proof-completedp-fun resp)))
+
+;;;###autoload
+(defun proof-server-send-to-prover (cmd)
+  (if proof-server-send-to-prover-fun 
+      (progn 
+	(if proof-server-log-traffic
+	    (proof-server-log "emacs" cmd))
+	(funcall proof-server-send-to-prover-fun cmd))))
 
 ;;;###autoload
 (defun proof-server-process-response (resp)

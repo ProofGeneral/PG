@@ -6,7 +6,7 @@
 ;;
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-(require 'proof)
+'(require 'proof)
 (require 'coq-syntax)
 
 (defun holes-show-doc ()

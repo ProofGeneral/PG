@@ -888,6 +888,12 @@ With old systems that may use unsafe unicode prefix sequences
   :group 'prover-config
   :prefix "proof-server-")
 
+(defcustom proof-server-send-to-prover-fun nil
+   "The procedure to send something to the prover. This can be as simple as a wrapper around 
+process-send-string, or it might use sockets or pipes."
+   :type 'function
+   :group 'proof-server)
+
 (defcustom proof-server-init-cmd nil
    "The command(s) for initially configuring the proof process.
 This command is sent to the process as soon as it started. It can be used to configure
@@ -899,6 +905,11 @@ the proof assistant in some way."
   "Take response from prover, parse it and produce items suitable to place on proof-action list."
    :type 'function
    :group 'proof-server)
+
+(defcustom proof-server-log-traffic t
+  "Log traffic between emacs and prover to a buffer."
+  :type 'boolean
+  :group 'proof-server)
 
 (defcustom proof-server-handle-output-system-specific nil
   "Set this variable to handle system specific output.

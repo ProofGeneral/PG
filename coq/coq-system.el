@@ -29,6 +29,11 @@ On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
+(defcustom coq-force-emacs-mode nil   ; TODO: change to nil for production
+  "Use prompt shell for Proof General in emacs, regardless of Coq version"
+  :type 'boolean
+  :group 'coq)
+
 (defcustom coq-prog-name
   (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin"))
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
@@ -39,11 +44,6 @@ This must be a single program name with no arguments; see `coq-prog-args'
 to manually adjust the arguments to the Coq process.
 See also `coq-prog-env' to adjust the environment."
   :type 'string
-  :group 'coq)
-
-(defcustom coq-force-emacs-mode nil   ; TODO: change to nil for production
-  "Use prompt shell for Proof General in emacs, regardless of Coq version"
-  :type 'boolean
   :group 'coq)
 
 (defcustom coq-dependency-analyzer

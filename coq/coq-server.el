@@ -2,15 +2,23 @@
 
 (require 'xml)
 (require 'proof-queue)
+(require 'proof-server)
 (require 'coq-xml)
 
 (defvar coq-server-init (coq-xml-call '((val . Init)) (coq-xml-option '((val . none)))))
 
 ; check value of a value response, 
-(defun successful-response (response)
+(defun coq-server-successful-response (response)
   (and (coq-xml-tagp response 'value)
        (let ((val (coq-xml-attr-value response 'val)))
 	 (eq val 'good))))
+
+; send data to Coq by sending to process
+(defun coq-server-send-to-prover (cmd)
+  (message "called coq-server-send-to-prover")
+  (process-send-string proof-server-process cmd)
+  ; to force response
+  (process-send-string proof-server-process "\n"))
 
 ; process XML response from Coq
 (defun coq-server-process-response (response)
@@ -24,9 +32,6 @@
     (message (format "%s" xml))
 
 ))
-
-
-
 
 (provide 'coq-server)
 

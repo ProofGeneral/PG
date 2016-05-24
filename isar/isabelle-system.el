@@ -187,7 +187,7 @@ This function sets `proof-prog-name' and `isar-prog-args'."
 		  "isabelle-process"))		  ; to
        (isabelle-opts (split-string (or (getenv "ISABELLE_OPTIONS") "")))
        (opts (append (list "-PI")  ;; Proof General + Isar
-		     (if proof-shell-unicode (list "-m" "PGASCII") nil)
+		     (if proof-prover-unicode (list "-m" "PGASCII") nil)
 		     isabelle-opts))
        (logic (or isabelle-chosen-logic
 		  (getenv "PROOFGENERAL_LOGIC")))

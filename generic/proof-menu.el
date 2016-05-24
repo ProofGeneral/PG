@@ -994,6 +994,7 @@ We first clear the dynamic settings from `proof-assistant-settings'."
     (dolist (setting proof-assistant-settings)
       (let ((sym       (car setting))
 	    (pacmd     (cadr setting))) 
+	(message (format "sym: %s" sym))
 	(if (and pacmd
 		 (or (not (get sym 'pgdynamic))
 		     (proof-ass-differs-from-default sym)))

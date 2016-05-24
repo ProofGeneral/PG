@@ -63,7 +63,7 @@
     (if (string= cstr "") 
         (concat "<" tag fmt-spaced-attrs "/>")
         (concat "<" tag fmt-spaced-attrs ">"
-                cstr
+		cstr
                 "</" tag ">\n")))) ;; newline so Coq sees it
 
 (defun coq-xml-attr-value (xml attr-name)
@@ -164,6 +164,16 @@
   (coq-xml-call '((val . Status))
                 (coq-xml-bool 'false)))
 
+(defun coq-xml-setoptions (names val-xml)
+  (coq-xml-call
+   '((val . SetOptions))
+   (coq-xml-list 
+    '()
+    (coq-xml-pair 
+     '()
+     (apply 'coq-xml-list '() (mapcar 'coq-xml-string names))
+     val-xml))))
+
 ;; there are a lot of printing options to set via SetOptions
 ;; so make it not-so-hard to do
 (defun coq-xml-printing-options (opts opt-ty opt-val)
@@ -178,7 +188,7 @@
       `((val . ,opt-ty))
       opt-val))))
 
-(defun coq-xml-setoptions ()
+'(defun coq-xml-setoptions ()
   (coq-xml-call 
    '((val . SetOptions))
    (coq-xml-list 
@@ -223,8 +233,7 @@
   (message (format "String is: %s\n" s))
   (message (format "Wrapped string is: %s\n" (coq-xml-add-item s))))
 
-(add-hook 'proof-server-insert-hook 'coq-xml-wrap)
-
+; (add-hook 'proof-server-insert-hook 'coq-xml-wrap)
 
 (provide 'coq-xml)
 
