@@ -14,10 +14,10 @@
 	 (eq val 'good))))
 
 ; send data to Coq by sending to process
-(defun coq-server-send-to-prover (cmd)
+(defun coq-server-send-to-prover (s)
   (message "called coq-server-send-to-prover")
-  (when cmd
-    (process-send-string proof-server-process cmd)
+  (when s
+    (process-send-string proof-server-process s)
     ; newline to force response
     (process-send-string proof-server-process "\n")))
 

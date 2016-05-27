@@ -32,7 +32,7 @@
   (proof-ready-for-assistant 'coq))     ; compile for coq
 
 (require 'proof)
-(require 'proof-resolve-calls)
+(require 'proof-resolver)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
 (require 'coq-local-vars)               ; setting coq args via file variables 
@@ -1624,6 +1624,7 @@ Near here means PT is either inside or just aside of a comment."
   (when (pg-uses-server)
     (setq 
      proof-server-send-to-prover-fun 'coq-server-send-to-prover
+     proof-server-format-command-fun 'coq-xml-add-item
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd coq-server-init
      proof-ready-prover-fun 'proof-server-ready-prover

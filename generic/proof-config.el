@@ -890,7 +890,13 @@ With old systems that may use unsafe unicode prefix sequences
 
 (defcustom proof-server-send-to-prover-fun nil
    "The procedure to send something to the prover. This can be as simple as a wrapper around 
-process-send-string, or it might use sockets or pipes."
+process-send-string, or it might use sockets or pipes. Takes optional flag indicating the 
+data needs formatting before sending."
+   :type 'function
+   :group 'proof-server)
+
+(defcustom proof-server-format-command-fun nil
+   "The procedure to format a command for the prover."
    :type 'function
    :group 'proof-server)
 

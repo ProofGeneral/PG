@@ -89,7 +89,7 @@
 (require 'cl)
 
 (eval-when (compile)
-  (require 'proof-resolve-calls)
+  (require 'proof-resolver)
   (require 'proof-queue)
   (require 'proof-shell))
 

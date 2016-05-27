@@ -35,7 +35,7 @@ On Windows you might need something like:
   :group 'coq)
 
 (defcustom coq-prog-name
-  (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin"))
+  (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")) ; TODO change path to just coqtop
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
@@ -72,7 +72,7 @@ See also `coq-prog-env' to adjust the environment."
   :type 'string
   :group 'coq)
 
-(defcustom coq-pinned-version nil
+(defcustom coq-pinned-version "8.5" ; TODO make nil for release
   "Which version of Coq you are using.
 There should be no need to set this value; Proof General can
 adjust to various releases of Coq automatically."

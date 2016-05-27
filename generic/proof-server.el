@@ -17,10 +17,6 @@
 (defvar proof-server-delayed-output-flags nil
   "A copy of the `proof-action-list' flags for `proof-server-delayed-output'.")
 
-(defun proof-server-log (src str)
-  (with-current-buffer proof-server-log-buffer
-    (insert "*" src ">>>" str "<<<" src "*\n")))
-
 ;;;###autoload
 (defun proof-server-config-done ()
   "Initialise the specific prover after the child has been configured.
@@ -274,10 +270,27 @@ after a completed proof."
 				 'no-response-display
 				 'no-error-display))
 
-;;  - the proof-action-list is a list of data structures with text and a callback, and some other bits
-;;  - it's extended by calling proof-add-to-queue
-;;  - if the queue had been empty, proof-add-queue send the text to the prover buffer, which has the effect of sending it to the prover itself; the items remain on proof-action-list
-;;  - in the exec loop, the first item is picked off for processing, then the next item is sent to the shell; the picked-off item has its callback invoked
+;; TODO format string with Add for Coq
+;;;###autoload
+(defun proof-server-insert (strings action &optional scriptspan)
+  "Send STRINGS to the prover.
+
+STRINGS is a list of strings (which will be concatenated), or a
+single string.
+
+The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API."
+  (assert (or (stringp strings)
+	      (listp strings))
+	  nil "proof-shell-insert: expected string list argument")
+
+    (let ((string (if (stringp strings) strings
+		    (apply 'concat strings))))
+      ; t means string should be formatted for prover
+      (proof-server-send-to-prover string t)))
+
+(defsubst proof-server-insert-action-item (item)
+  "Send ITEM from `proof-action-list' to prover."
+  (proof-server-insert (nth 1 item) (nth 2 item) (nth 0 item)))
 
 ;;;###autoload
 (defun proof-server-add-to-queue (queueitems &optional queuemode)
@@ -292,36 +305,35 @@ after a completed proof."
 
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-prover-slurp-comments))) 
+	(message "Calling callback on items %s" cbitems)
 	(mapc 'proof-prover-invoke-callback cbitems))) 
     ; in proof shell, have stuff about silent mode
     ; not relevant in server mode
     (if proof-action-list ;; something to do
 	(progn
+	  (message "Nonempty proof-action-list")
 	  (when nothingthere  ; start sending commands
-	    (proof-grab-lock queuemode)
-	    (setq proof-prover-last-output-kind nil)            ;;; PROOF-SHELL
-	    (proof-server-send-action-item (car proof-action-list))))
+	    '(proof-grab-lock queuemode)
+	    (setq proof-prover-last-output-kind nil) 
+	    (proof-server-insert-action-item (car proof-action-list))))
       (if proof-second-action-list-active
 	  ;; primary action list is empty, but there are items waiting
 	  ;; somewhere else
-	  (proof-grab-lock queuemode)
+	  '(proof-grab-lock queuemode)
       ;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
 
 (defun proof-server-format-item (item)
   "TODO: fill in")
 
-;;;###autoload
-(defun proof-server-insert-action-item (item)
-  "Send ITEM from `proof-action-list' to prover."
-  (message "proof-server-insert-action-item")
-  (let ((formatted-item (proof-server-format-item item)))
-    (process-send-string proof-server-process formatted-item)))
-
 ;;; TODO: factor out common code with proof shell exec loop
 
 
-; START HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;;  - the proof-action-list is a list of data structures with text and a callback, and some other bits
+;;  - it's extended by calling proof-add-to-queue
+;;  - if the queue had been empty, proof-add-queue send the text to the prover buffer, which has the effect of sending it to the prover itself; the items remain on proof-action-list
+;;  - in the exec loop, the first item is picked off for processing, then the next item is sent to the shell; the picked-off item has its callback invoked
+
 ;;;###autoload
 (defun proof-server-exec-loop ()
   "Main loop processing the `proof-action-list', called from server process filter.
@@ -341,6 +353,7 @@ the queue region.
 
 The return value is non-nil if the action list is now empty or
 contains only invisible elements for Prooftree synchronization."
+  (message "called proof-server-exec-loop")
   (unless (null proof-action-list)
     (save-excursion
       (if proof-script-buffer		      ; switch to active script
@@ -390,7 +403,7 @@ contains only invisible elements for Prooftree synchronization."
 	    (proof-server-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
-	(mapc 'proof-server-invoke-callback cbitems)	
+	(mapc 'proof-prover-invoke-callback cbitems)	
 
 	(unless (or proof-action-list proof-second-action-list-active)
 	; release lock, cleanup

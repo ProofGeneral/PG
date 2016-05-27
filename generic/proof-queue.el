@@ -3,7 +3,7 @@
 ;; this code should be independent of 'repl or 'server mode
 
 (require 'proof-script)
-(require 'proof-resolve-calls)
+(require 'proof-resolver)
 
 (defvar proof-action-list nil
   "The main queue of things to do: spans, commands and actions.

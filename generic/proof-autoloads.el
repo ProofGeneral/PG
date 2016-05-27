@@ -400,7 +400,7 @@ See `pg-next-error-regexp'.
 ;;;;;;  pg-slow-fontify-tracing-hint proof-electric-terminator-enable
 ;;;;;;  proof-define-assistant-command-witharg proof-define-assistant-command
 ;;;;;;  proof-process-buffer proof-goto-point proof-script-new-command-advance)
-;;;;;;  "pg-user" "pg-user.el" (22324 14658 658840 620000))
+;;;;;;  "pg-user" "pg-user.el" (22335 10815 738298 179000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -602,8 +602,8 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-aux-menu proof-menu-define-specific proof-menu-define-main
-;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22324
-;;;;;;  14658 658840 620000))
+;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22340
+;;;;;;  47580 952548 959000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -649,11 +649,11 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-extend-queue proof-start-queue) "proof-queue"
-;;;;;;  "proof-queue.el" (22324 43374 918941 756000))
+;;;;;;  "proof-queue.el" (22344 31099 390980 472000))
 ;;; Generated autoloads from proof-queue.el
 
 (autoload 'proof-start-queue "proof-queue" "\
-Begin processing a queue of commands in QUEUEITEMS.
+Begin processing a oqueue of commands in QUEUEITEMS.
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
@@ -671,36 +671,68 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads (proof-add-to-queue proof-invisible-command-invisible-result
-;;;;;;  proof-invisible-cmd-get-result proof-invisible-command proof-ready-prover)
-;;;;;;  "proof-resolve-calls" "proof-resolve-calls.el" (22324 43568
-;;;;;;  258942 437000))
-;;; Generated autoloads from proof-resolve-calls.el
+;;;### (autoloads (proof-server-process-response proof-server-send-to-prover
+;;;;;;  proof-server-format-command proof-server-proof-completedp
+;;;;;;  proof-server-errorp proof-server-interruptp proof-add-to-queue
+;;;;;;  proof-invisible-command-invisible-result proof-invisible-cmd-get-result
+;;;;;;  proof-invisible-command proof-ready-prover) "proof-resolver"
+;;;;;;  "proof-resolver.el" (22344 34164 378991 267000))
+;;; Generated autoloads from proof-resolver.el
 
-(autoload 'proof-ready-prover "proof-resolve-calls" "\
-Call procedure according to proof-interaction-mode
+(autoload 'proof-ready-prover "proof-resolver" "\
+
 
 \(fn &optional QUEUEMODE)" nil nil)
 
-(autoload 'proof-invisible-command "proof-resolve-calls" "\
-Call procedure according to proof-interaction-mode
+(autoload 'proof-invisible-command "proof-resolver" "\
+
 
 \(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
 
-(autoload 'proof-invisible-cmd-get-result "proof-resolve-calls" "\
-Call procedure according to proof-interaction-mode
+(autoload 'proof-invisible-cmd-get-result "proof-resolver" "\
+
 
 \(fn CMD)" nil nil)
 
-(autoload 'proof-invisible-command-invisible-result "proof-resolve-calls" "\
-Call procedure according to proof-interaction-mode
+(autoload 'proof-invisible-command-invisible-result "proof-resolver" "\
+
 
 \(fn CMD)" nil nil)
 
-(autoload 'proof-add-to-queue "proof-resolve-calls" "\
-Call procedure according to proof-interaction-mode
+(autoload 'proof-add-to-queue "proof-resolver" "\
+
 
 \(fn QUEUEITEMS &optional QUEUEMODE)" nil nil)
+
+(autoload 'proof-server-interruptp "proof-resolver" "\
+
+
+\(fn RESP)" nil nil)
+
+(autoload 'proof-server-errorp "proof-resolver" "\
+
+
+\(fn RESP)" nil nil)
+
+(autoload 'proof-server-proof-completedp "proof-resolver" "\
+
+
+\(fn RESP)" nil nil)
+
+(autoload 'proof-server-format-command "proof-resolver" "\
+
+
+\(fn CMD)" nil nil)
+
+(autoload 'proof-server-send-to-prover "proof-resolver" "\
+
+
+\(fn S &optional NEEDS-FORMATTING)" nil nil)
+
+(autoload 'proof-server-process-response "proof-resolver" "\
+
+
+\(fn RESP)" nil nil)
 
 ;;;***
 
@@ -708,8 +740,8 @@ Call procedure according to proof-interaction-mode
 ;;;;;;  proof-insert-pbp-command proof-script-generic-parse-find-comment-end
 ;;;;;;  proof-register-possibly-new-processed-file pg-set-span-helphighlights
 ;;;;;;  proof-locked-region-empty-p proof-locked-region-full-p proof-unprocessed-begin
-;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22324
-;;;;;;  19201 522856 620000))
+;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22335
+;;;;;;  11170 634299 429000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -798,11 +830,28 @@ finish setup which depends on specific proof assistant configuration.
 
 ;;;***
 
-;;;### (autoloads (proof-server-add-to-queue proof-server-invisible-command-invisible-result
+;;;### (autoloads (proof-server-exec-loop proof-server-add-to-queue
+;;;;;;  proof-server-insert proof-server-invisible-command-invisible-result
 ;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
-;;;;;;  proof-server-start proof-server-ready-prover) "proof-server"
-;;;;;;  "proof-server.el" (22331 30141 377520 401000))
+;;;;;;  proof-server-handle-delayed-ouput proof-server-handle-immediate-output
+;;;;;;  proof-server-start proof-server-ready-prover proof-server-filter
+;;;;;;  proof-server-config-done) "proof-server" "proof-server.el"
+;;;;;;  (22344 33976 678990 606000))
 ;;; Generated autoloads from proof-server.el
+
+(autoload 'proof-server-config-done "proof-server" "\
+Initialise the specific prover after the child has been configured.
+When using server mode, should call this function at the end of processing. 
+For shell modes, the config-done procedure is called when instantiating an 
+derived Emacs mode; here, we call the procedure directly.
+
+\(fn)" nil nil)
+
+(autoload 'proof-server-filter "proof-server" "\
+The filter function associated with the prover process.
+The first argument is the process object, the second is the response from the prover.
+
+\(fn PROCESS RESPONSE)" nil nil)
 
 (autoload 'proof-server-ready-prover "proof-server" "\
 Compare with proof-shell-ready-prover, for proof shells. 
@@ -816,6 +865,37 @@ with proof-shell-ready-prover.
 
 
 \(fn)" nil nil)
+
+(autoload 'proof-server-handle-immediate-output "proof-server" "\
+See if the output in cmd must be dealt with immediately.
+To speed up processing, PG tries to avoid displaying output that
+the user will not have a chance to see.  Some output must be
+handled immediately, however: these are errors, interrupts,
+goals and loopbacks (proof step hints/proof by pointing results).
+
+In this function we check, in turn:
+
+  `proof-server-interruptp'
+  `proof-server-errorp'
+  `proof-server-proof-completedp'
+  `proof-server-result-startp' TODO ??
+
+These are predicates on cmd, supplied by the prover configuration. 
+Compare with the proof shell approach, which looks for regexp matches on text.
+
+To extend this, set `proof-server-handle-output-system-specific',
+which is a hook to take particular additional actions.
+
+This function sets variables: `proof-prover-last-output-kind',
+and the counter `proof-prover-proof-completed' which counts commands
+after a completed proof.
+
+\(fn CMD FLAGS)" nil nil)
+
+(autoload 'proof-server-handle-delayed-ouput "proof-server" "\
+
+
+\(fn CMD FLAGS)" nil nil)
 
 (autoload 'proof-server-invisible-command "proof-server" "\
 
@@ -832,10 +912,41 @@ with proof-shell-ready-prover.
 
 \(fn CMD)" nil nil)
 
+(autoload 'proof-server-insert "proof-server" "\
+Send STRINGS to the prover.
+
+STRINGS is a list of strings (which will be concatenated), or a
+single string.
+
+The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API.
+
+\(fn STRINGS ACTION &optional SCRIPTSPAN)" nil nil)
+
 (autoload 'proof-server-add-to-queue "proof-server" "\
 add item to queue for 'server mode
 
 \(fn QUEUEITEMS &optional QUEUEMODE)" nil nil)
+
+(autoload 'proof-server-exec-loop "proof-server" "\
+Main loop processing the `proof-action-list', called from server process filter.
+
+`proof-action-list' contains a list of (SPAN COMMAND ACTION [FLAGS]) lists.
+
+If this function is called with a non-empty `proof-action-list', the
+head of the list is the previously executed command which succeeded.
+We execute the callback (ACTION SPAN) on the first item,
+then (ACTION SPAN) on any following items which have null as
+their cmd components.
+
+If a there is a next command after that, send it to the process.
+
+If the action list becomes empty, unlock the process and remove
+the queue region.
+
+The return value is non-nil if the action list is now empty or
+contains only invisible elements for Prooftree synchronization.
+
+\(fn)" nil nil)
 
 ;;;***
 
@@ -843,7 +954,7 @@ add item to queue for 'server mode
 ;;;;;;  proof-shell-invisible-cmd-get-result proof-shell-invisible-command
 ;;;;;;  proof-shell-wait proof-shell-insert proof-shell-available-p
 ;;;;;;  proof-shell-ready-prover) "proof-shell" "proof-shell.el"
-;;;;;;  (22331 30032 573520 18000))
+;;;;;;  (22344 28239 330970 399000))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -935,7 +1046,7 @@ The flag 'invisible is always added to FLAGS.
 Execute CMD and return result as a string.
 This expects CMD to result in some theorem prover output.
 Ordinary output (and error handling) is disabled, and the result
-\(contents of `proof-shell-last-output') is returned as a string.
+\(contents of `proof-prover-last-output') is returned as a string.
 
 \(fn CMD)" nil nil)
 
@@ -1007,7 +1118,7 @@ may be a string or sexp evaluated to get a string.
 ;;;***
 
 ;;;### (autoloads (proof-toolbar-scripting-menu proof-toolbar-setup)
-;;;;;;  "proof-toolbar" "proof-toolbar.el" (22324 14658 662840 620000))
+;;;;;;  "proof-toolbar" "proof-toolbar.el" (22335 11151 26299 360000))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
@@ -1054,8 +1165,8 @@ is changed.
 
 ;;;***
 
-;;;### (autoloads (proof-debug) "proof-utils" "proof-utils.el" (22324
-;;;;;;  14658 662840 620000))
+;;;### (autoloads (proof-debug) "proof-utils" "proof-utils.el" (22343
+;;;;;;  23315 480090 642000))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-debug "proof-utils" "\
@@ -1138,9 +1249,9 @@ Return a unicode encoded version presentation of STR.
 ;;;### (autoloads nil nil ("../lib/local-vars-list.el" "../lib/pg-fontsets.el"
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
-;;;;;;  "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22331 30168
-;;;;;;  974719 970000))
+;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22344 34488
+;;;;;;  558893 936000))
 
 ;;;***
 

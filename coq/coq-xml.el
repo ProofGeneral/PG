@@ -8,13 +8,14 @@
 (require 'xml)
 
 (defvar edit-id-counter 1)
+(defvar state-id-counter 1)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
 (defvar coq-xml-escape-table
   #s(hash-table size 8
                 data 
-                ( ; " " "&nbsp;" ; probably bogus
+                ( " " "&nbsp;"
                  "<" "&lt;"
                  ">" "&gt;"
                  "\\" "&apos;"
@@ -144,12 +145,13 @@
             (coq-xml-int (- 0 edit-id-counter)))
            (coq-xml-pair
             '()
-            (coq-xml-state_id '((val . 1)))
+            (coq-xml-state_id `((val . ,state-id-counter)))
             (coq-xml-bool 'false))
            )
           ))
         )
     (setq edit-id-counter (+ edit-id-counter 1))
+    (setq state-id-counter (+ state-id-counter 1))
     add-block))
 
 (defun coq-xml-goal ()
