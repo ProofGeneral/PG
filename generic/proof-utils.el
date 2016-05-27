@@ -766,5 +766,11 @@ Optional argument PUSH is ignored."
 ;;				   pos end))))))
 
 
+(defun pg-uses-repl ()
+  (eq proof-interaction-mode 'repl))
+
+(defun pg-uses-server ()
+  (eq proof-interaction-mode 'server))
+
 (provide 'proof-utils)
 ;;; proof-utils.el ends here

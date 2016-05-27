@@ -37,12 +37,6 @@
 (defvar proof-marker nil
   "Marker in proof shell buffer pointing to previous command input.")
 
-(defsubst proof-shell-invoke-callback (listitem)
-  "From `proof-action-list' LISTITEM, invoke the callback on the span."
-  (condition-case nil
-      (funcall (nth 2 listitem) (car listitem))
-    (error nil)))
-
 ;; We record the last output from the prover and a flag indicating its
 ;; type, as well as a previous ("delayed") version for when the end
 ;; of the queue is reached or an error or interrupt occurs.
@@ -855,7 +849,7 @@ being processed."
     
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-prover-slurp-comments))) 
-	(mapc 'proof-shell-invoke-callback cbitems))) 
+	(mapc 'proof-prover-invoke-callback cbitems))) 
   
     (if proof-action-list ;; something to do
 	(progn
@@ -926,6 +920,8 @@ contains only invisible elements for Prooftree synchronization."
 	;; but we delay this until sending the next command, attempting
 	;; to parallelize prover and Emacs somewhat.  (PG 4.0 change)
 
+	(message (format "proof-action-list 1: %s" proof-action-list))
+
 	(setq proof-action-list (cdr proof-action-list))
 
 	(setq cbitems (cons item
@@ -953,19 +949,21 @@ contains only invisible elements for Prooftree synchronization."
 
 	;; pending interrupts: we want to stop the queue here
 	(when proof-shell-interrupt-pending
-	  (mapc 'proof-shell-invoke-callback cbitems)
+	  (mapc 'proof-prover-invoke-callback cbitems)
 	  (setq cbitems nil)
 	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
+
+	(message (format "proof-action-list 2: %s" proof-action-list))
 
 	(if proof-action-list
 	    ;; send the next command to the process.
 	    (proof-shell-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
-	(mapc 'proof-shell-invoke-callback cbitems)	
+	(mapc 'proof-prover-invoke-callback cbitems)	
 
 	(unless (or proof-action-list proof-second-action-list-active)
-					; release lock, cleanup
+          ; release lock, cleanup
 	  (proof-release-lock)
 	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting

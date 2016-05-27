@@ -63,6 +63,12 @@ into `proof-action-list' and are stored somewhere else until the
 background compilation finishes. Then those items are put into
 `proof-action-list' for getting processed.")
 
+(defsubst proof-prover-invoke-callback (listitem)
+  "From `proof-action-list' LISTITEM, invoke the callback on the span."
+  (condition-case nil
+      (funcall (nth 2 listitem) (car listitem))
+    (error nil)))
+
 (defsubst proof-prover-slurp-comments ()
   "Strip comments at front of `proof-action-list', returning items stripped.
 Comments are not sent to the prover."
@@ -76,7 +82,7 @@ Comments are not sent to the prover."
 
 ;;;###autoload
 (defun proof-start-queue (start end queueitems &optional queuemode)
-  "Begin processing a queue of commands in QUEUEITEMS.
+  "Begin processing a oqueue of commands in QUEUEITEMS.
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 

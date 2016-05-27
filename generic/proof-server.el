@@ -274,12 +274,39 @@ after a completed proof."
 				 'no-response-display
 				 'no-error-display))
 
+;;  - the proof-action-list is a list of data structures with text and a callback, and some other bits
+;;  - it's extended by calling proof-add-to-queue
+;;  - if the queue had been empty, proof-add-queue send the text to the prover buffer, which has the effect of sending it to the prover itself; the items remain on proof-action-list
+;;  - in the exec loop, the first item is picked off for processing, then the next item is sent to the shell; the picked-off item has its callback invoked
+
 ;;;###autoload
 (defun proof-server-add-to-queue (queueitems &optional queuemode)
   "add item to queue for 'server mode"
   (message "Called proof-server-add-to-queue")
   (message (format "Items: %s" queueitems))
-  t)
+
+  (let ((nothingthere (null proof-action-list)))
+    ;; Now extend or start the queue.
+    (setq proof-action-list
+	  (nconc proof-action-list queueitems))
+
+    (when nothingthere ; process comments immediately
+      (let ((cbitems  (proof-prover-slurp-comments))) 
+	(mapc 'proof-prover-invoke-callback cbitems))) 
+    ; in proof shell, have stuff about silent mode
+    ; not relevant in server mode
+    (if proof-action-list ;; something to do
+	(progn
+	  (when nothingthere  ; start sending commands
+	    (proof-grab-lock queuemode)
+	    (setq proof-prover-last-output-kind nil)            ;;; PROOF-SHELL
+	    (proof-server-send-action-item (car proof-action-list))))
+      (if proof-second-action-list-active
+	  ;; primary action list is empty, but there are items waiting
+	  ;; somewhere else
+	  (proof-grab-lock queuemode)
+      ;; nothing to do: maybe we completed a list of comments without sending them
+	(proof-detach-queue)))))
 
 (defun proof-server-format-item (item)
   "TODO: fill in")
@@ -293,6 +320,8 @@ after a completed proof."
 
 ;;; TODO: factor out common code with proof shell exec loop
 
+
+; START HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;;;###autoload
 (defun proof-server-exec-loop ()
   "Main loop processing the `proof-action-list', called from server process filter.

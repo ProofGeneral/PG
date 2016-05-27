@@ -16,22 +16,27 @@
 ; send data to Coq by sending to process
 (defun coq-server-send-to-prover (cmd)
   (message "called coq-server-send-to-prover")
-  (process-send-string proof-server-process cmd)
-  ; to force response
-  (process-send-string proof-server-process "\n"))
+  (when cmd
+    (process-send-string proof-server-process cmd)
+    ; newline to force response
+    (process-send-string proof-server-process "\n")))
 
 ; process XML response from Coq
 (defun coq-server-process-response (response)
   (message "coq-proof-server-process-response")
-  (let* ((parsed-xml
+  ; might get several XML trees here, which will flummox the XML parser
+  ; so wrap response in dummy tags
+  (let* ((tagged-response (coq-xml-block "dummytag" '() (list response)))
+	 (parsed-xml
 	  (with-temp-buffer
-	    (insert response)
+	    (insert tagged-response)
 	    (xml-parse-region (point-min) (point-max))))
 	 (xml (car parsed-xml)))
-    (message "xml:")
-    (message (format "%s" xml))
+    (message "xml: %s" xml)
+    (dolist (child (xml-node-children xml))
+      (message "child: %s" child))))
+      
 
-))
 
 (provide 'coq-server)
 

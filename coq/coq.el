@@ -584,6 +584,12 @@ and as last element the name of the current proof (or nil if
 there is none)."
   (coq-last-prompt-info proof-shell-last-prompt))
 
+(defun coq-in-proof ()
+  (if (pg-uses-repl)
+      (not (null (caddr (coq-last-prompt-info-safe))))
+    nil)) ;; TODO how to check in server mode
+  
+
 (defvar coq-last-but-one-statenum 1
   "The state number we want to put in a span.
 This is the prompt number given *just before* the command was sent.
@@ -1241,7 +1247,7 @@ width is synchronized by coq (?!)."
 ;; variables first.
 (add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
 
-(defvar coq-shell-current-line-width nil
+(defvar coq-current-line-width nil
   "Current line width of the Coq printing width.
 Its value will be updated whenever a command is sent if
 necessary.")
@@ -1249,7 +1255,7 @@ necessary.")
 ;; Resetting the known printing width (for when we don't know it, for example
 ;; when retracting.
 (defun coq-reset-printing-width ()
-  (setq coq-shell-current-line-width nil))
+  (setq coq-current-line-width nil))
 
 (defun coq-buffer-window-width (buffer)
   "Return the width of a window currently displaying BUFFER."
@@ -1304,11 +1310,21 @@ goal is redisplayed."
   (interactive)
   (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
     ;; if no available width, or unchanged, do nothing
-    (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-      (proof-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
-      (setq coq-shell-current-line-width wdth)
-      ;; Show iff show non nil and some proof is under way
-      (when (and show (not (null (caddr (coq-last-prompt-info-safe)))))
+    (when (and wdth (not (equal wdth coq-current-line-width)))
+      (let* ((print-width (- wdth 1))
+             (cmd
+              (if (pg-uses-repl)
+                  (format "Set Printing Width %S." print-width)
+                (coq-xml-setoptions 
+                 '("Printing" "Width") 
+                 (coq-xml-option_value '((val . intvalue))
+                                       (coq-xml-option '((val . some))
+                                                       (coq-xml-int print-width)))))))
+             (proof-invisible-command cmd  t))
+      (setq coq-current-line-width wdth)
+      ;; In repl mode, Show iff show non nil and some proof is under way
+      ;; In server mode, full goal should always be available ?? TODO
+      (when (and (pg-uses-repl) show (coq-in-proof))
         (proof-invisible-command (format "Show.") t nil 'no-error-display)))))
 
 (defun coq-adapt-printing-width-and-show(&optional show width)
@@ -1605,7 +1621,7 @@ Near here means PT is either inside or just aside of a comment."
   (message (format "proof-interaction-mode: %s" proof-interaction-mode))
 
   ;; for server mode, update mode-dependent function variables
-  (when (eq proof-interaction-mode 'server)
+  (when (pg-uses-server)
     (setq 
      proof-server-send-to-prover-fun 'coq-server-send-to-prover
      proof-server-process-response-fun 'coq-server-process-response
@@ -1785,20 +1801,24 @@ Near here means PT is either inside or just aside of a comment."
 ;  :setting ("Set Printing All. " . "Unset Printing All. "))
 ;
 
+(defun coq-set-print-depth-repl (depth)
+  (format "Set Printing Depth %i . " depth))
+
+(defun coq-set-print-depth-server (depth)
+  (let ((xml (coq-xml-setoptions 
+              '("Printing" "Depth") 
+              (coq-xml-option_value '((val . intvalue))
+                                    (coq-xml-option '((val . some))
+                                                    (coq-xml-int depth))))))
+        xml))
+
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which dots are displayed."
   :type 'integer
   :setting (lambda (depth) 
-             (if (eq proof-interaction-mode 'repl) 
-                 (format "Set Printing Depth %i . " depth)
-               ; server
-               (let ((xml (coq-xml-setoptions 
-                           '("Printing" "Depth") 
-                           (coq-xml-option_value '((val . intvalue))
-                                             (coq-xml-option '((val . some))
-                                                             (coq-xml-int depth))))))
-                 (message "XML: %s" xml)
-                 xml))))
+             (if (pg-uses-repl)
+                 (coq-set-print-depth-repl depth)
+               (coq-set-print-depth-server depth))))
 
 ;;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit
@@ -1806,12 +1826,21 @@ Near here means PT is either inside or just aside of a comment."
 ;;  :type 'integer
 ;;  :setting "Set Undo %i . ")
 
-(defun coq-set-search-blacklist (s)
-  (let ((res (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
-          coq-search-blacklist-string-prev s)))
+(defun coq-make-reset-blacklist-string (s)
+  (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
+          coq-search-blacklist-string-prev s))
+
+(defun coq-set-search-blacklist-repl (s)
+  (let ((res (coq-make-reset-blacklist-string s)))
     (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
     res))
 
+(defun coq-set-search-blacklist-server (s)
+  (let* ((cmd (coq-make-reset-blacklist-string s))
+         (cmd-no-quotes (replace-regexp-in-string "\"" "" cmd))
+         (xml (coq-xml-add-item cmd-no-quotes)))
+    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
+    xml))
 
 (defun coq-get-search-blacklist (s)
   coq-search-blacklist-string)
@@ -1821,8 +1850,12 @@ Near here means PT is either inside or just aside of a comment."
   "Strings to blacklist in requests to coq environment."
   :type 'string
   :get coq-search-blacklist-string
-  :setting coq-set-search-blacklist)
-
+  :setting (lambda (s) 
+             (if (pg-uses-repl)
+                 ; repl
+                 (coq-set-search-blacklist-repl s)
+                 ; server               
+                 (coq-set-search-blacklist-server s))))
 
 (defpacustom time-commands nil
   "Whether to display timing information for each command."

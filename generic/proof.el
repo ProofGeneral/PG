@@ -36,6 +36,7 @@
 (require 'proof-script)			; script mode
 (require 'proof-tree)			; proof tree visualization with prooftree
 (require 'proof-shell)			; shell mode
+(require 'proof-server)			; server functionality
 
 (provide 'proof)
 ;;; proof.el ends here

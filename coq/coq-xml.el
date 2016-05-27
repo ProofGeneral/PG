@@ -7,7 +7,7 @@
 
 (require 'xml)
 
-(defvar edit-id-counter 0)
+(defvar edit-id-counter 1)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
