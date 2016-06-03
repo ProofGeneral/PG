@@ -230,6 +230,11 @@
      (coq-xml-bool 'false))
     )))
 
+(defun coq-xml-string-to-xml (s)
+  (with-temp-buffer
+    (insert s)
+    (car (xml-parse-region (point-min) (point-max)))))
+
 (defun coq-xml-wrap (s)
 ;  (message (format "Set Options is: %s\n" (coq-xml-setoptions)))
   (message (format "String is: %s\n" s))

@@ -1836,12 +1836,12 @@ Near here means PT is either inside or just aside of a comment."
     (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
     res))
 
-(defun coq-set-search-blacklist-server (s)
-  (let* ((cmd (coq-make-reset-blacklist-string s))
-         (cmd-no-quotes (replace-regexp-in-string "\"" "" cmd))
-         (xml (coq-xml-add-item cmd-no-quotes)))
-    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-    xml))
+(defun coq-set-search-blacklist-server (s) "")
+;  (let* ((cmd (coq-make-reset-blacklist-string s))
+;         (cmd-no-quotes (replace-regexp-in-string "\"" "" cmd))
+;         (xml (coq-xml-add-item cmd-no-quotes)))
+;    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
+;    xml))
 
 (defun coq-get-search-blacklist (s)
   coq-search-blacklist-string)
