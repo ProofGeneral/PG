@@ -607,6 +607,5 @@ The buffer is truncated if its size is greater than `proof-trace-buffer-max-line
       (unless (bolp) (newline))
       (set-buffer-modified-p nil))))
 
-
 (provide 'pg-response)
 ;;; pg-response.el ends here

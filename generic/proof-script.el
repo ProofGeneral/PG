@@ -1914,6 +1914,10 @@ Assumes that point is at the end of a command."
     (if (null semis) ; maybe inside a string or something.
 	(error "I can't find any complete commands to process!"))
     (run-hooks 'proof-assert-command-hook) ;; sneak commands (real ones with a prompt)
+    ;; track number of items added 
+    (message (format "semis: %s" semis))
+    (setq proof-server-pending-count (length semis))
+    (message (format "pending count in proof script: %d" proof-server-pending-count))
     (proof-assert-semis semis displayflags)))
 
 (defun proof-assert-electric-terminator ()
@@ -2739,8 +2743,6 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
   "Set `after-change-functions' for script buffers."
   (add-hook 'after-change-functions
 	    'proof-script-after-change-function nil t))
-
-
 
 (provide 'proof-script)
 ;;; proof-script.el ends here
