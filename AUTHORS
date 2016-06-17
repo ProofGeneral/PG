@@ -2,11 +2,12 @@ Current Authors/Maintainers:
 
    David Aspinall     (all)
    Pierre Courtieu    (coq)
-   Christoph Raffalli (phox)
-   Makarius Wenzel    (isar)
+   Paul Steckler      (coq)
  
 Previous Authors:
 
+   Christoph Raffalli (phox)
+   Makarius Wenzel    (isar)
    Stefan Berghofer   (isar)
    Paul Callaghan     (plastic,lego)
    Healfdene Goguen   (coq, generic, doc)

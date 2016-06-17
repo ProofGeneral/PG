@@ -1614,9 +1614,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; REPL or server mode
   (setq
    proof-interaction-mode
-   (if (coq-use-proof-shell)
-       'repl
-     'server))
+   'server)
 
   (message (format "proof-interaction-mode: %s" proof-interaction-mode))
 

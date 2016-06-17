@@ -22,7 +22,7 @@
 
     (if (and (eq proof-interaction-mode 'server)
 	     proof-server-log-traffic)
-	(let ((logger (concat "*" proof-assistant "-log*")))
+	(let ((logger (concat "*" (downcase proof-assistant) "-log*")))
 	  (setq proof-server-log-buffer (get-buffer-create logger))))
 
     ;; currently, repl-mode only, relies on regexps

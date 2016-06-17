@@ -29,11 +29,6 @@ On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
-(defcustom coq-force-emacs-mode nil   ; TODO: change to nil for production
-  "Use prompt shell for Proof General in emacs, regardless of Coq version"
-  :type 'boolean
-  :group 'coq)
-
 (defcustom coq-prog-name
   (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")) ; TODO change path to just coqtop
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
@@ -338,10 +333,6 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
           (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
             (coq-coqdep-prog-args coq-load-path current-directory pre-v85))))
 
-(defun coq-use-proof-shell ()
-  "Use proof shell, depending on Coq version, or if we've forced it"
-  (or coq-force-emacs-mode (coq--version< (coq-version t) "8.5")))
-
 (defvar coq-coqtop-proof-shell-flags
   '("-emacs"))
 
@@ -361,10 +352,7 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   "Build a list of options for coqc. 
    LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (let ((coqc-args (coq-coqc-prog-args load-path current-directory pre-v85))
-        (ide-args
-         (if (coq-use-proof-shell)
-	     coq-coqtop-proof-shell-flags
-	     coq-coqtop-server-flags)))
+        (ide-args coq-coqtop-server-flags))
     (append ide-args coqc-args)))
 
 (defun coq-prog-args ()

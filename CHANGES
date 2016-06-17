@@ -3,6 +3,10 @@
 This is a summary of main changes.  For details, please see
 the GIT ChangeLog and PG Trac, http://proofgeneral.inf.ed.ac.uk/trac.
 
+* Changes of Proof General 5.0 from Proof General 4.3
+
+   Removed support for provers other than Coq.
+
 * Changes of Proof General 4.3 from Proof General 4.2
 
 ** ProofGeneral has moved to github!

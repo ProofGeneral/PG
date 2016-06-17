@@ -35,14 +35,14 @@ DEST_PREFIX=$(DESTDIR)/usr
 
 PWD=$(shell pwd)
 
-PROVERS=acl2 ccc coq hol98 isar lego hol-light phox pgshell pgocaml pghaskell
+PROVERS=coq
 OTHER_ELISP=generic lib contrib/mmm
 ELISP_DIRS=${PROVERS} ${OTHER_ELISP}
 ELISP_EXTRAS=isar/interface isar/isartags
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
-DOC_EXAMPLES=acl2/*.acl2 hol98/*.sml isar/*.thy lclam/*.lcm lego/*.l pgshell/*.pgsh phox/*.phx plastic/*.lf twelf/*.elf
+DOC_EXAMPLES=
 DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS 
 
 BATCHEMACS=${EMACS} --batch --no-site-file -q 

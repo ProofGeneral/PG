@@ -72,6 +72,12 @@
 	 (attr (assq attr-name attrs)))
     (and attr (cdr attr))))
 
+(defun coq-xml-tag (xml)
+  (car xml))
+
+(defun coq-xml-body (xml)
+  (caddr xml))
+
 ; does this XML have this outermost tag
 (defun coq-xml-tagp (xml tag)
   (and (not (null xml))
@@ -146,7 +152,7 @@
            (coq-xml-pair
             '()
             (coq-xml-state_id `((val . ,state-id-counter)))
-            (coq-xml-bool 'false))
+            (coq-xml-bool 'true))
            )
           ))
         )
