@@ -1008,6 +1008,9 @@ Used by `coq-goal-command-p'"
 ;; need it)
 (defun coq-goal-command-p (span)
   "see `coq-goal-command-p'"
+  (message (format "coq-goal-command: %s" span))
+  (message (format "span-property 'cmd: %s" (span-property span 'cmd)))
+  (message (format "span-property: 'goalcmd %s" (span-property span 'goalcmd)))
   (or (span-property span 'goalcmd)
       ;; module and section starts are detected here
       (let ((str (or (span-property span 'cmd) "")))

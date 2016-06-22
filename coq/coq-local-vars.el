@@ -185,7 +185,6 @@ These variables describe the coqtop command to be launched on this file."
     (coq-insert-coq-prog-name progname loadpath)))
 
 
-
 (provide 'coq-local-vars)
 
 ;;; coq-local-vars.el ends here

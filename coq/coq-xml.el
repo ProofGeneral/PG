@@ -75,7 +75,12 @@
 (defun coq-xml-tag (xml)
   (car xml))
 
+;; returns body as list, may be several items
 (defun coq-xml-body (xml)
+  (cddr xml))
+
+;; when we know there's one item only in body
+(defun coq-xml-body1 (xml)
   (caddr xml))
 
 ; does this XML have this outermost tag

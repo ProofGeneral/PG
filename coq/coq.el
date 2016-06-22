@@ -6,8 +6,6 @@
 ;;
 ;; $Id$
 
-
-
 (eval-when-compile
   (require 'cl)
   (require 'proof-compat))
@@ -35,6 +33,7 @@
 (require 'proof-resolver)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
+(require 'coq-state-vars)               ; global state of the proof
 (require 'coq-local-vars)               ; setting coq args via file variables 
                                         ;   (prefer _CoqProject file instead)
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
@@ -557,6 +556,27 @@ This is a subroutine of `proof-shell-filter'."
         (cons (match-string 1 s)
               (build-list-id-from-string (match-string 2 s)))))))
 
+;; 
+;; type status = {
+;;   status_path : string list;
+;;   (** Module path of the current proof *)
+;;   status_proofname : string option;
+;;   (** Current proof name. [None] if no focussed proof is in progress *)
+;;   status_allproofs : string list;
+;;   (** List of all pending proofs. Order is not significant *)
+;;   status_proofnum : int;
+;;   (** An id describing the state of the current proof. *)
+;; }
+
+
+
+;; This information was encoded in the prompt using -emacs mode
+;; now this information is returned by a Status call, except for the state id
+(defun coq-current-proof-info ()
+  (list coq-current-state-id coq-proof-state-id coq-pending-proofs
+        (if coq-pending-proofs coq-current-proof-name nil)))
+
+
 ;; Use the statenumber inside the coq prompt to backtrack more easily
 (defun coq-last-prompt-info (s)
   "Extract info from the coq prompt S.  See `coq-last-prompt-info-safe'."
@@ -575,20 +595,8 @@ This is a subroutine of `proof-shell-filter'."
         (list state-number proof-state-number pending-proofs
               (if pending-proofs current-proof-name nil))))))
 
-
-(defun coq-last-prompt-info-safe ()
-  "Return a list with all informations from the last prompt.
-The list contains in the following order the state number, the
-proof stack depth, a list with the names of all pending proofs,
-and as last element the name of the current proof (or nil if
-there is none)."
-  (coq-last-prompt-info proof-shell-last-prompt))
-
 (defun coq-in-proof ()
-  (if (pg-uses-repl)
-      (not (null (caddr (coq-last-prompt-info-safe))))
-    nil)) ;; TODO how to check in server mode
-  
+  (not (null coq-pending-proofs)))
 
 (defvar coq-last-but-one-statenum 1
   "The state number we want to put in a span.
@@ -647,30 +655,41 @@ Initially 1 because Coq initial state has number 1.")
 
 ;;TODO update docstring and comment
 
+;; STECK TODO : work out what this is doing
+;;  need to associate 'goalcmd property with spans with Goal, Theorem, etc.
+;;  this appears to be only place where that happens
+;;  that is, only call to  coq-set-span-goalcmd
+;; apparently called after each line is processed
+
 (defun coq-set-state-infos ()
   "Set the last locked span's state number to the number found last time.
 This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
 If locked span already has a state number, then do nothing. Also updates
 `coq-last-but-one-statenum' to the last state number for next time."
+  (message "coq-set-state-infos")
   (if proof-shell-last-prompt
       ;; da: did test proof-script-buffer here, but that seems wrong
       ;; since restart needs to reset these values.
       ;; infos = promt infos of the very last prompt
       ;; sp = last locked span, which we want to fill with prompt infos
       (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
-            (infos (or (coq-last-prompt-info-safe)
-                       ;; the line above seems to return nil sometimes, let us
-                       ;; issue a warning when this happens, so that we
-                       ;; understand why.
-                       (and (display-warning
-                             'proof-general
-                             "oops nothing returned by (coq-last-prompt-info-safe)!!!" :debug) nil)
-                       '(0 0 nil nil))))
+            (infos (coq-current-proof-info)))
+        (message (format "infos: %s" infos))
         (unless (or (not sp) (coq-get-span-statenum sp))
           (coq-set-span-statenum sp coq-last-but-one-statenum))
         (setq coq-last-but-one-statenum (car infos))
         ;; set goalcmd property if this is a goal start
         ;; (ie proofstack has changed and not a save cmd)
+        (message (format "not sp: %s" (not sp)))
+        (message (format "(equal (span-property sp 'type) 'goalsave): %s" (equal (span-property sp 'type) 'goalsave)))
+        (message (format "(span-property sp 'type): %s" (span-property sp 'type)))
+        (message (format "(length (car (cdr (cdr infos)))) %s" (length (car (cdr (cdr infos))))))
+        (message (format "(length coq-last-but-one-proofstack))) %s" (length coq-last-but-one-proofstack)))
+        (if (or (not sp) (equal (span-property sp 'type) 'goalsave)
+                (<= (length (car (cdr (cdr infos))))
+                    (length coq-last-but-one-proofstack)))
+            (message "not setting goalcmd")
+            (message "setting goalcmd"))
         (unless
             (or (not sp) (equal (span-property sp 'type) 'goalsave)
                 (<= (length (car (cdr (cdr infos))))
@@ -1870,13 +1889,9 @@ Near here means PT is either inside or just aside of a comment."
 
 (defun coq-proof-tree-get-proof-info ()
   "Coq instance of `proof-tree-get-proof-info'."
-  (let* ((info (or (coq-last-prompt-info-safe) '(0 0 nil nil))))
-         ;; info is now a list with
-         ;; * the state number
-         ;; * the proof stack depth
-         ;; * the list of all open proofs
-         ;; * the name of the current proof or nil
-    (list (car info) (nth 3 info))))
+  (let* ((info (coq-current-proof-info)))
+    (list (nth 0 info)    ; state number
+          (nth 3 info)))) ; name of current proof
 
 (defun coq-extract-instantiated-existentials (start end)
   "Coq specific function for `proof-tree-extract-instantiated-existentials'.

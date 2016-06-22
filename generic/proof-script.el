@@ -27,6 +27,9 @@
   (defvar proof-mode-menu nil)
   (defvar proof-assistant-menu nil))
 
+(defun myformat (&rest args)
+  (apply 'format args))
+
 (declare-function proof-shell-strip-output-markup "proof-shell"
 		  (string &optional push))
 (declare-function proof-shell-make-associated-buffers "proof-shell" ())
@@ -1048,14 +1051,14 @@ Returns 'retract, 'process or finally nil if user declined."
       (switch-to-buffer proof-script-buffer t))
     (let ((action  (cond
 		    ((y-or-n-p
-		      (format
+		      (myformat
 		       "Scripting incomplete in buffer %s, retract? "
 		       proof-script-buffer))
 		     'retract)
 		    ((and
 		      (not proof-no-fully-processed-buffer)
 		      (y-or-n-p
-		       (format
+		       (myformat
 			"Completely process buffer %s instead? "
 			proof-script-buffer)))
 		     'process))))
@@ -1328,12 +1331,15 @@ Argument SPAN has just been processed."
 
     (proof-set-locked-end end)
 
+    (message (myformat "proof-save-command-regexp %s cmd %s" proof-save-command-regexp cmd))
+    (message (myformat "(proof-string-match-safe proof-save-command-regexp cmd): %s" (proof-string-match-safe proof-save-command-regexp cmd)))
     (if (span-live-p proof-queue-span)
 	(proof-set-queue-start end))
 
     (cond
      ;; CASE 1: Comments just get highlighted
      ((eq (span-property span 'type) 'comment)
+      (message "case 1")
       (proof-done-advancing-comment span))
 
      ;; CASE 2: Save command seen, now we may amalgamate spans.
@@ -1348,6 +1354,7 @@ Argument SPAN has just been processed."
 	       ;; (True for Isabelle/Isar).
 	       (eq proof-nesting-depth 0)
 	     t))
+      (message "case 2")
       (proof-done-advancing-save span))
 
      ;; CASE 3: Proof completed one step or more ago, non-save
@@ -1368,6 +1375,7 @@ Argument SPAN has just been processed."
 		(> proof-prover-proof-completed 0))
 	   (and (eq proof-completed-proof-behaviour 'closegoal)
 		(funcall proof-goal-command-p span))))
+      (message "case 3")
       (proof-done-advancing-autosave span))
 
      ;; CASE 4: A "Require" type of command is seen (Coq).
@@ -1376,6 +1384,7 @@ Argument SPAN has just been processed."
 
      ;; CASE 5:  Some other kind of command (or a nested goal).
      (t
+      (message "case 5")
       (proof-done-advancing-other span)))
 
     ;; Add the processed command to the input ring
@@ -1421,15 +1430,16 @@ Argument SPAN has just been processed."
 		 (prin1-to-string (match-string-no-properties 1))
 		 "\n"))))))))
 
-
+;; TODO STECK does this set goalsave?????
 (defun proof-done-advancing-save (span)
   "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
+  (message (myformat "span: %s" span))
   (unless (or (eq proof-prover-proof-completed 1)
 	      (eq proof-assistant-symbol 'isar))
     ;; We expect saves to succeed only for recently completed top-level proofs.
     ;; NB: not true in Isar, because save commands can perform proof.
     (proof-debug
-     (format
+     (myformat
       "PG: save command with proof-prover-proof-completed=%s, proof-nesting-depth=%s"
       proof-prover-proof-completed proof-nesting-depth)))
 
@@ -1446,30 +1456,42 @@ Argument SPAN has just been processed."
 	 (proof-string-match proof-save-with-hole-regexp cmd)
 	 ;; Give a message of a name if one can be determined
 	 (proof-minibuffer-message
-	  (format "proved %s"
+	  (myformat "proved %s"
 		  (setq nam
 			(if (stringp proof-save-with-hole-result)
 			    (replace-match proof-save-with-hole-result nil nil cmd)
 			  (match-string proof-save-with-hole-result cmd))))))
+
+    (message "pdas 1")
 
     ;; Search back for a goal command, deleting spans along the way:
     ;; they may be amalgamated into a single goal-save region, which
     ;; corresponds to the prover discarding the proof history.
     (setq lev 1)
     (setq nestedundos 0)
+    (message "pdas 2")
     (while (and gspan (> lev 0))
+      (message (myformat "in while gspan: %s" gspan))
       (setq next (prev-span gspan 'type))
+      (message "pdas 3")
       (unless proof-arbitrary-undo-positions
 	(span-delete gspan))
       (setq gspan next)
+      (message "pdas 4")
       (if gspan
 	  (progn
+	    (message (myformat "gspan in progn: %s" gspan))
 	    (setq cmd (span-property gspan 'cmd))
+	    (message (myformat "(funcall proof-goal-command-p gspan): %s" (funcall proof-goal-command-p gspan)))
+	    (message "pdas 5")
 	    (cond
 	     ;; Ignore comments [may have null cmd setting]
-	     ((eq (span-property gspan 'type) 'comment))
+	     ((eq (span-property gspan 'type) 
+		  'comment)
+	      (message "pdas 6"))
 	     ;; Nested goal saves: add in any nestedcmds
 	     ((eq (span-property gspan 'type) 'goalsave)
+	      (message "pdas 7")
 	      (setq nestedundos
 		    (+ nestedundos 1
 		       (or (span-property gspan 'nestedundos) 0))))
@@ -1478,14 +1500,18 @@ Argument SPAN has just been processed."
 	     ((and proof-nested-goals-history-p
 		   proof-save-command-regexp
 		   (proof-string-match proof-save-command-regexp cmd))
+	      (message "pdas 8")
 	      (incf lev))
 	     ;; Decrement depth when a goal is hit
 	     ((funcall proof-goal-command-p gspan)
+	      (message "pdas 9")
+	      (message (myformat "lev %s" lev))
 	      (decf lev))
 	     ;; Remainder cases: see if command matches something we
 	     ;; should count for a global undo
 	     ((and proof-nested-undo-regexp
 		   (proof-string-match proof-nested-undo-regexp cmd))
+	      (message "pdas 10")
 	      (incf nestedundos))
 	     ))))
 
@@ -1914,10 +1940,6 @@ Assumes that point is at the end of a command."
     (if (null semis) ; maybe inside a string or something.
 	(error "I can't find any complete commands to process!"))
     (run-hooks 'proof-assert-command-hook) ;; sneak commands (real ones with a prompt)
-    ;; track number of items added 
-    (message (format "semis: %s" semis))
-    (setq proof-server-pending-count (length semis))
-    (message (format "pending count in proof script: %d" proof-server-pending-count))
     (proof-assert-semis semis displayflags)))
 
 (defun proof-assert-electric-terminator ()
@@ -2471,7 +2493,7 @@ For this function to work properly, you must configure
     (if (= ct 0)
 	nil ; was proof-no-command
       (cond ((stringp proof-undo-n-times-cmd)
-	     (list (format proof-undo-n-times-cmd ct)))
+	     (list (myformat proof-undo-n-times-cmd ct)))
 	    ((functionp proof-undo-n-times-cmd)
 	     (list (funcall proof-undo-n-times-cmd ct)))))))
 
@@ -2510,7 +2532,7 @@ with something different."
 		   (proof-string-match proof-ignore-for-undo-count cmd))))
 	 ;; some named element: use generic forget-id function; finish.
 	 ((setq name (span-property span 'name))
-	  (setq ans (format proof-forget-id-command name))
+	  (setq ans (myformat proof-forget-id-command name))
 	  (setq span nil)))
 	(if ans (setq answers (cons ans answers)))
 	(if span (setq span (next-span span 'type))))

@@ -1,22 +1,23 @@
-;;; coq-server.el -- code related to server mode for Coq in Proof General
+;; coq-server.el -- code related to server mode for Coq in Proof General
 
 (require 'xml)
 (require 'proof-queue)
 (require 'proof-server)
 (require 'pg-goals)
 (require 'coq-xml)
+(require 'coq-state-vars)
+(require 'cl-lib)
 
 (defvar coq-server--protocol-buffer-name "*coq-protocol*")
 (defvar coq-server-protocol-buffer (get-buffer-create coq-server--protocol-buffer-name))
 
 (defvar coq-server-init (coq-xml-call '((val . Init)) (coq-xml-option '((val . none)))))
 
-;; when several statements sent, storage for all the responses
-(defvar coq-server--response-accum nil)
-
 ;; leading space makes buffer invisible, for the most part
 (defvar coq-server--response-buffer-name " *coq-responses*")
 (defvar coq-server-response-buffer (get-buffer-create coq-server--response-buffer-name))
+
+(defvar coq-server--pending-count 0)
 
 (defun coq-server--append-response (s)
   (with-current-buffer coq-server-response-buffer
@@ -59,6 +60,7 @@
 	   (next-state-id (number-to-string (+ (string-to-number state-id) 1))))
       (message "state id: %s" state-id)
       (puthash next-state-id t coq-server--pending-add-table)
+      (setq coq-server--pending-count (1+ coq-server--pending-count))
       (message "pending adds")
       (maphash 
        (lambda (k v) (message "add: %s" k))
@@ -72,29 +74,113 @@
       (coq-server-make-add-pending xml))
     ;; clear response buffer, locally-cached responses
     (pg-response-clear-displays)
-    (setq coq-server--response-accum nil)
     ;; send actual data
     (process-send-string proof-server-process s)
     ;; newline to force response
     (process-send-string proof-server-process "\n")))
 
 (defun coq-server--seen-all-pending ()
-  (or (null proof-server-pending-count)   ; added one statement
-      (eq 0 proof-server-pending-count))) ; added several, got all responses
+  (or (null coq-server--pending-count)   ; added one statement
+      (eq 0 coq-server--pending-count))) ; added several, got all responses
 
-(defun coq-server--handle-item (item in-value level) ; level is indentation
+(defvar impl-bar-char ?―)
+
+;;; goal formatting
+
+(defun coq-server--goal-id (goal)
+  (coq-xml-body1 (nth 2 goal)))
+
+(defun coq-server--goal-hypotheses (goal)
+  (coq-xml-body (nth 3 goal)))
+
+(defun coq-server--goal-goal (goal)
+  (coq-xml-body1 (nth 4 goal)))
+
+(defvar goal-indent " ")
+
+;; make a pretty goal 
+(defun coq-server--format-goal-with-hypotheses (goal hyps)
+  (let* ((nl "\n")
+	 (nl-indent (concat nl goal-indent))
+	 (min-width 5)   ; minimum width of implication bar
+	 (padding-len 1) ; on either side of hypotheses or goals
+	 (padding (make-string padding-len ?\s))
+	 (hyps-text (mapcar 'coq-xml-body1 hyps))
+	 (formatted-hyps (mapconcat 'identity hyps-text (concat nl-indent padding)))
+	 (hyps-width (apply 'max (cons 0 (mapcar 'length hyps-text)))) ; cons 0 in case empty
+	 (goal-width (length goal))
+	 (width (max min-width (+ (max hyps-width goal-width) (* 2 padding-len))))
+	 (goal-offset (/ (- width goal-width) 2)))
+    (message (format "goal-width: %d width: %d: goal-offs: %d" goal-width width goal-offset))
+    (concat goal-indent padding formatted-hyps nl             ; hypotheses
+	    goal-indent (make-string width impl-bar-char) nl  ; implication bar
+            goal-indent (make-string goal-offset ?\s) goal))) ; the goal
+
+(defun coq-server--format-goal-no-hypotheses (goal)
+  (concat goal-indent goal))
+
+;; invariant: goals is non-empty
+(defun coq-server--display-goals (goals)
+  (let* ((num-goals (length goals))
+	 (goal1 (car goals))
+	 (goals-rest (cdr goals))
+	 (goal-counter 1))
+    (with-temp-buffer
+      (if (eq num-goals 1)
+	  (insert "1 subgoal")
+	(insert (format "%d subgoals" num-goals)))
+      (insert "\n\n")
+      (insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
+      (insert (coq-server--format-goal-with-hypotheses 
+	       (coq-server--goal-goal goal1)
+	       (coq-server--goal-hypotheses goal1)))
+      (insert "\n")
+      (dolist (goal goals-rest)
+	(setq goal-counter (1+ goal-counter))
+	(insert (format "subgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
+	(insert (coq-server--format-goal-no-hypotheses 
+		 (coq-server--goal-goal goal))))
+      (pg-goals-display (buffer-string) t))))
+
+;; update global state in response to status
+(defun coq-server--handle-status (maybe-current-proof all-proofs current-proof-id)
+  (message (format "maybe-current-proof: %s\nall-proofs %s\ncurrent-proof-id: %s"
+		   maybe-current-proof all-proofs current-proof-id))
+  (let ((curr-proof-opt-val (coq-xml-attr-value maybe-current-proof 'val)))
+    (if (string-equal curr-proof-opt-val 'some)
+      (let* ((curr-proof-string (coq-xml-body1 maybe-current-proof))
+	     (curr-proof-name (coq-xml-body1 curr-proof-string)))
+	(message (format "setting coq-current-proof-name to %s" curr-proof-name))
+	(setq coq-current-proof-name curr-proof-name))
+      (setq coq-current-proof-name nil)))
+  (let* ((pending-proof-strings (coq-xml-body all-proofs))
+	 (_ (message (format "pending-proof-strings: %s" pending-proof-strings)))
+	 (pending-proofs (mapcar 'coq-xml-body1 pending-proof-strings)))
+    (message (format "setting coq-pending-proofs to %s" pending-proofs))
+    (setq coq-pending-proofs pending-proofs))
+  (let* ((proof-state-id-string (coq-xml-body1 current-proof-id))
+	 (proof-state-id (string-to-number proof-state-id-string)))
+    (message (format "setting coq-proof-state-id to %s" proof-state-id))
+    (setq coq-proof-state-id proof-state-id)))
+	      
+(defun coq-server--handle-item (item in-value level) 
+  ;; in-value means, are we looking at a value response
+  ;; level is indentation for logging
+  (message (format "coq-server--handle-item: %s %s %s" item in-value level))
   (insert (make-string level ?\s))
   (pcase (coq-xml-tag item)
     (`unit (insert (format "unit\n")))
     (`union (insert (format "union, %s:\n" (coq-xml-attr-value item 'val)))
-	    (coq-server--handle-item (coq-xml-body item) in-value (+ level 2)))
-    (`string (insert (format "string: %s\n" (coq-xml-body item))))
+	    (dolist (body-item (coq-xml-body item))
+	      (coq-server--handle-item body-item in-value (+ level 2))))
+    (`string (insert (format "string: %s\n" (coq-xml-body1 item))))
     (`loc_s (insert (format "start location: %s\n" (coq-xml-attr-value item 'loc_s))))
     (`loc_e (insert (format "end location: %s\n" (coq-xml-attr-value item 'loc_e))))
     (`state_id 
      (let* ((state-id (coq-xml-attr-value item 'val)))
        (insert (format "state_id: %s\n" state-id))
        (when in-value
+	 (setq coq-current-state-id state-id) ; update global state
 	 (let ((pendingp (and in-value (gethash state-id coq-server--pending-add-table))))
 	   (message (format "for state-id: %s" state-id))
 	   (message "pending? %s" pendingp)
@@ -103,11 +189,19 @@
 	    coq-server--pending-add-table)
 	   (when pendingp
 	     (remhash state-id coq-server--pending-add-table)
-	     (message (format "statement count: %d" proof-server-pending-count))
-	     (when proof-server-pending-count 
-	       (setq proof-server-pending-count (1- proof-server-pending-count)))
+	     (message (format "statement count: %d" coq-server--pending-count))
+	     (when coq-server--pending-count 
+	       (setq coq-server--pending-count (1- coq-server--pending-count)))
 	     (when (coq-server--seen-all-pending)
-	       (coq-server-send-to-prover (coq-xml-goal))))))))
+	       (coq-server-send-to-prover (coq-xml-goal))
+	       (coq-server-send-to-prover (coq-xml-status))))))))
+    (`status 
+     (let* ((status-items (coq-xml-body item))
+	    ;; ignoring module path of proof
+	    (maybe-current-proof (nth 1 status-items))
+	    (all-proofs (nth 2 status-items))
+	    (current-proof-id (nth 3 status-items)))
+       (coq-server--handle-status maybe-current-proof all-proofs current-proof-id)))
     (`option 
      (let ((val (coq-xml-attr-value item 'val)))
        (insert (format "option: %s\n" val))
@@ -124,31 +218,43 @@
        (if current-goals
 	   (progn
 	     (insert "goals:\n")
-	     (coq-server--handle-item current-goals in-value (+ level 1)))
-	 (insert "<no goals>"))
+	     (dolist (goal current-goals)
+	       (coq-server--handle-item goal in-value (+ level 1)))
+	     (coq-server--display-goals current-goals))
+	 (progn
+	   (insert "<no goals>")
+	   (setq proof-prover-proof-completed 1) ;; TODO is this right?
+	   ;; clear goals display
+	   (pg-goals-display "" nil)
+	   ;; mimic the coqtop REPL, though it would be better to come via XML
+	   (pg-response-display "No more subgoals."))) 
        (insert (make-string level ?\s))
        (if bg-goals
 	   (progn
 	     (insert "background goals:\n")
-	     (coq-server--handle-item bg-goals in-value (+ level 1)))
+	     (dolist (goal bg-goals)
+	       (coq-server--handle-item goal in-value (+ level 1))))
 	 (insert "<no background goals>\n"))
        (insert (make-string level ?\s))
        (if shelved-goals
 	   (progn
 	     (insert "shelved goals:\n")
-	     (coq-server--handle-item shelved-goals in-value (+ level 1)))
+	     (dolist (goal shelved-goals)
+	       (coq-server--handle-item goal in-value (+ level 1))))
 	 (insert "<no shelved goals>\n"))
        (insert (make-string level ?\s))
        (if abandoned-goals
 	   (progn
 	     (insert "abandoned goals:\n")
-	     (coq-server--handle-item abandoned-goals in-value (+ level 1)))
+	     (dolist (goal abandoned-goals)
+	       (coq-server--handle-item goal in-value (+ level 1))))
 	 (insert "<no abandoned goals>\n"))))
     (`goal
      (let* ((children (xml-node-children item))
-	    (goal-number (coq-xml-body (nth 0 children)))
+	    (goal-number (coq-xml-body1 (nth 0 children)))
 	    (goal-hypotheses (coq-xml-body (nth 1 children)))
-	    (goal (coq-xml-body (nth 2 children))))
+	    (goal (coq-xml-body1 (nth 2 children))))
+       (message "goal children: %s" children)
        (insert (format "goal %s\n" goal-number))
        (insert (make-string level ?\s))
        (if goal-hypotheses
@@ -157,8 +263,7 @@
 	     (coq-server--handle-item goal-hypotheses in-value (+ level 1)))
 	 (insert "<no hypotheses>\n"))
        (insert (make-string level ?\s))
-       (insert (format "goal: %s\n" goal))
-       (pg-goals-display goal t)))
+       (insert (format "goal: %s\n" goal))))
     (`pair 
      (dolist (item-child (xml-node-children item))
        (coq-server--handle-item item-child in-value (+ level 1))))
@@ -197,21 +302,16 @@
 	 (let ((level (coq-xml-attr-value child 'val)))
 	   (insert (format " Level: %s\n" level))))
 	(`string
-	 (let ((message (coq-server--unescape-string (coq-xml-body child))))
+	 (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
 	   (insert (format " Message: %s\n" message))
-	   (setq coq-server--response-accum (cons message coq-server--response-accum))
-	   ;; inefficient, because we redisplay all responses each time we see one,
-	   ;;  until we see the next Add
-	   ;; maybe we should just not display any responses for goto-point, a la CoqIDE
-	   (pg-response-display
-	      (mapconcat 'identity (reverse coq-server--response-accum) "\n"))))
+	   (pg-response-message message)))
 	(default
 	  (coq-server--handle-item xml nil 1))))))
 
 (defun coq-server--handle-value (xml)
   (message (format "got value: %s" xml))
   (with-current-buffer coq-server-protocol-buffer
-    (insert "*Status:\n")
+    (insert "*Value:\n")
     (let ((status (coq-xml-attr-value xml 'val)))
       (pcase status
 	("fail"

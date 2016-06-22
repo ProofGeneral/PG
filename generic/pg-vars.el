@@ -146,9 +146,6 @@ This can be used to help multiple file handling.")
 (defvar proof-server-log-buffer nil
   "In server mode, where traffic may be logged.")
 
-(defvar proof-server-pending-count nil
-  "In server mode, number of statements added waiting for a response.")
-
 (defvar proof-trace-buffer nil
   "A tracing buffer for storing tracing output from the proof shell.
 See `proof-shell-trace-output-regexp' for details.")
