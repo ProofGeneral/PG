@@ -6,9 +6,9 @@
 ;;;
 
 (require 'xml)
+(require 'coq-state-vars)
 
 (defvar edit-id-counter 1)
-(defvar state-id-counter 1)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
@@ -81,7 +81,7 @@
 
 ;; when we know there's one item only in body
 (defun coq-xml-body1 (xml)
-  (caddr xml))
+  (car (cddr xml)))
 
 ; does this XML have this outermost tag
 (defun coq-xml-tagp (xml tag)
@@ -156,13 +156,12 @@
             (coq-xml-int (- 0 edit-id-counter)))
            (coq-xml-pair
             '()
-            (coq-xml-state_id `((val . ,state-id-counter)))
+            (coq-xml-state_id `((val . ,coq-current-state-id)))
             (coq-xml-bool 'true))
            )
           ))
         )
     (setq edit-id-counter (+ edit-id-counter 1))
-    (setq state-id-counter (+ state-id-counter 1))
     add-block))
 
 (defun coq-xml-goal ()
@@ -245,13 +244,6 @@
   (with-temp-buffer
     (insert s)
     (car (xml-parse-region (point-min) (point-max)))))
-
-(defun coq-xml-wrap (s)
-;  (message (format "Set Options is: %s\n" (coq-xml-setoptions)))
-  (message (format "String is: %s\n" s))
-  (message (format "Wrapped string is: %s\n" (coq-xml-add-item s))))
-
-; (add-hook 'proof-server-insert-hook 'coq-xml-wrap)
 
 (provide 'coq-xml)
 

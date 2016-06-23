@@ -1650,6 +1650,7 @@ Near here means PT is either inside or just aside of a comment."
      proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result
      proof-add-to-queue-fun 'proof-server-add-to-queue))
 
+
   ;; prooftree config
   (setq
    proof-tree-configured t

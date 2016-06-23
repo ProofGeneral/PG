@@ -270,7 +270,6 @@ after a completed proof."
 				 'no-response-display
 				 'no-error-display))
 
-;; TODO format string with Add for Coq
 ;;;###autoload
 (defun proof-server-insert (strings action &optional scriptspan)
   "Send STRINGS to the prover.
@@ -281,12 +280,13 @@ single string.
 The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API."
   (assert (or (stringp strings)
 	      (listp strings))
-	  nil "proof-shell-insert: expected string list argument")
+	  nil "proof-server-insert: expected string list argument")
+  (run-hooks 'proof-server-insert-hook)
 
-    (let ((string (if (stringp strings) strings
-		    (apply 'concat strings))))
-      ; t means string should be formatted for prover
-      (proof-server-send-to-prover string t)))
+  (let ((string (if (stringp strings) strings
+		  (apply 'concat strings))))
+    ;; t means string should be formatted for prover
+    (proof-server-send-to-prover string t)))
 
 (defsubst proof-server-insert-action-item (item)
   "Send ITEM from `proof-action-list' to prover."
@@ -296,7 +296,7 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 (defun proof-server-add-to-queue (queueitems &optional queuemode)
   "add item to queue for 'server mode"
   (message "Called proof-server-add-to-queue")
-  (message (format "Items: %s" queueitems))
+  '(message (format "Items: %s" queueitems))
 
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
@@ -322,9 +322,6 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 	  '(proof-grab-lock queuemode)
       ;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
-
-(defun proof-server-format-item (item)
-  "TODO: fill in")
 
 ;;; TODO: factor out common code with proof shell exec loop
 
