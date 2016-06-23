@@ -4,11 +4,11 @@
 (require 'proof-queue)
 (require 'proof-server)
 (require 'pg-goals)
+(require 'coq-response)
 (require 'coq-xml)
-(require 'coq-state-vars)
 (require 'cl-lib)
 
-(defvar coq-server--protocol-buffer-name "*coq-protocol*")
+(defvar coq-server--protocol-buffer-name "*coq-protocol-debug*")
 (defvar coq-server-protocol-buffer (get-buffer-create coq-server--protocol-buffer-name))
 
 (defvar coq-server-init (coq-xml-call '((val . Init)) (coq-xml-option '((val . none)))))
@@ -19,6 +19,7 @@
 
 (defvar coq-server--pending-response nil)
 
+;; buffer for responses from coqtop process, nothing to do with user's response buffer
 (defun coq-server--append-response (s)
   (with-current-buffer coq-server-response-buffer
     (goto-char (point-max))
@@ -51,8 +52,12 @@
 (defun coq-server-wait-until-ready-to-send ()
   (accept-process-output))
 
+(defun coq-server--clear-response-buffer ()
+  (coq--display-response "")
+  (pg-response-clear-displays))
+
 ;; clear response buffer when we Add an item from the Coq script
-(add-hook 'proof-server-insert-hook 'pg-response-clear-displays)
+(add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
 
 ;; send data to Coq by sending to process
 ;; called by proof-server-send-to-prover
@@ -201,7 +206,7 @@
 	   ;; clear goals display
 	   (pg-goals-display "" nil)
 	   ;; mimic the coqtop REPL, though it would be better to come via XML
-	   (pg-response-message "No more subgoals.")))
+	   (coq--display-response "No more subgoals.")))
        (insert (make-string level ?\s))
        (if bg-goals
 	   (progn
@@ -268,7 +273,7 @@
 		      (message-str (nth 1 body))
 		      (message (coq-xml-body1 message-str)))
 		 (pg-response-clear-displays)
-		 (pg-response-message message)))))
+		 (coq--display-response message)))))
 	  (default
 	    (coq-server--handle-item child nil 1)))))))
 
@@ -284,7 +289,7 @@
 	(`string
 	 (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
 	   (insert (format " Message: %s\n" message))
-	   (pg-response-message message)))
+	   (coq--display-response message)))
 	(default
 	  (coq-server--handle-item xml nil 1))))))
 

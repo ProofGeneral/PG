@@ -7,6 +7,11 @@
 (require 'proof-queue)
 (require 'proof-buffers)
 
+(defcustom proof-server-fiddle-frames t
+  "Non-nil if proof-server functions should fire-up/delete frames like crazy."
+  :type 'boolean
+  :group 'proof-server)
+
 (defvar proof-server-process nil)
 
 (defconst proof-server-important-settings
@@ -127,7 +132,11 @@ with proof-shell-ready-prover."
 	    (set-process-filter proof-server-process 'proof-server-filter)
 	    (proof-prover-make-associated-buffers)
 	    (proof-server-config-done))
-	  (message "Failed to start prover"))))))
+	  (message "Failed to start prover"))))
+	(when proof-server-fiddle-frames
+	    (save-selected-window
+	      (save-selected-frame
+	       (proof-multiple-frames-enable))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -350,7 +359,7 @@ the queue region.
 
 The return value is non-nil if the action list is now empty or
 contains only invisible elements for Prooftree synchronization."
-  (message "called proof-server-exec-loop")
+  '(message "called proof-server-exec-loop")
   (unless (null proof-action-list)
     (save-excursion
       (if proof-script-buffer		      ; switch to active script

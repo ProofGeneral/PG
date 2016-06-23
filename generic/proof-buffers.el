@@ -1,4 +1,4 @@
-;; proof-buffers.el -- buffers for both repl and server modes
+;; proof-buffers.el -- buffers for server mode
 
 (require 'pg-vars)
 (require 'pg-response)
@@ -14,9 +14,8 @@
 (defun proof-prover-make-associated-buffers ()
   "Create the associated buffers and set buffer variables holding them."
   (let ((goals	"*goals*")
-	(resp	"*response*")
-	(trace	"*trace*")
-	(thms	"*thms*"))
+	(resp	"*response*"))
+
     (setq proof-goals-buffer    (get-buffer-create goals))
     (setq proof-response-buffer (get-buffer-create resp))
 
@@ -25,15 +24,8 @@
 	(let ((logger (concat "*" (downcase proof-assistant) "-log*")))
 	  (setq proof-server-log-buffer (get-buffer-create logger))))
 
-    ;; currently, repl-mode only, relies on regexps
-    (if proof-shell-trace-output-regexp
-	(setq proof-trace-buffer (get-buffer-create trace)))
-    (if proof-shell-thms-output-regexp
-	(setq proof-thms-buffer (get-buffer-create thms)))
-
-    ;; Set the special-display-regexps now we have the buffer names
     (setq pg-response-special-display-regexp
-	  (proof-regexp-alt goals resp trace thms))
+	  (proof-regexp-alt goals resp))
 
     (with-current-buffer proof-response-buffer
       (erase-buffer)
@@ -43,14 +35,7 @@
     (with-current-buffer proof-goals-buffer
       (erase-buffer)
       (proof-prover-set-text-representation)
-      (funcall proof-mode-for-goals))
-
-    ; repl-mode only, because depends on regexp
-    (proof-with-current-buffer-if-exists proof-trace-buffer
-      (erase-buffer)
-      (proof-prover-set-text-representation)
-      (funcall proof-mode-for-response)
-      (setq pg-response-eagerly-raise nil))))
+      (funcall proof-mode-for-goals))))
 
 (provide 'proof-buffers)
 

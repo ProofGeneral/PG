@@ -40,6 +40,7 @@
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
 (require 'coq-server)
+(require 'coq-response)
 (require 'coq-xml)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
@@ -89,11 +90,6 @@ These are appended at the end of `coq-shell-init-cmd'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
 
-(defcustom coq-optimise-resp-windows-enable t
-  "If non-nil (default) resize vertically response windw after each command."
-  :type 'boolean
-  :group 'coq)
-
 ;; Default coq is only Private_ and _subproof
 (defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
  "\"Private_\" \"_subproof\""
@@ -112,7 +108,6 @@ These are appended at the end of `coq-shell-init-cmd'."
 (defconst coq-shell-init-cmd
   (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) coq-user-init-cmd)
  "Command to initialize the Coq Proof Assistant.")
-
 
 (require 'coq-syntax)
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
@@ -347,15 +342,6 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 ;; Auxiliary code for Coq modes
 ;;
 
-;; finding the main frame of pg.
-(defun coq-find-threeb-frames ()
-  "Return a list of frames displaying both response and goals buffers."
-  (let* ((wins-resp (get-buffer-window-list proof-response-buffer nil t))
-         (wins-gls (get-buffer-window-list proof-goals-buffer nil t))
-         (frame-resp (cl-mapcar 'window-frame wins-resp))
-         (frame-gls (cl-mapcar 'window-frame wins-gls)))
-    (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
-
 
 (defun coq-remove-trailing-blanks (s)
   (let ((pos (string-match "\\s-*\\'" s)))
@@ -404,79 +390,6 @@ annotation-start) if found."
         ;;(proof-shell-process-urgent-message start-start end-end)
         ))
     (and start-start (goto-char start-start))))
-
-;; This is a modified version of the same function in generic/proof-shell.el.
-;; Using function coq-search-urgent-message instead of regex
-;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages. 
-(defun proof-shell-process-urgent-messages ()
-  "Scan the shell buffer for urgent messages.
-Scanning starts from `proof-shell-urgent-message-scanner' or
-`scomint-last-input-end', which ever is later.  We deal with strings
-between regexps `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-We update `proof-shell-urgent-message-marker' to point to last message found.
-
-This is a subroutine of `proof-shell-filter'."
-  (let ((pt (point)) (end t)
-	lastend laststart
-	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
-			 (marker-position scomint-last-input-end))))
-    (goto-char initstart)
-    (while (and end (setq laststart (coq-search-urgent-message))
-                )
-;      (setq laststart (match-beginning 0))
-      (if (setq end
-		(re-search-forward proof-shell-eager-annotation-end nil t))
-	  (save-excursion
-	    (setq lastend end)
-	    ;; Process the region including the annotations
-	    (proof-shell-process-urgent-message laststart lastend))))
-
-    (set-marker
-     proof-shell-urgent-message-scanner
-     (if end ;; couldn't find message start; move forward to avoid rescanning
-	 (max initstart
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
-       ;; incomplete message; leave marker at start of message
-       laststart))
-
-    ;; Set position of last urgent message found
-    (if lastend
-	(set-marker proof-shell-urgent-message-marker lastend))
-	
-    (goto-char pt)))
-
-;; Due to the architecture of proofgeneral, informative message put *before*
-;; the goal disappear unless marked as "urgent", i.e. being enclosed with
-;; "eager-annotation" syntax. Since we don't want the Warning color to be used
-;; for simple informative message, we have to redefine this function to use
-;; normal face when the "eager annotation" is acutally not a warning. This is a
-;; modified version of the same function in generic/proof-shell.el.
-(defun proof-shell-process-urgent-message-default (start end)
-  "A subroutine of `proof-shell-process-urgent-message'."
-  ;; Clear the response buffer this time, but not next, leave window.
-  (pg-response-maybe-erase nil nil)
-  (proof-minibuffer-message
-   (buffer-substring-no-properties
-    (save-excursion
-      (re-search-forward proof-shell-eager-annotation-start end nil)
-      (point))
-    (min end
-         (save-excursion (end-of-line) (point))
-         (+ start 75))))
-  (let*
-      ((face
-        (progn (goto-char start)
-               (if (looking-at "<infomsg>") 'default
-                 'proof-eager-annotation-face)))
-       (str (proof-shell-strip-eager-annotations start end))
-       (strnotrailingspace
-        (coq-remove-starting-blanks (coq-remove-trailing-blanks str))))
-    (pg-response-display-with-face strnotrailingspace))) ; face
-
 
 ;;;;;;;;;;; Trying to accept { and } as terminator for empty commands. Actually
 ;;;;;;;;;;; I am experimenting two new commands "{" and "}" (without no
@@ -710,6 +623,9 @@ If locked span already has a state number, then do nothing. Also updates
 ;; commands is started
 (add-hook 'proof-state-change-hook 'coq-set-state-infos)
 
+
+;; hook for resizing windows
+(add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
@@ -2580,10 +2496,6 @@ number of hypothesis displayed, without hiding the goal"
                                     (coq-build-subgoals-string nbgoals nbunfocused)))
                         minor-mode-alist)))))))
 
-
-
-
-
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
 ;; *after* windows resizing.
 (add-hook 'proof-shell-handle-delayed-output-hook
@@ -2597,57 +2509,9 @@ number of hypothesis displayed, without hiding the goal"
                 (proof-clean-buffer proof-goals-buffer))))
 
 
-(defun is-not-split-vertic (selected-window)
-  (<= (- (frame-height) (window-height)) 2))
-
 ;; bug fixed in generic ocde, useless now:
 ;(add-hook 'proof-activate-scripting-hook '(lambda () (when proof-three-window-enable (proof-layout-windows))))
 
-;; *Experimental* auto shrink response buffer in three windows mode. Things get
-;; a bit messed up if the response buffer is not at the right place (below
-;; goals buffer) TODO: Have this linked to proof-resize-window-tofit in
-;; proof-utils.el + customized by the "shrink to fit" menu entry
-;;  + have it on by default when in three windows mode.
-;; The philosophy is that if goals and response are on the same column, their
-;; cumulated size should not change.
-(defun coq-optimise-resp-windows ()
-  "Resize response buffer to optimal size.
-Only when three-buffer-mode is enabled."
-  ;; CPC 2015-12-31: Added the check below: if the command that caused this
-  ;; call was silent, we shouldn't touch the response buffer.  See GitHub
-  ;; issues https://github.com/cpitclaudel/company-coq/issues/32 and
-  ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (unless (memq 'no-response-display proof-shell-delayed-output-flags)
-    ;; If there is no frame with goql+response then do nothing
-    (when (and proof-three-window-enable (coq-find-threeb-frames))
-      (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting one adequat frame
-        (with-selected-frame pg-frame
-          (when (and (> (frame-height) 10)
-                     (get-buffer-window proof-response-buffer))
-            (let ((maxhgth
-                   (- (+ (with-selected-window (get-buffer-window proof-goals-buffer t) (window-text-height))
-                         (with-selected-window (get-buffer-window proof-response-buffer t) (window-text-height)))
-                      window-min-height))
-                  hgt-resp nline-resp)
-              (with-selected-window (get-buffer-window proof-response-buffer)
-                (setq hgt-resp (window-text-height))
-                (with-current-buffer proof-response-buffer
-                  (setq nline-resp ; number of lines we want for response buffer
-                        (min maxhgth (max window-min-height ; + 1 for comfort
-                                          (+ 1 (count-lines (point-max) (point-min)))))))
-                (unless (is-not-split-vertic (selected-window))
-                  (shrink-window (- hgt-resp nline-resp)))
-                (with-current-buffer proof-response-buffer
-                  (goto-char (point-min))
-                  (recenter))))))))))
-
-;; TODO: remove/add hook instead? 
-(defun coq-optimise-resp-windows-if-option ()
-  (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
-
-;; TODO: I would rather have a response-insert-hook thant this two hooks
-;; Careful: coq-optimise-resp-windows must be called BEFORE proof-show-first-goal,
-;; i.e. added in hook AFTER it.
 
 ;; Adapt when displaying a normal message
 (add-hook 'proof-shell-handle-delayed-output-hook 'coq-optimise-resp-windows-if-option)

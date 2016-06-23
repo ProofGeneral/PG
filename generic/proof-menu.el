@@ -682,7 +682,7 @@ without adjusting window layout."
 	 '(["Complete Identifier" proof-script-complete
 	    :help "Complete the identifier at point"]
 	   ["Insert Last Output" pg-insert-last-output-as-comment
-	    :active proof-shell-last-output
+	    :active "foobar" ; proof-shell-last-output
 	    :help "Insert the last output into the proof script as a comment"]
 	   ["Make Movie" pg-movie-export
 	    :help "Export processed portion as Movie XML file (enable Full Annotations first!)"])
