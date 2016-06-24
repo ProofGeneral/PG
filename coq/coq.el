@@ -2117,7 +2117,6 @@ Warning: this makes the error messages (and location) wrong.")
   "Return t if the last tactic of locked region contains an \"as\" close."
   (save-excursion (string-match "\\<as\\>" s)))
 
-
 (defun coq-insert-as-in-next-command ()
   (interactive)
   (save-excursion
@@ -2323,101 +2322,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; error handling
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defvar last-coq-error-location nil
-  "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
-
-
-;; I don't use proof-shell-last-ouput here since it is not always set to the
-;; really last output (specially when a *tactic* gives an error) instead I go
-;; directly to the response buffer. This allows also to clean the response
-;; buffer (better to only scroll it?)
-(defun coq-get-last-error-location (&optional parseresp clean)
-  "Return location information on last error sent by coq.
-Return a two elements list (POS LEN) if successful, nil otherwise.
-POS is the number of characters preceding the underlined expression,
-and LEN is its length.
-Coq error message must be like this:
-
-\"
-> command with an error here ...
->                       ^^^^
-\"
-
-If PARSERESP is nil, don't really parse response buffer but take the value of
-`last-coq-error-location' instead, otherwise parse response buffer and updates
-`last-coq-error-location'.
-
-If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
-  (if (not parseresp) last-coq-error-location
-    ;; proof-shell-handle-error-or-interrupt-hook is called from shell buffer
-    ;; then highlight the corresponding error location
-    (proof-with-current-buffer-if-exists proof-response-buffer
-      (goto-char (point-max)) ;\nToplevel input, character[^:]:\n
-      (when (re-search-backward "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n" nil t)
-        (let ((text (match-string 1))
-              (pos (length (match-string 2)))
-              (len (length (match-string 3))))
-          ;; clean the response buffer from ultra-ugly underlined command line
-          ;; parsed above. Don't kill the first \n
-          (let ((inhibit-read-only t))
-            (when clean (delete-region (match-beginning 0) (match-end 0))))
-          (when proof-prover-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
-            ;; `pos' and `len' are actually specified in bytes, apparently. So
-            ;; let's convert them, assuming the encoding used is utf-8.
-            ;; Presumably in Emacs-23 we could use `string-bytes' for that
-            ;; since the internal encoding happens to use utf-8 as well.
-            ;; Actually in coq-8.3 one utf8 char = one space so we do not need
-            ;; this at all
-            (let ((bytes text)) ;(encode-coding-string text 'utf-8-unix)
-              ;; Check that pos&len make sense in `bytes', if not give up.
-              (when (>= (length bytes) (+ pos len))
-                ;; We assume here that `text' is a single line and use \n as
-                ;; a marker so we can find it back after decoding.
-                (setq bytes (concat (substring bytes 0 pos)
-                                    "\n" (substring bytes pos (+ pos len))))
-                (let ((chars (decode-coding-string bytes 'utf-8-unix)))
-                  (setq pos (string-match "\n" chars))
-                  (setq len (- (length chars) pos 1))))))
-          (setq last-coq-error-location (list pos len)))))))
-
-
-(defun coq-highlight-error (&optional parseresp clean)
-  "Parses the last coq output looking at an error message. Highlight the text
-pointed by it. Coq error message must be like this:
-
-\"
-> command with an error here ...
->                       ^^^^
-\"
-
-If PARSERESP is nil, don't really parse response buffer but take the value of
-`last-coq-error-location' instead, otherwise parse response buffer and updates
-`last-coq-error-location'.
-
-If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
-  (proof-with-current-buffer-if-exists proof-script-buffer
-    (let ((mtch (coq-get-last-error-location parseresp clean)))
-      (when mtch
-        (let ((pos (car mtch))
-              (lgth (cadr mtch)))
-          (goto-char (+ (proof-unprocessed-begin) 1))
-          (coq-find-real-start)
-          
-          ;; utf8 adaptation is made in coq-get-last-error-location above
-          (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
-            (goto-char (+ (point) pos))
-            (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
-                                          'face 'proof-warning-face)))))))
-
-(defun coq-highlight-error-hook ()
-  (coq-highlight-error t t))
-
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-highlight-error-hook t)
-
 
 ;;
 ;; Scroll response buffer to maximize display of first goal

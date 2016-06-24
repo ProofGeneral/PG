@@ -3,6 +3,7 @@
 (require 'xml)
 (require 'proof-queue)
 (require 'proof-server)
+(require 'proof-script)
 (require 'pg-goals)
 (require 'coq-response)
 (require 'coq-xml)
@@ -51,6 +52,18 @@
 ;; if we haven't gotten a response, sleep to allow process filter to receive data
 (defun coq-server-wait-until-ready-to-send ()
   (accept-process-output))
+
+;; simplified version of proof shell code for handling errors
+(defun coq-server--handle-error ()
+  "Take action on errors."
+  ;; TODO beep?
+  (with-current-buffer 
+      proof-script-buffer
+    (proof-with-current-buffer-if-exists 
+     proof-script-buffer
+     (save-excursion
+       (proof-script-clear-queue-spans-on-error proof-last-span nil)))
+    (setq proof-action-list nil)))
 
 (defun coq-server--clear-response-buffer ()
   (coq--display-response "")
@@ -269,10 +282,13 @@
 		 (coq-server--handle-item feedback-child nil 1)))
 	     (when (string-equal feedback-value 'errormsg)
 	       (let* ((body (coq-xml-body child))
-		      ;; 0th item is location 
+		      (loc (nth 0 body))
+		      (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
+		      (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
 		      (message-str (nth 1 body))
 		      (message (coq-xml-body1 message-str)))
 		 (pg-response-clear-displays)
+		 (coq--highlight-error loc-start (- loc-stop loc-start))
 		 (coq--display-response message)))))
 	  (default
 	    (coq-server--handle-item child nil 1)))))))
@@ -305,7 +321,8 @@
 	 (insert " failure\n")
 	 (let ((children (xml-node-children xml)))
 	   (dolist (child children)
-	     (coq-server--handle-item child nil 1))))
+	     (coq-server--handle-item child nil 1)))
+	 (coq-server--handle-error))
 	("good"
 	 (insert " success\n")
 	 (let ((children (xml-node-children xml)))
@@ -326,5 +343,6 @@
 	(`message (coq-server--handle-message xml))
 	(default (message "unknown response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
+
 
 (provide 'coq-server)

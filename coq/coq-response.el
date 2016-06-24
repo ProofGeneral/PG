@@ -2,6 +2,11 @@
 
 (require 'proof-buffers)
 (require 'proof-server)
+(require 'coq-indent)
+
+(defvar coq-time-commands nil)        ; defpacustom
+(defconst coq--time-prefix "Time "
+  "Coq command prefix for displaying timing information.")
 
 (defcustom coq-optimise-resp-windows-enable t
   "If non-nil (default) resize vertically response windw after each command."
@@ -57,5 +62,15 @@ Only when three-buffer-mode is enabled."
 ;; display something in response buffer
 (defun coq--display-response (msg)
   (pg-response-message msg))
+
+(defun coq--highlight-error (pos lgth)
+  (proof-with-current-buffer-if-exists 
+   proof-script-buffer
+   (goto-char (+ (proof-unprocessed-begin) 1))
+   (coq-find-real-start)
+   (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
+     (goto-char (+ (point) pos))
+     (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
+				   'face 'proof-warning-face))))
 
 (provide 'coq-response)

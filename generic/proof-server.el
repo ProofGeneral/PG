@@ -14,13 +14,15 @@
 
 (defvar proof-server-process nil)
 
+(defvar proof-server-delayed-output-flags nil)
+
 (defconst proof-server-important-settings
   '(proof-server-send-to-prover-fun
     proof-server-process-response-fun
     ))
 
-(defvar proof-server-delayed-output-flags nil
-  "A copy of the `proof-action-list' flags for `proof-server-delayed-output'.")
+(defvar proof-last-span nil
+  "Last span we've pulled off proof-action-list")
 
 ;;;###autoload
 (defun proof-server-config-done ()
@@ -85,13 +87,6 @@ The first argument is the process object, the second is the response from the pr
     ;; A copy of the last message, verbatim, never modified.
     (setq proof-prover-last-output response)
 
-    ;; process response, run main loop
-    ;; TODO we have a single function for dealing with output, rather than 
-    ;;  immediate and delayed function as in the proof shell
-    ;; maybe that will change
-    (let ((output-kind (proof-server-handle-output cmd flags)))
-      (setq proof-prover-last-output-kind output-kind))
-
     (proof-server-exec-loop)
     
     ;; TODO why is this after the loop
@@ -144,7 +139,7 @@ with proof-shell-ready-prover."
 ;;
 
 ;; TODO: this is based on shell equivalent, need to make sure it's sane
-(defun proof-server-handle-error (err flags)
+'(defun proof-server-handle-error (err flags)
   "React on an error or interrupt message triggered by the prover.
 
 The argument ERR-OR-INT should be set to 'error or 'interrupt
@@ -159,7 +154,7 @@ In both cases we then sound a beep, clear the queue and spans."
   (unless (memq 'no-error-display flags)
       (message "proof-server-handle-error")))
 
-(defun proof-server-handle-interrupt (interrupt flags)
+'(defun proof-server-handle-interrupt (interrupt flags)
   "React on an error or interrupt message triggered by the prover.
 
 The argument ERR-OR-INT should be set to 'error or 'interrupt
@@ -177,72 +172,6 @@ In both cases we then sound a beep, clear the queue and spans."
     (pg-response-warning
      "Interrupt: script management may be in an inconsistent state
 	   (but it's probably okay)")))
-
-(defun proof-server-handle-output (output flags)
-  "React on an error or interrupt message triggered by the prover.
-
-The argument ERR-OR-INT should be set to 'error or 'interrupt
-which affects the action taken.
-
-For errors, we first flush unprocessed output (usually goals).
-The error message is the (usually) displayed in the response buffer.
-
-For interrupts, a warning message is displayed.
-
-In both cases we then sound a beep, clear the queue and spans."
-  (unless (memq 'no-error-display flags)
-    (message "proof-server-handle-output")
-    ;; TODO this is where we parse XML, dispatch to goals and response
-))
-
-;;;###autoload
-(defun proof-server-handle-immediate-output (cmd flags)
-  "See if the output in cmd must be dealt with immediately.
-To speed up processing, PG tries to avoid displaying output that
-the user will not have a chance to see.  Some output must be
-handled immediately, however: these are errors, interrupts,
-goals and loopbacks (proof step hints/proof by pointing results).
-
-In this function we check, in turn:
-
-  `proof-server-interruptp'
-  `proof-server-errorp'
-  `proof-server-proof-completedp'
-  `proof-server-result-startp' TODO ??
-
-These are predicates on cmd, supplied by the prover configuration. 
-Compare with the proof shell approach, which looks for regexp matches on text.
-
-To extend this, set `proof-server-handle-output-system-specific',
-which is a hook to take particular additional actions.
-
-This function sets variables: `proof-prover-last-output-kind',
-and the counter `proof-prover-proof-completed' which counts commands
-after a completed proof."
-  (message "Called proof-server-handle-immediate-output")
-
-  (setq proof-prover-last-output-kind nil) ; unclassified
-
-  (cond
-   ((proof-server-interruptp cmd)
-    (setq proof-prover-last-output-kind 'interrupt)
-    (proof-server-handle-interrupt cmd flags))
-   
-   ((proof-server-errorp cmd)
-    (setq proof-prover-last-output-kind 'error)
-    (proof-server-handle-error cmd flags))
-
-;   ((proof-server-result-startp cmd)
-;    ???? TODO
-   
-   ((proof-server-proof-completedp cmd)
-    (setq proof-prover-proof-completed 0)))
-
-  ;; PG4.0 change: simplify and run earlier
-  (if proof-server-handle-output-system-specific
-      (funcall proof-server-handle-output-system-specific
-	       cmd proof-prover-last-output))
-  )
 
 ;;;###autoload
 (defun proof-server-handle-delayed-ouput (cmd flags)
@@ -372,6 +301,8 @@ contains only invisible elements for Prooftree synchronization."
 	;; now we should invoke callback on just processed command,
 	;; but we delay this until sending the next command, attempting
 	;; to parallelize prover and Emacs somewhat.  (PG 4.0 change)
+
+	(setq proof-last-span (car item))
 
 	(setq proof-action-list (cdr proof-action-list))
 
