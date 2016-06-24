@@ -587,17 +587,17 @@ If locked span already has a state number, then do nothing. Also updates
       ;; sp = last locked span, which we want to fill with prompt infos
       (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
             (infos (coq-current-proof-info)))
-        (message (format "infos: %s" infos))
         (unless (or (not sp) (coq-get-span-statenum sp))
           (coq-set-span-statenum sp coq-last-but-one-statenum))
         (setq coq-last-but-one-statenum (car infos))
         ;; set goalcmd property if this is a goal start
         ;; (ie proofstack has changed and not a save cmd)
-        (message (format "not sp: %s" (not sp)))
-        (message (format "(equal (span-property sp 'type) 'goalsave): %s" (equal (span-property sp 'type) 'goalsave)))
-        (message (format "(span-property sp 'type): %s" (span-property sp 'type)))
-        (message (format "(length (car (cdr (cdr infos)))) %s" (length (car (cdr (cdr infos))))))
-        (message (format "(length coq-last-but-one-proofstack))) %s" (length coq-last-but-one-proofstack)))
+        '(progn 
+          (message (format "not sp: %s" (not sp)))
+          (message (format "(equal (span-property sp 'type) 'goalsave): %s" (equal (span-property sp 'type) 'goalsave)))
+          (message (format "(span-property sp 'type): %s" (span-property sp 'type)))
+          (message (format "(length (car (cdr (cdr infos)))) %s" (length (car (cdr (cdr infos))))))
+          (message (format "(length coq-last-but-one-proofstack))) %s" (length coq-last-but-one-proofstack))))
         (if (or (not sp) (equal (span-property sp 'type) 'goalsave)
                 (<= (length (car (cdr (cdr infos))))
                     (length coq-last-but-one-proofstack)))
@@ -637,52 +637,28 @@ If locked span already has a state number, then do nothing. Also updates
     res
     ))
 
-;; Simplified version of backtracking which uses state numbers, proof stack depth and
-;; pending proofs put inside the coq (> v8.1) prompt. It uses the new coq command
-;; "Backtrack". The prompt is like this:
-;;      state                        proof stack
-;;      num                           depth
-;;       __                              _
-;; aux < 12 |aux|SmallStepAntiReflexive| 4 < \371
-;; ^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^     ^
-;; usual           pending proofs           usual
-;;                                          special char
-;; exemple:
-;; to go (back) from 12 |lema1|lema2...|leman| xx
-;; to                8  |lemb1|lemb2...|lembm| 5
-;; we must do "Backtrack 8 5 naborts"
-;; where naborts is the number of lemais that are not lembis
-
-;; Rem: We could deal with suspend and resume with more work. We would need a new coq
-;; command, because it is better to backtrack with *one* command (because
-;; proof-change-hook used above is not exactly called at right times).
-
-(defun coq-find-and-forget (span)
-  "Backtrack to SPAN.  Using the \"Backtrack n m p\" coq command."
+(defun coq-server-find-and-forget (span)
+  "Backtrack to SPAN."
   (if (eq (span-property span 'type) 'proverproc)
       ;; processed externally (i.e. Require, etc), nothing to do
       ;; (should really be unlocked when we undo the Require).
       nil
-  (let* (ans (naborts 0) (nundos 0)
-             (proofdepth (coq-get-span-proofnum span))
-             (proofstack (coq-get-span-proofstack span))
-             (span-staten (coq-get-span-statenum span))
-             (naborts (count-not-intersection
-                       coq-last-but-one-proofstack proofstack)))
-    ;; if we move outside of any proof, coq does not print anything, so clean
-    ;; the goals buffer otherwise the old one will still be displayed
-    (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-    (unless (and
-             ;; return nil (was proof-no-command) in this case:
-             ;; this is more efficient as backtrack x y z may be slow
-             (equal coq-last-but-one-proofstack proofstack)
-             (= coq-last-but-one-proofnum proofdepth)
-             (= coq-last-but-one-statenum span-staten))
-      (list
-       (format "Backtrack %s %s %s . "
-               (int-to-string span-staten)
-               (int-to-string proofdepth)
-               naborts))))))
+    (let* (ans (naborts 0) (nundos 0)
+               (proofdepth (coq-get-span-proofnum span))
+               (proofstack (coq-get-span-proofstack span))
+               (span-staten (coq-get-span-statenum span))
+               (naborts (count-not-intersection
+                         coq-last-but-one-proofstack proofstack)))
+      ;; clean the goals buffer otherwise the old one will still be displayed
+      (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
+      (unless (and
+               ;; return nil (was proof-no-command) in this case:
+               ;; this is more efficient as backtrack x y z may be slow
+               (equal coq-last-but-one-proofstack proofstack)
+               (= coq-last-but-one-proofnum proofdepth)
+               (string-equal coq-last-but-one-statenum span-staten))
+        (setq coq-server-pending-state-id span-staten)
+        (proof-server-send-to-prover (coq-xml-edit-at span-staten))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
@@ -1496,7 +1472,7 @@ Near here means PT is either inside or just aside of a comment."
 ;;	proof-info-command "Help"
 
   (setq proof-goal-command-p 'coq-goal-command-p
-        proof-find-and-forget-fn 'coq-find-and-forget
+        proof-find-and-forget-fn 'coq-server-find-and-forget
         pg-topterm-goalhyplit-fn 'coq-goal-hyp
         proof-state-preserving-p 'coq-state-preserving-p)
 

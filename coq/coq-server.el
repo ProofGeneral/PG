@@ -14,6 +14,8 @@
 
 (defvar coq-server-init (coq-xml-call '((val . Init)) (coq-xml-option '((val . none)))))
 
+(defvar coq-server-pending-state-id nil)
+
 ;; leading space makes buffer invisible, for the most part
 (defvar coq-server--response-buffer-name " *coq-responses*")
 (defvar coq-server-response-buffer (get-buffer-create coq-server--response-buffer-name))
@@ -325,6 +327,11 @@
 	 (coq-server--handle-error))
 	("good"
 	 (insert " success\n")
+	 ;; TODO maybe it's better to use the feedback message, which contains the state id
+	 ;; but conceivable you'd get the feedback, then a failure ?
+	 (when coq-server-pending-state-id ; from Edit_at
+	   (setq coq-current-state-id coq-server-pending-state-id)
+	   (setq coq-server-pending-state-id nil))
 	 (let ((children (xml-node-children xml)))
 	   (dolist (child children)
 	     (coq-server--handle-item child t 1))))
@@ -343,6 +350,5 @@
 	(`message (coq-server--handle-message xml))
 	(default (message "unknown response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
-
 
 (provide 'coq-server)

@@ -164,6 +164,10 @@
     (setq edit-id-counter (+ edit-id-counter 1))
     add-block))
 
+(defun coq-xml-edit-at (state-id)
+  (coq-xml-call '((val . Edit_at))
+    (coq-xml-state_id `((val . ,state-id)))))
+		
 (defun coq-xml-goal ()
   (coq-xml-call '((val . Goal))
                 (coq-xml-unit)))
