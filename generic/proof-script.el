@@ -366,6 +366,7 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
   "Return end of locked region in current buffer or (point-min) otherwise.
 The position is actually one beyond the last locked character."
   (or
+   (and (message "proof-unprocessed-begin, proof-locked-span: %s" proof-locked-span) nil)
    (and proof-locked-span
 	(span-end proof-locked-span))
    (point-min)))
@@ -1390,12 +1391,7 @@ Argument SPAN has just been processed."
     ;; Add the processed command to the input ring
     (unless (or (not (span-live-p span))
 		(eq (span-property span 'type) 'comment))
-      (pg-add-to-input-history cmd)))
-
-  ;; Finally: state of scripting may have changed now, run hooks.
-  (run-hooks 'proof-state-change-hook))
-
-
+      (pg-add-to-input-history cmd))))
 
 (defun proof-done-advancing-comment (span)
   "A subroutine of `proof-done-advancing'.  Add comment element for SPAN."
@@ -1430,7 +1426,6 @@ Argument SPAN has just been processed."
 		 (prin1-to-string (match-string-no-properties 1))
 		 "\n"))))))))
 
-;; TODO STECK does this set goalsave?????
 (defun proof-done-advancing-save (span)
   "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
   (message (myformat "span: %s" span))
@@ -1505,6 +1500,7 @@ Argument SPAN has just been processed."
 	     ;; Decrement depth when a goal is hit
 	     ((funcall proof-goal-command-p gspan)
 	      (message "pdas 9")
+	      (message "gspan %s" gspan)
 	      (message (myformat "lev %s" lev))
 	      (decf lev))
 	     ;; Remainder cases: see if command matches something we
@@ -1558,8 +1554,11 @@ Argument GOALEND is the end of the goal;."
   "Try to return a goal name from GSPAN.
 Subroutine of `proof-done-advancing-save'."
   (let ((cmdstr (span-property gspan 'cmd)))
+    (message "cmdstr: %s" cmdstr)
     (and proof-goal-with-hole-regexp
+	 (or (message "got proof-goal-with-hole-regexp") t)
 	 (proof-string-match proof-goal-with-hole-regexp cmdstr)
+	 (or (message "got match with proof-goal-with-hole-regexp") t)
 	 (if (stringp proof-goal-with-hole-result)
 	     (replace-match proof-goal-with-hole-result nil nil cmdstr)
 	   (match-string proof-goal-with-hole-result cmdstr)))))
@@ -2113,17 +2112,18 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
     (span-set-property span 'remove-action remove-action)
     (list (list span proof-commands 'proof-done-retracting displayflags))))
 
-
 (defun proof-last-goal-or-goalsave ()
   "Return the span which is the last goal or save before point."
   (save-excursion
     (let ((span (span-at-before (proof-unprocessed-begin) 'type)))
+      (message "span before while: %s" span)
       (while (and span
 		  (not (eq (span-property span 'type) 'goalsave))
 		  (or (eq (span-property span 'type) 'proof)
 		      (eq (span-property span 'type) 'comment)
 		      (eq (span-property span 'type) 'proverproc)
 		      (not (funcall proof-goal-command-p span))))
+	(message "span in while: %s" span)
 	(setq span (prev-span span 'type)))
       span)))
 
@@ -2143,6 +2143,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 Notice that this necessitates retracting any spans following TARGET,
 up to the end of the locked region.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'."
+  (message "proof-retract-target: %s" target)
   (let ((end   (proof-unprocessed-begin))
 	(start (span-start target))
 	(span  (if proof-arbitrary-undo-positions
@@ -2262,6 +2263,7 @@ query saves here."
     (proof-ready-prover)
     (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
       (let ((span (span-at (point) 'type)))
+	(message "span-at-point: %s" span)
 	;; If no span at point, retracts the last span in the buffer.
 	(unless span
 	  (proof-goto-end-of-locked)
@@ -2269,7 +2271,8 @@ query saves here."
 	  (setq span (span-at (point) 'type)))
 	(if span
 	    (progn
-	      (run-hooks 'proof-retract-command-hook) ;; sneak commands (real ones with a prompt)
+	      ;; TODO remove ? for Coq server
+	      ; (run-hooks 'proof-retract-command-hook) ;; sneak commands (real ones with a prompt)
 	      (proof-retract-target span undo-action displayflags))
 	  ;; something wrong
 	  (proof-debug

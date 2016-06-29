@@ -101,37 +101,35 @@ We ignore QUEUEMODE, which is used just to give calling compatibility
 with proof-shell-ready-prover."
   (message "Called proof-server-ready-prover")
   (proof-server-start)
-;  (error "Could not start prover")
   t)
 
 ;;;###autoload
 (defun proof-server-start ()
   (message "Called proof-server-start")
-  (let* ((command-line-and-names (prover-command-line-and-names))
-	 (prog-command-line (car command-line-and-names))
-	 (prog-name-list (cdr command-line-and-names)))
-
-    (message "Starting: %s" prog-command-line)
-    (message "Program is: %s" proof-assistant-symbol)
-    (message "Command line: %s" prog-command-line)
-    (message "Proof assistant: %s" proof-assistant)
-    (message "Prog name list: %s" prog-name-list)
-    (unless proof-server-process
+  (unless proof-server-process
+    (let* ((command-line-and-names (prover-command-line-and-names))
+	   (prog-command-line (car command-line-and-names))
+	   (prog-name-list (cdr command-line-and-names)))
+      (message "Starting: %s" prog-command-line)
+      (message "Program is: %s" proof-assistant-symbol)
+      (message "Command line: %s" prog-command-line)
+      (message "Proof assistant: %s" proof-assistant)
+      (message "Prog name list: %s" prog-name-list)
       (let* ((server-buffer (get-buffer-create (concat "*" proof-assistant "*")))
 	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
 	(if the-process
-	  (progn 
-	    (message "Started prover process")
-	    (setq proof-server-process the-process
-		  proof-server-buffer server-buffer)
-	    (set-process-filter proof-server-process 'proof-server-filter)
-	    (proof-prover-make-associated-buffers)
-	    (proof-server-config-done))
+	    (progn 
+	      (message "Started prover process")
+	      (setq proof-server-process the-process
+		    proof-server-buffer server-buffer)
+	      (set-process-filter proof-server-process 'proof-server-filter)
+	      (proof-prover-make-associated-buffers)
+	      (proof-server-config-done))
 	  (message "Failed to start prover"))))
-	(when proof-server-fiddle-frames
-	    (save-selected-window
-	      (save-selected-frame
-	       (proof-multiple-frames-enable))))))
+    (when proof-server-fiddle-frames
+      (save-selected-window
+	(save-selected-frame
+	 (proof-multiple-frames-enable))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

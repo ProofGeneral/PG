@@ -154,7 +154,7 @@ back the default toolbar."
 (defalias 'proof-toolbar-undo 'proof-undo-last-successful-command)
 
 (defun proof-toolbar-undo-enable-p ()
-  (message "proof-toolbar-undo-enable-p: %s" 
+  '(message "proof-toolbar-undo-enable-p: %s" 
 	   (proof-with-script-buffer
 	    (> (proof-unprocessed-begin) (point-min))))
   (proof-with-script-buffer

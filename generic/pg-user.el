@@ -238,6 +238,8 @@ the text region in the proof script after undoing."
    (let (lastspan)
      (save-excursion
        (unless (proof-locked-region-empty-p)
+	 (message "proof-unproc-begin: %s" (proof-unprocessed-begin))
+	 (message "span-at-before proof-unproc-begin: %s" (span-at-before (proof-unprocessed-begin) 'type))
 	 (if (setq lastspan (span-at-before (proof-unprocessed-begin) 'type))
 	     (progn
 	       (goto-char (span-start lastspan))

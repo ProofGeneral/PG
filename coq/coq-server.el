@@ -6,6 +6,7 @@
 (require 'proof-script)
 (require 'pg-goals)
 (require 'coq-response)
+(require 'coq-stateinfo)
 (require 'coq-xml)
 (require 'cl-lib)
 
@@ -149,7 +150,7 @@
 
 ;; update global state in response to status
 (defun coq-server--handle-status (maybe-current-proof all-proofs current-proof-id)
-  '(message (format "maybe-current-proof: %s\nall-proofs %s\ncurrent-proof-id: %s"
+  (message (format "maybe-current-proof: %s\nall-proofs %s\ncurrent-proof-id: %s"
 		   maybe-current-proof all-proofs current-proof-id))
   (let ((curr-proof-opt-val (coq-xml-attr-value maybe-current-proof 'val)))
     (if (string-equal curr-proof-opt-val 'some)
@@ -162,7 +163,10 @@
     (setq coq-pending-proofs pending-proofs))
   (let* ((proof-state-id-string (coq-xml-body1 current-proof-id))
 	 (proof-state-id (string-to-number proof-state-id-string)))
-    (setq coq-proof-state-id proof-state-id)))
+    (setq coq-proof-state-id proof-state-id))
+  ;; used to be called as a hook at end of proof-done-advancing
+  (coq-set-state-infos))
+
 	      
 (defun coq-server--handle-item (item in-good-value level) 
   ;; in-good-value means, are we looking at a subterm of a value response
@@ -217,7 +221,7 @@
 	     (coq-server--display-goals current-goals))
 	 (progn
 	   (insert "<no goals>")
-	   (setq proof-prover-proof-completed 1) ;; TODO is this right?
+	   (setq proof-prover-proof-completed 0)
 	   ;; clear goals display
 	   (pg-goals-display "" nil)
 	   ;; mimic the coqtop REPL, though it would be better to come via XML

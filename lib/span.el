@@ -17,7 +17,7 @@
 ;;
 
 ;;; Code:
-(eval-when-compile (require 'cl))       ;For lexical-let.
+(eval-when-compile (require 'cl))       ; For lexical-let.
 
 (defalias 'span-start 'overlay-start)
 (defalias 'span-end 'overlay-end)

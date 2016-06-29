@@ -130,14 +130,14 @@ These are appended at the end of `coq-shell-init-cmd'."
 ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
 
-(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
+'(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
   "*Regular expression indicating that the proof has been completed.")
 
 (defvar coq-goal-regexp
   "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
 
 
-(defconst coq-interrupt-regexp "User Interrupt."
+'(defconst coq-interrupt-regexp "User Interrupt."
   "Regexp corresponding to an interrupt.")
 
 (defcustom coq-end-goals-regexp-show-subgoals "\n(dependent evars:"
@@ -481,15 +481,6 @@ annotation-start) if found."
 ;;   (** An id describing the state of the current proof. *)
 ;; }
 
-
-
-;; This information was encoded in the prompt using -emacs mode
-;; now this information is returned by a Status call, except for the state id
-(defun coq-current-proof-info ()
-  (list coq-current-state-id coq-proof-state-id coq-pending-proofs
-        (if coq-pending-proofs coq-current-proof-name nil)))
-
-
 ;; Use the statenumber inside the coq prompt to backtrack more easily
 (defun coq-last-prompt-info (s)
   "Extract info from the coq prompt S.  See `coq-last-prompt-info-safe'."
@@ -511,118 +502,11 @@ annotation-start) if found."
 (defun coq-in-proof ()
   (not (null coq-pending-proofs)))
 
-(defvar coq-last-but-one-statenum 1
-  "The state number we want to put in a span.
-This is the prompt number given *just before* the command was sent.
-This variable remembers this number and will be updated when
-used see coq-set-state-number.
-Initially 1 because Coq initial state has number 1.")
-
-(defvar coq-last-but-one-proofnum 1
-  "As for `coq-last-but-one-statenum' but for stack depth.")
-
-(defvar coq-last-but-one-proofstack '()
-  "As for `coq-last-but-one-statenum' but for proof stack symbols.")
-
-(defsubst coq-get-span-statenum (span)
-  "Return the state number of the SPAN."
-  (span-property span 'statenum))
-
-(defsubst coq-get-span-proofnum (span)
-  "Return the proof number of the SPAN."
-  (span-property span 'proofnum))
-
-(defsubst coq-get-span-proofstack (span)
-  "Return the proof stack (names of pending proofs) of the SPAN."
-  (span-property span 'proofstack))
-
-(defsubst coq-set-span-statenum (span val)
-  "Set the state number of the SPAN to VAL."
-  (span-set-property span 'statenum val))
-
-(defsubst coq-get-span-goalcmd (span)
-  "Return the 'goalcmd flag of the SPAN."
-  (span-property span 'goalcmd))
-
-(defsubst coq-set-span-goalcmd (span val)
-  "Set the 'goalcmd flag of the SPAN to VAL."
-  (span-set-property span 'goalcmd val))
-
-(defsubst coq-set-span-proofnum (span val)
-  "Set the proof number of the SPAN to VAL."
-  (span-set-property span 'proofnum val))
-
-(defsubst coq-set-span-proofstack (span val)
-  "Set the proof stack (names of pending proofs) of the SPAN to VAL."
-  (span-set-property span 'proofstack val))
-
-(defsubst proof-last-locked-span ()
-  (with-current-buffer proof-script-buffer
-    (span-at (- (proof-unprocessed-begin) 1) 'type)))
-
 ;; Each time the state changes (hook below), (try to) put the state number in
 ;; the last locked span (will fail if there is already a number which should
 ;; happen when going back in the script).  The state number we put is not the
 ;; last one because the last one has been sent by Coq *after* the change. We
 ;; use `coq-last-but-one-statenum' instead and then update it.
-
-;;TODO update docstring and comment
-
-;; STECK TODO : work out what this is doing
-;;  need to associate 'goalcmd property with spans with Goal, Theorem, etc.
-;;  this appears to be only place where that happens
-;;  that is, only call to  coq-set-span-goalcmd
-;; apparently called after each line is processed
-
-(defun coq-set-state-infos ()
-  "Set the last locked span's state number to the number found last time.
-This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
-If locked span already has a state number, then do nothing. Also updates
-`coq-last-but-one-statenum' to the last state number for next time."
-  (message "coq-set-state-infos")
-  (if proof-shell-last-prompt
-      ;; da: did test proof-script-buffer here, but that seems wrong
-      ;; since restart needs to reset these values.
-      ;; infos = promt infos of the very last prompt
-      ;; sp = last locked span, which we want to fill with prompt infos
-      (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
-            (infos (coq-current-proof-info)))
-        (unless (or (not sp) (coq-get-span-statenum sp))
-          (coq-set-span-statenum sp coq-last-but-one-statenum))
-        (setq coq-last-but-one-statenum (car infos))
-        ;; set goalcmd property if this is a goal start
-        ;; (ie proofstack has changed and not a save cmd)
-        '(progn 
-          (message (format "not sp: %s" (not sp)))
-          (message (format "(equal (span-property sp 'type) 'goalsave): %s" (equal (span-property sp 'type) 'goalsave)))
-          (message (format "(span-property sp 'type): %s" (span-property sp 'type)))
-          (message (format "(length (car (cdr (cdr infos)))) %s" (length (car (cdr (cdr infos))))))
-          (message (format "(length coq-last-but-one-proofstack))) %s" (length coq-last-but-one-proofstack))))
-        (if (or (not sp) (equal (span-property sp 'type) 'goalsave)
-                (<= (length (car (cdr (cdr infos))))
-                    (length coq-last-but-one-proofstack)))
-            (message "not setting goalcmd")
-            (message "setting goalcmd"))
-        (unless
-            (or (not sp) (equal (span-property sp 'type) 'goalsave)
-                (<= (length (car (cdr (cdr infos))))
-                    (length coq-last-but-one-proofstack)))
-          (coq-set-span-goalcmd sp t))
-        ;; testing proofstack=nil is not good here because nil is the empty list OR
-        ;; the no value, so we test proofnum as it is always set at the same time.
-        ;; This is why this test is done before the next one (which sets proofnum)
-        (unless (or (not sp) (coq-get-span-proofnum sp))
-          (coq-set-span-proofstack sp coq-last-but-one-proofstack))
-        (setq coq-last-but-one-proofstack (car (cdr (cdr infos))))
-        (unless (or (not sp) (coq-get-span-proofnum sp))
-          (coq-set-span-proofnum sp coq-last-but-one-proofnum))
-        (setq coq-last-but-one-proofnum (car (cdr infos))))))
-
-;; This hook seems the one we want.
-;; WARNING! It is applied once after each command PLUS once before a group of
-;; commands is started
-(add-hook 'proof-state-change-hook 'coq-set-state-infos)
-
 
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
@@ -1576,10 +1460,10 @@ Near here means PT is either inside or just aside of a comment."
   (setq
    proof-shell-cd-cmd coq-shell-cd
    proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\""   . "\\\""))
-   proof-shell-clear-goals-regexp coq-shell-proof-completed-regexp
-   proof-shell-proof-completed-regexp coq-shell-proof-completed-regexp
+   ; proof-shell-clear-goals-regexp coq-shell-proof-completed-regexp
+   ; proof-shell-proof-completed-regexp coq-shell-proof-completed-regexp
    proof-shell-error-regexp coq-error-regexp
-   proof-shell-interrupt-regexp coq-interrupt-regexp
+   ; proof-shell-interrupt-regexp coq-interrupt-regexp
    proof-shell-assumption-regexp coq-id
    pg-subterm-first-special-char ?\360
    ;; The next three represent path annotation information
@@ -2378,11 +2262,11 @@ number of hypothesis displayed, without hiding the goal"
 
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
 ;; *after* windows resizing.
-(add-hook 'proof-shell-handle-delayed-output-hook
+'(add-hook 'proof-shell-handle-delayed-output-hook
 	  'coq-show-first-goal)
-(add-hook 'proof-shell-handle-delayed-output-hook
+'(add-hook 'proof-shell-handle-delayed-output-hook
 	  'coq-update-minor-mode-alist)
-(add-hook 'proof-shell-handle-delayed-output-hook
+'(add-hook 'proof-shell-handle-delayed-output-hook
           (lambda ()
             (if (proof-string-match coq-shell-proof-completed-regexp
                                     proof-prover-last-output)
