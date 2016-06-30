@@ -895,6 +895,11 @@ data needs formatting before sending."
    :type 'function
    :group 'proof-server)
 
+(defcustom proof-server-retract-buffer-hook nil
+  "Code to run when the buffer is retracted."
+  :type 'function
+  :group 'proof-server)
+
 (defcustom proof-server-format-command-fun nil
    "The procedure to format a command for the prover."
    :type 'function

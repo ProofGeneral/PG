@@ -8,8 +8,6 @@
 (require 'xml)
 (require 'coq-state-vars)
 
-(defvar edit-id-counter 1)
-
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
 (defvar coq-xml-escape-table
@@ -121,20 +119,20 @@
 
 (defun coq-xml-string (s) 
   "XML block with `string' tag"
-  (coq-xml-block "string" '() (list s)))
+  (coq-xml-block "string" nil (list s)))
 
 (defun coq-xml-bool (b)
   "XML block with `bool' tag"
   (coq-xml-block "bool" `((val . ,b))
-                 '()))
+                 nil))
 
 (defun coq-xml-int (n)
   "XML block with `int' tag"
-  (coq-xml-block "int" '() (list (format "%d" n))))
+  (coq-xml-block "int" nil `(,(number-to-string n))))
 
 (defun coq-xml-unit ()
   "XML block with `unit' tag"
-  (coq-xml-block "unit" '() '()))
+  (coq-xml-block "unit" nil nil))
 
 ;; functions that use the `call' tag
 
@@ -143,30 +141,32 @@
                 (coq-xml-option '((val . none)))))
 
 ;; XML block for text from source file to Coq
-;; side-effect: increments edit-id-counter
+;; side-effect: increments coq-edit-id-counter
 (defun coq-xml-add-item (item)
   (let ((add-block 
          (coq-xml-call
           '((val . Add))
           (coq-xml-pair
-           '()
+           nil
            (coq-xml-pair 
-            '()
+            nil
             (coq-xml-string (coq-xml-escape item)) 
-            (coq-xml-int (- 0 edit-id-counter)))
+            (coq-xml-int (- 0 coq-edit-id-counter)))
            (coq-xml-pair
-            '()
+            nil
             (coq-xml-state_id `((val . ,coq-current-state-id)))
             (coq-xml-bool 'true))
            )
           ))
         )
-    (setq edit-id-counter (+ edit-id-counter 1))
+    (setq coq-edit-id-counter (1+ coq-edit-id-counter))
     add-block))
 
+;; state-id is string
 (defun coq-xml-edit-at (state-id)
-  (coq-xml-call '((val . Edit_at))
-    (coq-xml-state_id `((val . ,state-id)))))
+  (coq-xml-call 
+   '((val . Edit_at))
+   (coq-xml-state_id `((val . ,state-id)))))
 		
 (defun coq-xml-goal ()
   (coq-xml-call '((val . Goal))
@@ -184,10 +184,10 @@
   (coq-xml-call
    '((val . SetOptions))
    (coq-xml-list 
-    '()
+    nil
     (coq-xml-pair 
-     '()
-     (apply 'coq-xml-list '() (mapcar 'coq-xml-string names))
+     nil
+     (apply 'coq-xml-list nil (mapcar 'coq-xml-string names))
      val-xml))))
 
 ;; there are a lot of printing options to set via SetOptions
@@ -196,9 +196,9 @@
   (let ((names (mapcar (lambda (s) (coq-xml-string (symbol-name s)))
                        (cons 'Printing opts))))
     (coq-xml-pair 
-     '()
+     nil
      (apply 'coq-xml-list 
-      '()
+      nil
       names)
      (coq-xml-option_value 
       `((val . ,opt-ty))
@@ -208,7 +208,7 @@
   (coq-xml-call 
    '((val . SetOptions))
    (coq-xml-list 
-    '()
+    nil
     (coq-xml-printing-options
      '(Width)
      'intvalue

@@ -337,6 +337,13 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (require 'smie nil 'noerror)
 (require 'coq-smie nil 'noerror)
 
+(defun coq-reset-all-state ()
+  (coq-reset-state-vars)
+  (coq-server--clear-response-buffer)
+  (coq-server--clear-goals-buffer)
+  (with-current-buffer proof-script-buffer
+    (mapc 'span-delete (overlays-in (point-min) (point-max))))
+  (proof-init-segmentation))
 
 ;;
 ;; Auxiliary code for Coq modes
@@ -481,24 +488,6 @@ annotation-start) if found."
 ;;   (** An id describing the state of the current proof. *)
 ;; }
 
-;; Use the statenumber inside the coq prompt to backtrack more easily
-(defun coq-last-prompt-info (s)
-  "Extract info from the coq prompt S.  See `coq-last-prompt-info-safe'."
-  (let ((lastprompt (or s (error "No prompt !!?")))
-        (regex
-         (concat ">\\(" coq-id-shy "\\) < \\([0-9]+\\) |\\(\\(?:" coq-id-shy
-                 "|?\\)*\\)| \\([0-9]+\\) < ")))
-    (when (string-match regex lastprompt)
-      (let ((current-proof-name (match-string 1 lastprompt))
-            (state-number (string-to-number (match-string 2 lastprompt)))
-            (proof-state-number (string-to-number (match-string 4 lastprompt)))
-            ;; bind pending-proofs last, because build-list-id-from-string
-            ;; modifies the match data
-            (pending-proofs
-             (build-list-id-from-string (match-string 3 lastprompt))))
-        (list state-number proof-state-number pending-proofs
-              (if pending-proofs current-proof-name nil))))))
-
 (defun coq-in-proof ()
   (not (null coq-pending-proofs)))
 
@@ -506,10 +495,11 @@ annotation-start) if found."
 ;; the last locked span (will fail if there is already a number which should
 ;; happen when going back in the script).  The state number we put is not the
 ;; last one because the last one has been sent by Coq *after* the change. We
-;; use `coq-last-but-one-statenum' instead and then update it.
+;; use `coq-last-but-one-state-id' instead and then update it.
 
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
+(add-hook 'proof-retract-command-hook 'coq-reset-state-vars)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
@@ -523,26 +513,34 @@ annotation-start) if found."
 
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN."
-  (if (eq (span-property span 'type) 'proverproc)
-      ;; processed externally (i.e. Require, etc), nothing to do
-      ;; (should really be unlocked when we undo the Require).
-      nil
-    (let* (ans (naborts 0) (nundos 0)
-               (proofdepth (coq-get-span-proofnum span))
-               (proofstack (coq-get-span-proofstack span))
-               (span-staten (coq-get-span-statenum span))
-               (naborts (count-not-intersection
-                         coq-last-but-one-proofstack proofstack)))
-      ;; clean the goals buffer otherwise the old one will still be displayed
-      (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-      (unless (and
-               ;; return nil (was proof-no-command) in this case:
-               ;; this is more efficient as backtrack x y z may be slow
-               (equal coq-last-but-one-proofstack proofstack)
-               (= coq-last-but-one-proofnum proofdepth)
-               (string-equal coq-last-but-one-statenum span-staten))
-        (setq coq-server-pending-state-id span-staten)
-        (proof-server-send-to-prover (coq-xml-edit-at span-staten))))))
+  (message "coq-server-find-and-forget on span %s" span)
+  (cond ((eq (span-property span 'type) 'proverproc)
+         ;; processed externally (i.e. Require, etc), nothing to do
+         ;; (should really be unlocked when we undo the Require).
+         nil)
+        (t (let* (ans (naborts 0) (nundos 0)
+                      (proofdepth (coq-get-span-proofnum span))
+                      (proofstack (coq-get-span-proofstack span))
+                      (span-staten (coq-get-span-state-id span))
+                      (naborts (count-not-intersection
+                                coq-last-but-one-proofstack proofstack)))
+             (message "coq-server-find-and-forget, in default case")
+             ;; clean the goals buffer otherwise the old one will still be displayed
+             (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
+             (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
+             (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
+             (message "coq-last-but-one-state-id: %s  span-staten: %s" coq-last-but-one-state-id  span-staten)
+             (unless (and
+                      ;; return nil (was proof-no-command) in this case:
+                      ;; this is more efficient as backtrack x y z may be slow
+                      (equal coq-last-but-one-proofstack proofstack)
+                      (= coq-last-but-one-proofnum proofdepth)
+                      (string-equal coq-last-but-one-state-id span-staten))
+               (message "coq-server-find-and-forget, sending backtrack cmd")
+               (setq coq-server-pending-state-id span-staten)
+               (coq-server--clear-response-buffer)
+               (proof-server-send-to-prover (coq-xml-edit-at span-staten))
+               (proof-server-send-to-prover (coq-xml-status)))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
@@ -1419,12 +1417,13 @@ Near here means PT is either inside or just aside of a comment."
      proof-server-send-to-prover-fun 'coq-server-send-to-prover
      proof-server-format-command-fun 'coq-xml-add-item
      proof-server-process-response-fun 'coq-server-process-response
-     proof-server-init-cmd coq-server-init
+     proof-server-init-cmd (coq-xml-init)
      proof-ready-prover-fun 'proof-server-ready-prover
      proof-invisible-command-fun 'proof-server-invisible-command
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
      proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result
-     proof-add-to-queue-fun 'proof-server-add-to-queue))
+     proof-add-to-queue-fun 'proof-server-add-to-queue
+     proof-server-retract-buffer-hook 'coq-reset-all-state))
 
 
   ;; prooftree config
@@ -1764,9 +1763,9 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
   (let ((span-res nil)
         (span-cur (span-at (1- (proof-unprocessed-begin)) 'type))
         (state (1- state)))
-    ;; go backward as long as the statenum property in the span is greater or
+    ;; go backward as long as the state-id property in the span is greater or
     ;; equal than state
-    (while (<= state (span-property span-cur 'statenum))
+    (while (<= state (span-property span-cur 'state-id))
       (setq span-res span-cur)
       (setq span-cur (span-at (1- (span-start span-cur)) 'type)))
     (span-start span-res)))

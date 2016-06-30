@@ -13,8 +13,6 @@
 (defvar coq-server--protocol-buffer-name "*coq-protocol-debug*")
 (defvar coq-server-protocol-buffer (get-buffer-create coq-server--protocol-buffer-name))
 
-(defvar coq-server-init (coq-xml-call '((val . Init)) (coq-xml-option '((val . none)))))
-
 (defvar coq-server-pending-state-id nil)
 
 ;; leading space makes buffer invisible, for the most part
@@ -71,6 +69,9 @@
 (defun coq-server--clear-response-buffer ()
   (coq--display-response "")
   (pg-response-clear-displays))
+
+(defun coq-server--clear-goals-buffer ()
+  (pg-goals-display "" nil))
 
 ;; clear response buffer when we Add an item from the Coq script
 (add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
@@ -223,7 +224,7 @@
 	   (insert "<no goals>")
 	   (setq proof-prover-proof-completed 0)
 	   ;; clear goals display
-	   (pg-goals-display "" nil)
+	   (coq-server--clear-goals-buffer)
 	   ;; mimic the coqtop REPL, though it would be better to come via XML
 	   (coq--display-response "No more subgoals.")))
        (insert (make-string level ?\s))
@@ -326,8 +327,9 @@
 	("fail"
 	 (insert " failure\n")
 	 (let ((children (xml-node-children xml)))
-	   (dolist (child children)
-	     (coq-server--handle-item child nil 1)))
+	   (let ((errmsg (nth 1 children))) ; should be wrapped in string tags
+	     (coq-server--clear-response-buffer)
+	     (coq--display-response errmsg)))
 	 (coq-server--handle-error))
 	("good"
 	 (insert " success\n")

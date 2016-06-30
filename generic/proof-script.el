@@ -366,7 +366,6 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
   "Return end of locked region in current buffer or (point-min) otherwise.
 The position is actually one beyond the last locked character."
   (or
-   (and (message "proof-unprocessed-begin, proof-locked-span: %s" proof-locked-span) nil)
    (and proof-locked-span
 	(span-end proof-locked-span))
    (point-min)))
@@ -1428,13 +1427,11 @@ Argument SPAN has just been processed."
 
 (defun proof-done-advancing-save (span)
   "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
-  (message (myformat "span: %s" span))
-  (unless (or (eq proof-prover-proof-completed 1)
-	      (eq proof-assistant-symbol 'isar))
+  (message "proof-done-advancing, span: %s" span)
+  (unless (eq proof-prover-proof-completed 1)
     ;; We expect saves to succeed only for recently completed top-level proofs.
-    ;; NB: not true in Isar, because save commands can perform proof.
     (proof-debug
-     (myformat
+     (format
       "PG: save command with proof-prover-proof-completed=%s, proof-nesting-depth=%s"
       proof-prover-proof-completed proof-nesting-depth)))
 
@@ -2271,8 +2268,7 @@ query saves here."
 	  (setq span (span-at (point) 'type)))
 	(if span
 	    (progn
-	      ;; TODO remove ? for Coq server
-	      ; (run-hooks 'proof-retract-command-hook) ;; sneak commands (real ones with a prompt)
+	      (run-hooks 'proof-retract-command-hook) ;; sneak commands
 	      (proof-retract-target span undo-action displayflags))
 	  ;; something wrong
 	  (proof-debug

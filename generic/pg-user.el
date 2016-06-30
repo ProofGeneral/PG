@@ -258,8 +258,8 @@ interactive calls."
   (interactive "p")
   (proof-with-script-buffer
    (save-excursion
-    (goto-char (point-min))
-    (proof-retract-until-point-interactive))
+     (goto-char (point-min))
+     (proof-retract-until-point-interactive))
    (if called-interactively
        (proof-maybe-follow-locked-end (point-min)))))
 
