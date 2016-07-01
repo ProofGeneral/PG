@@ -85,6 +85,7 @@ The first argument is the process object, the second is the response from the pr
 	(flags (nth 3 (car proof-action-list))))
 
     ;; A copy of the last message, verbatim, never modified.
+    ;; TODO do we really need this?
     (setq proof-prover-last-output response)
 
     (proof-server-exec-loop)
@@ -131,51 +132,6 @@ with proof-shell-ready-prover."
 	(save-selected-frame
 	 (proof-multiple-frames-enable))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Processing error output
-;;
-
-;; TODO: this is based on shell equivalent, need to make sure it's sane
-'(defun proof-server-handle-error (err flags)
-  "React on an error or interrupt message triggered by the prover.
-
-The argument ERR-OR-INT should be set to 'error or 'interrupt
-which affects the action taken.
-
-For errors, we first flush unprocessed output (usually goals).
-The error message is the (usually) displayed in the response buffer.
-
-For interrupts, a warning message is displayed.
-
-In both cases we then sound a beep, clear the queue and spans."
-  (unless (memq 'no-error-display flags)
-      (message "proof-server-handle-error")))
-
-'(defun proof-server-handle-interrupt (interrupt flags)
-  "React on an error or interrupt message triggered by the prover.
-
-The argument ERR-OR-INT should be set to 'error or 'interrupt
-which affects the action taken.
-
-For errors, we first flush unprocessed output (usually goals).
-The error message is the (usually) displayed in the response buffer.
-
-For interrupts, a warning message is displayed.
-
-In both cases we then sound a beep, clear the queue and spans."
-  (unless (memq 'no-error-display flags)
-    (message "proof-server-handle-interrupt")
-    (pg-response-maybe-erase t t t) ; force cleaned now & next
-    (pg-response-warning
-     "Interrupt: script management may be in an inconsistent state
-	   (but it's probably okay)")))
-
-;;;###autoload
-(defun proof-server-handle-delayed-ouput (cmd flags)
-  (message "Called proof-server-handle-delayed-output")
-)
-
 ;;; assume that cmd is already formatted appropriately 
 ;;;###autoload
 (defun proof-server-invisible-command (cmd &optional wait invisiblecallback
@@ -216,7 +172,7 @@ single string.
 The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API."
   (assert (or (stringp strings)
 	      (listp strings))
-	  nil "proof-server-insert: expected string list argument")
+	  nil "proof-server-insert: expected string or list argument")
   (run-hooks 'proof-server-insert-hook)
 
   (let ((string (if (stringp strings) strings
@@ -226,12 +182,13 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 
 (defsubst proof-server-insert-action-item (item)
   "Send ITEM from `proof-action-list' to prover."
+  (message "proof-server-insert-action-item: %s" item)
   (proof-server-insert (nth 1 item) (nth 2 item) (nth 0 item)))
 
 ;;;###autoload
 (defun proof-server-add-to-queue (queueitems &optional queuemode)
   "add item to queue for 'server mode"
-  (message "Called proof-server-add-to-queue")
+  '(message "Called proof-server-add-to-queue")
   '(message (format "Items: %s" queueitems))
 
   (let ((nothingthere (null proof-action-list)))
@@ -251,6 +208,7 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 	  (when nothingthere  ; start sending commands
 	    '(proof-grab-lock queuemode)
 	    (setq proof-prover-last-output-kind nil) 
+	    (message "INSERTING 1")
 	    (proof-server-insert-action-item (car proof-action-list))))
       (if proof-second-action-list-active
 	  ;; primary action list is empty, but there are items waiting
@@ -261,7 +219,7 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 
 ;;; TODO: factor out common code with proof shell exec loop
 
-
+;;  notes by Paul Steckler
 ;;  - the proof-action-list is a list of data structures with text and a callback, and some other bits
 ;;  - it's extended by calling proof-add-to-queue
 ;;  - if the queue had been empty, proof-add-queue send the text to the prover buffer, which has the effect of sending it to the prover itself; the items remain on proof-action-list
@@ -335,7 +293,9 @@ contains only invisible elements for Prooftree synchronization."
 
 	(if proof-action-list
 	    ;; send the next command to the process.
-	    (proof-server-insert-action-item (car proof-action-list)))
+	    (progn
+	      (message "INSERTING 2")
+	      (proof-server-insert-action-item (car proof-action-list))))
 
 	;; process the delayed callbacks now
 	(mapc 'proof-prover-invoke-callback cbitems)	

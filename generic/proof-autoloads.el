@@ -323,7 +323,7 @@ Send an <askprefs> message to the prover.
 ;;;### (autoloads (pg-response-has-error-location proof-next-error
 ;;;;;;  pg-response-message pg-response-display-with-face pg-response-maybe-erase
 ;;;;;;  proof-response-config-done proof-response-mode) "pg-response"
-;;;;;;  "pg-response.el" (22324 14658 658840 620000))
+;;;;;;  "pg-response.el" (22379 64391 23888 554000))
 ;;; Generated autoloads from pg-response.el
 
 (autoload 'proof-response-mode "pg-response" "\
@@ -400,7 +400,7 @@ See `pg-next-error-regexp'.
 ;;;;;;  pg-slow-fontify-tracing-hint proof-electric-terminator-enable
 ;;;;;;  proof-define-assistant-command-witharg proof-define-assistant-command
 ;;;;;;  proof-process-buffer proof-goto-point proof-script-new-command-advance)
-;;;;;;  "pg-user" "pg-user.el" (22335 10815 738298 179000))
+;;;;;;  "pg-user" "pg-user.el" (22389 22267 769857 819000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -602,8 +602,8 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-aux-menu proof-menu-define-specific proof-menu-define-main
-;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22340
-;;;;;;  47580 952548 959000))
+;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22380
+;;;;;;  24422 736478 98000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -649,7 +649,7 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-extend-queue proof-start-queue) "proof-queue"
-;;;;;;  "proof-queue.el" (22344 31099 390980 472000))
+;;;;;;  "proof-queue.el" (22372 10294 165071 84000))
 ;;; Generated autoloads from proof-queue.el
 
 (autoload 'proof-start-queue "proof-queue" "\
@@ -676,7 +676,7 @@ The queue mode is set to 'advancing
 ;;;;;;  proof-server-errorp proof-server-interruptp proof-add-to-queue
 ;;;;;;  proof-invisible-command-invisible-result proof-invisible-cmd-get-result
 ;;;;;;  proof-invisible-command proof-ready-prover) "proof-resolver"
-;;;;;;  "proof-resolver.el" (22344 34164 378991 267000))
+;;;;;;  "proof-resolver.el" (22389 36921 917909 430000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -740,8 +740,8 @@ The queue mode is set to 'advancing
 ;;;;;;  proof-insert-pbp-command proof-script-generic-parse-find-comment-end
 ;;;;;;  proof-register-possibly-new-processed-file pg-set-span-helphighlights
 ;;;;;;  proof-locked-region-empty-p proof-locked-region-full-p proof-unprocessed-begin
-;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22335
-;;;;;;  11170 634299 429000))
+;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22389
+;;;;;;  30876 337888 138000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -833,10 +833,9 @@ finish setup which depends on specific proof assistant configuration.
 ;;;### (autoloads (proof-server-exec-loop proof-server-add-to-queue
 ;;;;;;  proof-server-insert proof-server-invisible-command-invisible-result
 ;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
-;;;;;;  proof-server-handle-delayed-ouput proof-server-handle-immediate-output
 ;;;;;;  proof-server-start proof-server-ready-prover proof-server-filter
 ;;;;;;  proof-server-config-done) "proof-server" "proof-server.el"
-;;;;;;  (22344 33976 678990 606000))
+;;;;;;  (22389 39767 477919 452000))
 ;;; Generated autoloads from proof-server.el
 
 (autoload 'proof-server-config-done "proof-server" "\
@@ -865,37 +864,6 @@ with proof-shell-ready-prover.
 
 
 \(fn)" nil nil)
-
-(autoload 'proof-server-handle-immediate-output "proof-server" "\
-See if the output in cmd must be dealt with immediately.
-To speed up processing, PG tries to avoid displaying output that
-the user will not have a chance to see.  Some output must be
-handled immediately, however: these are errors, interrupts,
-goals and loopbacks (proof step hints/proof by pointing results).
-
-In this function we check, in turn:
-
-  `proof-server-interruptp'
-  `proof-server-errorp'
-  `proof-server-proof-completedp'
-  `proof-server-result-startp' TODO ??
-
-These are predicates on cmd, supplied by the prover configuration. 
-Compare with the proof shell approach, which looks for regexp matches on text.
-
-To extend this, set `proof-server-handle-output-system-specific',
-which is a hook to take particular additional actions.
-
-This function sets variables: `proof-prover-last-output-kind',
-and the counter `proof-prover-proof-completed' which counts commands
-after a completed proof.
-
-\(fn CMD FLAGS)" nil nil)
-
-(autoload 'proof-server-handle-delayed-ouput "proof-server" "\
-
-
-\(fn CMD FLAGS)" nil nil)
 
 (autoload 'proof-server-invisible-command "proof-server" "\
 
@@ -954,7 +922,7 @@ contains only invisible elements for Prooftree synchronization.
 ;;;;;;  proof-shell-invisible-cmd-get-result proof-shell-invisible-command
 ;;;;;;  proof-shell-wait proof-shell-insert proof-shell-available-p
 ;;;;;;  proof-shell-ready-prover) "proof-shell" "proof-shell.el"
-;;;;;;  (22344 28239 330970 399000))
+;;;;;;  (22380 24115 684467 273000))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -1118,7 +1086,7 @@ may be a string or sexp evaluated to get a string.
 ;;;***
 
 ;;;### (autoloads (proof-toolbar-scripting-menu proof-toolbar-setup)
-;;;;;;  "proof-toolbar" "proof-toolbar.el" (22335 11151 26299 360000))
+;;;;;;  "proof-toolbar" "proof-toolbar.el" (22385 29481 624780 689000))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
@@ -1250,8 +1218,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22344 34488
-;;;;;;  558893 936000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22390 36916
+;;;;;;  426672 388000))
 
 ;;;***
 

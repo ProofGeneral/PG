@@ -1,6 +1,7 @@
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
 (require 'xml)
+(require 'tq)
 (require 'proof-queue)
 (require 'proof-server)
 (require 'proof-script)
@@ -15,11 +16,14 @@
 
 (defvar coq-server-pending-state-id nil)
 
+;; buffer for gluing coqtop responses into XML
 ;; leading space makes buffer invisible, for the most part
 (defvar coq-server--response-buffer-name " *coq-responses*")
 (defvar coq-server-response-buffer (get-buffer-create coq-server--response-buffer-name))
 
-(defvar coq-server--pending-response nil)
+(defvar coq-server-transaction-queue nil)
+
+(defvar end-of-response-regexp "</value>")
 
 ;; buffer for responses from coqtop process, nothing to do with user's response buffer
 (defun coq-server--append-response (s)
@@ -47,13 +51,6 @@
 	  (delete-region (point-min) (point)))
 	xml))))
 
-(defun coq-server-ready-to-send ()
-  (null coq-server--pending-response))
-
-;; if we haven't gotten a response, sleep to allow process filter to receive data
-(defun coq-server-wait-until-ready-to-send ()
-  (accept-process-output))
-
 ;; simplified version of proof shell code for handling errors
 (defun coq-server--handle-error ()
   "Take action on errors."
@@ -73,22 +70,14 @@
 (defun coq-server--clear-goals-buffer ()
   (pg-goals-display "" nil))
 
+(defun coq-server-start-transaction-queue ()
+  (unless coq-server-transaction-queue
+    (setq coq-server-transaction-queue (tq-create proof-server-process))))
+
 ;; clear response buffer when we Add an item from the Coq script
 (add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
-
-;; send data to Coq by sending to process
-;; called by proof-server-send-to-prover
-;; do not call directly
-(defun coq-server-send-to-prover (s)
-  ;; wait until we have the last response we need
-  (while (not (coq-server-ready-to-send))
-    (coq-server-wait-until-ready-to-send))
-  (message "setting pending response")
-  (setq coq-server--pending-response t)
-  ;; send actual data
-  (process-send-string proof-server-process s)
-  ;; newline to force response
-  (process-send-string proof-server-process "\n"))
+;; start transaction queue after coqtop process started
+(add-hook 'proof-server-init-hook 'coq-server-start-transaction-queue)
 
 ;; Unicode!
 (defvar impl-bar-char ?―)
@@ -167,7 +156,6 @@
     (setq coq-proof-state-id proof-state-id))
   ;; used to be called as a hook at end of proof-done-advancing
   (coq-set-state-infos))
-
 	      
 (defun coq-server--handle-item (item in-good-value level) 
   ;; in-good-value means, are we looking at a subterm of a value response
@@ -192,8 +180,7 @@
 	 (if (null (cdr proof-action-list))
 	     (progn
 	       (proof-server-send-to-prover (coq-xml-goal))
-	       (proof-server-send-to-prover (coq-xml-status)))
-	   (message (format "proof-action-list: %s" proof-action-list))))))
+	       (proof-server-send-to-prover (coq-xml-status)))))))
     (`status 
      (let* ((status-items (coq-xml-body item))
 	    ;; ignoring module path of proof
@@ -317,9 +304,7 @@
 	  (coq-server--handle-item xml nil 1))))))
 
 (defun coq-server--handle-value (xml)
-  '(message (format "got value: %s" xml))
-  (message "setting pending reponse to nil")
-  (setq coq-server--pending-response nil)
+  (message (format "handling value: %s" xml))
   (with-current-buffer coq-server-protocol-buffer
     (insert "*Value:\n")
     (let ((status (coq-xml-attr-value xml 'val)))
@@ -356,5 +341,26 @@
 	(`message (coq-server--handle-message xml))
 	(default (message "unknown response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
+
+(defun coq-server-handle-tq-response (closure response)
+  (message "from tq, got response: %s" response)
+  (proof-server-log "coqtop" response)
+  (coq-server-process-response response))
+
+;; send data to Coq by sending to process
+;; called by proof-server-send-to-prover
+;; do not call directly
+(defun coq-server-send-to-prover (s)
+  '(message "setting pending response")
+  ;; wait until we have the last response we need
+  (message "queueing to send to process: %s" s)
+  ;; newline to force response (inefficient, have to traverse string)
+  (tq-enqueue coq-server-transaction-queue (concat s "\n") end-of-response-regexp
+	      ;; "closure" argument, passed to handler below
+	      nil 
+	      ;; handler gets closure and coqtop response
+	      'coq-server-handle-tq-response
+	      ;; don't send until last response received
+	      t))
 
 (provide 'coq-server)

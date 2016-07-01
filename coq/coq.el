@@ -527,9 +527,10 @@ annotation-start) if found."
              (message "coq-server-find-and-forget, in default case")
              ;; clean the goals buffer otherwise the old one will still be displayed
              (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-             (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
-             (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
-             (message "coq-last-but-one-state-id: %s  span-staten: %s" coq-last-but-one-state-id  span-staten)
+             '(progn
+               (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
+               (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
+               (message "coq-last-but-one-state-id: %s  span-staten: %s" coq-last-but-one-state-id  span-staten))
              (unless (and
                       ;; return nil (was proof-no-command) in this case:
                       ;; this is more efficient as backtrack x y z may be slow
@@ -540,6 +541,8 @@ annotation-start) if found."
                (setq coq-server-pending-state-id span-staten)
                (coq-server--clear-response-buffer)
                (proof-server-send-to-prover (coq-xml-edit-at span-staten))
+               ;; race condition here
+               ;; need to get response from Status to update state variables before user does next Add
                (proof-server-send-to-prover (coq-xml-status)))))))
 
 (defvar coq-current-goal 1
@@ -1424,7 +1427,6 @@ Near here means PT is either inside or just aside of a comment."
      proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result
      proof-add-to-queue-fun 'proof-server-add-to-queue
      proof-server-retract-buffer-hook 'coq-reset-all-state))
-
 
   ;; prooftree config
   (setq

@@ -52,9 +52,9 @@
 
 ;;;###autoload
 (defun proof-server-send-to-prover (s &optional needs-formatting)
-  '(message (format "proof-server-send-to-prover: %s" s))
+  (message (format "proof-server-send-to-prover: %s" s))
   (when (and s (not (string-equal s "")))
-    (if needs-formatting (message "needs formatting") (message "no formatting"))
+    '(if needs-formatting (message "needs formatting") (message "no formatting"))
     (and proof-server-send-to-prover-fun 
 	 ;; we format here so we see what's sent by emacsy
 	 (let ((cmd (if needs-formatting (proof-server-format-command s) s)))
