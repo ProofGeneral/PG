@@ -18,7 +18,6 @@
 
 (defconst proof-server-important-settings
   '(proof-server-send-to-prover-fun
-    proof-server-process-response-fun
     ))
 
 (defvar proof-last-span nil
@@ -60,23 +59,8 @@ derived Emacs mode; here, we call the procedure directly."
 				(proof-server-invisible-command c t))
 			      (proof-assistant-settings-cmds))))))))
 
-;;;###autoload
-(defun proof-server-filter (process response)
-  "The filter function associated with the prover process.
-The first argument is the process object, the second is the response from the prover."
-  (message "Called server filter")
-  (message (concat "Message is " response))
-
-  (if proof-server-log-traffic
-      (proof-server-log proof-assistant response))
-
-  ; parse response in prover-specific way
-  (proof-server-process-response response)
-  ; take care of display buffers
-  (proof-server-filter-manage-output response))
-
 ;; use proof-action-list to create output 
-(defun proof-server-filter-manage-output (response)
+(defun proof-server-manage-output (response)
 
   ;; code borrowed from proof-shell.el, proof-shell-filter-manage-output
 
@@ -123,7 +107,7 @@ with proof-shell-ready-prover."
 	      (message "Started prover process")
 	      (setq proof-server-process the-process
 		    proof-server-buffer server-buffer)
-	      (set-process-filter proof-server-process 'proof-server-filter)
+	      ;; NB we don't associate a filter with process here
 	      (proof-prover-make-associated-buffers)
 	      (proof-server-config-done))
 	  (message "Failed to start prover"))))
@@ -244,7 +228,7 @@ the queue region.
 
 The return value is non-nil if the action list is now empty or
 contains only invisible elements for Prooftree synchronization."
-  '(message "called proof-server-exec-loop")
+  (message "called proof-server-exec-loop")
   (unless (null proof-action-list)
     (save-excursion
       (if proof-script-buffer		      ; switch to active script

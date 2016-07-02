@@ -58,8 +58,6 @@
     (and proof-server-send-to-prover-fun 
 	 ;; we format here so we see what's sent by emacsy
 	 (let ((cmd (if needs-formatting (proof-server-format-command s) s)))
-	   (when proof-server-log-traffic
-	     (proof-server-log "emacs" cmd))
 	   (funcall proof-server-send-to-prover-fun cmd)))))
 
 ;;;###autoload

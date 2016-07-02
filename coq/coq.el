@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;; coq.el --- Major mode for Coq proof assistant  -*- coding: utf-8 -*-
 ;; Copyright (C) 1994-2009 LFCS Edinburgh.
 ;; Authors: Healfdene Goguen, Pierre Courtieu
@@ -499,7 +501,7 @@ annotation-start) if found."
 
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
-(add-hook 'proof-retract-command-hook 'coq-reset-state-vars)
+'(add-hook 'proof-retract-command-hook 'coq-reset-state-vars)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
@@ -518,16 +520,17 @@ annotation-start) if found."
          ;; processed externally (i.e. Require, etc), nothing to do
          ;; (should really be unlocked when we undo the Require).
          nil)
-        (t (let* (ans (naborts 0) (nundos 0)
-                      (proofdepth (coq-get-span-proofnum span))
-                      (proofstack (coq-get-span-proofstack span))
-                      (span-staten (coq-get-span-state-id span))
-                      (naborts (count-not-intersection
-                                coq-last-but-one-proofstack proofstack)))
+        (t (let* (ans 
+                  (naborts 0) (nundos 0)
+                  (proofdepth (coq-get-span-proofnum span))
+                  (proofstack (coq-get-span-proofstack span))
+                  (span-staten (coq-get-span-state-id span))
+                  (naborts (count-not-intersection
+                            coq-last-but-one-proofstack proofstack)))
              (message "coq-server-find-and-forget, in default case")
              ;; clean the goals buffer otherwise the old one will still be displayed
              (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-             '(progn
+             (progn
                (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
                (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
                (message "coq-last-but-one-state-id: %s  span-staten: %s" coq-last-but-one-state-id  span-staten))
@@ -1303,9 +1306,13 @@ Near here means PT is either inside or just aside of a comment."
     (coq-display-debug-goal)
     (message "Prover expects input in %s buffer (if debug mode: h<return> for help))" proof-shell-buffer)))
 
+;; delay creating the XML so it will have the right state-id
+;; the returned lambda captures the passed item, which is why 
+;; this file needs lexical binding
+(defun coq-make-add-item-thunk (item)
+  (lambda () (coq-xml-add-item item)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defun coq-mode-config ()
   ;; SMIE needs this.
@@ -1418,7 +1425,7 @@ Near here means PT is either inside or just aside of a comment."
   (when (pg-uses-server)
     (setq 
      proof-server-send-to-prover-fun 'coq-server-send-to-prover
-     proof-server-format-command-fun 'coq-xml-add-item
+     proof-server-format-command-fun 'coq-make-add-item-thunk
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd (coq-xml-init)
      proof-ready-prover-fun 'proof-server-ready-prover

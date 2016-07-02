@@ -72,6 +72,7 @@ If locked span already has a state number, then do nothing. Also updates
       (message "setting state-id to %s in %s" coq-last-but-one-state-id sp)
       (coq-set-span-state-id sp coq-last-but-one-state-id))
     (setq coq-last-but-one-state-id (current-state-id-from-info infos))
+    (message "set last but one state id: %s" coq-last-but-one-state-id)
     ;; set goalcmd property if this is a goal start
     ;; (ie proofstack has changed and not a save cmd)
     (progn 

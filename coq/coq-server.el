@@ -1,7 +1,7 @@
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
 (require 'xml)
-(require 'tq)
+(require 'coq-tq)
 (require 'proof-queue)
 (require 'proof-server)
 (require 'proof-script)
@@ -10,6 +10,9 @@
 (require 'coq-stateinfo)
 (require 'coq-xml)
 (require 'cl-lib)
+
+(eval-when-compile 
+  (require 'cl))
 
 (defvar coq-server--protocol-buffer-name "*coq-protocol-debug*")
 (defvar coq-server-protocol-buffer (get-buffer-create coq-server--protocol-buffer-name))
@@ -117,6 +120,7 @@
 
 ;; invariant: goals is non-empty
 (defun coq-server--display-goals (goals)
+  (message "coq-server--display-goals")
   (let* ((num-goals (length goals))
 	 (goal1 (car goals))
 	 (goals-rest (cdr goals))
@@ -160,7 +164,7 @@
 (defun coq-server--handle-item (item in-good-value level) 
   ;; in-good-value means, are we looking at a subterm of a value response
   ;; level is indentation for logging
-  '(message (format "coq-server--handle-item: %s %s %s" item in-good-value level))
+  (message (format "coq-server--handle-item: %s %s %s" item in-good-value level))
   (insert (make-string level ?\s))
   ;; value tags with fail contain an untagged string in the body, probably a bug
   (pcase (or (stringp item) (coq-xml-tag item))
@@ -176,6 +180,7 @@
        (insert (format "state_id: %s\n" state-id))
        (when in-good-value
 	 (setq coq-current-state-id state-id) ; update global state
+	 (message "after setting, curr state id: %s" coq-current-state-id)
 	 ;; if there are no more Adds to do, get goal and status
 	 (if (null (cdr proof-action-list))
 	     (progn
@@ -259,7 +264,7 @@
       (insert (format "untagged item: %s\n" item)))))
 
 (defun coq-server--handle-feedback (xml)
-  '(message (format "got feedback: %s" xml))
+  (message (format "got feedback: %s" xml))
   (let* ((object (coq-xml-attr-value xml 'object))
 	 (route (coq-xml-attr-value xml 'route))
 	 (children (xml-node-children xml))) ; state_id, feedback_content 
@@ -288,7 +293,7 @@
 	    (coq-server--handle-item child nil 1)))))))
 
 (defun coq-server--handle-message (xml)
-  '(message (format "got message: %s" xml))
+  (message (format "got message: %s" xml))
   (with-current-buffer coq-server-protocol-buffer
     (insert "*Message:\n")
     (dolist (child (xml-node-children xml))
@@ -326,11 +331,13 @@
 	 (let ((children (xml-node-children xml)))
 	   (dolist (child children)
 	     (coq-server--handle-item child t 1))))
-	(default (insert (format "Unknown value status: %s" xml)))))))
+	(default (insert (format "Unknown value status: %s" xml))))))
+  ;; now that we've processed value, ready to send next item
+  (proof-server-exec-loop))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response)
-  '(message "coq-proof-server-process-response: %s" response)
+  (message "coq-proof-server-process-response: %s" response)
   (coq-server--append-response response)
   (let ((xml (coq-server--get-next-xml)))
     (while xml
@@ -344,18 +351,18 @@
 
 (defun coq-server-handle-tq-response (closure response)
   (message "from tq, got response: %s" response)
-  (proof-server-log "coqtop" response)
-  (coq-server-process-response response))
+  (coq-server-process-response response)
+  ;; needed to advance proof-action-list
+  (proof-server-manage-output response))
 
 ;; send data to Coq by sending to process
 ;; called by proof-server-send-to-prover
 ;; do not call directly
 (defun coq-server-send-to-prover (s)
-  '(message "setting pending response")
-  ;; wait until we have the last response we need
-  (message "queueing to send to process: %s" s)
-  ;; newline to force response (inefficient, have to traverse string)
-  (tq-enqueue coq-server-transaction-queue (concat s "\n") end-of-response-regexp
+  (message "queueing to send to process: %s" 
+	   (or (and (stringp s) s)
+	       (and (functionp s) (funcall s))))
+  (tq-enqueue coq-server-transaction-queue s end-of-response-regexp
 	      ;; "closure" argument, passed to handler below
 	      nil 
 	      ;; handler gets closure and coqtop response

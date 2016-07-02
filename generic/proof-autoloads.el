@@ -676,7 +676,7 @@ The queue mode is set to 'advancing
 ;;;;;;  proof-server-errorp proof-server-interruptp proof-add-to-queue
 ;;;;;;  proof-invisible-command-invisible-result proof-invisible-cmd-get-result
 ;;;;;;  proof-invisible-command proof-ready-prover) "proof-resolver"
-;;;;;;  "proof-resolver.el" (22389 36921 917909 430000))
+;;;;;;  "proof-resolver.el" (22390 40733 921879 794000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -740,8 +740,8 @@ The queue mode is set to 'advancing
 ;;;;;;  proof-insert-pbp-command proof-script-generic-parse-find-comment-end
 ;;;;;;  proof-register-possibly-new-processed-file pg-set-span-helphighlights
 ;;;;;;  proof-locked-region-empty-p proof-locked-region-full-p proof-unprocessed-begin
-;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22389
-;;;;;;  30876 337888 138000))
+;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22390
+;;;;;;  39120 781915 53000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -833,9 +833,8 @@ finish setup which depends on specific proof assistant configuration.
 ;;;### (autoloads (proof-server-exec-loop proof-server-add-to-queue
 ;;;;;;  proof-server-insert proof-server-invisible-command-invisible-result
 ;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
-;;;;;;  proof-server-start proof-server-ready-prover proof-server-filter
-;;;;;;  proof-server-config-done) "proof-server" "proof-server.el"
-;;;;;;  (22389 39767 477919 452000))
+;;;;;;  proof-server-start proof-server-ready-prover proof-server-config-done)
+;;;;;;  "proof-server" "proof-server.el" (22390 44839 89790 64000))
 ;;; Generated autoloads from proof-server.el
 
 (autoload 'proof-server-config-done "proof-server" "\
@@ -845,12 +844,6 @@ For shell modes, the config-done procedure is called when instantiating an
 derived Emacs mode; here, we call the procedure directly.
 
 \(fn)" nil nil)
-
-(autoload 'proof-server-filter "proof-server" "\
-The filter function associated with the prover process.
-The first argument is the process object, the second is the response from the prover.
-
-\(fn PROCESS RESPONSE)" nil nil)
 
 (autoload 'proof-server-ready-prover "proof-server" "\
 Compare with proof-shell-ready-prover, for proof shells. 
@@ -1218,8 +1211,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22390 36916
-;;;;;;  426672 388000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22390 44947
+;;;;;;  973799 270000))
 
 ;;;***
 
