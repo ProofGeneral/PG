@@ -68,9 +68,6 @@ If locked span already has a state number, then do nothing. Also updates
   ;; sp = last locked span, which we want to fill with prompt infos
   (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
 	(infos (coq-current-proof-info)))
-    (unless (or (not sp) (coq-get-span-state-id sp))
-      (message "setting state-id to %s in %s" coq-last-but-one-state-id sp)
-      (coq-set-span-state-id sp coq-last-but-one-state-id))
     (setq coq-last-but-one-state-id (current-state-id-from-info infos))
     (message "set last but one state id: %s" coq-last-but-one-state-id)
     ;; set goalcmd property if this is a goal start

@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
 (require 'xml)
@@ -27,6 +29,15 @@
 (defvar coq-server-transaction-queue nil)
 
 (defvar end-of-response-regexp "</value>")
+
+;; delay creating the XML so it will have the right state-id
+;; the returned lambda captures the passed item, which is why 
+;; this file needs lexical binding
+(defun coq-server-make-add-command-thunk (cmd span)
+  (lambda () 
+    (coq-set-span-state-id span coq-current-state-id)
+    (message "for span: %s set state-id to: %s" span coq-current-state-id)
+    (coq-xml-add-item cmd)))
 
 ;; buffer for responses from coqtop process, nothing to do with user's response buffer
 (defun coq-server--append-response (s)

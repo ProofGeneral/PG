@@ -18,6 +18,7 @@
 
 (defconst proof-server-important-settings
   '(proof-server-send-to-prover-fun
+    proof-server-make-command-thunk-fun
     ))
 
 (defvar proof-last-span nil
@@ -147,13 +148,14 @@ with proof-shell-ready-prover."
 				 'no-error-display))
 
 ;;;###autoload
-(defun proof-server-insert (strings action &optional scriptspan)
+(defun proof-server-insert (strings action span)
   "Send STRINGS to the prover.
 
 STRINGS is a list of strings (which will be concatenated), or a
 single string.
 
-The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API."
+The ACTION is unused here (hangover from proof-shell-insert), 
+while SPAN is the Emacs span containing the command."
   (assert (or (stringp strings)
 	      (listp strings))
 	  nil "proof-server-insert: expected string or list argument")
@@ -161,8 +163,11 @@ The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''
 
   (let ((string (if (stringp strings) strings
 		  (apply 'concat strings))))
-    ;; t means string should be formatted for prover
-    (proof-server-send-to-prover string t)))
+    (proof-server-queue-command-and-span-for-prover string span)))
+
+(defun proof-server-queue-command-and-span-for-prover (string span)
+  (let ((thunk (funcall proof-server-make-command-thunk-fun string span)))
+    (proof-server-send-to-prover thunk)))
 
 (defsubst proof-server-insert-action-item (item)
   "Send ITEM from `proof-action-list' to prover."

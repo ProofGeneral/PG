@@ -13,8 +13,6 @@
 ;; not see if we logged the sent strings at the time of queueing (a word with 
 ;; 5 consecutive vowels!).
 
-;; We've marked the changes with the word MODIFIED.
-
 ;; ****************************************************************************
 
 ;; Copyright (C) 1985-1987, 1992, 2001-2013 Free Software Foundation,

@@ -46,19 +46,11 @@
        (funcall proof-server-proof-completedp-fun resp)))
 
 ;;;###autoload
-(defun proof-server-format-command (cmd)
-  (and proof-server-format-command-fun 
-       (funcall proof-server-format-command-fun cmd)))
-
-;;;###autoload
-(defun proof-server-send-to-prover (s &optional needs-formatting)
-  (message (format "proof-server-send-to-prover: %s" s))
-  (when (and s (not (string-equal s "")))
-    '(if needs-formatting (message "needs formatting") (message "no formatting"))
+(defun proof-server-send-to-prover (string-or-fun)
+  (message "proof-server-send-to-prover: %s" string-or-fun)
+  (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
     (and proof-server-send-to-prover-fun 
-	 ;; we format here so we see what's sent by emacsy
-	 (let ((cmd (if needs-formatting (proof-server-format-command s) s)))
-	   (funcall proof-server-send-to-prover-fun cmd)))))
+	 (funcall proof-server-send-to-prover-fun string-or-fun))))
 
 ;;;###autoload
 (defun proof-server-process-response (resp)

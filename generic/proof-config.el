@@ -900,8 +900,8 @@ data needs formatting before sending."
   :type 'function
   :group 'proof-server)
 
-(defcustom proof-server-format-command-fun nil
-   "The procedure to format a command for the prover."
+(defcustom proof-server-make-command-thunk-fun nil
+   "The procedure to thunkify a command for the prover."
    :type 'function
    :group 'proof-server)
 
