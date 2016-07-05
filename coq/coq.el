@@ -524,29 +524,44 @@ annotation-start) if found."
                   (naborts 0) (nundos 0)
                   (proofdepth (coq-get-span-proofnum span))
                   (proofstack (coq-get-span-proofstack span))
-                  (span-staten (coq-get-span-state-id span))
+                  (span-state-id (coq-get-span-state-id span))
                   (naborts (count-not-intersection
                             coq-last-but-one-proofstack proofstack)))
              (message "coq-server-find-and-forget, in default case")
              ;; clean the goals buffer otherwise the old one will still be displayed
-             (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
+             (when (and proofdepth (= proofdepth 0)) 
+               (proof-clean-buffer proof-goals-buffer))
              (progn
                (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
                (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
-               (message "coq-last-but-one-state-id: %s  span-staten: %s" coq-last-but-one-state-id  span-staten))
+               (message "coq-last-but-one-state-id: %s  span-state-id: %s" coq-last-but-one-state-id  span-state-id))
              (unless (and
                       ;; return nil (was proof-no-command) in this case:
                       ;; this is more efficient as backtrack x y z may be slow
                       (equal coq-last-but-one-proofstack proofstack)
-                      (= coq-last-but-one-proofnum proofdepth)
-                      (string-equal coq-last-but-one-state-id span-staten))
+                      (and proofdepth (= coq-last-but-one-proofnum proofdepth))
+                      (string-equal coq-last-but-one-state-id span-state-id))
                (message "coq-server-find-and-forget, sending backtrack cmd")
-               (setq coq-server-pending-state-id span-staten)
                (coq-server--clear-response-buffer)
-               (proof-server-send-to-prover (coq-xml-edit-at span-staten))
-               ;; potential race condition here ?
-               ;; need to get response from Status to update state variables before user does next Add
-               (proof-server-send-to-prover (coq-xml-status)))))))
+               ;; if there's a state id in the span, send Edit-at command to Coq
+               ;; spans for comments don't have a state id 
+               (message "span-state-id: %s (span-start span): %s  coq-retract-buffer-state-id: %s"
+                        span-state-id (span-start span) coq-retract-buffer-state-id)
+               (cond
+                ((not (null span-state-id))
+                 (message "retracting to span-state-id: %s" span-state-id)
+                 (setq coq-server-pending-state-id span-state-id)
+                 (proof-server-send-to-prover (coq-xml-edit-at span-state-id))
+                 ;; potential race condition here ?
+                 ;; need to get response from Status to update state variables before user does next Add
+                 (proof-server-send-to-prover (coq-xml-status)))
+                ((and (= (span-start span) 1) coq-retract-buffer-state-id)
+                 (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
+                 (setq coq-server-pending-state-id coq-retract-buffer-state-id)
+                 (proof-server-send-to-prover (coq-xml-edit-at coq-retract-buffer-state-id))
+                 (proof-server-send-to-prover (coq-xml-status)))
+                (t (message "retraction in funny case")
+                   nil)))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
@@ -1389,7 +1404,6 @@ Near here means PT is either inside or just aside of a comment."
   ;; (setq indent-region-function 'coq-indent-region)
   
   
-
   ;; span menu
   (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
 

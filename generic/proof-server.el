@@ -42,8 +42,8 @@ derived Emacs mode; here, we call the procedure directly."
 
 	    ;; First, configure PGIP preferences (even before init cmd)
 	    ;; available: this allows setting them after the init cmd.
-;; TODO ????
-;;	    (proof-maybe-askprefs)
+	    ;; TODO ????
+	    ;; (proof-maybe-askprefs)
 
 	    ;; Now send the initialisation commands.
 	    (unwind-protect
@@ -53,7 +53,7 @@ derived Emacs mode; here, we call the procedure directly."
 		    (if (listp proof-server-init-cmd)
 			(mapc 'proof-server-invisible-command-invisible-result
 				proof-server-init-cmd)
-		      (proof-server-invisible-command-invisible-result 
+		      (proof-server-send-to-prover
 		       proof-server-init-cmd)))
 		  (if proof-assistant-settings
 		      (mapcar (lambda (c)

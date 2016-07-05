@@ -191,6 +191,8 @@
        (insert (format "state_id: %s\n" state-id))
        (when in-good-value
 	 (setq coq-current-state-id state-id) ; update global state
+	 (unless coq-retract-buffer-state-id  ; happens once per buffer
+	   (setq coq-retract-buffer-state-id state-id))
 	 (message "after setting, curr state id: %s" coq-current-state-id)
 	 ;; if there are no more Adds to do, get goal and status
 	 (if (null (cdr proof-action-list))
