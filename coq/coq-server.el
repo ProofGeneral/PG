@@ -272,35 +272,54 @@
     (default
       (insert (format "untagged item: %s\n" item)))))
 
+(defun coq-server--find-span-with-state-id (state-id)
+  (with-current-buffer proof-script-buffer
+    (let ((all-spans (overlays-in (point-min) (point-max))))
+      (car (cl-remove-if-not 
+	    (lambda (span) (equal (span-property span 'state-id) state-id))
+	    all-spans)))))
+
 (defun coq-server--handle-feedback (xml)
   (message (format "got feedback: %s" xml))
   (let* ((object (coq-xml-attr-value xml 'object))
 	 (route (coq-xml-attr-value xml 'route))
-	 (children (xml-node-children xml))) ; state_id, feedback_content 
+	 (children (xml-node-children xml)) ; state_id, feedback_content 
+	 in-error
+	 error-state-id
+	 error-start
+	 error-stop)
     (with-current-buffer coq-server-protocol-buffer
       (insert "*Feedback:\n")
       (insert (format " object: %s  route: %s\n" object route))
-      (unless (string-equal object "state")
-	(dolist (child children)
-	  (pcase (coq-xml-tag child)
-	    (`feedback_content 
-	     (let ((feedback-value (coq-xml-attr-value child 'val)))
-	       (insert (format " content value: %s\n" feedback-value))
-	       (let ((feedback-children (xml-node-children child)))
-		 (dolist (feedback-child feedback-children)
-		   (coq-server--handle-item feedback-child nil 1)))
-	       (when (string-equal feedback-value 'errormsg)
-		 (let* ((body (coq-xml-body child))
-			(loc (nth 0 body))
-			(loc-start (string-to-number (coq-xml-attr-value loc 'start)))
-			(loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
-			(msg-str (nth 1 body))
-			(msg (coq-xml-body1 msg-str)))
-		   (pg-response-clear-displays)
-		   (coq--highlight-error loc-start (- loc-stop loc-start))
-		   (coq--display-response msg)))))
-	    (default
-	      (coq-server--handle-item child nil 1))))))))
+      (dolist (child children)
+	(pcase (coq-xml-tag child)
+	  (`feedback_content 
+	   (let ((feedback-value (coq-xml-attr-value child 'val)))
+	     (insert (format " content value: %s\n" feedback-value))
+	     (let ((feedback-children (xml-node-children child)))
+	       (dolist (feedback-child feedback-children)
+		 (coq-server--handle-item feedback-child nil 1)))
+	     (when (string-equal feedback-value "errormsg")
+	       (setq in-error t)
+	       (let* ((body (coq-xml-body child))
+		      (loc (nth 0 body))
+		      (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
+		      (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+		      (msg-str (nth 1 body))
+		      (msg (coq-xml-body1 msg-str)))
+		 (setq error-start loc-start)
+		 (setq error-stop loc-stop)
+		 (pg-response-clear-displays)
+		 (coq--highlight-error loc-start (- loc-stop loc-start))
+		 (coq--display-response msg)))))
+	  (`state_id ;; may not be an error, but save state id just in case
+	   (setq error-state-id (coq-xml-body1 child))))))
+    (when in-error
+      (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
+	;; START HERE TODO ****************** 
+	;; make sure we have right error span
+	;; color span with something reddish
+	(message "error span: %s" error-span)))))
 
 (defun coq-server--handle-message (xml)
   (with-current-buffer coq-server-protocol-buffer
