@@ -6,7 +6,11 @@
 ;; well as strings. That allows us to invoke the thunk just before sending 
 ;; its results to the process, which allows capturing state variables that 
 ;; may have been changed by previous responses, in particular the state-id 
-;; in a <value> response from coqtop.
+;; in a <value> response from coqtop. The thunk returns a list consisting 
+;; of the span associated with a Coq sentence and the sentence wrapped 
+;; in XML, suitable to send to coqtop. We return the span along with the 
+;; coqtop response so we can set the state id in the span metadata.
+;; 
 
 ;; The other modification is that we can log the strings sent to the process.
 ;; That way, we see the correct order of calls and responses, which we would 
@@ -92,16 +96,24 @@
 
 ;;; added for Coq
 
+(defvar tq-current-span nil)
+
 (defun tq-maybe-log (src str)
   (when proof-server-log-traffic
     (proof-server-log src str)))
 
 (defun tq-log-and-send (tq question)
-  (let ((str (cond 
-	      ((stringp question) question)
-	      ((functionp question) (funcall question))
-	      (t (error "tq-queue-pop: expected string or function, got: %s" (type-of question))))))
+  (let* ((str-and-span 
+	 (cond 
+	  ((stringp question) (list question nil))
+	  ((functionp question) (funcall question))
+	  (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
+	 (str (car str-and-span))
+	 (span (cadr str-and-span)))
+    (message "str: %s span: %s" str span)
     (tq-maybe-log "emacs" str)
+    ;; span to be returned with coqtop response
+    (setq tq-current-span span) 
     (process-send-string (tq-process tq) str)))
 
 ;;; Core functionality
@@ -131,7 +143,9 @@ to a tcp server on another machine."
   (setcar tq (cdr (car tq)))
   (let ((question (tq-queue-head-question tq)))
     (condition-case nil
-	(tq-log-and-send tq question) ;; MODIFIED
+	(progn
+	  (message "type of question: %s" (type-of question))
+	(tq-log-and-send tq question)) ;; MODIFIED
       (error nil)))
   (null (car tq)))
 
@@ -153,6 +167,7 @@ This produces more reliable results with some processes."
 		   (not (tq-queue tq)))))
     (tq-queue-add tq (unless sendp question) regexp closure fn)
     (when sendp
+      (message "type of question: %s" (type-of question))
       (tq-log-and-send tq question)))) ;; MODIFIED
 
 (defun tq-close (tq)
@@ -186,7 +201,6 @@ This produces more reliable results with some processes."
 	  (goto-char (point-min))
 	  (if (re-search-forward (tq-queue-head-regexp tq) nil t)
 	      (let ((answer (buffer-substring (point-min) (point))))
-		(message "ANSWER: %s" answer)
 		(delete-region (point-min) (point))
 		(unwind-protect
 		    (condition-case nil
@@ -194,7 +208,8 @@ This produces more reliable results with some processes."
 			  (tq-maybe-log "coqtop" answer) ;; MODIFIED
 			  (funcall (tq-queue-head-fn tq)
 				   (tq-queue-head-closure tq)
-				   answer))
+				   answer 
+				   tq-current-span))
 		      (error nil))
 		  (tq-queue-pop tq))
 		(tq-process-buffer tq))))))))

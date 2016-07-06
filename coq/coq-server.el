@@ -21,6 +21,9 @@
 
 (defvar coq-server-pending-state-id nil)
 
+(defvar coq-server--current-span nil
+  "Span associated with last response")
+
 ;; buffer for gluing coqtop responses into XML
 ;; leading space makes buffer invisible, for the most part
 (defvar coq-server--response-buffer-name " *coq-responses*")
@@ -35,8 +38,7 @@
 ;; this file needs lexical binding
 (defun coq-server-make-add-command-thunk (cmd span)
   (lambda () 
-    (coq-set-span-state-id span coq-current-state-id)
-    (coq-xml-add-item cmd)))
+    (list (coq-xml-add-item cmd) span)))
 
 ;; buffer for responses from coqtop process, nothing to do with user's response buffer
 (defun coq-server--append-response (s)
@@ -166,7 +168,7 @@
   ;; used to be called as a hook at end of proof-done-advancing
   (coq-set-state-infos))
 	      
-(defun coq-server--handle-item (item in-good-value level) 
+(defun coq-server--handle-item (item in-good-value level)
   ;; in-good-value means, are we looking at a subterm of a value response
   ;; level is indentation for logging
   (insert (make-string level ?\s))
@@ -184,6 +186,8 @@
        (insert (format "state_id: %s\n" state-id))
        (when in-good-value
 	 (setq coq-current-state-id state-id) ; update global state
+	 (when coq-server--current-span
+	   (coq-set-span-state-id coq-server--current-span state-id))
 	 (unless coq-retract-buffer-state-id  ; happens once per buffer
 	   (setq coq-retract-buffer-state-id state-id))
 	 ;; if there are no more Adds to do, get goal and status
@@ -276,26 +280,27 @@
     (with-current-buffer coq-server-protocol-buffer
       (insert "*Feedback:\n")
       (insert (format " object: %s  route: %s\n" object route))
-      (dolist (child children)
-	(pcase (coq-xml-tag child)
-	  (`feedback_content 
-	   (let ((feedback-value (coq-xml-attr-value child 'val)))
-	     (insert (format " content value: %s\n" feedback-value))
-	     (let ((feedback-children (xml-node-children child)))
-	       (dolist (feedback-child feedback-children)
-		 (coq-server--handle-item feedback-child nil 1)))
-	     (when (string-equal feedback-value 'errormsg)
-	       (let* ((body (coq-xml-body child))
-		      (loc (nth 0 body))
-		      (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
-		      (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
-		      (msg-str (nth 1 body))
-		      (msg (coq-xml-body1 msg-str)))
-		 (pg-response-clear-displays)
-		 (coq--highlight-error loc-start (- loc-stop loc-start))
-		 (coq--display-response msg)))))
-	  (default
-	    (coq-server--handle-item child nil 1)))))))
+      (unless (string-equal object "state")
+	(dolist (child children)
+	  (pcase (coq-xml-tag child)
+	    (`feedback_content 
+	     (let ((feedback-value (coq-xml-attr-value child 'val)))
+	       (insert (format " content value: %s\n" feedback-value))
+	       (let ((feedback-children (xml-node-children child)))
+		 (dolist (feedback-child feedback-children)
+		   (coq-server--handle-item feedback-child nil 1)))
+	       (when (string-equal feedback-value 'errormsg)
+		 (let* ((body (coq-xml-body child))
+			(loc (nth 0 body))
+			(loc-start (string-to-number (coq-xml-attr-value loc 'start)))
+			(loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+			(msg-str (nth 1 body))
+			(msg (coq-xml-body1 msg-str)))
+		   (pg-response-clear-displays)
+		   (coq--highlight-error loc-start (- loc-stop loc-start))
+		   (coq--display-response msg)))))
+	    (default
+	      (coq-server--handle-item child nil 1))))))))
 
 (defun coq-server--handle-message (xml)
   (with-current-buffer coq-server-protocol-buffer
@@ -340,10 +345,11 @@
   (proof-server-exec-loop))
 
 ;; process XML response from Coq
-(defun coq-server-process-response (response)
+(defun coq-server-process-response (response span)
   (coq-server--append-response response)
   (with-current-buffer coq-server-response-buffer
     (coq-server--unescape-buffer))
+  (setq coq-server--current-span span)
   (let ((xml (coq-server--get-next-xml)))
     (while xml
       (pcase (coq-xml-tag xml)
@@ -353,8 +359,8 @@
 	(default (message "unknown response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
 
-(defun coq-server-handle-tq-response (closure response)
-  (coq-server-process-response response)
+(defun coq-server-handle-tq-response (closure response span)
+  (coq-server-process-response response span)
   ;; needed to advance proof-action-list
   (proof-server-manage-output response))
 
