@@ -499,15 +499,15 @@ current buffer (which contains the Require command) to
 
 ;;; kill coqtop on script buffer change
 
-(defun coq-switch-buffer-kill-proof-shell ()
-  "Kill the proof shell without asking the user.
+(defun coq-switch-buffer-kill-proof-server ()
+  "Kill the proof server without asking the user.
 This function is for `proof-deactivate-scripting-hook'. It kills
-the proof shell without asking the user for
+the proof server without asking the user for
 confirmation (assuming she agreed already on switching the active
 scripting buffer). This is needed to ensure the load path is
 correct in the new scripting buffer."
-  (unless proof-shell-exit-in-progress
-    (proof-shell-exit t)))
+  (unless proof-server-exit-in-progress
+    (proof-server-exit t)))
 
 ;; This is now always done (in coq.el)
 ;(add-hook 'proof-deactivate-scripting-hook

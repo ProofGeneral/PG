@@ -1025,6 +1025,7 @@ an error is signalled here."
   "Deactivate scripting without asking questions or raising errors.
 If the locked region is full, register the file as processed.
 Otherwise retract it.  Errors are ignored"
+  (message "CALLED DEACTIVATE SCRIPTING AUTO")
   (ignore-errors
     (proof-deactivate-scripting
      (proof-with-script-buffer
@@ -1331,8 +1332,6 @@ Argument SPAN has just been processed."
 
     (proof-set-locked-end end)
 
-    (message (myformat "proof-save-command-regexp %s cmd %s" proof-save-command-regexp cmd))
-    (message (myformat "(proof-string-match-safe proof-save-command-regexp cmd): %s" (proof-string-match-safe proof-save-command-regexp cmd)))
     (if (span-live-p proof-queue-span)
 	(proof-set-queue-start end))
 
@@ -2338,7 +2337,6 @@ with something different."
 (defconst proof-script-important-settings
   '(proof-script-comment-start			;
     proof-script-comment-end
-    proof-save-command-regexp		; [actually, some provers may not have save command]
 ;    proof-goal-command-regexp		; not needed if proof-goal-command-p is set
 ;    proof-goal-with-hole-regexp		; non-essential?
 ;    proof-save-with-hole-regexp		; non-essential?

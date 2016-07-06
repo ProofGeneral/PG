@@ -13,6 +13,13 @@
   :group 'proof-server)
 
 (defvar proof-server-process nil)
+(defvar proof-server-buffer nil)
+
+(defvar proof-server-exit-in-progress nil
+  "A flag indicating that the current proof process is about to exit.
+This flag is set for the duration of `proof-server-kill-function'
+to tell hooks in `proof-deactivate-scripting-hook' to refrain
+from calling `proof-server-exit'.")
 
 (defvar proof-server-delayed-output-flags nil)
 
@@ -24,12 +31,20 @@
 (defvar proof-last-span nil
   "Last span we've pulled off proof-action-list")
 
+(defun proof-server-clear-state ()
+  "Clear internal state of proof shell."
+  (setq proof-action-list nil
+	;; proof-included-files-list nil  ??
+	;; proof-nesting-depth 0 ??
+	proof-prover-last-output ""))
+
 ;;;###autoload
 (defun proof-server-config-done ()
   "Initialise the specific prover after the child has been configured.
 When using server mode, should call this function at the end of processing. 
 For shell modes, the config-done procedure is called when instantiating an 
 derived Emacs mode; here, we call the procedure directly."
+  (message "SERVER CONFIG DONE")
   (dolist (sym proof-server-important-settings)
     (proof-warn-if-unset "proof-server-config-done" sym))
 
@@ -37,6 +52,9 @@ derived Emacs mode; here, we call the procedure directly."
 	  (progn
 	    ;; Also ensure that proof-action-list is initialised.
 	    (setq proof-action-list nil)
+	    (with-current-buffer proof-server-buffer
+			 (add-hook 'kill-buffer-hook 'proof-server-kill-function t t))
+
 	    ;; Send main intitialization command and wait for it to be
 	    ;; processed.
 
@@ -48,13 +66,12 @@ derived Emacs mode; here, we call the procedure directly."
 	    ;; Now send the initialisation commands.
 	    (unwind-protect
 		(progn
+		  (message "RUNNING SERVER INIT HOOKS")
 		  (run-hooks 'proof-server-init-hook)
 		  (when proof-server-init-cmd
-		    (if (listp proof-server-init-cmd)
-			(mapc 'proof-server-invisible-command-invisible-result
-				proof-server-init-cmd)
-		      (proof-server-send-to-prover
-		       proof-server-init-cmd)))
+		    (message "SENDING INIT CMD")
+		    (proof-server-send-to-prover
+		     proof-server-init-cmd))
 		  (if proof-assistant-settings
 		      (mapcar (lambda (c)
 				(proof-server-invisible-command c t))
@@ -91,8 +108,9 @@ with proof-shell-ready-prover."
 
 ;;;###autoload
 (defun proof-server-start ()
-  (message "Called proof-server-start")
+  (message "Called proof-server-start with process: %s" proof-server-process)
   (unless proof-server-process
+    (message "Starting prover")
     (let* ((command-line-and-names (prover-command-line-and-names))
 	   (prog-command-line (car command-line-and-names))
 	   (prog-name-list (cdr command-line-and-names)))
@@ -171,14 +189,11 @@ while SPAN is the Emacs span containing the command."
 
 (defsubst proof-server-insert-action-item (item)
   "Send ITEM from `proof-action-list' to prover."
-  (message "proof-server-insert-action-item: %s" item)
   (proof-server-insert (nth 1 item) (nth 2 item) (nth 0 item)))
 
 ;;;###autoload
 (defun proof-server-add-to-queue (queueitems &optional queuemode)
   "add item to queue for 'server mode"
-  '(message "Called proof-server-add-to-queue")
-  '(message (format "Items: %s" queueitems))
 
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
@@ -187,23 +202,20 @@ while SPAN is the Emacs span containing the command."
 
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-prover-slurp-comments))) 
-	(message "Calling callback on items %s" cbitems)
 	(mapc 'proof-prover-invoke-callback cbitems))) 
     ; in proof shell, have stuff about silent mode
     ; not relevant in server mode
     (if proof-action-list ;; something to do
 	(progn
-	  (message "Nonempty proof-action-list")
 	  (when nothingthere  ; start sending commands
 	    '(proof-grab-lock queuemode)
 	    (setq proof-prover-last-output-kind nil) 
-	    (message "INSERTING 1")
 	    (proof-server-insert-action-item (car proof-action-list))))
       (if proof-second-action-list-active
 	  ;; primary action list is empty, but there are items waiting
 	  ;; somewhere else
 	  '(proof-grab-lock queuemode)
-      ;; nothing to do: maybe we completed a list of comments without sending them
+	;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
 
 ;;; TODO: factor out common code with proof shell exec loop
@@ -302,6 +314,95 @@ contains only invisible elements for Prooftree synchronization."
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
 
+(defun proof-server-kill-function ()
+  "Function run when a proof-server buffer is killed.
+Try to shut down the proof process nicely and clear locked
+regions and state variables.  Value for `kill-buffer-hook' in
+shell buffer, called by `proof-shell-bail-out' if process exits."
+  (message "RUNNING SERVER KILL FUNCTION")
+  (let* ((proc     (get-buffer-process (current-buffer)))
+	 (bufname  (buffer-name)))
+    (message "%s, cleaning up and exiting..." bufname)
+    (run-hooks 'proof-shell-signal-interrupt-hook)
+    
+    (redisplay t)
+    (when proc
+      (catch 'exited
+	(setq proof-server-exit-in-progress t)
+	(set-process-sentinel 
+	 proc
+	 (lambda (p m) (throw 'exited t)))
+	
+	;; Turn off scripting (ensure buffers completely processed/undone)
+	(proof-deactivate-scripting-auto)
+	;; TODO wait here?
+	
+	;; Try to shut down politely.
+	(if proof-server-quit-cmd
+	    (proof-server-send-to-prover proof-server-quit-cmd)
+	  (process-send-eof))
+
+	;; Wait for it to die
+	(let ((timecount   (proof-ass quit-timeout))
+	      (proc        (get-buffer-process proof-server-buffer)))
+	  (while (and (> timecount 0)
+		      (memq (process-status proc) '(open run stop)))
+	    (accept-process-output proc 1 nil 1)
+	    (decf timecount)))
+	
+	;; Still there, kill it rudely.
+	(when (memq (process-status proc) '(open run stop))
+	  (message "%s, cleaning up and exiting...killing process" bufname)
+	  (kill-process proc)))
+      (setq proof-server-process nil)
+      (set-process-sentinel proc nil))
+
+    ;; Clear all state
+    (proof-script-remove-all-spans-and-deactivate)
+    (proof-server-clear-state)
+
+    ;; Remove auxiliary windows, trying to stop proliferation of 
+    ;; frames (NB: loses if user has switched buffer in special frame)
+    (if (and proof-multiple-frames-enable
+	     proof-server-fiddle-frames)
+	(proof-delete-all-associated-windows))
+
+    ;; Kill associated buffer
+    (let ((proof-server-buffer nil)) ;; fool kill buffer hooks
+      (dolist (buf '(proof-goals-buffer proof-response-buffer))
+	(when (buffer-live-p (symbol-value buf))
+	  (delete-windows-on (symbol-value buf))
+	  (kill-buffer (symbol-value buf))
+	  (set buf nil))))
+    (setq proof-server-buffer nil)
+    (setq proof-server-exit-in-progress nil)
+    (message "%s exited." bufname)))
+
+(defun proof-server-exit (&optional dont-ask)
+  "Query the user and exit the proof process.
+
+This simply kills the `proof-server-buffer' relying on the hook function
+`proof-server-kill-function' to do the hard work. If optional
+argument DONT-ASK is non-nil, the proof process is terminated
+without confirmation.
+
+The kill function uses `<PA>-quit-timeout' as a timeout to wait
+after sending `proof-server-quit-cmd' before rudely killing the process.
+
+This function should not be called if
+`proof-server-exit-in-progress' is t, because a recursive call of
+`proof-server-kill-function' will give strange errors."
+  (interactive "P")
+  (message "EXITING PROOF SERVER")
+  (if (buffer-live-p proof-server-buffer)
+      (when (or dont-ask
+		(yes-or-no-p (format "Exit %s process? " proof-assistant)))
+	(let ((kill-buffer-query-functions nil)) ; avoid extra dialog
+	  (message "KILLING PROOF SERVER BUFFERS")
+	  (kill-buffer proof-server-buffer))
+	(setq proof-server-buffer nil))
+    (error "No proof server buffer to kill!")))
+
 (provide 'proof-server)
 
-;;; proof-server.el ends here
+;; proof-server.el ends here

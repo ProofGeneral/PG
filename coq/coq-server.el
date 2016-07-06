@@ -36,7 +36,6 @@
 (defun coq-server-make-add-command-thunk (cmd span)
   (lambda () 
     (coq-set-span-state-id span coq-current-state-id)
-    (message "for span: %s set state-id to: %s" span coq-current-state-id)
     (coq-xml-add-item cmd)))
 
 ;; buffer for responses from coqtop process, nothing to do with user's response buffer
@@ -59,7 +58,6 @@
   (ignore-errors ; returns nil if no XML available
     (with-current-buffer coq-server-response-buffer
       (goto-char (point-min))
-      (coq-server--unescape-buffer)
       (let ((xml (xml-parse-tag-1)))
 	(when xml
 	  (delete-region (point-min) (point)))
@@ -85,8 +83,7 @@
   (pg-goals-display "" nil))
 
 (defun coq-server-start-transaction-queue ()
-  (unless coq-server-transaction-queue
-    (setq coq-server-transaction-queue (tq-create proof-server-process))))
+  (setq coq-server-transaction-queue (tq-create proof-server-process)))
 
 ;; clear response buffer when we Add an item from the Coq script
 (add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
@@ -131,7 +128,6 @@
 
 ;; invariant: goals is non-empty
 (defun coq-server--display-goals (goals)
-  (message "coq-server--display-goals")
   (let* ((num-goals (length goals))
 	 (goal1 (car goals))
 	 (goals-rest (cdr goals))
@@ -155,8 +151,6 @@
 
 ;; update global state in response to status
 (defun coq-server--handle-status (maybe-current-proof all-proofs current-proof-id)
-  (message (format "maybe-current-proof: %s\nall-proofs %s\ncurrent-proof-id: %s"
-		   maybe-current-proof all-proofs current-proof-id))
   (let ((curr-proof-opt-val (coq-xml-attr-value maybe-current-proof 'val)))
     (if (string-equal curr-proof-opt-val 'some)
       (let* ((curr-proof-string (coq-xml-body1 maybe-current-proof))
@@ -175,7 +169,6 @@
 (defun coq-server--handle-item (item in-good-value level) 
   ;; in-good-value means, are we looking at a subterm of a value response
   ;; level is indentation for logging
-  (message (format "coq-server--handle-item: %s %s %s" item in-good-value level))
   (insert (make-string level ?\s))
   ;; value tags with fail contain an untagged string in the body, probably a bug
   (pcase (or (stringp item) (coq-xml-tag item))
@@ -193,7 +186,6 @@
 	 (setq coq-current-state-id state-id) ; update global state
 	 (unless coq-retract-buffer-state-id  ; happens once per buffer
 	   (setq coq-retract-buffer-state-id state-id))
-	 (message "after setting, curr state id: %s" coq-current-state-id)
 	 ;; if there are no more Adds to do, get goal and status
 	 (if (null (cdr proof-action-list))
 	     (progn
@@ -297,16 +289,15 @@
 		      (loc (nth 0 body))
 		      (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
 		      (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
-		      (message-str (nth 1 body))
-		      (message (coq-xml-body1 message-str)))
+		      (msg-str (nth 1 body))
+		      (msg (coq-xml-body1 msg-str)))
 		 (pg-response-clear-displays)
 		 (coq--highlight-error loc-start (- loc-stop loc-start))
-		 (coq--display-response message)))))
+		 (coq--display-response msg)))))
 	  (default
 	    (coq-server--handle-item child nil 1)))))))
 
 (defun coq-server--handle-message (xml)
-  (message (format "got message: %s" xml))
   (with-current-buffer coq-server-protocol-buffer
     (insert "*Message:\n")
     (dolist (child (xml-node-children xml))
@@ -322,7 +313,7 @@
 	  (coq-server--handle-item xml nil 1))))))
 
 (defun coq-server--handle-value (xml)
-  (message (format "handling value: %s" xml))
+  (message "Got value: %s" xml)
   (with-current-buffer coq-server-protocol-buffer
     (insert "*Value:\n")
     (let ((status (coq-xml-attr-value xml 'val)))
@@ -350,11 +341,11 @@
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response)
-  (message "coq-proof-server-process-response: %s" response)
   (coq-server--append-response response)
+  (with-current-buffer coq-server-response-buffer
+    (coq-server--unescape-buffer))
   (let ((xml (coq-server--get-next-xml)))
     (while xml
-      '(message (format "xml: %s" xml))
       (pcase (coq-xml-tag xml)
 	(`value (coq-server--handle-value xml))
 	(`feedback (coq-server--handle-feedback xml))
@@ -363,7 +354,6 @@
       (setq xml (coq-server--get-next-xml)))))
 
 (defun coq-server-handle-tq-response (closure response)
-  (message "from tq, got response: %s" response)
   (coq-server-process-response response)
   ;; needed to advance proof-action-list
   (proof-server-manage-output response))
@@ -372,9 +362,6 @@
 ;; called by proof-server-send-to-prover
 ;; do not call directly
 (defun coq-server-send-to-prover (s)
-  (message "queueing to send to process: %s" 
-	   (or (and (stringp s) s)
-	       (and (functionp s) (funcall s))))
   (tq-enqueue coq-server-transaction-queue s end-of-response-regexp
 	      ;; "closure" argument, passed to handler below
 	      nil 

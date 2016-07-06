@@ -10,8 +10,7 @@
 
 ;; The other modification is that we can log the strings sent to the process.
 ;; That way, we see the correct order of calls and responses, which we would 
-;; not see if we logged the sent strings at the time of queueing (a word with 
-;; 5 consecutive vowels!).
+;; not see if we logged the sent strings at the time of queueing.
 
 ;; ****************************************************************************
 
@@ -187,6 +186,7 @@ This produces more reliable results with some processes."
 	  (goto-char (point-min))
 	  (if (re-search-forward (tq-queue-head-regexp tq) nil t)
 	      (let ((answer (buffer-substring (point-min) (point))))
+		(message "ANSWER: %s" answer)
 		(delete-region (point-min) (point))
 		(unwind-protect
 		    (condition-case nil

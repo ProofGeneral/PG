@@ -1380,8 +1380,7 @@ Near here means PT is either inside or just aside of a comment."
   ;;TODO: from v8.5 this wold be better:
   ;;(setq proof-query-identifier-command "About %s.")
 
-  (setq proof-save-command-regexp coq-save-command-regexp
-        proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
+  (setq proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
 	proof-save-with-hole-regexp coq-save-with-hole-regexp
 	proof-goal-with-hole-regexp coq-goal-with-hole-regexp
 	proof-nested-undo-regexp coq-state-changing-commands-regexp
@@ -1435,6 +1434,7 @@ Near here means PT is either inside or just aside of a comment."
      proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd (coq-xml-init)
+     proof-server-quit-cmd (coq-xml-quit)
      proof-ready-prover-fun 'proof-server-ready-prover
      proof-invisible-command-fun 'proof-server-invisible-command
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
@@ -2430,7 +2430,7 @@ are non-nil at the same time, this gives priority to the former."
 ;; when "compile when require" is off. When switching scripting buffer, let us
 ;; restart the coq shell process, so that it applies local coqtop options. 
 (add-hook 'proof-deactivate-scripting-hook
-          'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
+          'coq-switch-buffer-kill-proof-server ;; this function is in coq-compile-common
           t)
 
 

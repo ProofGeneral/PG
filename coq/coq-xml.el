@@ -136,10 +136,6 @@
 
 ;; functions that use the `call' tag
 
-(defun coq-xml-init ()
-  (coq-xml-call '((val . Init))
-                (coq-xml-option '((val . none)))))
-
 ;; XML block for text from source file to Coq
 ;; side-effect: increments coq-edit-id-counter
 (defun coq-xml-add-item (item)
@@ -161,6 +157,13 @@
         )
     (setq coq-edit-id-counter (1+ coq-edit-id-counter))
     add-block))
+
+(defun coq-xml-init ()
+  (coq-xml-call '((val . Init))
+                (coq-xml-option '((val . none)))))
+
+(defun coq-xml-quit ()
+  (coq-xml-add-item "Quit."))
 
 ;; state-id is string
 (defun coq-xml-edit-at (state-id)

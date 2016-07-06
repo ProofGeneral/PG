@@ -389,11 +389,6 @@ NB: This setting is not used for matching output from the prover."
   :type 'boolean :group
   'proof-script)
 
-(defcustom proof-save-command-regexp nil
-  "Matches a save command."
-  :type 'regexp
-  :group 'proof-script)
-
 (defcustom proof-save-with-hole-regexp nil
   "Regexp which matches a command to save a named theorem.
 The name of the theorem is built from the variable
@@ -486,7 +481,6 @@ and that variable for details."
   :type 'sexp
   :group 'proof-script)
 
-;; FIXME da: unify this with proof-save-command-regexp, to allow fn or regexp
 (defcustom proof-goal-command-p 'proof-generic-goal-command-p
   "A function to test: is this really a goal command span?
 
@@ -497,7 +491,6 @@ look like definitions, etc.  (In the future we may generalize
   :type 'function
   :group 'proof-script)
 
-;; FIXME da: unify this with proof-save-command-regexp, to allow fn or regexp
 (defcustom proof-really-save-command-p (lambda (span cmd) t)
   "Is this really a save command?
 
@@ -910,6 +903,11 @@ data needs formatting before sending."
 This command is sent to the process as soon as it started. It can be used to configure
 the proof assistant in some way."
    :type '(choice (list string) string (const nil))
+   :group 'proof-server)
+
+(defcustom proof-server-quit-cmd nil
+  "A command to quit the proof server process.  If nil, send EOF instead."
+   :type '(choice string (const nil))
    :group 'proof-server)
 
 (defcustom proof-server-process-response-fun nil
