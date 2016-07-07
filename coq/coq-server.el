@@ -69,13 +69,11 @@
 (defun coq-server--handle-error ()
   "Take action on errors."
   ;; TODO beep?
-  (with-current-buffer 
-      proof-script-buffer
-    (proof-with-current-buffer-if-exists 
-     proof-script-buffer
-     (save-excursion
-       (proof-script-clear-queue-spans-on-error proof-last-span nil)))
-    (setq proof-action-list nil)))
+  (proof-with-current-buffer-if-exists 
+   proof-script-buffer
+   (save-excursion
+     (proof-script-clear-queue-spans-on-error proof-last-span nil)))
+  (setq proof-action-list nil))
 
 (defun coq-server--clear-response-buffer ()
   (coq--display-response "")
@@ -272,15 +270,31 @@
     (default
       (insert (format "untagged item: %s\n" item)))))
 
-(defun coq-server--find-span-with-state-id (state-id)
+(defun coq-server--find-span-with-predicate (pred)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
 	   (candidate-spans (cl-remove-if-not 
-			     (lambda (span) 
-			       (equal (span-property span 'state-id) state-id))
+			     pred
 			     all-spans)))
-      ;; should be a singleton, but program defensively
       (car-safe candidate-spans))))
+
+(defun coq-server--find-span-with-state-id (state-id)
+  (coq-server--find-span-with-predicate
+   (lambda (span) 
+     (equal (span-property span 'state-id) state-id))))
+
+;; is error span at end of locked region
+;; use as coloring heuristic 
+(defun coq-server--error-span-at-end-of-locked (error-span)
+  ;; TODO, we should be using proof-locked-span
+  ;; but that seems to be nil
+  (let* ((locked-span (coq-server--find-span-with-predicate
+		       (lambda (span) 
+			 (equal (span-property span 'face) 'proof-locked-face))))
+	 (locked-end (span-end locked-span))
+	 (error-end (span-end error-span)))
+    (message "error end: %s  locked-end: %s" error-end locked-end)
+    (= error-end locked-end)))
 
 (defun coq-server--handle-feedback (xml)
   (message (format "got feedback: %s" xml))
@@ -321,10 +335,13 @@
 	;; coloring heuristic
 	;; if error is at end of locked span, there's no async involved, do nothing
 	;;   we've already given temp coloring for that via coq--highlight-error
-	;; if error is in middle, color the error 
-	(message "error span: %s" error-span)
-	(message "locked span: %s" proof-locked-span)
-	(coq--highlight-error error-span error-start error-stop)))))
+	;; if error is in middle, indelibly color the span containing the error 
+	;; TODO this will change if we have multiple spans for proofs
+	(if (coq-server--error-span-at-end-of-locked error-span)
+	    ;; error in last sentence processed
+	    (coq--highlight-error error-span error-start error-stop)
+	  ;; error in middle of processed region
+	  (coq--mark-error error-span))))))
 
 (defun coq-server--handle-message (xml)
   (with-current-buffer coq-server-protocol-buffer

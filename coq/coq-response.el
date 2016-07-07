@@ -63,6 +63,7 @@ Only when three-buffer-mode is enabled."
 (defun coq--display-response (msg)
   (pg-response-message msg))
 
+;; temporarily highlight error location
 (defun coq--highlight-error (span start stop)
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
@@ -78,5 +79,11 @@ Only when three-buffer-mode is enabled."
      (let ((err-start (point)))
        (span-make-self-removing-span err-start (+ err-start len1)
 				     'face 'proof-warning-face)))))
+
+;; indelibly mark span containing an error
+(defun coq--mark-error (span)
+  (proof-with-current-buffer-if-exists 
+   proof-script-buffer
+   (span-set-property span 'face proof-error-face)))
 
 (provide 'coq-response)
