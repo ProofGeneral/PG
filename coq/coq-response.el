@@ -63,14 +63,20 @@ Only when three-buffer-mode is enabled."
 (defun coq--display-response (msg)
   (pg-response-message msg))
 
-(defun coq--highlight-error (pos lgth)
+(defun coq--highlight-error (span start stop)
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
-   (goto-char (+ (proof-unprocessed-begin) 1))
-   (coq-find-real-start)
-   (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
-     (goto-char (+ (point) pos))
-     (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
-				   'face 'proof-warning-face))))
+   (let* ((len0 (- stop start))
+	  (time-offset (if coq-time-commands (length coq--time-prefix) 0))
+	  (len1 (- len0 time-offset)))
+     ;; beginning of line
+     (goto-char (span-start span))
+     ;; skip whitespace
+     (coq-find-real-start)
+     ;; go to error start
+     (goto-char (+ (point) start))
+     (let ((err-start (point)))
+       (span-make-self-removing-span err-start (+ err-start len1)
+				     'face 'proof-warning-face)))))
 
 (provide 'coq-response)

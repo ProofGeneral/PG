@@ -274,10 +274,13 @@
 
 (defun coq-server--find-span-with-state-id (state-id)
   (with-current-buffer proof-script-buffer
-    (let ((all-spans (overlays-in (point-min) (point-max))))
-      (car (cl-remove-if-not 
-	    (lambda (span) (equal (span-property span 'state-id) state-id))
-	    all-spans)))))
+    (let* ((all-spans (overlays-in (point-min) (point-max)))
+	   (candidate-spans (cl-remove-if-not 
+			     (lambda (span) 
+			       (equal (span-property span 'state-id) state-id))
+			     all-spans)))
+      ;; should be a singleton, but program defensively
+      (car-safe candidate-spans))))
 
 (defun coq-server--handle-feedback (xml)
   (message (format "got feedback: %s" xml))
@@ -310,16 +313,18 @@
 		 (setq error-start loc-start)
 		 (setq error-stop loc-stop)
 		 (pg-response-clear-displays)
-		 (coq--highlight-error loc-start (- loc-stop loc-start))
 		 (coq--display-response msg)))))
-	  (`state_id ;; may not be an error, but save state id just in case
-	   (setq error-state-id (coq-xml-body1 child))))))
+	  (`state_id ;; maybe not error, save state id in case
+	   (setq error-state-id (coq-xml-attr-value child 'val))))))
     (when in-error
       (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
-	;; START HERE TODO ****************** 
-	;; make sure we have right error span
-	;; color span with something reddish
-	(message "error span: %s" error-span)))))
+	;; coloring heuristic
+	;; if error is at end of locked span, there's no async involved, do nothing
+	;;   we've already given temp coloring for that via coq--highlight-error
+	;; if error is in middle, color the error 
+	(message "error span: %s" error-span)
+	(message "locked span: %s" proof-locked-span)
+	(coq--highlight-error error-span error-start error-stop)))))
 
 (defun coq-server--handle-message (xml)
   (with-current-buffer coq-server-protocol-buffer
