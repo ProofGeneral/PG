@@ -2044,8 +2044,10 @@ query saves here."
     ;; (future: may allow retracting from queue in progress)
     (proof-ready-prover)
     (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
-      (let ((span (span-at (point) 'type)))
-	(message "span-at-point: %s" span)
+      ;; spans contain state id resulting from processing that span
+      ;; so leave this span processed, and work on preceding span
+      (let* ((curr-span (span-at (point) 'type))
+	     (span (prev-span curr-span 'type)))
 	;; If no span at point, retracts the last span in the buffer.
 	(unless span
 	  (proof-goto-end-of-locked)

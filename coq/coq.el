@@ -513,6 +513,33 @@ annotation-start) if found."
     res
     ))
 
+;; find a span preceding point that has a state id
+;; TODO: it would be (much) better to keep a list of active spans
+(defun coq--find-preceding-state-id ()
+  (let (state-id)
+    (with-current-buffer proof-script-buffer
+      (goto-char (1- (point)))
+      (save-excursion
+        (while (and (null state-id) (not (equal (point) (point-min))))
+          (let* ((all-spans (overlays-at (point)))
+                 (relevant-spans
+                  (cl-remove-if
+                   (lambda (span) (or (equal span proof-locked-span) 
+                                      (equal span proof-queue-span)))
+                   all-spans))
+                 (spans-with-state-ids 
+                  (cl-remove-if-not 
+                   (lambda (span) (not (null (span-property span 'state-id))))
+                   relevant-spans)))
+            (message "at point: %s, spans: %s spans-with-state-ids: %s"
+                     (point) all-spans spans-with-state-ids)
+            (pcase (length spans-with-state-ids)
+                  (0 ; jump before nearest preceding span
+                   (goto-char (1- (apply 'max (mapcar 'span-start relevant-spans)))))
+                  (1 (setq state-id (span-property (car spans-with-state-ids) 'state-id)))
+                  (default (error "coq--find-preceding-state-id, more than one with state id at point")))))))
+    state-id))
+
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN."
   (message "coq-server-find-and-forget on span %s" span)
@@ -543,11 +570,17 @@ annotation-start) if found."
                       (string-equal coq-last-but-one-state-id span-state-id))
                (message "coq-server-find-and-forget, sending backtrack cmd")
                (coq-server--clear-response-buffer)
-               ;; if there's a state id in the span, send Edit-at command to Coq
-               ;; spans for comments don't have a state id 
                (message "span-state-id: %s (span-start span): %s  coq-retract-buffer-state-id: %s"
                         span-state-id (span-start span) coq-retract-buffer-state-id)
                (cond
+                ((null span-state-id) ;; in a comment
+                 ;; find nearest preceding span with state id
+                 (let ((preceding-state-id (prev-span span 'type)))
+                   (when preceding-state-id
+                     (message "retracting to preceding state-id: %s" preceding-state-id)
+                     (proof-server-send-to-prover (coq-xml-edit-at preceding-state-id))
+                     (proof-server-send-to-prover (coq-xml-goal))
+                     (proof-server-send-to-prover (coq-xml-status)))))
                 ((not (null span-state-id))
                  (message "retracting to span-state-id: %s" span-state-id)
                  (setq coq-server-pending-state-id span-state-id)
