@@ -513,33 +513,6 @@ annotation-start) if found."
     res
     ))
 
-;; find a span preceding point that has a state id
-;; TODO: it would be (much) better to keep a list of active spans
-(defun coq--find-preceding-state-id ()
-  (let (state-id)
-    (with-current-buffer proof-script-buffer
-      (goto-char (1- (point)))
-      (save-excursion
-        (while (and (null state-id) (not (equal (point) (point-min))))
-          (let* ((all-spans (overlays-at (point)))
-                 (relevant-spans
-                  (cl-remove-if
-                   (lambda (span) (or (equal span proof-locked-span) 
-                                      (equal span proof-queue-span)))
-                   all-spans))
-                 (spans-with-state-ids 
-                  (cl-remove-if-not 
-                   (lambda (span) (not (null (span-property span 'state-id))))
-                   relevant-spans)))
-            (message "at point: %s, spans: %s spans-with-state-ids: %s"
-                     (point) all-spans spans-with-state-ids)
-            (pcase (length spans-with-state-ids)
-                  (0 ; jump before nearest preceding span
-                   (goto-char (1- (apply 'max (mapcar 'span-start relevant-spans)))))
-                  (1 (setq state-id (span-property (car spans-with-state-ids) 'state-id)))
-                  (default (error "coq--find-preceding-state-id, more than one with state id at point")))))))
-    state-id))
-
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN."
   (message "coq-server-find-and-forget on span %s" span)
