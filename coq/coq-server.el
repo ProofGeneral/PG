@@ -16,9 +16,6 @@
 (eval-when-compile 
   (require 'cl))
 
-(defvar coq-server--protocol-buffer-name "*coq-protocol-debug*")
-(defvar coq-server-protocol-buffer (get-buffer-create coq-server--protocol-buffer-name))
-
 (defvar coq-server-pending-state-id nil)
 
 (defvar coq-server--current-span nil
@@ -141,10 +138,10 @@
       (insert (coq-server--format-goal-with-hypotheses 
 	       (coq-server--goal-goal goal1)
 	       (coq-server--goal-hypotheses goal1)))
-      (insert "\n")
+      (insert "\n\n")
       (dolist (goal goals-rest)
 	(setq goal-counter (1+ goal-counter))
-	(insert (format "subgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
+	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
 	(insert (coq-server--format-goal-no-hypotheses 
 		 (coq-server--goal-goal goal))))
       (pg-goals-display (buffer-string) t))))
@@ -169,19 +166,19 @@
 (defun coq-server--handle-item (item in-good-value level)
   ;; in-good-value means, are we looking at a subterm of a value response
   ;; level is indentation for logging
-  (insert (make-string level ?\s))
+  
   ;; value tags with fail contain an untagged string in the body, probably a bug
   (pcase (or (stringp item) (coq-xml-tag item))
-    (`unit (insert (format "unit\n")))
-    (`union (insert (format "union, %s:\n" (coq-xml-attr-value item 'val)))
+    (`unit )
+    (`union 
 	    (dolist (body-item (coq-xml-body item))
 	      (coq-server--handle-item body-item in-good-value (+ level 2))))
-    (`string (insert (format "string: %s\n" (coq-xml-body1 item))))
-    (`loc_s (insert (format "start location: %s\n" (coq-xml-attr-value item 'loc_s))))
-    (`loc_e (insert (format "end location: %s\n" (coq-xml-attr-value item 'loc_e))))
+    (`string )
+    (`loc_s )
+    (`loc_e )
     (`state_id 
      (let* ((state-id (coq-xml-attr-value item 'val)))
-       (insert (format "state_id: %s\n" state-id))
+       
        (when in-good-value
 	 (setq coq-current-state-id state-id) ; update global state
 	 (when coq-server--current-span
@@ -202,7 +199,7 @@
        (coq-server--handle-status maybe-current-proof all-proofs current-proof-id)))
     (`option 
      (let ((val (coq-xml-attr-value item 'val)))
-       (insert (format "option: %s\n" val))
+       
        (when (string-equal val 'some)
 	 (let ((children (xml-node-children item)))
 	   (dolist (child children)
@@ -215,52 +212,52 @@
 	    (abandoned-goals (coq-xml-body (nth 3 children))))
        (if current-goals
 	   (progn
-	     (insert "goals:\n")
+	     
 	     (dolist (goal current-goals)
 	       (coq-server--handle-item goal in-good-value (+ level 1)))
 	     (coq-server--display-goals current-goals))
 	 (progn
-	   (insert "<no goals>")
+	   
 	   (setq proof-prover-proof-completed 0)
 	   ;; clear goals display
 	   (coq-server--clear-goals-buffer)
 	   ;; mimic the coqtop REPL, though it would be better to come via XML
 	   (coq--display-response "No more subgoals.")))
-       (insert (make-string level ?\s))
+       
        (if bg-goals
 	   (progn
-	     (insert "background goals:\n")
+	     
 	     (dolist (goal bg-goals)
 	       (coq-server--handle-item goal in-good-value (+ level 1))))
-	 (insert "<no background goals>\n"))
-       (insert (make-string level ?\s))
+	 )
+       
        (if shelved-goals
 	   (progn
-	     (insert "shelved goals:\n")
+	     
 	     (dolist (goal shelved-goals)
 	       (coq-server--handle-item goal in-good-value (+ level 1))))
-	 (insert "<no shelved goals>\n"))
-       (insert (make-string level ?\s))
+	 )
+       
        (if abandoned-goals
 	   (progn
-	     (insert "abandoned goals:\n")
+	     
 	     (dolist (goal abandoned-goals)
 	       (coq-server--handle-item goal in-good-value (+ level 1))))
-	 (insert "<no abandoned goals>\n"))))
+	 )))
     (`goal
      (let* ((children (xml-node-children item))
 	    (goal-number (coq-xml-body1 (nth 0 children)))
 	    (goal-hypotheses (coq-xml-body (nth 1 children)))
 	    (goal (coq-xml-body1 (nth 2 children))))
-       (insert (format "goal %s\n" goal-number))
-       (insert (make-string level ?\s))
+       
+       
        (if goal-hypotheses
 	   (progn
-	     (insert "hypotheses:\n")
+	     
 	     (coq-server--handle-item goal-hypotheses in-good-value (+ level 1)))
-	 (insert "<no hypotheses>\n"))
-       (insert (make-string level ?\s))
-       (insert (format "goal: %s\n" goal))))
+	 )
+       
+       ))
     (`pair 
      (dolist (item-child (xml-node-children item))
        (coq-server--handle-item item-child in-good-value (+ level 1))))
@@ -268,7 +265,7 @@
      (dolist (item-child (xml-node-children item))
        (coq-server--handle-item item-child in-good-value (+ level 1))))
     (default
-      (insert (format "untagged item: %s\n" item)))))
+      )))
 
 (defun coq-server--find-span-with-predicate (pred)
   (with-current-buffer proof-script-buffer
@@ -293,11 +290,11 @@
 			 (equal (span-property span 'face) 'proof-locked-face))))
 	 (locked-end (span-end locked-span))
 	 (error-end (span-end error-span)))
-    (message "error end: %s  locked-end: %s" error-end locked-end)
+    '(message "error end: %s  locked-end: %s" error-end locked-end)
     (= error-end locked-end)))
 
 (defun coq-server--handle-feedback (xml)
-  (message (format "got feedback: %s" xml))
+  '(message (format "got feedback: %s" xml))
   (let* ((object (coq-xml-attr-value xml 'object))
 	 (route (coq-xml-attr-value xml 'route))
 	 (children (xml-node-children xml)) ; state_id, feedback_content 
@@ -306,32 +303,29 @@
 	 error-start
 	 error-stop
 	 error-message)
-    (with-current-buffer coq-server-protocol-buffer
-      (insert "*Feedback:\n")
-      (insert (format " object: %s  route: %s\n" object route))
-      (dolist (child children)
-	(pcase (coq-xml-tag child)
-	  (`feedback_content 
-	   (let ((feedback-value (coq-xml-attr-value child 'val)))
-	     (insert (format " content value: %s\n" feedback-value))
-	     (let ((feedback-children (xml-node-children child)))
-	       (dolist (feedback-child feedback-children)
-		 (coq-server--handle-item feedback-child nil 1)))
-	     (when (string-equal feedback-value "errormsg")
-	       (setq in-error t)
-	       (let* ((body (coq-xml-body child))
-		      (loc (nth 0 body))
-		      (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
-		      (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
-		      (msg-str (nth 1 body))
-		      (msg (coq-xml-body1 msg-str)))
-		 (setq error-start loc-start)
-		 (setq error-stop loc-stop)
-		 (setq error-message msg)
-		 (pg-response-clear-displays)
-		 (coq--display-response msg)))))
-	  (`state_id ;; maybe not error, save state id in case
-	   (setq error-state-id (coq-xml-attr-value child 'val))))))
+    (dolist (child children)
+      (pcase (coq-xml-tag child)
+	(`feedback_content 
+	 (let ((feedback-value (coq-xml-attr-value child 'val)))
+	   
+	   (let ((feedback-children (xml-node-children child)))
+	     (dolist (feedback-child feedback-children)
+	       (coq-server--handle-item feedback-child nil 1)))
+	   (when (string-equal feedback-value "errormsg")
+	     (setq in-error t)
+	     (let* ((body (coq-xml-body child))
+		    (loc (nth 0 body))
+		    (loc-start (string-to-number (coq-xml-attr-value loc 'start)))
+		    (loc-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+		    (msg-str (nth 1 body))
+		    (msg (coq-xml-body1 msg-str)))
+	       (setq error-start loc-start)
+	       (setq error-stop loc-stop)
+	       (setq error-message msg)
+	       (pg-response-clear-displays)
+	       (coq--display-response msg)))))
+	(`state_id ;; maybe not error, save state id in case
+	 (setq error-state-id (coq-xml-attr-value child 'val)))))
     (when in-error
       (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
 	;; coloring heuristic
@@ -346,44 +340,40 @@
 	  (coq--mark-error error-span error-message))))))
 
 (defun coq-server--handle-message (xml)
-  (with-current-buffer coq-server-protocol-buffer
-    (insert "*Message:\n")
-    (dolist (child (xml-node-children xml))
-      (pcase (coq-xml-tag child)
-	(`message_level
-	 (let ((level (coq-xml-attr-value child 'val)))
-	   (insert (format " Level: %s\n" level))))
-	(`string
-	 (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
-	   (insert (format " Message: %s\n" message))
-	   (coq--display-response message)))
-	(default
-	  (coq-server--handle-item xml nil 1))))))
+  (dolist (child (xml-node-children xml))
+    (pcase (coq-xml-tag child)
+      (`message_level
+       (let ((level (coq-xml-attr-value child 'val)))
+	 ))
+      (`string
+       (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
+	 
+	 (coq--display-response message)))
+      (default
+	(coq-server--handle-item xml nil 1)))))
 
 (defun coq-server--handle-value (xml)
-  (message "Got value: %s" xml)
-  (with-current-buffer coq-server-protocol-buffer
-    (insert "*Value:\n")
-    (let ((status (coq-xml-attr-value xml 'val)))
-      (pcase status
-	("fail"
-	 (insert " failure\n")
-	 (let ((children (xml-node-children xml)))
-	   (let ((errmsg (nth 1 children))) ; should be wrapped in string tags
-	     (coq-server--clear-response-buffer)
-	     (coq--display-response errmsg)))
-	 (coq-server--handle-error))
-	("good"
-	 (insert " success\n")
-	 ;; TODO maybe it's better to use the feedback message, which contains the state id
-	 ;; but conceivable you'd get the feedback, then a failure ?
-	 (when coq-server-pending-state-id ; from Edit_at
-	   (setq coq-current-state-id coq-server-pending-state-id)
-	   (setq coq-server-pending-state-id nil))
-	 (let ((children (xml-node-children xml)))
-	   (dolist (child children)
-	     (coq-server--handle-item child t 1))))
-	(default (insert (format "Unknown value status: %s" xml))))))
+  '(message "Got value: %s" xml)
+  (let ((status (coq-xml-attr-value xml 'val)))
+    (pcase status
+      ("fail"
+       
+       (let ((children (xml-node-children xml)))
+	 (let ((errmsg (nth 1 children))) ; should be wrapped in string tags
+	   (coq-server--clear-response-buffer)
+	   (coq--display-response errmsg)))
+       (coq-server--handle-error))
+      ("good"
+       
+       ;; TODO maybe it's better to use the feedback message, which contains the state id
+       ;; but conceivable you'd get the feedback, then a failure ?
+       (when coq-server-pending-state-id ; from Edit_at
+	 (setq coq-current-state-id coq-server-pending-state-id)
+	 (setq coq-server-pending-state-id nil))
+       (let ((children (xml-node-children xml)))
+	 (dolist (child children)
+	   (coq-server--handle-item child t 1))))
+      (default )))
   ;; now that we've processed value, ready to send next item
   (proof-server-exec-loop))
 

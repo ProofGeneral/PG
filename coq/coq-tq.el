@@ -143,9 +143,7 @@ to a tcp server on another machine."
   (setcar tq (cdr (car tq)))
   (let ((question (tq-queue-head-question tq)))
     (condition-case nil
-	(progn
-	  (message "type of question: %s" (type-of question))
-	(tq-log-and-send tq question)) ;; MODIFIED
+	(tq-log-and-send tq question) ;; MODIFIED
       (error nil)))
   (null (car tq)))
 
@@ -167,7 +165,6 @@ This produces more reliable results with some processes."
 		   (not (tq-queue tq)))))
     (tq-queue-add tq (unless sendp question) regexp closure fn)
     (when sendp
-      (message "type of question: %s" (type-of question))
       (tq-log-and-send tq question)))) ;; MODIFIED
 
 (defun tq-close (tq)
