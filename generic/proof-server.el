@@ -119,7 +119,7 @@ with proof-shell-ready-prover."
       (message "Command line: %s" prog-command-line)
       (message "Proof assistant: %s" proof-assistant)
       (message "Prog name list: %s" prog-name-list)
-      (let* ((server-buffer (get-buffer-create (concat "*" proof-assistant "*")))
+      (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) ; leading space hides the buffer
 	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
 	(if the-process
 	    (progn 

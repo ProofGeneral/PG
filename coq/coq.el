@@ -546,6 +546,12 @@ annotation-start) if found."
                (message "span-state-id: %s (span-start span): %s  coq-retract-buffer-state-id: %s"
                         span-state-id (span-start span) coq-retract-buffer-state-id)
                (cond
+                ((and (= (span-start span) 1) coq-retract-buffer-state-id)
+                 (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
+                 (setq coq-server-pending-state-id coq-retract-buffer-state-id)
+                 (proof-server-send-to-prover (coq-xml-edit-at coq-retract-buffer-state-id))
+                 ;; no goal needed
+                 (proof-server-send-to-prover (coq-xml-status)))
                 ((null span-state-id) ;; in a comment
                  ;; find nearest preceding span with state id
                  (let ((preceding-state-id (prev-span span 'type)))
@@ -558,13 +564,7 @@ annotation-start) if found."
                  (message "retracting to span-state-id: %s" span-state-id)
                  (setq coq-server-pending-state-id span-state-id)
                  (proof-server-send-to-prover (coq-xml-edit-at span-state-id))
-                 ;; potential race condition here ?
                  (proof-server-send-to-prover (coq-xml-goal))
-                 (proof-server-send-to-prover (coq-xml-status)))
-                ((and (= (span-start span) 1) coq-retract-buffer-state-id)
-                 (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
-                 (setq coq-server-pending-state-id coq-retract-buffer-state-id)
-                 (proof-server-send-to-prover (coq-xml-edit-at coq-retract-buffer-state-id))
                  (proof-server-send-to-prover (coq-xml-status)))
                 (t (message "retraction in funny case")
                    nil)))))))

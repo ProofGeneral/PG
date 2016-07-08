@@ -2047,8 +2047,10 @@ query saves here."
       ;; spans contain state id resulting from processing that span
       ;; so leave this span processed, and work on preceding span
       (let* ((curr-span (span-at (point) 'type))
-	     (span (prev-span curr-span 'type)))
-	;; If no span at point, retracts the last span in the buffer.
+	     ;; if no previous span, use current span
+	     (span (or (prev-span curr-span 'type) curr-span)))
+	(message "retract-until-point, curr-span: %s span: %s" curr-span span)
+	;; If no span at point or previous span, retract the last span in the buffer.
 	(unless span
 	  (proof-goto-end-of-locked)
 	  (backward-char)
