@@ -81,9 +81,10 @@ Only when three-buffer-mode is enabled."
 				     'face 'proof-warning-face)))))
 
 ;; indelibly mark span containing an error
-(defun coq--mark-error (span)
+(defun coq--mark-error (span msg)
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
-   (span-set-property span 'face proof-error-face)))
+   (span-set-property span 'face proof-error-face)
+   (span-set-property span 'help-echo msg)))
 
 (provide 'coq-response)

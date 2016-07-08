@@ -180,6 +180,7 @@ Action is taken on all script buffers."
 
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
+  (message "set locked endpoints start: %s end: %s" start end)
   (span-set-endpoints proof-locked-span start end)
   (proof-set-overlay-arrow end))
 

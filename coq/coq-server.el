@@ -304,7 +304,8 @@
 	 in-error
 	 error-state-id
 	 error-start
-	 error-stop)
+	 error-stop
+	 error-message)
     (with-current-buffer coq-server-protocol-buffer
       (insert "*Feedback:\n")
       (insert (format " object: %s  route: %s\n" object route))
@@ -326,6 +327,7 @@
 		      (msg (coq-xml-body1 msg-str)))
 		 (setq error-start loc-start)
 		 (setq error-stop loc-stop)
+		 (setq error-message msg)
 		 (pg-response-clear-displays)
 		 (coq--display-response msg)))))
 	  (`state_id ;; maybe not error, save state id in case
@@ -341,7 +343,7 @@
 	    ;; error in last sentence processed
 	    (coq--highlight-error error-span error-start error-stop)
 	  ;; error in middle of processed region
-	  (coq--mark-error error-span))))))
+	  (coq--mark-error error-span error-message))))))
 
 (defun coq-server--handle-message (xml)
   (with-current-buffer coq-server-protocol-buffer

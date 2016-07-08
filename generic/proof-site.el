@@ -37,31 +37,10 @@
     '(
       ;; Main instances of PG.
 
-      (isar "Isabelle" "thy")
+      ;; only Coq these days
+
       (coq "Coq" "v" nil (".vo" ".glob"))
-      (phox "PhoX" "phx")
 
-      ;; Obscure instances or conflict with other Emacs modes.
-
-      ;; (lego "LEGO" "l")
-      ;; (ccc    "CASL Consistency Checker" "ccc")
-
-      ;; (hol-light "HOL Light" "ml") ; [for testing]
-
-      ;; Cut-and-paste management only
-
-      (pgshell	 "PG-Shell" "pgsh")
-      (pgocaml	 "PG-OCaml" "pgml")
-      (pghaskell "PG-Haskell" "pghci")
-      
-      ;; Incomplete/obsolete:
-
-      ;; (hol98	"HOL" "sml")
-      ;; (acl2	"ACL2" "acl2")
-      ;; (twelf	"Twelf" "elf")
-      ;; (plastic "Plastic" "lf")        ; obsolete
-      ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
-      ;; (demoisa "Isabelle Demo" "ML")  ; obsolete
       )
     "Default value for `proof-assistant-table', which see.")
 
@@ -72,7 +51,7 @@
 
 (eval-and-compile
   ;; WARNING: do not edit next line (constant is edited in Makefile.devel)
-  (defconst proof-general-version "Proof General Version 4.4pre."
+  (defconst proof-general-version "Proof General Version 5.0pre."
     "Version string identifying Proof General release."))
 
 (defconst proof-general-short-version

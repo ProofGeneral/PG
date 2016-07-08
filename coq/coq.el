@@ -553,7 +553,7 @@ annotation-start) if found."
                  (setq coq-server-pending-state-id span-state-id)
                  (proof-server-send-to-prover (coq-xml-edit-at span-state-id))
                  ;; potential race condition here ?
-                 ;; need to get response from Status to update state variables before user does next Add
+                 (proof-server-send-to-prover (coq-xml-goal))
                  (proof-server-send-to-prover (coq-xml-status)))
                 ((and (= (span-start span) 1) coq-retract-buffer-state-id)
                  (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
