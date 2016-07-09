@@ -12,9 +12,13 @@
 ;; coqtop response so we can set the state id in the span metadata.
 ;; 
 
-;; The other modification is that we can log the strings sent to the process.
+;; Another modification is that we can log the strings sent to the process.
 ;; That way, we see the correct order of calls and responses, which we would 
 ;; not see if we logged the sent strings at the time of queueing.
+
+;; Finally, the enqueue function does not take the optional delay-sending argument.
+;; We always delay sending until the last response has been received.
+
 
 ;; ****************************************************************************
 
@@ -147,7 +151,7 @@ to a tcp server on another machine."
       (error nil)))
   (null (car tq)))
 
-(defun tq-enqueue (tq question regexp closure fn &optional delay-question)
+(defun tq-enqueue (tq question regexp closure fn)
   "Add a transaction to transaction queue TQ.
 This sends the string QUESTION to the process that TQ communicates with.
 
@@ -161,8 +165,7 @@ that's how we tell where the answer ends.
 If DELAY-QUESTION is non-nil, delay sending this question until
 the process has finished replying to any previous questions.
 This produces more reliable results with some processes."
-  (let ((sendp (or (not delay-question)
-		   (not (tq-queue tq)))))
+  (let ((sendp (not (tq-queue tq)))) ;; MODIFIED, always delay sending
     (tq-queue-add tq (unless sendp question) regexp closure fn)
     (when sendp
       (tq-log-and-send tq question)))) ;; MODIFIED

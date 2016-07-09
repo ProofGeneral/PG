@@ -1930,7 +1930,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	(start (span-start target))
 	(span  (if proof-arbitrary-undo-positions
 		   target
-		 (proof-last-goal-or-goalsave)))
+		 (proof-last-goal-or-goalsave))) ;; TODO do we still need this?
 	actions)
 
     ;; NB: first section only entered if proof-kill-goal-command is
@@ -2048,6 +2048,7 @@ query saves here."
       ;; so leave this span processed, and work on preceding span
       (let* ((curr-span (span-at (point) 'type))
 	     ;; if no previous span, use current span
+	     ;; TODO: alternatively, store previous state id in span
 	     (span (or (prev-span curr-span 'type) curr-span)))
 	(message "retract-until-point, curr-span: %s span: %s" curr-span span)
 	;; If no span at point or previous span, retract the last span in the buffer.

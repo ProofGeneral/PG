@@ -19,10 +19,14 @@
     (setq proof-goals-buffer    (get-buffer-create goals))
     (setq proof-response-buffer (get-buffer-create resp))
 
-    (if (and (eq proof-interaction-mode 'server)
-	     proof-server-log-traffic)
+    (when (and (eq proof-interaction-mode 'server)
+	       proof-server-log-traffic)
 	(let ((logger (concat "*" (downcase proof-assistant) "-log*")))
-	  (setq proof-server-log-buffer (get-buffer-create logger))))
+	  (setq proof-server-log-buffer (get-buffer-create logger))
+	  (with-current-buffer proof-server-log-buffer
+	    ;; SGML mode highlights tags
+	    ;; XML mode complains too much
+	    (sgml-mode))))
 
     (setq pg-response-special-display-regexp
 	  (proof-regexp-alt goals resp))

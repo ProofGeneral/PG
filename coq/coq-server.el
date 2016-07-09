@@ -178,8 +178,8 @@
     (`loc_e )
     (`state_id 
      (let* ((state-id (coq-xml-attr-value item 'val)))
-       
        (when in-good-value
+	 (message "1> setting current state id: %s" state-id)
 	 (setq coq-current-state-id state-id) ; update global state
 	 (when coq-server--current-span
 	   (coq-set-span-state-id coq-server--current-span state-id))
@@ -364,10 +364,10 @@
 	   (coq--display-response errmsg)))
        (coq-server--handle-error))
       ("good"
-       
        ;; TODO maybe it's better to use the feedback message, which contains the state id
        ;; but conceivable you'd get the feedback, then a failure ?
        (when coq-server-pending-state-id ; from Edit_at
+	 (message "setting current state id: %s" coq-server-pending-state-id)
 	 (setq coq-current-state-id coq-server-pending-state-id)
 	 (setq coq-server-pending-state-id nil))
        (let ((children (xml-node-children xml)))
@@ -405,8 +405,6 @@
 	      ;; "closure" argument, passed to handler below
 	      nil 
 	      ;; handler gets closure and coqtop response
-	      'coq-server-handle-tq-response
-	      ;; don't send until last response received
-	      t))
+	      'coq-server-handle-tq-response))
 
 (provide 'coq-server)

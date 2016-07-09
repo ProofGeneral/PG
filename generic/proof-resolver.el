@@ -7,7 +7,7 @@
 
 (defun proof-server-log (src str)
   (with-current-buffer proof-server-log-buffer
-    (insert "*" src ">>>" str "<<<" src "*\n")))
+    (insert "*" src ">>>" str "\n")))
 
 ;;;###autoload
 (defun proof-ready-prover (&optional queuemode)
