@@ -348,8 +348,10 @@
 	 (string-equal (coq-xml-val child1) "in_r"))))
 
 (defun coq-server--simple-backtrack ()
-  ;; do nothing
+  ;; nothing to do here, retraction already done
 )
+
+;; TODO START HERE ... save deleted spans, restore as appropriate
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
   (message "create secondary span, focus-id: %s last tip state id: %s" focus-end-state-id last-tip-state-id)

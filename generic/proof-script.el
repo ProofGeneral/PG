@@ -1193,7 +1193,6 @@ a scripting buffer is killed it is always retracted."
        ;; Finally, run hooks
        (run-hooks 'proof-deactivate-scripting-hook)))))
 
-
 (defun proof-activate-scripting (&optional nosaves queuemode)
   "Ready prover and activate scripting for the current script buffer.
 
@@ -1995,15 +1994,14 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	(when (> end start)
 	  (setq actions
 		;; Append a retract action to clear the entire start-end
-		;; region.  Rely on proof-find-and-forget-fn to
-		;; calculate a command which "forgets" back to the first
-		;; definition, declaration, or whatever that comes after
-		;; the target span.
+		;; region.
 		(nconc actions (proof-setup-retract-action
 				start end
-				(funcall proof-find-and-forget-fn target)
+				nil
 				undo-action
-				displayflags))))
+				displayflags)))
+	  ;; tell prover about the retraction
+	  (funcall proof-find-and-forget-fn target))
 	(let ((start (min start end))
 	      (end (proof-unprocessed-begin)))
 	  (proof-start-queue start end actions 'retracting))))
