@@ -48,7 +48,6 @@ printing hints).
 
 See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
 
-
 (defvar proof-second-action-list-active nil
   "Signals that some items are waiting outside of `proof-action-list'.
 If this is t it means that some items from the queue region are

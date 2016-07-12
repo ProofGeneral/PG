@@ -70,6 +70,10 @@
 	 (attr (assq attr-name attrs)))
     (and attr (cdr attr))))
 
+;; this happens a lot
+(defun coq-xml-val (xml)
+  (coq-xml-attr-value xml 'val))
+
 (defun coq-xml-tag (xml)
   (car xml))
 

@@ -62,6 +62,12 @@ See also `coq-prog-env' to adjust the environment."
 (defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
   "The coq library directory, as reported by \"coqtop -where\".")
 
+(defcustom coq-allow-async-proofs t
+  "Whether to allow coqtop to run asynchronous proofs using worker 
+processes."
+  :type 'boolean
+  :group 'coq)
+
 (defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
   "The default TAGS table for the Coq library."
   :type 'string
@@ -339,7 +345,10 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
    ; TODO allow ports for main-channel
    ; TODO add control-channel ports
-  '("-ideslave" "-main-channel" "stdfds")) 
+  '("-ideslave" "-main-channel" "stdfds"))
+
+(defvar coq-coqtop-async-flags
+  '("-async-proofs" "on"))
 
 ;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
@@ -351,9 +360,10 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; include it in the -Q options. This is not true for coqdep.                                                                                                        
   "Build a list of options for coqc. 
    LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (let ((coqc-args (coq-coqc-prog-args load-path current-directory pre-v85))
-        (ide-args coq-coqtop-server-flags))
-    (append ide-args coqc-args)))
+  (let* ((coqc-args (coq-coqc-prog-args load-path current-directory pre-v85))
+	 (ide-args coq-coqtop-server-flags)
+	 (async-args (if coq-allow-async-proofs coq-coqtop-async-flags nil)))
+    (append ide-args async-args coqc-args)))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."

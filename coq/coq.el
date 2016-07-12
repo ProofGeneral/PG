@@ -501,7 +501,6 @@ annotation-start) if found."
 
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
-'(add-hook 'proof-retract-command-hook 'coq-reset-state-vars)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
@@ -513,6 +512,15 @@ annotation-start) if found."
     res
     ))
 
+(defun coq--send-retraction (state-id &optional get-goal)
+  (setq coq-server--pending-edit-at-state-id state-id)
+  (proof-server-send-to-prover (coq-xml-edit-at state-id))
+  (when get-goal
+    (proof-server-send-to-prover (coq-xml-goal)))
+  (proof-server-send-to-prover (coq-xml-status)))
+
+;; in proof shell, this command produced a string to send to coqtop to do backtracking
+;; here, we actually send the command to coqtop via XML
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN."
   (message "coq-server-find-and-forget on span %s" span)
@@ -531,7 +539,7 @@ annotation-start) if found."
              ;; clean the goals buffer otherwise the old one will still be displayed
              (when (and proofdepth (= proofdepth 0)) 
                (proof-clean-buffer proof-goals-buffer))
-             (progn
+             '(progn
                (message "coq-last-but-one-proofstack: %s  proofstack: %s" coq-last-but-one-proofstack proofstack)
                (message "coq-last-but-one-proofnum: %s  proofdepth: %s" coq-last-but-one-proofnum  proofdepth)
                (message "coq-last-but-one-state-id: %s  span-state-id: %s" coq-last-but-one-state-id  span-state-id))
@@ -548,24 +556,17 @@ annotation-start) if found."
                (cond
                 ((and (= (span-start span) 1) coq-retract-buffer-state-id)
                  (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
-                 (setq coq-server-pending-state-id coq-retract-buffer-state-id)
-                 (proof-server-send-to-prover (coq-xml-edit-at coq-retract-buffer-state-id))
-                 ;; no goal needed
-                 (proof-server-send-to-prover (coq-xml-status)))
+                 (coq--send-retraction coq-retract-buffer-state-id))
                 ((null span-state-id) ;; in a comment
                  ;; find nearest preceding span with state id
-                 (let ((preceding-state-id (prev-span span 'type)))
+                 (let* ((preceding-span (prev-span span 'state-id))
+                        (preceding-state-id (and preceding-span (span-property preceding-span 'state-id))))
                    (when preceding-state-id
                      (message "retracting to preceding state-id: %s" preceding-state-id)
-                     (proof-server-send-to-prover (coq-xml-edit-at preceding-state-id))
-                     (proof-server-send-to-prover (coq-xml-goal))
-                     (proof-server-send-to-prover (coq-xml-status)))))
+                     (coq--send-retraction preceding-state-id t))))
                 ((not (null span-state-id))
                  (message "retracting to span-state-id: %s" span-state-id)
-                 (setq coq-server-pending-state-id span-state-id)
-                 (proof-server-send-to-prover (coq-xml-edit-at span-state-id))
-                 (proof-server-send-to-prover (coq-xml-goal))
-                 (proof-server-send-to-prover (coq-xml-status)))
+                 (coq--send-retraction span-state-id t))
                 (t (message "retraction in funny case")
                    nil)))))))
 

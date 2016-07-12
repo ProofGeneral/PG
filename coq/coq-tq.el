@@ -103,6 +103,7 @@
 (defvar tq-current-span nil)
 
 (defun tq-maybe-log (src str)
+  (message "*%s* %s" src str)
   (when proof-server-log-traffic
     (proof-server-log src str)))
 
