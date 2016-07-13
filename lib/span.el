@@ -23,15 +23,17 @@
 (defalias 'span-end 'overlay-end)
 (defalias 'span-set-property 'overlay-put)
 (defalias 'span-property 'overlay-get)
+(defalias 'span-properties 'overlay-properties)
 (defalias 'span-make 'make-overlay)
 (defalias 'span-detach 'delete-overlay)
 (defalias 'span-set-endpoints 'move-overlay)
 (defalias 'span-buffer 'overlay-buffer)
 
 (defun span-read-only-hook (overlay after start end &optional len)
+  (message "inhibit read only: %s" inhibit-read-only)
   (unless inhibit-read-only
     (error "Region is read-only")))
-(add-to-list 'debug-ignored-errors "Region is read-only")
+'(add-to-list 'debug-ignored-errors "Region is read-only")
 
 (defsubst span-read-only (span)
   "Set SPAN to be read only."
@@ -109,6 +111,16 @@
   (mapcar fn 
 	  (sort (spans-at-region-prop start end prop)
 		'span-lt)))
+
+;; set span properties from property list
+(defun span-set-properties (span props)
+  (when (and (consp props)
+	     (consp (cdr props)))
+    (message "for span: %s, setting property %s to %s"
+	     span (car props) (cadr props))
+    (span-set-property span
+		       (car props) (cadr props))
+    (span-set-properties span (cddr props))))
 
 (defun span-at-before (pt prop)
   "Return the smallest SPAN at before PT with property PROP.

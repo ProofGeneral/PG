@@ -3,6 +3,8 @@
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
 (require 'xml)
+(require 'thingatpt)
+
 (require 'coq-tq)
 (require 'proof-queue)
 (require 'proof-server)
@@ -349,27 +351,79 @@
 
 (defun coq-server--simple-backtrack ()
   ;; nothing to do here, retraction already done
-)
+  )
 
-;; TODO START HERE ... save deleted spans, restore as appropriate
+;; TODO START better idea, instead of deleting spans, mark them with 'marked-for-deletion or such
+;; for simple backtrack, actually delete them
+;; for proof re-opening, delete just the ones within the focus, unmark rest
+;; use the unmarked ones to calculate secondary locked span
 
+;; focus-end-state-id represents end of re-opened proof
+;; last-tip-state-id represents tip before we re-opened proof
+;; want a secondary locked span just past focus end to old tip
+;; also, restore the just-deleted spans within that secondary locked region
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
   (message "create secondary span, focus-id: %s last tip state id: %s" focus-end-state-id last-tip-state-id)
-  (let* ((edit-at-span (coq-server--find-span-with-state-id coq-server--pending-edit-at-state-id))
-	 (tip-span (next-span edit-at-span 'type))
-	 (end-of-focus-span (coq-server--find-span-with-state-id focus-end-state-id))
-	 (start-of-secondary-locked-span (next-span end-of-focus-span 'type)))
-    (message "edit-at-span: %s" edit-at-span)
-    (message "tip-span: %s" tip-span)
-    (message "end of retract: %s" (span-end end-of-focus-span))
-    (proof-retract-target tip-span nil nil))
-  '(let* ((span (span-make start end)))
-     (span-set-property span 'start-open t)
-     (span-set-property span 'end-closed t)
-     (proof-span-read-only span)
-     (span-set-property span 'face 'proof-locked-face)
-     ;; (span-detach span) ;; what does this do? TODO
-     (setq proof-locked-secondary-span span)))
+  ;; proof-script-span-cache is list of (start end property-list), sorted by start
+  ;; the last one should be data for last tip, since that's where we retracted from
+  ;; so look for focus-end-state-id, restore all spans after that
+  (with-current-buffer proof-script-buffer
+    (let (found-focus-end
+	  secondary-span-start
+	  secondary-span-end
+	  span-fixup)
+      (message "num span data to check: %s" (length proof-script-span-cache))
+      (dolist (span-data proof-script-span-cache)
+	(message "looking at span data: %s" span-data)
+	(if found-focus-end
+	    ;; restore span, get secondary span bounds
+	    (progn
+	      (let ((curr-span-start (nth 0 span-data))
+		    (curr-span-end (nth 1 span-data))
+		    (curr-span-props (nth 2 span-data)))
+		(unless secondary-span-start ;; the first span we see here should start the secondary span
+		  (setq secondary-span-start curr-span-start))
+		(when (or (null secondary-span-end)
+			  (> curr-span-end secondary-span-end))
+		  (setq secondary-span-end curr-span-end))
+		;; restore the span 
+		(let ((restored-span (span-make curr-span-start curr-span-end)))
+		  (span-set-properties restored-span curr-span-props))))
+	  ;; look for focus end
+	  (let* ((span-props (nth 2 span-data))
+		 (span-state-id (plist-get span-props 'state-id)))
+	    (message "looking for focus-end-state-id: %s, found %s" focus-end-state-id span-state-id)
+	    (when (and span-state-id (equal span-state-id focus-end-state-id))
+	      (setq found-focus-end t)
+	      (message "found focus-end-state-id: %s" span-state-id)
+	      (setq found-focus-end t)))))
+      (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
+      ;; adjust bounds of secondary span to look nice
+      (save-excursion
+	(goto-char secondary-span-start)
+	;; we're now on same line as end of focus
+	(while (not (thing-at-point 'symbol))
+	  (goto-char (1- (point))))
+	(end-of-thing 'sentence)
+	;; skip forward to next sentence
+	(while (not (thing-at-point 'symbol))
+	  (goto-char (1+ (point))))
+	(beginning-of-thing 'sentence)
+	(message "setting start of secondary to: %s" (point))
+	(setq secondary-span-start (point))
+	(goto-char secondary-span-end)
+	(while (not (thing-at-point 'symbol))
+	  (goto-char (1- (point))))
+	(beginning-of-thing 'sentence)
+	(setq secondary-span-end (point)))
+      (message "adjusted secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
+      (let* ((span (span-make secondary-span-start secondary-span-end)))
+	(span-set-property span 'start-closed t)
+	(span-set-property span 'end-closed t)
+	(put-text-property secondary-span-start secondary-span-end 'read-only t)
+	(span-set-property span 'face 'proof-secondary-locked-face)
+	;; (span-detach span) ;; what does this do? TODO
+	(setq proof-locked-secondary-span span)))))
 
 (defun coq-server--handle-value (xml)
   '(message "Got value: %s" xml)
@@ -391,14 +445,14 @@
 	     ;; new focus produces secondary locked span, which extends from
 	     ;; end of new focus to last tip
 	     ;; primary locked span is from start of script to the edit at state id
-	   (let* ((union (coq-xml-body1 xml))
-		  (outer-pair (coq-xml-body1 union))
-		  (inner-pair (nth 1 (coq-xml-body outer-pair)))
-		  (inner-pair-children (coq-xml-body inner-pair))
-		  (focus-end-state-id (coq-xml-val (nth 0 inner-pair-children)))
-		  (last-tip-state-id (coq-xml-val (nth 1 inner-pair-children))))
-	     (with-current-buffer proof-script-buffer
-	       (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)))
+	     (let* ((union (coq-xml-body1 xml))
+		    (outer-pair (coq-xml-body1 union))
+		    (inner-pair (nth 1 (coq-xml-body outer-pair)))
+		    (inner-pair-children (coq-xml-body inner-pair))
+		    (focus-end-state-id (coq-xml-val (nth 0 inner-pair-children)))
+		    (last-tip-state-id (coq-xml-val (nth 1 inner-pair-children))))
+	       (with-current-buffer proof-script-buffer
+		 (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)))
 	   ;; simple backtrack, use old retract mechanism
 	   (coq-server--simple-backtrack)))
        (let ((children (xml-node-children xml)))

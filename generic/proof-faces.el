@@ -79,6 +79,14 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for locked region of proof script (processed commands)."
   :group 'proof-faces)
 
+(defface proof-secondary-locked-face
+  (proof-face-specs
+   (:background "#eaf800")
+   (:background "darkgreen")
+   (:underline t))
+  "*Face for secondary locked region of proof script (processed commands)."
+  :group 'proof-faces)
+
 (defface proof-declaration-name-face
   (proof-face-specs
    (:foreground "chocolate" :bold t)
