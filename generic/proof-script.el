@@ -39,14 +39,6 @@
 (declare-function proof-autosend-enable "pg-user")
 (declare-function proof-interrupt-process "pg-shell")
 
-;; list of start, end, actions to be sent to proof-start-queue for retraction
-(defvar proof-script-retract-info nil)
-
-;; flag save spans to be deleted, in case they need to be restored
-(defvar proof-script--cache-deleted-spans nil)
-;; deleted spans to be restored
-(defvar proof-script-span-cache nil)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;  PRIVATE VARIABLES
@@ -359,57 +351,17 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
 				      'proof-script-sticky-error-face))))
     (proof-script-delete-spans start end)))
 
-(defun any (args)
-  (and (consp args)
-       (or (car args)
-	   (any (cdr args)))))
-
-(defun proof-script--cache-spans (start end props)
-  ;; need to save span data, rather than spans themselves
-  ;; once spans are deleted from buffer, lose positional information
-  (with-current-buffer proof-script-buffer
-    (let* ((all-spans (overlays-in start end))
-	   (_ (message "all-spans: %s" all-spans))
-	   (relevant-spans 
-	    (cl-remove-if-not 
-	     (lambda (span)
-	       (let ((vals (mapcar (lambda (prop) 
-				     (message "for span: %s looking up prop: %s, got: %s" 
-					      span prop
-					      (span-property span prop))
-				     (span-property span prop)) props)))
-		 (message "vals: %s any vals: %s" vals (any vals))
-		 (any vals)))
-	     all-spans))
-	   (_ (message "relevant-spans: %s" relevant-spans)))
-      (let (result)
-	(dolist (span relevant-spans result)
-	  (setq result
-		(cons (list (span-start span)
-			    (span-end span)
-			    (span-properties span)) 
-		      result)))
-	result))))
-			      
 (defun proof-script-delete-spans (beg end)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
-  (if proof-script--cache-deleted-spans
-      (progn
-	(setq proof-script-span-cache
-	      (proof-script--cache-spans beg end '(type idiom)))
-	(message "length proof-script-span-cache: %s" (length proof-script-span-cache))
-	(message "sorting proof-script-span-cache")
-	(setq proof-script-span-cache 
-	      (sort proof-script-span-cache 
-		    (lambda (sp1 sp2) 
-		      (let ((start1 (nth 0 sp1))
-			    (start2 (nth 0 sp2)))
-			(< start1 start2)))))
-	(message "done sorting proof-script-span-cache")
-	(message "after sorting, length proof-script-span-cache: %s" (length proof-script-span-cache)))
-    (setq proof-script-span-cache nil))
   (span-delete-spans beg end 'type)
   (span-delete-spans beg end 'idiom))
+
+;; mark spans to indicate we may want to delete them as part of a retraction
+;; if a proof is re-opened, some spans may not be deleted
+(defun proof-script-mark-spans-for-deletion (beg end)
+  "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
+  (span-mark-delete-spans beg end 'type)
+  (span-mark-delete-spans beg end 'idiom))
 
 (defun proof-script-delete-secondary-spans (beg end)
   "Delete secondary spans between BEG and END (currently, 'pghelp spans)."
@@ -1941,9 +1893,7 @@ others)."
 	;; save deleted spans in case we need to restore 
 	;; them when proof reopened, to create secondary locked span
 	;; hackish, unfortunately
-	(setq proof-script--cache-deleted-spans t)
-	(proof-script-delete-spans start end)
-	(setq proof-script--cache-deleted-spans nil)
+	(proof-script-mark-spans-for-deletion start end)
 	(span-delete span)
 	(if killfn (funcall killfn start end))))
   ;; State of scripting may have changed now

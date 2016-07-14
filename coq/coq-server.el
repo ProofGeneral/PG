@@ -350,8 +350,13 @@
 	 (string-equal (coq-xml-val child1) "in_r"))))
 
 (defun coq-server--simple-backtrack ()
-  ;; nothing to do here, retraction already done
-  )
+  ;; delete all spans marked for deletion
+  (with-current-buffer proof-script-buffer
+    (let ((all-spans (overlays-in (point-min) (point-max))))
+      (mapc (lambda (span)
+	      (when (span-property span 'marked-for-deletion)
+		(span-delete span)))
+	    all-spans))))
 
 ;; TODO START better idea, instead of deleting spans, mark them with 'marked-for-deletion or such
 ;; for simple backtrack, actually delete them
@@ -368,55 +373,47 @@
   ;; the last one should be data for last tip, since that's where we retracted from
   ;; so look for focus-end-state-id, restore all spans after that
   (with-current-buffer proof-script-buffer
-    (let (found-focus-end
+    (let* ((all-spans (overlays-in (point-min) (point-max)))
+	  (marked-spans (cl-remove-if-not 
+			 (lambda (span) (span-property span 'marked-for-deletion)) 
+			 all-spans))
+	  (sorted-marked-spans 
+	   (sort marked-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
+	  (last-tip-span (coq-server--find-span-with-state-id last-tip-state-id))
+	  found-focus-end
 	  secondary-span-start
-	  secondary-span-end
-	  span-fixup)
-      (message "num span data to check: %s" (length proof-script-span-cache))
-      (dolist (span-data proof-script-span-cache)
-	(message "looking at span data: %s" span-data)
+	  secondary-span-end)
+      (message "num span data to check: %s" (length sorted-marked-spans))
+      (message "last tip span: %s with properties: %s" last-tip-span (span-properties last-tip-span))
+      (setq secondary-span-end (span-end last-tip-span))
+      (dolist (span sorted-marked-spans)
+	(message "looking at span: %s" span)
 	(if found-focus-end
 	    ;; restore span, get secondary span bounds
 	    (progn
-	      (let ((curr-span-start (nth 0 span-data))
-		    (curr-span-end (nth 1 span-data))
-		    (curr-span-props (nth 2 span-data)))
-		(unless secondary-span-start ;; the first span we see here should start the secondary span
+	      (let ((curr-span-start (span-start span))
+		    (curr-span-end (span-end span)))
+		;; the first span past the end of the focus starts the secondary span
+		(unless secondary-span-start 
 		  (setq secondary-span-start curr-span-start))
-		(when (or (null secondary-span-end)
-			  (> curr-span-end secondary-span-end))
-		  (setq secondary-span-end curr-span-end))
-		;; restore the span 
-		(let ((restored-span (span-make curr-span-start curr-span-end)))
-		  (span-set-properties restored-span curr-span-props))))
+		;; don't delete the span 
+		(span-unmark-delete span)))
 	  ;; look for focus end
-	  (let* ((span-props (nth 2 span-data))
-		 (span-state-id (plist-get span-props 'state-id)))
+	  (let ((span-state-id (span-property span 'state-id)))
 	    (message "looking for focus-end-state-id: %s, found %s" focus-end-state-id span-state-id)
-	    (when (and span-state-id (equal span-state-id focus-end-state-id))
-	      (setq found-focus-end t)
-	      (message "found focus-end-state-id: %s" span-state-id)
-	      (setq found-focus-end t)))))
-      (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
-      ;; adjust bounds of secondary span to look nice
+	    (if (and span-state-id (equal span-state-id focus-end-state-id))
+		(progn 
+		  (setq found-focus-end t)
+		  (message "found focus-end-state-id: %s" span-state-id))
+	      (span-delete span)))))
+      ;; skip past whitespace for secondary span
       (save-excursion
 	(goto-char secondary-span-start)
-	;; we're now on same line as end of focus
-	(while (not (thing-at-point 'symbol))
-	  (goto-char (1- (point))))
-	(end-of-thing 'sentence)
-	;; skip forward to next sentence
-	(while (not (thing-at-point 'symbol))
+	(while (thing-at-point 'whitespace)
 	  (goto-char (1+ (point))))
 	(beginning-of-thing 'sentence)
-	(message "setting start of secondary to: %s" (point))
-	(setq secondary-span-start (point))
-	(goto-char secondary-span-end)
-	(while (not (thing-at-point 'symbol))
-	  (goto-char (1- (point))))
-	(beginning-of-thing 'sentence)
-	(setq secondary-span-end (point)))
-      (message "adjusted secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
+	(setq secondary-span-start (point)))
+      (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
       (let* ((span (span-make secondary-span-start secondary-span-end)))
 	(span-set-property span 'start-closed t)
 	(span-set-property span 'end-closed t)

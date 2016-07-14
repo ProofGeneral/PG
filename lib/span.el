@@ -92,6 +92,14 @@
 	(span-property span 'span-delete-actions))
   (delete-overlay span))
 
+(defsubst span-mark-delete (span)
+  "Mark span for potential deletion."
+  (span-set-property span 'marked-for-deletion t))
+
+(defsubst span-unmark-delete (span)
+  "Unmark span for deletion."
+  (span-set-property span 'marked-for-deletion nil)) ; TODO is this the right way?
+
 (defsubst span-add-delete-action (span action)
   "Add ACTION to the list of functions called when SPAN is deleted."
   (span-set-property span 'span-delete-actions
@@ -223,6 +231,10 @@ Return nil if no such overlay belong to the list."
 (defsubst span-delete-spans (start end prop)
   "Delete all spans between START and END with property PROP set."
   (span-mapc-spans 'span-delete start end prop))
+
+(defsubst span-mark-delete-spans (start end prop)
+  "Mark all spans between START and END with property PROP set for deletion."
+  (span-mapc-spans 'span-mark-delete start end prop))
 
 (defsubst span-property-safe (span name)
   "Like span-property, but return nil if SPAN is nil."
