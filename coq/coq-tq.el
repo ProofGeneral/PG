@@ -192,13 +192,11 @@ This produces more reliable results with some processes."
       (set-buffer buffer)
       (if (= 0 (buffer-size)) ()
 	(if (tq-queue-empty tq)
-	    (let ((buf (generate-new-buffer "*spurious*")))
-	      (copy-to-buffer buf (point-min) (point-max))
-	      (delete-region (point-min) (point))
-	      (pop-to-buffer buf nil)
-	      (error "Spurious communication from process %s, see buffer %s"
-		     (process-name (tq-process tq))
-		     (buffer-name buf)))
+	    ;; feedbacks not prompted by call
+	    ;; MODIFIED
+	    ;; original code put response here in a *spurious* buffer
+	    (tq-maybe-log "coqtop-oob" (buffer-string))
+	  ;; elisp allows multiple else-forms
 	  (goto-char (point-min))
 	  (if (re-search-forward (tq-queue-head-regexp tq) nil t)
 	      (let ((answer (buffer-substring (point-min) (point))))

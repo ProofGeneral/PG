@@ -18,7 +18,23 @@
 (eval-when-compile 
   (require 'cl))
 
-(defvar coq-server--pending-edit-at-state-id nil)
+(defvar coq-server--pending-edit-at-state-id nil
+  "State id for an Edit_at command sent, until we get a response.")
+
+(defvar coq-server--start-of-focus-state-id nil
+  "When re-opening a proof, this is the state id of the current focus.
+If we undo to point before the span with this state id, the focus 
+is gone and we have to close the secondary locked span."
+  )
+
+(defvar coq-server--end-of-focus-state-id nil
+  "When re-opening a proof, this is the state id of the end of 
+the current focus."
+  )
+
+(defvar coq-server--last-tip-state-id nil
+  "When re-opening a proof, this is the state id of the tip before re-opening."
+  )
 
 (defvar coq-server--current-span nil
   "Span associated with last response")
@@ -260,6 +276,24 @@
     (default
       )))
 
+;; similar to next-span in lib/span.el
+;; but looks at point after 
+(defun coq-server--next-span (span)
+  (let ((end (span-end span)))
+    (if (< end (point-max))
+	(let* ((pt-after (1+ end))
+	       (all-spans (overlays-in pt-after pt-after))
+	       (sorted-spans (sort (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2))) all-spans)))
+	  (car-safe sorted-spans))
+      (error "Looking for non-existent span after focus"))))
+
+;; inefficient, but number of spans should be small
+(defun coq-server--state-id-precedes (state-id-1 state-id-2)
+  "Does STATE-ID-1 occur in a span before that for STATE-ID-2?"
+  (let ((span1 (coq-server--find-span-with-state-id state-id-1))
+	(span2 (coq-server--find-span-with-state-id state-id-2)))
+    (< (span-start span1) (span-start span2))))
+
 (defun coq-server--find-span-with-predicate (pred &optional span-list)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (or span-list (overlays-in (point-min) (point-max)))))
@@ -268,7 +302,6 @@
 (defun coq-server--find-span-with-state-id (state-id &optional span-list)
   (coq-server--find-span-with-predicate
    (lambda (span) 
-     (message "testing for equality of %s with %s" (span-property span 'state-id) state-id)
      (equal (span-property span 'state-id) state-id))
    span-list))
 
@@ -358,11 +391,6 @@
 		(span-delete span)))
 	    all-spans))))
 
-;; TODO START better idea, instead of deleting spans, mark them with 'marked-for-deletion or such
-;; for simple backtrack, actually delete them
-;; for proof re-opening, delete just the ones within the focus, unmark rest
-;; use the unmarked ones to calculate secondary locked span
-
 ;; focus-end-state-id represents end of re-opened proof
 ;; last-tip-state-id represents tip before we re-opened proof
 ;; want a secondary locked span just past focus end to old tip
@@ -374,15 +402,15 @@
   ;; so look for focus-end-state-id, restore all spans after that
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
-	  (marked-spans (cl-remove-if-not 
-			 (lambda (span) (span-property span 'marked-for-deletion)) 
-			 all-spans))
-	  (sorted-marked-spans 
-	   (sort marked-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
-	  (last-tip-span (coq-server--find-span-with-state-id last-tip-state-id))
-	  found-focus-end
-	  secondary-span-start
-	  secondary-span-end)
+	   (marked-spans (cl-remove-if-not 
+			  (lambda (span) (span-property span 'marked-for-deletion)) 
+			  all-spans))
+	   (sorted-marked-spans 
+	    (sort marked-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
+	   (last-tip-span (coq-server--find-span-with-state-id last-tip-state-id))
+	   found-focus-end
+	   secondary-span-start
+	   secondary-span-end)
       (message "num span data to check: %s" (length sorted-marked-spans))
       (message "last tip span: %s with properties: %s" last-tip-span (span-properties last-tip-span))
       (setq secondary-span-end (span-end last-tip-span))
@@ -415,11 +443,15 @@
 	(setq secondary-span-start (point)))
       (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
       (let* ((span (span-make secondary-span-start secondary-span-end)))
+	(message "made a span")
 	(span-set-property span 'start-closed t)
 	(span-set-property span 'end-closed t)
-	(put-text-property secondary-span-start secondary-span-end 'read-only t)
+	(message "setting span face")
 	(span-set-property span 'face 'proof-secondary-locked-face)
-	;; (span-detach span) ;; what does this do? TODO
+	(message "set some properties on it")
+	(message "setting span text r/o")
+	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
+	(message "here is the locked 2ndary span: %s" span)
 	(setq proof-locked-secondary-span span)))))
 
 (defun coq-server--handle-value (xml)
@@ -437,6 +469,42 @@
        ;; but conceivable you'd get the feedback, then a failure ?
        (message "coq-server--pending-edit-at-state-id %s" coq-server--pending-edit-at-state-id)
        (when coq-server--pending-edit-at-state-id ; from Edit_at
+	 ;; if we just retracted to before a re-opened proof, remove secondary locked span, delete 
+	 ;; any spans contained between last end of focus and last tip
+	 (message "coq-server--start-of-focus-state-id: %s coq-server--end-of-focus-state-id: %s  coq-server--last-tip-state-id: %s"
+		  coq-server--start-of-focus-state-id coq-server--end-of-focus-state-id coq-server--last-tip-state-id)
+	 (when (and coq-server--start-of-focus-state-id coq-server--end-of-focus-state-id coq-server--last-tip-state-id
+		    (or (equal coq-server--pending-edit-at-state-id coq-retract-buffer-state-id)
+			(coq-server--state-id-precedes coq-server--pending-edit-at-state-id coq-server--start-of-focus-state-id)))
+	   (message "proof-locked-secondary-span: %s" proof-locked-secondary-span)
+	   (when proof-locked-secondary-span ;; should always be true
+	     (message "removing secondary span")
+	     (let ((start (span-start proof-locked-secondary-span))
+		   (end (span-end proof-locked-secondary-span)))
+	       ;; delete spans between end of last focus (exclusive) and last tip (inclusive)
+	       (with-current-buffer proof-script-buffer
+		 (message "removing secondary span")
+		 (span-delete proof-locked-secondary-span)
+		 (setq proof-locked-secondary-span nil)
+		 (message "removing read-only prop")
+		 (message "about to remove that prop start: %s end: %s" start end)
+		 (setq inhibit-read-only t) ; special trick
+		 (remove-list-of-text-properties start end (list 'read-only))
+		 (setq inhibit-read-only nil)
+		 (message "removed r/o property")
+		 (let* ((end-of-focus-span (coq-server--find-span-with-state-id coq-server--end-of-focus-state-id))
+			(span-after-focus (coq-server--next-span end-of-focus-span))
+			(last-tip-span (coq-server--find-span-with-state-id coq-server--last-tip-state-id))
+			(candidate-spans (overlays-in (span-start span-after-focus) (span-start last-tip-span)))
+			(relevant-spans 
+			 (cl-remove-if-not 
+			  (lambda (span) (or (span-property span 'type) (span-property span 'idiom)))
+			  candidate-spans)))
+		   (mapc 'span-delete relevant-spans)))))
+	   (setq coq-server--start-of-focus-state-id nil
+		 coq-server--end-of-focus-state-id nil
+		 coq-server--last-tip-state-id nil))
+	 (message "on edit-at, setting coq-current-state-id to %s" coq-server--pending-edit-at-state-id)
 	 (setq coq-current-state-id coq-server--pending-edit-at-state-id)
 	 (if (coq-server--value-new-focusp xml)
 	     ;; new focus produces secondary locked span, which extends from
@@ -444,13 +512,17 @@
 	     ;; primary locked span is from start of script to the edit at state id
 	     (let* ((union (coq-xml-body1 xml))
 		    (outer-pair (coq-xml-body1 union))
+		    (focus-start-state-id (coq-xml-attr-value (coq-xml-body1 outer-pair) 'val))
 		    (inner-pair (nth 1 (coq-xml-body outer-pair)))
 		    (inner-pair-children (coq-xml-body inner-pair))
 		    (focus-end-state-id (coq-xml-val (nth 0 inner-pair-children)))
 		    (last-tip-state-id (coq-xml-val (nth 1 inner-pair-children))))
+	       (setq coq-server--start-of-focus-state-id focus-start-state-id)
+	       (setq coq-server--end-of-focus-state-id focus-end-state-id)
+	       (setq coq-server--last-tip-state-id last-tip-state-id)
 	       (with-current-buffer proof-script-buffer
 		 (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)))
-	   ;; simple backtrack, use old retract mechanism
+	   ;; simple backtrack
 	   (coq-server--simple-backtrack)))
        (let ((children (xml-node-children xml)))
 	 (dolist (child children)

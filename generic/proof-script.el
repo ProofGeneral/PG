@@ -123,9 +123,6 @@ from the buffer.
 Proof General allows buffers in other modes also to be locked;
 these also have a non-nil value for this variable.")
 
-(deflocal proof-locked-secondary-span nil
-  "If there's an edit within the locked span, that may result in two locked regions, 
-with the focus between them. This span represents the second such region.")
 
 (deflocal proof-queue-span nil
   "The queue span of the buffer.  May be detached if inactive or empty.
@@ -139,6 +136,10 @@ scripting buffer may have an active queue span.")
 (deflocal proof-overlay-arrow nil
   "Marker holding the overlay arrow position for this buffer.")
 
+;; global variable
+(defvar proof-locked-secondary-span nil
+  "If there's an edit within the locked span, that may result in two locked regions, 
+with the focus between them. This span represents the second such region.")
 
 ;; ** Getters and setters
 
@@ -167,7 +168,7 @@ Action is taken on all script buffers."
    (proof-buffers-in-mode proof-mode-for-script)
    (when (span-live-p proof-locked-span)
      (proof-span-read-only proof-locked-span)
-     (proof-span-read-only proof-locked-secondary-span))))
+     '(proof-span-read-only proof-locked-secondary-span))))
 
 (defsubst proof-set-queue-endpoints (start end)
   "Set the queue span to be START, END."
@@ -1943,9 +1944,7 @@ up to the end of the locked region.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'."
   (let ((end (proof-unprocessed-begin))
 	(start (span-start target))
-	(span  (if proof-arbitrary-undo-positions
-		   target
-		 (proof-last-goal-or-goalsave))) ;; TODO do we still need this?
+	(span target)
 	actions)
 
 	;; NB: first section only entered if proof-kill-goal-command is
@@ -1999,6 +1998,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	;; make spans outside the locked region at the moment)...
 	;; But end may have moved backwards above: this just checks whether
 	;; there is more retraction to be done.
+	(message "retracting span: %s start: %s end: %s" span start end)
 	(when (> end start)
 	  (setq actions
 		;; Append a retract action to clear the entire start-end
@@ -2060,11 +2060,7 @@ query saves here."
     (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
       ;; spans contain state id resulting from processing that span
       ;; so leave this span processed, and work on preceding span
-      (let* ((curr-span (span-at (point) 'type))
-	     ;; if no previous span, use current span
-	     ;; TODO: alternatively, store previous state id in span
-	     (span (or (prev-span curr-span 'type) curr-span)))
-	(message "retract-until-point, curr-span: %s span: %s" curr-span span)
+      (let* ((span (span-at (point) 'type)))
 	;; If no span at point or previous span, retract the last span in the buffer.
 	(unless span
 	  (proof-goto-end-of-locked)

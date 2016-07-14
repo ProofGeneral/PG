@@ -549,9 +549,10 @@ a state id."
           (progn
             (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
             (coq--send-retraction coq-retract-buffer-state-id))
-        (let ((prev-state-id (coq--find-previous-state-id span)))
-          (message "retracting to span-state-id: %s" prev-state-id)
-          (coq--send-retraction prev-state-id t))))))
+        ;; use nearest state id before this span; if none, use retraction state id
+        (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
+          (message "retracting to span-state-id: %s, span given was: %s" prev-state-id span)
+          (coq--send-retraction prev-state-id))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
