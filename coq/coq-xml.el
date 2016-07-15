@@ -6,6 +6,7 @@
 ;;;
 
 (require 'xml)
+(require 'cl-lib)
 (require 'coq-state-vars)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
@@ -81,7 +82,7 @@
 (defun coq-xml-body (xml)
   (cddr xml))
 
-;; when we know there's one item only in body
+;; often we know there's only one item in body
 (defun coq-xml-body1 (xml)
   (car (cddr xml)))
 
@@ -91,7 +92,7 @@
        (listp xml)
        (eq (car xml) tag)))
 
-;; use these functions for specific tags, so we don't make silly mistakes 
+;; use these functions for specific tags, so we don't make mistakes 
 
 ;; it would be nice to have a function that took just the tag, and 
 ;;  returned a function that took the attrs and contents
@@ -137,6 +138,61 @@
 (defun coq-xml-unit ()
   "XML block with `unit' tag"
   (coq-xml-block "unit" nil nil))
+
+;; convenience functions so we don't have to write out traversals by hand
+
+(defun coq-xml-footprint (xml)
+  "Footprint to check for a syntactic pattern in parsed XML, 
+actually an S-expression. The footprint describes the 
+structure of tags only."
+  (let ((tag (coq-xml-tag xml))
+	(children (coq-xml-body xml)))
+    (cons tag 
+	  (cl-remove-if 'null 
+			(mapcar (lambda (child) 
+				  (and (consp child)
+				       (coq-xml-footprint child)))
+				children)))))
+
+;; conventional zip using cons, except that
+;; path may end, leaving extra xmls, which is OK
+(defun zip (xmls paths)
+  (let ((null1 (null xmls))
+	(null2 (null paths)))
+    (if null2
+	nil
+      (if null1
+	  (error "zip, path too long")
+	(cons (cons (car xmls) (car paths))
+	      (zip (cdr xmls) (cdr paths)))))))
+
+(defun coq-xml-at-path (xml path)
+  "Get item parsed XML following PATH, which may terminate in a 
+tag, or a tag with an attribute name. Using this function avoids having 
+to write out the traversal code by hand each time."
+  (cond
+   ;; didn't find what we wanted
+   ((null path) 
+    nil) 
+   ;; end of path
+   ((and (consp path) (eq (car path) (coq-xml-tag xml)))
+    (cond 
+     ;; attribute
+     ;; nil is a symbol in this crazy world
+     ((and (symbolp (cadr path)) (not (null (cadr path)))) 
+      (coq-xml-attr-value xml (cadr path)))
+     ;; this XML node
+     ((null (cdr path)) 
+      xml)
+     ;; child nodes, want last one
+     (t (let* ((xml-children (coq-xml-body xml))
+	       (path-children (cdr path))
+	       (zipped-children (zip xml-children path-children))
+	       ;; running all of these checks validity of path
+	       (results (mapcar (lambda (consed) (coq-xml-at-path (car consed) (cdr consed)))
+				zipped-children)))
+	  (car (reverse results))))))
+   (t (error "coq-xml-at-path, xml does not match path"))))
 
 ;; functions that use the `call' tag
 

@@ -64,6 +64,9 @@ kill buffer hook.  This variable is used when buffer-file-name is nil.")
 (defalias 'proof-active-buffer-fake-minor-mode
   'proof-toggle-active-scripting)
 
+(defvar proof-merged-locked-end nil
+"When merging locked regions, holds value of end of merged region")
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1344,7 +1347,16 @@ Argument SPAN has just been processed."
   (let ((end     (span-end span))
 	(cmd     (span-property span 'cmd)))
 
-    (proof-set-locked-end end)
+    ;; if merging primary, secondary locked regions,
+    ;; may have already extended locked region beyond the 
+    ;; just-processed span's end
+
+    (if proof-merged-locked-end
+	(progn 
+	  (proof-set-locked-end proof-merged-locked-end)
+	  (goto-char proof-merged-locked-end)
+	  (setq proof-merged-locked-end nil))
+      (proof-set-locked-end end))
 
     (if (span-live-p proof-queue-span)
 	(proof-set-queue-start end))
@@ -1352,7 +1364,6 @@ Argument SPAN has just been processed."
     (cond
      ;; CASE 1: Comments just get highlighted
      ((eq (span-property span 'type) 'comment)
-      (message "case 1")
       (proof-done-advancing-comment span))
 
      ;; removed code to amalgamate spans
@@ -1360,7 +1371,6 @@ Argument SPAN has just been processed."
 
      ;; CASE 5:  Some other kind of command (or a nested goal).
      (t
-      (message "case 5")
       (proof-done-advancing-other span)))
 
     ;; Add the processed command to the input ring

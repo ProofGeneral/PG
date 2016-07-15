@@ -77,6 +77,7 @@ the current focus."
       (goto-char (point-min))
       (let ((xml (xml-parse-tag-1)))
 	(when xml
+	  (message "xml: %s footprint: %s" xml (coq-xml-footprint xml))
 	  (delete-region (point-min) (point)))
 	xml))))
 
@@ -376,11 +377,71 @@ the current focus."
       (default
 	(coq-server--handle-item xml nil 1)))))
 
+;; extract state ids from value response after focus open
+(defun coq-server--get-focus-state-ids (xml)
+  (let* ((outer-pair 
+	  (coq-xml-at-path 
+	   xml
+	   '(value (union (pair)))))
+	 (focus-start-state-id 
+	  (coq-xml-at-path 
+	   outer-pair
+	   '(pair (state_id val))))
+	 (inner-pair 
+	  (coq-xml-at-path 
+	   outer-pair
+	   '(pair (state_id) (pair))))
+	 (focus-end-state-id 
+	  (coq-xml-at-path 
+	   inner-pair
+	   '(pair (state_id val))))
+	 (last-tip-state-id 
+	  (coq-xml-at-path 
+	   inner-pair
+	   '(pair (state_id) (state_id val)))))
+    (list focus-start-state-id focus-end-state-id last-tip-state-id)))
+
+;; extract state ids from value response after focus close
+(defun coq-server--close-focus-state-ids (xml)
+  (let* ((outer-pair 
+	  (coq-xml-at-path 
+	   xml
+	   '(value (pair))))
+	 (qed-state-id
+	  (coq-xml-at-path 
+	   outer-pair
+	   '(pair (state_id val))))
+	 (new-tip-state-id
+	  (coq-xml-at-path 
+	   outer-pair
+	   '(pair (state_id) (pair (union) (state_id val))))))
+    (list qed-state-id new-tip-state-id)))
+
+(defvar coq-server--value-new-focus-footprint 
+  '(value (union (pair (state_id) (pair (state_id) (state_id))))))
+
 (defun coq-server--value-new-focusp (xml)
-  (let ((child1 (coq-xml-body1 xml)))
-    (and child1
-	 (coq-xml-tagp child1 'union)
-	 (string-equal (coq-xml-val child1) "in_r"))))
+  (and (equal (coq-xml-footprint xml)
+	      coq-server--value-new-focus-footprint)
+       (string-equal (coq-xml-at-path 
+		      xml
+		      '(value (union val)))
+		     "in_r")))
+
+(defvar coq-server--value-end-focus-footprint 
+  '(value (pair (state_id) (pair (union (state_id)) (string)))))
+
+(defun coq-server--value-end-focusp (xml) 
+  (message "testing for end of focus")
+  (and (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
+       (or (message "got footprint equality") t)
+       (or (message "attr at union: %s" (coq-xml-at-path 
+		      xml 
+		      '(value (pair (state_id) (pair (union val)))))) t)
+       (string-equal (coq-xml-at-path 
+		      xml 
+		      '(value (pair (state_id) (pair (union val))))) 
+		     "in_r")))
 
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
@@ -443,16 +504,41 @@ the current focus."
 	(setq secondary-span-start (point)))
       (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
       (let* ((span (span-make secondary-span-start secondary-span-end)))
-	(message "made a span")
-	(span-set-property span 'start-closed t)
+	(span-set-property span 'start-closed t) ;; TODO what are these for?
 	(span-set-property span 'end-closed t)
-	(message "setting span face")
 	(span-set-property span 'face 'proof-secondary-locked-face)
-	(message "set some properties on it")
-	(message "setting span text r/o")
 	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
-	(message "here is the locked 2ndary span: %s" span)
 	(setq proof-locked-secondary-span span)))))
+
+(defun coq-server--remove-secondary-locked-span (&optional delete-spans)
+  (message "removing secondary span")
+  (let ((start (span-start proof-locked-secondary-span))
+	(end (span-end proof-locked-secondary-span)))
+    ;; delete spans between end of last focus (exclusive) and last tip (inclusive)
+    (with-current-buffer proof-script-buffer
+      (span-delete proof-locked-secondary-span)
+      (setq proof-locked-secondary-span nil)
+      (setq inhibit-read-only t) ; special trick
+      (remove-list-of-text-properties start end (list 'read-only))
+      (setq inhibit-read-only nil)
+      ;; don't delete when merging primary, secondary locked regions, spans following focused region are valid
+      (when delete-spans
+	(let* ((end-of-focus-span (coq-server--find-span-with-state-id coq-server--end-of-focus-state-id))
+	       (span-after-focus (coq-server--next-span end-of-focus-span))
+	       (last-tip-span (coq-server--find-span-with-state-id coq-server--last-tip-state-id))
+	       (candidate-spans (overlays-in (span-start span-after-focus) (span-start last-tip-span)))
+	       (relevant-spans 
+		(cl-remove-if-not 
+		 (lambda (span) (or (span-property span 'type) (span-property span 'idiom)))
+		 candidate-spans)))
+	  (mapc 'span-delete relevant-spans))))))
+
+(defun coq-server--merge-locked-spans ()
+  (with-current-buffer proof-script-buffer
+    (let ((new-end (span-end proof-locked-secondary-span)))
+      (coq-server--remove-secondary-locked-span)
+      ;; proof-done-advancing uses this to set merged locked end
+      (setq proof-merged-locked-end new-end))))
 
 (defun coq-server--handle-value (xml)
   '(message "Got value: %s" xml)
@@ -465,74 +551,52 @@ the current focus."
 	   (coq--display-response errmsg)))
        (coq-server--handle-error))
       ("good"
-       ;; TODO maybe it's better to use the feedback message, which contains the state id
-       ;; but conceivable you'd get the feedback, then a failure ?
-       (message "coq-server--pending-edit-at-state-id %s" coq-server--pending-edit-at-state-id)
-       (when coq-server--pending-edit-at-state-id ; from Edit_at
+       ;; handle special cases before processing children
+       (cond
+	;; from Edit_at
+	(coq-server--pending-edit-at-state-id 
 	 ;; if we just retracted to before a re-opened proof, remove secondary locked span, delete 
 	 ;; any spans contained between last end of focus and last tip
-	 (message "coq-server--start-of-focus-state-id: %s coq-server--end-of-focus-state-id: %s  coq-server--last-tip-state-id: %s"
-		  coq-server--start-of-focus-state-id coq-server--end-of-focus-state-id coq-server--last-tip-state-id)
+	 ;; check for backtrack past start of focus
 	 (when (and coq-server--start-of-focus-state-id coq-server--end-of-focus-state-id coq-server--last-tip-state-id
 		    (or (equal coq-server--pending-edit-at-state-id coq-retract-buffer-state-id)
 			(coq-server--state-id-precedes coq-server--pending-edit-at-state-id coq-server--start-of-focus-state-id)))
-	   (message "proof-locked-secondary-span: %s" proof-locked-secondary-span)
 	   (when proof-locked-secondary-span ;; should always be true
-	     (message "removing secondary span")
-	     (let ((start (span-start proof-locked-secondary-span))
-		   (end (span-end proof-locked-secondary-span)))
-	       ;; delete spans between end of last focus (exclusive) and last tip (inclusive)
-	       (with-current-buffer proof-script-buffer
-		 (message "removing secondary span")
-		 (span-delete proof-locked-secondary-span)
-		 (setq proof-locked-secondary-span nil)
-		 (message "removing read-only prop")
-		 (message "about to remove that prop start: %s end: %s" start end)
-		 (setq inhibit-read-only t) ; special trick
-		 (remove-list-of-text-properties start end (list 'read-only))
-		 (setq inhibit-read-only nil)
-		 (message "removed r/o property")
-		 (let* ((end-of-focus-span (coq-server--find-span-with-state-id coq-server--end-of-focus-state-id))
-			(span-after-focus (coq-server--next-span end-of-focus-span))
-			(last-tip-span (coq-server--find-span-with-state-id coq-server--last-tip-state-id))
-			(candidate-spans (overlays-in (span-start span-after-focus) (span-start last-tip-span)))
-			(relevant-spans 
-			 (cl-remove-if-not 
-			  (lambda (span) (or (span-property span 'type) (span-property span 'idiom)))
-			  candidate-spans)))
-		   (mapc 'span-delete relevant-spans)))))
+	     (coq-server--remove-secondary-locked-span t))
 	   (setq coq-server--start-of-focus-state-id nil
 		 coq-server--end-of-focus-state-id nil
 		 coq-server--last-tip-state-id nil))
-	 (message "on edit-at, setting coq-current-state-id to %s" coq-server--pending-edit-at-state-id)
-	 (setq coq-current-state-id coq-server--pending-edit-at-state-id)
-	 (if (coq-server--value-new-focusp xml)
+	 (if (coq-server--value-new-focusp xml) 
 	     ;; new focus produces secondary locked span, which extends from
 	     ;; end of new focus to last tip
 	     ;; primary locked span is from start of script to the edit at state id
-	     (let* ((union (coq-xml-body1 xml))
-		    (outer-pair (coq-xml-body1 union))
-		    (focus-start-state-id (coq-xml-attr-value (coq-xml-body1 outer-pair) 'val))
-		    (inner-pair (nth 1 (coq-xml-body outer-pair)))
-		    (inner-pair-children (coq-xml-body inner-pair))
-		    (focus-end-state-id (coq-xml-val (nth 0 inner-pair-children)))
-		    (last-tip-state-id (coq-xml-val (nth 1 inner-pair-children))))
+	     (let* ((state-ids (coq-server--get-focus-state-ids xml))
+		    (focus-start-state-id (nth 0 state-ids))
+		    (focus-end-state-id (nth 1 state-ids))
+		    (last-tip-state-id (nth 2 state-ids)))
 	       (setq coq-server--start-of-focus-state-id focus-start-state-id)
 	       (setq coq-server--end-of-focus-state-id focus-end-state-id)
 	       (setq coq-server--last-tip-state-id last-tip-state-id)
 	       (with-current-buffer proof-script-buffer
 		 (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)))
 	   ;; simple backtrack
-	   (coq-server--simple-backtrack)))
+	   (coq-server--simple-backtrack))
+	 ;; we're now in the requested Edit_at state id
+	 (setq coq-current-state-id coq-server--pending-edit-at-state-id))
+	;; close of focus after Add
+	((coq-server--value-end-focusp xml) 
+	 (message "END OF FOCUS")
+	 (coq-server--merge-locked-spans)))
+       ;; TODO prevent children from looking at state id in Edit_at and end-of-focus cases in principled way
+       ;; now process children
        (let ((children (xml-node-children xml)))
 	 (dolist (child children)
 	   (coq-server--handle-item child t 1)))
-       ;; must set after processing children
+       ;; must set after processing children -- TODO fix
        (when coq-server--pending-edit-at-state-id
-	 (setq coq-server--pending-edit-at-state-id nil)))
-      (default )))
-  ;; now that we've processed value, ready to send next item
-  (proof-server-exec-loop))
+	 (setq coq-server--pending-edit-at-state-id nil))))
+    ;; now that we've processed value, ready to send next item
+    (proof-server-exec-loop)))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response span)
