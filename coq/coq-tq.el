@@ -109,11 +109,11 @@
 
 (defun tq-log-and-send (tq question)
   (let* ((str-and-span 
-	 (cond 
-	  ((stringp question) (list question nil))
-	  ((symbolp question) (list (symbol-value question) nil))
-	  ((functionp question) (funcall question))
-	  (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
+	  (cond 
+	   ((stringp question) (list question nil))
+	   ((symbolp question) (list (symbol-value question) nil))
+	   ((functionp question) (funcall question))
+	   (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
     (tq-maybe-log "emacs" str)
@@ -148,7 +148,8 @@ to a tcp server on another machine."
   (setcar tq (cdr (car tq)))
   (let ((question (tq-queue-head-question tq)))
     (condition-case nil
-	(tq-log-and-send tq question) ;; MODIFIED
+	(when question
+	  (tq-log-and-send tq question)) ;; MODIFIED
       (error nil)))
   (null (car tq)))
 
@@ -198,7 +199,7 @@ This produces more reliable results with some processes."
 	    (tq-maybe-log "coqtop-oob" (buffer-string))
 	  ;; elisp allows multiple else-forms
 	  (goto-char (point-min))
-	  (if (re-search-forward (tq-queue-head-regexp tq) nil t)
+	  (when (re-search-forward (tq-queue-head-regexp tq) nil t)
 	      (let ((answer (buffer-substring (point-min) (point))))
 		(delete-region (point-min) (point))
 		(unwind-protect
