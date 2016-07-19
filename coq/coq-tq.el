@@ -196,7 +196,9 @@ This produces more reliable results with some processes."
 	    ;; feedbacks not prompted by call
 	    ;; MODIFIED
 	    ;; original code put response here in a *spurious* buffer
-	    (tq-maybe-log "coqtop-oob" (buffer-string))
+	    (progn
+	      (tq-maybe-log "coqtop-oob" (buffer-string))
+	      (delete-region (point-min) (point-max)))
 	  ;; elisp allows multiple else-forms
 	  (goto-char (point-min))
 	  (when (re-search-forward (tq-queue-head-regexp tq) nil t)

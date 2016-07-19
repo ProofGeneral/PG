@@ -1900,12 +1900,11 @@ others)."
 	;;			(pg-remove-from-input-history
 	;;			 (span-property span 'cmd))))))
 	;;	  (mapc fn (reverse cmds)))
-
-	;; save deleted spans in case we need to restore 
-	;; them when proof reopened, to create secondary locked span
-	;; hackish, unfortunately
+	;; mark spans for deletion
+	;; if we create secondary locked span, we won't delete those covered by that span
 	(proof-script-mark-spans-for-deletion start end)
 	(span-delete span)
+	;; TODO what if error marks below this span???
 	(if killfn (funcall killfn start end))))
   ;; State of scripting may have changed now
   (run-hooks 'proof-state-change-hook))

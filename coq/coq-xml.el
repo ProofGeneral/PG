@@ -175,7 +175,8 @@ to write out the traversal code by hand each time."
    ((null path) 
     nil) 
    ;; end of path
-   ((and (consp path) (eq (car path) (coq-xml-tag xml)))
+   ((and (consp path) (or (eq (car path) (coq-xml-tag xml))
+			  (eq (car path) '_))) ; wildcard tag
     (cond 
      ;; attribute
      ;; nil is a symbol in this crazy world

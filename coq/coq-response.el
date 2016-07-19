@@ -81,10 +81,23 @@ Only when three-buffer-mode is enabled."
 				     'face 'proof-warning-face)))))
 
 ;; indelibly mark span containing an error
+;; TODO : in proof-script.el, there's pg-set-span-highlights, but that appears to have a different purpose
 (defun coq--mark-error (span msg)
-  (proof-with-current-buffer-if-exists 
-   proof-script-buffer
-   (span-set-property span 'face proof-error-face)
-   (span-set-property span 'help-echo msg)))
+  (let ((start (span-start span))
+	(end (span-end span))
+	(ws " \t\n"))
+    (with-current-buffer proof-script-buffer 
+      (save-excursion
+	(goto-char start)
+	(skip-chars-forward ws end)
+	(setq start (point))
+	(goto-char end)
+	(skip-chars-backward ws start)
+	(setq end (point)))
+      (let ((error-span (span-make start end)))
+	(span-set-property error-span 'face proof-error-face)
+	(span-set-property error-span 'help-echo msg)
+	(span-set-property error-span 'type 'pg-error)))))
+
 
 (provide 'coq-response)
