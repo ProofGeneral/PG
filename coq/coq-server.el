@@ -261,23 +261,6 @@ is gone and we have to close the secondary locked span."
 	 (error-end (span-end error-span)))
     (= error-end locked-end)))
 
-
-;; extract state ids from value response after focus close
-(defun coq-server--close-focus-state-ids (xml)
-  (let* ((outer-pair 
-	  (coq-xml-at-path 
-	   xml
-	   '(value (pair))))
-	 (qed-state-id
-	  (coq-xml-at-path 
-	   outer-pair
-	   '(pair (state_id val))))
-	 (new-tip-state-id
-	  (coq-xml-at-path 
-	   outer-pair
-	   '(pair (state_id) (pair (union) (state_id val))))))
-    (list qed-state-id new-tip-state-id)))
-
 (defvar coq-server--value-simple-backtrack-footprint 
   '(value (union (unit))))
 
@@ -361,12 +344,12 @@ is gone and we have to close the secondary locked span."
 		      '(value (pair (state_id) (pair (union val))))) 
 		     "in_r")))
 
-(defun coq-server--end-focus-new-tip-state-id (xml)
+(defun coq-server--end-focus-qed-state-id (xml)
   (coq-xml-at-path 
    xml 
    '(value (pair (state_id val)))))
 
-(defun coq-server--end-focus-qed-state-id (xml)
+(defun coq-server--end-focus-new-tip-state-id (xml)
   (coq-xml-at-path 
    xml 
    '(value (pair (state_id) (pair (union (state_id val)))))))
