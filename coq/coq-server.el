@@ -172,7 +172,7 @@ is gone and we have to close the secondary locked span."
   (equal (coq-xml-footprint xml) 
 	 coq-server--value-empty-goals-footprint))
 
-(defun coq-server--handle-empty-goals (xml)
+(defun coq-server--handle-empty-goals ()
   (coq-server--clear-goals-buffer))
 
 ;; use path instead of footprint, because inner bits may vary
@@ -181,7 +181,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-goal (goal)
   ;; nothing to do, apparently
-  )
+  (and nil goal)) ;; prevents compiler warning
 
 (defun coq-server--handle-goals (xml)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
@@ -307,6 +307,11 @@ is gone and we have to close the secondary locked span."
    xml
    '(value (state_id val))))
 
+(defun coq-server--set-init-state-id (xml)
+  (let ((state-id (coq-server--value-init-state-id xml)))
+    (setq coq-retract-buffer-state-id state-id)
+    (coq-server--update-state-id-and-process state-id)))
+
 ;; value when updating state id from an Add
 (defvar coq-server--value-new-state-id-footprint
   '(value (pair (state_id) (pair (union (unit)) (string)))))
@@ -315,10 +320,11 @@ is gone and we have to close the secondary locked span."
   (equal (coq-xml-footprint xml) 
 	 coq-server--value-new-state-id-footprint))
 
-(defun coq-server--value-new-state-id (xml)
-  (coq-xml-at-path 
-   xml
-   '(value (pair (state_id val)))))
+(defun coq-server--set-new-state-id (xml)
+  (let ((state-id (coq-xml-at-path 
+		   xml
+		   '(value (pair (state_id val))))))
+    (coq-server--update-state-id-and-process state-id)))
 
 ;; Add'ing past end of focus
 (defvar coq-server--value-end-focus-footprint 
@@ -340,6 +346,14 @@ is gone and we have to close the secondary locked span."
   (coq-xml-at-path 
    xml 
    '(value (pair (state_id) (pair (union (state_id val)))))))
+
+(defun coq-server--end-focus (xml)
+  (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
+	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
+    (coq-set-span-state-id coq-server--current-span qed-state-id)
+    (setq coq-current-state-id new-tip-state-id)
+    (setq coq-server--start-of-focus-state-id nil)
+    (coq-server--merge-locked-spans)))
 
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
@@ -386,8 +400,7 @@ is gone and we have to close the secondary locked span."
 	(if found-focus-end
 	    ;; restore span, get secondary span bounds
 	    (progn
-	      (let ((curr-span-start (span-start span))
-		    (curr-span-end (span-end span)))
+	      (let ((curr-span-start (span-start span)))
 		;; the first span past the end of the focus starts the secondary span
 		(unless secondary-span-start 
 		  (setq secondary-span-start curr-span-start))
@@ -448,6 +461,12 @@ is gone and we have to close the secondary locked span."
 	    coq-server--pending-edit-at-state-id 
 	    coq-server--start-of-focus-state-id))))
 
+(defun coq-server--backtrack-before-focus-backtrack ()
+  ;; retract to before a re-opened proof
+  (assert proof-locked-secondary-span)
+  (coq-server--remove-secondary-locked-span t)
+  (setq coq-server--start-of-focus-state-id nil))
+
 (defun coq-server--update-state-id-and-process (state-id)
   (setq coq-current-state-id state-id)
   (when coq-server--current-span
@@ -459,90 +478,62 @@ is gone and we have to close the secondary locked span."
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
+(defun coq-server--handle-failure-value (xml)
+  (let* ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
+    ;; we usually see the failure twice, once for Goal, again for Status
+    (when (not (equal last-valid-state-id coq-current-state-id))
+      (coq-server--send-retraction last-valid-state-id))))
+
+(defun coq-server--handle-edit-at-value (xml)
+  (cond
+   ((coq-server--backtrack-before-focusp)
+    ;; retract before current focus
+    (coq-server--backtrack-before-focus-backtrack))
+   ((coq-server--value-new-focusp xml)
+     ;; retract re-opens a proof
+    (coq-server--new-focus-backtrack xml))
+   ((coq-server--value-simple-backtrackp xml)
+     (coq-server--simple-backtrack))
+   (t
+    (error (format "Unexpected Edit_at response: %s" xml))))
+  ;; we're now in the requested Edit_at state id
+  (setq coq-current-state-id coq-server--pending-edit-at-state-id)
+  (setq coq-server--pending-edit-at-state-id nil))
+
+(defun coq-server--handle-good-value (xml)
+  (if coq-server--pending-edit-at-state-id 
+      ;; response to Edit_at
+      (coq-server--handle-edit-at-value xml)
+    (cond
+     ((coq-server--value-end-focusp xml) 
+      ;; close of focus after Add
+      (coq-server--end-focus xml))
+     ((coq-server--value-init-state-idp xml) 
+      ;; Init, get first state id
+      (coq-server--set-init-state-id xml))
+     ((coq-server--value-new-state-idp xml) 
+      ;; Add that updates state id
+      (coq-server--set-new-state-id xml))
+     ((coq-server--value-empty-goalsp xml)
+      ;; Response to Goals, with no current goals
+      (coq-server--handle-empty-goals))
+     ((coq-server--value-goalsp xml)
+      ;; Response to Goals, some current goals
+      (coq-server--handle-goals xml))
+     (t 
+      (error "Unknown good value response")))))
+
+;; we distinguish value responses by their syntactic structure
+;; and a little bit by some global state
+;; can we do better?
 (defun coq-server--handle-value (xml)
-  (message "GOT VALUE: %s" xml)
+  '(message "GOT VALUE: %s" xml)
   (let ((status (coq-xml-val xml)))
     (pcase status
       ("fail"
-       (message "GOT FAILURE")
-       (let* ((children (coq-xml-body xml))
-	      (tagged-state-id (nth 0 children))
-	      (last-valid-state-id (coq-xml-val tagged-state-id))
-	      (error-msg (nth 1 children))) ; should be wrapped in string tags, bug 4849
-	 (message "LAST VALID STATE ID: %s" last-valid-state-id)
-	 ;; we usually see the failure twice, once for Goal, again for Status
-	 (when (not (equal last-valid-state-id coq-current-state-id))
-	   (coq-server--send-retraction last-valid-state-id))))
+       (coq-server--handle-failure-value xml))
       ("good"
-       (cond
-	(coq-server--pending-edit-at-state-id ; response to Edit_at
-	 ;; any spans contained between last end of focus and last tip
-	 ;; check for backtrack past start of focus
-	 (cond
-	  ((coq-server--backtrack-before-focusp)
-	   (message "BEFORE FOCUS")
-	   ;; retract to before a re-opened proof
-	   (assert proof-locked-secondary-span)
-	   (coq-server--remove-secondary-locked-span t)
-	   (setq coq-server--start-of-focus-state-id nil))
-	  ((coq-server--value-new-focusp xml)
-	   (message "NEW FOCUS")
-	   ;; retract re-opens a proof
-	   (coq-server--new-focus-backtrack xml))
-	  ((coq-server--value-simple-backtrackp xml)
-	   (message "SIMPLE BACKTRACK")
-	   (coq-server--simple-backtrack))
-	  (t
-	   (error (format "Unexpected Edit_at response: %s" xml))))
-	 ;; we're now in the requested Edit_at state id
-	 (message "SETTING CURRENT STATE ID TO: %s" coq-server--pending-edit-at-state-id)
-	 (setq coq-current-state-id coq-server--pending-edit-at-state-id)
-	 (setq coq-server--pending-edit-at-state-id nil))
-	((coq-server--value-end-focusp xml) 
-	 ;; close of focus after Add
-	 (message "CLOSE OF FOCUS")
-	 (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
-	       (new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
-	   (coq-set-span-state-id coq-server--current-span qed-state-id)
-	   (setq coq-current-state-id new-tip-state-id)
-	   (setq coq-server--start-of-focus-state-id nil)
-	   (coq-server--merge-locked-spans)))
-	((coq-server--value-init-state-idp xml) ; Init, get first state id
-	 (message "INIT STATE ID")
-	 (let ((state-id (coq-server--value-init-state-id xml)))
-	   (setq coq-retract-buffer-state-id state-id)
-	   (coq-server--update-state-id-and-process state-id)))
-	((coq-server--value-new-state-idp xml) ; Add that updates state id
-	 (message "ADD THAT UPDATES STATE ID")
-	 (let ((state-id (coq-server--value-new-state-id xml)))
-	   (coq-server--update-state-id-and-process state-id)))
-	((coq-server--value-empty-goalsp xml)
-	 (message "NO CURRENT GOALS RESPONSE")
-	 (coq-server--handle-empty-goals xml))
-	((coq-server--value-goalsp xml)
-	 (message "GOT GOALS RESPONSE")
-	 (coq-server--handle-goals xml))
-	(t ; Add that doesn't update state id
-	 (error "UNKNOWN GOOD VALUE RESPONSE")))))))
-
-(defun coq-server--retract-on-error (error-span)
-  ;; error on single Add, emulate CoqIDE
-  ;; retract to last point
-  (with-current-buffer proof-script-buffer
-    (let* ((all-spans (overlays-in (point-min) (1- (span-start error-span))))
-	   (state-id-spans (cl-remove-if-not 
-			    (lambda (span) 
-			      (span-property span 'state-id)) 
-			    all-spans))
-	   (sorted-state-id-spans (sort state-id-spans (lambda (sp1 sp2) (> (span-start sp1) (span-start sp2)))))
-	   (state-id-span (car-safe sorted-state-id-spans))
-	   (type-spans (cl-remove-if-not 
-			(lambda (span) 
-			  (span-property span 'type)) 
-			all-spans))
-	   (sorted-type-spans (sort type-spans (lambda (sp1 sp2) (> (span-start sp1) (span-start sp2)))))
-	   (type-span (car-safe sorted-type-spans)))
-      (proof-retract-until-point (span-end type-span)))))
+       (coq-server--handle-good-value xml)))))
 
 ;; if we've processed all the Add's, there will be at most 1 item in proof-action-list
 ;; TODO : is there a better way to discern this?
@@ -606,7 +597,7 @@ is gone and we have to close the secondary locked span."
       (`string
        (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
 	 (coq--display-response message)))
-      (default
+      (t
 	(coq-server--handle-item xml)))))
 
 ;; process XML response from Coq
@@ -625,7 +616,7 @@ is gone and we have to close the secondary locked span."
 	(t (message "unknown coqtop response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
 
-(defun coq-server-handle-tq-response (closure response span)
+(defun coq-server-handle-tq-response (_ response span)
   (coq-server-process-response response span)
   ;; needed to advance proof-action-list
   (proof-server-manage-output response))
