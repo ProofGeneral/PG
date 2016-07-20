@@ -512,13 +512,6 @@ annotation-start) if found."
     res
     ))
 
-(defun coq--send-retraction (state-id &optional get-goal)
-  (setq coq-server--pending-edit-at-state-id state-id)
-  (proof-server-send-to-prover (coq-xml-edit-at state-id))
-  (when get-goal
-    (proof-server-send-to-prover (coq-xml-goal)))
-  (proof-server-send-to-prover (coq-xml-status)))
-
 (defun coq--find-previous-state-id (span)
   "Find state id for nearest span with a state id before SPAN."
   (with-current-buffer proof-script-buffer
@@ -548,11 +541,11 @@ a state id."
       (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
           (progn
             (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
-            (coq--send-retraction coq-retract-buffer-state-id))
+            (coq-server--send-retraction coq-retract-buffer-state-id))
         ;; use nearest state id before this span; if none, use retraction state id
         (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
           (message "retracting to span-state-id: %s, span given was: %s" prev-state-id span)
-          (coq--send-retraction prev-state-id))))))
+          (coq-server--send-retraction prev-state-id))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")

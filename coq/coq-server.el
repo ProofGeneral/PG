@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
 
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
@@ -65,18 +65,13 @@ is gone and we have to close the secondary locked span."
 	  (delete-region (point-min) (point)))
 	xml))))
 
-(defun coq-server--handle-error ()
-  "Take action on errors."
-  ;; TODO beep?
-
-  ;; proof shell would clear queue spans, proof action list
-  ;; here, we can continue on because of async processing
-  ;; script errors don't actually produce a failure response 
-  ;; instead, the error messages show up in feedbacks
-  ;; and a subsequent Status will give a failure
-
-  ;; so nothing to do here, really ???
-  )
+;; retract to particular state id, get Status, optionally get Goal
+(defun coq-server--send-retraction (state-id &optional get-goal)
+  (setq coq-server--pending-edit-at-state-id state-id)
+  (proof-server-send-to-prover (coq-xml-edit-at state-id))
+  (when get-goal
+    (proof-server-send-to-prover (coq-xml-goal)))
+  (proof-server-send-to-prover (coq-xml-status)))
 
 (defun coq-server--clear-response-buffer ()
   (coq--display-response "")
@@ -169,16 +164,56 @@ is gone and we have to close the secondary locked span."
   ;; used to be called as a hook at end of proof-done-advancing
   (coq-set-state-infos))
 
+;; no current goal
+(defvar coq-server--value-empty-goals-footprint
+  '(value (option)))
+
+(defun coq-server--value-empty-goalsp (xml)
+  (equal (coq-xml-footprint xml) 
+	 coq-server--value-empty-goals-footprint))
+
+(defun coq-server--handle-empty-goals (xml)
+  (coq-server--clear-goals-buffer))
+
+;; use path instead of footprint, because inner bits may vary
+(defun coq-server--value-goalsp (xml)
+  (coq-xml-at-path xml '(value (option (goals)))))
+
+(defun coq-server--handle-goal (goal)
+  ;; nothing to do, apparently
+  )
+
+(defun coq-server--handle-goals (xml)
+  (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
+	 (_ (message "all-goals: %s" all-goals))
+	 (current-goals (coq-xml-body (nth 0 all-goals)))
+	 (_ (message "current-goals: %s" current-goals))
+	 (bg-goals (coq-xml-body (nth 1 all-goals)))
+	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
+	 (abandoned-goals (coq-xml-body (nth 3 all-goals))))
+    (if current-goals
+	(progn
+	  (dolist (goal current-goals)
+	    (coq-server--handle-goal goal))
+	  (coq-server--display-goals current-goals))
+      (progn
+	(setq proof-prover-proof-completed 0)
+	;; clear goals display
+	(coq-server--clear-goals-buffer)
+	;; mimic the coqtop REPL, though it would be better to come via XML
+	(coq--display-response "No more subgoals.")))
+    (when bg-goals
+      (dolist (goal bg-goals)
+	(coq-server--handle-goal goal)))
+    (when shelved-goals
+      (dolist (goal shelved-goals)
+	(coq-server--handle-goal goal)))
+    (when abandoned-goals
+      (dolist (goal abandoned-goals)
+	(coq-server--handle-goal goal)))))
+
 (defun coq-server--handle-item (item)
   (pcase (or (stringp item) (coq-xml-tag item))
-    (`unit)
-    (`union 
-     (dolist (body-item (coq-xml-body item))
-       (coq-server--handle-item body-item)))
-    (`string)
-    (`loc_s)
-    (`loc_e)
-    (`state_id)
     (`status 
      (let* ((status-items (coq-xml-body item))
 	    ;; ignoring module path of proof
@@ -186,52 +221,7 @@ is gone and we have to close the secondary locked span."
 	    (all-proofs (nth 2 status-items))
 	    (current-proof-id (nth 3 status-items)))
        (coq-server--handle-status maybe-current-proof all-proofs current-proof-id)))
-    (`option 
-     (let ((val (coq-xml-val item)))
-       (when (string-equal val 'some)
-	 (let ((children (xml-node-children item)))
-	   (dolist (child children)
-	     (coq-server--handle-item child))))))
-    (`goals
-     (let* ((children (xml-node-children item))
-	    (current-goals (coq-xml-body (nth 0 children)))
-	    (bg-goals (coq-xml-body (nth 1 children)))
-	    (shelved-goals (coq-xml-body (nth 2 children)))
-	    (abandoned-goals (coq-xml-body (nth 3 children))))
-       (if current-goals
-	   (progn
-	     (dolist (goal current-goals)
-	       (coq-server--handle-item goal))
-	     (coq-server--display-goals current-goals))
-	 (progn
-	   (setq proof-prover-proof-completed 0)
-	   ;; clear goals display
-	   (coq-server--clear-goals-buffer)
-	   ;; mimic the coqtop REPL, though it would be better to come via XML
-	   (coq--display-response "No more subgoals.")))
-       (when bg-goals
-	 (dolist (goal bg-goals)
-	   (coq-server--handle-item goal)))
-       (when shelved-goals
-	 (dolist (goal shelved-goals)
-	   (coq-server--handle-item goal)))
-       (when abandoned-goals
-	 (dolist (goal abandoned-goals)
-	   (coq-server--handle-item goal)))))
-    (`goal
-     (let* ((children (xml-node-children item))
-	    (goal-number (coq-xml-body1 (nth 0 children)))
-	    (goal-hypotheses (coq-xml-body (nth 1 children)))
-	    (goal (coq-xml-body1 (nth 2 children))))
-       (when goal-hypotheses
-	 (coq-server--handle-item goal-hypotheses))))
-    (`pair 
-     (dolist (item-child (xml-node-children item))
-       (coq-server--handle-item item-child)))
-    (`list 
-     (dolist (item-child (xml-node-children item))
-       (coq-server--handle-item item-child)))
-    (default)))
+    (t)))
 
 ;; inefficient, but number of spans should be small
 (defun coq-server--state-id-precedes (state-id-1 state-id-2)
@@ -265,7 +255,6 @@ is gone and we have to close the secondary locked span."
   '(value (union (unit))))
 
 (defun coq-server--value-simple-backtrackp (xml)
-  (message "LOOKING FOR SIMPLE BACKTRACK: %s AGAINST: %s" (coq-xml-footprint xml) coq-server--value-simple-backtrack-footprint)
   (equal (coq-xml-footprint xml)
 	 coq-server--value-simple-backtrack-footprint))
 
@@ -274,7 +263,6 @@ is gone and we have to close the secondary locked span."
   '(value (union (pair (state_id) (pair (state_id) (state_id))))))
 
 (defun coq-server--value-new-focusp (xml)
-  (message "LOOKING FOR NEW FOCUS WITH: %s AGAINST: %s" (coq-xml-footprint xml) coq-server--value-new-focus-footprint)
   (and (equal (coq-xml-footprint xml)
 	      coq-server--value-new-focus-footprint)
        (string-equal (coq-xml-at-path 
@@ -337,7 +325,6 @@ is gone and we have to close the secondary locked span."
   '(value (pair (state_id) (pair (union (state_id)) (string)))))
 
 (defun coq-server--value-end-focusp (xml) 
-  (message "END FOCUSP XML: %s LOOKING FOR: %s" (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
   (and (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
        (string-equal (coq-xml-at-path 
 		      xml 
@@ -357,11 +344,15 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
   (with-current-buffer proof-script-buffer
-    (let ((all-spans (overlays-in (point-min) (point-max))))
-      (mapc (lambda (span)
-	      (when (span-property span 'marked-for-deletion)
-		(span-delete span)))
-	    all-spans))))
+    (let* ((retract-span (coq-server--find-span-with-state-id coq-server--pending-edit-at-state-id))
+	   (start (span-start retract-span))
+	   (end (span-end retract-span)))
+      (proof-retract-until-point start)
+      (let ((all-spans (overlays-in (1+ end) (point-max))))
+	(mapc (lambda (span)
+		(when (span-property span 'marked-for-deletion)
+		  (span-delete span)))
+	      all-spans)))))
 
 (defun coq-server--new-focus-backtrack (xml)
   (message "NEW FOCUS")
@@ -378,7 +369,7 @@ is gone and we have to close the secondary locked span."
       (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
-  (message "create secondary span, focus-id: %s last tip state id: %s" focus-end-state-id last-tip-state-id)
+  '(message "create secondary span, focus-id: %s last tip state id: %s" focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
 	   (marked-spans (cl-remove-if-not 
@@ -473,11 +464,15 @@ is gone and we have to close the secondary locked span."
   (let ((status (coq-xml-val xml)))
     (pcase status
       ("fail"
-       (let ((children (xml-node-children xml)))
-	 (let ((error-msg (nth 1 children))) ; should be wrapped in string tags, bug 4849
-	   (coq-server--clear-response-buffer)
-	   (coq--display-response error-msg)))
-       (coq-server--handle-error))
+       (message "GOT FAILURE")
+       (let* ((children (coq-xml-body xml))
+	      (tagged-state-id (nth 0 children))
+	      (last-valid-state-id (coq-xml-val tagged-state-id))
+	      (error-msg (nth 1 children))) ; should be wrapped in string tags, bug 4849
+	 (message "LAST VALID STATE ID: %s" last-valid-state-id)
+	 ;; we usually see the failure twice, once for Goal, again for Status
+	 (when (not (equal last-valid-state-id coq-current-state-id))
+	   (coq-server--send-retraction last-valid-state-id))))
       ("good"
        (cond
 	(coq-server--pending-edit-at-state-id ; response to Edit_at
@@ -521,6 +516,12 @@ is gone and we have to close the secondary locked span."
 	 (message "ADD THAT UPDATES STATE ID")
 	 (let ((state-id (coq-server--value-new-state-id xml)))
 	   (coq-server--update-state-id-and-process state-id)))
+	((coq-server--value-empty-goalsp xml)
+	 (message "NO CURRENT GOALS RESPONSE")
+	 (coq-server--handle-empty-goals xml))
+	((coq-server--value-goalsp xml)
+	 (message "GOT GOALS RESPONSE")
+	 (coq-server--handle-goals xml))
 	(t ; Add that doesn't update state id
 	 (error "UNKNOWN GOOD VALUE RESPONSE")))))))
 
@@ -590,9 +591,7 @@ is gone and we have to close the secondary locked span."
 	     ;; if at end of locked span, do temp highlighting
 	     ;; if error is in middle, indelibly color the span containing the error 
 	     (if (coq-server--error-span-at-end-of-locked error-span)
-		 (progn ; error in last sentence processed
-		   (coq--highlight-error error-span error-start error-stop)
-		   (coq-server--retract-on-error error-span))
+		 (coq--highlight-error error-span error-start error-stop)
 	       ;; error in middle of processed region
 	       (coq--mark-error error-span error-msg)))))
 	;; TODO maybe use fancy colors for other feedbacks
