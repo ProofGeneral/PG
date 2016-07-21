@@ -52,7 +52,6 @@ is gone and we have to close the secondary locked span."
 
 ;; hook function to count how many Adds are pending
 ;; comments generate items with null element
-
 (defun count-addable (items ct) ; helper for coq-server-count-pending-adds
   (if (null items)
       ct
@@ -91,6 +90,7 @@ is gone and we have to close the secondary locked span."
 
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)
+  (message "SENDING RETRACTION TO STATE: %s" state-id)
   (setq coq-server--pending-edit-at-state-id state-id)
   (proof-server-send-to-prover (coq-xml-edit-at state-id))
   (when get-goal
@@ -273,12 +273,23 @@ is gone and we have to close the secondary locked span."
     (message "error-span: %s  error-end: %s locked-end: %s" error-span error-end locked-end)
     (>= error-end locked-end)))
 
+;; make pending Edit_at state id current
+(defun coq-server--consume-edit-at-state-id ()
+  (message "SETTING CURR STATE ID TO EDIT AT ID: %s" coq-server--pending-edit-at-state-id)
+  (setq coq-current-state-id coq-server--pending-edit-at-state-id)
+  (setq coq-server--pending-edit-at-state-id nil))
+
 (defvar coq-server--value-simple-backtrack-footprint 
   '(value (union (unit))))
 
 (defun coq-server--value-simple-backtrackp (xml)
-  (equal (coq-xml-footprint xml)
-	 coq-server--value-simple-backtrack-footprint))
+  (message "TESTING FOR SIMPLE BACKTRACK")
+  (message "pending-edit-at-id: %s" coq-server--pending-edit-at-state-id)
+  (message "EQUAL FOOTPRINTS: %s" (equal (coq-xml-footprint xml)
+	      coq-server--value-simple-backtrack-footprint))
+  (and coq-server--pending-edit-at-state-id 
+       (equal (coq-xml-footprint xml)
+	      coq-server--value-simple-backtrack-footprint)))
 
 ;; Edit_at, get new focus
 (defvar coq-server--value-new-focus-footprint 
@@ -353,7 +364,8 @@ is gone and we have to close the secondary locked span."
   '(value (pair (state_id) (pair (union (state_id)) (string)))))
 
 (defun coq-server--value-end-focusp (xml) 
-  (and (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
+  (and coq-server--pending-edit-at-state-id
+       (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
        (string-equal (coq-xml-at-path 
 		      xml 
 		      '(value (pair (state_id) (pair (union val))))) 
@@ -375,7 +387,8 @@ is gone and we have to close the secondary locked span."
     (coq-set-span-state-id coq-server--current-span qed-state-id)
     (setq coq-current-state-id new-tip-state-id)
     (setq coq-server--start-of-focus-state-id nil)
-    (coq-server--merge-locked-spans)))
+    (coq-server--merge-locked-spans)
+    (coq-server--consume-edit-at-state-id)))
 
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
@@ -388,9 +401,11 @@ is gone and we have to close the secondary locked span."
 		(when (and (span-property span 'marked-for-deletion)
 			   (not (span-property span 'self-removing)))
 		  (span-delete span)))
-	      all-spans)))))
+	      all-spans))))
+  (coq-server--consume-edit-at-state-id))
 
 (defun coq-server--new-focus-backtrack (xml)
+  (message "NEW FOCUS BACKTRACK")
   ;; new focus produces secondary locked span, which extends from
   ;; end of new focus to last tip
   ;; primary locked span is from start of script to the edit at state id
@@ -399,9 +414,16 @@ is gone and we have to close the secondary locked span."
 	 (focus-start-state-id (nth 0 state-ids))
 	 (focus-end-state-id (nth 1 state-ids))
 	 (last-tip-state-id (nth 2 state-ids)))
-    (setq coq-server--start-of-focus-state-id focus-start-state-id)
-    (with-current-buffer proof-script-buffer
-      (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))))
+    ;; if focus end and last tip are the same, treat as simple backtrack
+    (if (equal focus-end-state-id last-tip-state-id)
+	(coq-server--simple-backtrack)
+      ;; multiple else's
+      (setq coq-server--start-of-focus-state-id focus-start-state-id)
+      (message "ABOUT TO CREATE SECONDARY SPAN")
+      (with-current-buffer proof-script-buffer
+	(coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))
+      (message "CREATED SECONDARY SPAN")
+      (coq-server--consume-edit-at-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
@@ -473,18 +495,20 @@ is gone and we have to close the secondary locked span."
       (setq proof-merged-locked-end new-end))))
 
 ;; did we backtrack to a point before the current focus
-(defun coq-server--backtrack-before-focusp ()
-  (and coq-server--start-of-focus-state-id 
+(defun coq-server--backtrack-before-focusp (xml)
+  (and (coq-server--value-simple-backtrackp xml) ; response otherwise looks like simple backtrack
+       coq-server--start-of-focus-state-id 
        (or (equal coq-server--pending-edit-at-state-id coq-retract-buffer-state-id)
 	   (coq-server--state-id-precedes 
 	    coq-server--pending-edit-at-state-id 
 	    coq-server--start-of-focus-state-id))))
 
-(defun coq-server--backtrack-before-focus-backtrack ()
+(defun coq-server--before-focus-backtrack ()
   ;; retract to before a re-opened proof
   (assert proof-locked-secondary-span)
   (coq-server--remove-secondary-locked-span t)
-  (setq coq-server--start-of-focus-state-id nil))
+  (setq coq-server--start-of-focus-state-id nil)
+  (coq-server--consume-edit-at-state-id))
 
 (defun coq-server--update-state-id (state-id)
   (setq coq-current-state-id state-id)
@@ -505,6 +529,9 @@ is gone and we have to close the secondary locked span."
   (proof-server-exec-loop))
 
 (defun coq-server--handle-failure-value (xml)
+  ;; don't clear pending edit-at state id here
+  ;; because we may get failures from Status/Goals before the edit-at value
+  (message "HANDLING FAILURE VALUE: %s" xml)
   ;; we usually see the failure twice, once for Goal, again for Status
   (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
     (unless (or (equal last-valid-state-id coq-current-state-id)
@@ -515,29 +542,21 @@ is gone and we have to close the secondary locked span."
 	  (goto-char (span-end last-valid-span))
 	  (proof-retract-until-point))))))
 
-(defun coq-server--handle-edit-at-value (xml)
-  (message "GOT EDIT AT VALUE: %s" xml)
+(defun coq-server--handle-good-value (xml)
+  (message "good value: %s" xml)
   (cond
-   ((coq-server--backtrack-before-focusp)
+   ((coq-server--backtrack-before-focusp xml)
     ;; retract before current focus
-    (coq-server--backtrack-before-focus-backtrack))
+    (message "BACKTRACK BEFORE FOCUS")
+    (coq-server--before-focus-backtrack))
    ((coq-server--value-new-focusp xml)
      ;; retract re-opens a proof
+    (message "REOPENED PROOF")
     (coq-server--new-focus-backtrack xml))
    ((coq-server--value-simple-backtrackp xml)
+     ;; simple backtrack
+    (message "SIMPLE BACKTRACK")
     (coq-server--simple-backtrack))
-   (t
-    (error (format "Unexpected Edit_at response: %s" xml))))
-  ;; we're now in the requested Edit_at state id
-  (setq coq-current-state-id coq-server--pending-edit-at-state-id)
-  (message "SETTING PENDING EDIT TO NIL")
-  (setq coq-server--pending-edit-at-state-id nil))
-
-(defun coq-server--handle-good-value (xml)
-  (cond
-   (coq-server--pending-edit-at-state-id 
-    ;; response to Edit_at
-    (coq-server--handle-edit-at-value xml))
    ((coq-server--value-end-focusp xml) 
     ;; close of focus after Add
     (coq-server--end-focus xml))
