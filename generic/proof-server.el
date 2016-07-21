@@ -200,6 +200,8 @@ while SPAN is the Emacs span containing the command."
     (setq proof-action-list
 	  (nconc proof-action-list queueitems))
 
+    (run-hooks 'proof-server-enqueue-hook)
+
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-prover-slurp-comments))) 
 	(mapc 'proof-prover-invoke-callback cbitems))) 
@@ -292,11 +294,9 @@ contains only invisible elements for Prooftree synchronization."
 ;	  (setq cbitems nil)
 ;	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
 
-	(if proof-action-list
+	(when proof-action-list
 	    ;; send the next command to the process.
-	    (progn
-	      (message "INSERTING 2")
-	      (proof-server-insert-action-item (car proof-action-list))))
+	    (proof-server-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
 	(mapc 'proof-prover-invoke-callback cbitems)	

@@ -61,10 +61,12 @@ Only when three-buffer-mode is enabled."
 
 ;; display something in response buffer
 (defun coq--display-response (msg)
+  (message "DISPLAYING RESPONSE: %s" msg)
   (pg-response-message msg))
 
 ;; temporarily highlight error location
 (defun coq--highlight-error (span start stop)
+  (message "HIGHLIGHTING ERROR")
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
    (let* ((len0 (- stop start))
@@ -77,8 +79,12 @@ Only when three-buffer-mode is enabled."
      ;; go to error start
      (goto-char (+ (point) start))
      (let ((err-start (point)))
-       (span-make-self-removing-span err-start (+ err-start len1)
-				     'face 'proof-warning-face)))))
+       (span-make-self-removing-span 
+	;; endpoints
+	err-start (+ err-start len1)
+	;; properties
+	'face 'proof-warning-face
+	'self-removing t)))))
 
 ;; indelibly mark span containing an error
 ;; TODO : in proof-script.el, there's pg-set-span-highlights, but that appears to have a different purpose

@@ -1798,13 +1798,10 @@ We also delete help spans which appear in the same region (in the expectation
 that these may be overwritten).
 This function expects the buffer to be activated for advancing."
   (assert semis nil "proof-assert-semis: argument must be a list")
-  '(message "proof-assert-semis 1")
   (let ((startpos  (proof-queue-or-locked-end))
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
-    '(message "proof-assert-semis 2")
     (proof-script-delete-secondary-spans startpos lastpos)
-    '(message "proof-assert-semis 3")
     (proof-extend-queue lastpos vanillas)))
 
 (defun proof-retract-before-change (beg end)

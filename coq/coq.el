@@ -54,6 +54,8 @@
 
 (declare-function some "cl-extra")      ; spurious bytecomp warning
 
+(defvar coq--retraction-on-failure nil)
+
 ;; prettify is in emacs > 24.4
 ;; FIXME: this should probably be done like for smie above.
 (defvar coq-may-use-prettify nil) ; may become t below
@@ -502,6 +504,9 @@ annotation-start) if found."
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
 
+;; hook to count how many Adds we're about to send
+(add-hook 'proof-server-enqueue-hook 'coq-server-count-pending-adds)
+
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
   (let ((l1 l) (l2 notin) (res 0))
@@ -528,24 +533,21 @@ annotation-start) if found."
 
 ;; send a command to coqtop via XML to do retraction
 (defun coq-server-find-and-forget (span)
-  "Backtrack to SPAN. We want to send Edit_at for the nearest preceding span with 
-a state id."
-  (message "coq-server-find-and-forget on span %s" span)
+  "Backtrack to SPAN, possibly resulting in a full retraction. Send Edit_at for the 
+nearest preceding span with a state id."
   (if (eq (span-property span 'type) 'proverproc) ; TODO is this needed?
          ;; processed externally (i.e. Require, etc), nothing to do
          ;; (should really be unlocked when we undo the Require).
          nil
-    (progn
-      (message "coq-server-find-and-forget, sending backtrack cmd")
-      (coq-server--clear-response-buffer)
-      (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
-          (progn
-            (message "retracting to retract state id: %s" coq-retract-buffer-state-id)
-            (coq-server--send-retraction coq-retract-buffer-state-id))
-        ;; use nearest state id before this span; if none, use retraction state id
-        (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
-          (message "retracting to span-state-id: %s, span given was: %s" prev-state-id span)
-          (coq-server--send-retraction prev-state-id))))))
+    ;; if auto-retracting on error, leave error in response buffer
+    (if coq-server--retraction-on-error
+        (setq coq-server--retraction-on-error nil)
+      (coq-server--clear-response-buffer))
+    (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
+        (coq-server--send-retraction coq-retract-buffer-state-id)
+      ;; use nearest state id before this span; if none, use retraction state id
+      (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
+        (coq-server--send-retraction prev-state-id)))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")

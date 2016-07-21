@@ -1,4 +1,4 @@
-;; -*- lexical-binding: t -*-
+;;; -*- lexical-binding: t -*-
 
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
@@ -21,6 +21,8 @@
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
 
+(defvar coq-server--pending-add-count 0)
+
 (defvar coq-server--start-of-focus-state-id nil
   "When re-opening a proof, this is the state id of the current focus.
 If we undo to point before the span with this state id, the focus 
@@ -30,6 +32,9 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--current-span nil
   "Span associated with last response")
 
+(defvar coq-server--retraction-on-error nil
+  "Was the last retraction due to an error")
+
 ;; buffer for gluing coqtop responses into XML
 ;; leading space makes buffer invisible, for the most part
 (defvar coq-server--response-buffer-name " *coq-responses*")
@@ -38,6 +43,26 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server-transaction-queue nil)
 
 (defvar end-of-response-regexp "</value>")
+
+;; we see feedback and value-fail messages twice, once for Goal, again for Status
+;; see Bug 4850
+;; process each one just once, because they have effects; use table to know if they've been seen
+;; to prevent this table from taking too much space, we clear it just as each Add is sent
+(defvar coq-server--error-fail-tbl (make-hash-table :test 'equal))
+
+;; hook function to count how many Adds are pending
+;; comments generate items with null element
+
+(defun count-addable (items ct) ; helper for coq-server-count-pending-adds
+  (if (null items)
+      ct
+    (let ((item (car items)))
+      (if (nth 1 item)
+	  (count-addable (cdr items) (1+ ct))
+	(count-addable (cdr items) ct)))))
+
+(defun coq-server-count-pending-adds ()
+  (setq coq-server--pending-add-count (count-addable proof-action-list 0)))
 
 ;; buffer for responses from coqtop process, not the *response* buffer seen by user
 (defun coq-server--append-response (s)
@@ -61,7 +86,6 @@ is gone and we have to close the secondary locked span."
       (goto-char (point-min))
       (let ((xml (xml-parse-tag-1)))
 	(when xml
-	  '(message "xml: %s footprint: %s" xml (coq-xml-footprint xml))
 	  (delete-region (point-min) (point)))
 	xml))))
 
@@ -185,9 +209,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-goals (xml)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
-	 (_ (message "all-goals: %s" all-goals))
 	 (current-goals (coq-xml-body (nth 0 all-goals)))
-	 (_ (message "current-goals: %s" current-goals))
 	 (bg-goals (coq-xml-body (nth 1 all-goals)))
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals))))
@@ -241,15 +263,15 @@ is gone and we have to close the secondary locked span."
      (equal (span-property span 'state-id) state-id))
    span-list))
 
-;; is error span at end of locked region
-;; use as coloring heuristic 
-(defun coq-server--error-span-at-end-of-locked (error-span)
+;; error coloring heuristic 
+(defun coq-server--error-span-beyond-locked (error-span)
   (let* ((locked-span (coq-server--find-span-with-predicate
 		       (lambda (span) 
 			 (equal (span-property span 'face) 'proof-locked-face))))
 	 (locked-end (span-end locked-span))
 	 (error-end (span-end error-span)))
-    (= error-end locked-end)))
+    (message "error-span: %s  error-end: %s locked-end: %s" error-span error-end locked-end)
+    (>= error-end locked-end)))
 
 (defvar coq-server--value-simple-backtrack-footprint 
   '(value (union (unit))))
@@ -310,7 +332,7 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--set-init-state-id (xml)
   (let ((state-id (coq-server--value-init-state-id xml)))
     (setq coq-retract-buffer-state-id state-id)
-    (coq-server--update-state-id-and-process state-id)))
+    (coq-server--update-state-id state-id)))
 
 ;; value when updating state id from an Add
 (defvar coq-server--value-new-state-id-footprint
@@ -359,17 +381,16 @@ is gone and we have to close the secondary locked span."
   ;; delete all spans marked for deletion
   (with-current-buffer proof-script-buffer
     (let* ((retract-span (coq-server--find-span-with-state-id coq-server--pending-edit-at-state-id))
-	   (start (span-start retract-span))
-	   (end (span-end retract-span)))
-      (proof-retract-until-point start)
-      (let ((all-spans (overlays-in (1+ end) (point-max))))
+	   (start (or (and retract-span (1+ (span-end retract-span)))
+		      (point-min))))
+      (let ((all-spans (overlays-in start (point-max))))
 	(mapc (lambda (span)
-		(when (span-property span 'marked-for-deletion)
+		(when (and (span-property span 'marked-for-deletion)
+			   (not (span-property span 'self-removing)))
 		  (span-delete span)))
 	      all-spans)))))
 
 (defun coq-server--new-focus-backtrack (xml)
-  (message "NEW FOCUS")
   ;; new focus produces secondary locked span, which extends from
   ;; end of new focus to last tip
   ;; primary locked span is from start of script to the edit at state id
@@ -383,7 +404,6 @@ is gone and we have to close the secondary locked span."
       (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
-  '(message "create secondary span, focus-id: %s last tip state id: %s" focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
 	   (marked-spans (cl-remove-if-not 
@@ -418,7 +438,6 @@ is gone and we have to close the secondary locked span."
 	  (goto-char (1+ (point))))
 	(beginning-of-thing 'sentence)
 	(setq secondary-span-start (point)))
-      (message "making secondary span with start: %s end: %s" secondary-span-start secondary-span-end)
       (let* ((span (span-make secondary-span-start secondary-span-end)))
 	(span-set-property span 'start-closed t) ;; TODO what are these for?
 	(span-set-property span 'end-closed t)
@@ -427,17 +446,17 @@ is gone and we have to close the secondary locked span."
 	(setq proof-locked-secondary-span span)))))
 
 (defun coq-server--remove-secondary-locked-span (&optional delete-spans)
-  (message "removing secondary span")
   (let ((start (span-start proof-locked-secondary-span))
 	(end (span-end proof-locked-secondary-span)))
-    ;; delete spans covered by secondary span
+    ;; remove read-only property
     (with-current-buffer proof-script-buffer
       (span-delete proof-locked-secondary-span)
       (setq proof-locked-secondary-span nil)
-      (setq inhibit-read-only t) ; special trick
+      (setq inhibit-read-only t) ; "special trick"
       (remove-list-of-text-properties start end (list 'read-only))
       (setq inhibit-read-only nil)
-      ;; don't delete when merging primary, secondary locked regions, spans following primary locked region are valid
+      ;; delete unless merging primary, secondary locked regions 
+      ;; spans following primary locked region are valid
       (when delete-spans
 	(let* ((candidate-spans (overlays-in start end))
 	       (relevant-spans 
@@ -467,24 +486,37 @@ is gone and we have to close the secondary locked span."
   (coq-server--remove-secondary-locked-span t)
   (setq coq-server--start-of-focus-state-id nil))
 
-(defun coq-server--update-state-id-and-process (state-id)
+(defun coq-server--update-state-id (state-id)
   (setq coq-current-state-id state-id)
   (when coq-server--current-span
-    (coq-set-span-state-id coq-server--current-span state-id))
-  ;; no more Adds to do
-  (when (coq-server--finished-adds)
+    (coq-set-span-state-id coq-server--current-span state-id)))
+
+(defun coq-server--update-state-id-and-process (state-id)
+  (coq-server--update-state-id state-id)
+  (message "UPDATING STATE ID: %s PENDING ADDS: %s" state-id coq-server--pending-add-count)
+  (when (> coq-server--pending-add-count 0)
+    (setq coq-server--pending-add-count (1- coq-server--pending-add-count)))
+  ;; gotten response from all Adds, ask for goals/status
+  (when (= coq-server--pending-add-count 0)
     (proof-server-send-to-prover (coq-xml-goal))
     (proof-server-send-to-prover (coq-xml-status)))
+    ;; if we've gotten responses from all Add's, ask for goals/status
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
 (defun coq-server--handle-failure-value (xml)
-  (let* ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
-    ;; we usually see the failure twice, once for Goal, again for Status
-    (when (not (equal last-valid-state-id coq-current-state-id))
-      (coq-server--send-retraction last-valid-state-id))))
+  ;; we usually see the failure twice, once for Goal, again for Status
+  (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
+    (unless (or (equal last-valid-state-id coq-current-state-id)
+		(gethash xml coq-server--error-fail-tbl))
+      (puthash xml t coq-server--error-fail-tbl)
+      (let ((last-valid-span (coq-server--find-span-with-state-id last-valid-state-id)))
+	(with-current-buffer proof-script-buffer
+	  (goto-char (span-end last-valid-span))
+	  (proof-retract-until-point))))))
 
 (defun coq-server--handle-edit-at-value (xml)
+  (message "GOT EDIT AT VALUE: %s" xml)
   (cond
    ((coq-server--backtrack-before-focusp)
     ;; retract before current focus
@@ -493,41 +525,41 @@ is gone and we have to close the secondary locked span."
      ;; retract re-opens a proof
     (coq-server--new-focus-backtrack xml))
    ((coq-server--value-simple-backtrackp xml)
-     (coq-server--simple-backtrack))
+    (coq-server--simple-backtrack))
    (t
     (error (format "Unexpected Edit_at response: %s" xml))))
   ;; we're now in the requested Edit_at state id
   (setq coq-current-state-id coq-server--pending-edit-at-state-id)
+  (message "SETTING PENDING EDIT TO NIL")
   (setq coq-server--pending-edit-at-state-id nil))
 
 (defun coq-server--handle-good-value (xml)
-  (if coq-server--pending-edit-at-state-id 
-      ;; response to Edit_at
-      (coq-server--handle-edit-at-value xml)
-    (cond
-     ((coq-server--value-end-focusp xml) 
-      ;; close of focus after Add
-      (coq-server--end-focus xml))
-     ((coq-server--value-init-state-idp xml) 
-      ;; Init, get first state id
-      (coq-server--set-init-state-id xml))
-     ((coq-server--value-new-state-idp xml) 
-      ;; Add that updates state id
-      (coq-server--set-new-state-id xml))
-     ((coq-server--value-empty-goalsp xml)
-      ;; Response to Goals, with no current goals
-      (coq-server--handle-empty-goals))
-     ((coq-server--value-goalsp xml)
-      ;; Response to Goals, some current goals
-      (coq-server--handle-goals xml))
-     (t 
-      (error "Unknown good value response")))))
+  (cond
+   (coq-server--pending-edit-at-state-id 
+    ;; response to Edit_at
+    (coq-server--handle-edit-at-value xml))
+   ((coq-server--value-end-focusp xml) 
+    ;; close of focus after Add
+    (coq-server--end-focus xml))
+   ((coq-server--value-init-state-idp xml) 
+    ;; Init, get first state id
+    (coq-server--set-init-state-id xml))
+   ((coq-server--value-new-state-idp xml) 
+    ;; Add that updates state id
+    (coq-server--set-new-state-id xml))
+   ((coq-server--value-empty-goalsp xml)
+    ;; Response to Goals, with no current goals
+    (coq-server--handle-empty-goals))
+   ((coq-server--value-goalsp xml)
+    ;; Response to Goals, some current goals
+    (coq-server--handle-goals xml))
+   (t 
+    (error "Unknown good value response"))))
 
 ;; we distinguish value responses by their syntactic structure
 ;; and a little bit by some global state
 ;; can we do better?
 (defun coq-server--handle-value (xml)
-  '(message "GOT VALUE: %s" xml)
   (let ((status (coq-xml-val xml)))
     (pcase status
       ("fail"
@@ -535,70 +567,55 @@ is gone and we have to close the secondary locked span."
       ("good"
        (coq-server--handle-good-value xml)))))
 
-;; if we've processed all the Add's, there will be at most 1 item in proof-action-list
-;; TODO : is there a better way to discern this?
-(defun coq-server--finished-adds ()
-  (null (cdr proof-action-list)))
-
-;; we see feedback messages twice, once for Goal, again for Status
-;; see Bug 4850
-;; process each one just once, because they have effects; use table to know if they've been seen
-;; to prevent this table from taking too much space, we clear it just as each Add is sent
-(defvar coq-server--feedback-errormsg-tbl (make-hash-table :test 'equal))
-
 ;; delay creating the XML so it will have the right state-id
 ;; the returned lambda captures the passed item, which is why 
 ;; this file needs lexical binding
 ;; side-effect of the thunk: clear feedback message table
 (defun coq-server-make-add-command-thunk (cmd span)
   (lambda () 
-    (clrhash coq-server--feedback-errormsg-tbl)
+    (clrhash coq-server--error-fail-tbl)
     (list (coq-xml-add-item cmd) span)))
 
-(defun coq-server--handle-feedback (xml)
-  (message "GOT FEEDBACK: %s" xml)
-  (unless (gethash xml coq-server--feedback-errormsg-tbl)
-    (puthash xml t coq-server--feedback-errormsg-tbl)
-    (let ((feedback-type (coq-xml-at-path xml '(feedback (_) (feedback_content val)))))
-      (message "feedback type: %s" feedback-type)
-      (pcase feedback-type
-	("errormsg"
-	 (let* ((loc (coq-xml-at-path 
+(defun coq-server--handle-errormsg (xml)
+  ;; memoize this errormsg response
+  (puthash xml t coq-server--error-fail-tbl)
+  (let* ((loc (coq-xml-at-path 
+	       xml 
+	       '(feedback (state_id) (feedback_content (loc)))))
+	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
+	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+	 (msg-string (coq-xml-at-path 
 		      xml 
-		      '(feedback (state_id) (feedback_content (loc)))))
-		(error-start (string-to-number (coq-xml-attr-value loc 'start)))
-		(error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
-		(msg-string (coq-xml-at-path 
-			     xml 
-			     '(feedback (state_id) (feedback_content (loc) (string)))))
-		(error-msg (coq-xml-body1 msg-string))
-		(error-state-id (coq-xml-at-path 
-				 xml 
-				 '(feedback (state_id val)))))
-	   (pg-response-clear-displays)
-	   (coq--display-response error-msg)
-	   (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
-	     ;; coloring heuristic for errors
-	     ;; if at end of locked span, do temp highlighting
-	     ;; if error is in middle, indelibly color the span containing the error 
-	     (if (coq-server--error-span-at-end-of-locked error-span)
-		 (coq--highlight-error error-span error-start error-stop)
-	       ;; error in middle of processed region
-	       (coq--mark-error error-span error-msg)))))
-	;; TODO maybe use fancy colors for other feedbacks
-	(t)))))
+		      '(feedback (state_id) (feedback_content (loc) (string)))))
+	 (error-msg (coq-xml-body1 msg-string))
+	 (error-state-id (coq-xml-at-path 
+			  xml 
+			  '(feedback (state_id val)))))
+    (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
+      ;; decide where to show error
+      (if (coq-server--error-span-beyond-locked error-span)
+	  (progn
+	    (coq-server--clear-response-buffer)
+	    (coq--display-response error-msg)
+	    ;; don't clear error in response buffer
+	    (setq coq-server--retraction-on-error t) 
+	    (coq--highlight-error error-span error-start error-stop))
+	;; error in middle of processed region
+	;; indelibly color the error 
+	(coq--mark-error error-span error-msg)))))
+
+(defun coq-server--handle-feedback (xml)
+  (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
+    ("errormsg"
+     (unless (gethash xml coq-server--error-fail-tbl)
+       (coq-server--handle-errormsg xml)))
+    ;; TODO maybe use fancy colors for other feedbacks
+    (t)))
 
 (defun coq-server--handle-message (xml)
-  (dolist (child (xml-node-children xml))
-    (pcase (coq-xml-tag child)
-      (`message_level
-       (let ((level (coq-xml-val child)))
-	 ))
-      (`string
-       (let ((message (coq-server--unescape-string (coq-xml-body1 child))))
-	 (coq--display-response message)))
-      (t
-	(coq-server--handle-item xml)))))
+  (let* ((message-str (coq-xml-at-path xml '(message (message_level) (string))))
+	 (msg (coq-server--unescape-string (coq-xml-body1 message-str))))
+     (coq--display-response msg)))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response span)

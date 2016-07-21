@@ -252,14 +252,17 @@ Return nil if no such overlay belong to the list."
 ;; Handy overlay utils
 ;;
 
+(defvar span-self-removing-timeout 4)
+
 (defun span-make-self-removing-span (beg end &rest props)
   "Add a self-removing span from BEG to END with properties PROPS.
-The span will remove itself after a timeout of 2 seconds."
+The span will remove itself after a timeout of 
+`span-self-removing-timeout' seconds."
   (let ((ol (make-overlay beg end)))
     (while props
       (overlay-put ol (car props) (cadr props))
       (setq props (cddr props)))
-    (add-timeout 2 'delete-overlay ol)
+    (add-timeout span-self-removing-timeout 'delete-overlay ol)
     ol))
 
 (defun span-delete-self-modification-hook (span &rest args)

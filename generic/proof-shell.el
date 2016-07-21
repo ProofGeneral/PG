@@ -485,7 +485,7 @@ object files, used by Lego and Coq)."
   "Marker in proof shell buffer pointing to scan start for urgent messages.
 This is only used in `proof-shell-process-urgent-message'.")
 
-(defun proof-shell-handle-error-output (start-regexp append-face)
+'(defun proof-shell-handle-error-output (start-regexp append-face)
   "Displays output from process in `proof-response-buffer'.
 The output is taken from `proof-prover-last-output' and begins
 the first match for START-REGEXP.
@@ -515,7 +515,7 @@ This is a subroutine of `proof-shell-handle-error'."
 ;; Processing error output
 ;;
 
-(defun proof-shell-handle-error-or-interrupt (err-or-int flags)
+'(defun proof-shell-handle-error-or-interrupt (err-or-int flags)
   "React on an error or interrupt message triggered by the prover.
 
 The argument ERR-OR-INT should be set to 'error or 'interrupt
@@ -1001,7 +1001,7 @@ and indentation.  Assumes `proof-script-buffer' is active."
 		    (cons (list span cmd 'proof-done-advancing)
 			  (cdr proof-action-list))))))))
 
-(defun proof-shell-process-urgent-message (start end)
+'(defun proof-shell-process-urgent-message (start end)
   "Analyse urgent message between START and END for various cases.
 
 Cases are: *trace* output, included/retracted files, cleared 
@@ -1057,7 +1057,7 @@ ends with text matching `proof-shell-eager-annotation-end'."
 ;; urgent message subroutines
 ;;
 
-(defun proof-shell-process-urgent-message-default (start end)
+'(defun proof-shell-process-urgent-message-default (start end)
   "A subroutine of `proof-shell-process-urgent-message'."
   ;; Clear the response buffer this time, but not next, leave window.
   (pg-response-maybe-erase nil nil)

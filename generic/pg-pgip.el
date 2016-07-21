@@ -297,7 +297,7 @@ Return a symbol representing the PGIP command processed, or nil."
 (defun pg-pgip-process-ready (node)
   )
 
-(defun pg-pgip-process-cleardisplay (node)
+'(defun pg-pgip-process-cleardisplay (node)
   (let ((area	(pg-pgip-get-area node)))
     (cond
      ((equal area "message")

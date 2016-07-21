@@ -145,14 +145,18 @@
   "Footprint to check for a syntactic pattern in parsed XML, 
 actually an S-expression. The footprint describes the 
 structure of tags only."
-  (let ((tag (coq-xml-tag xml))
-	(children (coq-xml-body xml)))
+  (let ((tag (coq-xml-tag xml)))
     (cons tag 
-	  (cl-remove-if 'null 
-			(mapcar (lambda (child) 
-				  (and (consp child)
-				       (coq-xml-footprint child)))
-				children)))))
+	  (if (eq tag 'string) 
+	      ;; special case for string
+	      ;; children are text, so ignore
+	      nil
+	    (let ((children (coq-xml-body xml)))
+	      (cl-remove-if 'null 
+			    (mapcar (lambda (child) 
+				      (and (consp child)
+					   (coq-xml-footprint child)))
+				    children)))))))
 
 ;; conventional zip using cons, except that
 ;; path may end, leaving extra xmls, which is OK
@@ -268,6 +272,7 @@ to write out the traversal code by hand each time."
       `((val . ,opt-ty))
       opt-val))))
 
+;; TODO decide what to do with this
 '(defun coq-xml-setoptions ()
   (coq-xml-call 
    '((val . SetOptions))
