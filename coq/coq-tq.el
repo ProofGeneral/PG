@@ -98,8 +98,6 @@
 ;; Determine whether queue is empty
 (defun tq-queue-empty         (tq) (not (tq-queue tq)))
 
-(defun tq-queue-length         (tq) (length (tq-queue tq)))
-
 ;;; added for Coq
 
 (defvar tq-current-span nil)
