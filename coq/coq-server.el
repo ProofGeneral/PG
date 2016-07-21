@@ -364,8 +364,7 @@ is gone and we have to close the secondary locked span."
   '(value (pair (state_id) (pair (union (state_id)) (string)))))
 
 (defun coq-server--value-end-focusp (xml) 
-  (and coq-server--pending-edit-at-state-id
-       (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
+  (and (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
        (string-equal (coq-xml-at-path 
 		      xml 
 		      '(value (pair (state_id) (pair (union val))))) 
@@ -382,6 +381,7 @@ is gone and we have to close the secondary locked span."
    '(value (pair (state_id) (pair (union (state_id val)))))))
 
 (defun coq-server--end-focus (xml)
+  (message "END FOCUS")
   (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
     (coq-set-span-state-id coq-server--current-span qed-state-id)
@@ -558,6 +558,7 @@ is gone and we have to close the secondary locked span."
     (message "SIMPLE BACKTRACK")
     (coq-server--simple-backtrack))
    ((coq-server--value-end-focusp xml) 
+    (message "SIMPLE BACKTRACK")
     ;; close of focus after Add
     (coq-server--end-focus xml))
    ((coq-server--value-init-state-idp xml) 
