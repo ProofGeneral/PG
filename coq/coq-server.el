@@ -652,7 +652,7 @@ is gone and we have to close the secondary locked span."
 	(t (message "unknown coqtop response %s" xml)))
       (setq xml (coq-server--get-next-xml)))))
 
-(defun coq-server-handle-tq-response (_ response span)
+(defun coq-server-handle-tq-response (unused response span)
   (coq-server-process-response response span)
   ;; needed to advance proof-action-list
   (proof-server-manage-output response))

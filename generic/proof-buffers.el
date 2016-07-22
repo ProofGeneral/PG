@@ -1,4 +1,4 @@
-;; proof-buffers.el -- buffers for server mode
+;; proof-buffers.el -- extra buffers to display to user
 
 (require 'pg-vars)
 (require 'pg-response)

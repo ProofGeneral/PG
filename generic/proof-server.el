@@ -39,6 +39,14 @@ from calling `proof-server-exit'.")
 	proof-prover-last-output ""))
 
 ;;;###autoload
+(defsubst proof-server-live-buffer ()
+  "Return non-nil if proof-server-buffer is live."
+  (and proof-server-buffer
+       (buffer-live-p proof-server-buffer)
+       (let ((proc (get-buffer-process proof-server-buffer)))
+	 (and proc (memq (process-status proc) '(open run stop))))))
+
+;;;###autoload
 (defun proof-server-config-done ()
   "Initialise the specific prover after the child has been configured.
 When using server mode, should call this function at the end of processing. 
@@ -108,6 +116,7 @@ with proof-shell-ready-prover."
 
 ;;;###autoload
 (defun proof-server-start ()
+  (interactive)
   (message "Called proof-server-start with process: %s" proof-server-process)
   (unless proof-server-process
     (message "Starting prover")
@@ -126,7 +135,6 @@ with proof-shell-ready-prover."
 	      (message "Started prover process")
 	      (setq proof-server-process the-process
 		    proof-server-buffer server-buffer)
-	      ;; NB we don't associate a filter with process here
 	      (proof-prover-make-associated-buffers)
 	      (proof-server-config-done))
 	  (message "Failed to start prover"))))
@@ -336,11 +344,14 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	;; Turn off scripting (ensure buffers completely processed/undone)
 	(proof-deactivate-scripting-auto)
 	;; TODO wait here?
-	
+	(message "POINT 1: proc status: %s" (process-status proc))
 	;; Try to shut down politely.
 	(if proof-server-quit-cmd
 	    (proof-server-send-to-prover proof-server-quit-cmd)
 	  (process-send-eof))
+
+	(message "POINT 2: proc status: %s" (process-status proc))
+
 
 	;; Wait for it to die
 	(let ((timecount   (proof-ass quit-timeout))
@@ -349,11 +360,18 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 		      (memq (process-status proc) '(open run stop)))
 	    (accept-process-output proc 1 nil 1)
 	    (decf timecount)))
+
+	(message "POINT 3: proc status: %s" (process-status proc))
 	
 	;; Still there, kill it rudely.
 	(when (memq (process-status proc) '(open run stop))
 	  (message "%s, cleaning up and exiting...killing process" bufname)
-	  (kill-process proc)))
+	  (kill-process proc))
+
+	(message "POINT 4: proc status: %s" (process-status proc))
+
+
+)
       (setq proof-server-process nil)
       (set-process-sentinel proc nil))
 

@@ -184,12 +184,12 @@ without adjusting window layout."
 	     (list
 	      (vector
 	       (concat "Start " proof-assistant)
-	     'proof-shell-start
-	     ':active '(not (proof-shell-live-buffer)))
+	     'proof-server-start
+	     ':active '(not (proof-server-live-buffer)))
 	      (vector
 	       (concat "Exit " proof-assistant)
-	       'proof-shell-exit
-	       ':active '(proof-shell-live-buffer))
+	       'proof-server-exit
+	       ':active '(proof-server-live-buffer))
 	      ;; TODO: doc <PA>-set-command here
 	      (vector
 	       (concat "Set " proof-assistant " Command")

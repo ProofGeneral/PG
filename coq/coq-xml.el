@@ -17,7 +17,7 @@
                 ( " " "&nbsp;"
                  "<" "&lt;"
                  ">" "&gt;"
-                 "\\" "&apos;"
+                 "\'" "&apos;"
                  "\"" "&quot;")
                 test equal))
 
