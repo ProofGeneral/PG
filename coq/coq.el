@@ -547,7 +547,7 @@ nearest preceding span with a state id."
         (coq-server--send-retraction coq-retract-buffer-state-id)
       ;; use nearest state id before this span; if none, use retraction state id
       (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
-        (coq-server--send-retraction prev-state-id)))))
+        (coq-server--send-retraction prev-state-id t)))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
