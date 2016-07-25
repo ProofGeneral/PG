@@ -64,20 +64,43 @@ Only when three-buffer-mode is enabled."
   (message "DISPLAYING RESPONSE: %s" msg)
   (pg-response-message msg))
 
+;; given a byte offset in a multibyte string, calculate the string offset
+;; TODO find a home for this function
+(defun byte-offset-to-char-offset (str byte-offset)
+  (let ((len (length str))
+	(count 0)
+	(pos 0))
+    (while (and (< pos len) (< count byte-offset))
+      (let* ((char (substring str pos (1+ pos)))
+	     (unichar (string-as-unibyte char)))
+	(setq count (+ count (length unichar)))
+	(setq pos (1+ pos))))
+    pos))
+
 ;; temporarily highlight error location
 (defun coq--highlight-error (span start stop)
-  (message "HIGHLIGHTING ERROR")
+
+  ;; start and stop are byte positions
+  ;; if multibyte characters, those don't correspond to character positions
+  ;;  and we have to calculate them
+
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
-   (let* ((len0 (- stop start))
+   (let* ((raw-string (buffer-substring-no-properties (span-start span) (span-end span)))
+	  (trimmed-string (replace-regexp-in-string "\\`[ \t\n]*" "" raw-string))
+	  (char-start (byte-offset-to-char-offset trimmed-string start))
+	  (char-stop (byte-offset-to-char-offset trimmed-string stop))
+	  (len0 (- char-stop char-start))
 	  (time-offset (if coq-time-commands (length coq--time-prefix) 0))
 	  (len1 (- len0 time-offset)))
+
      ;; beginning of line
      (goto-char (span-start span))
-     ;; skip whitespace
      (coq-find-real-start)
+
      ;; go to error start
-     (goto-char (+ (point) start))
+     (goto-char (+ (point) char-start))
+
      (let ((err-start (point)))
        (span-make-self-removing-span 
 	;; endpoints

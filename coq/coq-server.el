@@ -633,7 +633,6 @@ is gone and we have to close the secondary locked span."
 
 ;; discard information in richpp-formatted strings
 ;; TODO : use that information
-;; run Web browser in Emacs?
 (defun flatten-pp (items)
   (mapconcat (lambda (it)
 	       (if (and (consp it) (consp (cdr it)))
@@ -645,6 +644,7 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-error (xml)
   ;; memoize this response
   (puthash xml t coq-server--error-fail-tbl)
+  ;; TODO what happens when there's no location?
   (let* ((loc (coq-xml-at-path 
 	       xml 
 	       '(feedback (state_id) 
@@ -656,7 +656,6 @@ is gone and we have to close the secondary locked span."
 		      '(feedback (state_id) 
 				 (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
 	 (error-msg (flatten-pp (coq-xml-body msg-string)))
-	 (_ (message "ERROR-MSG: %s" error-msg))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
 			  '(feedback (state_id val)))))
@@ -673,7 +672,8 @@ is gone and we have to close the secondary locked span."
 	      (coq-xml-at-path 
 	       xml 
 	       '(feedback (_) (feedback_content (message (message_level val)))))))
-	 (when (equal msg-level "error")
+	 (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
+		   (equal msg-level "error") )
 	   (coq-server--handle-error xml)))))
     ;; TODO maybe use fancy colors for other feedbacks
     (t)))
