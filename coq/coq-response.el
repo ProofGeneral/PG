@@ -87,7 +87,6 @@ Only when three-buffer-mode is enabled."
 	'self-removing t)))))
 
 ;; indelibly mark span containing an error
-;; TODO : in proof-script.el, there's pg-set-span-highlights, but that appears to have a different purpose
 (defun coq--mark-error (span msg)
   (let ((start (span-start span))
 	(end (span-end span))
