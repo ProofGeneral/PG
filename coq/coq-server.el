@@ -557,19 +557,23 @@ is gone and we have to close the secondary locked span."
     (message "SIMPLE BACKTRACK")
     (coq-server--simple-backtrack))
    ((coq-server--value-end-focusp xml) 
-    (message "SIMPLE BACKTRACK")
+    (message "SIMPLE END FOCUS")
     ;; close of focus after Add
     (coq-server--end-focus xml))
    ((coq-server--value-init-state-idp xml) 
+    (message "INIT STATE ID")
     ;; Init, get first state id
     (coq-server--set-init-state-id xml))
    ((coq-server--value-new-state-idp xml) 
+    (message "NEW STATE ID")
     ;; Add that updates state id
     (coq-server--set-new-state-id xml))
    ((coq-server--value-empty-goalsp xml)
+    (message "EMPTY GOALS")
     ;; Response to Goals, with no current goals
     (coq-server--handle-empty-goals))
    ((coq-server--value-goalsp xml)
+    (message "NONEMPTY GOALS")
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
    (t 
@@ -595,6 +599,21 @@ is gone and we have to close the secondary locked span."
     (clrhash coq-server--error-fail-tbl)
     (list (coq-xml-add-item cmd) span)))
 
+(defun coq-server--display-error (error-state-id error-msg error-start error-stop)
+  (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
+    ;; decide where to show error
+    (if (coq-server--error-span-beyond-locked error-span)
+	(progn
+	  (coq-server--clear-response-buffer)
+	  (coq--display-response error-msg)
+	  ;; don't clear error in response buffer
+	  (setq coq-server--retraction-on-error t) 
+	  (coq--highlight-error error-span error-start error-stop))
+      ;; error in middle of processed region
+      ;; indelibly color the error 
+      (coq--mark-error error-span error-msg))))
+
+;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)
   ;; memoize this errormsg response
   (puthash xml t coq-server--error-fail-tbl)
@@ -610,29 +629,64 @@ is gone and we have to close the secondary locked span."
 	 (error-state-id (coq-xml-at-path 
 			  xml 
 			  '(feedback (state_id val)))))
-    (let ((error-span (coq-server--find-span-with-state-id error-state-id)))
-      ;; decide where to show error
-      (if (coq-server--error-span-beyond-locked error-span)
-	  (progn
-	    (coq-server--clear-response-buffer)
-	    (coq--display-response error-msg)
-	    ;; don't clear error in response buffer
-	    (setq coq-server--retraction-on-error t) 
-	    (coq--highlight-error error-span error-start error-stop))
-	;; error in middle of processed region
-	;; indelibly color the error 
-	(coq--mark-error error-span error-msg)))))
+    (coq-server--display-error error-state-id error-msg error-start error-stop)))
+
+;; discard information in richpp-formatted strings
+;; TODO : use that information
+;; run Web browser in Emacs?
+(defun flatten-pp (items)
+  (mapconcat (lambda (it)
+	       (if (and (consp it) (consp (cdr it)))
+		   (flatten-pp (cddr it))
+		 it))
+	     items " "))
+
+;; this is for 8.6
+(defun coq-server--handle-error (xml)
+  ;; memoize this response
+  (puthash xml t coq-server--error-fail-tbl)
+  (let* ((loc (coq-xml-at-path 
+	       xml 
+	       '(feedback (state_id) 
+			  (feedback_content (message (message_level) (option (loc)))))))
+	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
+	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+	 (msg-string (coq-xml-at-path 
+		      xml 
+		      '(feedback (state_id) 
+				 (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
+	 (error-msg (flatten-pp (coq-xml-body msg-string)))
+	 (_ (message "ERROR-MSG: %s" error-msg))
+	 (error-state-id (coq-xml-at-path 
+			  xml 
+			  '(feedback (state_id val)))))
+    (coq-server--display-error error-state-id error-msg error-start error-stop)))
 
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
-    ("errormsg"
+    ("errormsg" ; 8.5-only
      (unless (gethash xml coq-server--error-fail-tbl)
        (coq-server--handle-errormsg xml)))
+    ("message" ; 8.6
+     (unless (gethash xml coq-server--error-fail-tbl)
+       (let ((msg-level 
+	      (coq-xml-at-path 
+	       xml 
+	       '(feedback (_) (feedback_content (message (message_level val)))))))
+	 (when (equal msg-level "error")
+	   (coq-server--handle-error xml)))))
     ;; TODO maybe use fancy colors for other feedbacks
     (t)))
 
+;; syntax of messages differs in 8.5 and 8.6, handle both cases
+;; TODO : dispatch on version, maybe
 (defun coq-server--handle-message (xml)
-  (let* ((message-str (coq-xml-at-path xml '(message (message_level) (string))))
+  (message "Handling message: %s" xml)
+  (let* ((message-str-8.5 (coq-xml-at-path xml '(message (message_level) (string))))
+	 ;; The _ below is a wildcard in our search path, but the tag is actually _
+	 ;; something of a delicious irony
+	 (message-str (or message-str-8.5 
+			  (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))
 	 (msg (coq-server--unescape-string (coq-xml-body1 message-str))))
      (coq--display-response msg)))
 
@@ -645,6 +699,7 @@ is gone and we have to close the secondary locked span."
   (setq coq-server--current-span span) 
   (let ((xml (coq-server--get-next-xml)))
     (while xml
+      (message "XML: %s FOOTPRINT: %s" xml (coq-xml-footprint xml))
       (pcase (coq-xml-tag xml)
 	(`value (coq-server--handle-value xml))
 	(`feedback (coq-server--handle-feedback xml))

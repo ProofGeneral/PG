@@ -174,13 +174,8 @@ structure of tags only."
   "Get item parsed XML following PATH, which may terminate in a 
 tag, or a tag with an attribute name. Using this function avoids having 
 to write out the traversal code by hand each time."
-  (cond
-   ;; didn't find what we wanted
-   ((null path) 
-    nil) 
-   ;; end of path
-   ((and (consp path) (or (eq (car path) (coq-xml-tag xml))
-			  (eq (car path) '_))) ; wildcard tag
+  (if (and (consp path) (or (eq (car path) (coq-xml-tag xml))
+			    (eq (car path) '_))) ; wildcard tag
     (cond 
      ;; attribute
      ;; nil is a symbol in this crazy world
@@ -196,8 +191,16 @@ to write out the traversal code by hand each time."
 	       ;; running all of these checks validity of path
 	       (results (mapcar (lambda (consed) (coq-xml-at-path (car consed) (cdr consed)))
 				zipped-children)))
-	  (car (reverse results))))))
-   (t (error "coq-xml-at-path, xml does not match path"))))
+	  (let (failed)
+	    ;; if any item is nil, the path is invalid
+	    (dolist (res results failed)
+	      (when (null res)
+		(setq failed t)))
+	    (if failed
+		nil
+	      (car (reverse results)))))))
+    ;; return nil if end of path or tag mismatch
+    nil))
 
 ;; functions that use the `call' tag
 
