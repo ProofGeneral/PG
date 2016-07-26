@@ -638,7 +638,7 @@ is gone and we have to close the secondary locked span."
 	       (if (and (consp it) (consp (cdr it)))
 		   (flatten-pp (cddr it))
 		 it))
-	     items " "))
+	     items ""))
 
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
