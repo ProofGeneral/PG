@@ -1,0 +1,46 @@
+Stuff to do to clean up the code
+--------------------------------
+
+Probably the "invisible" command things can go
+These are commands that user does not see, not part of script
+Can just call send-to-prover, yes?
+
+Either update or ditch the Adapting document
+We could describe how to use different protocols
+Right now, all the comms stuff is in coq/, though
+
+generic/proof-resolver.el probably doesn't need much of what's there
+
+ditch generic/proof-shell.el, but there is code that uses it, so careful
+
+Makefile.devel mentions cvs; update that to git, or ditch it?
+
+generic/proof-easy-config is probably ditchable
+
+Go through autoloads, see what's what
+
+Is generic/pg-xml.el still used? It's used in pg-movie.el, pgip.el
+Bits of it are redundant with coq/coq-xml.el
+
+in bin/proofgeneral, make it executable
+remove references to other provers
+
+Update these files:
+
+AUTHORS  
+BUGS
+CHANGES
+COMPATIBILITY 
+COPYING 
+FAQ 
+INSTALL
+README.md  
+REGISTER (is this still used?)
+TAGS
+
+
+
+
+
+
+
