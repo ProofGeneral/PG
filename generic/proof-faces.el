@@ -82,9 +82,17 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 (defface proof-secondary-locked-face
   (proof-face-specs
    (:background "#eaf800")
-   (:background "darkgreen")
+   (:background "lightgreen")
    (:underline t))
   "*Face for secondary locked region of proof script (processed commands)."
+  :group 'proof-faces)
+
+(defface proof-processing-face
+  (proof-face-specs
+   (:background "#ff00ff")
+   (:background "lightgreen")
+   (:underline t))
+  "*Face for span that is being processed."
   :group 'proof-faces)
 
 (defface proof-declaration-name-face

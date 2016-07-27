@@ -50,6 +50,11 @@ is gone and we have to close the secondary locked span."
 ;; to prevent this table from taking too much space, we clear it just as each Add is sent
 (defvar coq-server--error-fail-tbl (make-hash-table :test 'equal))
 
+;; table mapping state ids to spans created by processingin feedbacks
+;; we make values weak; spans can be deleted from buffer without necessarily
+;;  deleting from this table
+(defvar coq-server--processing-span-tbl (make-hash-table :test 'equal :weakness 'value))
+
 ;; hook function to count how many Adds are pending
 ;; comments generate items with null element
 (defun count-addable (items ct) ; helper for coq-server-count-pending-adds
@@ -418,10 +423,8 @@ is gone and we have to close the secondary locked span."
 	(coq-server--simple-backtrack)
       ;; multiple else's
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
-      (message "ABOUT TO CREATE SECONDARY SPAN")
       (with-current-buffer proof-script-buffer
 	(coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))
-      (message "CREATED SECONDARY SPAN")
       (coq-server--consume-edit-at-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
@@ -437,9 +440,11 @@ is gone and we have to close the secondary locked span."
 	   secondary-span-start
 	   secondary-span-end)
       (setq secondary-span-end (span-end last-tip-span))
+      ;; delete spans within focus, because they're unprocessed now
+      ;; leave spans beneath the focus, because we'll skip past them 
+      ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
 	(if found-focus-end
-	    ;; restore span, get secondary span bounds
 	    (progn
 	      (let ((curr-span-start (span-start span)))
 		;; the first span past the end of the focus starts the secondary span
@@ -455,8 +460,7 @@ is gone and we have to close the secondary locked span."
       ;; skip past whitespace for secondary span
       (save-excursion
 	(goto-char secondary-span-start)
-	(while (thing-at-point 'whitespace)
-	  (goto-char (1+ (point))))
+	(skip-chars-forward " \t\n")
 	(beginning-of-thing 'sentence)
 	(setq secondary-span-start (point)))
       (let* ((span (span-make secondary-span-start secondary-span-end)))
@@ -611,6 +615,13 @@ is gone and we have to close the secondary locked span."
 	  (coq--highlight-error error-span error-start error-stop))
       ;; error in middle of processed region
       ;; indelibly color the error 
+      (let ((span-processing (gethash error-state-id coq-server--processing-span-tbl)))
+       ;; may get several processed feedbacks for one processingin
+       ;; only need to use first one
+	(when span-processing
+	   (progn
+	     (remhash error-state-id coq-server--processing-span-tbl)
+	     (span-delete span-processing))))
       (coq--mark-error error-span error-msg))))
 
 ;; this is for 8.5
@@ -663,6 +674,44 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
+    ("processingin"
+     (with-current-buffer proof-script-buffer
+       (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	      (span-with-state-id (coq-server--find-span-with-state-id state-id))
+	      (contained-spans (and span-with-state-id
+				    (overlays-in (span-start span-with-state-id)
+						 (span-end span-with-state-id))))
+	      (previous-processing-spans (cl-remove-if-not
+					  (lambda (span) (span-property span 'processing-in))
+					  contained-spans)))
+	 (message "CONTAINED: %s" contained-spans)
+	 (message "PREVIOUS: %s" previous-processing-spans)
+
+	 ;; delete any existing processing spans contained in the state id span
+	 ;; such spans may have been created when the state id span represented a 
+	 ;;  different state id; for example, when a proof is re-opened, and a line is 
+	 ;;  processed again
+	 (when previous-processing-spans
+	   ;; we don't know the key for this span in the span table
+	   ;; that's OK, values are weakly held in that table
+	   (mapc 'span-delete previous-processing-spans))
+	 (save-excursion
+	   (goto-char (span-start span-with-state-id))
+	   (skip-chars-forward " \t\n")
+	   (beginning-of-thing 'line)
+	   (let ((span-processing (span-make (point) (span-end span-with-state-id))))
+	     (span-set-property span-processing 'processing-in t)
+	     (span-set-property span-processing 'face 'proof-processing-face)
+	     (puthash state-id span-processing coq-server--processing-span-tbl))))))
+    ("processed"
+     (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	    (span-processing (gethash state-id coq-server--processing-span-tbl)))
+       ;; may get several processed feedbacks for one processingin
+       ;; only need to use first one
+       (when span-processing
+	   (progn
+	     (remhash state-id coq-server--processing-span-tbl)
+	     (span-delete span-processing)))))
     ("errormsg" ; 8.5-only
      (unless (gethash xml coq-server--error-fail-tbl)
        (coq-server--handle-errormsg xml)))
@@ -675,7 +724,6 @@ is gone and we have to close the secondary locked span."
 	 (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
 		   (equal msg-level "error") )
 	   (coq-server--handle-error xml)))))
-    ;; TODO maybe use fancy colors for other feedbacks
     (t)))
 
 ;; syntax of messages differs in 8.5 and 8.6, handle both cases
