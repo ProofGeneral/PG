@@ -99,7 +99,7 @@
 		    (unload-feature feat 'force)
 		    (error nil)))
    '(proof-splash pg-assoc pg-xml proof-depends proof-indent proof-site
-     proof-shell proof-menu pg-pbrpm pg-pgip proof-script
+     proof-shell proof-menu pg-pbrpm proof-script
      proof-autoloads pg-response pg-goals proof-toolbar
      proof-easy-config proof-config proof-mmm proof
      proof-utils proof-syntax pg-user pg-custom

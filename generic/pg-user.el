@@ -17,7 +17,6 @@
 ;;; Code:
 
 (require 'span)
-(require 'scomint)
 
 (require 'proof-script)	        ; we build on proof-script
 

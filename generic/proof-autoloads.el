@@ -17,7 +17,7 @@
 
 
 ;;;### (autoloads (bufhist-exit bufhist-init bufhist-mode) "../lib/bufhist"
-;;;;;;  "../lib/bufhist.el" (22324 14658 670840 620000))
+;;;;;;  "../lib/bufhist.el" (22396 10805 387884 342000))
 ;;; Generated autoloads from ../lib/bufhist.el
 
 (autoload 'bufhist-mode "../lib/bufhist" "\
@@ -50,7 +50,7 @@ Stop keeping ring history for current buffer.
 
 ;;;### (autoloads (holes-insert-and-expand holes-abbrev-complete
 ;;;;;;  holes-mode holes-set-make-active-hole) "../lib/holes" "../lib/holes.el"
-;;;;;;  (22324 14658 670840 620000))
+;;;;;;  (22396 10805 387884 342000))
 ;;; Generated autoloads from ../lib/holes.el
 
 (autoload 'holes-set-make-active-hole "../lib/holes" "\
@@ -164,7 +164,7 @@ Insert S, expand it and replace #s and @{]s by holes.
 ;;;***
 
 ;;;### (autoloads (maths-menu-mode) "../lib/maths-menu" "../lib/maths-menu.el"
-;;;;;;  (22324 14658 670840 620000))
+;;;;;;  (22396 10805 387884 342000))
 ;;; Generated autoloads from ../lib/maths-menu.el
 
 (autoload 'maths-menu-mode "../lib/maths-menu" "\
@@ -178,8 +178,8 @@ This mode is only useful with a font which can display the maths repertoire.
 ;;;***
 
 ;;;### (autoloads (proof-associated-frames proof-associated-windows
-;;;;;;  proof-associated-buffers) "pg-assoc" "pg-assoc.el" (22324
-;;;;;;  14658 654840 620000))
+;;;;;;  proof-associated-buffers) "pg-assoc" "pg-assoc.el" (22396
+;;;;;;  10805 375884 342000))
 ;;; Generated autoloads from pg-assoc.el
 
 (autoload 'proof-associated-buffers "pg-assoc" "\
@@ -204,7 +204,7 @@ Return the list of frames displaying at least one associated buffer.
 ;;;***
 
 ;;;### (autoloads (profile-pg) "../lib/pg-dev" "../lib/pg-dev.el"
-;;;;;;  (22324 14658 670840 620000))
+;;;;;;  (22424 64910 945002 480000))
 ;;; Generated autoloads from ../lib/pg-dev.el
 
 (autoload 'profile-pg "../lib/pg-dev" "\
@@ -215,7 +215,7 @@ Configure Proof General for profiling.  Use M-x elp-results to see results.
 ;;;***
 
 ;;;### (autoloads (proof-goals-config-done) "pg-goals" "pg-goals.el"
-;;;;;;  (22324 14658 658840 620000))
+;;;;;;  (22415 56991 207934 530000))
 ;;; Generated autoloads from pg-goals.el
 
 (autoload 'proof-goals-config-done "pg-goals" "\
@@ -226,8 +226,8 @@ Initialise the goals buffer after the child has been configured.
 ;;;***
 
 ;;;### (autoloads (pg-movie-export-directory pg-movie-export-from
-;;;;;;  pg-movie-export) "pg-movie" "pg-movie.el" (22324 14658 658840
-;;;;;;  620000))
+;;;;;;  pg-movie-export) "pg-movie" "pg-movie.el" (22396 10805 375884
+;;;;;;  342000))
 ;;; Generated autoloads from pg-movie.el
 
 (autoload 'pg-movie-export "pg-movie" "\
@@ -250,7 +250,7 @@ Existing XML files are overwritten.
 ;;;***
 
 ;;;### (autoloads (defpacustom proof-defpacustom-fn) "pg-pamacs"
-;;;;;;  "pg-pamacs.el" (22324 14658 658840 620000))
+;;;;;;  "pg-pamacs.el" (22424 64805 521004 784000))
 ;;; Generated autoloads from pg-pamacs.el
 
 (autoload 'proof-defpacustom-fn "pg-pamacs" "\
@@ -284,13 +284,8 @@ Additional properties in the ARGS prop list may include:
 		     For example, \"Timing\", \"Tracing\", etc.  Used
 		     to generate sub-menus in the UI.
 
- pgipgcmd  string    Alternative to :setting.
-		     Send a PGIP formatted command based on given string.
-
  pgdynamic flag      If flag is non-nil, this setting is a dynamic one
 		     that is particular to the running instance of the prover.
-		     Automatically set by preferences configured from PGIP 
-		     askprefs message.
 
 This macro also extends the `proof-assistant-settings' list.
 
@@ -298,32 +293,10 @@ This macro also extends the `proof-assistant-settings' list.
 
 ;;;***
 
-;;;### (autoloads (pg-pgip-askprefs pg-pgip-maybe-askpgip pg-pgip-process-packet)
-;;;;;;  "pg-pgip" "pg-pgip.el" (22324 14658 658840 620000))
-;;; Generated autoloads from pg-pgip.el
-
-(autoload 'pg-pgip-process-packet "pg-pgip" "\
-Process the command packet PGIP, which is parsed XML according to pg-xml-parse-*.
-The list PGIPS may contain one or more PGIP packets, whose contents are processed.
-
-\(fn PGIPS)" nil nil)
-
-(autoload 'pg-pgip-maybe-askpgip "pg-pgip" "\
-Send an <askpgip> message to the prover if PGIP is supported.
-
-\(fn)" nil nil)
-
-(autoload 'pg-pgip-askprefs "pg-pgip" "\
-Send an <askprefs> message to the prover.
-
-\(fn)" nil nil)
-
-;;;***
-
 ;;;### (autoloads (pg-response-has-error-location proof-next-error
 ;;;;;;  pg-response-message pg-response-display-with-face pg-response-maybe-erase
 ;;;;;;  proof-response-config-done proof-response-mode) "pg-response"
-;;;;;;  "pg-response.el" (22379 64391 23888 554000))
+;;;;;;  "pg-response.el" (22396 10818 499884 55000))
 ;;; Generated autoloads from pg-response.el
 
 (autoload 'proof-response-mode "pg-response" "\
@@ -400,7 +373,7 @@ See `pg-next-error-regexp'.
 ;;;;;;  pg-slow-fontify-tracing-hint proof-electric-terminator-enable
 ;;;;;;  proof-define-assistant-command-witharg proof-define-assistant-command
 ;;;;;;  proof-process-buffer proof-goto-point proof-script-new-command-advance)
-;;;;;;  "pg-user" "pg-user.el" (22389 22267 769857 819000))
+;;;;;;  "pg-user" "pg-user.el" (22424 65040 212999 654000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -526,8 +499,8 @@ Enable or disable autosend behaviour.
 
 ;;;***
 
-;;;### (autoloads (pg-xml-parse-string) "pg-xml" "pg-xml.el" (22324
-;;;;;;  14658 658840 620000))
+;;;### (autoloads (pg-xml-parse-string) "pg-xml" "pg-xml.el" (22424
+;;;;;;  64704 685006 988000))
 ;;; Generated autoloads from pg-xml.el
 
 (autoload 'pg-xml-parse-string "pg-xml" "\
@@ -538,7 +511,7 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 ;;;***
 
 ;;;### (autoloads (proof-dependency-in-span-context-menu proof-depends-process-dependencies)
-;;;;;;  "proof-depends" "proof-depends.el" (22324 14658 658840 620000))
+;;;;;;  "proof-depends" "proof-depends.el" (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -556,7 +529,7 @@ Make some menu entries showing proof dependencies of SPAN.
 ;;;***
 
 ;;;### (autoloads (proof-easy-config) "proof-easy-config" "proof-easy-config.el"
-;;;;;;  (22324 14658 658840 620000))
+;;;;;;  (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-easy-config.el
 
 (autoload 'proof-easy-config "proof-easy-config" "\
@@ -569,7 +542,7 @@ the `proof-assistant-table', which see.
 ;;;***
 
 ;;;### (autoloads (proof-indent-line) "proof-indent" "proof-indent.el"
-;;;;;;  (22324 14658 658840 620000))
+;;;;;;  (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-indent.el
 
 (autoload 'proof-indent-line "proof-indent" "\
@@ -580,8 +553,8 @@ Indent current line of proof script, if indentation enabled.
 ;;;***
 
 ;;;### (autoloads (proof-maths-menu-enable proof-maths-menu-set-global)
-;;;;;;  "proof-maths-menu" "proof-maths-menu.el" (22324 14658 658840
-;;;;;;  620000))
+;;;;;;  "proof-maths-menu" "proof-maths-menu.el" (22396 10805 379884
+;;;;;;  342000))
 ;;; Generated autoloads from proof-maths-menu.el
 
 (autoload 'proof-maths-menu-set-global "proof-maths-menu" "\
@@ -602,8 +575,8 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-aux-menu proof-menu-define-specific proof-menu-define-main
-;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22380
-;;;;;;  24422 736478 98000))
+;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22424
+;;;;;;  64768 481005 593000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -629,7 +602,7 @@ Construct and return PG auxiliary menu used in non-scripting buffers.
 ;;;***
 
 ;;;### (autoloads (proof-mmm-enable proof-mmm-set-global) "proof-mmm"
-;;;;;;  "proof-mmm.el" (22324 14658 658840 620000))
+;;;;;;  "proof-mmm.el" (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-mmm.el
 
 (autoload 'proof-mmm-set-global "proof-mmm" "\
@@ -649,7 +622,7 @@ in future if we have just activated it for this buffer.
 ;;;***
 
 ;;;### (autoloads (proof-extend-queue proof-start-queue) "proof-queue"
-;;;;;;  "proof-queue.el" (22372 10294 165071 84000))
+;;;;;;  "proof-queue.el" (22405 2183 511289 197000))
 ;;; Generated autoloads from proof-queue.el
 
 (autoload 'proof-start-queue "proof-queue" "\
@@ -672,11 +645,11 @@ The queue mode is set to 'advancing
 ;;;***
 
 ;;;### (autoloads (proof-server-process-response proof-server-send-to-prover
-;;;;;;  proof-server-format-command proof-server-proof-completedp
-;;;;;;  proof-server-errorp proof-server-interruptp proof-add-to-queue
-;;;;;;  proof-invisible-command-invisible-result proof-invisible-cmd-get-result
-;;;;;;  proof-invisible-command proof-ready-prover) "proof-resolver"
-;;;;;;  "proof-resolver.el" (22390 40733 921879 794000))
+;;;;;;  proof-server-proof-completedp proof-server-errorp proof-server-interruptp
+;;;;;;  proof-add-to-queue proof-invisible-command-invisible-result
+;;;;;;  proof-invisible-cmd-get-result proof-invisible-command proof-ready-prover)
+;;;;;;  "proof-resolver" "proof-resolver.el" (22401 25129 671628
+;;;;;;  540000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -719,15 +692,10 @@ The queue mode is set to 'advancing
 
 \(fn RESP)" nil nil)
 
-(autoload 'proof-server-format-command "proof-resolver" "\
-
-
-\(fn CMD)" nil nil)
-
 (autoload 'proof-server-send-to-prover "proof-resolver" "\
 
 
-\(fn S &optional NEEDS-FORMATTING)" nil nil)
+\(fn STRING-OR-FUN)" nil nil)
 
 (autoload 'proof-server-process-response "proof-resolver" "\
 
@@ -740,8 +708,8 @@ The queue mode is set to 'advancing
 ;;;;;;  proof-insert-pbp-command proof-script-generic-parse-find-comment-end
 ;;;;;;  proof-register-possibly-new-processed-file pg-set-span-helphighlights
 ;;;;;;  proof-locked-region-empty-p proof-locked-region-full-p proof-unprocessed-begin
-;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22390
-;;;;;;  39120 781915 53000))
+;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22418
+;;;;;;  18709 238017 275000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -834,8 +802,11 @@ finish setup which depends on specific proof assistant configuration.
 ;;;;;;  proof-server-insert proof-server-invisible-command-invisible-result
 ;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
 ;;;;;;  proof-server-start proof-server-ready-prover proof-server-config-done)
-;;;;;;  "proof-server" "proof-server.el" (22390 44839 89790 64000))
+;;;;;;  "proof-server" "proof-server.el" (22422 12749 317662 164000))
 ;;; Generated autoloads from proof-server.el
+
+(defsubst proof-server-live-buffer nil "\
+Return non-nil if proof-server-buffer is live." (and proof-server-buffer (buffer-live-p proof-server-buffer) (let ((proc (get-buffer-process proof-server-buffer))) (and proc (memq (process-status proc) (quote (open run stop)))))))
 
 (autoload 'proof-server-config-done "proof-server" "\
 Initialise the specific prover after the child has been configured.
@@ -856,7 +827,7 @@ with proof-shell-ready-prover.
 (autoload 'proof-server-start "proof-server" "\
 
 
-\(fn)" nil nil)
+\(fn)" t nil)
 
 (autoload 'proof-server-invisible-command "proof-server" "\
 
@@ -879,9 +850,10 @@ Send STRINGS to the prover.
 STRINGS is a list of strings (which will be concatenated), or a
 single string.
 
-The ACTION and SCRIPTSPAN arguments are here to conform to `proof-shell-insert''s API.
+The ACTION is unused here (hangover from proof-shell-insert), 
+while SPAN is the Emacs span containing the command.
 
-\(fn STRINGS ACTION &optional SCRIPTSPAN)" nil nil)
+\(fn STRINGS ACTION SPAN)" nil nil)
 
 (autoload 'proof-server-add-to-queue "proof-server" "\
 add item to queue for 'server mode
@@ -911,11 +883,11 @@ contains only invisible elements for Prooftree synchronization.
 
 ;;;***
 
-;;;### (autoloads (proof-shell-config-done proof-shell-mode proof-shell-invisible-command-invisible-result
+;;;### (autoloads (proof-shell-config-done proof-shell-invisible-command-invisible-result
 ;;;;;;  proof-shell-invisible-cmd-get-result proof-shell-invisible-command
-;;;;;;  proof-shell-wait proof-shell-insert proof-shell-available-p
+;;;;;;  proof-shell-wait proof-shell-action-list-item proof-shell-available-p
 ;;;;;;  proof-shell-ready-prover) "proof-shell" "proof-shell.el"
-;;;;;;  (22380 24115 684467 273000))
+;;;;;;  (22424 65190 756996 363000))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -928,7 +900,7 @@ No change to current buffer or point.
 \(fn &optional QUEUEMODE)" nil nil)
 
 (defsubst proof-shell-live-buffer nil "\
-Return non-nil if proof-shell-buffer is live." (and proof-shell-buffer (buffer-live-p proof-shell-buffer) (scomint-check-proc proof-shell-buffer)))
+Return non-nil if proof-shell-buffer is live." (and proof-shell-buffer (buffer-live-p proof-shell-buffer)))
 
 (autoload 'proof-shell-available-p "proof-shell" "\
 Return non-nil if there is a proof shell active and available.
@@ -936,32 +908,11 @@ No error messages.  Useful as menu or toolbar enabler.
 
 \(fn)" nil nil)
 
-(autoload 'proof-shell-insert "proof-shell" "\
-Insert STRINGS at the end of the proof shell, call `scomint-send-input'.
+(autoload 'proof-shell-action-list-item "proof-shell" "\
+Return action list entry run CMD with callback CALLBACK and FLAGS.
+The queue entry does not refer to a span in the script buffer.
 
-STRINGS is a list of strings (which will be concatenated), or a
-single string.
-
-The ACTION argument is a symbol which is typically the name of a
-callback for when each string has been processed.
-
-This calls `proof-shell-insert-hook'.  The arguments `action' and
-`scriptspan' may be examined by the hook to determine how to modify
-the `string' variable (exploiting dynamic scoping) which will be
-the command actually sent to the shell.
-
-Note that the hook is not called for the empty (null) string
-or a carriage return.
-
-We strip the string of carriage returns before inserting it
-and updating `proof-marker' to point to the end of the newly
-inserted text.
-
-Do not use this function directly, or output will be lost.  It is only
-used in `proof-add-to-queue' when we start processing a queue, and in
-`proof-shell-exec-loop', to process the next item.
-
-\(fn STRINGS ACTION &optional SCRIPTSPAN)" nil nil)
+\(fn CMD CALLBACK &optional FLAGS)" nil nil)
 
 (autoload 'proof-shell-wait "proof-shell" "\
 Busy wait for `proof-shell-busy' to become nil, reading from prover.
@@ -1017,10 +968,7 @@ Error messages are displayed as usual.
 
 \(fn CMD)" nil nil)
 
-(autoload 'proof-shell-mode "proof-shell" "\
-Proof General shell mode class for proof assistant processes
-
-\(fn)" t nil)
+(defconst proof-shell-important-settings '(proof-shell-annotated-prompt-regexp))
 
 (autoload 'proof-shell-config-done "proof-shell" "\
 Initialise the specific prover after the child has been configured.
@@ -1032,7 +980,7 @@ processing.
 ;;;***
 
 ;;;### (autoloads (proof-ready-for-assistant) "proof-site" "proof-site.el"
-;;;;;;  (22324 14658 662840 620000))
+;;;;;;  (22399 52312 343135 63000))
 ;;; Generated autoloads from proof-site.el
 
 (autoload 'proof-ready-for-assistant "proof-site" "\
@@ -1044,7 +992,7 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'.
 ;;;***
 
 ;;;### (autoloads (proof-splash-message proof-splash-display-screen)
-;;;;;;  "proof-splash" "proof-splash.el" (22324 14658 662840 620000))
+;;;;;;  "proof-splash" "proof-splash.el" (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-splash.el
 
 (autoload 'proof-splash-display-screen "proof-splash" "\
@@ -1063,7 +1011,7 @@ Make sure the user gets welcomed one way or another.
 ;;;***
 
 ;;;### (autoloads (proof-format) "proof-syntax" "proof-syntax.el"
-;;;;;;  (22324 14658 662840 620000))
+;;;;;;  (22396 10805 379884 342000))
 ;;; Generated autoloads from proof-syntax.el
 
 (defsubst proof-replace-regexp-in-string (regexp rep string) "\
@@ -1079,7 +1027,7 @@ may be a string or sexp evaluated to get a string.
 ;;;***
 
 ;;;### (autoloads (proof-toolbar-scripting-menu proof-toolbar-setup)
-;;;;;;  "proof-toolbar" "proof-toolbar.el" (22385 29481 624780 689000))
+;;;;;;  "proof-toolbar" "proof-toolbar.el" (22396 10818 503884 55000))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
@@ -1099,7 +1047,7 @@ Menu made from the Proof General toolbar commands.
 
 ;;;### (autoloads (proof-unicode-tokens-enable proof-unicode-tokens-set-global
 ;;;;;;  proof-unicode-tokens-mode-if-enabled) "proof-unicode-tokens"
-;;;;;;  "proof-unicode-tokens.el" (22324 14658 662840 620000))
+;;;;;;  "proof-unicode-tokens.el" (22396 10805 383884 342000))
 ;;; Generated autoloads from proof-unicode-tokens.el
 
 (autoload 'proof-unicode-tokens-mode-if-enabled "proof-unicode-tokens" "\
@@ -1126,8 +1074,8 @@ is changed.
 
 ;;;***
 
-;;;### (autoloads (proof-debug) "proof-utils" "proof-utils.el" (22343
-;;;;;;  23315 480090 642000))
+;;;### (autoloads (proof-debug) "proof-utils" "proof-utils.el" (22396
+;;;;;;  10818 503884 55000))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-debug "proof-utils" "\
@@ -1138,40 +1086,8 @@ If flag `proof-general-debug' is nil, do nothing.
 
 ;;;***
 
-;;;### (autoloads (scomint-make scomint-make-in-buffer) "../lib/scomint"
-;;;;;;  "../lib/scomint.el" (22324 14658 670840 620000))
-;;; Generated autoloads from ../lib/scomint.el
-
-(autoload 'scomint-make-in-buffer "../lib/scomint" "\
-Make a Comint process NAME in BUFFER, running PROGRAM.
-If BUFFER is nil, it defaults to NAME surrounded by `*'s.
-PROGRAM should be either a string denoting an executable program to create
-via `start-file-process', or a cons pair of the form (HOST . SERVICE) denoting
-a TCP connection to be opened via `open-network-stream'.  If there is already
-a running process in that buffer, it is not restarted.  Optional fourth arg
-STARTFILE is the name of a file to send the contents of to the process.
-
-If PROGRAM is a string, any more args are arguments to PROGRAM.
-
-\(fn NAME BUFFER PROGRAM &optional STARTFILE &rest SWITCHES)" nil nil)
-
-(autoload 'scomint-make "../lib/scomint" "\
-Make a Comint process NAME in a buffer, running PROGRAM.
-The name of the buffer is made by surrounding NAME with `*'s.
-PROGRAM should be either a string denoting an executable program to create
-via `start-file-process', or a cons pair of the form (HOST . SERVICE) denoting
-a TCP connection to be opened via `open-network-stream'.  If there is already
-a running process in that buffer, it is not restarted.  Optional third arg
-STARTFILE is the name of a file to send the contents of the process to.
-
-If PROGRAM is a string, any more args are arguments to PROGRAM.
-
-\(fn NAME PROGRAM &optional STARTFILE &rest SWITCHES)" nil nil)
-
-;;;***
-
 ;;;### (autoloads (texi-docstring-magic) "../lib/texi-docstring-magic"
-;;;;;;  "../lib/texi-docstring-magic.el" (22324 14658 670840 620000))
+;;;;;;  "../lib/texi-docstring-magic.el" (22396 10805 387884 342000))
 ;;; Generated autoloads from ../lib/texi-docstring-magic.el
 
 (autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
@@ -1184,7 +1100,7 @@ With prefix arg, no errors on unknown symbols.  (This results in
 ;;;***
 
 ;;;### (autoloads (unicode-chars-list-chars) "../lib/unicode-chars"
-;;;;;;  "../lib/unicode-chars.el" (22324 14658 670840 620000))
+;;;;;;  "../lib/unicode-chars.el" (22396 10805 391884 342000))
 ;;; Generated autoloads from ../lib/unicode-chars.el
 
 (autoload 'unicode-chars-list-chars "../lib/unicode-chars" "\
@@ -1197,7 +1113,7 @@ in your emacs font.
 ;;;***
 
 ;;;### (autoloads (unicode-tokens-encode-str) "../lib/unicode-tokens"
-;;;;;;  "../lib/unicode-tokens.el" (22324 14658 670840 620000))
+;;;;;;  "../lib/unicode-tokens.el" (22396 10805 391884 342000))
 ;;; Generated autoloads from ../lib/unicode-tokens.el
 
 (autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
@@ -1211,8 +1127,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22390 44947
-;;;;;;  973799 270000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22424 65213
+;;;;;;  420283 537000))
 
 ;;;***
 

@@ -1535,31 +1535,6 @@ settings."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
-
-(defcustom proof-shell-match-pgip-cmd nil
-  "Regexp used to match PGIP command from proof assistant.
-
-More precisely, this should match a string which is bounded by
-matches on `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-The matching string will be parsed as XML and then processed by
-`pg-pgip-process-cmd'."
-  :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
-;; FIXME: next one needs changing to be a function, or have function
-;; built from it.
-(defcustom proof-shell-issue-pgip-cmd nil
-  "Command sent to prover to process PGIP command in %s placeholder."
-  :type '(choice (const nil) string)
-  :group 'proof-shell)
-
-(defcustom proof-use-pgip-askprefs nil
-  "Whether to use the PGIP <askprefs> command to configure prover settings."
-  :type 'boolean
-  :group 'proof-shell)
-
 ;; FIXME FIXME: this next one not yet used.  It's hard to interleave
 ;; commands with the ordinary queue anyway: the prover should
 ;; automatically output this information if it is enabled.

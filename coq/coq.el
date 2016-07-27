@@ -1482,7 +1482,6 @@ Near here means PT is either inside or just aside of a comment."
 
    ;; ****** is added at the end of warnings in emacs mode, this is temporary I
    ;;        want xml like tags, and I want them removed before warning display.
-   ;; I want the same for errors -> pgip
 
    proof-shell-eager-annotation-end "\377\\|done\\]\\|</infomsg>\\|\\*\\*\\*\\*\\*\\*\\|) >" ; done
    proof-shell-annotated-prompt-regexp coq-shell-prompt-pattern
