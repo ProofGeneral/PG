@@ -677,28 +677,11 @@ is gone and we have to close the secondary locked span."
     ("processingin"
      (with-current-buffer proof-script-buffer
        (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	      (span-with-state-id (coq-server--find-span-with-state-id state-id))
-	      (contained-spans (and span-with-state-id
-				    (overlays-in (span-start span-with-state-id)
-						 (span-end span-with-state-id))))
-	      (previous-processing-spans (cl-remove-if-not
-					  (lambda (span) (span-property span 'processing-in))
-					  contained-spans)))
-	 (message "CONTAINED: %s" contained-spans)
-	 (message "PREVIOUS: %s" previous-processing-spans)
-
-	 ;; delete any existing processing spans contained in the state id span
-	 ;; such spans may have been created when the state id span represented a 
-	 ;;  different state id; for example, when a proof is re-opened, and a line is 
-	 ;;  processed again
-	 (when previous-processing-spans
-	   ;; we don't know the key for this span in the span table
-	   ;; that's OK, values are weakly held in that table
-	   (mapc 'span-delete previous-processing-spans))
+	      (span-with-state-id (coq-server--find-span-with-state-id state-id)))
 	 (save-excursion
 	   (goto-char (span-start span-with-state-id))
 	   (skip-chars-forward " \t\n")
-	   (beginning-of-thing 'line)
+	   (beginning-of-thing 'sentence)
 	   (let ((span-processing (span-make (point) (span-end span-with-state-id))))
 	     (span-set-property span-processing 'processing-in t)
 	     (span-set-property span-processing 'face 'proof-processing-face)

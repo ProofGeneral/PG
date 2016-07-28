@@ -117,13 +117,6 @@ These are appended at the end of `coq-shell-init-cmd'."
 (require 'coq-indent)
 
 
-;; Command to reset the Coq Proof Assistant
-(defconst coq-shell-restart-cmd "Reset Initial.\n ")
-
-(defvar coq-shell-prompt-pattern
-  "\\(?:\n\\(?:[^\n\371]+\371\\|<prompt>[^\n]+</prompt>\\)\\)"
-  "*The prompt pattern for the inferior shell running coq.")
-
 ;; FIXME da: this was disabled (set to nil) -- why?
 ;; da: 3.5: add experimental
 ;; am:answer: because of bad interaction
@@ -303,11 +296,6 @@ See also `coq-hide-additional-subgoals'."
 ;;
 ;; Derived modes
 ;;
-
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-shell-mode proof-shell-mode
-    "Coq Shell" nil
-    (coq-shell-mode-config)))
 
 (eval-and-compile ;; FIXME: Why?
   (define-derived-mode coq-response-mode proof-response-mode
@@ -535,10 +523,21 @@ annotation-start) if found."
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN, possibly resulting in a full retraction. Send Edit_at for the 
 nearest preceding span with a state id."
-  (if (eq (span-property span 'type) 'proverproc) ; TODO is this needed?
-         ;; processed externally (i.e. Require, etc), nothing to do
-         ;; (should really be unlocked when we undo the Require).
-         nil
+  (unless 
+      ;; processed externally (i.e. Require, etc), nothing to do
+      ;; (should really be unlocked when we undo the Require).
+      (eq (span-property span 'type) 'proverproc) ; TODO is this needed?
+    ;; remove any processing spans beneath this span
+    ;; because we'll need to re-do then
+    ;; we don't know the keys for these spans in the span table
+    ;; that's OK, values are weakly held in that table
+    (with-current-buffer proof-script-buffer
+      (let* ((spans (overlays-in (span-end span) (point-max)))
+             (processing-spans 
+              (cl-remove-if-not 
+               (lambda (sp) (span-property sp 'processing-in)) 
+               spans)))
+        (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
     (if coq-server--retraction-on-error
         (setq coq-server--retraction-on-error nil)
@@ -1484,7 +1483,6 @@ Near here means PT is either inside or just aside of a comment."
    ;;        want xml like tags, and I want them removed before warning display.
 
    proof-shell-eager-annotation-end "\377\\|done\\]\\|</infomsg>\\|\\*\\*\\*\\*\\*\\*\\|) >" ; done
-   proof-shell-annotated-prompt-regexp coq-shell-prompt-pattern
    proof-shell-result-start "\372 Pbp result \373"
    proof-shell-result-end "\372 End Pbp result \373"
 
@@ -1495,14 +1493,11 @@ Near here means PT is either inside or just aside of a comment."
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
      (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))
 
-   proof-shell-init-cmd coq-shell-init-cmd
-
    proof-no-fully-processed-buffer t
 
    ;; Coq has no global settings?
    ;; (proof-assistant-settings-cmd)
 
-   proof-shell-restart-cmd coq-shell-restart-cmd
    pg-subterm-anns-use-stack t)
 
   (coq-init-syntax-table)
