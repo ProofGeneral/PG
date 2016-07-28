@@ -16,6 +16,8 @@
 ;; That way, we see the correct order of calls and responses, which we would 
 ;; not see if we logged the sent strings at the time of queueing.
 
+;; When creating the transaction queue, we pass a handler for out-of-band data.
+
 ;; Finally, the enqueue function does not take the optional delay-sending argument.
 ;; We always delay sending until the last response has been received.
 
@@ -102,6 +104,9 @@
 
 (defvar tq-current-span nil)
 
+;; handler for out-of-band responses from coqtop
+(defvar tq--oob-handler nil)
+
 (defun tq-maybe-log (src str)
   (message "*%s* %s" src str)
   (when proof-server-log-traffic
@@ -124,16 +129,18 @@
 ;;; Core functionality
 
 ;;;###autoload
-(defun tq-create (process)
+(defun tq-create (process oob-handler)
   "Create and return a transaction queue communicating with PROCESS.
 PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
-to a tcp server on another machine."
+to a tcp server on another machine. The OOB-HANDLER handles responses
+from the PROCESS that are not transactional."
   (let ((tq (cons nil (cons process
 			    (generate-new-buffer
 			     (concat " tq-temp-"
 				     (process-name process)))))))
     (buffer-disable-undo (tq-buffer tq))
+    (setq tq--oob-handler oob-handler)
     (set-process-filter process
 			`(lambda (proc string)
 			   (tq-filter ',tq string)))
@@ -196,9 +203,10 @@ This produces more reliable results with some processes."
 	    ;; feedbacks not prompted by call
 	    ;; MODIFIED
 	    ;; original code put response here in a *spurious* buffer
-	    (progn
-	      (tq-maybe-log "coqtop-oob" (buffer-string))
-	      (delete-region (point-min) (point-max)))
+	    (let ((oob-response (buffer-string)))
+	      (tq-maybe-log "coqtop-oob" oob-response)
+	      (delete-region (point-min) (point-max))
+	      (funcall tq--oob-handler oob-response))
 	  ;; elisp allows multiple else-forms
 	  (goto-char (point-min))
 	  (when (re-search-forward (tq-queue-head-regexp tq) nil t)
