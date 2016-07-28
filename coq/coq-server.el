@@ -207,7 +207,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-empty-goals-footprint
   '(value (option)))
 
-(defun coq-server--value-empty-goalsp (xml)
+(defun coq-server--value-empty-goals-p (xml)
   (equal (coq-xml-footprint xml) 
 	 coq-server--value-empty-goals-footprint))
 
@@ -215,7 +215,7 @@ is gone and we have to close the secondary locked span."
   (coq-server--clear-goals-buffer))
 
 ;; use path instead of footprint, because inner bits may vary
-(defun coq-server--value-goalsp (xml)
+(defun coq-server--value-goals-p (xml)
   (coq-xml-at-path xml '(value (option (goals)))))
 
 (defun coq-server--handle-goal (goal)
@@ -296,7 +296,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-simple-backtrack-footprint 
   '(value (union (unit))))
 
-(defun coq-server--value-simple-backtrackp (xml)
+(defun coq-server--value-simple-backtrack-p (xml)
   (message "TESTING FOR SIMPLE BACKTRACK")
   (message "pending-edit-at-id: %s" coq-server--pending-edit-at-state-id)
   (message "EQUAL FOOTPRINTS: %s" (equal (coq-xml-footprint xml)
@@ -309,7 +309,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-new-focus-footprint 
   '(value (union (pair (state_id) (pair (state_id) (state_id))))))
 
-(defun coq-server--value-new-focusp (xml)
+(defun coq-server--value-new-focus-p (xml)
   (and (equal (coq-xml-footprint xml)
 	      coq-server--value-new-focus-footprint)
        (string-equal (coq-xml-at-path 
@@ -345,7 +345,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-init-state-id-footprint
   '(value (state_id)))
 
-(defun coq-server--value-init-state-idp (xml)
+(defun coq-server--value-init-state-id-p (xml)
   (equal (coq-xml-footprint xml) 
 	 coq-server--value-init-state-id-footprint))
 
@@ -363,7 +363,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-new-state-id-footprint
   '(value (pair (state_id) (pair (union (unit)) (string)))))
 
-(defun coq-server--value-new-state-idp (xml)
+(defun coq-server--value-new-state-id-p (xml)
   (equal (coq-xml-footprint xml) 
 	 coq-server--value-new-state-id-footprint))
 
@@ -377,7 +377,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--value-end-focus-footprint 
   '(value (pair (state_id) (pair (union (state_id)) (string)))))
 
-(defun coq-server--value-end-focusp (xml) 
+(defun coq-server--value-end-focus-p (xml) 
   (and (equal (coq-xml-footprint xml) coq-server--value-end-focus-footprint)
        (string-equal (coq-xml-at-path 
 		      xml 
@@ -513,8 +513,8 @@ is gone and we have to close the secondary locked span."
       (setq proof-merged-locked-end new-end))))
 
 ;; did we backtrack to a point before the current focus
-(defun coq-server--backtrack-before-focusp (xml)
-  (and (coq-server--value-simple-backtrackp xml) ; response otherwise looks like simple backtrack
+(defun coq-server--backtrack-before-focus-p (xml)
+  (and (coq-server--value-simple-backtrack-p xml) ; response otherwise looks like simple backtrack
        coq-server--start-of-focus-state-id 
        (or (equal coq-server--pending-edit-at-state-id coq-retract-buffer-state-id)
 	   (coq-server--state-id-precedes 
@@ -563,35 +563,35 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-good-value (xml)
   (message "good value: %s" xml)
   (cond
-   ((coq-server--backtrack-before-focusp xml)
+   ((coq-server--backtrack-before-focus-p xml)
     ;; retract before current focus
     (message "BACKTRACK BEFORE FOCUS")
     (coq-server--before-focus-backtrack))
-   ((coq-server--value-new-focusp xml)
+   ((coq-server--value-new-focus-p xml)
      ;; retract re-opens a proof
     (message "REOPENED PROOF")
     (coq-server--new-focus-backtrack xml))
-   ((coq-server--value-simple-backtrackp xml)
+   ((coq-server--value-simple-backtrack-p xml)
      ;; simple backtrack
     (message "SIMPLE BACKTRACK")
     (coq-server--simple-backtrack))
-   ((coq-server--value-end-focusp xml) 
+   ((coq-server--value-end-focus-p xml) 
     (message "SIMPLE END FOCUS")
     ;; close of focus after Add
     (coq-server--end-focus xml))
-   ((coq-server--value-init-state-idp xml) 
+   ((coq-server--value-init-state-id-p xml) 
     (message "INIT STATE ID")
     ;; Init, get first state id
     (coq-server--set-init-state-id xml))
-   ((coq-server--value-new-state-idp xml) 
+   ((coq-server--value-new-state-id-p xml) 
     (message "NEW STATE ID")
     ;; Add that updates state id
     (coq-server--set-new-state-id xml))
-   ((coq-server--value-empty-goalsp xml)
+   ((coq-server--value-empty-goals-p xml)
     (message "EMPTY GOALS")
     ;; Response to Goals, with no current goals
     (coq-server--handle-empty-goals))
-   ((coq-server--value-goalsp xml)
+   ((coq-server--value-goals-p xml)
     (message "NONEMPTY GOALS")
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
