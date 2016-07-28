@@ -94,9 +94,13 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--get-next-xml ()
   (ignore-errors ; returns nil if no XML available
     (goto-char (point-min))
+    (when (equal (current-buffer) coq-server-response-buffer)
+      (message "BUFFER: %s" (buffer-string)))
     (let ((xml (xml-parse-tag-1)))
       (when xml
-	(delete-region (point-min) (point)))
+	(delete-region (point-min) (point))
+	(when (equal (current-buffer) coq-server-response-buffer)
+	  (message "AFTER DELETION, BUFFER: %s" (buffer-string))))
       xml)))
 
 ;; retract to particular state id, get Status, optionally get Goal
@@ -432,11 +436,11 @@ is gone and we have to close the secondary locked span."
 	(coq-server--simple-backtrack)
       ;; multiple else's
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
-      (with-current-buffer proof-script-buffer
-	(coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id))
+      (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)
       (coq-server--consume-edit-at-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
+  (message "MAKING SECONDARY SPAN, LAST TIP: %s" last-tip-state-id)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
 	   (marked-spans (cl-remove-if-not 
@@ -449,10 +453,12 @@ is gone and we have to close the secondary locked span."
 	   secondary-span-start
 	   secondary-span-end)
       (setq secondary-span-end (span-end last-tip-span))
+      (message "GOT VARIABLES")
       ;; delete spans within focus, because they're unprocessed now
       ;; leave spans beneath the focus, because we'll skip past them 
       ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
+	(message "LOOKING AT MARKED SPAN: %s" span)
 	(if found-focus-end
 	    (progn
 	      (let ((curr-span-start (span-start span)))
@@ -690,14 +696,15 @@ is gone and we have to close the secondary locked span."
      (with-current-buffer proof-script-buffer
        (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
 	      (span-with-state-id (coq-server--get-span-with-state-id state-id)))
-	 (save-excursion
-	   (goto-char (span-start span-with-state-id))
-	   (skip-chars-forward " \t\n")
-	   (beginning-of-thing 'sentence)
-	   (let ((span-processing (span-make (point) (span-end span-with-state-id))))
-	     (span-set-property span-processing 'processing-in t)
-	     (span-set-property span-processing 'face 'proof-processing-face)
-	     (puthash state-id span-processing coq-server--processing-span-tbl))))))
+	 (when span-with-state-id ; can see feedbacks with state id not yet associated with a span
+	   (save-excursion
+	     (goto-char (span-start span-with-state-id))
+	     (skip-chars-forward " \t\n")
+	     (beginning-of-thing 'sentence)
+	     (let ((span-processing (span-make (point) (span-end span-with-state-id))))
+	       (span-set-property span-processing 'processing-in t)
+	       (span-set-property span-processing 'face 'proof-processing-face)
+	       (puthash state-id span-processing coq-server--processing-span-tbl)))))))
     ("processed"
      (message "GOT PROCESSED")
      (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
