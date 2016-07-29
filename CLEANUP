@@ -7,6 +7,8 @@ Can just call send-to-prover, yes?
 
 Localize all state
 
+Use cl-lib throughout
+
 Either update or ditch the Adapting document
 We could describe how to use different protocols
 Right now, all the comms stuff is in coq/, though
