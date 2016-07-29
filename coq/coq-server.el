@@ -1,4 +1,4 @@
-;; -*- lexical-binding: t -*-
+;;; -*- lexical-binding: t -*-
 
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
@@ -136,10 +136,29 @@ is gone and we have to close the secondary locked span."
   (coq-xml-body1 (nth 2 goal)))
 
 (defun coq-server--goal-hypotheses (goal)
-  (coq-xml-body (nth 3 goal)))
+  (let ((goal-hypos (nth 3 goal)))
+     (let* ((richpp-hypos
+	     (cl-remove-if 'null
+			   (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
+				   (coq-xml-body goal-hypos))))
+	    (flattened-hypos 
+	     (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
+		     richpp-hypos)))
+       (or 
+	;; 8.6
+	flattened-hypos 
+	;; 8.5
+	(coq-xml-body goal-hypos)))))
 
 (defun coq-server--goal-goal (goal)
-  (coq-xml-body1 (nth 4 goal)))
+  (let ((goal-goal (nth 4 goal)))
+    (or 
+     ;; 8.6
+     (let ((richpp-goal (coq-xml-at-path goal-goal '(richpp (_)))))
+       (and richpp-goal
+	    (flatten-pp (coq-xml-body richpp-goal))))
+     ;; 8.5
+     (coq-xml-body1 goal-goal))))
 
 (defvar goal-indent " ")
 
@@ -169,17 +188,25 @@ is gone and we have to close the secondary locked span."
 	 (goal1 (car goals))
 	 (goals-rest (cdr goals))
 	 (goal-counter 1))
+    (message "num goals: %s" num-goals)
+    (message "goal 1: %s" goal1)
+    (message "goal-rest: %s" goals-rest)
+    (message "POINT 1")
     (with-temp-buffer
-      (if (eq num-goals 1)
+      (if (= num-goals 1)
 	  (insert "1 subgoal")
 	(insert (format "%d subgoals" num-goals)))
       (insert "\n\n")
+      (message "POINT 2")
       (insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
+      (message "POINT 3")
       (insert (coq-server--format-goal-with-hypotheses 
 	       (coq-server--goal-goal goal1)
 	       (coq-server--goal-hypotheses goal1)))
+      (message "POINT 4")
       (insert "\n\n")
       (dolist (goal goals-rest)
+	(message "POINT 5")
 	(setq goal-counter (1+ goal-counter))
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
 	(insert (coq-server--format-goal-no-hypotheses 
@@ -228,6 +255,7 @@ is gone and we have to close the secondary locked span."
 	 (bg-goals (coq-xml-body (nth 1 all-goals)))
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals))))
+    (message "current-goals: %s" current-goals)
     (if current-goals
 	(progn
 	  (dolist (goal current-goals)
