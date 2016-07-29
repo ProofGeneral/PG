@@ -24,10 +24,12 @@
 	(let ((logger (concat "*" (downcase proof-assistant) "-log*")))
 	  (setq proof-server-log-buffer (get-buffer-create logger))
 	  (with-current-buffer proof-server-log-buffer
+	    (setq buffer-read-only t)
 	    ;; SGML mode highlights tags
 	    ;; XML mode complains too much
 	    (sgml-mode))))
 
+    ;; TODO : what is this?
     (setq pg-response-special-display-regexp
 	  (proof-regexp-alt goals resp))
 

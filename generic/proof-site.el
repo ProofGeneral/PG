@@ -264,7 +264,6 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
        (setq proof-assistant-symbol (quote ,assistantsym))
        ;; define the per-prover settings which depend on above
        (require 'pg-custom)
-       (setq proof-mode-for-shell (proof-ass-sym shell-mode))
        (setq proof-mode-for-response (proof-ass-sym response-mode))
        (setq proof-mode-for-goals (proof-ass-sym goals-mode))
        (setq proof-mode-for-script (proof-ass-sym mode))
