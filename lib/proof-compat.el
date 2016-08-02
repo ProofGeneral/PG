@@ -20,7 +20,7 @@
 (eval-when-compile
   (require 'easymenu))
 
-(require 'cl)
+(require 'cl-lib)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -55,7 +55,7 @@
 Done by removing all properties mentioned by custom library.
 The symbol itself is left defined, in case it has been changed
 in the current Emacs session."
-  (mapc (lambda (prop) (remprop symbol prop))
+  (mapc (lambda (prop) (cl-remprop symbol prop))
 	  '(default
 	     standard-value
 	     force-value
@@ -86,7 +86,7 @@ in the current Emacs session."
 (defmacro save-selected-frame (&rest body)
   "Execute forms in BODY, then restore the selected frame.
 The value returned is the value of the last form in BODY."
-  (let ((old-frame (gensym "ssf")))
+  (let ((old-frame (cl-gensym "ssf")))
     `(let ((,old-frame (selected-frame)))
        (unwind-protect
 	   (progn ,@body)

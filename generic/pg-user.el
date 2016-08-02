@@ -20,9 +20,14 @@
 
 (require 'proof-script)	        ; we build on proof-script
 
-(require 'cl)
+
+;; OK to use cl at compile-time
+(eval-when-compile
+  (require 'cl))
+
 (eval-when-compile
   (require 'completion))                ; Loaded dynamically at runtime.
+
 (defvar which-func-modes)               ; Defined by which-func.
 
 (declare-function proof-segment-up-to "proof-script") 
@@ -203,7 +208,7 @@ If inside a comment, just process until the start of the comment."
    (proof-maybe-follow-locked-end))
   (when proof-fast-process-buffer
     (message "Processing buffer...")
-    (proof-shell-wait)
+    '(proof-shell-wait)  ;; TODO should we use something like this?
     (message "Processing buffer...done")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -328,7 +333,7 @@ is off (nil)."
 	   proof-state-preserving-p
 	   (not (funcall proof-state-preserving-p cmd)))
       (error "Command is not state preserving, I won't execute it!"))
-  (proof-shell-invisible-command cmd))
+  (proof-server-invisible-command cmd))
 
 
 ;;
@@ -392,7 +397,7 @@ BODY defaults to CMDVAR, a variable."
 		"")
      (interactive)
      (proof-if-setting-configured ,cmdvar
-       (proof-shell-invisible-command ,(or body cmdvar)))))
+       (proof-server-invisible-command ,(or body cmdvar)))))
 
 ;;;###autoload
 (defmacro proof-define-assistant-command-witharg (fn doc cmdvar prompt &rest body)
@@ -420,7 +425,7 @@ CMDVAR is a variable holding a function or string.  Automatically has history."
 If point is in the locked region, move to the end of it first.
 Start up the proof assistant if necessary."
   (proof-with-script-buffer
-   (if (proof-shell-live-buffer)
+   (if (proof-server-live-buffer)
        (if (proof-in-locked-region-p)
 	   (proof-goto-end-of-locked t)))
    (proof-script-new-command-advance)
@@ -462,7 +467,7 @@ This is intended as a value for `proof-activate-scripting-hook'"
   ;; so we explicitly test it here.
   (when proof-shell-cd-cmd
     (proof-cd)
-    (proof-shell-wait)))
+    '(proof-shell-wait))) ;; TODO ?
 
 ;;
 ;; Commands which require an argument, and maybe affect the script.
@@ -472,7 +477,7 @@ This is intended as a value for `proof-activate-scripting-hook'"
  "Search for items containing given constants."
  proof-find-theorems-command
  "Find theorems containing"
- (proof-shell-invisible-command arg))
+ (proof-server-invisible-command arg))
 
 (proof-define-assistant-command-witharg proof-issue-goal
  "Write a goal command in the script, prompting for the goal."
@@ -904,7 +909,7 @@ allows for multiple name spaces).
 If CALLBACK is set, we invoke that when the command completes."
   (unless (or (null identifier)
 	      (string-equal identifier "")) ;; or whitespace?
-    (proof-shell-invisible-command
+    (proof-server-invisible-command
      (cond
       ((stringp proof-query-identifier-command)
        ;; simple customization
@@ -1343,14 +1348,14 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	     '(no-response-display 
 	       no-error-display
 	       no-goals-display))))
-	(proof-shell-wait t) ; interruptible
+	;; (proof-shell-wait t) ; interruptible TODO
 	(cond
 	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Sending commands to prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
 	  (proof-interrupt-process)
 	  (message "Sending commands to prover...interrupted")
-	  (proof-shell-wait))
+	  '(proof-shell-wait)) ;; TODO
 	 (t
 	  (message "Sending commands to prover...done"))))))
 
@@ -1369,14 +1374,14 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	       no-error-display
 	       no-goals-display))))
 	(let ((proof-sticky-errors t))
-	  (proof-shell-wait t)) ; interruptible
+	  '(proof-shell-wait t)) ; interruptible TODO
 	(cond
 	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Trying next commands in prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
 	  (proof-interrupt-process)
 	  (message "Trying next commands in prover...interrupted")
-	  (proof-shell-wait))
+	  '(proof-shell-wait))
 	 (t
 	  (message "Trying next commands in prover...OK")))
 	;; success: now undo in prover, highlight undone spans if OK

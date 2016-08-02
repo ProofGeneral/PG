@@ -18,7 +18,7 @@
 (eval-when-compile
   (require 'proof-compat))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (defvar queueitems nil)       ; dynamic scope in p-s-extend-queue-hook
   (defvar coq-compile-before-require nil)       ; defpacustom
   (defvar coq-compile-parallel-in-background nil)       ; defpacustom
@@ -74,7 +74,7 @@ dependencies are absolute too and the simplified treatment of
 break."
   (let ((coqdep-arguments
          ;; FIXME should this use coq-coqdep-prog-args?
-         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file))
 		(list lib-src-file)))
         coqdep-status coqdep-output)
     (if coq-debug-auto-compilation
@@ -113,7 +113,7 @@ Display errors in buffer `coq-compile-response-buffer'."
   (message "Recompile %s" src-file)
   (let ((coqc-arguments
          (nconc
-          (coq-coqc-prog-args coq-load-path (file-name-directory src-file) (coq--pre-v85))
+          (coq-coqc-prog-args coq-load-path (file-name-directory src-file))
 	  (list src-file)))
         coqc-status)
     (coq-init-compile-response-buffer
@@ -295,12 +295,7 @@ decent error message.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if coq-load-path-include-current
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "") "Require " module-id "."))
         result)
     (unwind-protect

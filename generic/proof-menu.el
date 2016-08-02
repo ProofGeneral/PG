@@ -7,10 +7,10 @@
 ;; $Id$
 ;;
 
-(require 'cl)				; mapcan
+(require 'cl-lib)	
 
 ;;; Code:
-(eval-when (compile)
+(cl-eval-when (compile)
   (defvar proof-assistant-menu nil) ; defined by macro in proof-menu-define-specific
   (defvar proof-mode-map nil))
 
@@ -51,10 +51,10 @@ without adjusting window layout."
   (cond
    ((and (called-interactively-p 'any)
 	 (eq last-command 'proof-display-some-buffers))
-    (incf proof-display-some-buffers-count))
+    (cl-incf proof-display-some-buffers-count))
    (t
     (setq proof-display-some-buffers-count 0)))
-  (let* ((assocbufs   (remove-if-not 'buffer-live-p
+  (let* ((assocbufs   (cl-remove-if-not 'buffer-live-p
 				     (list proof-response-buffer
 					   proof-thms-buffer
 					   proof-trace-buffer
@@ -764,7 +764,7 @@ suitable for adding to the proof assistant menu."
     (while (and new (fboundp menu-fn))
       (setq menu-fn (intern (concat (symbol-name menuname-sym)
 				    "-" (int-to-string i))))
-      (incf i))
+      (cl-incf i))
     (if inscript
 	(eval `(proof-defshortcut ,menu-fn ,command ,key))
       (eval `(proof-definvisible ,menu-fn ,command ,key)))
@@ -798,8 +798,8 @@ suitable for adding to the proof assistant menu."
 		     nil t)))
   (let*
       ((favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+       (rmfavs	   (cl-remove-if
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs)))
     (unless (equal favs rmfavs)
       (easy-menu-remove-item proof-assistant-menu
@@ -840,8 +840,8 @@ KEY is the optional key binding."
   (let*
       ((menu-entry (proof-def-favourite command inscript menuname key t))
        (favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+       (rmfavs	   (cl-remove-if
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs))
        (newfavs    (append
 		    rmfavs
@@ -869,7 +869,7 @@ KEY is the optional key binding."
 	(mapc (lambda (stg) (add-to-list 'groups (get (car stg) 'pggroup)))
 	      proof-assistant-settings)
 	(dolist (grp (reverse groups))
-	  (let* ((gstgs (mapcan (lambda (stg)
+	  (let* ((gstgs (cl-mapcan (lambda (stg)
 				  (if (eq (get (car stg) 'pggroup) grp)
 				      (list stg)))
 				proof-assistant-settings))
@@ -949,20 +949,18 @@ KEY is the optional key binding."
   ;; session somehow.  (This might happen automatically if a queue of
   ;; deffered commands is set, since defcustom calls proof-set-value
   ;; even to set the default/initial value?)
-  (if (proof-shell-available-p)
-      (progn
-	(proof-shell-invisible-command cmd t)
-	;; refresh display,
-	;; FIXME: should only do if goals display is active,
-	;; messy otherwise.
-	;; (we need a new flag for "active goals display").
-	;; PG 3.5 (patch 22.04.04):
-	;; Let's approximate that by looking at proof-nesting-depth.
-	(if (and proof-showproof-command
-		 (> proof-nesting-depth 0))
-	    (proof-shell-invisible-command proof-showproof-command))
-	;;  Could also repeat last command if non-state destroying.
-	)))
+  (proof-server-invisible-command cmd t)
+  ;; refresh display,
+  ;; FIXME: should only do if goals display is active,
+  ;; messy otherwise.
+  ;; (we need a new flag for "active goals display").
+  ;; PG 3.5 (patch 22.04.04):
+  ;; Let's approximate that by looking at proof-nesting-depth.
+  (if (and proof-showproof-command
+	   (> proof-nesting-depth 0))
+      (proof-server-invisible-command proof-showproof-command))
+  ;;  Could also repeat last command if non-state destroying.
+  )
 
 (defun proof-assistant-settings-cmd (setting)
   "Return string for making SETTING in Proof General customization."

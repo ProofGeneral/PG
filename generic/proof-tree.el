@@ -86,12 +86,12 @@
 
 ;;; Code:
 
-(require 'cl)
+(eval-when-compile 
+  (require 'cl-lib))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'proof-resolver)
-  (require 'proof-queue)
-  (require 'proof-shell))
+  (require 'proof-queue))
 
 ;;
 ;; User options

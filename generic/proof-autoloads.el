@@ -5,13 +5,11 @@
 (if (featurep 'proof-autoloads) (error "Already loaded"))
   
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'pg-vars)
-  (require 'proof-config)
-  (require 'scomint))
-
+  (require 'proof-config))
 
 (provide 'proof-autoloads)
 
@@ -48,9 +46,8 @@ Stop keeping ring history for current buffer.
 
 ;;;***
 
-;;;### (autoloads (holes-insert-and-expand holes-abbrev-complete
-;;;;;;  holes-mode holes-set-make-active-hole) "../lib/holes" "../lib/holes.el"
-;;;;;;  (22396 10805 387884 342000))
+;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (22432 56150
+;;;;;;  44148 359000))
 ;;; Generated autoloads from ../lib/holes.el
 
 (autoload 'holes-set-make-active-hole "../lib/holes" "\
@@ -177,9 +174,8 @@ This mode is only useful with a font which can display the maths repertoire.
 
 ;;;***
 
-;;;### (autoloads (proof-associated-frames proof-associated-windows
-;;;;;;  proof-associated-buffers) "pg-assoc" "pg-assoc.el" (22396
-;;;;;;  10805 375884 342000))
+;;;### (autoloads nil "pg-assoc" "pg-assoc.el" (22432 58393 128270
+;;;;;;  113000))
 ;;; Generated autoloads from pg-assoc.el
 
 (autoload 'proof-associated-buffers "pg-assoc" "\
@@ -203,8 +199,8 @@ Return the list of frames displaying at least one associated buffer.
 
 ;;;***
 
-;;;### (autoloads (profile-pg) "../lib/pg-dev" "../lib/pg-dev.el"
-;;;;;;  (22424 64910 945002 480000))
+;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (22432 56187
+;;;;;;  356150 385000))
 ;;; Generated autoloads from ../lib/pg-dev.el
 
 (autoload 'profile-pg "../lib/pg-dev" "\
@@ -214,8 +210,8 @@ Configure Proof General for profiling.  Use M-x elp-results to see results.
 
 ;;;***
 
-;;;### (autoloads (proof-goals-config-done) "pg-goals" "pg-goals.el"
-;;;;;;  (22415 56991 207934 530000))
+;;;### (autoloads nil "pg-goals" "pg-goals.el" (22432 58268 584263
+;;;;;;  353000))
 ;;; Generated autoloads from pg-goals.el
 
 (autoload 'proof-goals-config-done "pg-goals" "\
@@ -365,15 +361,8 @@ See `pg-next-error-regexp'.
 
 ;;;***
 
-;;;### (autoloads (proof-autosend-enable pg-clear-input-ring pg-remove-from-input-history
-;;;;;;  pg-add-to-input-history pg-next-matching-input-from-input
-;;;;;;  pg-previous-matching-input-from-input proof-imenu-enable
-;;;;;;  pg-identifier-near-point-query pg-hint pg-next-error-hint
-;;;;;;  pg-processing-complete-hint pg-jump-to-end-hint pg-response-buffers-hint
-;;;;;;  pg-slow-fontify-tracing-hint proof-electric-terminator-enable
-;;;;;;  proof-define-assistant-command-witharg proof-define-assistant-command
-;;;;;;  proof-process-buffer proof-goto-point proof-script-new-command-advance)
-;;;;;;  "pg-user" "pg-user.el" (22424 65040 212999 654000))
+;;;### (autoloads nil "pg-user" "pg-user.el" (22432 58106 204254
+;;;;;;  539000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -499,8 +488,7 @@ Enable or disable autosend behaviour.
 
 ;;;***
 
-;;;### (autoloads (pg-xml-parse-string) "pg-xml" "pg-xml.el" (22424
-;;;;;;  64704 685006 988000))
+;;;### (autoloads nil "pg-xml" "pg-xml.el" (22432 57780 152236 841000))
 ;;; Generated autoloads from pg-xml.el
 
 (autoload 'pg-xml-parse-string "pg-xml" "\
@@ -510,8 +498,8 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 
 ;;;***
 
-;;;### (autoloads (proof-dependency-in-span-context-menu proof-depends-process-dependencies)
-;;;;;;  "proof-depends" "proof-depends.el" (22396 10805 379884 342000))
+;;;### (autoloads nil "proof-depends" "proof-depends.el" (22432 57854
+;;;;;;  740240 890000))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -552,9 +540,8 @@ Indent current line of proof script, if indentation enabled.
 
 ;;;***
 
-;;;### (autoloads (proof-maths-menu-enable proof-maths-menu-set-global)
-;;;;;;  "proof-maths-menu" "proof-maths-menu.el" (22396 10805 379884
-;;;;;;  342000))
+;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (22432
+;;;;;;  57744 776234 921000))
 ;;; Generated autoloads from proof-maths-menu.el
 
 (autoload 'proof-maths-menu-set-global "proof-maths-menu" "\
@@ -574,9 +561,8 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads (proof-aux-menu proof-menu-define-specific proof-menu-define-main
-;;;;;;  proof-menu-define-keys) "proof-menu" "proof-menu.el" (22424
-;;;;;;  64768 481005 593000))
+;;;### (autoloads nil "proof-menu" "proof-menu.el" (22432 57724 160233
+;;;;;;  802000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -601,8 +587,8 @@ Construct and return PG auxiliary menu used in non-scripting buffers.
 
 ;;;***
 
-;;;### (autoloads (proof-mmm-enable proof-mmm-set-global) "proof-mmm"
-;;;;;;  "proof-mmm.el" (22396 10805 379884 342000))
+;;;### (autoloads nil "proof-mmm" "proof-mmm.el" (22432 57506 976222
+;;;;;;  13000))
 ;;; Generated autoloads from proof-mmm.el
 
 (autoload 'proof-mmm-set-global "proof-mmm" "\
@@ -621,8 +607,8 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads (proof-extend-queue proof-start-queue) "proof-queue"
-;;;;;;  "proof-queue.el" (22405 2183 511289 197000))
+;;;### (autoloads nil "proof-queue" "proof-queue.el" (22425 3273
+;;;;;;  0 0))
 ;;; Generated autoloads from proof-queue.el
 
 (autoload 'proof-start-queue "proof-queue" "\
@@ -644,12 +630,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads (proof-server-process-response proof-server-send-to-prover
-;;;;;;  proof-server-proof-completedp proof-server-errorp proof-server-interruptp
-;;;;;;  proof-add-to-queue proof-invisible-command-invisible-result
-;;;;;;  proof-invisible-cmd-get-result proof-invisible-command proof-ready-prover)
-;;;;;;  "proof-resolver" "proof-resolver.el" (22401 25129 671628
-;;;;;;  540000))
+;;;### (autoloads nil "proof-resolver" "proof-resolver.el" (22432
+;;;;;;  52752 831963 959000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -704,12 +686,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads (proof-config-done proof-mode proof-insert-sendback-command
-;;;;;;  proof-insert-pbp-command proof-script-generic-parse-find-comment-end
-;;;;;;  proof-register-possibly-new-processed-file pg-set-span-helphighlights
-;;;;;;  proof-locked-region-empty-p proof-locked-region-full-p proof-unprocessed-begin
-;;;;;;  proof-colour-locked) "proof-script" "proof-script.el" (22418
-;;;;;;  18709 238017 275000))
+;;;### (autoloads nil "proof-script" "proof-script.el" (22432 57475
+;;;;;;  912220 327000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -883,104 +861,8 @@ contains only invisible elements for Prooftree synchronization.
 
 ;;;***
 
-;;;### (autoloads (proof-shell-config-done proof-shell-invisible-command-invisible-result
-;;;;;;  proof-shell-invisible-cmd-get-result proof-shell-invisible-command
-;;;;;;  proof-shell-wait proof-shell-action-list-item proof-shell-available-p
-;;;;;;  proof-shell-ready-prover) "proof-shell" "proof-shell.el"
-;;;;;;  (22424 65190 756996 363000))
-;;; Generated autoloads from proof-shell.el
-
-(autoload 'proof-shell-ready-prover "proof-shell" "\
-Make sure the proof assistant is ready for a command.
-If QUEUEMODE is set, succeed if the proof shell is busy but
-has mode QUEUEMODE, which is a symbol or list of symbols.
-Otherwise, if the shell is busy, give an error.
-No change to current buffer or point.
-
-\(fn &optional QUEUEMODE)" nil nil)
-
-(defsubst proof-shell-live-buffer nil "\
-Return non-nil if proof-shell-buffer is live." (and proof-shell-buffer (buffer-live-p proof-shell-buffer)))
-
-(autoload 'proof-shell-available-p "proof-shell" "\
-Return non-nil if there is a proof shell active and available.
-No error messages.  Useful as menu or toolbar enabler.
-
-\(fn)" nil nil)
-
-(autoload 'proof-shell-action-list-item "proof-shell" "\
-Return action list entry run CMD with callback CALLBACK and FLAGS.
-The queue entry does not refer to a span in the script buffer.
-
-\(fn CMD CALLBACK &optional FLAGS)" nil nil)
-
-(autoload 'proof-shell-wait "proof-shell" "\
-Busy wait for `proof-shell-busy' to become nil, reading from prover.
-
-Needed between sequences of commands to maintain synchronization,
-because Proof General does not allow for the action list to be extended
-in some cases.   Also is considerably faster than leaving the Emacs 
-top-level command loop to read from the prover.
-
-Called by `proof-shell-invisible-command' and `proof-process-buffer'
-when setting `proof-fast-process-buffer' is enabled.
-
-If INTERRUPT-ON-INPUT is non-nil, return if input is received.
-
-If TIMEOUTSECS is a number, time out after that many seconds.
-
-\(fn &optional INTERRUPT-ON-INPUT TIMEOUTSECS)" nil nil)
-
-(autoload 'proof-shell-invisible-command "proof-shell" "\
-Send CMD to the proof process.
-The CMD is `invisible' in the sense that it is not recorded in buffer.
-CMD may be a string or a string-yielding expression.
-
-Automatically add `proof-terminal-string' if necessary, examining
-`proof-shell-no-auto-terminate-commands'.
-
-By default, let the command be processed asynchronously.
-But if optional WAIT command is non-nil, wait for processing to finish
-before and after sending the command.
-
-In case CMD is (or yields) nil, do nothing.
-
-INVISIBLECALLBACK will be invoked after the command has finished,
-if it is set.  It should probably run the hook variables
-`proof-state-change-hook'.
-
-FLAGS are additional flags to put onto the `proof-action-list'.
-The flag 'invisible is always added to FLAGS.
-
-\(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
-
-(autoload 'proof-shell-invisible-cmd-get-result "proof-shell" "\
-Execute CMD and return result as a string.
-This expects CMD to result in some theorem prover output.
-Ordinary output (and error handling) is disabled, and the result
-\(contents of `proof-prover-last-output') is returned as a string.
-
-\(fn CMD)" nil nil)
-
-(autoload 'proof-shell-invisible-command-invisible-result "proof-shell" "\
-Execute CMD for side effect in the theorem prover, waiting before and after.
-Error messages are displayed as usual.
-
-\(fn CMD)" nil nil)
-
-(defconst proof-shell-important-settings '(proof-shell-annotated-prompt-regexp))
-
-(autoload 'proof-shell-config-done "proof-shell" "\
-Initialise the specific prover after the child has been configured.
-Every derived shell mode should call this function at the end of
-processing.
-
-\(fn)" nil nil)
-
-;;;***
-
-;;;### (autoloads (proof-ready-for-assistant) "proof-site" "proof-site.el"
-;;;;;;  (22399 52312 343135 63000))
+;;;### (autoloads nil "proof-site" "proof-site.el" (22426 33220 0
+;;;;;;  0))
 ;;; Generated autoloads from proof-site.el
 
 (autoload 'proof-ready-for-assistant "proof-site" "\
@@ -1045,9 +927,8 @@ Menu made from the Proof General toolbar commands.
 
 ;;;***
 
-;;;### (autoloads (proof-unicode-tokens-enable proof-unicode-tokens-set-global
-;;;;;;  proof-unicode-tokens-mode-if-enabled) "proof-unicode-tokens"
-;;;;;;  "proof-unicode-tokens.el" (22396 10805 383884 342000))
+;;;### (autoloads nil "proof-unicode-tokens" "proof-unicode-tokens.el"
+;;;;;;  (22432 57297 780210 658000))
 ;;; Generated autoloads from proof-unicode-tokens.el
 
 (autoload 'proof-unicode-tokens-mode-if-enabled "proof-unicode-tokens" "\
@@ -1086,8 +967,8 @@ If flag `proof-general-debug' is nil, do nothing.
 
 ;;;***
 
-;;;### (autoloads (texi-docstring-magic) "../lib/texi-docstring-magic"
-;;;;;;  "../lib/texi-docstring-magic.el" (22396 10805 387884 342000))
+;;;### (autoloads nil "../lib/texi-docstring-magic" "../lib/texi-docstring-magic.el"
+;;;;;;  (22432 56527 596168 853000))
 ;;; Generated autoloads from ../lib/texi-docstring-magic.el
 
 (autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
@@ -1112,8 +993,8 @@ in your emacs font.
 
 ;;;***
 
-;;;### (autoloads (unicode-tokens-encode-str) "../lib/unicode-tokens"
-;;;;;;  "../lib/unicode-tokens.el" (22396 10805 391884 342000))
+;;;### (autoloads nil "../lib/unicode-tokens" "../lib/unicode-tokens.el"
+;;;;;;  (22432 57207 956205 783000))
 ;;; Generated autoloads from ../lib/unicode-tokens.el
 
 (autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
@@ -1127,8 +1008,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22424 65213
-;;;;;;  420283 537000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22432 58437
+;;;;;;  876219 54000))
 
 ;;;***
 

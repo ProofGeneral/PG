@@ -13,7 +13,6 @@
 ;;; Code:
 (eval-when-compile
   (require 'easymenu)			; easy-menu-add, etc
-  (require 'cl)				; incf
   (require 'span)			; span-*
   (defvar proof-goals-mode-menu)	; defined by macro below
   (defvar proof-assistant-menu))	; defined by macro in proof-menu
@@ -85,7 +84,7 @@ If KEEPRESPONSE is non-nil, we assume that a response message
 corresponding to this goals message has already been displayed
 before this goals message (see `proof-shell-handle-delayed-output'),  
 so the response buffer should not be cleared."
-  (save-excursion
+  (with-current-buffer proof-goals-buffer
     ;; Response buffer may be out of date. It may contain (error)
     ;; messages relating to earlier proof states
 
@@ -96,7 +95,6 @@ so the response buffer should not be cleared."
     ;; (pg-response-maybe-erase t t nil keepresponse)
 
     ;; Erase the goals buffer and add in the new string
-    (set-buffer proof-goals-buffer)
 
     (setq buffer-read-only nil)
 

@@ -14,9 +14,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
-
 (require 'proof-config)			; for proof-face-specs, a macro
 (require 'proof-syntax)			; for proof-ids-to-regexp
 (require 'holes)

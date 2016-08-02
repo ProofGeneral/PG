@@ -16,7 +16,7 @@
 (require 'proof-shell)
 (require 'coq-system)
 
-(eval-when (compile)
+(cl-eval-when (compile)
   ;;(defvar coq-pre-v85 nil)
   (defvar coq-confirm-external-compilation nil); defpacustom
   (defvar coq-compile-parallel-in-background nil) ; defpacustom

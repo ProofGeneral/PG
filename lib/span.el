@@ -17,7 +17,10 @@
 ;;
 
 ;;; Code:
-(eval-when-compile (require 'cl))       ; For lexical-let.
+
+;; FSF says not to use cl at runtime, but OK at compile-time
+;; Here, we do so to get lexical-let.
+(eval-when-compile (require 'cl))       
 
 (defalias 'span-start 'overlay-start)
 (defalias 'span-end 'overlay-end)

@@ -6,11 +6,11 @@
 ;;
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (require 'pg-autotest)
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'proof-site)
   (proof-ready-for-assistant 'coq)
   (defvar coq-compile-before-require nil))

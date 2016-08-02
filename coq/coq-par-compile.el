@@ -27,7 +27,7 @@
 (eval-when-compile
   (require 'proof-compat))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (defvar queueitems nil)       ; dynamic scope in p-s-extend-queue-hook
   (defvar coq-compile-before-require nil)       ; defpacustom
   (defvar coq-compile-parallel-in-background nil) ; defpacustom
@@ -460,7 +460,7 @@ belonging to the circle."
 Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqdep-prog-args coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (coq-coqdep-prog-args coq-load-path (file-name-directory lib-src-file))
          (list lib-src-file)))
 
 (defun coq-par-coqc-arguments (lib-src-file coq-load-path)
@@ -468,7 +468,7 @@ load-path options to coqdep."
 Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqc-prog-args coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (coq-coqc-prog-args coq-load-path (file-name-directory lib-src-file))
          (list lib-src-file)))
 
 (defun coq-par-analyse-coq-dep-exit (status output command)
@@ -510,10 +510,7 @@ If an error occurs this funtion displays
 output. The optional argument COMMAND-INTRO is only used in the
 error case. It is prepended to the displayed command.
 
-LIB-SRC-FILE should be an absolute file name. If it is, the
-dependencies are absolute too and the simplified treatment of
-`coq-load-path-include-current' in `coq-include-options' won't
-break."
+LIB-SRC-FILE should be an absolute file name."
   (let* ((coqdep-arguments
 	  (coq-par-coqdep-arguments lib-src-file coq-load-path))
 	 (this-command (cons coq-dependency-analyzer coqdep-arguments))
@@ -547,12 +544,7 @@ in order to provide correct load-path options to coqdep.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if coq-load-path-include-current
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "")
                             "Require " module-id "."))
         result)

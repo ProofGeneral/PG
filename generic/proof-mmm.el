@@ -26,9 +26,9 @@
 
 ;;; Code:
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'proof-auxmodes)	  ; will be loaded
   (require 'mmm-auto))		  ; loaded dynamically by proof-auxmodes
 

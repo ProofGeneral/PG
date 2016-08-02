@@ -2,21 +2,19 @@
 
 ;; coq-server.el -- code related to server mode for Coq in Proof General
 
+(require 'cl-lib)
 (require 'xml)
 (require 'thingatpt)
 
-(require 'coq-tq)
 (require 'proof-queue)
 (require 'proof-server)
 (require 'proof-script)
 (require 'pg-goals)
+
+(require 'coq-tq)
 (require 'coq-response)
 (require 'coq-stateinfo)
 (require 'coq-xml)
-(require 'cl-lib)
-
-(eval-when-compile 
-  (require 'cl))
 
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
@@ -780,7 +778,6 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--current-span span) 
     (let ((xml (coq-server--get-next-xml)))
       (while xml
-	(message "XML: %s FOOTPRINT: %s" xml (coq-xml-footprint xml))
 	(pcase (coq-xml-tag xml)
 	  (`value (coq-server--handle-value xml))
 	  (`feedback (coq-server--handle-feedback xml))
@@ -791,13 +788,12 @@ is gone and we have to close the secondary locked span."
 ;; process OOB response from Coq
 (defun coq-server-process-oob (oob)
   (with-current-buffer coq-server-oob-buffer
-    (message "PROCESSING OOB: %s" oob)
     (coq-server--append-response oob)
     (coq-server--unescape-buffer)
     (let ((xml (coq-server--get-next-xml)))
       (while xml
-	(message "OOB XML: %s" xml)
-	(coq-server--handle-feedback xml) ; OOB data always feedback
+	;; OOB data is always feedback
+	(coq-server--handle-feedback xml) 
 	(setq xml (coq-server--get-next-xml))))))
 
 (defun coq-server-handle-tq-response (unused response span)

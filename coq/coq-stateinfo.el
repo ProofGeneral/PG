@@ -3,7 +3,10 @@
 (require 'proof-buffers)
 (require 'coq-state-vars)
 
-(eval-when (compile)
+(eval-when-compile
+  (require 'cl-lib))
+
+(cl-eval-when (compile)
   (require 'span))
 
 ;; This information was encoded in the prompt using -emacs mode

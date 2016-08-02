@@ -19,10 +19,9 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
-    (require 'scomint)
+(cl-eval-when (compile)
     (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
     (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 

@@ -167,7 +167,6 @@ back the default toolbar."
 (defun proof-toolbar-delete-enable-p ()
   (proof-with-script-buffer
    (and (not buffer-read-only)
-	(proof-shell-available-p)
 	(> (proof-unprocessed-begin) (point-min)))))
 
 ;; Home
@@ -221,23 +220,22 @@ back the default toolbar."
 (defun proof-toolbar-qed-enable-p ()
   (proof-with-script-buffer
    (and proof-save-command
-	proof-prover-proof-completed
-	(proof-shell-available-p))))
+	proof-prover-proof-completed)))
 
 ;; State
 
 (defalias 'proof-toolbar-state 'proof-prf)
-(defalias 'proof-toolbar-state-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-state-enable-p 'proof-server-available-p)
 
 ;; Context
 
 (defalias 'proof-toolbar-context 'proof-ctxt)
-(defalias 'proof-toolbar-context-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-context-enable-p 'proof-server-available-p)
 
 ;; Command
 
 (defalias 'proof-toolbar-command 'proof-minibuffer-cmd)
-(defalias 'proof-toolbar-command-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-command-enable-p 'proof-server-available-p)
 
 ;; Help  (I was an alias for this)
 
@@ -248,12 +246,12 @@ back the default toolbar."
 ;; Find
 
 (defalias 'proof-toolbar-find 'proof-find-theorems)
-(defalias 'proof-toolbar-find-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-find-enable-p 'proof-server-available-p)
 
 ;; Info
 
 (defalias 'proof-toolbar-info 'proof-query-identifier)
-(defalias 'proof-toolbar-info-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-info-enable-p 'proof-server-available-p)
 
 ;; Visibility (not on toolbar)
 

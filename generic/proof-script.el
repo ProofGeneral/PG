@@ -17,7 +17,7 @@
 
 ;;; Code:
 
-(require 'cl)				; various
+(require 'cl-lib)			; various
 (require 'span)				; abstraction of overlays/extents
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
@@ -534,8 +534,8 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-get-element (idiomsym id)
   "Return proof script element of type IDIOM identifier ID.
 IDIOM is a symbol, ID is a string."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
   (let ((idsym  (intern id))
 	(elts   (cdr-safe (assq idiomsym pg-script-portions))))
     (if elts
@@ -553,9 +553,9 @@ NAME does not need to be unique.
 
 NAME is a name that comes from the proof script or prover output.
 It is recorded in the span with the 'rawname property."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
-  (if name (assert (stringp name)))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
+  (if name (cl-assert (stringp name)))
   (let* ((idsym    (intern id))
 	 (rawname  name)
 	 (name	   (or name id))
@@ -877,7 +877,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
 		(unwind-protect
 		    (save-some-buffers nil #'proof-query-save-this-buffer-p)))
 	    ;; Tell the prover
-	    (proof-shell-invisible-command
+	    (proof-server-invisible-command
 	     (proof-format-filename proof-shell-inform-file-processed-cmd
 				    cfile)
 	     'wait))))))
@@ -891,7 +891,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
   "Send a message to the prover to tell it RFILE has been undone."
   (cond
    ((stringp proof-shell-inform-file-retracted-cmd)
-    (proof-shell-invisible-command
+    (proof-server-invisible-command
      (proof-format-filename proof-shell-inform-file-retracted-cmd
 			    rfile)
      'wait))
@@ -904,7 +904,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
       (funcall proof-shell-inform-file-retracted-cmd rfile)
       (proof-restart-buffers
        (proof-files-to-buffers
-	(set-difference current-included
+	(cl-set-difference current-included
 			proof-included-files-list)))))))
 
 (defun proof-auto-retract-dependencies (cfile &optional informprover)
@@ -1032,7 +1032,7 @@ an error is signalled here."
 	      (progn
 		(message "%s buffer %s..." name buf)
 		(funcall fn)
-		(proof-shell-wait) ; busy wait
+		; (proof-shell-wait) ; busy wait TODO ?
 		(message "%s buffer %s...done." name buf)
 		(sit-for 0))
 	    ;; Test to see if action was successful
@@ -1144,6 +1144,7 @@ questioning the user.  It is used to make a value for
 the `kill-buffer-hook' for scripting buffers, so that when
 a scripting buffer is killed it is always retracted."
   (interactive)
+  (message "proof-deactivate-scripting!")
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
    ;; Examine buffer.
@@ -1158,6 +1159,9 @@ a scripting buffer is killed it is always retracted."
 	  (action     (unless complete
 			(or forcedaction
 			    (proof-deactivate-scripting-choose-action)))))
+     (message "proof-deactivate-scripting, complete: %s action: %s"
+	      complete action)
+
      (if action
 	 (proof-protected-process-or-retract action))
      
@@ -1262,7 +1266,7 @@ activation is considered to have failed and an error is given."
       ;; proof-unregister-buffer-file-name.
       (if proof-script-buffer
 	  (proof-deactivate-scripting))
-      (assert (null proof-script-buffer)
+      (cl-assert (null proof-script-buffer)
 	      "Bug in proof-activate-scripting: deactivate failed.")
 
       ;; Set the active scripting buffer, and initialise regions
@@ -1455,12 +1459,12 @@ Subroutine of `proof-done-advancing-save'."
     (cond
      ((funcall proof-goal-command-p span)
       (pg-add-element 'statement id bodyspan)
-      (incf proof-nesting-depth))
+      (cl-incf proof-nesting-depth))
      (t
       (pg-add-element 'command id bodyspan)))
 
     (if proof-prover-proof-completed
-	(incf proof-prover-proof-completed))
+	(cl-incf proof-prover-proof-completed))
 
     (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
 
@@ -1801,7 +1805,7 @@ We assume that the list is contiguous and begins at (proof-queue-or-locked-end).
 We also delete help spans which appear in the same region (in the expectation
 that these may be overwritten).
 This function expects the buffer to be activated for advancing."
-  (assert semis nil "proof-assert-semis: argument must be a list")
+  (cl-assert semis nil "proof-assert-semis: argument must be a list")
   (let ((startpos  (proof-queue-or-locked-end))
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
@@ -1817,14 +1821,14 @@ No effect if prover is busy."
     (when proof-shell-busy
       (message "Interrupting prover")
       (proof-interrupt-process)
-      (proof-shell-wait))
+      '(proof-shell-wait)) ;; TODO ??
     (message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-restriction ;; see Trac#403
 	(widen)
 	(goto-char beg)
 	(proof-retract-until-point)
-	(proof-shell-wait)))))
+	'(proof-shell-wait))))) ; TODO ??
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2294,13 +2298,13 @@ For this function to work properly, you must configure
       (setq str (span-property span 'cmd))
       (cond ((eq (span-property span 'type) 'vanilla)
 	     (unless (proof-stringfn-match proof-ignore-for-undo-count str)
-	       (incf ct)))
+	       (cl-incf ct)))
 	    ((eq (span-property span 'type) 'pbp)
 	     (setq i 0)
 	     (while (< i (length str))
 	       (if (string-equal (substring str i (+ i tl)) proof-terminal-string)
-		   (incf ct))
-	       (incf i))))
+		   (cl-incf ct))
+	       (cl-incf i))))
       (setq span (next-span span 'type)))
     (if (= ct 0)
 	nil ; was proof-no-command

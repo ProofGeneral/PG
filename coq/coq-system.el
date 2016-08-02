@@ -15,7 +15,6 @@
 (require 'proof)
 
 (eval-when-compile
-  (require 'cl)
   (require 'proof-compat)
   (proof-ready-for-assistant 'coq))
 
@@ -203,11 +202,8 @@ A plain string maps to -Q ... \"\" in 8.5, and -I ... in 8.4.
 
 Under normal circumstances this list does not need to
 contain the coq standard library or \".\" for the current
-directory (see `coq-load-path-include-current').
-
-WARNING: if you use coq <= 8.4, the meaning of these options is
-not the same (-I is for coq path)."
-  :type '(repeat (choice (string :tag "simple directory without path (-Q \"\") in 8.5, -I in 8.4")
+directory."
+  :type '(repeat (choice (string :tag "simple directory without path (-Q \"\") in 8.5")
                          (list :tag
                                "recursive directory with path (-R ... ...)"
                                (const rec)
@@ -233,36 +229,11 @@ not the same (-I is for coq path)."
 
 (make-variable-buffer-local 'coq-load-path)
 
-(defcustom coq-load-path-include-current t
-  "If `t' let coqdep search the current directory too.
-Should be `t' for normal users. If `t' pass -Q dir \"\" to coqdep when
-processing files in directory \"dir\" in addition to any entries
-in `coq-load-path'.
-
-This setting is only relevant with Coq < 8.5."
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
-
-(make-obsolete-variable 'coq-load-path-include-current "Coq 8.5 does not need it" "4.3")
-
-(defun coq-option-of-load-path-entry (entry &optional pre-v85)
+(defun coq-option-of-load-path-entry (entry)
   "Translate a single ENTRY from `coq-load-path' into options.
 See `coq-load-path' for the possible forms of ENTRY and to which
 options they are translated.  Use a non-nil PRE-V85 flag to
 request compatibility handling of flags."
-  (if pre-v85
-      ;; FIXME Which base directory do we expand against? Should the entries of
-      ;; load-path just always be absolute?
-      ;; NOTE we don't handle 'recnoimport in 8.4, and we don't handle 'nonrec
-      ;; in 8.5.
-      (pcase entry
-        ((or (and (pred stringp) dir) `(ocamlimport ,dir))
-         (list "-I" (expand-file-name dir)))
-        (`(nonrec ,dir ,alias)
-         (list "-I" (expand-file-name dir) "-as" alias))
-        ((or `(rec ,dir ,alias) `(,dir ,alias))
-         (list "-R" (expand-file-name dir) alias)))
     (pcase entry
       ((and (pred stringp) dir)
        (list "-Q" (expand-file-name dir) "\"\""))
@@ -271,49 +242,36 @@ request compatibility handling of flags."
       (`(recnoimport ,dir ,alias)
        (list "-Q" (expand-file-name dir) alias))
       ((or `(rec ,dir ,alias) `(,dir ,alias))
-       (list "-R" (expand-file-name dir) alias)))))
+       (list "-R" (expand-file-name dir) alias))))
 
-(defun coq-include-options (load-path &optional current-directory pre-v85)
+(defun coq-include-options (load-path &optional current-directory)
   "Build the base list of include options for coqc, coqdep and coqtop.
 The options list includes all entries from argument LOAD-PATH
 \(which should be `coq-load-path' of the buffer that invoked the
-compilation) prefixed with suitable options and (for coq<8.5), if
-`coq-load-path-include-current' is enabled, the directory base of
-FILE.  The resulting list is fresh for every call, callers can
-append more arguments with `nconc'.
+compilation) prefixed with suitable options. The resulting list is fresh 
+for every call, callers can append more arguments with `nconc'.
 
-CURRENT-DIRECTORY should be an absolute directory name.  It can be nil if
-`coq-load-path-include-current' is nil.
-
-A non-nil PRE-V85 flag requests compatibility handling of flags."
+CURRENT-DIRECTORY should be an absolute directory name."
   (unless (coq-load-path-safep load-path)
     (error "Invalid value in coq-load-path"))
-  (when (and pre-v85 coq-load-path-include-current)
-    (cl-assert current-directory)
-    (push current-directory load-path))
   (cl-loop for entry in load-path
-           append (coq-option-of-load-path-entry entry pre-v85)))
+           append (coq-option-of-load-path-entry entry)))
 
-(defun coq--options-test-roundtrip-1 (coq-project parsed pre-v85)
-  "Run a sanity check on COQ-PROJECT's PARSED options.
-If PRE-V85 is non-nil, use compatibility mode."
+(defun coq--options-test-roundtrip-1 (coq-project parsed)
+  "Run a sanity check on COQ-PROJECT's PARSED options."
   (let* ((concatenated (apply #'append parsed))
-         (coq-load-path-include-current nil)
          (extracted (coq--extract-load-path parsed nil))
-         (roundtrip (coq-include-options extracted nil pre-v85)))
-    (princ (format "[%s] with compatibility flag set to %S: " coq-project pre-v85))
+         (roundtrip (coq-include-options extracted nil)))
+    (princ (format "[%s]: " coq-project))
     (if (equal concatenated roundtrip)
         (princ "OK\n")
       (princ (format "Failed.\n:: Original:  %S\n:: LoadPath: %S\n:: Roundtrip: %S\n"
                      concatenated extracted roundtrip)))))
 
-(defun coq--options-test-roundtrip (coq-project &optional v85-only)
-  "Run a sanity check on COQ-PROJECT.
-If V85-ONLY is non-nil, do not check the compatibility code."
+(defun coq--options-test-roundtrip (coq-project)
+  "Run a sanity check on COQ-PROJECT."
   (let ((parsed (coq--read-options-from-project-file coq-project)))
-    (coq--options-test-roundtrip-1 coq-project parsed nil)
-    (unless v85-only
-      (coq--options-test-roundtrip-1 coq-project parsed t))))
+    (coq--options-test-roundtrip-1 coq-project parsed)))
 
 (defun coq--options-test-roundtrips ()
   "Run sanity tests on coq-project parsing code.
@@ -325,19 +283,18 @@ options of a few coq-project files does the right thing."
     (coq--options-test-roundtrip "-R /test Test")
     (coq--options-test-roundtrip "-I /test")))
 
-(defun coq-coqdep-prog-args (load-path &optional current-directory pre-v85)
+(defun coq-coqdep-prog-args (load-path &optional current-directory)
   "Build a list of options for coqdep.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
-  (coq-include-options load-path current-directory pre-v85))
+LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
+  (coq-include-options load-path current-directory))
 
-(defun coq-coqc-prog-args (load-path &optional current-directory pre-v85)
+(defun coq-coqc-prog-args (load-path &optional current-directory)
   "Build a list of options for coqc.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
+LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
   (append (remove "-emacs" (remove "-emacs-U" coq-prog-args))
-          (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
-            (coq-coqdep-prog-args coq-load-path current-directory pre-v85))))
+	  (coq-coqdep-prog-args coq-load-path current-directory)))
 
 (defvar coq-coqtop-proof-shell-flags
   '("-emacs"))
@@ -355,12 +312,12 @@ LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 ;; Coq process, see 'defpacustom prog-args' in pg-custom.el for
 ;; documentation.
 
-(defun coq-coqtop-prog-args (load-path &optional current-directory pre-v85)
+(defun coq-coqtop-prog-args (load-path &optional current-directory)
   ;; coqtop always adds the current directory to the LoadPath, so don't                                                                                                
   ;; include it in the -Q options. This is not true for coqdep.                                                                                                        
   "Build a list of options for coqc. 
-   LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (let* ((coqc-args (coq-coqc-prog-args load-path current-directory pre-v85))
+   LOAD-PATH, CURRENT-DIRECTORY: see `coq-coqc-prog-args'."
+  (let* ((coqc-args (coq-coqc-prog-args load-path current-directory))
 	 (ide-args coq-coqtop-server-flags)
 	 (async-args (if coq-allow-async-proofs coq-coqtop-async-flags nil)))
     (append ide-args async-args coqc-args)))

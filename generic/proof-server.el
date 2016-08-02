@@ -31,6 +31,11 @@ from calling `proof-server-exit'.")
 (defvar proof-last-span nil
   "Last span we've pulled off proof-action-list")
 
+;; since commands are queued, we don't need to wait for a prompt
+;; so server is always available
+(defun proof-server-available-p ()
+  t)
+
 (defun proof-server-clear-state ()
   "Clear internal state of proof shell."
   (setq proof-action-list nil

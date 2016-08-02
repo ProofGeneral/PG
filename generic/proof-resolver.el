@@ -8,10 +8,8 @@
 (defun proof-server-log (src str)
   (with-current-buffer proof-server-log-buffer
     (setq buffer-read-only nil)
-    (insert "*" src ">>>\n")
-    (let ((start (point)))
-      (insert str "\n")
-      (sgml-pretty-print start (point-max)))
+    (insert "*" src ":\n")
+    (insert str "\n")
     (setq buffer-read-only t)))
 
 ;;;###autoload

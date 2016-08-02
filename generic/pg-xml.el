@@ -9,7 +9,7 @@
 ;; XML functions for Proof General.
 ;;
 
-(require 'cl)
+(require 'cl-lib)
 
 (require 'xml)
 
@@ -78,7 +78,7 @@ Optional START and END bound the parse."
 (defun pg-xml-child-elts (node)
   "Return list of *element* children of NODE (ignoring strings)."
   (let ((children (xml-node-children node)))
-    (mapcan (lambda (x) (if (listp x) (list x))) children)))
+    (cl-mapcan (lambda (x) (if (listp x) (list x))) children)))
 
 (defun pg-xml-child-elt (node)
   "Return unique element child of NODE."
@@ -122,10 +122,10 @@ Optional START and END bound the parse."
   "Convert the XML trees in XMLS into a string (without additional indentation)."
   (let* (strs
 	 (insertfn    (lambda (&rest args)
-			(setq strs (cons (reduce 'concat args) strs)))))
+			(setq strs (cons (cl-reduce 'concat args) strs)))))
     (dolist (xml xmls)
       (pg-xml-output-internal xml nil insertfn))
-    (reduce 'concat (reverse strs))))
+    (cl-reduce 'concat (reverse strs))))
 
 ;; based on xml-debug-print from xml.el
 

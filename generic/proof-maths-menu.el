@@ -21,9 +21,9 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'proof-auxmodes)	  ; loaded by proof.el
   (require 'maths-menu))	  ; loaded dynamically in proof-auxmodes
 

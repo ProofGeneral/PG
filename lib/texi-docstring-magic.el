@@ -82,9 +82,6 @@
 ;;
 ;;
 
-(eval-when-compile
-  (require 'cl))
-
 (defun texi-docstring-magic-find-face (face)
   ;; Compatibility between FSF Emacs and XEmacs
   (or (facep face)

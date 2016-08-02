@@ -16,7 +16,7 @@
 
 
 
-(require 'cl)
+(require 'cl-lib)
 (require 'span)
 (require 'pg-vars)
 (require 'proof-config)
@@ -187,12 +187,12 @@ Called from `proof-done-advancing' when a save is processed and
 	     (subitems (and ns (assoc ns nested))))
 	(cond
 	 ((and ns subitems)
-	  (setcdr subitems (adjoin name (cdr subitems))))
+	  (setcdr subitems (cl-adjoin name (cdr subitems))))
 	 (ns
 	  (setq nested
 		(cons (cons ns (list name)) nested)))
 	 (t
-	  (setq toplevel (adjoin name  toplevel))))))
+	  (setq toplevel (cl-adjoin name  toplevel))))))
     (cons nested toplevel)))
 
 (defun proof-dep-make-submenu (name namefn appfn list)
@@ -228,7 +228,7 @@ NAMEFN is applied to each element of LIST to make the names."
   "Show dependency THM using `proof-show-dependency-cmd'.
 This is simply to display the dependency somehow."
   (if proof-shell-show-dependency-cmd ;; robustness
-      (proof-shell-invisible-command
+      (proof-server-invisible-command
        (format proof-shell-show-dependency-cmd thm))))
 
 (defconst pg-dep-span-priority 500)
@@ -237,7 +237,7 @@ This is simply to display the dependency somehow."
 (defun proof-highlight-depcs (name nmspans)
   (let ((helpmsg  (concat "This item is a dependency (ancestor) of " name)))
     (while nmspans
-      (let ((span (cadar nmspans)))
+      (let ((span (cl-cadar nmspans)))
 	(proof-depends-save-old-face span)
 	(span-set-property span 'face 'proof-highlight-dependency-face)
 	;; (span-set-property span 'priority pg-dep-span-priority)
@@ -248,7 +248,7 @@ This is simply to display the dependency somehow."
 (defun proof-highlight-depts (name nmspans)
   (let ((helpmsg  (concat "This item depends on (is a child of) " name)))
     (while nmspans
-      (let ((span (cadar nmspans)))
+      (let ((span (cl-cadar nmspans)))
 	(proof-depends-save-old-face span)
 	(span-set-property span 'face 'proof-highlight-dependent-face)
 	;; (span-set-property span 'priority pg-dep-span-priority)

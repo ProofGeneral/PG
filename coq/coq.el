@@ -7,27 +7,27 @@
 ;; $Id$
 
 (eval-when-compile
-  (require 'cl)
+  (require 'cl-lib)
   (require 'proof-compat))
 
-(eval-when (compile)
-           (require 'proof-utils)
-           (require 'span)
-           (require 'outline)
-           (require 'newcomment)
-           (require 'etags)
-           (unless (proof-try-require 'smie)
-             (defvar smie-indent-basic nil)
-             (defvar smie-rules-function nil))
-           (defvar proof-info nil)       ; dynamic scope in proof-tree-urgent-action
-           (defvar action nil)       ; dynamic scope in coq-insert-as stuff
-           (defvar string nil)       ; dynamic scope in coq-insert-as stuff
-           (defvar coq-auto-insert-as nil)    ; defpacustom
-           (defvar coq-time-commands nil)        ; defpacustom
-           (defvar coq-use-project-file t)        ; defpacustom
-           (defvar coq-use-editing-holes nil)    ; defpacustom
-           (defvar coq-hide-additional-subgoals nil) ; defpacustom
-           (proof-ready-for-assistant 'coq))     ; compile for coq
+(cl-eval-when (compile)
+              (require 'proof-utils)
+              (require 'span)
+              (require 'outline)
+              (require 'newcomment)
+              (require 'etags)
+              (unless (proof-try-require 'smie)
+                (defvar smie-indent-basic nil)
+                (defvar smie-rules-function nil))
+              (defvar proof-info nil)       ; dynamic scope in proof-tree-urgent-action
+              (defvar action nil)       ; dynamic scope in coq-insert-as stuff
+              (defvar string nil)       ; dynamic scope in coq-insert-as stuff
+              (defvar coq-auto-insert-as nil)    ; defpacustom
+              (defvar coq-time-commands nil)        ; defpacustom
+              (defvar coq-use-project-file t)        ; defpacustom
+              (defvar coq-use-editing-holes nil)    ; defpacustom
+              (defvar coq-hide-additional-subgoals nil) ; defpacustom
+              (proof-ready-for-assistant 'coq))     ; compile for coq
 
 (require 'proof)
 (require 'proof-resolver)

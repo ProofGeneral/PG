@@ -60,13 +60,13 @@ argument ALL-FRAMES has the same meaning than for
 
 (defun proof-filter-associated-windows (lw)
   "Remove windows of LW not displaying at least one associated buffer."
-  (remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
+  (cl-remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
 
 
 ;;;###autoload
 (defun proof-associated-frames ()
   "Return the list of frames displaying at least one associated buffer."
-  (remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
+  (cl-remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
 		 (frame-list)))
 
 (provide 'pg-assoc)

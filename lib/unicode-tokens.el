@@ -41,7 +41,7 @@
 ;;; Code:
 ;;
 
-(require 'cl)
+(require 'cl-lib)
 (require 'quail)
 
 (eval-when-compile
@@ -428,10 +428,10 @@ This function also initialises the important tables for the mode."
     (if (string= "" (format unicode-tokens-token-format ""))
 	;; no special token format, parse separate words/symbols
 	(let* ((optoks
-		(remove* "^\\(?:\\sw\\|\\s_\\)+$"
+		(cl-remove "^\\(?:\\sw\\|\\s_\\)+$"
 			 toks :test 'string-match))
 	       (idtoks
-		(set-difference toks optoks))
+		(cl-set-difference toks optoks))
 	       (idorop
 		(concat "\\(\\_<"
 			(regexp-opt idtoks)
@@ -456,7 +456,7 @@ This function also initialises the important tables for the mode."
 The check is with `char-displayable-p'."
   (cond
    ((stringp comp)
-    (reduce (lambda (x y) (and x (char-displayable-p y)))
+    (cl-reduce (lambda (x y) (and x (char-displayable-p y)))
  	    comp
  	    :initial-value t))
    ((characterp comp)
@@ -513,7 +513,7 @@ The face property is set to the :family and :slant attriubutes taken from
 					    (car props) (cadr props))
 	    (setq props (cddr props)))))
     (unless (or unicode-tokens-show-symbols
-		(intersection unicode-tokens-fonts propsyms))
+		(cl-intersection unicode-tokens-fonts propsyms))
       (font-lock-append-text-property
        start end 'face
        ;; just use family and slant to enhance merging with other faces
@@ -675,7 +675,7 @@ Calculated from `unicode-tokens-token-name-alist' and
 `unicode-tokens-shortcut-alist'."
   (let ((unicode-tokens-quail-define-rules
 	 (list 'quail-define-rules)))
-    (let ((ulist (copy-list unicode-tokens-shortcut-alist))
+    (let ((ulist (cl-copy-list unicode-tokens-shortcut-alist))
 	  ustring shortcut)
       (setq ulist (sort ulist 'unicode-tokens-map-ordering))
       (while ulist
@@ -709,7 +709,7 @@ Available annotations chosen from `unicode-tokens-control-regions'."
 			"Annotate region with: "
 			unicode-tokens-control-regions nil
 			'requirematch))))
-  (assert (assoc name unicode-tokens-control-regions))
+  (cl-assert (assoc name unicode-tokens-control-regions))
   (let* ((entry (assoc name unicode-tokens-control-regions))
 	 (beg   (region-beginning))
 	 (end   (region-end))
@@ -731,7 +731,7 @@ Available annotations chosen from `unicode-tokens-control-regions'."
 		      "Insert control symbol: "
 		      unicode-tokens-control-characters
 		      nil 'requirematch)))
-  (assert (assoc name unicode-tokens-control-characters))
+  (cl-assert (assoc name unicode-tokens-control-characters))
   (insert (format unicode-tokens-control-char-format
 		  (cadr (assoc name unicode-tokens-control-characters)))))
 
@@ -828,7 +828,7 @@ but multiple characters in the underlying buffer."
 	    (error "Cannot find token before point"))
 	  (when token
 	    (let* ((tokennumber
-		    (search (list token) unicode-tokens-token-list :test 'equal))
+		    (cl-search (list token) unicode-tokens-token-list :test 'equal))
 		   (numtoks
 		    (hash-table-count unicode-tokens-hash-table))
 		   (newtok
@@ -938,7 +938,7 @@ Starts from point."
 			     'face
 			     'header-line))
 	    (insert " "))
-	  (incf count)
+	  (cl-incf count)
 	  (if (null toks)
 	      (insert " ")
 	    (insert-text-button

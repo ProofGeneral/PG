@@ -17,9 +17,9 @@
 (require 'whitespace)
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (require 'proof-site))
 
 (with-no-warnings
