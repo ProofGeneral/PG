@@ -7,7 +7,9 @@ Can just call send-to-prover, yes?
 
 Localize all state
 
-Use cl-lib throughout
+Use cl-lib throughout - DONE
+
+Consistent naming; using pg- prefix throughout?
 
 Either update or ditch the Adapting document
 We could describe how to use different protocols
@@ -16,6 +18,7 @@ Right now, all the comms stuff is in coq/, though
 generic/proof-resolver.el probably doesn't need much of what's there
 
 ditch generic/proof-shell.el, but there is code that uses it, so careful
+DONE, although proof-tree, some other code still references it
 
 Makefile.devel mentions cvs; update that to git, or ditch it?
 
