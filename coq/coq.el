@@ -1419,7 +1419,6 @@ Near here means PT is either inside or just aside of a comment."
      proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd (coq-xml-init)
-     proof-server-quit-cmd (coq-xml-quit)
      proof-ready-prover-fun 'proof-server-ready-prover
      proof-invisible-command-fun 'proof-server-invisible-command
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result

@@ -1055,6 +1055,7 @@ Returns 'retract, 'process or finally nil if user declined."
   ;; Would be nicer to ask a single question, but
   ;; a nuisance to define our own dialogue since it
   ;; doesn't really fit with one of the standard ones.
+  (message "called proof-deactivate-scripting-query-user-action")
   (save-window-excursion
     (unless
 	;; Test to see whether to display the buffer or not.  Could
@@ -1228,6 +1229,9 @@ activation is considered to have failed and an error is given."
   (interactive)
   (unless (eq proof-buffer-type 'script)
     (error "Must be running in a script buffer!"))
+
+  (message "called proof-activate-scripting, with current-buffer: %s proof-script-buffer: %s"
+	   (current-buffer) proof-script-buffer)
 
   (unless (equal (current-buffer) proof-script-buffer)
 

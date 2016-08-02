@@ -230,9 +230,6 @@ to write out the traversal code by hand each time."
   (coq-xml-call '((val . Init))
                 (coq-xml-option '((val . none)))))
 
-(defun coq-xml-quit ()
-  (coq-xml-add-item "Quit."))
-
 ;; state-id is string
 (defun coq-xml-edit-at (state-id)
   (coq-xml-call 
