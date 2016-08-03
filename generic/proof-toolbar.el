@@ -213,6 +213,10 @@ back the default toolbar."
 
 (defalias 'proof-toolbar-goal 'proof-issue-goal)
 
+;; Check document
+
+(defalias 'proof-toolbar-check 'proof-check-document)
+
 ;; QED
 
 (defalias 'proof-toolbar-qed 'proof-issue-save)
