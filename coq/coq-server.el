@@ -92,18 +92,14 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--get-next-xml ()
   (ignore-errors ; returns nil if no XML available
     (goto-char (point-min))
-    (when (equal (current-buffer) coq-server-response-buffer)
-      (message "BUFFER: %s" (buffer-string)))
+    (message "buffer: %s contents: %s" (current-buffer) (buffer-string))
     (let ((xml (xml-parse-tag-1)))
       (when xml
-	(delete-region (point-min) (point))
-	(when (equal (current-buffer) coq-server-response-buffer)
-	  (message "AFTER DELETION, BUFFER: %s" (buffer-string))))
+	(delete-region (point-min) (point)))
       xml)))
 
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)
-  (message "SENDING RETRACTION TO STATE: %s" state-id)
   (setq coq-server--pending-edit-at-state-id state-id)
   (proof-server-send-to-prover (coq-xml-edit-at state-id))
   (when get-goal
@@ -549,7 +545,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--before-focus-backtrack ()
   ;; retract to before a re-opened proof
-  (assert proof-locked-secondary-span)
+  (cl-assert proof-locked-secondary-span)
   (coq-server--remove-secondary-locked-span t)
   (setq coq-server--start-of-focus-state-id nil)
   (coq-server--consume-edit-at-state-id))
@@ -587,7 +583,7 @@ is gone and we have to close the secondary locked span."
 	  (proof-retract-until-point))))))
 
 (defun coq-server--handle-good-value (xml)
-  (message "good value: %s" xml)
+  (message "GOOD VALUE: %s" xml)
   (cond
    ((coq-server--backtrack-before-focus-p xml)
     ;; retract before current focus
@@ -718,11 +714,14 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
     ("processingin"
-     (message "GOT PROCESSINGIN")
      (with-current-buffer proof-script-buffer
        (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
 	      (span-with-state-id (coq-server--get-span-with-state-id state-id)))
-	 (when span-with-state-id ; can see feedbacks with state id not yet associated with a span
+	 ;; can see feedbacks with state id not yet associated with a span
+	 ;; also can find a span with a state id that's been deleted from script buffer,
+	 ;;  but not yet garbage-collected from table
+	 (when (and span-with-state-id
+		    (eq (span-buffer span-with-state-id) proof-script-buffer))
 	   (save-excursion
 	     (goto-char (span-start span-with-state-id))
 	     (skip-chars-forward " \t\n")
@@ -777,6 +776,7 @@ is gone and we have to close the secondary locked span."
     ;; maybe should pass this instead
     (setq coq-server--current-span span) 
     (let ((xml (coq-server--get-next-xml)))
+      (message "process response XML: %s" xml)
       (while xml
 	(pcase (coq-xml-tag xml)
 	  (`value (coq-server--handle-value xml))
