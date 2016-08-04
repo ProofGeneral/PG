@@ -474,6 +474,7 @@ is gone and we have to close the secondary locked span."
       ;; leave spans beneath the focus, because we'll skip past them 
       ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
+	(message "MARKED SPAN: %s CMD: %s" span (span-property span 'cmd))
 	(if found-focus-end
 	    (progn
 	      (let ((curr-span-start (span-start span)))
@@ -484,9 +485,9 @@ is gone and we have to close the secondary locked span."
 		(span-unmark-delete span)))
 	  ;; look for focus end
 	  (let ((span-state-id (span-property span 'state-id)))
-	    (if (and span-state-id (equal span-state-id focus-end-state-id))
-		(setq found-focus-end t)
-	      (span-delete span)))))
+	    (when (and span-state-id (equal span-state-id focus-end-state-id))
+	      (setq found-focus-end t))
+	    (span-delete span))))
       ;; remove incomplete span for the Qed in the reopened focus
       (let ((incomplete-span (gethash focus-end-state-id coq-server--incomplete-span-tbl)))
 	(when (and incomplete-span (span-buffer incomplete-span))
