@@ -133,7 +133,8 @@ with proof-shell-ready-prover."
       (message "Command line: %s" prog-command-line)
       (message "Proof assistant: %s" proof-assistant)
       (message "Prog name list: %s" prog-name-list)
-      (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) ; leading space hides the buffer
+      ;; leading space hides the buffer
+      (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) 
 	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
 	(if the-process
 	    (progn 
@@ -187,7 +188,7 @@ single string.
 
 The ACTION is unused here (hangover from proof-shell-insert), 
 while SPAN is the Emacs span containing the command."
-  (assert (or (stringp strings)
+  (cl-assert (or (stringp strings)
 	      (listp strings))
 	  nil "proof-server-insert: expected string or list argument")
   (run-hooks 'proof-server-insert-hook)
@@ -323,7 +324,7 @@ contains only invisible elements for Prooftree synchronization."
 
 	(and (not proof-second-action-list-active)
 	     (or (null proof-action-list)
-		 (every
+		 (cl-every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
 
@@ -364,7 +365,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	  (while (and (> timecount 0)
 		      (memq (process-status proc) '(open run stop)))
 	    (accept-process-output proc 1 nil 1)
-	    (decf timecount)))
+	    (cl-decf timecount)))
 
 	(message "POINT 3: proc status: %s" (process-status proc))
 	
@@ -425,6 +426,11 @@ This function should not be called if
 	  (kill-buffer proof-server-buffer))
 	(setq proof-server-buffer nil))
     (error "No proof server buffer to kill!")))
+
+(defun proof-server-restart ()
+  "Restart proof server."
+  (interactive)
+  (proof-server-exit t))
 
 (provide 'proof-server)
 

@@ -244,9 +244,15 @@ to write out the traversal code by hand each time."
   (coq-xml-call '((val . Evars))
                 (coq-xml-unit)))
 
-(defun coq-xml-status ()
+;; Status requests don't force unless we say otherwise
+(defun coq-xml-status (&optional b)
+  (let ((force (or b 'false)))
+    (coq-xml-call '((val . Status))
+		  (coq-xml-bool force))))
+
+(defun coq-xml-status-force ()
   (coq-xml-call '((val . Status))
-                (coq-xml-bool 'false)))
+                (coq-xml-bool 'true)))
 
 (defun coq-xml-setoptions (names val-xml)
   (coq-xml-call

@@ -207,7 +207,7 @@ back the default toolbar."
 
 ;; Restart
 
-(defalias 'proof-toolbar-restart 'proof-shell-restart)
+(defalias 'proof-toolbar-restart 'proof-server-restart)
 
 ;; Goal
 
