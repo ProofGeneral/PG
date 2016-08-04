@@ -1424,7 +1424,8 @@ Near here means PT is either inside or just aside of a comment."
      proof-invisible-cmd-get-result-fun 'proof-server-cmd-get-result
      proof-invisible-command-invisible-result-fun 'proof-server-command-invisible-result
      proof-add-to-queue-fun 'proof-server-add-to-queue
-     proof-server-retract-buffer-hook 'coq-reset-all-state))
+     proof-server-retract-buffer-hook 'coq-reset-all-state
+     proof-check-command 'coq-server-check-document))
 
   ;; prooftree config
   (setq

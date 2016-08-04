@@ -50,7 +50,6 @@
 
 ;;;###autoload
 (defun proof-server-send-to-prover (string-or-fun)
-  (message "proof-server-send-to-prover: %s" string-or-fun)
   (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
     (and proof-server-send-to-prover-fun 
 	 (funcall proof-server-send-to-prover-fun string-or-fun))))

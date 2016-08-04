@@ -151,6 +151,12 @@ If a function, it should return the command string to insert."
   :type '(choice string function)
   :group 'prover-config)
 
+(defcustom proof-check-command nil
+  "Command to check the validity of all processed proofs in the current
+document."
+  :type 'function
+  :group 'prover-config)
+
 (defcustom proof-find-theorems-command nil
   "Command to search for a theorem containing a given term.  String or fn.
 If a string, the format character `%s' will be replaced by the term.

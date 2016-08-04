@@ -51,7 +51,8 @@
   (next      "Next Step"          "Process the next proof command" t t)
   (use       "Use Buffer"         "Process whole buffer" t t)
   (goto      "Goto Point"         "Process or undo to the cursor position" t t)
-  (check     "Check Document"     "Check proofs in the document" t t)
+  (check
+             "Check"              "Check all proofs in the document" t t)
   (qed       "Finish Proof"       "Close/save proved theorem" t nil)
   (home      "Goto Locked End"    "Goto end of the last command processed" t t)
   (find      "Find Theorems"	  "Find theorems" t proof-find-theorems-command)

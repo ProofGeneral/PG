@@ -215,7 +215,8 @@ back the default toolbar."
 
 ;; Check document
 
-(defalias 'proof-toolbar-check 'proof-check-document)
+(defalias 'proof-toolbar-check 'proof-check)
+(defalias 'proof-toolbar-check-enable-p 'proof-check-available-p)
 
 ;; QED
 

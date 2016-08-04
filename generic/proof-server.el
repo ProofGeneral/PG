@@ -432,6 +432,16 @@ This function should not be called if
   (interactive)
   (proof-server-exit t))
 
+;; TODO move this to a good home
+(defun proof-check ()
+  "Check validity of entire document."
+  (interactive)
+  (when proof-check-command
+    (funcall proof-check-command)))
+
+(defun proof-check-available-p ()
+  proof-check-command)
+
 (provide 'proof-server)
 
 ;; proof-server.el ends here
