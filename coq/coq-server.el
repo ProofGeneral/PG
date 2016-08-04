@@ -439,8 +439,10 @@ is gone and we have to close the secondary locked span."
 		      (point-min))))
       (let ((all-spans (overlays-in start (point-max))))
 	(mapc (lambda (span)
-		(when (and (span-property span 'marked-for-deletion)
-			   (not (span-property span 'self-removing)))
+		(when (or (and (span-property span 'marked-for-deletion)
+			       (not (span-property span 'self-removing)))
+			  ;; also remove any incomplete spans
+			  (span-property span 'incomplete))
 		  (span-delete span)))
 	      all-spans))))
   (coq-server--consume-edit-at-state-id))
