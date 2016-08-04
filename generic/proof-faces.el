@@ -95,6 +95,14 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for span that is being processed."
   :group 'proof-faces)
 
+(defface proof-incomplete-face
+  (proof-face-specs
+   (:background "#33cccc")
+   (:background "lightred")
+   (:underline t))
+  "*Face for span that ends an incomplete proof."
+  :group 'proof-faces)
+
 (defface proof-declaration-name-face
   (proof-face-specs
    (:foreground "chocolate" :bold t)

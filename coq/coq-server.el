@@ -57,6 +57,9 @@ is gone and we have to close the secondary locked span."
 ;;  deleting from this table
 (defvar coq-server--processing-span-tbl (make-hash-table :test 'equal :weakness 'value))
 
+;; table mapping state ids to spans created by incomplete feedbacks
+(defvar coq-server--incomplete-span-tbl (make-hash-table :test 'equal :weakness 'value))
+
 ;; table mapping state ids to spans
 ;; values are weak, because spans can be deleted, as on a retract
 (defvar coq-server--span-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
@@ -306,12 +309,10 @@ is gone and we have to close the secondary locked span."
 			 (equal (span-property span 'face) 'proof-locked-face))))
 	 (locked-end (span-end locked-span))
 	 (error-end (span-end error-span)))
-    (message "error-span: %s  error-end: %s locked-end: %s" error-span error-end locked-end)
     (>= error-end locked-end)))
 
 ;; make pending Edit_at state id current
 (defun coq-server--consume-edit-at-state-id ()
-  (message "SETTING CURR STATE ID TO EDIT AT ID: %s" coq-server--pending-edit-at-state-id)
   (setq coq-current-state-id coq-server--pending-edit-at-state-id)
   (setq coq-server--pending-edit-at-state-id nil))
 
@@ -319,10 +320,6 @@ is gone and we have to close the secondary locked span."
   '(value (union (unit))))
 
 (defun coq-server--value-simple-backtrack-p (xml)
-  (message "TESTING FOR SIMPLE BACKTRACK")
-  (message "pending-edit-at-id: %s" coq-server--pending-edit-at-state-id)
-  (message "EQUAL FOOTPRINTS: %s" (equal (coq-xml-footprint xml)
-	      coq-server--value-simple-backtrack-footprint))
   (and coq-server--pending-edit-at-state-id 
        (equal (coq-xml-footprint xml)
 	      coq-server--value-simple-backtrack-footprint)))
@@ -444,7 +441,6 @@ is gone and we have to close the secondary locked span."
   (coq-server--consume-edit-at-state-id))
 
 (defun coq-server--new-focus-backtrack (xml)
-  (message "NEW FOCUS BACKTRACK")
   ;; new focus produces secondary locked span, which extends from
   ;; end of new focus to last tip
   ;; primary locked span is from start of script to the edit at state id
@@ -462,7 +458,6 @@ is gone and we have to close the secondary locked span."
       (coq-server--consume-edit-at-state-id))))
 
 (defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
-  (message "MAKING SECONDARY SPAN, LAST TIP: %s" last-tip-state-id)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (point-max)))
 	   (marked-spans (cl-remove-if-not 
@@ -475,12 +470,10 @@ is gone and we have to close the secondary locked span."
 	   secondary-span-start
 	   secondary-span-end)
       (setq secondary-span-end (span-end last-tip-span))
-      (message "GOT VARIABLES")
       ;; delete spans within focus, because they're unprocessed now
       ;; leave spans beneath the focus, because we'll skip past them 
       ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
-	(message "LOOKING AT MARKED SPAN: %s" span)
 	(if found-focus-end
 	    (progn
 	      (let ((curr-span-start (span-start span)))
@@ -494,6 +487,10 @@ is gone and we have to close the secondary locked span."
 	    (if (and span-state-id (equal span-state-id focus-end-state-id))
 		(setq found-focus-end t)
 	      (span-delete span)))))
+      ;; remove incomplete span for the Qed in the reopened focus
+      (let ((incomplete-span (gethash focus-end-state-id coq-server--incomplete-span-tbl)))
+	(when (and incomplete-span (span-buffer incomplete-span))
+	  (span-delete incomplete-span)))
       ;; skip past whitespace for secondary span
       (save-excursion
 	(goto-char secondary-span-start)
@@ -587,22 +584,17 @@ is gone and we have to close the secondary locked span."
   (cond
    ((coq-server--backtrack-before-focus-p xml)
     ;; retract before current focus
-    (message "BACKTRACK BEFORE FOCUS")
     (coq-server--before-focus-backtrack))
    ((coq-server--value-new-focus-p xml)
      ;; retract re-opens a proof
-    (message "REOPENED PROOF")
     (coq-server--new-focus-backtrack xml))
    ((coq-server--value-simple-backtrack-p xml)
      ;; simple backtrack
-    (message "SIMPLE BACKTRACK")
     (coq-server--simple-backtrack))
    ((coq-server--value-end-focus-p xml) 
-    (message "SIMPLE END FOCUS")
     ;; close of focus after Add
     (coq-server--end-focus xml))
    ((coq-server--value-init-state-id-p xml) 
-    (message "INIT STATE ID")
     ;; Init, get first state id
     (coq-server--set-init-state-id xml))
    ((coq-server--value-new-state-id-p xml) 
@@ -711,41 +703,69 @@ is gone and we have to close the secondary locked span."
 			  '(feedback (state_id val)))))
     (coq-server--display-error error-state-id error-msg error-start error-stop)))
 
+(defun coq-server--color-span-on-feedback (xml tbl prop face)
+  (with-current-buffer proof-script-buffer
+    (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	   (span-with-state-id (coq-server--get-span-with-state-id state-id)))
+      ;; can see feedbacks with state id not yet associated with a span
+      ;; also can find a span with a state id that's been deleted from script buffer,
+      ;;  but not yet garbage-collected from table
+      (when (and span-with-state-id
+		 (eq (span-buffer span-with-state-id) proof-script-buffer))
+	(save-excursion
+	  (goto-char (span-start span-with-state-id))
+	  (skip-chars-forward " \t\n")
+	  (beginning-of-thing 'sentence)
+	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
+	    (span-set-property span-processing prop t)
+	    (span-set-property span-processing 'face face)
+	    (puthash state-id span-processing tbl)))))))
+
+(defun coq-server--color-span-processingin (xml)
+  (coq-server--color-span-on-feedback
+   xml
+   coq-server--processing-span-tbl
+   'processing-in
+   'proof-processing-face))
+
+(defun coq-server--color-span-incomplete (xml)
+  (coq-server--color-span-on-feedback
+   xml
+   coq-server--incomplete-span-tbl
+   'incomplete
+   'proof-incomplete-face))
+
+(defun coq-server--uncolor-span-on-feedback (xml tbl)
+  (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	 (span-colored (gethash state-id tbl)))
+    ;; may get several identical feedbacks, use just first one
+    (when span-colored
+      (progn
+	(remhash state-id tbl)
+	(span-delete span-colored)))))
+
+(defun coq-server--uncolor-span-processed (xml)
+  (coq-server--uncolor-span-on-feedback xml coq-server--processing-span-tbl))
+  
+(defun coq-server--uncolor-span-complete (xml)
+  ;; we also get complete feedbacks for statements that dismiss last goal in proof
+  ;; we ignore those
+  (coq-server--uncolor-span-on-feedback xml coq-server--incomplete-span-tbl))
+  
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
     ("processingin"
-     (with-current-buffer proof-script-buffer
-       (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	      (span-with-state-id (coq-server--get-span-with-state-id state-id)))
-	 ;; can see feedbacks with state id not yet associated with a span
-	 ;; also can find a span with a state id that's been deleted from script buffer,
-	 ;;  but not yet garbage-collected from table
-	 (when (and span-with-state-id
-		    (eq (span-buffer span-with-state-id) proof-script-buffer))
-	   (save-excursion
-	     (goto-char (span-start span-with-state-id))
-	     (skip-chars-forward " \t\n")
-	     (beginning-of-thing 'sentence)
-	     (let ((span-processing (span-make (point) (span-end span-with-state-id))))
-	       (span-set-property span-processing 'processing-in t)
-	       (span-set-property span-processing 'face 'proof-processing-face)
-	       (puthash state-id span-processing coq-server--processing-span-tbl)))))))
+     (coq-server--color-span-processingin xml))
     ("processed"
-     (message "GOT PROCESSED")
-     (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	    (span-processing (gethash state-id coq-server--processing-span-tbl)))
-       ;; may get several processed feedbacks for one processingin
-       ;; only need to use first one
-       (when span-processing
-	   (progn
-	     (remhash state-id coq-server--processing-span-tbl)
-	     (span-delete span-processing)))))
+     (coq-server--uncolor-span-processed xml))
+    ("incomplete"
+     (coq-server--color-span-incomplete xml))
+    ("complete"
+     (coq-server--uncolor-span-complete xml))
     ("errormsg" ; 8.5-only
-     (message "GOT ERRORMSG")
      (unless (gethash xml coq-server--error-fail-tbl)
        (coq-server--handle-errormsg xml)))
     ("message" ; 8.6
-     (message "GOT MESSAGE")
      (unless (gethash xml coq-server--error-fail-tbl)
        (let ((msg-level 
 	      (coq-xml-at-path 

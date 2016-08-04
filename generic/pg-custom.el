@@ -58,7 +58,7 @@
   (info      "Identifier Info"    "Information about identifier" t proof-query-identifier-command)
   (command   "Issue Command"	  "Issue a non-scripting command" t t)
   (prooftree "Start/Stop Prooftree" "Start/Stop external proof-tree display" t proof-tree-configured)
-  (interrupt "Interrupt Prover"   "Interrupt the proof assistant" t t)
+  (interrupt "Interrupt Prover"    "Interrupt the proof assistant" t t)
   (restart   "Restart Scripting"  "Restart scripting (clear all locked regions)" t t)
   (visibility "Toggle Visibility" "Show or hide hidden proofs" nil t)
   (help	nil   "Proof General manual" t t))
