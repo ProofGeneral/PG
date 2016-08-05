@@ -6,6 +6,7 @@
 (require 'proof-proverargs)
 (require 'proof-queue)
 (require 'proof-buffers)
+(require 'proof-script)
 
 (defcustom proof-server-fiddle-frames t
   "Non-nil if proof-server functions should fire-up/delete frames like crazy."
@@ -95,19 +96,29 @@ derived Emacs mode; here, we call the procedure directly."
 
   ;; code borrowed from proof-shell.el, proof-shell-filter-manage-output
 
-  (let ((span  (caar proof-action-list))
-	(cmd   (nth 1 (car proof-action-list)))
-	(flags (nth 3 (car proof-action-list))))
+  ;; A copy of the last message, verbatim, never modified.
+  ;; TODO do we really need this?
+  (setq proof-prover-last-output response)
 
-    ;; A copy of the last message, verbatim, never modified.
-    ;; TODO do we really need this?
-    (setq proof-prover-last-output response)
+  (if proof-action-list
 
-    (proof-server-exec-loop)
+    (let ((span  (caar proof-action-list))
+	  (cmd   (nth 1 (car proof-action-list)))
+	  (flags (nth 3 (car proof-action-list))))
+
+      (proof-server-exec-loop)
+      
+      ;; TODO why is this after the loop
+      '(if proof-tree-external-display
+	   (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))
+
+    ;; ordinarily, locked region merger happens when
+    ;; items pulled off proof-action-list
+    ;; at the end of the script, that list may be empty
+    ;; so do the merger here
+    (when proof-merged-locked-end
+      (proof-merge-locked))))
     
-    ;; TODO why is this after the loop
-    '(if proof-tree-external-display
-	(proof-tree-handle-delayed-output old-proof-marker cmd flags span))))
 
 ;;;###autoload
 (defun proof-server-ready-prover (queuemode)

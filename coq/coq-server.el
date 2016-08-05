@@ -426,6 +426,7 @@ is gone and we have to close the secondary locked span."
   (message "END FOCUS")
   (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
+    (message "QED STATE ID: %s NEW TIP: %s" qed-state-id new-tip-state-id)
     (coq-server--register-state-id coq-server--current-span qed-state-id)
     (setq coq-current-state-id new-tip-state-id)
     (setq coq-server--start-of-focus-state-id nil)
@@ -535,6 +536,7 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--merge-locked-spans ()
   (with-current-buffer proof-script-buffer
     (let ((new-end (span-end proof-locked-secondary-span)))
+      (message "NEW END: %s" new-end)
       (coq-server--remove-secondary-locked-span)
       ;; proof-done-advancing uses this to set merged locked end
       (setq proof-merged-locked-end new-end))))

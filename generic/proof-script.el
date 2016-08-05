@@ -190,7 +190,7 @@ Action is taken on all script buffers."
 
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
-  (message "set locked endpoints start: %s end: %s" start end)
+  (message "SET LOCKED ENDPOINTS START: %s END: %s" start end)
   (span-set-endpoints proof-locked-span start end)
   (proof-set-overlay-arrow end))
 
@@ -214,6 +214,7 @@ Action is taken on all script buffers."
   "Set the end of the locked region to be END.
 If END is at or before (point-min), remove the locked region.
 Otherwise set the locked region to be from (point-min) to END."
+  (message "PROOF SET LOCKED END: %s" end)
   (if (>= (point-min) end)
       ;; Detach queue span, otherwise may have read-only character at end.
       (proof-detach-locked)
@@ -1349,6 +1350,13 @@ With ARG, turn on scripting iff ARG is positive."
 ;; The main function for dealing with processed spans is
 ;; `proof-done-advancing'
 
+(defun proof-merge-locked ()
+  (message "USING MERGED LOCKED END: %s" proof-merged-locked-end)
+  (with-current-buffer proof-script-buffer
+    (proof-set-locked-end proof-merged-locked-end)
+    (goto-char proof-merged-locked-end)
+    (setq proof-merged-locked-end nil)))
+
 (defun proof-done-advancing (span)
   "The callback function for `assert-until-point'.
 Argument SPAN has just been processed."
@@ -1360,10 +1368,7 @@ Argument SPAN has just been processed."
     ;; just-processed span's end
 
     (if proof-merged-locked-end
-	(progn 
-	  (proof-set-locked-end proof-merged-locked-end)
-	  (goto-char proof-merged-locked-end)
-	  (setq proof-merged-locked-end nil))
+	(proof-merge-locked)
       (proof-set-locked-end end))
 
     (if (span-live-p proof-queue-span)
@@ -1674,37 +1679,46 @@ The optional QUEUEFLAGS are added to each queue item."
   (let ((start (proof-queue-or-locked-end))
 	(file  (or (buffer-file-name) (buffer-name)))
 	(cb    'proof-done-advancing)
+	(secondary-start (and proof-locked-secondary-span (span-start proof-locked-secondary-span)))
+	(secondary-end (and proof-locked-secondary-span (span-end proof-locked-secondary-span)))
 	span alist semi item end)
     (setq semis (nreverse semis))
     (save-match-data
       (dolist (semi semis)
 	(setq end (nth 2 semi))
-	(setq span  (span-make start end))
-	(if (eq (car semi) 'cmd)
-	    (progn ;; command span
-	      (let* ((cmd  (nth 1 semi))
-		     (qcmd (if proof-script-preprocess
-			       (funcall proof-script-preprocess
-					file
-					;; ignore spaces at start of command
-					(+ start (save-excursion
-						   (goto-char start)
-						   (skip-chars-forward " \t\n")))
-					end
-					cmd)
-			     (list cmd)))
-		     (qitem  (list span qcmd cb queueflags)))
-		(span-set-property span 'type 'vanilla)
-		(span-set-property span 'cmd cmd)
-		(setq alist (cons qitem alist))))
-	  ;; ignored text
-	  (let ((qitem  
-		 (list span nil cb queueflags))) ; nil was `proof-no-command' 
-	    (span-set-property span 'type 'comment)
-	    (setq alist (cons qitem alist))))
+	;; don't add items in secondary locked region
+	(message "SECONDARY: %s SECONDARY-START: %s SECONDARY-END: %s START: %s END: %s"
+		 proof-locked-secondary-span secondary-start secondary-end start end)
+	(unless (and proof-locked-secondary-span
+		     (or (and (>= start secondary-start) (<= start secondary-end))
+			 (and (>= end secondary-start) (<= end secondary-end))))
+	  (setq span (span-make start end))
+	  (message "MADE SPAN WITH TEXT: %s" (nth 1 semi))
+	  (if (eq (car semi) 'cmd)
+	      (progn ;; command span
+		(let* ((cmd  (nth 1 semi))
+		       (qcmd (if proof-script-preprocess
+				 (funcall proof-script-preprocess
+					  file
+					  ;; ignore spaces at start of command
+					  (+ start (save-excursion
+						     (goto-char start)
+						     (skip-chars-forward " \t\n")))
+					  end
+					  cmd)
+			       (list cmd)))
+		       (qitem  (list span qcmd cb queueflags)))
+		  (span-set-property span 'type 'vanilla)
+		  (span-set-property span 'cmd cmd)
+		  (setq alist (cons qitem alist))))
+	    ;; ignored text
+	    (let ((qitem  
+		   (list span nil cb queueflags))) ; nil was `proof-no-command' 
+	      (span-set-property span 'type 'comment)
+	      (setq alist (cons qitem alist)))))
+	(message "UPDATING START")
 	(setq start end)))
     (nreverse alist)))
-
 
 
 
