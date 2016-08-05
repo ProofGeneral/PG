@@ -234,8 +234,8 @@ back the default toolbar."
 
 ;; Context
 
-(defalias 'proof-toolbar-context 'proof-ctxt)
-(defalias 'proof-toolbar-context-enable-p 'proof-server-available-p)
+(defalias 'proof-toolbar-context 'proof-get-context)
+(defalias 'proof-toolbar-context-enable-p 'proof-context-available-p)
 
 ;; Command
 

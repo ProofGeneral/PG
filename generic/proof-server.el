@@ -162,12 +162,14 @@ with proof-shell-ready-prover."
 
 ;;; assume that cmd is already formatted appropriately 
 ;;;###autoload
-(defun proof-server-invisible-command (cmd &optional wait invisiblecallback
-					   &rest flags)
-  (message (format "Called proof-server-invisible-command: %s" cmd))
-  (proof-server-send-to-prover cmd)
+(defun proof-server-invisible-command (string-or-thunk
+				       &optional wait invisiblecallback
+				       &rest flags)
+  (message "Called proof-server-invisible-command: %s" string-or-thunk)
+  (let ((cmd (or (and (stringp string-or-thunk) string-or-thunk)
+		 (and (functionp string-or-thunk) (funcall string-or-thunk)))))
+    (proof-server-send-to-prover cmd)))
   ;; TODO deal with wait, callback, flags
-)
 
 ;;;###autoload
 (defun proof-server-invisible-cmd-get-result (cmd)
@@ -443,7 +445,7 @@ This function should not be called if
   (interactive)
   (proof-server-exit t))
 
-;; TODO move this to a good home
+;; TODO move these to a good home
 (defun proof-check ()
   "Check validity of entire document."
   (interactive)
@@ -453,6 +455,15 @@ This function should not be called if
 (defun proof-check-available-p ()
   proof-check-command)
 
+(defun proof-get-context ()
+  "Get current proof context."
+  (interactive)
+  (when proof-context-command
+    (funcall proof-context-command)))
+
+(defun proof-context-available-p ()
+  proof-context-command)
+  
 (provide 'proof-server)
 
 ;; proof-server.el ends here

@@ -42,8 +42,7 @@
 (defconst proof-toolbar-entries-default
 `((state "Display Proof State" "Display the current proof state" t
 	   proof-showproof-command)
-  (context "Display Context" "Display the current context" t
-	     proof-context-command)
+  (context "Display Context" "Display the current context" t t)
   (goal      "Start a New Proof" "Start a new proof" t nil)
   (retract   "Retract Buffer"     "Retract (undo) whole buffer" t t)
   (undo      "Undo Step"          "Undo the previous proof command" t t)
@@ -180,7 +179,6 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
   "*If non-nil, format for newlines after each command in a script."
   :type 'boolean
   :group 'proof-user-options)
-
 
 ;; Contributed modes
 

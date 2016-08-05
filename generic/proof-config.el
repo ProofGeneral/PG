@@ -120,7 +120,7 @@ Used for Proof General's help menu."
 
 (defcustom proof-context-command nil
   "Command to display the context in proof assistant."
-  :type 'string
+  :type 'function
   :group 'prover-config)
 
 (defcustom proof-info-command nil

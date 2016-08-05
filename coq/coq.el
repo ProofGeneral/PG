@@ -1346,16 +1346,18 @@ Near here means PT is either inside or just aside of a comment."
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
+
   
   ;; Commands sent to proof engine
   (setq proof-showproof-command "Show. "
-        proof-context-command "Print All. "
         proof-goal-command "Goal %s. "
         proof-save-command "Save %s. "
         proof-find-theorems-command "Search %s. ")
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
 
+  (setq proof-context-command 'coq-server-make-query-print-all-thunk)
+  
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
         pg-topterm-goalhyplit-fn 'coq-goal-hyp

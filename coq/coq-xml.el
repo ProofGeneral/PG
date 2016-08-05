@@ -226,6 +226,15 @@ to write out the traversal code by hand each time."
     (setq coq-edit-id-counter (1+ coq-edit-id-counter))
     add-block))
 
+(defun coq-xml-query-item (item)
+  (coq-xml-call
+   '((val . Query))
+   (coq-xml-pair
+    nil
+    (coq-xml-string
+     item)
+    (coq-xml-state_id `((val . ,coq-current-state-id))))))
+
 (defun coq-xml-init ()
   (coq-xml-call '((val . Init))
                 (coq-xml-option '((val . none)))))
