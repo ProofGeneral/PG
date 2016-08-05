@@ -692,12 +692,14 @@ is gone and we have to close the secondary locked span."
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
 (defun flatten-pp (items)
-  (mapconcat (lambda (it)
-	       (if (and (consp it) (consp (cdr it)))
-		   (flatten-pp (cddr it))
-		 it))
-	     items ""))
-
+  (message "FLATTENING RICHPP items: %s" items)
+  (let* ((result (mapconcat (lambda (it)
+			      (if (and (consp it) (consp (cdr it)))
+				  (flatten-pp (cddr it))
+				it))
+			    items "")))
+    result))
+	 
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
   (message "HANDLING ERROR: %s" xml)
@@ -802,7 +804,7 @@ is gone and we have to close the secondary locked span."
 	 ;; something of a delicious irony
 	 (message-str (or message-str-8.5 
 			  (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))
-	 (msg (coq-server--unescape-string (coq-xml-body1 message-str))))
+	 (msg (flatten-pp (coq-xml-body message-str))))
      (coq--display-response msg)))
 
 ;; process XML response from Coq
