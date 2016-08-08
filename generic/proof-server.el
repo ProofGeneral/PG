@@ -33,9 +33,9 @@ from calling `proof-server-exit'.")
   "Last span we've pulled off proof-action-list")
 
 ;; since commands are queued, we don't need to wait for a prompt
-;; so server is always available
+;; server is always available if process is running
 (defun proof-server-available-p ()
-  t)
+  proof-server-process)
 
 (defun proof-server-clear-state ()
   "Clear internal state of proof shell."
@@ -453,7 +453,8 @@ This function should not be called if
     (funcall proof-check-command)))
 
 (defun proof-check-available-p ()
-  proof-check-command)
+  (and proof-server-process
+       proof-check-command))
 
 (defun proof-get-context ()
   "Get current proof context."
@@ -462,7 +463,8 @@ This function should not be called if
     (funcall proof-context-command)))
 
 (defun proof-context-available-p ()
-  proof-context-command)
+  (and proof-server-process
+       proof-context-command))
   
 (provide 'proof-server)
 

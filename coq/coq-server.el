@@ -732,7 +732,9 @@ is gone and we have to close the secondary locked span."
 	  (skip-chars-forward " \t\n")
 	  (beginning-of-thing 'sentence)
 	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
-	    (span-set-property span-processing prop t)
+	    ;; TODO 'type becomes 'pg-type when merged with trunk
+	    (span-set-property span-processing 'type 'pg-special-coloring)
+	    (span-set-property span-processing prop 't)
 	    (span-set-property span-processing 'face face)
 	    (puthash state-id span-processing tbl)))))))
 

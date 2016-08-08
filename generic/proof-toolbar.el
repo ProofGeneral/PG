@@ -208,6 +208,7 @@ back the default toolbar."
 ;; Restart
 
 (defalias 'proof-toolbar-restart 'proof-server-restart)
+(defalias 'proof-toolbar-restart-enable-p 'proof-server-available-p)
 
 ;; Goal
 

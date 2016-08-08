@@ -358,6 +358,8 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
 
 (defun proof-script-delete-spans (beg end)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
+  ;; TODO 'type will change to 'pg-type when merged with trunk
+  ; (span-delete-spans beg end 'pg-type)
   (span-delete-spans beg end 'type)
   (span-delete-spans beg end 'idiom))
 
