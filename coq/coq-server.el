@@ -66,16 +66,13 @@ is gone and we have to close the secondary locked span."
 
 ;; hook function to count how many Adds are pending
 ;; comments generate items with null element
-(defun count-addable (items ct) ; helper for coq-server-count-pending-adds
-  (if (null items)
-      ct
-    (let ((item (car items)))
-      (if (nth 1 item)
-	  (count-addable (cdr items) (1+ ct))
-	(count-addable (cdr items) ct)))))
+(defun count-addable (items) ; helper for coq-server-count-pending-adds
+  (let ((ct 0))
+    (mapc (lambda (it) (when (nth 1 it) (cl-incf ct))) items)
+    ct))
 
 (defun coq-server-count-pending-adds ()
-  (setq coq-server--pending-add-count (count-addable proof-action-list 0)))
+  (setq coq-server--pending-add-count (count-addable proof-action-list)))
 
 ;; not the *response* buffer seen by user
 (defun coq-server--append-response (s)
@@ -436,9 +433,9 @@ is gone and we have to close the secondary locked span."
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
     (message "QED STATE ID: %s NEW TIP: %s" qed-state-id new-tip-state-id)
     (coq-server--register-state-id coq-server--current-span qed-state-id)
-    (setq coq-current-state-id new-tip-state-id)
     (setq coq-server--start-of-focus-state-id nil)
-    (coq-server--merge-locked-spans)))
+    (coq-server--merge-locked-spans)
+    (coq-server--update-state-id-and-process new-tip-state-id)))
 
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
@@ -692,7 +689,6 @@ is gone and we have to close the secondary locked span."
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
 (defun flatten-pp (items)
-  (message "FLATTENING RICHPP items: %s" items)
   (let* ((result (mapconcat (lambda (it)
 			      (if (and (consp it) (consp (cdr it)))
 				  (flatten-pp (cddr it))
