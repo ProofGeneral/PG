@@ -33,15 +33,6 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--retraction-on-error nil
   "Was the last retraction due to an error")
 
-;; buffer for gluing coqtop responses into XML
-;; leading space makes buffer invisible, for the most part
-(defvar coq-server--response-buffer-name " *coq-responses*")
-(defvar coq-server-response-buffer (get-buffer-create coq-server--response-buffer-name))
-
-;; buffer for gluing coqtop out-of-band responses into XML
-(defvar coq-server--oob-buffer-name " *coq-oob-responses*")
-(defvar coq-server-oob-buffer (get-buffer-create coq-server--oob-buffer-name))
-
 (defvar coq-server-transaction-queue nil)
 
 (defvar end-of-response-regexp "</value>")
@@ -73,30 +64,6 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server-count-pending-adds ()
   (setq coq-server--pending-add-count (count-addable proof-action-list)))
-
-;; not the *response* buffer seen by user
-(defun coq-server--append-response (s)
-  (goto-char (point-max))
-  (insert s))
-
-(defun coq-server--unescape-string (s)
-  (replace-regexp-in-string "&nbsp;" " " s))
-
-;; XML parser does not understand &nbsp;
-(defun coq-server--unescape-buffer ()
-  (let ((contents (buffer-string)))
-    (erase-buffer)
-    (insert (coq-server--unescape-string contents))
-    (goto-char (point-min))))
-
-(defun coq-server--get-next-xml ()
-  (ignore-errors ; returns nil if no XML available
-    (goto-char (point-min))
-    (message "buffer: %s contents: %s" (current-buffer) (buffer-string))
-    (let ((xml (xml-parse-tag-1)))
-      (when xml
-	(delete-region (point-min) (point)))
-      xml)))
 
 ;; called from toolbar 
 (defun coq-server-check-document ()
@@ -805,31 +772,31 @@ is gone and we have to close the secondary locked span."
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response span)
-  (with-current-buffer coq-server-response-buffer
-    (coq-server--append-response response)
-    (coq-server--unescape-buffer)
+  (with-current-buffer coq-xml-response-buffer
+    (coq-xml-append-response response)
+    (coq-xml-unescape-buffer)
     ;; maybe should pass this instead
     (setq coq-server--current-span span) 
-    (let ((xml (coq-server--get-next-xml)))
+    (let ((xml (coq-xml-get-next-xml)))
       (while xml
 	(message "process response XML: %s" xml)
 	(pcase (coq-xml-tag xml)
 	  (`value (coq-server--handle-value xml))
 	  (`feedback (coq-server--handle-feedback xml))
 	  (`message (coq-server--handle-message xml))
-	  (t (message "unknown coqtop response %s" xml)))
-	(setq xml (coq-server--get-next-xml))))))
+	  (t (message "Unknown coqtop response %s" xml)))
+	(setq xml (coq-xml-get-next-xml))))))
 
 ;; process OOB response from Coq
 (defun coq-server-process-oob (oob)
-  (with-current-buffer coq-server-oob-buffer
-    (coq-server--append-response oob)
-    (coq-server--unescape-buffer)
-    (let ((xml (coq-server--get-next-xml)))
+  (with-current-buffer coq-xml-oob-buffer
+    (coq-xml-append-response oob)
+    (coq-xml-unescape-buffer)
+    (let ((xml (coq-xml-get-next-xml)))
       (while xml
 	;; OOB data is always feedback
 	(coq-server--handle-feedback xml) 
-	(setq xml (coq-server--get-next-xml))))))
+	(setq xml (coq-xml-get-next-xml))))))
 
 (defun coq-server-handle-tq-response (special-processor response span)
   ;; if there's a special processor, use that

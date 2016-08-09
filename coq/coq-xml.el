@@ -166,7 +166,7 @@ structure of tags only."
     (if null2
 	nil
       (if null1
-	  (error "zip, path too long")
+	  nil ; path too long
 	(cons (cons (car xmls) (car paths))
 	      (zip (cdr xmls) (cdr paths)))))))
 
@@ -332,6 +332,43 @@ to write out the traversal code by hand each time."
   (with-temp-buffer
     (insert s)
     (car (xml-parse-region (point-min) (point-max)))))
+
+;; buffer for gluing coqtop responses into XML
+;; leading space makes buffer invisible, for the most part
+(defvar coq-xml--response-buffer-name " *coq-responses*")
+(defvar coq-xml-response-buffer (get-buffer-create coq-xml--response-buffer-name))
+
+;; buffer for gluing coqtop out-of-band responses into XML
+;; this is separate from ordinary response buffer because these
+;;  OOB responses may occur while processing ordinary responses
+(defvar coq-xml--oob-buffer-name " *coq-oob-responses*")
+(defvar coq-xml-oob-buffer (get-buffer-create coq-xml--oob-buffer-name))
+
+;;; functions for XML received from coqtop
+;;; these assume that current-buffer is a response buffer
+;;; though not the *response* buffer seen by user
+
+(defun coq-xml-append-response (s)
+  (goto-char (point-max))
+  (insert s))
+
+(defun coq-xml-unescape-string (s)
+  (replace-regexp-in-string "&nbsp;" " " s))
+
+;; XML parser does not understand &nbsp;
+(defun coq-xml-unescape-buffer ()
+  (let ((contents (buffer-string)))
+    (erase-buffer)
+    (insert (coq-xml-unescape-string contents))
+    (goto-char (point-min))))
+
+(defun coq-xml-get-next-xml ()
+  (ignore-errors ; returns nil if no XML available
+    (goto-char (point-min))
+    (let ((xml (xml-parse-tag-1)))
+      (when xml
+	(delete-region (point-min) (point)))
+      xml)))
 
 (provide 'coq-xml)
 
