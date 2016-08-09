@@ -39,7 +39,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server-response-buffer (get-buffer-create coq-server--response-buffer-name))
 
 ;; buffer for gluing coqtop out-of-band responses into XML
-(defvar coq-server--oob-buffer-name " *coq-oob*")
+(defvar coq-server--oob-buffer-name " *coq-oob-responses*")
 (defvar coq-server-oob-buffer (get-buffer-create coq-server--oob-buffer-name))
 
 (defvar coq-server-transaction-queue nil)
@@ -483,22 +483,20 @@ is gone and we have to close the secondary locked span."
 	   secondary-span-start
 	   secondary-span-end)
       (setq secondary-span-end (span-end last-tip-span))
-      ;; delete spans within focus, because they're unprocessed now
-      ;; leave spans beneath the focus, because we'll skip past them 
+      ;; delete marked spans within focus, because they're unprocessed now
+      ;; but leave spans beneath the focus, because we'll skip past them 
       ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
-	(message "MARKED SPAN: %s CMD: %s" span (span-property span 'cmd))
 	(if found-focus-end
-	    (progn
-	      (let ((curr-span-start (span-start span)))
-		;; the first span past the end of the focus starts the secondary span
-		(unless secondary-span-start 
-		  (setq secondary-span-start curr-span-start))
-		;; don't delete the span 
-		(span-unmark-delete span)))
+	    ;; don't delete the span 
+	    (span-unmark-delete span)
 	  ;; look for focus end
 	  (let ((span-state-id (span-property span 'state-id)))
 	    (when (and span-state-id (equal span-state-id focus-end-state-id))
+	      (let ((curr-span-end (span-end span)))
+		;; the secondary span starts just past the focus end
+		(unless secondary-span-start 
+		  (setq secondary-span-start (1+ curr-span-end))))
 	      (setq found-focus-end t))
 	    (span-delete span))))
       ;; remove incomplete span for the Qed in the reopened focus
@@ -509,7 +507,7 @@ is gone and we have to close the secondary locked span."
       (save-excursion
 	(goto-char secondary-span-start)
 	(skip-chars-forward " \t\n")
-	(beginning-of-thing 'sentence)
+	(beginning-of-thing 'line)
 	(setq secondary-span-start (point)))
       (let* ((span (span-make secondary-span-start secondary-span-end)))
 	(span-set-property span 'start-closed t) ;; TODO what are these for?
@@ -624,8 +622,8 @@ is gone and we have to close the secondary locked span."
     (message "NONEMPTY GOALS")
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
-   (t 
-    (error "Unknown good value response"))))
+   ;; some good values are unprocessed, for example, responses to Query 
+   (t (message "Unprocessed good value: %s" xml))))
 
 ;; we distinguish value responses by their syntactic structure
 ;; and a little bit by some global state
@@ -813,8 +811,8 @@ is gone and we have to close the secondary locked span."
     ;; maybe should pass this instead
     (setq coq-server--current-span span) 
     (let ((xml (coq-server--get-next-xml)))
-      (message "process response XML: %s" xml)
       (while xml
+	(message "process response XML: %s" xml)
 	(pcase (coq-xml-tag xml)
 	  (`value (coq-server--handle-value xml))
 	  (`feedback (coq-server--handle-feedback xml))
@@ -833,19 +831,25 @@ is gone and we have to close the secondary locked span."
 	(coq-server--handle-feedback xml) 
 	(setq xml (coq-server--get-next-xml))))))
 
-(defun coq-server-handle-tq-response (unused response span)
-  (coq-server-process-response response span)
-  ;; needed to advance proof-action-list
+(defun coq-server-handle-tq-response (special-processor response span)
+  ;; if there's a special processor, use that
+  (if special-processor
+      (funcall special-processor response)
+    (coq-server-process-response response span))
+  ;; advance script queue
   (proof-server-manage-output response))
 
 ;; send data to Coq by sending to process
 ;; called by proof-server-send-to-prover
 ;; do not call directly
-(defun coq-server-send-to-prover (s)
+(defun coq-server-send-to-prover (s special-handler)
   (tq-enqueue coq-server-transaction-queue s end-of-response-regexp
 	      ;; "closure" argument, passed to handler below
-	      nil 
-	      ;; handler gets closure and coqtop response
+	      ;; can be used for unusual processing on response
+	      ;; for example, to insert intros into script
+	      ;; always nil or a function symbol
+	      special-handler
+	      ;; default handler gets special-handler and coqtop response
 	      'coq-server-handle-tq-response))
 
 (provide 'coq-server)

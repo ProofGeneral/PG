@@ -17,13 +17,12 @@
   (funcall proof-ready-prover-fun queuemode))
 
 ;;;###autoload
-(defun proof-invisible-command (cmd &optional wait invisiblecallback
-				    &rest flags)
-  (funcall proof-invisible-command-fun cmd wait invisiblecallback flags))
+(defun proof-invisible-command (cmd)
+  (funcall proof-invisible-command-fun cmd))
 
 ;;;###autoload
-(defun proof-invisible-cmd-get-result (cmd)
-  (funcall proof-invisible-cmd-get-result-fun cmd))
+(defun proof-invisible-cmd-handle-result (cmd handler)
+  (funcall proof-invisible-cmd-handle-result-fun cmd handler))
 
 ;;;###autoload
 (defun proof-invisible-command-invisible-result (cmd)
@@ -49,10 +48,10 @@
        (funcall proof-server-proof-completedp-fun resp)))
 
 ;;;###autoload
-(defun proof-server-send-to-prover (string-or-fun)
+(defun proof-server-send-to-prover (string-or-fun &optional special-processor)
   (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
     (and proof-server-send-to-prover-fun 
-	 (funcall proof-server-send-to-prover-fun string-or-fun))))
+	 (funcall proof-server-send-to-prover-fun string-or-fun special-processor))))
 
 ;;;###autoload
 (defun proof-server-process-response (resp)

@@ -88,7 +88,7 @@ derived Emacs mode; here, we call the procedure directly."
 		     proof-server-init-cmd))
 		  (if proof-assistant-settings
 		      (mapcar (lambda (c)
-				(proof-server-invisible-command c t))
+				(proof-server-invisible-command c))
 			      (proof-assistant-settings-cmds))))))))
 
 ;; use proof-action-list to create output 
@@ -160,37 +160,17 @@ with proof-shell-ready-prover."
 	(save-selected-frame
 	 (proof-multiple-frames-enable))))))
 
-;;; assume that cmd is already formatted appropriately 
 ;;;###autoload
-(defun proof-server-invisible-command (string-or-thunk
-				       &optional wait invisiblecallback
-				       &rest flags)
-  (message "Called proof-server-invisible-command: %s" string-or-thunk)
-  (let ((cmd (or (and (stringp string-or-thunk) string-or-thunk)
-		 (and (functionp string-or-thunk) (funcall string-or-thunk)))))
-    (proof-server-send-to-prover cmd)))
-  ;; TODO deal with wait, callback, flags
+(defun proof-server-invisible-command (cmd)
+  (proof-server-send-to-prover cmd))
 
 ;;;###autoload
-(defun proof-server-invisible-cmd-get-result (cmd)
-  ;; TODO prover-specific wrapping function for cmd and result
-  ;; e.g. in Coq, wrap cmd in XML
-  (message "Called proof-server-invisible-command-get-result")
-  (proof-server-invisible-command cmd 'waitforit
-				 nil
-				 'no-response-display
-				 'no-error-display)
-  proof-prover-last-output)
+(defun proof-server-invisible-cmd-handle-result (cmd handler)
+  (proof-server-send-to-prover cmd handler))
 
 ;;;###autoload
 (defun proof-server-invisible-command-invisible-result (cmd)
-  ;; TODO prover-specific wrapping function for cmd
-  ;; e.g. in Coq, wrap cmd in XML
-  (message "Called proof-server-invisible-command-get-invisible-result")
-  (proof-server-invisible-command cmd 'waitforit
-				 nil
-				 'no-response-display
-				 'no-error-display))
+  (proof-server-invisible-command cmd))
 
 ;;;###autoload
 (defun proof-server-insert (strings action span)

@@ -821,28 +821,28 @@ See pg-user.el: `pg-create-in-span-context-menu' for more hints."
 ; for the following function variables, the default function is for 'repl mode
 ; so don't need to worry about them in configuration unless in 'server mode
 
-(defcustom proof-ready-prover-fun 'proof-shell-ready-prover
+(defcustom proof-ready-prover-fun 'proof-server-ready-prover
   "Function to see if prover ready"
   :type 'function
   :group 'proof-interaction)
 
-(defcustom proof-invisible-command-fun 'proof-shell-invisible-command
+(defcustom proof-invisible-command-fun 'proof-server-invisible-command
   "Function to send a command to server"
   :type 'function
   :group 'proof-interaction)
 
-(defcustom proof-invisible-cmd-get-result-fun 'proof-shell-invisible-cmd-get-result
-  "Function to send a command to server, return result"
+(defcustom proof-invisible-cmd-handle-result-fun 'proof-server-invisible-cmd-handle-result
+  "Function to send a command to server, send result to handler"
   :type 'function
   :group 'proof-interaction)
 
-(defcustom proof-invisible-command-invisible-result-fun 'proof-shell-invisible-command-invisible-result
+(defcustom proof-invisible-command-invisible-result-fun 'proof-server-invisible-command-invisible-result
   "Function to send a command to server, save result"
   :type 'function
   :group 'proof-interaction)
 
-(defcustom proof-add-to-queue-fun 'proof-shell-add-to-queue
-  "Function to add item to the queue of items to be processed by the proof shell or server"
+(defcustom proof-add-to-queue-fun 'proof-server-add-to-queue
+  "Function to add item to the queue of items to be processed by the proof server"
   :type 'function
   :group 'proof-interaction)
 
