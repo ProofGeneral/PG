@@ -97,7 +97,6 @@ derived Emacs mode; here, we call the procedure directly."
   ;; code borrowed from proof-shell.el, proof-shell-filter-manage-output
 
   ;; A copy of the last message, verbatim, never modified.
-  ;; TODO do we really need this?
   (setq proof-prover-last-output response)
 
   (if proof-action-list

@@ -263,7 +263,12 @@ to write out the traversal code by hand each time."
   (coq-xml-call '((val . Status))
                 (coq-xml-bool 'true)))
 
-(defun coq-xml-setoptions (names val-xml)
+(defun coq-xml-get-options ()
+  (coq-xml-call
+   '((val . GetOptions))
+   (coq-xml-unit)))
+
+(defun coq-xml-set-options (names val-xml)
   (coq-xml-call
    '((val . SetOptions))
    (coq-xml-list 
@@ -288,7 +293,7 @@ to write out the traversal code by hand each time."
       opt-val))))
 
 ;; TODO decide what to do with this
-'(defun coq-xml-setoptions ()
+'(defun coq-xml-set-options ()
   (coq-xml-call 
    '((val . SetOptions))
    (coq-xml-list 
