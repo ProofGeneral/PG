@@ -117,7 +117,7 @@
 	  (cond 
 	   ((stringp question) (list question nil))
 	   ((symbolp question) (list (symbol-value question) nil))
-	   ((functionp question) (message "QUESTION: %s YIELDS: %s" question (funcall question)) (funcall question))
+	   ((functionp question) (funcall question))
 	   (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))

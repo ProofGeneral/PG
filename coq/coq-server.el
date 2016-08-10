@@ -74,7 +74,7 @@ is gone and we have to close the secondary locked span."
   "Creates thunk, which when called gets context of current point in proof."
   (proof-server-send-to-prover
    (lambda ()
-     ;; a bit hackish: clear out responses before sending
+     ;; a bit hackish: clear out responses just before sending
      (coq-server--clear-response-buffer)
      (list (coq-xml-query-item "Print All.") nil))))
 
@@ -162,25 +162,17 @@ is gone and we have to close the secondary locked span."
 	 (goal1 (car goals))
 	 (goals-rest (cdr goals))
 	 (goal-counter 1))
-    (message "num goals: %s" num-goals)
-    (message "goal 1: %s" goal1)
-    (message "goal-rest: %s" goals-rest)
-    (message "POINT 1")
     (with-temp-buffer
       (if (= num-goals 1)
 	  (insert "1 subgoal")
 	(insert (format "%d subgoals" num-goals)))
       (insert "\n\n")
-      (message "POINT 2")
       (insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
-      (message "POINT 3")
       (insert (coq-server--format-goal-with-hypotheses 
 	       (coq-server--goal-goal goal1)
 	       (coq-server--goal-hypotheses goal1)))
-      (message "POINT 4")
       (insert "\n\n")
       (dolist (goal goals-rest)
-	(message "POINT 5")
 	(setq goal-counter (1+ goal-counter))
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
 	(insert (coq-server--format-goal-no-hypotheses 
@@ -402,7 +394,7 @@ is gone and we have to close the secondary locked span."
     (coq-server--register-state-id coq-server--current-span qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
     (coq-server--merge-locked-spans)
-    (coq-server--update-state-id-and-process new-tip-state-id)))
+    (coq-server--update-state-id-and-process qed-state-id)))
 
 (defun coq-server--simple-backtrack ()
   ;; delete all spans marked for deletion
@@ -456,7 +448,8 @@ is gone and we have to close the secondary locked span."
       (dolist (span sorted-marked-spans)
 	(if found-focus-end
 	    ;; don't delete the span 
-	    (span-unmark-delete span)
+	    (progn
+	      (span-unmark-delete span))
 	  ;; look for focus end
 	  (let ((span-state-id (span-property span 'state-id)))
 	    (when (and span-state-id (equal span-state-id focus-end-state-id))
@@ -506,7 +499,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--merge-locked-spans ()
   (with-current-buffer proof-script-buffer
     (let ((new-end (span-end proof-locked-secondary-span)))
-      (message "NEW END: %s" new-end)
       (coq-server--remove-secondary-locked-span)
       ;; proof-done-advancing uses this to set merged locked end
       (setq proof-merged-locked-end new-end))))
@@ -534,7 +526,6 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--update-state-id-and-process (state-id)
   (coq-server--update-state-id state-id)
-  (message "UPDATING STATE ID: %s PENDING ADDS: %s" state-id coq-server--pending-add-count)
   (when (> coq-server--pending-add-count 0)
     (setq coq-server--pending-add-count (1- coq-server--pending-add-count)))
   ;; gotten response from all Adds, ask for goals/status
@@ -548,7 +539,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-failure-value (xml)
   ;; don't clear pending edit-at state id here
   ;; because we may get failures from Status/Goals before the edit-at value
-  (message "HANDLING FAILURE VALUE: %s" xml)
   ;; we usually see the failure twice, once for Goal, again for Status
   (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
     (unless (or (equal last-valid-state-id coq-current-state-id)
@@ -578,15 +568,12 @@ is gone and we have to close the secondary locked span."
     ;; Init, get first state id
     (coq-server--set-init-state-id xml))
    ((coq-server--value-new-state-id-p xml) 
-    (message "NEW STATE ID")
     ;; Add that updates state id
     (coq-server--set-new-state-id xml))
    ((coq-server--value-empty-goals-p xml)
-    (message "EMPTY GOALS")
     ;; Response to Goals, with no current goals
     (coq-server--handle-empty-goals))
    ((coq-server--value-goals-p xml)
-    (message "NONEMPTY GOALS")
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
    ;; some good values are unprocessed, for example, responses to Query 
