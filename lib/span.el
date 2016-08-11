@@ -89,6 +89,16 @@
   "Return some SPAN at point PT with property PROP."
   (car-safe (spans-at-point-prop pt prop)))
 
+;; TODO : 'type becomes 'pg-type after merger
+(defsubst span-at-with-type (pt type)
+  "Return some SPAN at point PT with its type property set to TYPE."
+  (let* ((all-typed-spans (spans-at-point-prop pt 'type))
+	 (type-typed-spans
+	  (cl-remove-if-not
+	   (lambda (sp) (eq (span-property sp 'type) type))
+	   all-typed-spans)))
+    (car-safe type-typed-spans)))
+
 (defsubst span-delete (span)
   "Run the 'span-delete-actions and delete SPAN."
   (mapc (lambda (predelfn) (funcall predelfn))

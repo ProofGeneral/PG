@@ -689,8 +689,10 @@ is gone and we have to close the secondary locked span."
 	(save-excursion
 	  (goto-char (span-start span-with-state-id))
 	  (skip-chars-forward " \t\n")
-	  (beginning-of-thing 'sentence)
-	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
+	  ;; if there's an existing colored span at point, re-use it,
+	  ;;  because want most recent coloring
+	  (let ((span-processing (or (span-at-with-type (point) 'pg-special-coloring)
+				     (span-make (point) (span-end span-with-state-id)))))
 	    ;; TODO 'type becomes 'pg-type when merged with trunk
 	    (span-set-property span-processing 'type 'pg-special-coloring)
 	    (span-set-property span-processing prop 't)
