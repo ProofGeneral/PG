@@ -691,8 +691,8 @@ is gone and we have to close the secondary locked span."
 	  (skip-chars-forward " \t\n")
 	  ;; if there's an existing colored span at point, re-use it,
 	  ;;  because want most recent coloring
-	  (let ((span-processing (or (span-at-with-type (point) 'pg-special-coloring)
-				     (span-make (point) (span-end span-with-state-id)))))
+	  (message "COLORING SPAN AT: %s WITH FACE: %s" (point) face)
+	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
 	    ;; TODO 'type becomes 'pg-type when merged with trunk
 	    (span-set-property span-processing 'type 'pg-special-coloring)
 	    (span-set-property span-processing prop 't)
@@ -718,9 +718,9 @@ is gone and we have to close the secondary locked span."
 	 (span-colored (gethash state-id tbl)))
     ;; may get several identical feedbacks, use just first one
     (when span-colored
-      (progn
-	(remhash state-id tbl)
-	(span-delete span-colored)))))
+      (message "UNCOLORING SPAN AT: %s" (span-start span-colored))
+      (remhash state-id tbl)
+      (span-delete span-colored))))
 
 (defun coq-server--uncolor-span-processed (xml)
   (coq-server--uncolor-span-on-feedback xml coq-server--processing-span-tbl))
