@@ -426,21 +426,28 @@ is gone and we have to close the secondary locked span."
 	(coq-server--simple-backtrack)
       ;; multiple else's
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
-      (coq-server--create-secondary-locked-span focus-end-state-id last-tip-state-id)
+      (coq-server--create-secondary-locked-span focus-start-state-id focus-end-state-id last-tip-state-id)
       (coq-server--consume-edit-at-state-id))))
 
-(defun coq-server--create-secondary-locked-span (focus-end-state-id last-tip-state-id)
+(defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
-    (let* ((all-spans (overlays-in (point-min) (point-max)))
+    (let* ((focus-start-span (coq-server--get-span-with-state-id focus-start-state-id))
+	   (focus-end-span (coq-server--get-span-with-state-id focus-end-state-id))
+	   (last-tip-span (coq-server--get-span-with-state-id last-tip-state-id))
+	   (all-spans (overlays-in (span-start focus-start-span) (span-end last-tip-span)))
 	   (marked-spans (cl-remove-if-not 
-			  (lambda (span) (span-property span 'marked-for-deletion)) 
+			  (lambda (span) (span-property span 'marked-for-deletion))
 			  all-spans))
 	   (sorted-marked-spans 
 	    (sort marked-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
-	   (last-tip-span (coq-server--get-span-with-state-id last-tip-state-id))
+	   (focus-spans (overlays-in (span-start focus-start-span) (span-end focus-end-span)))
+	   (error-spans (cl-remove-if-not (lambda (span) (eq (span-property span 'type) 'pg-error)) focus-spans))
 	   found-focus-end
 	   secondary-span-start
 	   secondary-span-end)
+      ;; delete any error spans within focus
+      (mapc 'span-delete error-spans)
+      ;; tentatively set end of secondary span
       (setq secondary-span-end (span-end last-tip-span))
       ;; delete marked spans within focus, because they're unprocessed now
       ;; but leave spans beneath the focus, because we'll skip past them 
