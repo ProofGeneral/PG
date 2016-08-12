@@ -533,7 +533,6 @@ so for the following reasons:
      ("Print" "p" "Print #." nil "Print")
      ("Pwd" nil "Pwd." nil "Pwd")
      ("Search" nil "Search #" nil "Search")
-     ("SearchAbout" nil "SearchAbout #" nil "SearchAbout")
      ("SearchPattern" nil "SearchPattern (#)" nil "SearchPattern")
      ("SearchRewrite" nil "SearchRewrite #" nil "SearchRewrite")
      ("Show" nil "Show #." nil "Show")

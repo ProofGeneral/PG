@@ -175,8 +175,6 @@ It was constructed with `proof-defstringset-fn'.")
      ["About...(show all)" coq-About-with-all t]
      ["Search..." coq-SearchConstant t]
      ["SearchRewrite..." coq-SearchRewrite t]
-     ["SearchAbout (hiding principles)..." coq-SearchAbout t]
-     ["SearchAbout..." coq-SearchAbout-all t]
      ["SearchPattern..." coq-SearchIsos t]
      ["Locate constant..." coq-LocateConstant t]
      ["Locate Library..." coq-LocateLibrary t]

@@ -725,15 +725,7 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-queries-ask "SearchRewrite" "SearchRewrite" nil))
 
-;; TODO SearchAbout become Search in v8.5, change when V8.4 becomes old.
-(defun coq-SearchAbout ()
-  (interactive)
-  (coq-queries-ask
-   ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
-   ;;  "_ind" "_rec" "R_" "_equation"
-   "SearchAbout (ex: \"eq_\" eq -bool)"
-   "SearchAbout")
-  (message "use [Coq/Settings/Search Blacklist] to change blacklisting."))
+;; N.B. SearchAbout was replaced bySearch in v8.5
 
 (defun coq-Print (withprintingall)
   "Ask for an ident and print the corresponding term.
@@ -1882,7 +1874,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?o)] 'coq-SearchIsos)
 (define-key coq-keymap [(control ?p)] 'coq-Print)
 (define-key coq-keymap [(control ?b)] 'coq-About)
-(define-key coq-keymap [(control ?a)] 'coq-SearchAbout)
 (define-key coq-keymap [(control ?c)] 'coq-Check)
 (define-key coq-keymap [?h] 'coq-PrintHint)
 (define-key coq-keymap [(control ?l)] 'coq-LocateConstant)
@@ -1899,7 +1890,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?r] 'proof-store-response-win)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?g] 'proof-store-goals-win)
@@ -1914,7 +1904,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] 'proof-store-response-win)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] 'proof-store-goals-win)
