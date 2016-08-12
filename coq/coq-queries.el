@@ -262,17 +262,40 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
        (defun ,unsetter-thunk ()
 	 (,unsetter)))))
 
-;; call the macro, as needed
-
+;; call the macro
 (coq-queries--mk-bool-option-setters printing-all)
-
 (coq-queries--mk-bool-option-setters printing-synth)
-
 (coq-queries--mk-bool-option-setters printing-coercions)
-
 (coq-queries--mk-bool-option-setters printing-wildcard)
-
 (coq-queries--mk-bool-option-setters implicit-arguments)
+
+;; macro for simple Query's
+(defmacro coq-queries--mk-query-fun (query)
+  (let* ((query-name-str (symbol-name query))
+	 (query-fun (intern (concat "coq-queries-" query-name-str)))
+	 (query-fun-thunk (intern (concat "coq-queries-" query-name-str "-thunk")))
+	 (capped-query (replace-regexp-in-string "-" " " (capitalize query-name-str))))
+    (princ (format "Defining functions via macro: %s\n" (list query-fun query-fun-thunk)))
+    `(progn
+       (defun ,query-fun ()
+	 (list (coq-xml-query-item (concat ,capped-query ".")) nil))
+       (defun ,query-fun-thunk ()
+	 (lambda ()
+	   (,query-fun))))))
+
+;; call the macro
+(coq-queries--mk-query-fun show-tree)
+(coq-queries--mk-query-fun show-proof)
+(coq-queries--mk-query-fun show-conjectures)
+(coq-queries--mk-query-fun show-intros)
+
+(defun coq-queries-print-all-thunk ()
+  "Creates thunk, which when called gets context of current point in proof."
+  (proof-server-send-to-prover
+   (lambda ()
+     ;; a bit hackish: clear out responses just before sending
+     (coq-server--clear-response-buffer)
+     (list (coq-xml-query-item "Print All.") nil))))
 
 (defun coq-queries-ask-show-all (ask do)
   "Ask for an ident and print the corresponding term."

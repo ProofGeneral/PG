@@ -70,14 +70,6 @@ is gone and we have to close the secondary locked span."
   "Force coqtop to check validity of entire document."
   (proof-server-send-to-prover (coq-xml-status 'true)))
 
-(defun coq-server-make-query-print-all-thunk ()
-  "Creates thunk, which when called gets context of current point in proof."
-  (proof-server-send-to-prover
-   (lambda ()
-     ;; a bit hackish: clear out responses just before sending
-     (coq-server--clear-response-buffer)
-     (list (coq-xml-query-item "Print All.") nil))))
-
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)
   (setq coq-server--pending-edit-at-state-id state-id)

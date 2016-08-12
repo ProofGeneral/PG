@@ -1088,11 +1088,12 @@ goal is redisplayed."
 (proof-definvisible coq-PrintHint "Print Hint. ")
 
 ;; Items on show menu
-;; TODO
-;; (proof-definvisible coq-show-tree "Show Tree.")
-(proof-definvisible coq-show-proof "Show Proof.")
-(proof-definvisible coq-show-conjectures "Show Conjectures.")
-(proof-definvisible coq-show-intros "Show Intros.") ; see coq-insert-intros below
+
+(proof-definvisible coq-show-tree (coq-queries-show-tree-thunk))
+(proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
+(proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
+(proof-definvisible coq-show-intros (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
+
 (proof-definvisible coq-set-implicit-arguments (coq-queries-set-implicit-arguments-thunk))
 (proof-definvisible coq-unset-implicit-arguments (coq-queries-unset-implicit-arguments-thunk))
 (proof-definvisible coq-set-printing-all (coq-queries-set-printing-all-thunk))
@@ -1283,7 +1284,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
 
-  (setq proof-context-command 'coq-server-make-query-print-all-thunk)
+  (setq proof-context-command 'coq-queries-print-all-thunk)
   
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
