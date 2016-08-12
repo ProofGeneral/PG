@@ -691,59 +691,6 @@ Otherwise propose identifier at point if any."
   (let ((resp proof-shell-last-response-output))
     (string-match "is on\\>" resp)))
 
-
-;; TODO this will need to change
-(defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd testcmd)
-  "Play commands SETCMD then CMD and then silently UNSETCMD."
-  (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
-         (flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
-    (unless flag-is-on
-      (proof-invisible-command
-       (format " %s . " (funcall postform setcmd))))
-    (proof-invisible-command
-     (format " %s . " (funcall postform cmd)))
-    (unless flag-is-on
-      (proof-invisible-command-invisible-result
-       (format " %s . " (funcall postform unsetcmd))))))
-
-(defun coq-ask-do-set-unset (ask do setcmd unsetcmd
-                                 &optional dontguess postformatcmd tescmd)
-  "Ask for an ident id and execute command DO in SETCMD mode.
-More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
-  (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd tescmd)))
-    (proof-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (coq-command-with-set-unset setcmd (concat do " " cmd) unsetcmd postformatcmd)))
-
-(defun coq-ask-do-show-implicits (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (coq-ask-do-set-unset ask do
-                        "Set Printing Implicit"
-                        "Unset Printing Implicit"
-                        dontguess postformatcmd
-                        "Test Printing Implicit"))
-
-(defun coq-ask-do-show-all (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (coq-ask-do-set-unset ask do
-                        "Set Printing All"
-                        "Unset Printing All"
-                        dontguess postformatcmd
-                        "Test Printing All"))
-
-
-;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-
-
-;;   (proof-ready-prover)
-;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-;;   (coq-command-with-set-unset
-;;    "Set Printing Implicit"
-;;    (format (concat do " %s . ") cmd)
-;;    "Unset Printing Implicit" )
-;;   ))
-
-
 (defsubst coq-put-into-brackets (s)
   (concat "[ " s " ]"))
 
@@ -908,18 +855,11 @@ flag Printing All set."
   ;;prefix argument and not on the locked span, show the goal with
   ;;flag Printing All set."
   (interactive "P")
-  ;; Disabling this as this relies on 'response attribute that is empty when
-  ;; the command was processed silently. We should first have a coq command
-  ;; asking to print the goal at a given state.
+  ;; Disabling this because we don't ask for a goal after every state, which would be
+  ;; expensive. If Coq offered a way to query for the goal at a state id, we could query
+  ;; for that
   (if (proof-in-locked-region-p)
-      (let ((s (coq-get-response-string-at)))
-        (if (zerop (length (coq-get-response-string-at)))
-            (message "Cannot show the state at this point: Coq was silent during this command.")
-          (set-buffer proof-response-buffer)
-          (let ((inhibit-read-only 'titi))
-            (pg-response-display s)
-            (proof-display-and-keep-buffer proof-response-buffer)
-            (coq-optimise-resp-windows))))
+      (message "Can't ask for non-current goal")
     (if withprintingall
         (coq-queries-ask-show-all "Show goal number" "Show" t)
       (coq-queries-ask "Show goal number" "Show" t))))
@@ -927,12 +867,12 @@ flag Printing All set."
 (defun coq-Show-with-implicits ()
   "Ask for a number i and show the ith goal."
   (interactive)
-  (coq-queries-ask-show-implicits "Show goal number" "Show" t))
+  (coq-queries-ask-show-implicits "Show goal number" "Show"))
 
 (defun coq-Show-with-all ()
   "Ask for a number i and show the ith goal."
   (interactive)
-  (coq-queries-ask-show-all "Show goal number" "Show" t))
+  (coq-queries-ask-show-all "Show goal number" "Show"))
 
 ;; Check
 (eval-when (compile)
@@ -1906,16 +1846,18 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (interactive)
   (coq-insert-from-db coq-terms-db "Kind of term"))
 
-
 (defun coq-query (showall)
   "Ask for a query, with completion, and send to Coq."
   (interactive "P")
-  (let ((q (coq-build-command-from-db coq-queries-commands-db "which Query?")))
+  (let* ((query (coq-build-command-from-db coq-queries-commands-db "which Query?"))
+         (thunk (lambda () (list (coq-xml-query-item (concat query " ."))))))
     (if showall
-        (coq-command-with-set-unset
-         "Set Printing All" q "Unset Printing All" nil "Test Printing All")
-      (proof-invisible-command q))))
-
+        (coq-queries-command-with-set-unset
+         thunk
+         (coq-queries-set-printing-all)
+         (coq-queries-unset-printing-all)
+         '("Printing All"))
+      (proof-invisible-command thunk))))
 
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)

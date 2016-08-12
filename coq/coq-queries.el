@@ -212,6 +212,19 @@ Otherwise suggest the identifier at point, if any."
 	    (setq options-pairs (cdr options-pairs))))
 	result))))
 
+(defun coq-queries-command-with-set-unset (setcmd cmd unsetcmd &optional testcmd)
+  "Play commands SETCMD then CMD and then silently UNSETCMD."
+  (let* ((flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
+    (unless flag-is-on
+      (proof-invisible-command
+       (format " %s . " (funcall postform setcmd))))
+    (proof-invisible-command
+     (format " %s . " (funcall postform cmd)))
+    (unless flag-is-on
+      (proof-invisible-command-invisible-result
+       (format " %s . " (funcall postform unsetcmd))))))
+
+
 (defun coq-queries-ask-set-unset (ask do set-cmd unset-cmd &optional bool-opt)
   "Ask for an ident id and execute command DO in SETCMD mode.
 More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
