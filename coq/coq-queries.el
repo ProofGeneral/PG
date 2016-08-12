@@ -73,7 +73,6 @@ Based on idea mentioned in Coq reference manual."
 
 ;;; queries where handler just invokes default handler
 
-
 (defun coq-remove-trailing-dot (s)
   "Return the string S without its trailing \".\" if any.
 Return nil if S is nil."
@@ -212,7 +211,7 @@ Otherwise suggest the identifier at point, if any."
 		(setq result (eq b 'true))))
 	    (setq options-pairs (cdr options-pairs))))
 	result))))
-  
+
 (defun coq-queries-ask-set-unset (ask do set-cmd unset-cmd &optional bool-opt)
   "Ask for an ident id and execute command DO in SETCMD mode.
 More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
@@ -228,40 +227,69 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
        (list (coq-xml-query-item (format (concat do " %s .") cmd)) nil))
      'coq-queries-clear-and-process-response)
     (unless flag-is-set
-       (proof-invisible-cmd-handle-result
-        unset-cmd
-        'coq-queries-process-response))))
+      (proof-invisible-cmd-handle-result
+       unset-cmd
+       'coq-queries-process-response))))
 
-;; build call for Print All
-;; helper for coq-queries-show-all
-(defun coq-queries--mk-print-opt (b)
-  (lambda ()
-    (list
-     (coq-xml-call 
-      '((val . SetOptions))
-      (coq-xml-list 
-       nil
-       (coq-xml-printing-options
-	'(All)
-	'boolvalue (coq-xml-bool b))))
-     nil)))
+;; macro to build SetOption setters/unsetters
+(defmacro coq-queries--mk-bool-option-setters (opt-name)
+  (let* ((opt-name-str (symbol-name opt-name))
+	 (maker (intern (concat "coq-queries--mk-" opt-name-str "-setters")))
+ 	 (setter (intern (concat "coq-queries-set-" opt-name-str)))
+ 	 (setter-thunk (intern (concat "coq-queries-set-" opt-name-str "-thunk")))
+ 	 (unsetter (intern (concat "coq-queries-unset-" opt-name-str)))
+ 	 (unsetter-thunk (intern (concat "coq-queries-unset-" opt-name-str "-thunk")))
+	 (opt-strings (split-string (capitalize opt-name-str) "-")))
+    (princ (format "Defining functions via macro: %s\n"
+	     (list setter setter-thunk unsetter unsetter-thunk)))
+    `(progn
+       (defun ,maker (b)
+       	 (lambda ()
+       	   (list (coq-xml-set-options 
+       		  ;; tricky!
+       		  ;; using just unquote treats this as an application
+       		  (list ,@opt-strings) 
+       		  (coq-xml-option_value 
+       		   '((val . boolvalue))
+       		   (coq-xml-bool b)))
+       		 nil)))
+       (defun ,setter ()
+	 (,maker 'true))
+       (defun ,setter-thunk ()
+	 (,setter))
+       (defun ,unsetter ()
+	 (,maker 'false))
+       (defun ,unsetter-thunk ()
+	 (,unsetter)))))
+
+;; call the macro, as needed
+
+(coq-queries--mk-bool-option-setters printing-all)
+
+(coq-queries--mk-bool-option-setters printing-synth)
+
+(coq-queries--mk-bool-option-setters printing-coercions)
+
+(coq-queries--mk-bool-option-setters printing-wildcard)
+
+(coq-queries--mk-bool-option-setters implicit-arguments)
 
 (defun coq-queries-ask-show-all (ask do)
   "Ask for an ident and print the corresponding term."
-    (coq-queries-ask-set-unset
-     ask do
-     ;; setter
-     (coq-queries--mk-print-opt 'true)
-     ;; unsetter
-     (coq-queries--mk-print-opt 'false)
-     ;; option to test
-     '("Printing" "All")))
+  (coq-queries-ask-set-unset
+   ask do
+   ;; setter
+   (coq-queries-set-printing-all)
+   ;; unsetter
+   (coq-queries-unset-printing-all)
+   ;; option to test
+   '("Printing" "All")))
 
-(defun coq-queries-ask (ask do)
+(defun coq-queries-ask (ask do &optional dont-guess)
   "Ask for an ident and print the corresponding term."
   (proof-ready-prover)
   (let ((cmd (format (concat do " %s.")
-		     (coq-queries-guess-or-ask-for-string ask t))))
+		     (coq-queries-guess-or-ask-for-string ask dont-guess))))
     (proof-invisible-cmd-handle-result
      (lambda ()
        (list (coq-xml-query-item cmd) nil))

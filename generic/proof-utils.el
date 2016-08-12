@@ -50,7 +50,6 @@
 (require 'bufhist)			; bufhist
 (require 'proof-syntax)			; syntax utils
 (require 'proof-autoloads)		; interface fns
-(require 'scomint)			; for proof-shell-live-buffer
 
 ;;; Code:
 
@@ -613,7 +612,7 @@ KEY is added onto proof assistant map."
 (defmacro proof-definvisible (fn string &optional key)
   "Define function FN to send STRING to proof assistant, optional keydef KEY.
 This is intended for defining proof assistant specific functions.
-STRING is sent using `proof-shell-invisible-command', which see.
+STRING is sent using `proof-server-invisible-command', which see.
 STRING may be a string or a function which returns a string.
 KEY is added onto proof assistant map."
   `(progn
@@ -626,10 +625,7 @@ KEY is added onto proof assistant map."
 		  "an instruction")
 		" to the proof assistant.")
        (interactive)
-       ,(if (stringp string)
-	    (list 'proof-shell-invisible-command string)
-	  (list 'proof-shell-invisible-command (eval string))))))
-
+       ,(list 'proof-server-invisible-command string))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
