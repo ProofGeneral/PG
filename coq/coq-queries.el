@@ -264,10 +264,11 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
 
 ;; call the macro
 (coq-queries--mk-bool-option-setters printing-all)
-(coq-queries--mk-bool-option-setters printing-synth)
-(coq-queries--mk-bool-option-setters printing-coercions)
-(coq-queries--mk-bool-option-setters printing-wildcard)
 (coq-queries--mk-bool-option-setters implicit-arguments)
+(coq-queries--mk-bool-option-setters printing-implicit)
+(coq-queries--mk-bool-option-setters printing-coercions)
+(coq-queries--mk-bool-option-setters printing-synth)
+(coq-queries--mk-bool-option-setters printing-wildcard)
 
 ;; macro for simple Query's
 (defmacro coq-queries--mk-query-fun (query)
@@ -288,9 +289,10 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
 (coq-queries--mk-query-fun show-proof)
 (coq-queries--mk-query-fun show-conjectures)
 (coq-queries--mk-query-fun show-intros)
+(coq-queries--mk-query-fun print-hint)
 
 (defun coq-queries-print-all-thunk ()
-  "Creates thunk, which when called gets context of current point in proof."
+  "Thunk that gets context of proof at point."
   (proof-server-send-to-prover
    (lambda ()
      ;; a bit hackish: clear out responses just before sending
@@ -307,6 +309,17 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
    (coq-queries-unset-printing-all)
    ;; option to test
    '("Printing" "All")))
+
+(defun coq-queries-ask-show-implicits (ask do)
+  "Ask for an ident and print the corresponding term."
+  (coq-queries-ask-set-unset
+   ask do
+   ;; setter
+   (coq-queries-set-printing-implicit)
+   ;; unsetter
+   (coq-queries-unset-printing-implicit)
+   ;; option to test
+   '("Printing" "Implicits")))
 
 (defun coq-queries-ask (ask do &optional dont-guess)
   "Ask for an ident and print the corresponding term."

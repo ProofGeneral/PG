@@ -1085,10 +1085,10 @@ goal is redisplayed."
         (coq-highlight-id-in-goals re)
         (setq coq-highlight-id-last-regexp re)))))
 
-(proof-definvisible coq-PrintHint "Print Hint. ")
 
-;; Items on show menu
+;; Items on Other Queries menu
 
+(proof-definvisible coq-PrintHint (coq-queries-print-hint-thunk))
 (proof-definvisible coq-show-tree (coq-queries-show-tree-thunk))
 (proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
 (proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))

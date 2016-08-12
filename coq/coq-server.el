@@ -599,25 +599,29 @@ is gone and we have to close the secondary locked span."
     (list (coq-xml-add-item cmd) span)))
 
 (defun coq-server--display-error (error-state-id error-msg error-start error-stop)
-  (let ((error-span (coq-server--get-span-with-state-id error-state-id)))
-    ;; decide where to show error
-    (if (coq-server--error-span-at-end-of-locked error-span)
-	(progn
-	  (coq-server--clear-response-buffer)
-	  (coq--display-response error-msg)
-	  ;; on retraction, keep error in response buffer
-	  (setq coq-server--retraction-on-error t) 
-	  (coq--highlight-error error-span error-start error-stop))
-      ;; error in middle of processed region
-      ;; indelibly color the error 
-      (let ((span-processing (gethash error-state-id coq-server--processing-span-tbl)))
-       ;; may get several processed feedbacks for one processingin
-       ;; use first one
-	(when span-processing
-	   (progn
-	     (remhash error-state-id coq-server--processing-span-tbl)
-	     (span-delete span-processing))))
-      (coq--mark-error error-span error-msg))))
+  (if (equal error-state-id "0") ; no context for this error
+      (progn
+	(coq-server--clear-response-buffer)
+	(coq--display-response error-msg))
+    (let ((error-span (coq-server--get-span-with-state-id error-state-id)))
+      ;; decide where to show error
+      (if (coq-server--error-span-at-end-of-locked error-span)
+	  (progn
+	    (coq-server--clear-response-buffer)
+	    (coq--display-response error-msg)
+	    ;; on retraction, keep error in response buffer
+	    (setq coq-server--retraction-on-error t) 
+	    (coq--highlight-error error-span error-start error-stop))
+	;; error in middle of processed region
+	;; indelibly color the error 
+	(let ((span-processing (gethash error-state-id coq-server--processing-span-tbl)))
+	  ;; may get several processed feedbacks for one processingin
+	  ;; use first one
+	  (when span-processing
+	    (progn
+	      (remhash error-state-id coq-server--processing-span-tbl)
+	      (span-delete span-processing))))
+	(coq--mark-error error-span error-msg)))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)
