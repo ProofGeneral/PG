@@ -287,12 +287,14 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
 	   (,query-fun))))))
 
 ;; call the macro
-(coq-queries--mk-query-fun show-tree)
-(coq-queries--mk-query-fun show-proof)
+(coq-queries--mk-query-fun print-hint)
+(coq-queries--mk-query-fun print-scopes)
+(coq-queries--mk-query-fun print-visibility)
+(coq-queries--mk-query-fun pwd)
 (coq-queries--mk-query-fun show-conjectures)
 (coq-queries--mk-query-fun show-intros)
-(coq-queries--mk-query-fun print-hint)
-(coq-queries--mk-query-fun pwd)
+(coq-queries--mk-query-fun show-proof)
+(coq-queries--mk-query-fun show-tree)
 
 (defun coq-queries-print-all-thunk ()
   "Thunk that gets context of proof at point."

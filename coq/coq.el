@@ -607,10 +607,10 @@ the *goals* buffer."
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
-  "Enumerates the different kinds of notation information one can ask to coq.")
+  "Enumerates the different kinds of notation information one can get from Coq.")
 
 (defun coq-PrintScope ()
-  "Show information on notations. Coq specific."
+  "Show information on Coq notations."
   (interactive)
   (let*
       ((mods
@@ -620,9 +620,9 @@ the *goals* buffer."
        (all (string-equal s "")))
     (cond
      ((and (string-equal mods "Print Scope(s)") (string-equal s ""))
-      (proof-invisible-command (format "Print Scopes.")))
+      (proof-invisible-command (coq-queries-print-scopes-thunk)))
      (t
-      (proof-invisible-command (format "%s %s ." mods s))))))
+      (proof-invisible-command (coq-queries-print-visibility-thunk))))))
 
 (defcustom coq-remap-mouse-1 nil
   "Wether coq mode should remap mouse button 1 to coq queries.
@@ -674,15 +674,6 @@ Otherwise propose identifier at point if any."
     (read-string
      (if guess (concat s " (default " guess "): ") (concat s ": "))
      nil 'proof-minibuffer-history guess)))
-
-(defun coq-ask-do (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    (proof-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (proof-invisible-command
-     (format (concat do " %s . ") (funcall postform cmd)))))
-
 
 (defsubst coq-put-into-brackets (s)
   (concat "[ " s " ]"))
@@ -1009,12 +1000,11 @@ goal is redisplayed."
 
 ;; Items on Other Queries menu
 
-(proof-definvisible coq-PrintHint (coq-queries-print-hint-thunk))
+(proof-definvisible coq-print-hint (coq-queries-print-hint-thunk))
 (proof-definvisible coq-show-tree (coq-queries-show-tree-thunk))
 (proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
 (proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
 (proof-definvisible coq-show-intros (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
-(proof-definvisible coq-Pwd (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
 
 (proof-definvisible coq-set-implicit-arguments (coq-queries-set-implicit-arguments-thunk))
 (proof-definvisible coq-unset-implicit-arguments (coq-queries-unset-implicit-arguments-thunk))

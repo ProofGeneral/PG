@@ -157,7 +157,7 @@ It was constructed with `proof-defstringset-fn'.")
     [ "Store Response" proof-store-response-win :help "Stores the content of response buffer in a dedicated buffer"]
     [ "Store Goal" proof-store-goals-win  :help "Stores the content of goals buffer in a dedicated buffer"]
     ("OTHER QUERIES"
-     ["Print Hint" coq-PrintHint t]
+     ["Print Hint" coq-print-hint t]
      ["Show ith Goal..." coq-Show t]
      ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
      ["Show ith Goal... (show all)" coq-Show-with-all t]
