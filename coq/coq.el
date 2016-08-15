@@ -5,8 +5,6 @@
 ;; Authors: Healfdene Goguen, Pierre Courtieu
 ;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
-;;
-;; $Id$
 
 (eval-when-compile
   (require 'cl-lib)
@@ -44,6 +42,7 @@
 (require 'coq-par-compile)              ; parallel compilation of Requires
 (require 'coq-server)
 (require 'coq-response)
+(require 'coq-parsing)
 (require 'coq-queries)
 (require 'coq-xml)
 
