@@ -162,7 +162,7 @@ It was constructed with `proof-defstringset-fn'.")
      ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
      ["Show ith Goal... (show all)" coq-Show-with-all t]
      ["Show Tree" coq-show-tree t]
-     ["Show Proof" coq-show-proofy t]
+     ["Show Proof" coq-show-proof t]
      ["Show Conjectures" coq-show-conjectures t];; maybe not so useful with editing in PG?
      ""
      ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]

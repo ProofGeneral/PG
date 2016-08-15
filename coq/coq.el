@@ -686,23 +686,6 @@ is nil (t by default)."
                   ;; Notation need to be surrounded by ""
                   (if id id (concat "\"" notat "\"")))))))))
 
-(defun coq-guess-or-ask-for-string (s &optional dontguess)
-  "Asks for a coq identifier with message S.
-If DONTGUESS is non nil, propose a default value as follows:
-
-If region is active, propose its containt as default value.
-
-Otherwise propose identifier at point if any."
-  (let* ((guess
-          (cond
-           (dontguess nil)
-           ((use-region-p)
-            (buffer-substring-no-properties (region-beginning) (region-end)))
-           (t (coq-id-or-notation-at-point)))))
-    (read-string
-     (if guess (concat s " (default " guess "): ") (concat s ": "))
-     nil 'proof-minibuffer-history guess)))
-
 (defsubst coq-put-into-brackets (s)
   (concat "[ " s " ]"))
 
@@ -710,7 +693,6 @@ Otherwise propose identifier at point if any."
   (if (coq-is-symbol-or-punct (string-to-char s))
       (concat "\"" s "\"")
     s))
-
 
 (defun coq-build-removed-pattern (s)
   (concat " -\"" s "\""))
@@ -842,7 +824,7 @@ must be in locked region."
         (forward-char))
       (span-property (span-at (point) 'response) 'response))))
 
-(defun coq-Show (withprintingall)
+(defun coq-Show (with-printing-all)
   "Ask for a number i and show the ith goal.
 Ask for a number i and show the ith current goal. With non-nil
 prefix argument and not on the locked span, show the goal with
@@ -860,8 +842,8 @@ flag Printing All set."
   ;; for that
   (if (proof-in-locked-region-p)
       (message "Can't ask for non-current goal")
-    (if withprintingall
-        (coq-queries-ask-show-all "Show goal number" "Show" t)
+    (if with-printing-all
+        (coq-queries-ask-show-all "Show goal number" "Show")
       (coq-queries-ask "Show goal number" "Show" t))))
 
 (defun coq-Show-with-implicits ()
@@ -982,14 +964,11 @@ goal is redisplayed."
     ;; if no available width, or unchanged, do nothing
     (when (and wdth (not (equal wdth coq-current-line-width)))
       (let* ((print-width (- wdth 1))
-             (cmd
-              (if (pg-uses-repl)
-                  (format "Set Printing Width %S." print-width)
-                (coq-xml-set-options 
-                 '("Printing" "Width") 
-                 (coq-xml-option_value '((val . intvalue))
-                                       (coq-xml-option '((val . some))
-                                                       (coq-xml-int print-width)))))))
+             (cmd (coq-xml-set-options 
+                   '("Printing" "Width") 
+                   (coq-xml-option_value '((val . intvalue))
+                                         (coq-xml-option '((val . some))
+                                                         (coq-xml-int print-width))))))
         (proof-invisible-command cmd))
       (setq coq-current-line-width wdth))))
 
@@ -1582,8 +1561,6 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
         (setq string (concat coq--time-prefix string))))))
 
-(add-hook 'proof-shell-insert-hook 'coq-preprocessing)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Subterm markup -- it was added to Coq by Healf, but got removed.
@@ -1612,12 +1589,19 @@ mouse activation."
         (list (vector
                "Check" ; useful?
                `(proof-invisible-command
-                 ,(format "Check %s." thm)))
+                 (lambda ()
+                   (list 
+                    (coq-xml-query-item 
+                     ,(format "Check %s." thm))
+                    nil)))
               (vector
                "Print"
                `(proof-invisible-command
-                 ,(format "Print %s." thm)))))))
-
+                 (lambda ()
+                   (list 
+                    (coq-xml-query-item 
+                     ,(format "Print %s." thm))
+                    nil)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1755,25 +1739,24 @@ Warning: this makes the error messages (and location) wrong.")
                        nil
                      (coq-hack-cmd-for-infoH cmd))))
       (when newcmd ; FIXME: we stop if as already there, replace it instead?
-        (proof-invisible-command newcmd)
-        (let* ((str (string-match "<infoH>\\([^<]*\\)</infoH>"
-                                  ;; proof-shell-last-response-output would be
-                                  ;; smaller/faster but since this message is output
-                                  ;; *before* resulting goals, it is not detected as
-                                  ;; a response message.
-                                  proof-prover-last-output))
-               (substr  (or (and str (match-string 1 proof-prover-last-output)) ""))  ;; TODO match 1 in server mode?
-               ;; emptysubstr = t if substr is empty or contains only spaces and |
-               (emptysubstr (and (string-match "\\(\\s-\\||\\)*" substr)
-                                 (eq (length substr) (length (match-string 0 substr)))))) ; idem
-          (unless (or emptysubstr (coq-tactic-already-has-an-as-close newcmd)) ;; FIXME
-            (save-excursion
-              ;; TODO: look for eqn:XX and go before it.
-              ;; Go just before the last "."
-              (goto-char (proof-unprocessed-begin))
-              (coq-script-parse-cmdend-forward)
-              (coq-script-parse-cmdend-backward)
-              (insert (concat " as [" substr "]")))))))))
+        (proof-server-invisible-cmd-handle-result
+         (lambda ()
+           (list
+            (coq-xml-query-item newcmd)
+            nil))
+         (lambda (response)
+           (let ((result (coq-queries-get-message-string response)))
+             (if (null result) ;; TODO bug? in 8.5 XML protocol, don't get any string back
+                 (coq-queries-process-response response) ; show error if no valid response
+               (unless (coq-tactic-already-has-an-as-close newcmd) ;; FIXME ???
+                 (with-current-buffer proof-script-buffer
+                   (save-excursion
+                     ;; TODO: look for eqn:XX and go before it.
+                     ;; Go just before the last "."
+                     (goto-char (proof-unprocessed-begin))
+                     (coq-script-parse-cmdend-forward)
+                     (coq-script-parse-cmdend-backward)
+                     (insert (concat " as [" result "]")))))))))))))
 
 ;; Trying to propose insertion of "as" for a whole region. But iterating
 ;; proof-assert-next-command-interactive is probably wrong if some error occur
