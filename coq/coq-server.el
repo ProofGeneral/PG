@@ -65,11 +65,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server-count-pending-adds ()
   (setq coq-server--pending-add-count (count-addable proof-action-list)))
 
-;; called from toolbar 
-(defun coq-server-check-document ()
-  "Force coqtop to check validity of entire document."
-  (proof-server-send-to-prover (coq-xml-status 'true)))
-
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)
   (setq coq-server--pending-edit-at-state-id state-id)

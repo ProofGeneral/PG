@@ -637,6 +637,14 @@ Based on idea mentioned in Coq reference manual."
            (let ((last-command-event ?.)) ;; Insert a dot
              (proof-electric-terminator))))))))
 
+(defun coq-check-document ()
+  "Force coqtop to check validity of entire document."
+  (proof-server-send-to-prover (coq-xml-status 'true)))
+
+(defun coq-get-context ()
+  (proof-server-invisible-command
+   (coq-queries-print-all-thunk)))
+
 (defun coq-PrintScope ()
   "Show information on Coq notations."
   (interactive)
@@ -1196,23 +1204,24 @@ Near here means PT is either inside or just aside of a comment."
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
 
-  
   ;; Commands sent to proof engine
-  (setq proof-showproof-command "Show. "
+  ;; TODO replace these?
+  '(setq proof-showproof-command "Show. "
         proof-goal-command "Goal %s. "
         proof-save-command "Save %s. "
         proof-find-theorems-command "Search %s. ")
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
 
-  (setq proof-context-command 'coq-queries-print-all-thunk)
+  (setq proof-context-command 'coq-get-context)
   
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
         pg-topterm-goalhyplit-fn 'coq-goal-hyp
         proof-state-preserving-p 'coq-state-preserving-p)
 
-  (setq proof-query-identifier-command "Check %s.")
+  ;; TODO REPLACE THIS?
+  '(setq proof-query-identifier-command "Check %s.")
   ;;TODO: from v8.5 this wold be better:
   ;;(setq proof-query-identifier-command "About %s.")
 
@@ -1271,7 +1280,7 @@ Near here means PT is either inside or just aside of a comment."
      proof-server-process-response-fun 'coq-server-process-response
      proof-server-init-cmd (coq-xml-init)
      proof-server-retract-buffer-hook 'coq-reset-all-state
-     proof-check-command 'coq-server-check-document))
+     proof-check-command 'coq-check-document))
 
   ;; prooftree config
   (setq

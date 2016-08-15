@@ -438,8 +438,10 @@ This function should not be called if
 (defun proof-get-context ()
   "Get current proof context."
   (interactive)
+  (message "CALLED PROOF GET CONTEXT: %s" proof-context-command)
   (when proof-context-command
-    (funcall proof-context-command)))
+    (proof-invisible-command
+     (funcall proof-context-command))))
 
 (defun proof-context-available-p ()
   (and proof-server-process
