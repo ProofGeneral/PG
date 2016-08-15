@@ -1205,8 +1205,7 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-query-file-save-when-activating-scripting nil)
 
   ;; Commands sent to proof engine
-  ;; TODO replace these?
-  '(setq proof-showproof-command "Show. "
+  (setq proof-showproof-command "Show. "
         proof-goal-command "Goal %s. "
         proof-save-command "Save %s. "
         proof-find-theorems-command "Search %s. ")
