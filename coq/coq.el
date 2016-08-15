@@ -1833,12 +1833,12 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (interactive)
   (coq-insert-from-db coq-terms-db "Kind of term"))
 
-(defun coq-query (showall)
+(defun coq-query (show-all)
   "Ask for a query, with completion, and send to Coq."
   (interactive "P")
   (let* ((query (coq-build-command-from-db coq-queries-commands-db "which Query?"))
          (thunk (lambda () (list (coq-xml-query-item (concat query " ."))))))
-    (if showall
+    (if show-all
         (coq-queries-ask-set-unset
          thunk
          (coq-queries-set-printing-all)
