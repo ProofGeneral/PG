@@ -684,13 +684,6 @@ Otherwise propose identifier at point if any."
      (format (concat do " %s . ") (funcall postform cmd)))))
 
 
-;; TODO this will have to change
-(defun coq-flag-is-on-p (testcmd)
-  (proof-ready-prover)
-  (proof-invisible-command (format testcmd))
-  (let ((resp proof-shell-last-response-output))
-    (string-match "is on\\>" resp)))
-
 (defsubst coq-put-into-brackets (s)
   (concat "[ " s " ]"))
 
@@ -726,6 +719,7 @@ This is specific to `coq-mode'."
   (coq-queries-ask "SearchRewrite" "SearchRewrite" nil))
 
 ;; N.B. SearchAbout was replaced bySearch in v8.5
+;; so it's removed here
 
 (defun coq-Print (withprintingall)
   "Ask for an ident and print the corresponding term.
@@ -783,11 +777,6 @@ This is specific to `coq-mode'."
 
 (defun coq-set-undo-limit (undos)
   (proof-invisible-command (format "Set Undo %s . " undos)))
-
-(defun coq-Pwd ()
-  "Display the current Coq working directory."
-  (interactive)
-  (proof-invisible-command "Pwd."))
 
 (defun coq-Inspect ()
   (interactive)
@@ -1025,6 +1014,7 @@ goal is redisplayed."
 (proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
 (proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
 (proof-definvisible coq-show-intros (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
+(proof-definvisible coq-Pwd (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
 
 (proof-definvisible coq-set-implicit-arguments (coq-queries-set-implicit-arguments-thunk))
 (proof-definvisible coq-unset-implicit-arguments (coq-queries-unset-implicit-arguments-thunk))
@@ -1036,6 +1026,8 @@ goal is redisplayed."
 (proof-definvisible coq-unset-printing-coercions (coq-queries-unset-printing-coercions-thunk))
 (proof-definvisible coq-set-printing-wildcards (coq-queries-set-printing-wildcard-thunk))
 (proof-definvisible coq-unset-printing-wildcards (coq-queries-unset-printing-wildcard-thunk))
+(proof-definvisible coq-pwd (coq-queries-pwd-thunk))
+
 ;; Takes an argument
 ;;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
 ;;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
@@ -1844,7 +1836,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (let* ((query (coq-build-command-from-db coq-queries-commands-db "which Query?"))
          (thunk (lambda () (list (coq-xml-query-item (concat query " ."))))))
     (if showall
-        (coq-queries-command-with-set-unset
+        (coq-queries-ask-set-unset
          thunk
          (coq-queries-set-printing-all)
          (coq-queries-unset-printing-all)

@@ -8,6 +8,7 @@
 
 '(require 'proof)
 (require 'coq-syntax)
+(require 'coq-queries)
 
 (defun holes-show-doc ()
   (interactive)
@@ -161,7 +162,7 @@ It was constructed with `proof-defstringset-fn'.")
      ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
      ["Show ith Goal... (show all)" coq-Show-with-all t]
      ["Show Tree" coq-show-tree t]
-     ["Show Proof" coq-show-proof t]
+     ["Show Proof" coq-show-proofy t]
      ["Show Conjectures" coq-show-conjectures t];; maybe not so useful with editing in PG?
      ""
      ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
@@ -178,7 +179,7 @@ It was constructed with `proof-defstringset-fn'.")
      ["SearchPattern..." coq-SearchIsos t]
      ["Locate constant..." coq-LocateConstant t]
      ["Locate Library..." coq-LocateLibrary t]
-     ["Pwd" coq-Pwd t]
+     ["Pwd" coq-pwd t]
      ["Inspect..." coq-Inspect t]
      ["Print Section..." coq-PrintSection t]
      ""

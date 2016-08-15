@@ -212,24 +212,12 @@ Otherwise suggest the identifier at point, if any."
 	    (setq options-pairs (cdr options-pairs))))
 	result))))
 
-(defun coq-queries-command-with-set-unset (setcmd cmd unsetcmd &optional testcmd)
-  "Play commands SETCMD then CMD and then silently UNSETCMD."
-  (let* ((flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
-    (unless flag-is-on
-      (proof-invisible-command
-       (format " %s . " (funcall postform setcmd))))
-    (proof-invisible-command
-     (format " %s . " (funcall postform cmd)))
-    (unless flag-is-on
-      (proof-invisible-command-invisible-result
-       (format " %s . " (funcall postform unsetcmd))))))
-
-
 (defun coq-queries-ask-set-unset (ask do set-cmd unset-cmd &optional bool-opt)
   "Ask for an ident id and execute command DO in SETCMD mode.
-More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
+More precisely it executes SET-CMD, then DO, finally UNSETCMD."
   (proof-ready-prover)
   (let* ((cmd (coq-queries-guess-or-ask-for-string ask t))
+	 ;; expensive: get all options, find the one we're interested in
 	 (flag-is-set (and bool-opt (coq-queries-test-boolean-option bool-opt))))
     (unless flag-is-set
       (proof-invisible-cmd-handle-result
@@ -292,6 +280,7 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
     (princ (format "Defining functions via macro: %s\n" (list query-fun query-fun-thunk)))
     `(progn
        (defun ,query-fun ()
+	 (coq-server--clear-response-buffer)
 	 (list (coq-xml-query-item (concat ,capped-query ".")) nil))
        (defun ,query-fun-thunk ()
 	 (lambda ()
@@ -303,6 +292,7 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
 (coq-queries--mk-query-fun show-conjectures)
 (coq-queries--mk-query-fun show-intros)
 (coq-queries--mk-query-fun print-hint)
+(coq-queries--mk-query-fun pwd)
 
 (defun coq-queries-print-all-thunk ()
   "Thunk that gets context of proof at point."
