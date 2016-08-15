@@ -22,56 +22,25 @@
 (require 'coq-syntax)
 (require 'coq-xml)
 
-;; insert intros query
-
-;; helper
-(defun coq--format-intros (output)
-  "Create an “intros” form from the OUTPUT of “Show Intros”."
-  (let* ((shints (replace-regexp-in-string "[\r\n ]*\\'" "" output)))
-    (if (or (string= "" shints)
-	    (string-match coq-error-regexp shints))
-	(error "Don't know what to intro")
-      (format "intros %s" shints))))
-
-(defun coq-queries--handle-insert-intros (response)
+;; extract string from message
+;; used for build-match, insert-intros, for example
+(defun coq-queries-get-message-string (response)
   (with-current-buffer coq-xml-response-buffer
     (coq-xml-append-response response)
     (coq-xml-unescape-buffer)
     (let ((xml (coq-xml-get-next-xml))
-	  processed)
-      (while (and xml (not processed))
+	  message)
+      (while (and xml (not message))
 	(when (string-equal (coq-xml-at-path xml '(message (message_level val))) "notice")
-	  (let* ((intros-xml (or
+	  (let* ((message-xml (or
 			      ;; 8.5
 			      (coq-xml-at-path xml '(message (message_level) (string)))
 			      ;; 8.6
-			      (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))
-		 (intros (coq-xml-body1 intros-xml)))
-	    (when intros
-	      (setq processed t)
-	      (with-current-buffer proof-script-buffer
-		(indent-region (point)
-			       (progn (insert (coq--format-intros intros))
-				      (save-excursion
-					(insert " ")
-					(point))))
-		;; `proof-electric-terminator' moves the point in all sorts of strange
-		;; ways, so we run it last
-		(let ((last-command-event ?.)) ;; Insert a dot
-		  (proof-electric-terminator))))))
-	(setq xml (coq-xml-get-next-xml))))))
-
-;; query sender
-(defun coq-insert-intros ()
-  "Insert an intros command with names given by Show Intros.
-Based on idea mentioned in Coq reference manual."
-  (interactive)
-  (proof-server-invisible-cmd-handle-result
-   (lambda ()
-     (list (coq-xml-query-item "Show Intros.") nil))
-   'coq-queries--handle-insert-intros))
-
-;;; queries where handler just invokes default handler
+			      (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
+	    (when message-xml
+	      (setq message (coq-xml-body1 message-xml)))))
+	(setq xml (coq-xml-get-next-xml)))
+      message)))
 
 (defun coq-remove-trailing-dot (s)
   "Return the string S without its trailing \".\" if any.
@@ -172,7 +141,6 @@ Otherwise suggest the identifier at point, if any."
 ;;; interactive queries
 
 ;; query for current value of particular option
-;; can't use proof-prover-last-result, because we don't know its our result
 ;; lexical scoping crucial here!
 (defun coq-queries-test-boolean-option (opt)
   (let (options-str)
@@ -241,6 +209,7 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
  	 (unsetter (intern (concat "coq-queries-unset-" opt-name-str)))
  	 (unsetter-thunk (intern (concat "coq-queries-unset-" opt-name-str "-thunk")))
 	 (opt-strings (split-string (capitalize opt-name-str) "-")))
+    ;; compile-time message
     (princ (format "Defining functions via macro: %s\n"
 	     (list setter setter-thunk unsetter unsetter-thunk)))
     `(progn
@@ -277,6 +246,7 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
 	 (query-fun (intern (concat "coq-queries-" query-name-str)))
 	 (query-fun-thunk (intern (concat "coq-queries-" query-name-str "-thunk")))
 	 (capped-query (replace-regexp-in-string "-" " " (capitalize query-name-str))))
+    ;; compile-time message
     (princ (format "Defining functions via macro: %s\n" (list query-fun query-fun-thunk)))
     `(progn
        (defun ,query-fun ()
@@ -287,6 +257,7 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
 	   (,query-fun))))))
 
 ;; call the macro
+(coq-queries--mk-query-fun print-all)
 (coq-queries--mk-query-fun print-hint)
 (coq-queries--mk-query-fun print-scopes)
 (coq-queries--mk-query-fun print-visibility)
@@ -295,14 +266,6 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
 (coq-queries--mk-query-fun show-intros)
 (coq-queries--mk-query-fun show-proof)
 (coq-queries--mk-query-fun show-tree)
-
-(defun coq-queries-print-all-thunk ()
-  "Thunk that gets context of proof at point."
-  (proof-server-send-to-prover
-   (lambda ()
-     ;; a bit hackish: clear out responses just before sending
-     (coq-server--clear-response-buffer)
-     (list (coq-xml-query-item "Print All.") nil))))
 
 (defun coq-queries-ask-show-all (ask do)
   "Ask for an ident and print the corresponding term."

@@ -609,6 +609,35 @@ the *goals* buffer."
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
   "Enumerates the different kinds of notation information one can get from Coq.")
 
+;; helper for insert intros
+(defun coq--format-intros (output)
+  "Create an “intros” form from the OUTPUT of “Show Intros”."
+  (let* ((shints (replace-regexp-in-string "[\r\n ]*\\'" "" output)))
+    (if (or (string= "" shints)
+	    (string-match coq-error-regexp shints))
+	(error "Don't know what to intro")
+      (format "intros %s" shints))))
+
+(defun coq-insert-intros ()
+  "Insert an intros command with names given by Show Intros.
+Based on idea mentioned in Coq reference manual."
+  (interactive)
+  (proof-server-invisible-cmd-handle-result
+   (coq-queries-show-intros-thunk)
+   (lambda (response)
+     (let ((intros (coq-queries-get-message-string response)))
+       (when intros
+         (with-current-buffer proof-script-buffer
+           (indent-region (point)
+                          (progn (insert (coq--format-intros intros))
+                                 (save-excursion
+                                   (insert " ")
+                                   (point))))
+           ;; `proof-electric-terminator' moves the point in all sorts of strange
+           ;; ways, so we run it last
+           (let ((last-command-event ?.)) ;; Insert a dot
+             (proof-electric-terminator))))))))
+
 (defun coq-PrintScope ()
   "Show information on Coq notations."
   (interactive)
@@ -1004,7 +1033,7 @@ goal is redisplayed."
 (proof-definvisible coq-show-tree (coq-queries-show-tree-thunk))
 (proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
 (proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
-(proof-definvisible coq-show-intros (coq-queries-show-intros-thunk)) ; see coq-insert-intros below
+(proof-definvisible coq-show-intros (coq-queries-show-intros-thunk))
 
 (proof-definvisible coq-set-implicit-arguments (coq-queries-set-implicit-arguments-thunk))
 (proof-definvisible coq-unset-implicit-arguments (coq-queries-unset-implicit-arguments-thunk))
@@ -1575,7 +1604,7 @@ mouse activation."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Context-senstive in-span menu additions
+;; Context-sensitive in-span menu additions
 ;;
 
 (defun coq-create-span-menu (span idiom name)
@@ -1760,37 +1789,39 @@ Warning: this makes the error messages (and location) wrong.")
 ;;       (coq-insert-as-in-next-command)
 ;;       (proof-assert-next-command-interactive))))
 
-
-
-;; TODO use new handle-result thing
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
 Based on idea mentioned in Coq reference manual.
 Also insert holes at insertion positions."
   (interactive)
   (proof-ready-prover)
-  (let* ((cmd))
+  (let* (cmd)
     (setq cmd (read-string "Build match for type: "))
-    (let* ((thematch
-            (proof-invisible-cmd-get-result (concat "Show Match " cmd ".") 'identity))
-           (match (replace-regexp-in-string "=> \n" "=> #\n" thematch)))
-      ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp match)
-        (let ((start (point)))
-          (insert match)
-          (indent-region start (point) nil)
-          (let ((n (holes-replace-string-by-holes-backward start)))
-            (case n
-                  (0 nil)				; no hole, stay here.
-                  (1
-                   (goto-char start)
-                   (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-                  (t
-                   (goto-char start)
-                   (message
-                    (substitute-command-keys
-                     "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+    (proof-invisible-cmd-handle-result
+     (lambda ()
+       (list (coq-xml-query-item (concat "Show Match " cmd " ."))
+             nil))
+     (lambda (response)
+       (let* ((the-match (coq-queries-get-message-string response))
+              (match (replace-regexp-in-string "=> \n" "=> #\n" the-match)))
+         ;; if error, it will be displayed in response buffer (see def of
+         ;; proof-invisible-cmd-get-result), otherwise:
+         (unless (proof-string-match coq-error-regexp match)
+           (with-current-buffer proof-script-buffer
+             (let ((start (point)))
+               (insert match)
+               (indent-region start (point) nil)
+               (let ((n (holes-replace-string-by-holes-backward start)))
+                 (case n
+                       (0 nil)				; no hole, stay here.
+                       (1
+                        (goto-char start)
+                        (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+                       (t
+                        (goto-char start)
+                        (message
+                         (substitute-command-keys
+                          "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
