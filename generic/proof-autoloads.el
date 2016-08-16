@@ -289,10 +289,8 @@ This macro also extends the `proof-assistant-settings' list.
 
 ;;;***
 
-;;;### (autoloads (pg-response-has-error-location proof-next-error
-;;;;;;  pg-response-message pg-response-display-with-face pg-response-maybe-erase
-;;;;;;  proof-response-config-done proof-response-mode) "pg-response"
-;;;;;;  "pg-response.el" (22396 10818 499884 55000))
+;;;### (autoloads nil "pg-response" "pg-response.el" (22436 59790
+;;;;;;  827424 24000))
 ;;; Generated autoloads from pg-response.el
 
 (autoload 'proof-response-mode "pg-response" "\
@@ -361,8 +359,8 @@ See `pg-next-error-regexp'.
 
 ;;;***
 
-;;;### (autoloads nil "pg-user" "pg-user.el" (22432 58106 204254
-;;;;;;  539000))
+;;;### (autoloads nil "pg-user" "pg-user.el" (22432 61817 716455
+;;;;;;  999000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -498,8 +496,8 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-depends" "proof-depends.el" (22432 57854
-;;;;;;  740240 890000))
+;;;### (autoloads nil "proof-depends" "proof-depends.el" (22432 62132
+;;;;;;  380473 79000))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -513,19 +511,6 @@ Called from `proof-done-advancing' when a save is processed and
 Make some menu entries showing proof dependencies of SPAN.
 
 \(fn SPAN)" nil nil)
-
-;;;***
-
-;;;### (autoloads (proof-easy-config) "proof-easy-config" "proof-easy-config.el"
-;;;;;;  (22396 10805 379884 342000))
-;;; Generated autoloads from proof-easy-config.el
-
-(autoload 'proof-easy-config "proof-easy-config" "\
-Configure Proof General for proof-assistant using BODY as a setq body.
-The symbol SYM and string name NAME must match those given in
-the `proof-assistant-table', which see.
-
-\(fn SYM NAME &rest BODY)" nil t)
 
 ;;;***
 
@@ -561,8 +546,8 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-menu" "proof-menu.el" (22432 57724 160233
-;;;;;;  802000))
+;;;### (autoloads nil "proof-menu" "proof-menu.el" (22434 25789 526892
+;;;;;;  729000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -630,8 +615,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads nil "proof-resolver" "proof-resolver.el" (22432
-;;;;;;  52752 831963 959000))
+;;;### (autoloads nil "proof-resolver" "proof-resolver.el" (22440
+;;;;;;  63770 307999 523000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -642,12 +627,12 @@ The queue mode is set to 'advancing
 (autoload 'proof-invisible-command "proof-resolver" "\
 
 
-\(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
-
-(autoload 'proof-invisible-cmd-get-result "proof-resolver" "\
-
-
 \(fn CMD)" nil nil)
+
+(autoload 'proof-invisible-cmd-handle-result "proof-resolver" "\
+
+
+\(fn CMD HANDLER)" nil nil)
 
 (autoload 'proof-invisible-command-invisible-result "proof-resolver" "\
 
@@ -677,7 +662,7 @@ The queue mode is set to 'advancing
 (autoload 'proof-server-send-to-prover "proof-resolver" "\
 
 
-\(fn STRING-OR-FUN)" nil nil)
+\(fn STRING-OR-FUN &optional SPECIAL-PROCESSOR)" nil nil)
 
 (autoload 'proof-server-process-response "proof-resolver" "\
 
@@ -686,8 +671,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads nil "proof-script" "proof-script.el" (22432 57475
-;;;;;;  912220 327000))
+;;;### (autoloads nil "proof-script" "proof-script.el" (22451 21515
+;;;;;;  124663 952000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -776,11 +761,8 @@ finish setup which depends on specific proof assistant configuration.
 
 ;;;***
 
-;;;### (autoloads (proof-server-exec-loop proof-server-add-to-queue
-;;;;;;  proof-server-insert proof-server-invisible-command-invisible-result
-;;;;;;  proof-server-invisible-cmd-get-result proof-server-invisible-command
-;;;;;;  proof-server-start proof-server-ready-prover proof-server-config-done)
-;;;;;;  "proof-server" "proof-server.el" (22422 12749 317662 164000))
+;;;### (autoloads nil "proof-server" "proof-server.el" (22450 12486
+;;;;;;  936706 75000))
 ;;; Generated autoloads from proof-server.el
 
 (defsubst proof-server-live-buffer nil "\
@@ -810,12 +792,12 @@ with proof-shell-ready-prover.
 (autoload 'proof-server-invisible-command "proof-server" "\
 
 
-\(fn CMD &optional WAIT INVISIBLECALLBACK &rest FLAGS)" nil nil)
-
-(autoload 'proof-server-invisible-cmd-get-result "proof-server" "\
-
-
 \(fn CMD)" nil nil)
+
+(autoload 'proof-server-invisible-cmd-handle-result "proof-server" "\
+
+
+\(fn CMD HANDLER)" nil nil)
 
 (autoload 'proof-server-invisible-command-invisible-result "proof-server" "\
 
@@ -908,8 +890,8 @@ may be a string or sexp evaluated to get a string.
 
 ;;;***
 
-;;;### (autoloads (proof-toolbar-scripting-menu proof-toolbar-setup)
-;;;;;;  "proof-toolbar" "proof-toolbar.el" (22396 10818 503884 55000))
+;;;### (autoloads nil "proof-toolbar" "proof-toolbar.el" (22440 54604
+;;;;;;  103734 610000))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
@@ -955,8 +937,8 @@ is changed.
 
 ;;;***
 
-;;;### (autoloads (proof-debug) "proof-utils" "proof-utils.el" (22396
-;;;;;;  10818 503884 55000))
+;;;### (autoloads nil "proof-utils" "proof-utils.el" (22451 21090
+;;;;;;  708690 76000))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-debug "proof-utils" "\
@@ -1008,8 +990,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22432 58437
-;;;;;;  876219 54000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22451 22499
+;;;;;;  172024 512000))
 
 ;;;***
 
