@@ -124,6 +124,7 @@
 (coq-queries--mk-bool-option-setters implicit-arguments)
 (coq-queries--mk-bool-option-setters printing-implicit)
 (coq-queries--mk-bool-option-setters printing-coercions)
+(coq-queries--mk-bool-option-setters printing-universes)
 (coq-queries--mk-bool-option-setters printing-synth)
 (coq-queries--mk-bool-option-setters printing-wildcard)
 

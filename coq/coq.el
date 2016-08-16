@@ -1029,6 +1029,8 @@ goal is redisplayed."
 (proof-definvisible coq-unset-printing-synth (coq-queries-unset-printing-synth-thunk))
 (proof-definvisible coq-set-printing-coercions (coq-queries-set-printing-coercions-thunk))
 (proof-definvisible coq-unset-printing-coercions (coq-queries-unset-printing-coercions-thunk))
+(proof-definvisible coq-set-printing-universes (coq-queries-set-printing-universes-thunk))
+(proof-definvisible coq-unset-printing-universes (coq-queries-unset-printing-universes-thunk))
 (proof-definvisible coq-set-printing-wildcards (coq-queries-set-printing-wildcard-thunk))
 (proof-definvisible coq-unset-printing-wildcards (coq-queries-unset-printing-wildcard-thunk))
 (proof-definvisible coq-pwd (coq-queries-pwd-thunk))
