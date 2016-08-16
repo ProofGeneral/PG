@@ -21,6 +21,7 @@
 (require 'span)				; abstraction of overlays/extents
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
+(require 'proof-buffers)
 
 (eval-when-compile
   (require 'easymenu)
@@ -32,7 +33,6 @@
 
 (declare-function proof-shell-strip-output-markup "proof-shell"
 		  (string &optional push))
-(declare-function proof-shell-make-associated-buffers "proof-shell" ())
 (declare-function proof-layout-windows "pg-response" (&rest args))
 (declare-function pg-response-warning "pg-response" (&rest args))
 (declare-function proof-segment-up-to "proof-script")
@@ -2455,7 +2455,7 @@ finish setup which depends on specific proof assistant configuration."
 
   ;; If we're excited to get going straightaway, make and layout windows
   (when proof-layout-windows-on-visit-file
-    (proof-shell-make-associated-buffers)
+    (proof-prover-make-associated-buffers)
     (proof-layout-windows))
 
   ;; Make sure the user has been welcomed!
