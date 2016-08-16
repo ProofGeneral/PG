@@ -1260,14 +1260,13 @@ Near here means PT is either inside or just aside of a comment."
   (message (format "proof-interaction-mode: %s" proof-interaction-mode))
 
   ;; for server mode, update mode-dependent function variables
-  (when (pg-uses-server)
-    (setq 
-     proof-server-send-to-prover-fun 'coq-server-send-to-prover
-     proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
-     proof-server-process-response-fun 'coq-server-process-response
-     proof-server-init-cmd (coq-xml-init)
-     proof-server-retract-buffer-hook 'coq-reset-all-state
-     proof-check-command 'coq-check-document))
+  (setq 
+   proof-server-send-to-prover-fun 'coq-server-send-to-prover
+   proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
+   proof-server-process-response-fun 'coq-server-process-response
+   proof-server-init-cmd (coq-xml-init)
+   proof-server-retract-buffer-hook 'coq-reset-all-state
+   proof-check-command 'coq-check-document)
 
   ;; prooftree config
   (setq
@@ -1372,36 +1371,7 @@ Near here means PT is either inside or just aside of a comment."
 ;;  :type 'integer
 ;;  :setting "Set Undo %i . ")
 
-(defun coq-make-reset-blacklist-string (s)
-  (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
-          coq-search-blacklist-string-prev s))
-
-(defun coq-set-search-blacklist-repl (s)
-  (let ((res (coq-make-reset-blacklist-string s)))
-    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-    res))
-
-(defun coq-set-search-blacklist-server (s) "")
-                                        ;  (let* ((cmd (coq-make-reset-blacklist-string s))
-                                        ;         (cmd-no-quotes (replace-regexp-in-string "\"" "" cmd))
-                                        ;         (xml (coq-xml-add-item cmd-no-quotes)))
-                                        ;    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-                                        ;    xml))
-
-(defun coq-get-search-blacklist (s)
-  coq-search-blacklist-string)
-
-
-(defpacustom search-blacklist coq-search-blacklist-string
-  "Strings to blacklist in requests to coq environment."
-  :type 'string
-  :get coq-search-blacklist-string
-  :setting (lambda (s) 
-             (if (pg-uses-repl)
-                                        ; repl
-                 (coq-set-search-blacklist-repl s)
-                                        ; server               
-               (coq-set-search-blacklist-server s))))
+;; N.B. Removed Search Blacklist setting, because it already matches Coq's default
 
 (defpacustom time-commands nil
   "Whether to display timing information for each command."

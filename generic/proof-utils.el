@@ -727,12 +727,5 @@ Optional argument PUSH is ignored."
 ;;       (setq result (concat result (buffer-substring-no-properties
 ;;				   pos end))))))
 
-
-(defun pg-uses-repl ()
-  (eq proof-interaction-mode 'repl))
-
-(defun pg-uses-server ()
-  (eq proof-interaction-mode 'server))
-
 (provide 'proof-utils)
 ;;; proof-utils.el ends here
