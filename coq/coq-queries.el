@@ -128,6 +128,28 @@
 (coq-queries--mk-bool-option-setters printing-synth)
 (coq-queries--mk-bool-option-setters printing-wildcard)
 
+;; macro to build SetOption int setters/unsetters
+(defmacro coq-queries--mk-int-option-setters (opt-name)
+  (let* ((opt-name-str (symbol-name opt-name))
+ 	 (setter (intern (concat "coq-queries-set-" opt-name-str)))
+	 (opt-strings (split-string (capitalize opt-name-str) "-")))
+    ;; compile-time message
+    (princ (format "Defining function via macro: %s\n" setter))
+    `(progn
+       (defun ,setter (n)
+       	 (lambda ()
+       	   (list (coq-xml-set-options 
+       		  (list ,@opt-strings) 
+       		  (coq-xml-option_value 
+       		   '((val . intvalue))
+		   (coq-xml-option '((val . some))
+				   (coq-xml-int n))))
+       		 nil))))))
+
+;; call the macro
+(coq-queries--mk-int-option-setters printing-depth)
+(coq-queries--mk-int-option-setters printing-width)
+
 ;; macro for simple Query's
 (defmacro coq-queries--mk-query-fun (query)
   (let* ((query-name-str (symbol-name query))

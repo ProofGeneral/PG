@@ -119,8 +119,10 @@
 	   ((symbolp question) (list (symbol-value question) nil))
 	   ((functionp question) (funcall question))
 	   (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
+	 (_ (message "str-and-span: %s" str-and-span))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
+
     (tq-maybe-log "emacs" str)
     ;; span to be returned with coqtop response
     (setq tq-current-span span) 

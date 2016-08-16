@@ -108,12 +108,6 @@ These are appended at the end of `coq-shell-init-cmd'."
 ;; initially we put it at current value of coq-search-blacklist-string.
 (defvar coq-search-blacklist-string-prev coq-search-blacklist-string)
 
-;;TODO: remove Set Undo xx. It is obsolete since coq-8.5 at least.
-;;`(,(format "Set Undo %s . " coq-default-undo-limit) "Set Printing Width 75.")
-(defconst coq-shell-init-cmd
-  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) coq-user-init-cmd)
-  "Command to initialize the Coq Proof Assistant.")
-
 (require 'coq-syntax)
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
@@ -730,11 +724,11 @@ This is specific to `coq-mode'."
 ;; N.B. SearchAbout was replaced bySearch in v8.5
 ;; so it's removed here
 
-(defun coq-Print (withprintingall)
+(defun coq-Print (with-printing-all)
   "Ask for an ident and print the corresponding term.
 With flag Printing All if some prefix arg is given (C-u)."
   (interactive "P")
-  (if withprintingall
+  (if with-printing-all
       (coq-queries-ask-show-all "Print" "Print")
     (coq-queries-ask "Print" "Print")))
 
@@ -971,13 +965,9 @@ goal is redisplayed."
   (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
     ;; if no available width, or unchanged, do nothing
     (when (and wdth (not (equal wdth coq-current-line-width)))
-      (let* ((print-width (- wdth 1))
-             (cmd (coq-xml-set-options 
-                   '("Printing" "Width") 
-                   (coq-xml-option_value '((val . intvalue))
-                                         (coq-xml-option '((val . some))
-                                                         (coq-xml-int print-width))))))
-        (proof-invisible-command cmd))
+      (let* ((print-width (1- wdth))
+             (thunk (coq-queries-set-printing-width print-width)))
+        (proof-invisible-command thunk))
       (setq coq-current-line-width wdth))))
 
 (defun coq-adapt-printing-width-and-show(&optional show width)
@@ -1034,10 +1024,6 @@ goal is redisplayed."
 (proof-definvisible coq-set-printing-wildcards (coq-queries-set-printing-wildcard-thunk))
 (proof-definvisible coq-unset-printing-wildcards (coq-queries-unset-printing-wildcard-thunk))
 (proof-definvisible coq-pwd (coq-queries-pwd-thunk))
-
-;; Takes an argument
-;;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
-;;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
 
 (defun coq-Compile ()
   "Compiles current buffer."
@@ -1374,24 +1360,11 @@ Near here means PT is either inside or just aside of a comment."
                                         ;  :setting ("Set Printing All. " . "Unset Printing All. "))
                                         ;
 
-(defun coq-set-print-depth-repl (depth)
-  (format "Set Printing Depth %i . " depth))
-
-(defun coq-set-print-depth-server (depth)
-  (let ((xml (coq-xml-set-options 
-              '("Printing" "Depth") 
-              (coq-xml-option_value '((val . intvalue))
-                                    (coq-xml-option '((val . some))
-                                                    (coq-xml-int depth))))))
-    xml))
-
 (defpacustom printing-depth 50
-  "Depth of pretty printer formatting, beyond which dots are displayed."
+  "Depth of pretty printer formatting, beyond which an ellipsis (...) is displayed."
   :type 'integer
   :setting (lambda (depth) 
-             (if (pg-uses-repl)
-                 (coq-set-print-depth-repl depth)
-               (coq-set-print-depth-server depth))))
+             (coq-queries-set-printing-depth depth)))
 
 ;;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit
@@ -1604,14 +1577,14 @@ mouse activation."
                     (coq-xml-query-item 
                      ,(format "Check %s." thm))
                     nil)))
-              (vector
-               "Print"
-               `(proof-invisible-command
-                 (lambda ()
-                   (list 
-                    (coq-xml-query-item 
-                     ,(format "Print %s." thm))
-                    nil)))))))))
+               (vector
+                "Print"
+                `(proof-invisible-command
+                  (lambda ()
+                    (list 
+                     (coq-xml-query-item 
+                      ,(format "Print %s." thm))
+                     nil)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
