@@ -156,6 +156,13 @@ It was constructed with `proof-defstringset-fn'.")
     ["Other..." coq-query]
     [ "Store Response" proof-store-response-win :help "Stores the content of response buffer in a dedicated buffer"]
     [ "Store Goal" proof-store-goals-win  :help "Stores the content of goals buffer in a dedicated buffer"]
+    ("LTAC"
+     ["Start profiling" coq-start-ltac-profiling t]
+     ["Stop profiling" coq-stop-ltac-profiling t]
+     ["Show profile" coq-show-ltac-profile t]
+     ""
+     ["Reset profile" coq-reset-ltac-profile t]
+     )
     ("OTHER QUERIES"
      ["Print Hint" coq-print-hint t]
      ["Show ith Goal..." coq-Show t]
