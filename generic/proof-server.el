@@ -389,7 +389,6 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	(when (buffer-live-p (symbol-value buf))
 	  ;; allow killing buffer
 	  (with-current-buffer (symbol-value buf)
-	    (setq buffer-read-only nil)
 	    (remove-hook 'kill-buffer-hook 'pg-save-from-death t))
 	  (delete-windows-on (symbol-value buf))
 	  (kill-buffer (symbol-value buf))
