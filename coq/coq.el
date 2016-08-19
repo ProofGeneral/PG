@@ -536,8 +536,8 @@ nearest preceding span with a state id."
                spans)))
         (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
-    (if coq-server--retraction-on-error
-        (setq coq-server--retraction-on-error nil)
+    (unless coq-server--retraction-on-error
+        '(setq coq-server--retraction-on-error nil)
       (coq-server--clear-response-buffer))
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)
@@ -1236,7 +1236,7 @@ Near here means PT is either inside or just aside of a comment."
   
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
-        pg-topterm-goalhyplit-fn 'coq-goal-hyp
+        pg-topterm-goalhyplit-fn 'coq-goal-hyp ; TODO not used?
         proof-state-preserving-p 'coq-state-preserving-p)
 
   ;; TODO REPLACE THIS?

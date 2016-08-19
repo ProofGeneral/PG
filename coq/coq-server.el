@@ -33,6 +33,9 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--retraction-on-error nil
   "Was the last retraction due to an error")
 
+(defvar coq-server--backtrack-on-failure nil
+  "Was the last Edit_at backtrack due to a failure value")
+
 (defvar coq-server-transaction-queue nil)
 
 (defvar end-of-response-regexp "</value>")
@@ -98,18 +101,18 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--goal-hypotheses (goal)
   (let ((goal-hypos (nth 3 goal)))
-     (let* ((richpp-hypos
-	     (cl-remove-if 'null
-			   (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
-				   (coq-xml-body goal-hypos))))
-	    (flattened-hypos 
-	     (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
-		     richpp-hypos)))
-       (or 
-	;; 8.6
-	flattened-hypos 
-	;; 8.5
-	(coq-xml-body goal-hypos)))))
+    (let* ((richpp-hypos
+	    (cl-remove-if 'null
+			  (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
+				  (coq-xml-body goal-hypos))))
+	   (flattened-hypos 
+	    (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
+		    richpp-hypos)))
+      (or 
+       ;; 8.6
+       flattened-hypos 
+       ;; 8.5
+       (coq-xml-body goal-hypos)))))
 
 (defun coq-server--goal-goal (goal)
   (let ((goal-goal (nth 4 goal)))
@@ -241,7 +244,6 @@ is gone and we have to close the secondary locked span."
        (coq-server--handle-status maybe-current-proof all-proofs current-proof-id)))
     (t)))
 
-;; inefficient, but number of spans should be small
 (defun coq-server--state-id-precedes (state-id-1 state-id-2)
   "Does STATE-ID-1 occur in a span before that for STATE-ID-2?"
   (let ((span1 (coq-server--get-span-with-state-id state-id-1))
@@ -384,17 +386,42 @@ is gone and we have to close the secondary locked span."
     (coq-server--update-state-id-and-process qed-state-id)))
 
 (defun coq-server--simple-backtrack ()
-  ;; delete all spans marked for deletion
+  ;; delete spans marked for deletion
   (with-current-buffer proof-script-buffer
     (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
 		      (point-min))))
+      (when coq-server--backtrack-on-failure
+	;; TODO race condition here
+	;; not certain that this flag matches latest Edit_at
+	;; may not be a practical issue
+	(setq coq-server--backtrack-on-failure nil)
+	;; if we backtracked on a failure, see if the next span with a state id
+	;; has a pg-error span on top; if so, unmark it for deletion
+	(with-current-buffer proof-script-buffer
+	  (let* ((spans-after-retract (overlays-in start (point-max)))
+		 (relevant-spans (cl-remove-if-not (lambda (sp) (span-property sp 'marked-for-deletion)) spans-after-retract))
+		 (sorted-spans (sort relevant-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
+		 error-span
+		 state-id-span)
+	    ;; see if first pg-error span overlaps first span with a state id
+	    (while (and sorted-spans (or (null error-span) (null state-id-span)))
+	      (let ((span (car sorted-spans)))
+		(when (span-property span 'state-id)
+		  (setq state-id-span span))
+		(when (eq (span-property span 'type) 'pg-error)
+		  (setq error-span span)))
+	      (setq sorted-spans (cdr sorted-spans)))
+	    (when (and (>= (span-start error-span) (span-start state-id-span))
+		       (<= (span-end error-span) (span-end state-id-span)))
+	      (span-unmark-delete error-span)))))
       (let ((all-spans (overlays-in start (point-max))))
 	(mapc (lambda (span)
 		(when (or (and (span-property span 'marked-for-deletion)
 			       (not (span-property span 'self-removing)))
-			  ;; also remove any incomplete spans
-			  (span-property span 'incomplete))
+			  ;; also remove any incomplete, processing-in spans
+			  (span-property span 'incomplete)
+			  (span-property span 'processing-in))
 		  (span-delete span)))
 	      all-spans))))
   (coq-server--consume-edit-at-state-id))
@@ -526,7 +553,7 @@ is gone and we have to close the secondary locked span."
   (when (= coq-server--pending-add-count 0)
     (proof-server-send-to-prover (coq-xml-goal))
     (proof-server-send-to-prover (coq-xml-status)))
-    ;; if we've gotten responses from all Add's, ask for goals/status
+  ;; if we've gotten responses from all Add's, ask for goals/status
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
@@ -538,10 +565,14 @@ is gone and we have to close the secondary locked span."
     (unless (or (equal last-valid-state-id coq-current-state-id)
 		(gethash xml coq-server--error-fail-tbl))
       (puthash xml t coq-server--error-fail-tbl)
-      (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	(with-current-buffer proof-script-buffer
-	  (goto-char (span-end last-valid-span))
-	  (proof-retract-until-point))))))
+      (setq coq-server--backtrack-on-failure t)
+      (with-current-buffer proof-script-buffer
+	(if (equal last-valid-state-id coq-retract-buffer-state-id)
+	    (goto-char (point-min))
+	  (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
+	    (with-current-buffer proof-script-buffer
+	      (goto-char (span-end last-valid-span)))))
+	(proof-retract-until-point)))))
 
 (defun coq-server--handle-good-value (xml)
   (message "GOOD VALUE: %s" xml)
@@ -550,10 +581,10 @@ is gone and we have to close the secondary locked span."
     ;; retract before current focus
     (coq-server--before-focus-backtrack))
    ((coq-server--value-new-focus-p xml)
-     ;; retract re-opens a proof
+    ;; retract re-opens a proof
     (coq-server--new-focus-backtrack xml))
    ((coq-server--value-simple-backtrack-p xml)
-     ;; simple backtrack
+    ;; simple backtrack
     (coq-server--simple-backtrack))
    ((coq-server--value-end-focus-p xml) 
     ;; close of focus after Add
@@ -600,12 +631,12 @@ is gone and we have to close the secondary locked span."
 	(coq--display-response error-msg))
     (let ((error-span (coq-server--get-span-with-state-id error-state-id)))
       ;; decide where to show error
+      ;; on subsequent retraction, keep error in response buffer
+      (setq coq-server--retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
 	    (coq-server--clear-response-buffer)
 	    (coq--display-response error-msg)
-	    ;; on retraction, keep error in response buffer
-	    (setq coq-server--retraction-on-error t) 
 	    (coq--highlight-error error-span error-start error-stop))
 	;; error in middle of processed region
 	;; indelibly color the error 
@@ -645,7 +676,7 @@ is gone and we have to close the secondary locked span."
 				it))
 			    items "")))
     result))
-	 
+
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
   (message "HANDLING ERROR: %s" xml)
@@ -715,12 +746,12 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--uncolor-span-processed (xml)
   (coq-server--uncolor-span-on-feedback xml coq-server--processing-span-tbl))
-  
+
 (defun coq-server--uncolor-span-complete (xml)
   ;; we also get complete feedbacks for statements that dismiss last goal in proof
   ;; we ignore those
   (coq-server--uncolor-span-on-feedback xml coq-server--incomplete-span-tbl))
-  
+
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
     ("processingin"
@@ -755,7 +786,7 @@ is gone and we have to close the secondary locked span."
 	 (message-str (or message-str-8.5 
 			  (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))
 	 (msg (flatten-pp (coq-xml-body message-str))))
-     (coq--display-response msg)))
+    (coq--display-response msg)))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response span)

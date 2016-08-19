@@ -109,6 +109,11 @@ Only when three-buffer-mode is enabled."
 	'face 'proof-warning-face
 	'self-removing t)))))
 
+;; handler that deletes an error span if its text is modified
+(defun coq--error-span-modification-handler (span after-change-p start end &optional len)
+  (when after-change-p
+    (span-delete span)))
+
 ;; indelibly mark span containing an error
 (defun coq--mark-error (span msg)
   (let ((start (span-start span))
@@ -123,6 +128,7 @@ Only when three-buffer-mode is enabled."
 	(skip-chars-backward ws start)
 	(setq end (point)))
       (let ((error-span (span-make start end)))
+	(span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
 	(span-set-property error-span 'face proof-error-face)
 	(span-set-property error-span 'help-echo msg)
 	(span-set-property error-span 'type 'pg-error)))))

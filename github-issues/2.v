@@ -1,7 +1,7 @@
 (* https://github.com/psteckler/ProofGeneral/issues/2 *)
 
 Goal True.
-Proof.
+Proof. 
   exact I.
 Qed.
 
