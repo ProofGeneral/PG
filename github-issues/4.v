@@ -4,5 +4,6 @@
 
 Check (true : False).
 
-Theorem blah : True.
+Goal True.
+Goal False.
   
