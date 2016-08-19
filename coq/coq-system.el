@@ -323,7 +323,11 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."
   (coq-load-project-file)
   (coq-autodetect-version)
-  (coq-coqtop-prog-args coq-load-path))
+  (if (coq--pre-v85)
+      (progn
+      (message-box "Proof General requires Coq v8.5 or later.\nDetected Coq version %s" coq-autodetected-version)
+      nil)
+    (coq-coqtop-prog-args coq-load-path)))
 
 (defcustom coq-use-project-file t
   "If t, when opening a coq file read the dominating _CoqProject.
