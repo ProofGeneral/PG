@@ -293,11 +293,8 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
-  (append (remove "-emacs" (remove "-emacs-U" coq-prog-args))
+  (append coq-prog-args
 	  (coq-coqdep-prog-args coq-load-path current-directory)))
-
-(defvar coq-coqtop-proof-shell-flags
-  '("-emacs"))
 
 (defvar coq-coqtop-server-flags
    ; TODO allow ports for main-channel
@@ -417,7 +414,7 @@ coqtop."
          (setq args
                (append (split-string (cadr opt) coq--project-file-separator)
                        args)))))
-    (cons "-emacs" args)))
+    args))
 
 (defun coq--extract-load-path-1 (option base-directory)
   "Convert one _CoqProject OPTION, relative to BASE-DIRECTORY."
@@ -572,9 +569,7 @@ then be set using local file variables."
                                   "| sed s/coqc/coqtop/"))))
             (message command)
             (setq coq-prog-args nil)
-            (concat
-             (substring command 0 (string-match " [^ ]*$" command))
-             "-emacs-U"))
+             (substring command 0 (string-match " [^ ]*$" command)))
         coq-prog-name))))
 
 ;;; coq-compile-common.el ends here

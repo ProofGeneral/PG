@@ -129,6 +129,9 @@ with proof-shell-ready-prover."
   (proof-server-start)
   t)
 
+(defun proof-server-sentinel (process event)
+  (message-box "%s: %s" (capitalize (symbol-name proof-assistant-symbol)) event))
+
 ;;;###autoload
 (defun proof-server-start ()
   (interactive)
@@ -148,12 +151,13 @@ with proof-shell-ready-prover."
 	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
 	(if the-process
 	    (progn 
-	      (message "Started prover process")
+	      (message "Started prover process with command line: \"%s\"" prog-command-line)
+	      (set-process-sentinel the-process 'proof-server-sentinel)
 	      (setq proof-server-process the-process
 		    proof-server-buffer server-buffer)
 	      (proof-prover-make-associated-buffers)
 	      (proof-server-config-done))
-	  (message "Failed to start prover"))))
+	  (message-box "Failed to start prover with command line: \"%s\"" prog-command-line))))
     (when proof-server-fiddle-frames
       (save-selected-window
 	(save-selected-frame
