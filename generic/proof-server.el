@@ -140,7 +140,10 @@ with proof-shell-ready-prover."
     (message "Starting prover")
     (let* ((command-line-and-names (prover-command-line-and-names))
 	   (prog-command-line (car command-line-and-names))
-	   (prog-name-list (cdr command-line-and-names)))
+	   (prog-name-list (cdr command-line-and-names))
+	   (redirect (if (eq system-type 'windows-nt)
+			     "2> NUL"
+			     "2> /dev/null")))
       (message "Starting: %s" prog-command-line)
       (message "Program is: %s" proof-assistant-symbol)
       (message "Command line: %s" prog-command-line)
@@ -148,7 +151,7 @@ with proof-shell-ready-prover."
       (message "Prog name list: %s" prog-name-list)
       ;; leading space hides the buffer
       (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) 
-	     (the-process (apply 'start-process (cons proof-assistant (cons server-buffer prog-command-line)))))
+	     (the-process (apply 'start-process-shell-command (cons proof-assistant (cons server-buffer (append prog-command-line (list redirect)))))))
 	(if the-process
 	    (progn 
 	      (message "Started prover process with command line: \"%s\"" prog-command-line)
