@@ -639,38 +639,6 @@ Based on idea mentioned in Coq reference manual."
   (proof-server-invisible-command
    (coq-queries-print-all-thunk)))
 
-(defun coq-start-ltac-profiling ()
-  (interactive)
-  (proof-server-invisible-command
-   (lambda ()
-     (list
-      (coq-xml-add-item "Set Ltac Profiling.")
-      nil))))
-
-(defun coq-stop-ltac-profiling ()
-  (interactive)
-  (proof-server-invisible-command
-   (lambda ()
-     (list
-      (coq-xml-add-item "Unset Ltac Profiling.")
-      nil))))
-
-(defun coq-show-ltac-profile ()
-  (interactive)
-  (proof-server-invisible-command
-   (lambda ()
-     (list
-      (coq-xml-add-item "Show Ltac Profile.")
-      nil))))
-
-(defun coq-reset-ltac-profile ()
-  (interactive)
-  (proof-server-invisible-command
-   (lambda ()
-     (list
-      (coq-xml-add-item "Reset Ltac Profile.")
-      nil))))
-
 (defun coq-PrintScope ()
   "Show information on Coq notations."
   (interactive)
