@@ -270,7 +270,7 @@ is gone and we have to close the secondary locked span."
     (>= error-end locked-end)))
 
 ;; make pending Edit_at state id current
-(defun coq-server--consume-edit-at-state-id ()
+(defun coq-server--make-edit-at-state-id-current ()
   (setq coq-current-state-id coq-server--pending-edit-at-state-id)
   (setq coq-server--pending-edit-at-state-id nil))
 
@@ -391,6 +391,7 @@ is gone and we have to close the secondary locked span."
     (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
 		      (point-min))))
+      (message "retract-span: %s start: %s" retract-span start)
       (when coq-server--backtrack-on-failure
 	;; TODO race condition here
 	;; not certain that this flag matches latest Edit_at
@@ -412,7 +413,8 @@ is gone and we have to close the secondary locked span."
 		(when (eq (span-property span 'type) 'pg-error)
 		  (setq error-span span)))
 	      (setq sorted-spans (cdr sorted-spans)))
-	    (when (and (>= (span-start error-span) (span-start state-id-span))
+	    (when (and state-id-span error-span
+		       (>= (span-start error-span) (span-start state-id-span))
 		       (<= (span-end error-span) (span-end state-id-span)))
 	      (span-unmark-delete error-span)))))
       (let ((all-spans (overlays-in start (point-max))))
@@ -424,7 +426,7 @@ is gone and we have to close the secondary locked span."
 			  (span-property span 'processing-in))
 		  (span-delete span)))
 	      all-spans))))
-  (coq-server--consume-edit-at-state-id))
+  (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--new-focus-backtrack (xml)
   ;; new focus produces secondary locked span, which extends from
@@ -441,7 +443,7 @@ is gone and we have to close the secondary locked span."
       ;; multiple else's
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
       (coq-server--create-secondary-locked-span focus-start-state-id focus-end-state-id last-tip-state-id)
-      (coq-server--consume-edit-at-state-id))))
+      (coq-server--make-edit-at-state-id-current))))
 
 (defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
@@ -538,7 +540,7 @@ is gone and we have to close the secondary locked span."
   (cl-assert proof-locked-secondary-span)
   (coq-server--remove-secondary-locked-span t)
   (setq coq-server--start-of-focus-state-id nil)
-  (coq-server--consume-edit-at-state-id))
+  (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--update-state-id (state-id)
   (setq coq-current-state-id state-id)
