@@ -1137,9 +1137,10 @@ Near here means PT is either inside or just aside of a comment."
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
 
-  ;; Commands sent to proof engine
-  (setq proof-showproof-command "Show. "
-        proof-goal-command "Goal %s. "
+  ;; Sent to proof engine
+  (setq proof-showproof-command
+        (lambda () (list (coq-xml-query-item "Show.") nil)))
+  (setq proof-goal-command "Goal %s. "
         proof-save-command "Save %s. ")
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
