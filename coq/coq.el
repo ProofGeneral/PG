@@ -488,7 +488,7 @@ nearest preceding span with a state id."
         (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
     (unless coq-server--retraction-on-error
-        '(setq coq-server--retraction-on-error nil)
+      '(setq coq-server--retraction-on-error nil)
       (coq-server--clear-response-buffer))
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)
@@ -585,6 +585,9 @@ Based on idea mentioned in Coq reference manual."
 (defun coq-check-document ()
   "Force coqtop to check validity of entire document."
   (proof-server-send-to-prover (coq-xml-status 'true)))
+
+(defun coq-find-theorems ()
+  (coq-queries-ask "Find theorems" "Search" nil))
 
 (defun coq-get-context ()
   (proof-server-invisible-command
@@ -1128,6 +1131,8 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
+  (setq proof-command-formatting-fun 'coq-format-command)
+
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
@@ -1135,8 +1140,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; Commands sent to proof engine
   (setq proof-showproof-command "Show. "
         proof-goal-command "Goal %s. "
-        proof-save-command "Save %s. "
-        proof-find-theorems-command "Search %s. ")
+        proof-save-command "Save %s. ")
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
 
@@ -1179,7 +1183,7 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
 
   '(setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+         proof-shell-stop-silent-cmd "Unset Silent. ")
 
   (coq-init-syntax-table)
   ;; we can cope with nested comments
@@ -1192,20 +1196,13 @@ Near here means PT is either inside or just aside of a comment."
                                         ;(if coq-use-editing-holes (holes-mode 1))
   (holes-mode 1)
 
-  ;; REPL or server mode
-  (setq
-   proof-interaction-mode
-   'server)
-
-  (message (format "proof-interaction-mode: %s" proof-interaction-mode))
-
-  ;; for server mode, update mode-dependent function variables
   (setq 
    proof-server-send-to-prover-fun 'coq-server-send-to-prover
    proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
    proof-server-process-response-fun 'coq-server-process-response
    proof-server-init-cmd (coq-xml-init)
    proof-server-retract-buffer-hook 'coq-reset-all-state
+   proof-find-theorems-command 'coq-find-theorems
    proof-check-command 'coq-check-document)
 
   ;; prooftree config
@@ -1248,6 +1245,12 @@ Near here means PT is either inside or just aside of a comment."
      proof-response-mode-map
      "Menu for Proof General response buffer."
      (cons "Coq" coq-other-buffers-menu-entries))))
+
+;; formatter for user commands entered in minibuffer
+(defun coq-format-command (cmd)
+  (lambda ()
+    (list (coq-xml-query-item cmd)
+          nil)))
 
 (defun coq-goals-mode-config ()
   (setq pg-goals-change-goal "Show %s . ")

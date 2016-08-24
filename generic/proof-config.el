@@ -157,6 +157,11 @@ document."
   :type 'function
   :group 'prover-config)
 
+(defcustom proof-command-formatting-fun nil
+  "Function to format commands to send to prover."
+  :type 'function
+  :group 'prover-config)
+
 (defcustom proof-find-theorems-command nil
   "Command to search for a theorem containing a given term.  String or fn.
 If a string, the format character `%s' will be replaced by the term.

@@ -108,7 +108,7 @@ Assumes script buffer is current."
 	(if (eq 'unclosed-comment (car-safe semis))
 	    (setq semis (cdr-safe semis)))
 	(if (nth 2 semis) ; fetch end point of previous command
-	      (goto-char (nth 2 semis))
+	    (goto-char (nth 2 semis))
 	  ;; no previous command: just next to end of locked
 	  (goto-char (proof-unprocessed-begin)))))
     ;; Oddities of this function: if we're beyond the last proof
@@ -270,16 +270,16 @@ interactive calls."
 (defun proof-retract-current-goal ()
   "Retract the current proof, and move point to its start."
   (interactive)
-   (let
+  (let
       ((span (proof-last-goal-or-goalsave)))
-     (save-excursion
-       (if (and span (not (eq (span-property span 'type) 'goalsave))
-		(< (span-end span) (proof-unprocessed-begin)))
-	   (progn
-	     (goto-char (span-start span))
-	     (proof-retract-until-point-interactive))
-	 (error "Not proving")))
-     (if span (proof-maybe-follow-locked-end (span-start span)))))
+    (save-excursion
+      (if (and span (not (eq (span-property span 'type) 'goalsave))
+	       (< (span-end span) (proof-unprocessed-begin)))
+	  (progn
+	    (goto-char (span-start span))
+	    (proof-retract-until-point-interactive))
+	(error "Not proving")))
+    (if span (proof-maybe-follow-locked-end (span-start span)))))
 
 
 ;;
@@ -333,7 +333,10 @@ is off (nil)."
 	   proof-state-preserving-p
 	   (not (funcall proof-state-preserving-p cmd)))
       (error "Command is not state preserving, I won't execute it!"))
-  (proof-server-invisible-command cmd))
+  (let ((formatted-cmd (or (and proof-command-formatting-fun
+				(funcall proof-command-formatting-fun cmd))
+			   cmd)))
+    (proof-server-invisible-command formatted-cmd)))
 
 
 ;;
@@ -394,10 +397,10 @@ BODY defaults to CMDVAR, a variable."
      ,(concat doc
 	      (concat "\nIssues a command to the assistant based on "
 		      (symbol-name cmdvar) ".")
-		"")
+	      "")
      (interactive)
      (proof-if-setting-configured ,cmdvar
-       (proof-server-invisible-command ,(or body cmdvar)))))
+				  (proof-server-invisible-command ,(or body cmdvar)))))
 
 ;;;###autoload
 (defmacro proof-define-assistant-command-witharg (fn doc cmdvar prompt &rest body)
@@ -407,17 +410,17 @@ CMDVAR is a variable holding a function or string.  Automatically has history."
      (defvar ,(intern (concat (symbol-name fn) "-history")) nil
        ,(concat "History of arguments for " (symbol-name fn) "."))
      (defun ,fn (arg)
-     ,(concat doc "\nIssues a command based on ARG to the assistant, using "
-	      (symbol-name cmdvar) ".\n"
-	      "The user is prompted for an argument.")
-      (interactive
-       (proof-if-setting-configured ,cmdvar
-	   (if (stringp ,cmdvar)
-	       (list (format ,cmdvar
-			 (read-string
-			   ,(concat prompt ": ") ""
-			   ,(intern (concat (symbol-name fn) "-history")))))
-	     (funcall ,cmdvar))))
+       ,(concat doc "\nIssues a command based on ARG to the assistant, using "
+		(symbol-name cmdvar) ".\n"
+		"The user is prompted for an argument.")
+       (interactive
+	(proof-if-setting-configured ,cmdvar
+				     (if (stringp ,cmdvar)
+					 (list (format ,cmdvar
+						       (read-string
+							,(concat prompt ": ") ""
+							,(intern (concat (symbol-name fn) "-history")))))
+				       (funcall ,cmdvar))))
        ,@body)))
 
 (defun proof-issue-new-command (cmd)
@@ -439,26 +442,26 @@ Start up the proof assistant if necessary."
 ;;
 
 (proof-define-assistant-command proof-prf
-  "Show the current proof state."
-  proof-showproof-command
-  (progn
-    (pg-goals-buffers-hint)
-    proof-showproof-command))
+				"Show the current proof state."
+				proof-showproof-command
+				(progn
+				  (pg-goals-buffers-hint)
+				  proof-showproof-command))
 
 (proof-define-assistant-command proof-ctxt
-  "Show the current context."
-  proof-context-command)
+				"Show the current context."
+				proof-context-command)
 
 (proof-define-assistant-command proof-help
-  "Show a help or information message from the proof assistant.
+				"Show a help or information message from the proof assistant.
 Typically, a list of syntax of commands available."
-  proof-info-command)
+				proof-info-command)
 
 (proof-define-assistant-command proof-cd
-  "Change directory to the default directory for the current buffer."
-  proof-shell-cd-cmd
-  (proof-format-filename proof-shell-cd-cmd
-	  default-directory))
+				"Change directory to the default directory for the current buffer."
+				proof-shell-cd-cmd
+				(proof-format-filename proof-shell-cd-cmd
+						       default-directory))
 
 (defun proof-cd-sync ()
   "If `proof-shell-cd-cmd' is set, do `proof-cd' and wait for prover ready.
@@ -473,25 +476,19 @@ This is intended as a value for `proof-activate-scripting-hook'"
 ;; Commands which require an argument, and maybe affect the script.
 ;;
 
-(proof-define-assistant-command-witharg proof-find-theorems
- "Search for items containing given constants."
- proof-find-theorems-command
- "Find theorems containing"
- (proof-server-invisible-command arg))
-
 (proof-define-assistant-command-witharg proof-issue-goal
- "Write a goal command in the script, prompting for the goal."
- proof-goal-command
- "Goal" ; Goals always start at a new line
- (let ((proof-next-command-on-new-line t)) 
-   (proof-issue-new-command arg)))
+					"Write a goal command in the script, prompting for the goal."
+					proof-goal-command
+					"Goal" ; Goals always start at a new line
+					(let ((proof-next-command-on-new-line t)) 
+					  (proof-issue-new-command arg)))
 
 (proof-define-assistant-command-witharg proof-issue-save
- "Write a save/qed command in the script, prompting for the theorem name."
- proof-save-command
- "Save as" ; Saves always start at a new line
- (let ((proof-next-command-on-new-line t)) 
-   (proof-issue-new-command arg)))
+					"Write a save/qed command in the script, prompting for the theorem name."
+					proof-save-command
+					"Save as" ; Saves always start at a new line
+					(let ((proof-next-command-on-new-line t)) 
+					  (proof-issue-new-command arg)))
 
 
 
@@ -571,7 +568,7 @@ last use time, to discourage saving these into the users database."
 
 (unless noninteractive ; during compilation
   (eval-after-load "completion"
-  '(proof-add-completions)))
+    '(proof-add-completions)))
 
 (defun proof-script-complete (&optional arg)
   "Like `complete' but case-fold-search set to proof-case-fold-search."
@@ -654,7 +651,7 @@ If NUM is negative, move upwards.  Return new span."
       ;; list with single nil element.  Hence liveness test
       (mapc (lambda (s) (if (span-live-p s)
 			    (span-set-property s 'duplicable 't)))
-	      (span-property span 'children))
+	    (span-property span 'children))
       (let* ((start     (span-start span))
 	     (end       (span-end span))
 	     (contents  (buffer-substring start end))
@@ -750,7 +747,7 @@ If NUM is negative, move upwards.  Return new span."
 	 (idiom (and span (span-property span 'idiom)))
 	 (id    (and span (span-property span 'id))))
     (and  idiom id
-	 (pg-toggle-element-visibility idiom (symbol-name id)))))
+	  (pg-toggle-element-visibility idiom (symbol-name id)))))
 
 (defun pg-create-in-span-context-menu (span idiom name)
   "Create the dynamic context-sensitive menu for a span."
@@ -880,12 +877,12 @@ a popup with the information in it."
 	 identifier ctxt
 	 ;; the callback
 	 (lexical-let ((s start) (e end))
-	   (lambda (x)
-	     (save-excursion
-	       (let ((idspan (span-make s e)))
-                 ;; (span-set-property idspan 'priority 90) ; highest
-                 (span-set-property idspan 'help-echo
-                                    (pg-last-output-displayform))))))))))
+		      (lambda (x)
+			(save-excursion
+			  (let ((idspan (span-make s e)))
+			    ;; (span-set-property idspan 'priority 90) ; highest
+			    (span-set-property idspan 'help-echo
+					       (pg-last-output-displayform))))))))))
 
 (defvar proof-query-identifier-history nil
   "History for `proof-query-identifier'.")
@@ -947,8 +944,8 @@ If CALLBACK is set, we invoke that when the command completes."
       (imenu-add-to-menubar "Index")
     (progn
       (when (listp which-func-modes)
-        (setq which-func-modes 
-              (remove proof-mode-for-script which-func-modes)))
+	(setq which-func-modes 
+	      (remove proof-mode-for-script which-func-modes)))
       (let ((oldkeymap (keymap-parent (current-local-map))))
 	(if ;; sanity checks in case someone else set local keymap
 	    (and oldkeymap
@@ -1167,15 +1164,15 @@ If N is negative, search backwards for the -Nth previous match."
 
 ;;;###autoload
 (defun pg-add-to-input-history (cmd)
-   "Maybe add CMD to the input history.
+  "Maybe add CMD to the input history.
 CMD is only added to the input history if it is not a duplicate
 of the last item added."
-   (when (or (not (ring-p pg-input-ring))
-	     (ring-empty-p pg-input-ring)
-	     (not (string-equal (ring-ref pg-input-ring 0) cmd)))
-     (unless (ring-p pg-input-ring)
-       (setq pg-input-ring (make-ring pg-input-ring-size)))
-     (ring-insert pg-input-ring cmd)))
+  (when (or (not (ring-p pg-input-ring))
+	    (ring-empty-p pg-input-ring)
+	    (not (string-equal (ring-ref pg-input-ring 0) cmd)))
+    (unless (ring-p pg-input-ring)
+      (setq pg-input-ring (make-ring pg-input-ring-size)))
+    (ring-insert pg-input-ring cmd)))
 
 ;;;###autoload
 (defun pg-remove-from-input-history (cmd)
@@ -1222,7 +1219,7 @@ Moreover, undo/redo is always allowed in comments located in \
 the locked region."
   (interactive "*P")
   (if (or (not proof-locked-span)
-  	  (equal (proof-queue-or-locked-end) (point-min)))
+	  (equal (proof-queue-or-locked-end) (point-min)))
       (undo arg)
     (let ((repeat ; Allow the user to perform successive undos at once
 	   (if (numberp arg)
@@ -1245,8 +1242,8 @@ the locked region."
 The flag ARG is passed to functions `undo' and `next-undo-elt'.
 It should be a non-numeric value saying whether an undo-in-region
 behavior is expected."
-;; Note that if ARG is non-nil, (> (region-end) (region-beginning)) must hold,
-;; at least for the first call from the loop of `pg-protected-undo'.
+  ;; Note that if ARG is non-nil, (> (region-end) (region-beginning)) must hold,
+  ;; at least for the first call from the loop of `pg-protected-undo'.
   (setq arg (and arg (not (numberp arg)))) ; ensure arg is boolean
   (if (or (not proof-locked-span)
 	  (equal (proof-queue-or-locked-end) (point-min))) ; required test
@@ -1323,17 +1320,17 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 
 (defun proof-autosend-loop ()
   (proof-with-current-buffer-if-exists proof-script-buffer
-    (unless (or (proof-locked-region-full-p)
-		proof-shell-busy
-		;; TODO: re-engage autosend after C-c C-n even if not modified.
-		(eq (buffer-chars-modified-tick) proof-autosend-modified-tick)
-		(and proof-autosend-all
-		     (eq proof-shell-last-queuemode 'retracting)))
-      (let ((proof-autosend-running t))
-	(setq proof-autosend-modified-tick (buffer-chars-modified-tick))
-	(if proof-autosend-all
-	    (proof-autosend-loop-all)
-	  (proof-autosend-loop-next))))))
+				       (unless (or (proof-locked-region-full-p)
+						   proof-shell-busy
+						   ;; TODO: re-engage autosend after C-c C-n even if not modified.
+						   (eq (buffer-chars-modified-tick) proof-autosend-modified-tick)
+						   (and proof-autosend-all
+							(eq proof-shell-last-queuemode 'retracting)))
+					 (let ((proof-autosend-running t))
+					   (setq proof-autosend-modified-tick (buffer-chars-modified-tick))
+					   (if proof-autosend-all
+					       (proof-autosend-loop-all)
+					     (proof-autosend-loop-next))))))
 
 (defun proof-autosend-loop-all ()
   "Send commands from the script until an error, complete, or input appears."
@@ -1364,8 +1361,8 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
   (unwind-protect
       (let ((qol   (proof-queue-or-locked-end)))
 	(save-excursion
-	  ;(goto-char qol)
-	  ;(skip-chars-forward " \t\n")
+					;(goto-char qol)
+					;(skip-chars-forward " \t\n")
 	  (message "Trying next commands in prover...")
 	  (proof-assert-until-point
 	   (if proof-multiple-frames-enable 
@@ -1400,7 +1397,7 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	     '(no-response-display 
 	       no-error-display
 	       no-goals-display)))))))
-  
+
 (provide 'pg-user)
 
 ;;; pg-user.el ends here

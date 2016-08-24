@@ -19,8 +19,7 @@
     (setq proof-goals-buffer    (get-buffer-create goals))
     (setq proof-response-buffer (get-buffer-create resp))
 
-    (when (and (eq proof-interaction-mode 'server)
-	       proof-server-log-traffic)
+    (when proof-server-log-traffic
 	(let ((logger (concat "*" (downcase proof-assistant) "-log*")))
 	  (setq proof-server-log-buffer (get-buffer-create logger))
 	  (with-current-buffer proof-server-log-buffer

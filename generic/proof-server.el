@@ -445,6 +445,12 @@ This function should not be called if
   (and proof-server-process
        proof-check-command))
 
+(defun proof-find-theorems ()
+  "Find theorems containing item."
+  (interactive)
+  (when proof-find-theorems-command
+    (funcall proof-find-theorems-command)))
+
 (defun proof-get-context ()
   "Get current proof context."
   (interactive)
