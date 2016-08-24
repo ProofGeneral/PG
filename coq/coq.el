@@ -122,15 +122,8 @@ These are appended at the end of `coq-shell-init-cmd'."
   ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
 
-'(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
-   "*Regular expression indicating that the proof has been completed.")
-
 (defvar coq-goal-regexp
   "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
-
-
-'(defconst coq-interrupt-regexp "User Interrupt."
-   "Regexp corresponding to an interrupt.")
 
 (defcustom coq-end-goals-regexp-show-subgoals "\n(dependent evars:"
   "Regexp for `proof-shell-end-goals-regexp' when showing all subgoals.
@@ -344,48 +337,6 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (defun coq-remove-starting-blanks (s)
   (string-match "\\`\\s-*" s)
   (substring s (match-end 0) (length s)))
-
-
-;; Messages dispalyed by "Time" are always following or preceding the real
-;; result, if it follows we want it to be non urgent, otherwise the result
-;; would not be shown in response buffer. If it is before, then we want it
-;; urgent so that it is displayed.
-(defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching proof-shell-eager-annotation-start
-  that should maybe not be classified as urgent messages.")
-
-;; return the end position if found, nil otherwise
-(defun coq-non-urgent-eager-annotation ()
-  (save-excursion
-    (when (and (looking-at coq-eager-no-urgent-regex)
-               (re-search-forward proof-shell-eager-annotation-end nil t))
-      (let ((res (match-end 0))); robustify
-        ;; if there is something else than a prompt here then this eager
-        ;; annotation is left urgent (return nil), otherwise it is not urgent
-        ;; (return position of the end of the annotation)
-        (when (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
-          res)))))
-
-;; Looking for eager annotation which does not match coq-eager-no-urgent-regex
-(defun coq-search-urgent-message ()
-  "Find forward the next really urgent message.
-Return the position of the beginning of the message (after the
-annotation-start) if found."
-  (let ((again t) 
-        (start-start nil) 
-        (end-end nil)
-        (eager proof-shell-eager-annotation-start))
-    (while again
-      (setq start-start (and (re-search-forward eager nil 'limit)
-                             (match-beginning 0)))
-      (setq end-end (and start-start (coq-non-urgent-eager-annotation)))
-      (unless end-end
-        (setq again nil) ; exit while
-        ;; display message (this prints the message once now but it will be
-        ;; reprinted as a normal output, bad?)
-        ;;(proof-shell-process-urgent-message start-start end-end)
-        ))
-    (and start-start (goto-char start-start))))
 
 ;;;;;;;;;;; Trying to accept { and } as terminator for empty commands. Actually
 ;;;;;;;;;;; I am experimenting two new commands "{" and "}" (without no
@@ -1141,7 +1092,7 @@ Near here means PT is either inside or just aside of a comment."
 
 ;; overwrite the generic one, interactive prompt is Debug mode;; try to display
 ;; the debug goal in the goals buffer.
-(defun proof-shell-process-interactive-prompt-regexp ()
+'(defun proof-shell-process-interactive-prompt-regexp ()
   "Action taken when `proof-shell-interactive-prompt-regexp' is observed."
   (when (and (proof-shell-live-buffer)
                                         ; not already visible
@@ -1238,7 +1189,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; span menu
   (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent. "
+  '(setq proof-shell-start-silent-cmd "Set Silent. "
         proof-shell-stop-silent-cmd "Unset Silent. ")
 
   (coq-init-syntax-table)
