@@ -1090,17 +1090,6 @@ Near here means PT is either inside or just aside of a comment."
             (when (looking-at "Goal")
               (pg-goals-display (buffer-substring (point) pt2) nil))))))))
 
-;; overwrite the generic one, interactive prompt is Debug mode;; try to display
-;; the debug goal in the goals buffer.
-'(defun proof-shell-process-interactive-prompt-regexp ()
-  "Action taken when `proof-shell-interactive-prompt-regexp' is observed."
-  (when (and (proof-shell-live-buffer)
-                                        ; not already visible
-             t)
-    (switch-to-buffer proof-shell-buffer)
-    (coq-display-debug-goal)
-    (message "Prover expects input in %s buffer (if debug mode: h<return> for help))" proof-shell-buffer)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun coq-mode-config ()
