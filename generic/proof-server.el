@@ -348,15 +348,13 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	
 	;; Turn off scripting (ensure buffers completely processed/undone)
 	(proof-deactivate-scripting-auto)
-	;; TODO wait here?
-	(message "POINT 1: proc status: %s" (process-status proc))
+
 	;; Try to shut down politely.
 	(if proof-server-quit-cmd
-	    (proof-server-send-to-prover proof-server-quit-cmd)
+	    (progn
+	      (proof-server-send-to-prover proof-server-quit-cmd)
+	      (accept-process-output proc 0 100))
 	  (process-send-eof))
-
-	(message "POINT 2: proc status: %s" (process-status proc))
-
 
 	;; Wait for it to die
 	(let ((timecount   (proof-ass quit-timeout))
@@ -366,17 +364,11 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	    (accept-process-output proc 1 nil 1)
 	    (cl-decf timecount)))
 
-	(message "POINT 3: proc status: %s" (process-status proc))
-	
 	;; Still there, kill it rudely.
 	(when (memq (process-status proc) '(open run stop))
 	  (message "%s, cleaning up and exiting...killing process" bufname)
-	  (kill-process proc))
+	  (kill-process proc)))
 
-	(message "POINT 4: proc status: %s" (process-status proc))
-
-
-)
       (setq proof-server-process nil)
       (set-process-sentinel proc nil))
 

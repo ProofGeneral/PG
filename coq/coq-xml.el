@@ -249,6 +249,10 @@ to write out the traversal code by hand each time."
   (coq-xml-call '((val . Goal))
                 (coq-xml-unit)))
 
+(defun coq-xml-quit ()
+  (coq-xml-call '((val . Quit))
+                (coq-xml-unit)))
+
 (defun coq-xml-evars ()
   (coq-xml-call '((val . Evars))
                 (coq-xml-unit)))

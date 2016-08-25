@@ -1145,6 +1145,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; FIXME da: Does Coq have a help or about command?
   ;;	proof-info-command "Help"
 
+  (setq proof-server-quit-cmd (lambda () (list (coq-xml-quit) nil)))
   (setq proof-context-command 'coq-get-context)
   
   (setq proof-goal-command-p 'coq-goal-command-p
@@ -1644,7 +1645,7 @@ Warning: this makes the error messages (and location) wrong.")
          (lambda (response)
            (let ((result (coq-queries-get-message-string response)))
              (if (null result) ;; TODO bug? in 8.5 XML protocol, don't get any string back
-                 (coq-queries-process-response response) ; show error if no valid response
+                 (coq-queries-process-response response nil nil) ; show error if no valid response
                (unless (coq-tactic-already-has-an-as-close newcmd) ;; FIXME ???
                  (with-current-buffer proof-script-buffer
                    (save-excursion
