@@ -567,7 +567,8 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--backtrack-on-call-failure ()
   (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
     (when xml
-      (equal (coq-xml-at-path xml '(call val)) "Add"))))
+      (let ((call-val (coq-xml-at-path xml '(call val))))
+	(member call-val '("Goal" "Status"))))))
   
 (defun coq-server--handle-failure-value (xml)
   ;; don't clear pending edit-at state id here
