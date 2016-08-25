@@ -1692,8 +1692,8 @@ The optional QUEUEFLAGS are added to each queue item."
 	(message "SECONDARY: %s SECONDARY-START: %s SECONDARY-END: %s START: %s END: %s"
 		 proof-locked-secondary-span secondary-start secondary-end start end)
 	(unless (and proof-locked-secondary-span
-		     (or (and (>= start secondary-start) (<= start secondary-end))
-			 (and (>= end secondary-start) (<= end secondary-end))))
+		     (or (and (>= start secondary-start) (< start secondary-end))
+			 (and (> end secondary-start) (<= end secondary-end))))
 	  (setq span (span-make start end))
 	  (message "MADE SPAN WITH TEXT: %s" (nth 1 semi))
 	  (if (eq (car semi) 'cmd)
