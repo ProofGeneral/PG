@@ -386,7 +386,7 @@ is gone and we have to close the secondary locked span."
     (coq-server--register-state-id coq-server--current-span qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
     (coq-server--merge-locked-spans)
-    (coq-server--update-state-id-and-process qed-state-id)))
+    (coq-server--update-state-id-and-process new-tip-state-id)))
 
 (defun coq-server--simple-backtrack ()
   ;; delete spans marked for deletion
