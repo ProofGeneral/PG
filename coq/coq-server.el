@@ -27,6 +27,9 @@ If we undo to point before the span with this state id, the focus
 is gone and we have to close the secondary locked span."
   )
 
+(defvar coq-server--current-call nil
+  "Call associated with last response")
+
 (defvar coq-server--current-span nil
   "Span associated with last response")
 
@@ -559,22 +562,30 @@ is gone and we have to close the secondary locked span."
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
+
+;; only some kinds of calls should cause backtracking if we get a fail value
+(defun coq-server--backtrack-on-call-failure ()
+  (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
+    (when xml
+      (equal (coq-xml-at-path xml '(call val)) "Add"))))
+  
 (defun coq-server--handle-failure-value (xml)
   ;; don't clear pending edit-at state id here
   ;; because we may get failures from Status/Goals before the edit-at value
   ;; we usually see the failure twice, once for Goal, again for Status
-  (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
-    (unless (or (equal last-valid-state-id coq-current-state-id)
-		(gethash xml coq-server--error-fail-tbl))
-      (puthash xml t coq-server--error-fail-tbl)
-      (setq coq-server--backtrack-on-failure t)
-      (with-current-buffer proof-script-buffer
-	(if (equal last-valid-state-id coq-retract-buffer-state-id)
-	    (goto-char (point-min))
-	  (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	    (with-current-buffer proof-script-buffer
-	      (goto-char (span-end last-valid-span)))))
-	(proof-retract-until-point)))))
+  (when (coq-server--backtrack-on-call-failure)
+    (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
+      (unless (or (equal last-valid-state-id coq-current-state-id)
+		  (gethash xml coq-server--error-fail-tbl))
+	(puthash xml t coq-server--error-fail-tbl)
+	(setq coq-server--backtrack-on-failure t)
+	(with-current-buffer proof-script-buffer
+	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
+	      (goto-char (point-min))
+	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
+	      (with-current-buffer proof-script-buffer
+		(goto-char (span-end last-valid-span)))))
+	  (proof-retract-until-point))))))
 
 (defun coq-server--handle-good-value (xml)
   (message "GOOD VALUE: %s" xml)
@@ -791,11 +802,12 @@ is gone and we have to close the secondary locked span."
     (coq--display-response msg)))
 
 ;; process XML response from Coq
-(defun coq-server-process-response (response span)
+(defun coq-server-process-response (response call span)
   (with-current-buffer coq-xml-response-buffer
     (coq-xml-append-response response)
     (coq-xml-unescape-buffer)
-    ;; maybe should pass this instead
+    ;; maybe should pass these instead
+    (setq coq-server--current-call call) 
     (setq coq-server--current-span span) 
     (let ((xml (coq-xml-get-next-xml)))
       (while xml
@@ -818,11 +830,11 @@ is gone and we have to close the secondary locked span."
 	(coq-server--handle-feedback xml) 
 	(setq xml (coq-xml-get-next-xml))))))
 
-(defun coq-server-handle-tq-response (special-processor response span)
+(defun coq-server-handle-tq-response (special-processor response call span)
   ;; if there's a special processor, use that
   (if special-processor
-      (funcall special-processor response)
-    (coq-server-process-response response span))
+      (funcall special-processor response call span)
+    (coq-server-process-response response call span))
   ;; advance script queue
   (proof-server-manage-output response))
 

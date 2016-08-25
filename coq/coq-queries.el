@@ -21,14 +21,14 @@
 ;; some handlers
 
 ;; clear user *response* buffer and
-;;  pass response to default response handler with nil span
-(defun coq-queries-clear-and-process-response (response)
+;;  pass response to default response handler
+(defun coq-queries-clear-and-process-response (response call span)
   (pg-response-clear-displays)
-  (funcall 'coq-server-process-response response nil))
+  (funcall 'coq-server-process-response response call span))
 
-;; just pass response to default response handler with nil span
-(defun coq-queries-process-response (response)
-  (funcall 'coq-server-process-response response nil))
+;; just pass response to default response handler
+(defun coq-queries-process-response (response call span)
+  (funcall 'coq-server-process-response response call span))
 
 ;; extract string from message
 ;; used for build-match, insert-intros, for example

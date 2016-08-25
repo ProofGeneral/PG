@@ -102,6 +102,7 @@
 
 ;;; added for Coq
 
+(defvar tq-current-call nil)
 (defvar tq-current-span nil)
 
 ;; handler for out-of-band responses from coqtop
@@ -124,6 +125,8 @@
 	 (span (cadr str-and-span)))
 
     (tq-maybe-log "emacs" str)
+    ;; call to be returned with coqtop response
+    (setq tq-current-call str) 
     ;; span to be returned with coqtop response
     (setq tq-current-span span) 
     (process-send-string (tq-process tq) str)))
@@ -215,14 +218,15 @@ This produces more reliable results with some processes."
 	      (let ((answer (buffer-substring (point-min) (point))))
 		(delete-region (point-min) (point))
 		(unwind-protect
-		    (condition-case nil
+		    (condition-case err
 			(progn
 			  (tq-maybe-log "coqtop" answer) ;; MODIFIED
 			  (funcall (tq-queue-head-fn tq)
 				   (tq-queue-head-closure tq)
 				   answer 
+				   tq-current-call
 				   tq-current-span))
-		      (error nil))
+		      (error (message "Error when processing Coq response: %s, response was: \"%s\"" err answer)))
 		  (tq-queue-pop tq))
 		(tq-process-buffer tq))))))))
 
