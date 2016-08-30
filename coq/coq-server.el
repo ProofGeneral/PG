@@ -42,6 +42,7 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server-transaction-queue nil)
 
 (defvar end-of-response-regexp "</value>")
+(defvar other-responses-regexp "</feedback>\\|</message>")
 
 ;; we see feedback and value-fail messages twice, once for Goal, again for Status
 ;; see Bug 4850
@@ -843,7 +844,8 @@ is gone and we have to close the secondary locked span."
 ;; called by proof-server-send-to-prover
 ;; do not call directly
 (defun coq-server-send-to-prover (s special-handler)
-  (tq-enqueue coq-server-transaction-queue s end-of-response-regexp
+  (tq-enqueue coq-server-transaction-queue s
+	      end-of-response-regexp other-responses-regexp
 	      ;; "closure" argument, passed to handler below
 	      ;; can be used for unusual processing on response
 	      ;; for example, to insert intros into script

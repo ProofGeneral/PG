@@ -84,18 +84,21 @@
 (defun tq-buffer              (tq) (cdr (cdr tq)))
 
 ;; The structure of `queue' is as follows
-;; ((question regexp closure . fn)
+;; ((question end-regexp other-regexp closure . fn)
 ;;  <other queue entries>)
 ;; question: string to send to the process
 (defun tq-queue-head-question (tq) (car (car (tq-queue tq))))
-;; regexp: regular expression that matches the end of a response from
+;; end-regexp: regular expression that matches the end of a response from
 ;; the process
-(defun tq-queue-head-regexp   (tq) (car (cdr (car (tq-queue tq)))))
+(defun tq-queue-head-end-regexp   (tq) (car (cdr (car (tq-queue tq)))))
+;; other-regexp: regular expression that matches a partial response from
+;; the process
+(defun tq-queue-head-other-regexp   (tq) (car (cdr (cdr (car (tq-queue tq))))))
 ;; closure: additional data to pass to the function
-(defun tq-queue-head-closure  (tq) (car (cdr (cdr (car (tq-queue tq))))))
+(defun tq-queue-head-closure  (tq) (car (cdr (cdr (cdr (car (tq-queue tq)))))))
 ;; fn: function to call upon receiving a complete response from the
 ;; process
-(defun tq-queue-head-fn       (tq) (cdr (cdr (cdr (car (tq-queue tq))))))
+(defun tq-queue-head-fn       (tq) (cdr (cdr (cdr (cdr (car (tq-queue tq)))))))
 
 ;; Determine whether queue is empty
 (defun tq-queue-empty         (tq) (not (tq-queue tq)))
@@ -151,21 +154,22 @@ from the PROCESS that are not transactional."
 			   (tq-filter ',tq string)))
     tq))
 
-(defun tq-queue-add (tq question re closure fn)
-  (setcar tq (nconc (tq-queue tq)
-		    (cons (cons question (cons re (cons closure fn))) nil)))
-  'ok)
+(defun tq-queue-add (tq question end-re other-re closure fn)
+  (let ((new-item (cons question (cons end-re (cons other-re (cons closure fn))))))
+    (setcar tq (nconc (tq-queue tq)
+		      (list new-item)))
+    'ok))
 
 (defun tq-queue-pop (tq)
   (setcar tq (cdr (car tq)))
   (let ((question (tq-queue-head-question tq)))
     (condition-case nil
 	(when question
-	  (tq-log-and-send tq question)) ;; MODIFIED
+	  (tq-log-and-send tq question))
       (error nil)))
   (null (car tq)))
 
-(defun tq-enqueue (tq question regexp closure fn)
+(defun tq-enqueue (tq question end-regexp other-regexp closure fn)
   "Add a transaction to transaction queue TQ.
 This sends the string QUESTION to the process that TQ communicates with.
 
@@ -173,16 +177,16 @@ When the corresponding answer comes back, we call FN with two
 arguments: CLOSURE, which may contain additional data that FN
 needs, and the answer to the question.
 
-REGEXP is a regular expression to match the entire answer;
+END-REGEXP is a regular expression to match the entire answer;
 that's how we tell where the answer ends.
 
-If DELAY-QUESTION is non-nil, delay sending this question until
-the process has finished replying to any previous questions.
-This produces more reliable results with some processes."
-  (let ((sendp (not (tq-queue tq)))) ;; MODIFIED, always delay sending
-    (tq-queue-add tq (unless sendp question) regexp closure fn)
+OTHER-REGEXP is a regular expression to match a partial answer, 
+which we can process, without allowing the next item in the queue
+to be sent."
+  (let ((sendp (not (tq-queue tq)))) ;; always delay sending
+    (tq-queue-add tq (unless sendp question) end-regexp other-regexp closure fn)
     (when sendp
-      (tq-log-and-send tq question)))) ;; MODIFIED
+      (tq-log-and-send tq question))))
 
 (defun tq-close (tq)
   "Shut down transaction queue TQ, terminating the process."
@@ -206,7 +210,6 @@ This produces more reliable results with some processes."
       (if (= 0 (buffer-size)) ()
 	(if (tq-queue-empty tq)
 	    ;; feedbacks not prompted by call
-	    ;; MODIFIED
 	    ;; original code put response here in a *spurious* buffer
 	    (let ((oob-response (buffer-string)))
 	      (tq-maybe-log "coqtop-oob" oob-response)
@@ -214,21 +217,39 @@ This produces more reliable results with some processes."
 	      (funcall tq--oob-handler oob-response))
 	  ;; elisp allows multiple else-forms
 	  (goto-char (point-min))
-	  (when (re-search-forward (tq-queue-head-regexp tq) nil t)
-	      (let ((answer (buffer-substring (point-min) (point))))
+	  (cond
+	   ;; complete response
+	   ;; can safely pop item from queue and send it
+	   ((re-search-forward (tq-queue-head-end-regexp tq) nil t)
+	    (let ((answer (buffer-substring (point-min) (point))))
 		(delete-region (point-min) (point))
 		(unwind-protect
 		    (condition-case err
 			(progn
-			  (tq-maybe-log "coqtop" answer) ;; MODIFIED
+			  (tq-maybe-log "coqtop" answer)
 			  (funcall (tq-queue-head-fn tq)
 				   (tq-queue-head-closure tq)
 				   answer 
 				   tq-current-call
 				   tq-current-span))
-		      (error (message "Error when processing Coq response: %s, response was: \"%s\"" err answer)))
+		      (error (message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
 		  (tq-queue-pop tq))
-		(tq-process-buffer tq))))))))
+		(tq-process-buffer tq)))
+	   ;; partial response
+	   ;; don't pop item from queue
+	   ((re-search-forward (tq-queue-head-other-regexp tq) nil t)
+	    (let ((answer (buffer-substring (point-min) (point))))
+		(delete-region (point-min) (point))
+		(condition-case err
+		    (progn
+		      (tq-maybe-log "coqtop" answer)
+		      (funcall (tq-queue-head-fn tq)
+			       (tq-queue-head-closure tq)
+			       answer 
+			       tq-current-call
+			       tq-current-span))
+		  (error (message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
+		(tq-process-buffer tq)))))))))
 
 (provide 'coq-tq)
 
