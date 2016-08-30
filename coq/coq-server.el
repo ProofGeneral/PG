@@ -570,7 +570,7 @@ is gone and we have to close the secondary locked span."
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
 	(member call-val '("Goal" "Status"))))))
-  
+
 (defun coq-server--handle-failure-value (xml)
   ;; don't clear pending edit-at state id here
   ;; because we may get failures from Status/Goals before the edit-at value
@@ -640,7 +640,8 @@ is gone and we have to close the secondary locked span."
     (list (coq-xml-add-item cmd) span)))
 
 (defun coq-server--display-error (error-state-id error-msg error-start error-stop)
-  (if (equal error-state-id "0") ; no context for this error
+  (if (or (null error-state-id)
+	  (equal error-state-id "0")) ; no context for this error
       (progn
 	(coq-server--clear-response-buffer)
 	(coq--display-response error-msg))
@@ -694,24 +695,27 @@ is gone and we have to close the secondary locked span."
 
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
-  (message "HANDLING ERROR: %s" xml)
   ;; memoize this response
   (puthash xml t coq-server--error-fail-tbl)
   ;; TODO what happens when there's no location?
-  (let* ((loc (coq-xml-at-path 
-	       xml 
-	       '(feedback (state_id) 
-			  (feedback_content (message (message_level) (option (loc)))))))
+  ;; can get a state id or edit id
+  (let* ((content (or (coq-xml-at-path 
+		       xml 
+		       '(feedback (state_id) (feedback_content)))
+		      (coq-xml-at-path 
+		       xml 
+		       '(feedback (edit_id) (feedback_content)))))
+	 (loc (coq-xml-at-path content '(feedback_content (message (message_level) (option (loc))))))
 	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
 	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
 	 (msg-string (coq-xml-at-path 
-		      xml 
-		      '(feedback (state_id) 
-				 (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
+		      content
+		      '(feedback_content (message (message_level) (option (loc)) (richpp (_))))))
 	 (error-msg (flatten-pp (coq-xml-body msg-string)))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
 			  '(feedback (state_id val)))))
+    ;; error-state-id will be nil if we get an edit-id instead
     (coq-server--display-error error-state-id error-msg error-start error-stop)))
 
 (defun coq-server--color-span-on-feedback (xml tbl prop face)
