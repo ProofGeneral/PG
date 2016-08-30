@@ -577,21 +577,17 @@ is gone and we have to close the secondary locked span."
   ;; we usually see the failure twice, once for Goal, again for Status
   (when (coq-server--backtrack-on-call-failure)
     (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
-      (message "LAST VALID STATE ID: %s" last-valid-state-id)
-      (unless ; (or (equal last-valid-state-id coq-current-state-id)
-	  (gethash xml coq-server--error-fail-tbl)
-	;)
+      (unless (gethash xml coq-server--error-fail-tbl)
 	(puthash xml t coq-server--error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
 	(with-current-buffer proof-script-buffer
 	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
 	      (goto-char (point-min))
 	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	      (goto-char (span-end last-valid-span)))
-	    (proof-goto-point)))))))
+	      (goto-char (span-end last-valid-span))))
+	  (proof-goto-point))))))
 
 (defun coq-server--handle-good-value (xml)
-  (message "GOOD VALUE: %s" xml)
   (cond
    ((coq-server--backtrack-before-focus-p xml)
     ;; retract before current focus
