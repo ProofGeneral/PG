@@ -231,7 +231,7 @@ completely processing the buffer as the last step."
 		 (when proof-shell-busy
 		   (pg-autotest-message
 		    " random jump: interrupting prover")
-		   (proof-interrupt-process)))
+		   (proof-server-interrupt-process)))
 	     (proof-shell-wait))
 	   (decf jumps)))))
   (unless (proof-locked-region-full-p)

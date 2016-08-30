@@ -268,7 +268,7 @@ back the default toolbar."
 
 ;; Interrupt
 
-(defalias 'proof-toolbar-interrupt 'proof-interrupt-process)
+(defalias 'proof-toolbar-interrupt 'proof-server-interrupt-process)
 (defun proof-toolbar-interrupt-enable-p () proof-shell-busy)
 
 ;;

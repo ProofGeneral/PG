@@ -37,6 +37,11 @@ from calling `proof-server-exit'.")
 (defun proof-server-available-p ()
   proof-server-process)
 
+(defun proof-server-interrupt-process ()
+  (interactive)
+  (when proof-server-process
+    (interrupt-process proof-server-process)))
+
 (defun proof-server-clear-state ()
   "Clear internal state of proof shell."
   (setq proof-action-list nil

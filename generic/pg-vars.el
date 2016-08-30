@@ -253,7 +253,7 @@ Internal variable dynamically bound.")
   :group 'proof-general-internals)
 
 (defcustom proof-general-home-page
-  "http://proofgeneral.inf.ed.ac.uk"
+  "https://proofgeneral.github.io/"
   "*Web address for Proof General."
   :type 'string
   :group 'proof-general-internals)
@@ -266,7 +266,7 @@ Internal variable dynamically bound.")
 
 (defcustom proof-universal-keys
   '(([(control c) ?`]		. proof-next-error)
-    ([(control c) (control c)]  . proof-interrupt-process)
+    ([(control c) (control c)]  . proof-server-interrupt-process)
     ([(control c) (control n)]  . proof-assert-next-command-interactive)
     ([(control c) (control u)]  . proof-undo-last-successful-command)
     ([(control c) (control p)]  . proof-prf)

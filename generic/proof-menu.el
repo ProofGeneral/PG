@@ -103,7 +103,7 @@ without adjusting window layout."
   (define-key map [(control meta a)] 'proof-goto-command-start)
   (define-key map [(control meta e)] 'proof-goto-command-end)
   (define-key map [(control c) (control b)] 'proof-process-buffer)
-  ;; C-c C-c is proof-interrupt-process in universal-keys
+  ;; C-c C-c is proof-server-interrupt-process in universal-keys
   (define-key map [(control c) (control d)] 'proof-tree-external-display-toggle)
   ;; C-c C-f is proof-find-theorems in universal-keys
   (define-key map [(control c) (control H)] 'proof-help)

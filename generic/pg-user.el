@@ -31,7 +31,6 @@
 (defvar which-func-modes)               ; Defined by which-func.
 
 (declare-function proof-segment-up-to "proof-script") 
-(declare-function proof-interrupt-process "proof-shell") 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1350,7 +1349,7 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Sending commands to prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
-	  (proof-interrupt-process)
+	  (proof-server-interrupt-process)
 	  (message "Sending commands to prover...interrupted")
 	  '(proof-shell-wait)) ;; TODO
 	 (t
@@ -1376,7 +1375,7 @@ assuming the undo-in-region behavior will apply if ARG is non-nil."
 	 ((eq proof-prover-last-output-kind 'error)
 	  (message "Trying next commands in prover...error"))
 	 ((and (input-pending-p) proof-shell-busy)
-	  (proof-interrupt-process)
+	  (proof-server-interrupt-process)
 	  (message "Trying next commands in prover...interrupted")
 	  '(proof-shell-wait))
 	 (t

@@ -37,7 +37,6 @@
 (declare-function pg-response-warning "pg-response" (&rest args))
 (declare-function proof-segment-up-to "proof-script")
 (declare-function proof-autosend-enable "pg-user")
-(declare-function proof-interrupt-process "pg-shell")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1834,10 +1833,10 @@ No effect if prover is busy."
   (when (and (> (proof-queue-or-locked-end) beg)
 	     (not (and (proof-inside-comment beg)
 		       (proof-inside-comment end))))
-    (when proof-shell-busy
-      (message "Interrupting prover")
-      (proof-interrupt-process)
-      '(proof-shell-wait)) ;; TODO ??
+    ;; what is condition for interrupting?
+    ;; was proof-shell-busy in REPL world
+    ;; (message "Interrupting prover")
+    ;; (proof-server-interrupt-process)
     (message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-restriction ;; see Trac#403
