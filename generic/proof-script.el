@@ -2089,6 +2089,7 @@ query saves here."
     (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
       ;; spans contain state id resulting from processing that span
       ;; so leave this span processed, and work on preceding span
+      ;; TODO 'type becomes 'pg-type
       (let* ((span (span-at (point) 'type)))
 	;; If no span at point or previous span, retract the last span in the buffer.
 	(unless span

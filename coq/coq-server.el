@@ -569,7 +569,7 @@ is gone and we have to close the secondary locked span."
   (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
-	(member call-val '("Goal" "Status"))))))
+	(member call-val '("Add" "Goal" "Status"))))))
 
 (defun coq-server--handle-failure-value (xml)
   ;; don't clear pending edit-at state id here
@@ -577,17 +577,18 @@ is gone and we have to close the secondary locked span."
   ;; we usually see the failure twice, once for Goal, again for Status
   (when (coq-server--backtrack-on-call-failure)
     (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
-      (unless (or (equal last-valid-state-id coq-current-state-id)
-		  (gethash xml coq-server--error-fail-tbl))
+      (message "LAST VALID STATE ID: %s" last-valid-state-id)
+      (unless ; (or (equal last-valid-state-id coq-current-state-id)
+	  (gethash xml coq-server--error-fail-tbl)
+	;)
 	(puthash xml t coq-server--error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
 	(with-current-buffer proof-script-buffer
 	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
 	      (goto-char (point-min))
 	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	      (with-current-buffer proof-script-buffer
-		(goto-char (span-end last-valid-span)))))
-	  (proof-retract-until-point))))))
+	      (goto-char (span-end last-valid-span)))
+	    (proof-goto-point)))))))
 
 (defun coq-server--handle-good-value (xml)
   (message "GOOD VALUE: %s" xml)
@@ -645,8 +646,10 @@ is gone and we have to close the secondary locked span."
       (progn
 	(coq-server--clear-response-buffer)
 	(coq--display-response error-msg))
-    (let ((error-span (coq-server--get-span-with-state-id error-state-id)))
-      ;; decide where to show error
+    (let ((error-span (or (coq-server--get-span-with-state-id error-state-id)
+			  ;; if no span associated with state id, assume current span
+			  coq-server--current-span)))
+      ;; decide where to show error 
       ;; on subsequent retraction, keep error in response buffer
       (setq coq-server--retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
@@ -732,7 +735,6 @@ is gone and we have to close the secondary locked span."
 	  (skip-chars-forward " \t\n")
 	  ;; if there's an existing colored span at point, re-use it,
 	  ;;  because want most recent coloring
-	  (message "COLORING SPAN AT: %s WITH FACE: %s" (point) face)
 	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
 	    ;; TODO 'type becomes 'pg-type when merged with trunk
 	    (span-set-property span-processing 'type 'pg-special-coloring)
@@ -759,7 +761,6 @@ is gone and we have to close the secondary locked span."
 	 (span-colored (gethash state-id tbl)))
     ;; may get several identical feedbacks, use just first one
     (when span-colored
-      (message "UNCOLORING SPAN AT: %s" (span-start span-colored))
       (remhash state-id tbl)
       (span-delete span-colored))))
 
