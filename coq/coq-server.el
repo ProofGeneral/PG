@@ -572,10 +572,12 @@ is gone and we have to close the secondary locked span."
 	(member call-val '("Add" "Goal" "Status"))))))
 
 (defun coq-server--handle-failure-value (xml)
-  ;; don't clear pending edit-at state id here
-  ;; because we may get failures from Status/Goals before the edit-at value
-  ;; we usually see the failure twice, once for Goal, again for Status
+  ;; remove any pending calls
+  (tq-flush coq-server-transaction-queue)
   (when (coq-server--backtrack-on-call-failure)
+    ;; don't clear pending edit-at state id here
+    ;; because we may get failures from Status/Goals before the edit-at value
+    ;; we usually see the failure twice, once for Goal, again for Status
     (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
       (unless (gethash xml coq-server--error-fail-tbl)
 	(puthash xml t coq-server--error-fail-tbl)

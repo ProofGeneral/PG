@@ -2,6 +2,9 @@
 
 ;; modified version of tq.el from Emacs distribution
 
+;; TODO mention returning current call
+;;      handlers for partial responses
+
 ;; The main modification is that queue may contain elements that are thunks, as 
 ;; well as strings. That allows us to invoke the thunk just before sending 
 ;; its results to the process, which allows capturing state variables that 
@@ -133,6 +136,13 @@
     ;; span to be returned with coqtop response
     (setq tq-current-span span) 
     (process-send-string (tq-process tq) str)))
+
+(defun tq-flush (tq)
+  ;; flush queue 
+  (setcar tq nil)
+  ;; remove any parts of any responses
+  (with-current-buffer (tq-buffer tq)
+    (erase-buffer)))
 
 ;;; Core functionality
 
