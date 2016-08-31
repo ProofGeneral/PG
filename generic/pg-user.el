@@ -20,7 +20,6 @@
 
 (require 'proof-script)	        ; we build on proof-script
 
-
 ;; OK to use cl at compile-time
 (eval-when-compile
   (require 'cl))
@@ -264,7 +263,8 @@ interactive calls."
      (goto-char (point-min))
      (proof-retract-until-point-interactive))
    (if called-interactively
-       (proof-maybe-follow-locked-end (point-min)))))
+       (proof-maybe-follow-locked-end (point-min))))
+  (run-hooks 'proof-server-retract-buffer-hook))
 
 (defun proof-retract-current-goal ()
   "Retract the current proof, and move point to its start."
@@ -914,10 +914,7 @@ If CALLBACK is set, we invoke that when the command completes."
        ;; buffer-syntactic context dependent, as an alist
        ;; (handy for Isabelle: not a true replacement for parsing)
        (format (nth 1 (assq ctxt proof-query-identifier-command))
-	       identifier)))
-     nil ; no wait
-     callback)))
-
+	       identifier))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

@@ -44,24 +44,6 @@ is gone and we have to close the secondary locked span."
 (defvar end-of-response-regexp "</value>")
 (defvar other-responses-regexp "</feedback>\\|</message>")
 
-;; we see feedback and value-fail messages twice, once for Goal, again for Status
-;; see Bug 4850
-;; process each one just once, because they have effects; use table to know if they've been seen
-;; to prevent this table from taking too much space, we clear it just as each Add is sent
-(defvar coq-server--error-fail-tbl (make-hash-table :test 'equal))
-
-;; table mapping state ids to spans created by processingin feedbacks
-;; we make values weak; spans can be deleted from buffer without necessarily
-;;  deleting from this table
-(defvar coq-server--processing-span-tbl (make-hash-table :test 'equal :weakness 'value))
-
-;; table mapping state ids to spans created by incomplete feedbacks
-(defvar coq-server--incomplete-span-tbl (make-hash-table :test 'equal :weakness 'value))
-
-;; table mapping state ids to spans
-;; values are weak, because spans can be deleted, as on a retract
-(defvar coq-server--span-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
-
 ;; hook function to count how many Adds are pending
 ;; comments generate items with null element
 (defun count-addable (items) ; helper for coq-server-count-pending-adds
@@ -262,7 +244,10 @@ is gone and we have to close the secondary locked span."
 ;; we could use the predicate mechanism, but this happens a lot
 ;; so use hash table
 (defun coq-server--get-span-with-state-id (state-id)
-  (gethash state-id coq-server--span-state-id-tbl))
+  (gethash state-id coq-span-state-id-tbl))
+
+(defun coq-server--get-span-with-edit-id (edit-id)
+  (gethash edit-id coq-span-edit-id-tbl))
 
 ;; error coloring heuristic 
 (defun coq-server--error-span-at-end-of-locked (error-span)
@@ -377,7 +362,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--register-state-id (span state-id)
   (coq-set-span-state-id span state-id)
-  (puthash state-id span coq-server--span-state-id-tbl))
+  (puthash state-id span coq-span-state-id-tbl))
 
 (defun coq-server--end-focus (xml)
   (message "END FOCUS")
@@ -487,7 +472,7 @@ is gone and we have to close the secondary locked span."
 	      (setq found-focus-end t))
 	    (span-delete span))))
       ;; remove incomplete span for the Qed in the reopened focus
-      (let ((incomplete-span (gethash focus-end-state-id coq-server--incomplete-span-tbl)))
+      (let ((incomplete-span (gethash focus-end-state-id coq-incomplete-span-tbl)))
 	(when (and incomplete-span (span-buffer incomplete-span))
 	  (span-delete incomplete-span)))
       ;; skip past whitespace for secondary span
@@ -563,7 +548,6 @@ is gone and we have to close the secondary locked span."
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
-
 ;; only some kinds of calls should cause backtracking if we get a fail value
 (defun coq-server--backtrack-on-call-failure ()
   (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
@@ -582,8 +566,8 @@ is gone and we have to close the secondary locked span."
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status
     (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
-      (unless (gethash xml coq-server--error-fail-tbl)
-	(puthash xml t coq-server--error-fail-tbl)
+      (unless (gethash xml coq-error-fail-tbl)
+	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
 	(unless (coq-server--valid-state-id last-valid-state-id)
 	  (setq last-valid-state-id coq-current-state-id))
@@ -641,17 +625,21 @@ is gone and we have to close the secondary locked span."
 ;; side-effect of the thunk: clear feedback message table
 (defun coq-server-make-add-command-thunk (cmd span)
   (lambda () 
-    (clrhash coq-server--error-fail-tbl)
+    (clrhash coq-error-fail-tbl)
     (list (coq-xml-add-item cmd) span)))
 
-(defun coq-server--display-error (error-state-id error-msg error-start error-stop)
-  (if (or (null error-state-id)
-	  (equal error-state-id "0")) ; no context for this error
+(defun coq-server--display-error (error-state-id error-edit-id error-msg error-start error-stop)
+  (if (and (or (null error-state-id)
+	       (not (coq-server--valid-state-id error-state-id)))
+	   (null error-edit-id))
+      ;; no context for this error      
       (progn
 	(coq-server--clear-response-buffer)
 	(coq--display-response error-msg))
     (let ((error-span (or (coq-server--get-span-with-state-id error-state-id)
-			  ;; if no span associated with state id, assume current span
+			  (coq-server--get-span-with-edit-id error-edit-id)
+			  ;; no span associated with state id or edit id
+			  ;; assume current span
 			  coq-server--current-span)))
       ;; decide where to show error 
       ;; on subsequent retraction, keep error in response buffer
@@ -663,19 +651,20 @@ is gone and we have to close the secondary locked span."
 	    (coq--highlight-error error-span error-start error-stop))
 	;; error in middle of processed region
 	;; indelibly color the error 
-	(let ((span-processing (gethash error-state-id coq-server--processing-span-tbl)))
+	(let ((span-processing (or (gethash error-state-id coq-processing-span-tbl)
+				   coq-server--current-span)))
 	  ;; may get several processed feedbacks for one processingin
 	  ;; use first one
 	  (when span-processing
 	    (progn
-	      (remhash error-state-id coq-server--processing-span-tbl)
+	      (remhash error-state-id coq-processing-span-tbl)
 	      (span-delete span-processing))))
 	(coq--mark-error error-span error-msg)))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)
   ;; memoize this errormsg response
-  (puthash xml t coq-server--error-fail-tbl)
+  (puthash xml t coq-error-fail-tbl)
   (let* ((loc (coq-xml-at-path 
 	       xml 
 	       '(feedback (state_id) (feedback_content (loc)))))
@@ -687,8 +676,11 @@ is gone and we have to close the secondary locked span."
 	 (error-msg (coq-xml-body1 msg-string))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
-			  '(feedback (state_id val)))))
-    (coq-server--display-error error-state-id error-msg error-start error-stop)))
+			  '(feedback (state_id val))))
+	 (error-edit-id (coq-xml-at-path 
+			 xml 
+			 '(feedback (edit_id val)))))
+    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
@@ -703,27 +695,26 @@ is gone and we have to close the secondary locked span."
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
   ;; memoize this response
-  (puthash xml t coq-server--error-fail-tbl)
+  (puthash xml t coq-error-fail-tbl)
   ;; TODO what happens when there's no location?
-  ;; can get a state id or edit id
-  (let* ((content (or (coq-xml-at-path 
-		       xml 
-		       '(feedback (state_id) (feedback_content)))
-		      (coq-xml-at-path 
-		       xml 
-		       '(feedback (edit_id) (feedback_content)))))
-	 (loc (coq-xml-at-path content '(feedback_content (message (message_level) (option (loc))))))
+  ;; can get a state id or edit id, so use _ in path
+  (let* ((loc (coq-xml-at-path
+	       xml
+	       '(feedback (_) (feedback_content (message (message_level) (option (loc)))))))
 	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
 	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
 	 (msg-string (coq-xml-at-path 
-		      content
-		      '(feedback_content (message (message_level) (option (loc)) (richpp (_))))))
+		      xml
+		      '(feedback (_) (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
 	 (error-msg (flatten-pp (coq-xml-body msg-string)))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
-			  '(feedback (state_id val)))))
-    ;; error-state-id will be nil if we get an edit-id instead
-    (coq-server--display-error error-state-id error-msg error-start error-stop)))
+			  '(feedback (state_id val))))
+	 (error-edit-id (coq-xml-at-path 
+			 xml 
+			 '(feedback (edit_id val)))))
+    ;; may get either state id or edit id
+    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
 (defun coq-server--color-span-on-feedback (xml tbl prop face)
   (with-current-buffer proof-script-buffer
@@ -749,14 +740,14 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--color-span-processingin (xml)
   (coq-server--color-span-on-feedback
    xml
-   coq-server--processing-span-tbl
+   coq-processing-span-tbl
    'processing-in
    'proof-processing-face))
 
 (defun coq-server--color-span-incomplete (xml)
   (coq-server--color-span-on-feedback
    xml
-   coq-server--incomplete-span-tbl
+   coq-incomplete-span-tbl
    'incomplete
    'proof-incomplete-face))
 
@@ -769,12 +760,12 @@ is gone and we have to close the secondary locked span."
       (span-delete span-colored))))
 
 (defun coq-server--uncolor-span-processed (xml)
-  (coq-server--uncolor-span-on-feedback xml coq-server--processing-span-tbl))
+  (coq-server--uncolor-span-on-feedback xml coq-processing-span-tbl))
 
 (defun coq-server--uncolor-span-complete (xml)
   ;; we also get complete feedbacks for statements that dismiss last goal in proof
   ;; we ignore those
-  (coq-server--uncolor-span-on-feedback xml coq-server--incomplete-span-tbl))
+  (coq-server--uncolor-span-on-feedback xml coq-incomplete-span-tbl))
 
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
@@ -787,14 +778,17 @@ is gone and we have to close the secondary locked span."
     ("complete"
      (coq-server--uncolor-span-complete xml))
     ("errormsg" ; 8.5-only
-     (unless (gethash xml coq-server--error-fail-tbl)
+     (unless (gethash xml coq-error-fail-tbl)
        (coq-server--handle-errormsg xml)))
     ("message" ; 8.6
-     (unless (gethash xml coq-server--error-fail-tbl)
+     (message "GOT FEEDBACK MESSAGE")
+     (unless (gethash xml coq-error-fail-tbl)
+       (message "NOT IN HASHTBL")
        (let ((msg-level 
 	      (coq-xml-at-path 
 	       xml 
 	       '(feedback (_) (feedback_content (message (message_level val)))))))
+	 (message "MSG LEVEL: %s" msg-level)
 	 (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
 		   (equal msg-level "error") )
 	   (coq-server--handle-error xml)))))
@@ -831,7 +825,7 @@ is gone and we have to close the secondary locked span."
 (defun coq-server-process-response (response call span)
   (with-current-buffer coq-xml-response-buffer
     (coq-server--xml-loop response call span)))
-    
+
 ;; process OOB response from Coq
 (defun coq-server-process-oob (oob call span)
   (with-current-buffer coq-xml-oob-buffer

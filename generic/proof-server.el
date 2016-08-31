@@ -1,7 +1,6 @@
 ;; ;;; proof-server.el --- Proof General server mode code
 ;;
 
-(require 'pg-response)
 (require 'proof-config)
 (require 'proof-proverargs)
 (require 'proof-queue)
