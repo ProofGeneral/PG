@@ -571,6 +571,9 @@ is gone and we have to close the secondary locked span."
       (let ((call-val (coq-xml-at-path xml '(call val))))
 	(member call-val '("Add" "Goal" "Status"))))))
 
+(defun coq-server--valid-state-id (state-id)
+  (not (equal state-id "0")))
+
 (defun coq-server--handle-failure-value (xml)
   ;; remove any pending calls
   (tq-flush coq-server-transaction-queue)
@@ -582,11 +585,14 @@ is gone and we have to close the secondary locked span."
       (unless (gethash xml coq-server--error-fail-tbl)
 	(puthash xml t coq-server--error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
+	(unless (coq-server--valid-state-id last-valid-state-id)
+	  (setq last-valid-state-id coq-current-state-id))
 	(with-current-buffer proof-script-buffer
 	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
 	      (goto-char (point-min))
 	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	      (goto-char (span-end last-valid-span))))
+	      (when last-valid-span
+		(goto-char (span-end last-valid-span)))))
 	  (proof-goto-point))))))
 
 (defun coq-server--handle-good-value (xml)
@@ -806,34 +812,30 @@ is gone and we have to close the secondary locked span."
 	 (msg (flatten-pp (coq-xml-body message-str))))
     (coq--display-response msg)))
 
+(defun coq-server--xml-loop (response call span)
+  (coq-xml-append-response response)
+  (coq-xml-unescape-buffer)
+  (setq coq-server--current-call call) 
+  (setq coq-server--current-span span) 
+  (let ((xml (coq-xml-get-next-xml)))
+    (while xml
+      (message "process response XML: %s" xml)
+      (pcase (coq-xml-tag xml)
+	(`value (coq-server--handle-value xml))
+	(`feedback (coq-server--handle-feedback xml))
+	(`message (coq-server--handle-message xml))
+	(t (message "Unknown coqtop response %s" xml)))
+      (setq xml (coq-xml-get-next-xml)))))
+
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
   (with-current-buffer coq-xml-response-buffer
-    (coq-xml-append-response response)
-    (coq-xml-unescape-buffer)
-    ;; maybe should pass these instead
-    (setq coq-server--current-call call) 
-    (setq coq-server--current-span span) 
-    (let ((xml (coq-xml-get-next-xml)))
-      (while xml
-	(message "process response XML: %s" xml)
-	(pcase (coq-xml-tag xml)
-	  (`value (coq-server--handle-value xml))
-	  (`feedback (coq-server--handle-feedback xml))
-	  (`message (coq-server--handle-message xml))
-	  (t (message "Unknown coqtop response %s" xml)))
-	(setq xml (coq-xml-get-next-xml))))))
-
+    (coq-server--xml-loop response call span)))
+    
 ;; process OOB response from Coq
-(defun coq-server-process-oob (oob)
+(defun coq-server-process-oob (oob call span)
   (with-current-buffer coq-xml-oob-buffer
-    (coq-xml-append-response oob)
-    (coq-xml-unescape-buffer)
-    (let ((xml (coq-xml-get-next-xml)))
-      (while xml
-	;; OOB data is always feedback
-	(coq-server--handle-feedback xml) 
-	(setq xml (coq-xml-get-next-xml))))))
+    (coq-server--xml-loop oob call span)))
 
 (defun coq-server-handle-tq-response (special-processor response call span)
   ;; if there's a special processor, use that

@@ -5,5 +5,6 @@
 *)
 
 Goal nat.
-Check nat.
+  Check nat.
+  Check True.
 

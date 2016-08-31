@@ -224,8 +224,8 @@ to be sent."
 	    (let ((oob-response (buffer-string)))
 	      (tq-maybe-log "coqtop-oob" oob-response)
 	      (delete-region (point-min) (point-max))
-	      (funcall tq--oob-handler oob-response))
-	  ;; elisp allows multiple else-forms
+	      (funcall tq--oob-handler oob-response tq-current-call tq-current-span))
+	  ;; multiple else-forms
 	  (goto-char (point-min))
 	  (cond
 	   ;; complete response
