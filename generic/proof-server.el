@@ -344,10 +344,12 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
   (let* ((proc     (get-buffer-process (current-buffer)))
 	 (bufname  (buffer-name)))
     (message "%s, cleaning up and exiting..." bufname)
-    (run-hooks 'proof-shell-signal-interrupt-hook)
-    
-    (redisplay t)
+
+    ;; sometimes causes internal Emacs 24.5 error
+    ;; (redisplay t)
+
     (when proc
+
       (catch 'exited
 	(setq proof-server-exit-in-progress t)
 	(set-process-sentinel 
@@ -363,11 +365,12 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	      (proof-server-send-to-prover proof-server-quit-cmd)
 	      (accept-process-output proc 0 100))
 	  (process-send-eof))
-
+	
 	;; Wait for it to die
 	(let ((timecount   (proof-ass quit-timeout))
 	      (proc        (get-buffer-process proof-server-buffer)))
-	  (while (and (> timecount 0)
+	  (while (and proc
+		      (> timecount 0)
 		      (memq (process-status proc) '(open run stop)))
 	    (accept-process-output proc 1 nil 1)
 	    (cl-decf timecount)))
@@ -400,6 +403,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	  (delete-windows-on (symbol-value buf))
 	  (kill-buffer (symbol-value buf))
 	  (set buf nil))))
+
     (setq proof-server-buffer nil)
     (setq proof-server-exit-in-progress nil)
     (message "%s exited." bufname)))
