@@ -262,12 +262,16 @@ interactive calls."
   ;; The numeric prefix argument "p" is never nil,
   ;; see Section  "Distinguish Interactive Calls" in the Elisp manual.
   (interactive "p")
-  (proof-with-script-buffer
-   (save-excursion
-     (goto-char (point-min))
-     (proof-retract-until-point-interactive))
-   (if called-interactively
-       (proof-maybe-follow-locked-end (point-min))))
+  (if (and proof-server-response-complete-fun
+	   (not (funcall proof-server-response-complete-fun)))
+      ;; brute force if in a loop
+      (proof-server-restart)
+    (proof-with-script-buffer
+     (save-excursion
+       (goto-char (point-min))
+       (proof-retract-until-point-interactive))
+     (if called-interactively
+	 (proof-maybe-follow-locked-end (point-min)))))
   (run-hooks 'proof-server-retract-buffer-hook))
 
 (defun proof-retract-current-goal ()

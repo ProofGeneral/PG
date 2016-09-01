@@ -110,8 +110,8 @@ For example for coq on Windows you might need something like:
 
 (defpgcustom quit-timeout 
   (cond
-   ((eq proof-assistant-symbol 'isar)    45)
-   (t					 5))
+   ((eq proof-assistant-symbol 'coq)      1)
+   (t					  5))
   "The number of seconds to wait after sending `proof-shell-quit-cmd'.
 After this timeout, the proof shell will be killed off more rudely.
 If your proof assistant takes a long time to clean up (for

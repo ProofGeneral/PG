@@ -84,33 +84,34 @@ If KEEPRESPONSE is non-nil, we assume that a response message
 corresponding to this goals message has already been displayed
 before this goals message (see `proof-shell-handle-delayed-output'),  
 so the response buffer should not be cleared."
-  (with-current-buffer proof-goals-buffer
-    ;; Response buffer may be out of date. It may contain (error)
-    ;; messages relating to earlier proof states
+  (when proof-goals-buffer
+    (with-current-buffer proof-goals-buffer
+      ;; Response buffer may be out of date. It may contain (error)
+      ;; messages relating to earlier proof states
 
-    ;; Erase the response buffer if need be, maybe removing the
-    ;; window.  Indicate it should be erased before the next output.
+      ;; Erase the response buffer if need be, maybe removing the
+      ;; window.  Indicate it should be erased before the next output.
 
-    ;; TODO do we still need to call this?
-    ;; (pg-response-maybe-erase t t nil keepresponse)
+      ;; TODO do we still need to call this?
+      ;; (pg-response-maybe-erase t t nil keepresponse)
 
-    ;; Erase the goals buffer and add in the new string
+      ;; Erase the goals buffer and add in the new string
 
-    (setq buffer-read-only nil)
+      (setq buffer-read-only nil)
 
-    (unless (eq 0 (buffer-size))
-      (bufhist-checkpoint-and-erase))
+      (unless (eq 0 (buffer-size))
+	(bufhist-checkpoint-and-erase))
 
-    ;; Only display if string is non-empty.
-    (unless (string-equal string "")
-      (insert string))
+      ;; Only display if string is non-empty.
+      (unless (string-equal string "")
+	(insert string))
 
-    (setq buffer-read-only t)
-    (set-buffer-modified-p nil)
-    
-    ;; Keep point at the start of the buffer.
-    (proof-display-and-keep-buffer
-     proof-goals-buffer (point-min))))
+      (setq buffer-read-only t)
+      (set-buffer-modified-p nil)
+      
+      ;; Keep point at the start of the buffer.
+      (proof-display-and-keep-buffer
+       proof-goals-buffer (point-min)))))
 
 ;;
 ;; Actions in the goals buffer
