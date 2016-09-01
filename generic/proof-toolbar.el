@@ -153,13 +153,17 @@ back the default toolbar."
 
 (defalias 'proof-toolbar-undo 'proof-undo-last-successful-command)
 
+;; for Coq, we should only undo when we've received a complete response
+;; but if we test that here, the Undo button is often disabled when
+;;  we don't want; instead, test that condition when we press the button
 (defun proof-toolbar-undo-enable-p ()
-  '(message "proof-toolbar-undo-enable-p: %s" 
+  '(message "proof-toolbar-undo-enable-p: %s"
 	   (proof-with-script-buffer
 	    (> (proof-unprocessed-begin) (point-min))))
-  (proof-with-script-buffer
-   (> (proof-unprocessed-begin) (point-min))))
-
+  ;; can undo only if we've processed something
+   (proof-with-script-buffer
+    (> (proof-unprocessed-begin) (point-min))))
+       
 ;; Delete
 
 (defalias 'proof-toolbar-delete 'proof-undo-and-delete-last-successful-command)

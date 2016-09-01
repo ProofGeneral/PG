@@ -228,8 +228,6 @@ to be sent."
 
 (defun tq-process-buffer (tq)
   "Check TQ's buffer for the regexp at the head of the queue."
-  (message "QUEUE BIT OF TQ: %s" (tq-queue tq))
-  (message "END REGEXP: %s" (tq-queue-head-end-regexp tq))
   (let ((buffer (tq-buffer tq)))
     (when (buffer-live-p buffer)
       (set-buffer buffer)

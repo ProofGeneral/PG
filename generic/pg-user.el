@@ -217,7 +217,11 @@ If inside a comment, just process until the start of the comment."
 (defun proof-undo-last-successful-command ()
   "Undo last successful command at end of locked region."
   (interactive)
-  (proof-undo-last-successful-command-1))
+  ;; for Coq, don't allow Undo if haven't received complete response
+  (if (or (not proof-server-response-complete-fun)
+	    (funcall proof-server-response-complete-fun))
+      (proof-undo-last-successful-command-1)
+    (message-box "Can't undo, incomplete response from prover")))
 
 (defun proof-undo-and-delete-last-successful-command ()
   "Undo and delete last successful command at end of locked region.

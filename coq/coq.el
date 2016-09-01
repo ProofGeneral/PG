@@ -1143,6 +1143,7 @@ Near here means PT is either inside or just aside of a comment."
 
   (setq proof-command-formatting-fun 'coq-format-command)
   (setq proof-server-interrupt-fun 'coq-interrupt-coq)
+  (setq proof-server-response-complete-fun (lambda () (tq-response-complete coq-server-transaction-queue)))
   
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.

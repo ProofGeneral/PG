@@ -883,6 +883,12 @@ data needs formatting before sending."
    :type 'function
    :group 'proof-server)
 
+(defcustom proof-server-response-complete-fun nil
+  "Have we received all pending responses from the prover. Used to know when we 
+can undo the last command sent."
+  :type 'function
+  :group 'proof-server)
+
 (defcustom proof-server-retract-buffer-hook nil
   "Code to run just after the buffer is retracted."
   :type 'function
