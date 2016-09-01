@@ -61,6 +61,9 @@ It's the state id returned after Init command sent.")
 ;; edit ids are numbers, so don't need to use 'equal as test like we did for state ids
 (defvar coq-span-edit-id-tbl (make-hash-table :weakness 'value))
 
+;; table of active workers
+(defvar coq-worker-status-tbl (make-hash-table :test 'equal))
+
 (defun coq-reset-tables ()
   (mapc 'clrhash
 	(list coq-error-fail-tbl

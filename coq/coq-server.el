@@ -41,7 +41,10 @@ is gone and we have to close the secondary locked span."
 
 (defvar coq-server-transaction-queue nil)
 
+;; regexp to know when whole response has been received
 (defvar end-of-response-regexp "</value>")
+;; sometimes we don't get a whole response, as when looping, so need
+;;  regexp to detect a usable partial response
 (defvar other-responses-regexp "</feedback>\\|</message>")
 
 ;; hook function to count how many Adds are pending
@@ -71,6 +74,17 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server-start-transaction-queue ()
   (setq coq-server-transaction-queue (tq-create proof-server-process 'coq-server-process-oob)))
+
+;; stop all active workers
+;; which we do when we get an interrupt and there's no pending response
+(defun coq-server-stop-active-workers ()
+  (maphash (lambda (worker-id _)
+	     (proof-server-send-to-prover
+	      (lambda ()
+		(list 
+		 (coq-xml-stop-worker worker-id)
+		 nil))))
+	   coq-worker-status-tbl))
 
 ;; clear response buffer when we Add an item from the Coq script
 (add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
@@ -197,7 +211,6 @@ is gone and we have to close the secondary locked span."
 	 (bg-goals (coq-xml-body (nth 1 all-goals)))
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals))))
-    (message "current-goals: %s" current-goals)
     (if current-goals
 	(progn
 	  (dolist (goal current-goals)
@@ -365,10 +378,8 @@ is gone and we have to close the secondary locked span."
   (puthash state-id span coq-span-state-id-tbl))
 
 (defun coq-server--end-focus (xml)
-  (message "END FOCUS")
   (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
-    (message "QED STATE ID: %s NEW TIP: %s" qed-state-id new-tip-state-id)
     (coq-server--register-state-id coq-server--current-span qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
     (coq-server--merge-locked-spans)
@@ -767,6 +778,15 @@ is gone and we have to close the secondary locked span."
   ;; we ignore those
   (coq-server--uncolor-span-on-feedback xml coq-incomplete-span-tbl))
 
+;; maintain table of active workers
+(defun coq-server--handle-worker-status (xml)
+  (let* ((status-pair (coq-xml-at-path xml '(feedback (state_id) (feedback_content (pair)))))
+	 (worker-id (coq-xml-body1 (coq-xml-at-path status-pair '(pair (string)))))
+	 (status (coq-xml-body1 (coq-xml-at-path status-pair '(pair (string) (string))))))
+    (if (member status '("Idle" "Dead"))
+	(remhash worker-id coq-worker-status-tbl)
+      (puthash worker-id status coq-worker-status-tbl))))
+	 
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
     ("processingin"
@@ -777,18 +797,17 @@ is gone and we have to close the secondary locked span."
      (coq-server--color-span-incomplete xml))
     ("complete"
      (coq-server--uncolor-span-complete xml))
+    ("workerstatus"
+     (coq-server--handle-worker-status xml))
     ("errormsg" ; 8.5-only
      (unless (gethash xml coq-error-fail-tbl)
        (coq-server--handle-errormsg xml)))
     ("message" ; 8.6
-     (message "GOT FEEDBACK MESSAGE")
      (unless (gethash xml coq-error-fail-tbl)
-       (message "NOT IN HASHTBL")
        (let ((msg-level 
 	      (coq-xml-at-path 
 	       xml 
 	       '(feedback (_) (feedback_content (message (message_level val)))))))
-	 (message "MSG LEVEL: %s" msg-level)
 	 (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
 		   (equal msg-level "error") )
 	   (coq-server--handle-error xml)))))

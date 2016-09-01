@@ -257,6 +257,10 @@ to write out the traversal code by hand each time."
   (coq-xml-call '((val . Evars))
                 (coq-xml-unit)))
 
+(defun coq-xml-stop-worker (worker-id)
+  (coq-xml-call '((val . StopWorker))
+		(coq-xml-string worker-id)))
+
 ;; Status requests don't force unless we say otherwise
 (defun coq-xml-status (&optional b)
   (let ((force (or b 'false)))

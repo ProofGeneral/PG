@@ -38,8 +38,12 @@ from calling `proof-server-exit'.")
 
 (defun proof-server-interrupt-process ()
   (interactive)
-  (when proof-server-process
-    (interrupt-process proof-server-process)))
+  ;; call prover's interrupter if available
+  (if proof-server-interrupt-fun
+      (funcall proof-server-interrupt-fun)
+    (when proof-server-process
+      ;; otherwise, send a SIGINT
+      (interrupt-process proof-server-process))))
 
 (defun proof-server-clear-state ()
   "Clear internal state of proof shell."

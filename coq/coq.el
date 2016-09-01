@@ -1076,6 +1076,15 @@ Near here means PT is either inside or just aside of a comment."
              (cm-prefix (match-string 2)))
         (concat (make-string (length cm-start) ? ) cm-prefix)))))
 
+(defun coq-interrupt-coq ()
+  (when proof-server-process
+    (let ((complete-p (tq-response-complete coq-server-transaction-queue)))
+      ;; resets completed flag
+      ;; which is why we get its value first
+      (tq-flush coq-server-transaction-queue) 
+      (if complete-p
+          (coq-server-stop-active-workers)
+        (interrupt-process proof-server-process)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
@@ -1133,7 +1142,8 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-prog-name-guess t)
 
   (setq proof-command-formatting-fun 'coq-format-command)
-
+  (setq proof-server-interrupt-fun 'coq-interrupt-coq)
+  
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)

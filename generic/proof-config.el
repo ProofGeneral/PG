@@ -884,7 +884,13 @@ data needs formatting before sending."
    :group 'proof-server)
 
 (defcustom proof-server-retract-buffer-hook nil
-  "Code to run when the buffer is retracted."
+  "Code to run just after the buffer is retracted."
+  :type 'function
+  :group 'proof-server)
+
+(defcustom proof-server-interrupt-fun nil
+  "Code to interrupt the prover, if anything more than 
+a SIGINT is needed."
   :type 'function
   :group 'proof-server)
 

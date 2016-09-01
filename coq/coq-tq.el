@@ -76,15 +76,25 @@
 
 (require 'proof-config)
 (require 'proof-resolver)
+(require 'coq-state-vars)
 
 ;;; Code:
 
 ;;; Accessors
 
-;; This part looks like (queue . (process . buffer))
-(defun tq-queue               (tq) (car tq))
-(defun tq-process             (tq) (car (cdr tq)))
-(defun tq-buffer              (tq) (cdr (cdr tq)))
+;; This part looks like ((queue . (process . buffer)) . (response-complete . (call . span)))
+
+(defun tq-qpb                 (tq) (car tq))
+(defun tq-queue               (tq) (car (tq-qpb tq)))
+(defun tq-process             (tq) (car (cdr (tq-qpb tq))))
+(defun tq-buffer              (tq) (cdr (cdr (tq-qpb tq))))
+
+(defun tq-state-items         (tq) (cdr tq))
+(defun tq-response-complete   (tq) (car (tq-state-items tq)))
+(defun tq-call                (tq) (car (cdr (tq-state-items tq))))
+(defun tq-span                (tq) (cdr (cdr (tq-state-items tq))))
+
+(defun tq-set-complete        (tq) (setcar (tq-state-items tq) t))
 
 ;; The structure of `queue' is as follows
 ;; ((question end-regexp other-regexp closure . fn)
@@ -108,9 +118,6 @@
 
 ;;; added for Coq
 
-(defvar tq-current-call nil)
-(defvar tq-current-span nil)
-
 ;; handler for out-of-band responses from coqtop
 (defvar tq--oob-handler nil)
 
@@ -128,12 +135,11 @@
 	   (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
-
     (tq-maybe-log "emacs" str)
     ;; call to be returned with coqtop response
-    (setq tq-current-call str) 
-    ;; span to be returned with coqtop response
-    (setq tq-current-span span) 
+    (setcdr tq (cons nil       ; not complete
+		     (cons str ; call
+			   span)))
     ;; associate edit id with this span
     (when span
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
@@ -141,7 +147,9 @@
 
 (defun tq-flush (tq)
   ;; flush queue 
-  (setcar tq nil)
+  (setcar (tq-qpb tq) nil)
+  ;; reset complete flag
+  (tq-set-complete tq)
   ;; remove any parts of any responses
   (with-current-buffer (tq-buffer tq)
     (erase-buffer)))
@@ -155,10 +163,12 @@ PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
 to a tcp server on another machine. The OOB-HANDLER handles responses
 from the PROCESS that are not transactional."
-  (let ((tq (cons nil (cons process
+  (let* ((qpb (cons nil (cons process
 			    (generate-new-buffer
 			     (concat " tq-temp-"
-				     (process-name process)))))))
+				     (process-name process))))))
+	 (state (cons nil (cons nil nil)))
+	 (tq (cons qpb state)))
     (buffer-disable-undo (tq-buffer tq))
     (setq tq--oob-handler oob-handler)
     (set-process-filter process
@@ -168,12 +178,14 @@ from the PROCESS that are not transactional."
 
 (defun tq-queue-add (tq question end-re other-re closure fn)
   (let ((new-item (cons question (cons end-re (cons other-re (cons closure fn))))))
-    (setcar tq (nconc (tq-queue tq)
-		      (list new-item)))
+    (setcar (tq-qpb tq) 
+	    (nconc (tq-queue tq)
+		   (list new-item)))
     'ok))
 
 (defun tq-queue-pop (tq)
-  (setcar tq (cdr (car tq)))
+  (let ((queue-items (tq-queue tq)))
+    (setcar (tq-qpb tq) (cdr queue-items)))
   (let ((question (tq-queue-head-question tq)))
     (condition-case nil
 	(when question
@@ -216,6 +228,8 @@ to be sent."
 
 (defun tq-process-buffer (tq)
   "Check TQ's buffer for the regexp at the head of the queue."
+  (message "QUEUE BIT OF TQ: %s" (tq-queue tq))
+  (message "END REGEXP: %s" (tq-queue-head-end-regexp tq))
   (let ((buffer (tq-buffer tq)))
     (when (buffer-live-p buffer)
       (set-buffer buffer)
@@ -226,42 +240,43 @@ to be sent."
 	    (let ((oob-response (buffer-string)))
 	      (tq-maybe-log "coqtop-oob" oob-response)
 	      (delete-region (point-min) (point-max))
-	      (funcall tq--oob-handler oob-response tq-current-call tq-current-span))
+	      (funcall tq--oob-handler oob-response (tq-call tq) (tq-span tq)))
 	  ;; multiple else-forms
 	  (goto-char (point-min))
 	  (cond
 	   ;; complete response
 	   ;; can safely pop item from queue and send it
 	   ((re-search-forward (tq-queue-head-end-regexp tq) nil t)
+	    (tq-set-complete tq)
 	    (let ((answer (buffer-substring (point-min) (point))))
-		(delete-region (point-min) (point))
-		(unwind-protect
-		    (condition-case err
-			(progn
-			  (tq-maybe-log "coqtop" answer)
-			  (funcall (tq-queue-head-fn tq)
-				   (tq-queue-head-closure tq)
-				   answer 
-				   tq-current-call
-				   tq-current-span))
-		      (error (message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
-		  (tq-queue-pop tq))
-		(tq-process-buffer tq)))
+	      (delete-region (point-min) (point))
+	      (unwind-protect
+		  (condition-case err
+		      (progn
+			(tq-maybe-log "coqtop" answer)
+			(funcall (tq-queue-head-fn tq)
+				 (tq-queue-head-closure tq)
+				 answer 
+				 (tq-call tq)
+				 (tq-span tq)))
+		    (error (message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
+		(tq-queue-pop tq))
+	      (tq-process-buffer tq)))
 	   ;; partial response
 	   ;; don't pop item from queue
 	   ((re-search-forward (tq-queue-head-other-regexp tq) nil t)
 	    (let ((answer (buffer-substring (point-min) (point))))
-		(delete-region (point-min) (point))
-		(condition-case err
-		    (progn
-		      (tq-maybe-log "coqtop" answer)
-		      (funcall (tq-queue-head-fn tq)
-			       (tq-queue-head-closure tq)
-			       answer 
-			       tq-current-call
-			       tq-current-span))
-		  (error (message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
-		(tq-process-buffer tq)))))))))
+	      (delete-region (point-min) (point))
+	      (condition-case err
+		  (progn
+		    (tq-maybe-log "coqtop" answer)
+		    (funcall (tq-queue-head-fn tq)
+			     (tq-queue-head-closure tq)
+			     answer 
+			     (tq-call tq)
+			     (tq-span tq)))
+		(error (message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
+	      (tq-process-buffer tq)))))))))
 
 (provide 'coq-tq)
 
