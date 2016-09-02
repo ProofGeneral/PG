@@ -2383,6 +2383,7 @@ with something different."
 (defconst proof-script-important-settings
   '(proof-script-comment-start			;
     proof-script-comment-end
+    proof-server-response-complete-fun
     ;;    proof-goal-command-regexp		; not needed if proof-goal-command-p is set
     ;;    proof-goal-with-hole-regexp		; non-essential?
     ;;    proof-save-with-hole-regexp		; non-essential?

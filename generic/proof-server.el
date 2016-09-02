@@ -340,7 +340,6 @@ contains only invisible elements for Prooftree synchronization."
 Try to shut down the proof process nicely and clear locked
 regions and state variables.  Value for `kill-buffer-hook' in
 shell buffer, called by `proof-shell-bail-out' if process exits."
-  (message "RUNNING SERVER KILL FUNCTION")
   (let* ((proc     (get-buffer-process (current-buffer)))
 	 (bufname  (buffer-name)))
     (message "%s, cleaning up and exiting..." bufname)
@@ -359,21 +358,22 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	;; Turn off scripting (ensure buffers completely processed/undone)
 	(proof-deactivate-scripting-auto)
 
-	;; Try to shut down politely.
-	(if proof-server-quit-cmd
-	    (progn
-	      (proof-server-send-to-prover proof-server-quit-cmd)
-	      (accept-process-output proc 0 100))
-	  (process-send-eof))
-	
-	;; Wait for it to die
-	(let ((timecount   (proof-ass quit-timeout))
-	      (proc        (get-buffer-process proof-server-buffer)))
-	  (while (and proc
-		      (> timecount 0)
-		      (memq (process-status proc) '(open run stop)))
-	    (accept-process-output proc 1 nil 1)
-	    (cl-decf timecount)))
+	;; Try to shut down politely, if have full last response from prover
+	(when (proof-server-response-complete)
+	  (if proof-server-quit-cmd
+	      (progn
+		(proof-server-send-to-prover proof-server-quit-cmd)
+		(accept-process-output proc 0 100))
+	    (process-send-eof))
+	  
+	  ;; Wait for it to die
+	  (let ((timecount   (proof-ass quit-timeout))
+		(proc        (get-buffer-process proof-server-buffer)))
+	    (while (and proc
+			(> timecount 0)
+			(memq (process-status proc) '(open run stop)))
+	      (accept-process-output proc 1 nil 1)
+	      (cl-decf timecount))))
 
 	;; Still there, kill it rudely.
 	(when (memq (process-status proc) '(open run stop))

@@ -218,8 +218,7 @@ If inside a comment, just process until the start of the comment."
   "Undo last successful command at end of locked region."
   (interactive)
   ;; for Coq, don't allow Undo if haven't received complete response
-  (if (or (not proof-server-response-complete-fun)
-	    (funcall proof-server-response-complete-fun))
+  (if (proof-server-response-complete)
       (proof-undo-last-successful-command-1)
     (message-box "Can't undo, incomplete response from prover")))
 
@@ -262,8 +261,7 @@ interactive calls."
   ;; The numeric prefix argument "p" is never nil,
   ;; see Section  "Distinguish Interactive Calls" in the Elisp manual.
   (interactive "p")
-  (if (and proof-server-response-complete-fun
-	   (not (funcall proof-server-response-complete-fun)))
+  (if (proof-server-response-incomplete)
       ;; brute force if in a loop
       (proof-server-restart)
     (proof-with-script-buffer

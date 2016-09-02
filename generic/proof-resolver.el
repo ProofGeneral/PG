@@ -47,6 +47,14 @@
   (and proof-server-proof-completedp-fun 
        (funcall proof-server-proof-completedp-fun resp)))
 
+(defun proof-server-response-complete ()
+  (and proof-server-response-complete-fun
+       (funcall proof-server-response-complete-fun)))
+
+(defun proof-server-response-incomplete ()
+  (and proof-server-response-complete-fun
+       (not (funcall proof-server-response-complete-fun))))
+
 ;;;###autoload
 (defun proof-server-send-to-prover (string-or-fun &optional special-processor)
   (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
