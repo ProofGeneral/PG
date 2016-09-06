@@ -955,7 +955,7 @@ so for the following reasons:
  of STRG matching REGEXP. Empty match are counted once."
   (let ((nbmatch 0) (str strg))
     (while (and (proof-string-match regexp str) (not (string-equal str "")))
-      (incf nbmatch)
+      (cl-incf nbmatch)
       (if (= (match-end 0) 0) (setq str (substring str 1))
         (setq str (substring str (match-end 0)))))
     nbmatch))
