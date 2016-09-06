@@ -1,11 +1,9 @@
 Stuff to do to clean up the code
 --------------------------------
 
-Probably the "invisible" command things can go
-These are commands that user does not see, not part of script
-Can just call send-to-prover, yes?
+Fold in changes in main PG repo
 
-Localize all state
+Localize all state 
 
 Use cl-lib throughout - DONE
 
@@ -20,17 +18,23 @@ generic/proof-resolver.el probably doesn't need much of what's there
 ditch generic/proof-shell.el, but there is code that uses it, so careful
 DONE, although proof-tree, some other code still references it
 
-Makefile.devel mentions cvs; update that to git, or ditch it?
+Makefile.devel mentions cvs; update that to git, or ditch this Makefile?
 
-generic/proof-easy-config is probably ditchable
+generic/proof-easy-config is probably ditchable - DONE
 
-Go through autoloads, see what's what
+Go through autoloads, see what's what, rebuild autoloads
 
 Is generic/pg-xml.el still used? It's used in pg-movie.el, pgip.el
 Bits of it are redundant with coq/coq-xml.el
 
 in bin/proofgeneral, make it executable
 remove references to other provers
+
+remove uses of proof-trace-buffer, proof-thms-buffer?
+
+Update mmm contrib?
+
+What about Makefile.travis?
 
 Update these files:
 
@@ -45,6 +49,7 @@ README.md
 REGISTER (is this still used?)
 TAGS
 
+Document how communications works, coq-tq, coq-server
 
 
 
