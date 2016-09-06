@@ -72,6 +72,8 @@ Support dot.notation.of.modules."
        symbclean))))
 
 (defun coq-id-or-notation-at-point ()
-  (or (coq-id-at-point) (concat "\"" (coq-notation-at-position (point)) "\"")))
+  (or (coq-id-at-point)
+      (let ((notation (coq-notation-at-position (point))))
+	(if notation (concat "\"" notation "\"") ""))))
 
 (provide 'coq-parsing)
