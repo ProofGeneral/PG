@@ -1281,7 +1281,6 @@ activation is considered to have failed and an error is given."
                (signal (car err) (cdr err))))
 
       ;; Initialise regions
-
       (if (proof-locked-region-empty-p) ; leave alone if non-empty
 	  (proof-init-segmentation))
 
