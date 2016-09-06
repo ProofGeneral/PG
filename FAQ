@@ -3,6 +3,9 @@ FAQs for using/installing Proof General
 
 With thanks to the anonymous authors of questions/answers below.
 
+For latest version, see https://github.com/ProofGeneral/PG/blob/master/FAQ
+Please also check the BUGS file.
+
 -----------------------------------------------------------------
 
 Q. Coq produces some useful output I'd like to keep a note of, how do I do that?
