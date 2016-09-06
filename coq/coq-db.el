@@ -200,7 +200,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  t)))
 	    (setq res (nconc res (list menu-entry)))));; append *in place*
 	(setq l (cdr l))
-	(decf size)))
+	(cl-decf size)))
     res))
 
 

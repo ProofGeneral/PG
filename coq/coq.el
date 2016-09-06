@@ -958,7 +958,6 @@ goal is redisplayed."
          (re (regexp-quote (or id ""))))
     (when coq-highlight-id-last-regexp
       (coq-unhighlight-id-in-goals coq-highlight-id-last-regexp))
-<<<<<<< HEAD
        (coq-highlight-id-in-goals re)
        (setq coq-highlight-id-last-regexp re)))
 
@@ -983,34 +982,6 @@ goal is redisplayed."
 (proof-definvisible coq-set-printing-wildcards (coq-queries-set-printing-wildcard-thunk))
 (proof-definvisible coq-unset-printing-wildcards (coq-queries-unset-printing-wildcard-thunk))
 (proof-definvisible coq-pwd (coq-queries-pwd-thunk))
-=======
-    (coq-highlight-id-in-goals re)
-    (setq coq-highlight-id-last-regexp re)))
-
-
-(proof-definvisible coq-PrintHint "Print Hint. ")
-
-;; Items on show menu
-(proof-definvisible coq-show-tree "Show Tree.")
-(proof-definvisible coq-show-proof "Show Proof.")
-(proof-definvisible coq-show-conjectures "Show Conjectures.")
-(proof-definvisible coq-show-intros "Show Intros.") ; see coq-insert-intros below
-(proof-definvisible coq-set-printing-implicit "Set Printing Implicit.")
-(proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
-(proof-definvisible coq-set-printing-all "Set Printing All.")
-(proof-definvisible coq-unset-printing-all "Unset Printing All.")
-(proof-definvisible coq-set-printing-synth "Set Printing Synth.")
-(proof-definvisible coq-unset-printing-synth "Unset Printing Synth.")
-(proof-definvisible coq-set-printing-coercions "Set Printing Coercions.")
-(proof-definvisible coq-unset-printing-coercions "Unset Printing Coercions.")
-(proof-definvisible coq-set-printing-wildcards "Set Printing Wildcard.")
-(proof-definvisible coq-unset-printing-wildcards "Unset Printing Wildcard.")
-; Takes an argument
-;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
-;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
-
-
->>>>>>> 66ea13a2b855597ef8b5b648d0e8c398ac471933
 
 (defun coq-Compile ()
   "Compiles current buffer."
