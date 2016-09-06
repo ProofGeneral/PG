@@ -26,8 +26,12 @@ Return nil if S is nil."
 (defun coq-is-symbol-or-punct (c)
   "Return non nil if character C is a punctuation or a symbol constituent.
 If C is nil, return nil."
-  (when c
-    (or (equal (char-syntax c) ?\.) (equal (char-syntax c) ?\_))))
+  (let* ((symb (cond
+		((fboundp 'symbol-near-point) (symbol-near-point))
+		((fboundp 'symbol-at-point) (symbol-at-point))))
+	 (symbclean (when symb (coq-clean-id-at-point (symbol-name symb)))))
+    (when (and symb (not (zerop (length symbclean))))
+      symbclean)))
 
 (defun coq-grab-punctuation-left (pos)
   "Return a string made of punctuations chars found immediately before position POS."
