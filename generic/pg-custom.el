@@ -10,10 +10,6 @@
 ;;
 ;; Prover specific settings and user options.
 ;;
-;; The settings defined here automatically use the current proof
-;; assistant symbol as a prefix, i.e.  isar-favourites, coq-favourites,
-;; or whatever will be defined on evaluation.
-;;
 ;; This file is loaded only by mode stubs defined in `proof-site.el',
 ;; immediately after `proof-assistant' and similar settings have been
 ;; configured.
@@ -108,10 +104,7 @@ For example for coq on Windows you might need something like:
   :type '(repeat string)
   :group 'proof-shell)
 
-(defpgcustom quit-timeout 
-  (cond
-   ((eq proof-assistant-symbol 'coq)      1)
-   (t					  5))
+(defpgcustom quit-timeout 1
   "The number of seconds to wait after sending `proof-shell-quit-cmd'.
 After this timeout, the proof shell will be killed off more rudely.
 If your proof assistant takes a long time to clean up (for
@@ -164,17 +157,14 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
 ;; TODO: not used yet.  Want to move specific enabling of holes modes
 ;; to generic code (coq.el enables it in script and shell).
 ;; See http://proofgeneral.inf.ed.ac.uk/trac/ticket/211
-(defpgcustom use-holes (eq proof-assistant-symbol 'coq)
+(defpgcustom use-holes t
   "Whether or not to use the holes (editing template) mechanism.
 Enabled by default for Coq.
 Currently this setting is UNIMPLEMENTED, changes have no effect."
   :type 'boolean
   :group 'prover-config)
 
-(defpgcustom one-command-per-line
-  (cond
-   ((eq proof-assistant-symbol 'isar)  nil)
-   (t t))
+(defpgcustom one-command-per-line t
   "*If non-nil, format for newlines after each command in a script."
   :type 'boolean
   :group 'proof-user-options)
@@ -187,7 +177,7 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
   :set 'proof-set-value
   :group 'proof-user-options)
 
-(defpgcustom unicode-tokens-enable (eq proof-assistant-symbol 'isar)
+(defpgcustom unicode-tokens-enable nil
   "*Non-nil for using Unicode token input mode in Proof General."
   :type 'boolean
   :set 'proof-set-value
@@ -201,8 +191,6 @@ support depends on whether your proof assistant supports it."
   :type 'boolean
   :set 'proof-set-value
   :group 'proof-user-options)
-
-
 
 (provide 'pg-custom)
 
