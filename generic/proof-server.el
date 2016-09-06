@@ -125,17 +125,15 @@ derived Emacs mode; here, we call the procedure directly."
     ;; so do the merger here
     (when proof-merged-locked-end
       (proof-merge-locked))))
-    
 
 ;;;###autoload
 (defun proof-server-ready-prover (queuemode)
-  "Compare with proof-shell-ready-prover, for proof shells. 
-Make sure the proof assistant is ready for a command.
+"Make sure the proof assistant is ready for a command.
 We ignore QUEUEMODE, which is used just to give calling compatibility 
 with proof-shell-ready-prover."
   (message "Called proof-server-ready-prover")
   (proof-server-start)
-  t)
+  proof-server-process)
 
 (defun proof-server-sentinel (process event)
   (message-box "%s: %s" (capitalize (symbol-name proof-assistant-symbol)) event))
