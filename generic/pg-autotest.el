@@ -21,7 +21,6 @@
 (setq proof-splash-enable nil)		; prevent splash when testing
 
 (require 'proof)
-(require 'proof-shell)
 (require 'proof-utils)
 
 ;;; Code:
