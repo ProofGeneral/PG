@@ -13,7 +13,6 @@
 ;;
 
 
-(require 'proof-shell)
 (require 'coq-system)
 
 (cl-eval-when (compile)
