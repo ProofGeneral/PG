@@ -30,6 +30,7 @@
               (defvar coq-hide-additional-subgoals nil) ; defpacustom
               (proof-ready-for-assistant 'coq))     ; compile for coq
 
+(require 'cl-lib)
 (require 'proof)
 (require 'proof-resolver)
 (require 'coq-system)                   ; load path, option, project file etc.
@@ -820,7 +821,7 @@ flag Printing All set."
   (coq-queries-ask-show-all "Show goal number" "Show"))
 
 ;; Check
-(eval-when (compile)
+(cl-eval-when (compile)
            (defvar coq-auto-adapt-printing-width nil)); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
@@ -876,11 +877,11 @@ necessary.")
   "Return the width of a window currently displaying BUFFER."
   (let*
       ((buf-wins (get-buffer-window-list buffer nil t))
-       (dummy (if (not (eq 1 (length buf-wins)))
-                  (display-warning
-                   'proof-general
-                   "Zero or more than one goals window, guessing window width."
-                   :debug)))
+       (_ (if (not (eq 1 (length buf-wins)))
+              (display-warning
+               'proof-general
+               "Zero or more than one goals window, guessing window width."
+               :debug)))
        (buf-win (car buf-wins)));; TODO return the widest one instead of the first?
     ;; return nil if no goal buffer found
     (and buf-win (window-width buf-win))))
@@ -969,8 +970,6 @@ goal is redisplayed."
 (proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
 (proof-definvisible coq-show-intros (coq-queries-show-intros-thunk))
 
-(proof-definvisible coq-set-implicit-arguments (coq-queries-set-implicit-arguments-thunk))
-(proof-definvisible coq-unset-implicit-arguments (coq-queries-unset-implicit-arguments-thunk))
 (proof-definvisible coq-set-printing-all (coq-queries-set-printing-all-thunk))
 (proof-definvisible coq-unset-printing-all (coq-queries-unset-printing-all-thunk))
 (proof-definvisible coq-set-printing-synth (coq-queries-set-printing-synth-thunk))
@@ -1154,7 +1153,7 @@ Near here means PT is either inside or just aside of a comment."
 
   ;; Sent to proof engine
   (setq proof-showproof-command
-        (lambda () (list (coq-xml-query-item "Show.") nil)))
+        (lambda () (list (coq-xml-goal) nil)))
   (setq proof-goal-command "Goal %s. "
         proof-save-command "Save %s. ")
   ;; FIXME da: Does Coq have a help or about command?
@@ -1496,7 +1495,7 @@ mouse activation."
 ;; Context-sensitive in-span menu additions
 ;;
 
-(defun coq-create-span-menu (span idiom name)
+(defun coq-create-span-menu (span idiom _)
   (if (eq idiom 'proof)
       (let ((thm (span-property span 'name)))
         (list (vector
@@ -1535,7 +1534,7 @@ mouse activation."
 (defun coq-directories-files (l)
   (let* ((file-list-list (mapcar 'directory-files l))
          (file-list (apply 'append file-list-list))
-         (filtered-list (remove-if-not 'coq-postfix-.v-p file-list)))
+         (filtered-list (cl-remove-if-not 'coq-postfix-.v-p file-list)))
     filtered-list))
 
 (defun coq-remove-dot-v-extension (s)
@@ -1547,7 +1546,7 @@ mouse activation."
 (defun coq-build-accessible-modules-list ()
   (let* ((pth (or coq-load-path '(".")))
          (cleanpth (mapcar 'coq-load-path-to-paths pth))
-         (existingpth (remove-if-not 'file-exists-p cleanpth))
+         (existingpth (cl-remove-if-not 'file-exists-p cleanpth))
          (file-list (coq-directories-files existingpth)))
     (mapcar 'coq-remove-dot-v-extension file-list)))
 
@@ -1585,7 +1584,7 @@ mouse activation."
           (completing-read
            "Command (TAB to see list, default Require Import) : "
            reqkinds-kinds-table nil nil nil nil "Require Import")))
-    (loop do
+    (cl-loop do
           (setq s (completing-read "Name (empty to stop) : "
                                    (coq-build-accessible-modules-list)))
           (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
@@ -1646,7 +1645,7 @@ Warning: this makes the error messages (and location) wrong.")
     (goto-char (proof-unprocessed-begin))
     (coq-find-real-start)
     (let* ((pt (point))
-           (dummy (coq-script-parse-cmdend-forward))
+           (_ (coq-script-parse-cmdend-forward))
            (cmd (buffer-substring pt (point)))
            (newcmd (if (coq-tactic-already-has-an-as-close cmd)
                        nil
@@ -1707,16 +1706,16 @@ Also insert holes at insertion positions."
                (insert match)
                (indent-region start (point) nil)
                (let ((n (holes-replace-string-by-holes-backward start)))
-                 (case n
-                       (0 nil)				; no hole, stay here.
-                       (1
-                        (goto-char start)
-                        (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-                       (t
-                        (goto-char start)
-                        (message
-                         (substitute-command-keys
-                          "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))))))))
+                 (cl-case n
+                          (0 nil)				; no hole, stay here.
+                          (1
+                           (goto-char start)
+                           (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+                          (t
+                           (goto-char start)
+                           (message
+                            (substitute-command-keys
+                             "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -2080,7 +2079,7 @@ are non-nil at the same time, this gives priority to the former."
 (declare-function ml4pg-select-mode "ml4pg") ;; Avoids copilation warnings
 
 (defun coq-activate-ml4pg ()
-  (let ((filename (concatenate 'string proof-home-directory "contrib/ML4PG/ml4pg.el")))
+  (let ((filename (cl-concatenate 'string proof-home-directory "contrib/ML4PG/ml4pg.el")))
     (when (file-exists-p filename) (load-file filename) (ml4pg-select-mode))))
 
 ;;;;;;;;;;;;;;
