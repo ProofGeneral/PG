@@ -300,47 +300,6 @@ to write out the traversal code by hand each time."
       `((val . ,opt-ty))
       opt-val))))
 
-;; TODO decide what to do with this
-'(defun coq-xml-set-options ()
-  (coq-xml-call 
-   '((val . SetOptions))
-   (coq-xml-list 
-    nil
-    (coq-xml-printing-options
-     '(Width)
-     'intvalue
-     (coq-xml-option 
-       '((val . none))))
-    (coq-xml-printing-options
-     '(Coercions)
-     'boolvalue
-     (coq-xml-bool 'false))
-    (coq-xml-printing-options
-     '(Matching)
-     'boolvalue
-     (coq-xml-bool 'true))
-    (coq-xml-printing-options
-     '(Notations)
-     'boolvalue
-     (coq-xml-bool 'true))
-    (coq-xml-printing-options
-     '(Existential Instances)
-     'boolvalue
-     (coq-xml-bool 'false))
-    (coq-xml-printing-options
-     '(Implicit)
-     'boolvalue
-     (coq-xml-bool 'false))
-    (coq-xml-printing-options
-     '(All)
-     'boolvalue
-     (coq-xml-bool 'false))
-    (coq-xml-printing-options
-     '(Universes)
-     'boolvalue
-     (coq-xml-bool 'false))
-    )))
-
 (defun coq-xml-string-to-xml (s)
   (with-temp-buffer
     (insert s)

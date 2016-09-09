@@ -176,6 +176,23 @@
 (coq-queries--mk-query-fun show-proof)
 (coq-queries--mk-query-fun show-tree)
 
+;; macro to build Query string commands
+(defmacro coq-queries--mk-string-query-fun (query)
+  (let* ((query-name-str (symbol-name query))
+	 (query-fun (intern (concat "coq-queries-" query-name-str)))
+	 (capped-query (replace-regexp-in-string "-" " " (capitalize query-name-str))))
+    ;; compile-time message
+    (princ (format "Defining function via macro: %s\n" query-fun))
+    `(progn
+       (defun ,query-fun (s)
+       	 (lambda ()
+       	   (list (coq-xml-query-item
+       		  (concat ,capped-query " \"" s "\" ."))
+       		 nil))))))
+
+(coq-queries--mk-string-query-fun add-search-blacklist)
+(coq-queries--mk-string-query-fun remove-search-blacklist)
+
 ;; interactive queries
 
 (defun coq-queries-guess-or-ask-for-string (s &optional dontguess)

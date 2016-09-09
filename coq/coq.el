@@ -79,29 +79,47 @@
 (defvar coq-debug nil)
 ;; End debugging
 
-;; Obsolete
-;;(defcustom coq-default-undo-limit 500
-;;  "Maximum number of Undo's possible when doing a proof."
-;;  :type 'number
-;;  :group 'coq)
-
 (defcustom coq-server-log-traffic t
   "In server mode, log traffic between emacs and coqtop to a buffer"
   :type 'boolean
   :group 'coq)
 
-(defcustom coq-user-init-cmd nil
+(defcustom coq-user-init-cmds nil
   "user defined init commands for Coq.
-These are appended at the end of `coq-shell-init-cmd'."
+These are appended at the end of `coq-server-init-cmds'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
 
 ;; Default coq is only Private_ and _subproof
-(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
-  "\"Private_\" \"_subproof\""
-  "String for blacklisting strings from requests to coq environment."
-  :type 'string
+(defcustom coq-search-blacklist-strings ; add these? _ind _rect _rec
+  (list "Private_" "_subproof")
+  "Strings to blacklist for search requests to Coq environment."
+  :type '(list string)
   :group 'coq)
+
+;; add quotes to blacklist strings, concat into single string
+(defun coq-format-blacklist-strings (bstrs)
+  (mapconcat (lambda (s) (format "\"%s\"" s)) bstrs " "))
+
+(defvar coq-formatted-search-blacklist-strings (coq-format-blacklist-strings coq-search-blacklist-strings))
+
+;; this remembers the previous value of coq-search-blacklist-string, so that we
+;; can cook a remove+add blacklist command each time the variable is changed.
+;; initially we put it at current value of coq-search-blacklist-string.
+(defvar coq-search-blacklist-strings-prev coq-search-blacklist-strings)
+
+(defun coq-set-search-blacklist (s)
+  (let ((cmd (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s."
+          (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
+    (setq coq-search-blacklist-strings-prev coq-search-blacklist-strings)
+    (lambda ()
+      (list (coq-xml-query-item cmd) nil))))
+
+(defpacustom search-blacklist coq-formatted-search-blacklist-strings
+  "Strings to blacklist in requests to Coq environment."
+  :type 'string
+  :get coq-formatted-search-blacklist-strings
+  :setting coq-set-search-blacklist)
 
 (defcustom coq-prefer-top-of-conclusion nil
   "prefer start of the conclusion over its end when displaying goals
@@ -109,10 +127,9 @@ that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
 
-;; this remembers the previous value of coq-search-blacklist-string, so that we
-;; can cook a remove+add blacklist command each time the variable is changed.
-;; initially we put it at current value of coq-search-blacklist-string.
-(defvar coq-search-blacklist-string-prev coq-search-blacklist-string)
+(defconst coq-server-init-cmds
+  (cons (coq-xml-init) (mapcar 'coq-queries-add-search-blacklist coq-search-blacklist-strings))
+ "Commands to initialize Coq.")
 
 (require 'coq-syntax)
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
@@ -608,8 +625,7 @@ Based on idea mentioned in Coq reference manual."
       ((mods
         (completing-read "Infos on notation (TAB to see list): "
                          notation-print-kinds-table))
-       (s (read-string  "Name (empty for all): "))
-       (all (string-equal s "")))
+       (s (read-string  "Name (empty for all): ")))
     (cond
      ((and (string-equal mods "Print Scope(s)") (string-equal s ""))
       (proof-invisible-command (coq-queries-print-scopes-thunk)))
@@ -740,9 +756,6 @@ This is specific to `coq-mode'."
    "Locate notation (ex: \'exists\' _ , _)" "Locate"
    ))
 
-(defun coq-set-undo-limit (undos)
-  (proof-invisible-command (format "Set Undo %s . " undos)))
-
 (defun coq-Inspect ()
   (interactive)
   (coq-queries-ask "Inspect how many objects back?" "Inspect" t))
@@ -831,9 +844,8 @@ flag Printing All set."
 
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
-(defun coq-set-auto-adapt-printing-width (&optional symb val); args are for :set compatibility
+(defun coq-set-auto-adapt-printing-width (&optional _val _symb); args are for :set compatibility
   "Function called when setting `auto-adapt-printing-width'"
-  (setq symb val)
   (if coq-auto-adapt-printing-width
       (progn
         (add-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
@@ -928,11 +940,13 @@ goal is redisplayed."
     ;; if no available width, or unchanged, do nothing
     (when (and wdth (not (equal wdth coq-current-line-width)))
       (let* ((print-width (1- wdth))
-             (thunk (coq-queries-set-printing-width print-width)))
-        (proof-invisible-command thunk))
+             (print-thunk (coq-queries-set-printing-width print-width)))
+        (proof-invisible-command print-thunk)
+        (when show
+          (proof-invisible-command (lambda () (list (coq-xml-goal) nil)))))
       (setq coq-current-line-width wdth))))
 
-(defun coq-adapt-printing-width-and-show(&optional show width)
+(defun coq-adapt-printing-width-and-show(&optional _ width)
   (interactive)
   (coq-adapt-printing-width t width))
 
@@ -1060,7 +1074,7 @@ Near here means PT is either inside or just aside of a comment."
            (save-excursion (forward-char) (coq-looking-at-comment)))
       (coq-get-comment-region (+ (point) 1))))))
 
-(defun coq-fill-paragraph-function (n)
+(defun coq-fill-paragraph-function (_)
   "Coq mode specific fill-paragraph function. Fills only comment at point."
   (let ((reg (coq-near-comment-region)))
     (when reg
@@ -1216,7 +1230,7 @@ Near here means PT is either inside or just aside of a comment."
    proof-server-send-to-prover-fun 'coq-server-send-to-prover
    proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
    proof-server-process-response-fun 'coq-server-process-response
-   proof-server-init-cmd (coq-xml-init)
+   proof-server-init-cmd coq-server-init-cmds
    proof-server-retract-buffer-hook 'coq-reset-all-state
    proof-find-theorems-command 'coq-find-theorems
    proof-check-command 'coq-check-document)
@@ -1323,14 +1337,6 @@ Near here means PT is either inside or just aside of a comment."
   :type 'integer
   :setting (lambda (depth) 
              (coq-queries-set-printing-depth depth)))
-
-;;; Obsolete:
-;;(defpacustom undo-depth coq-default-undo-limit
-;;  "Depth of undo history.  Undo behaviour will break beyond this size."
-;;  :type 'integer
-;;  :setting "Set Undo %i . ")
-
-;; N.B. Removed Search Blacklist setting, because it already matches Coq's default
 
 (defpacustom time-commands nil
   "Whether to display timing information for each command."

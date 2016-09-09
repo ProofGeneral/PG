@@ -88,12 +88,13 @@ derived Emacs mode; here, we call the procedure directly."
 	    ;; Now send the initialisation commands.
 	    (unwind-protect
 		(progn
-		  (message "RUNNING SERVER INIT HOOKS")
 		  (run-hooks 'proof-server-init-hook)
-		  (when proof-server-init-cmd
-		    (message "SENDING INIT CMD")
-		    (proof-server-send-to-prover
-		     proof-server-init-cmd))
+		  (if (stringp proof-server-init-cmd)
+		      (proof-server-send-to-prover proof-server-init-cmd)
+;		    (proof-server-send-to-prover (car proof-server-init-cmd)))
+		    (dolist (cmd proof-server-init-cmd)
+		      (message "SENDING INIT: %s" cmd)
+		      (proof-server-send-to-prover cmd)))
 		  (if proof-assistant-settings
 		      (mapcar (lambda (c)
 				(proof-server-invisible-command c))
