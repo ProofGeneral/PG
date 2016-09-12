@@ -108,7 +108,7 @@ These are appended at the end of `coq-server-init-cmds'."
 ;; initially we put it at current value of coq-search-blacklist-string.
 (defvar coq-search-blacklist-strings-prev coq-search-blacklist-strings)
 
-(defun coq-set-search-blacklist (s)
+(defun coq--set-search-blacklist (s)
   (let ((cmd (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s."
           (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
     (setq coq-search-blacklist-strings-prev coq-search-blacklist-strings)
@@ -119,7 +119,7 @@ These are appended at the end of `coq-server-init-cmds'."
   "Strings to blacklist in requests to Coq environment."
   :type 'string
   :get coq-formatted-search-blacklist-strings
-  :setting coq-set-search-blacklist)
+  :setting coq--set-search-blacklist)
 
 (defcustom coq-prefer-top-of-conclusion nil
   "prefer start of the conclusion over its end when displaying goals
