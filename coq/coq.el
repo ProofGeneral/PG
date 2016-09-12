@@ -128,7 +128,7 @@ that do not fit in the goals window."
   :group 'coq)
 
 (defconst coq-server-init-cmds
-  (cons (coq-xml-init) (mapcar 'coq-queries-add-search-blacklist coq-search-blacklist-strings))
+  (list (coq-xml-init))
  "Commands to initialize Coq.")
 
 (require 'coq-syntax)
