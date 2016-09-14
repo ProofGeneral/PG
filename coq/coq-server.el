@@ -397,33 +397,40 @@ is gone and we have to close the secondary locked span."
   (with-current-buffer proof-script-buffer
     (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
-		      (point-min))))
-      (message "retract-span: %s start: %s" retract-span start)
-      (when coq-server--backtrack-on-failure
-	;; TODO race condition here
-	;; not certain that this flag matches latest Edit_at
-	;; may not be a practical issue
-	(setq coq-server--backtrack-on-failure nil)
-	;; if we backtracked on a failure, see if the next span with a state id
-	;; has a pg-error span on top; if so, unmark it for deletion
-	(with-current-buffer proof-script-buffer
-	  (let* ((spans-after-retract (overlays-in start (point-max)))
-		 (relevant-spans (cl-remove-if-not (lambda (sp) (span-property sp 'marked-for-deletion)) spans-after-retract))
-		 (sorted-spans (sort relevant-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
-		 error-span
-		 state-id-span)
-	    ;; see if first pg-error span overlaps first span with a state id
-	    (while (and sorted-spans (or (null error-span) (null state-id-span)))
-	      (let ((span (car sorted-spans)))
-		(when (span-property span 'state-id)
-		  (setq state-id-span span))
-		(when (eq (span-property span 'type) 'pg-error)
-		  (setq error-span span)))
-	      (setq sorted-spans (cdr sorted-spans)))
-	    (when (and state-id-span error-span
-		       (>= (span-start error-span) (span-start state-id-span))
-		       (<= (span-end error-span) (span-end state-id-span)))
-	      (span-unmark-delete error-span)))))
+		      (point-min)))
+	   (spans-after-retract (overlays-in start (point-max))))
+      (if coq-server--backtrack-on-failure
+	  (progn 
+	      ;; TODO race condition here
+	      ;; not certain that this flag matches latest Edit_at
+	      ;; may not be a practical issue
+	      (setq coq-server--backtrack-on-failure nil)
+	      ;; if we backtracked on a failure, see if the next span with a state id
+	      ;; has a pg-error span on top; if so, unmark it for deletion
+	      (let* ((relevant-spans (cl-remove-if-not
+				      (lambda (sp) (span-property sp 'marked-for-deletion))
+				      spans-after-retract))
+		     (sorted-spans (sort relevant-spans
+					 (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
+		     error-span
+		     state-id-span)
+		;; see if first pg-error span overlaps first span with a state id
+		(while (and sorted-spans (or (null error-span) (null state-id-span)))
+		  (let ((span (car sorted-spans)))
+		    (when (span-property span 'state-id)
+		      (setq state-id-span span))
+		    (when (eq (span-property span 'type) 'pg-error)
+		      (setq error-span span)))
+		  (setq sorted-spans (cdr sorted-spans)))
+		(when (and state-id-span error-span
+			   (>= (span-start error-span) (span-start state-id-span))
+			   (<= (span-end error-span) (span-end state-id-span)))
+		  (span-unmark-delete error-span))))
+	;; not on failure, delete pg-error spans below
+	(let* ((help-spans (cl-remove-if-not
+				(lambda (sp) (eq (span-property sp 'type) 'pg-error))
+				spans-after-retract)))
+	  (mapc 'span-delete help-spans)))
       (let ((all-spans (overlays-in start (point-max))))
 	(mapc (lambda (span)
 		(when (or (and (span-property span 'marked-for-deletion)
@@ -571,7 +578,7 @@ is gone and we have to close the secondary locked span."
   (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
-	(member call-val '("Add" "Goal" "Status"))))))
+	(member call-val '("Add" "Edit_at" "Goal" "Status"))))))
 
 (defun coq-server--valid-state-id (state-id)
   (not (equal state-id "0")))
@@ -580,6 +587,8 @@ is gone and we have to close the secondary locked span."
   ;; remove any pending calls
   (tq-flush coq-server-transaction-queue)
   (when (coq-server--backtrack-on-call-failure)
+    ;; in case it was an Edit_at that failed
+    (setq coq-server--pending-edit-at-state-id nil)
     ;; don't clear pending edit-at state id here
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status
