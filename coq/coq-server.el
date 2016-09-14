@@ -126,6 +126,11 @@ is gone and we have to close the secondary locked span."
 
 (defvar goal-indent " ")
 
+;; length of hypothesis is maximum length of each of its lines
+;; lines within a hypothesis are separated by newlines
+(defun coq-server--hyp-length (hyp)
+  (apply 'max (mapcar 'length (split-string hyp "\n"))))
+
 ;; make a pretty goal 
 (defun coq-server--format-goal-with-hypotheses (goal hyps)
   (let* ((nl "\n")
@@ -135,7 +140,7 @@ is gone and we have to close the secondary locked span."
 	 (padding (make-string padding-len ?\s))
 	 (hyps-text (mapcar 'coq-xml-body1 hyps))
 	 (formatted-hyps (mapconcat 'identity hyps-text (concat nl-indent padding)))
-	 (hyps-width (apply 'max (cons 0 (mapcar 'length hyps-text)))) ; cons 0 in case empty
+	 (hyps-width (apply 'max (cons 0 (mapcar 'coq-server--hyp-length hyps-text)))) ; cons 0 in case empty
 	 (goal-width (length goal))
 	 (width (max min-width (+ (max hyps-width goal-width) (* 2 padding-len))))
 	 (goal-offset (/ (- width goal-width) 2)))
