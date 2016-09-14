@@ -387,6 +387,8 @@ is gone and we have to close the secondary locked span."
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
     (coq-server--register-state-id coq-server--current-span qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
+    ;; prevents current span from getting new tip state id
+    (setq coq-server--current-span nil) 
     (coq-server--merge-locked-spans)
     (coq-server--update-state-id-and-process new-tip-state-id)))
 
@@ -601,7 +603,7 @@ is gone and we have to close the secondary locked span."
     ;; retract before current focus
     (coq-server--before-focus-backtrack))
    ((coq-server--value-new-focus-p xml)
-    ;; retract re-opens a proof
+    ;; retract re-opens a proof, creates focus
     (coq-server--new-focus-backtrack xml))
    ((coq-server--value-simple-backtrack-p xml)
     ;; simple backtrack
