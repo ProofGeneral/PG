@@ -593,7 +593,7 @@ Based on idea mentioned in Coq reference manual."
   (interactive)
   (proof-server-invisible-cmd-handle-result
    (coq-queries-show-intros-thunk)
-   (lambda (response)
+   (lambda (response _call _span)
      (let ((intros (coq-queries-get-message-string response)))
        (when intros
          (with-current-buffer proof-script-buffer
@@ -1662,7 +1662,7 @@ Warning: this makes the error messages (and location) wrong.")
            (list
             (coq-xml-query-item newcmd)
             nil))
-         (lambda (response)
+         (lambda (response _call _span)
            (let ((result (coq-queries-get-message-string response)))
              (if (null result) ;; TODO bug? in 8.5 XML protocol, don't get any string back
                  (coq-queries-process-response response nil nil) ; show error if no valid response
@@ -1701,7 +1701,7 @@ Also insert holes at insertion positions."
      (lambda ()
        (list (coq-xml-query-item (concat "Show Match " cmd " ."))
              nil))
-     (lambda (response)
+     (lambda (response _call _span)
        (let* ((the-match (coq-queries-get-message-string response))
               (match (replace-regexp-in-string "=> \n" "=> #\n" the-match)))
          ;; if error, it will be displayed in response buffer (see def of

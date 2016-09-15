@@ -833,7 +833,6 @@ is gone and we have to close the secondary locked span."
 ;; syntax of messages differs in 8.5 and 8.6, handle both cases
 ;; TODO : dispatch on version, maybe
 (defun coq-server--handle-message (xml)
-  (message "Handling message: %s" xml)
   (let* ((message-str-8.5 (coq-xml-at-path xml '(message (message_level) (string))))
 	 ;; The _ below is a wildcard in our search path, but the tag is actually _
 	 ;; something of a delicious irony
@@ -849,7 +848,6 @@ is gone and we have to close the secondary locked span."
   (setq coq-server--current-span span) 
   (let ((xml (coq-xml-get-next-xml)))
     (while xml
-      (message "process response XML: %s" xml)
       (pcase (coq-xml-tag xml)
 	(`value (coq-server--handle-value xml))
 	(`feedback (coq-server--handle-feedback xml))

@@ -57,7 +57,7 @@
     (proof-invisible-cmd-handle-result
      (lambda ()
        (list (coq-xml-get-options) nil))
-     (lambda (response) (setq options-str response)))
+     (lambda (response _call _span) (setq options-str response)))
     ;; wait for response
     (while (not options-str)
       (accept-process-output proof-server-process 0.1))
