@@ -595,7 +595,7 @@ Based on idea mentioned in Coq reference manual."
    (coq-queries-show-intros-thunk)
    (lambda (response _call _span)
      (let ((intros (coq-queries-get-message-string response)))
-       (when intros
+       (if intros
          (with-current-buffer proof-script-buffer
            (indent-region (point)
                           (progn (insert (coq--format-intros intros))
@@ -605,7 +605,9 @@ Based on idea mentioned in Coq reference manual."
            ;; `proof-electric-terminator' moves the point in all sorts of strange
            ;; ways, so we run it last
            (let ((last-command-event ?.)) ;; Insert a dot
-             (proof-electric-terminator))))))))
+             (proof-electric-terminator)))
+         ;; if no intros, call default response handler
+         (coq-server-process-response response _call _span))))))
 
 (defun coq-check-document ()
   "Force coqtop to check validity of entire document."
