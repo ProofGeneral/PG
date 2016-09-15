@@ -13,7 +13,7 @@
 
 (require 'coq-tq)
 (require 'coq-response)
-(require 'coq-stateinfo)
+(require 'coq-state-info)
 (require 'coq-xml)
 
 (defvar coq-server--pending-edit-at-state-id nil

@@ -97,4 +97,4 @@ If locked span already has a state number, then do nothing. Also updates
       (coq-set-span-proofnum sp coq-last-but-one-proofnum))
     (setq coq-last-but-one-proofnum (proofnum-from-info infos))))
 
-(provide 'coq-stateinfo)
+(provide 'coq-state-info)
