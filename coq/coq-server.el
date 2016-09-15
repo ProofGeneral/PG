@@ -389,7 +389,8 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--start-of-focus-state-id nil)
     ;; prevents current span from getting new tip state id
     (setq coq-server--current-span nil) 
-    (coq-server--merge-locked-spans)
+    (when proof-locked-secondary-span
+      (coq-server--merge-locked-spans))
     (coq-server--update-state-id-and-process new-tip-state-id)))
 
 (defun coq-server--simple-backtrack ()
