@@ -573,12 +573,12 @@ is gone and we have to close the secondary locked span."
   ;; processed good value, ready to send next item
   (proof-server-exec-loop))
 
-;; only some kinds of calls should cause backtracking if we get a fail value
+;; no backtrack on Query call (Coq bug #5041)
 (defun coq-server--backtrack-on-call-failure ()
   (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
-	(member call-val '("Add" "Edit_at" "Goal" "Status"))))))
+	(not (equal call-val "Query"))))))
 
 (defun coq-server--valid-state-id (state-id)
   (not (equal state-id "0")))
