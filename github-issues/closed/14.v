@@ -22,7 +22,7 @@ Proof using i.
   sleep time.
   idtac.
   sleep time.
-  exact (i i). (* enter spaces here after error found *)
+  exact (i  i). (* enter spaces here after error found *)
   trivial.
 Qed.
 
