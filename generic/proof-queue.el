@@ -96,7 +96,7 @@ This function calls `proof-add-to-queue'."
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to END.
 The queue mode is set to 'advancing"
-  '(proof-set-queue-endpoints (proof-unprocessed-begin) end)
+  (proof-set-queue-endpoints (proof-unprocessed-begin) end)
   (condition-case err
       (run-hooks 'proof-extend-queue-hook)
     ((error quit)
