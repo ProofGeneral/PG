@@ -66,7 +66,6 @@ from calling `proof-server-exit'.")
 When using server mode, should call this function at the end of processing. 
 For shell modes, the config-done procedure is called when instantiating an 
 derived Emacs mode; here, we call the procedure directly."
-  (message "SERVER CONFIG DONE")
   (dolist (sym proof-server-important-settings)
     (proof-warn-if-unset "proof-server-config-done" sym))
 
@@ -93,7 +92,6 @@ derived Emacs mode; here, we call the procedure directly."
 		      (proof-server-send-to-prover proof-server-init-cmd)
 ;		    (proof-server-send-to-prover (car proof-server-init-cmd)))
 		    (dolist (cmd proof-server-init-cmd)
-		      (message "SENDING INIT: %s" cmd)
 		      (proof-server-send-to-prover cmd)))
 		  (if proof-assistant-settings
 		      (mapcar (lambda (c)
@@ -132,7 +130,6 @@ derived Emacs mode; here, we call the procedure directly."
 "Make sure the proof assistant is ready for a command.
 We ignore QUEUEMODE, which is used just to give calling compatibility 
 with proof-shell-ready-prover."
-  (message "Called proof-server-ready-prover")
   (proof-server-start)
   proof-server-process)
 
@@ -142,7 +139,6 @@ with proof-shell-ready-prover."
 ;;;###autoload
 (defun proof-server-start ()
   (interactive)
-  (message "Called proof-server-start with process: %s" proof-server-process)
   (unless proof-server-process
     (message "Starting prover")
     (let* ((command-line-and-names (prover-command-line-and-names))
@@ -267,7 +263,6 @@ the queue region.
 
 The return value is non-nil if the action list is now empty or
 contains only invisible elements for Prooftree synchronization."
-  (message "called proof-server-exec-loop")
   (unless (null proof-action-list)
     (save-excursion
       (if proof-script-buffer		      ; switch to active script
@@ -422,12 +417,10 @@ This function should not be called if
 `proof-server-exit-in-progress' is t, because a recursive call of
 `proof-server-kill-function' will give strange errors."
   (interactive "P")
-  (message "EXITING PROOF SERVER")
   (if (buffer-live-p proof-server-buffer)
       (when (or dont-ask
 		(yes-or-no-p (format "Exit %s process? " proof-assistant)))
 	(let ((kill-buffer-query-functions nil)) ; avoid extra dialog
-	  (message "KILLING PROOF SERVER BUFFERS")
 	  (kill-buffer proof-server-buffer))
 	(setq proof-server-buffer nil))
     (error "No proof server buffer to kill!")))
@@ -457,7 +450,6 @@ This function should not be called if
 (defun proof-get-context ()
   "Get current proof context."
   (interactive)
-  (message "CALLED PROOF GET CONTEXT: %s" proof-context-command)
   (when proof-context-command
     (proof-invisible-command
      (funcall proof-context-command))))

@@ -189,7 +189,6 @@ Action is taken on all script buffers."
 
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
-  (message "SET LOCKED ENDPOINTS START: %s END: %s" start end)
   (span-set-endpoints proof-locked-span start end)
   (proof-set-overlay-arrow end))
 
@@ -213,7 +212,6 @@ Action is taken on all script buffers."
   "Set the end of the locked region to be END.
 If END is at or before (point-min), remove the locked region.
 Otherwise set the locked region to be from (point-min) to END."
-  (message "PROOF SET LOCKED END: %s" end)
   (if (>= (point-min) end)
       ;; Detach queue span, otherwise may have read-only character at end.
       (proof-detach-locked)
@@ -1057,7 +1055,6 @@ Returns 'retract, 'process or finally nil if user declined."
   ;; Would be nicer to ask a single question, but
   ;; a nuisance to define our own dialogue since it
   ;; doesn't really fit with one of the standard ones.
-  (message "called proof-deactivate-scripting-query-user-action")
   (save-window-excursion
     (unless
 	;; Test to see whether to display the buffer or not.  Could
@@ -1235,9 +1232,6 @@ activation is considered to have failed and an error is given."
   (interactive)
   (unless (eq proof-buffer-type 'script)
     (error "Must be running in a script buffer!"))
-
-  (message "called proof-activate-scripting, with current-buffer: %s proof-script-buffer: %s"
-	   (current-buffer) proof-script-buffer)
 
   (unless (equal (current-buffer) proof-script-buffer)
 
@@ -1692,13 +1686,10 @@ The optional QUEUEFLAGS are added to each queue item."
       (dolist (semi semis)
 	(setq end (nth 2 semi))
 	;; don't add items in secondary locked region
-	(message "SECONDARY: %s SECONDARY-START: %s SECONDARY-END: %s START: %s END: %s"
-		 proof-locked-secondary-span secondary-start secondary-end start end)
 	(unless (and proof-locked-secondary-span
 		     (or (and (>= start secondary-start) (< start secondary-end))
 			 (and (> end secondary-start) (<= end secondary-end))))
 	  (setq span (span-make start end))
-	  (message "MADE SPAN WITH TEXT: %s" (nth 1 semi))
 	  (if (eq (car semi) 'cmd)
 	      (progn ;; command span
 		(let* ((cmd  (nth 1 semi))
@@ -1721,7 +1712,6 @@ The optional QUEUEFLAGS are added to each queue item."
 		   (list span nil cb queueflags))) ; nil was `proof-no-command' 
 	      (span-set-property span 'type 'comment)
 	      (setq alist (cons qitem alist)))))
-	(message "UPDATING START")
 	(setq start end)))
     (nreverse alist)))
 
