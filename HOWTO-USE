@@ -27,8 +27,7 @@ bash as your shell.
 In your .emacs file, add something like:
 
   (defun pg-xml ()
-    (load-file "<path-to>/ProofGeneral/generic/proof-site.el")
-    '(defun message (&rest s) nil)) 
+    (load-file "<path-to>/ProofGeneral/generic/proof-site.el"))
 
 And in your ~/.bashrc, add a line like:
 
@@ -50,18 +49,21 @@ To run the current Proof General distribution, you can setup another
 
   alias emacs-pg="<path-to>/emacs -eval \"(pg)\""
 
-The Proof General code is still experimental, and prints a lot of
-debug messages, which may be annoying. To get rid of those, you can
-remove the quote from the "defun" above (although you'll lose the
-information provided by those messages).
+The Proof General code is still experimental. There are some debugging
+messages available, not printed by default. To enable those, in the
+file generic/proof-useropts.el, set the variable
+`proof-general-debug-messages' to non-nil. These debug messages appear
+in the *Messages* buffer. Also, by default, all traffic between Emacs
+and Coq is logged to the buffer *coq-log*. Disabling that logging may
+speed things up; you can do that by setting the variable
+`proof-server-log-traffic' in generic/proof-config.el to nil.
 
-Please note, this code is of alpha quality. Also, the most recent
-fixes to Proof General have not yet been folded into the code.
-
-If you discover a bug, please work out the steps to reproduce
-it. There's a transcript of the traffic between Emacs and coqtop in
-the buffer *coq-log*, which may be helpful. Please create a new
-issue in the Github repo above (not in the standard PG repo).
+Please note, this code is of alpha quality. If you discover a bug,
+please work out the steps to reproduce it. Unless such logging is
+disabled, as described above, there's a transcript of the traffic
+between Emacs and coqtop in the buffer *coq-log*, which may be
+helpful. Please create a new issue in the Github repo above (not in
+the standard PG repo).
 
 Thanks for trying out the code!
 

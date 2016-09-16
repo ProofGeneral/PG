@@ -634,7 +634,7 @@ is gone and we have to close the secondary locked span."
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
    ;; some good values are unprocessed, for example, responses to Query 
-   (t (message "Unprocessed good value: %s" xml))))
+   (t (proof-debug-message "Unprocessed good value: %s" xml))))
 
 ;; we distinguish value responses by their syntactic structure
 ;; and a little bit by some global state
@@ -852,7 +852,7 @@ is gone and we have to close the secondary locked span."
 	(`value (coq-server--handle-value xml))
 	(`feedback (coq-server--handle-feedback xml))
 	(`message (coq-server--handle-message xml))
-	(t (message "Unknown coqtop response %s" xml)))
+	(t (proof-debug-message "Unknown coqtop response %s" xml)))
       (setq xml (coq-xml-get-next-xml)))))
 
 ;; process XML response from Coq

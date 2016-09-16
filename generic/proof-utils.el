@@ -336,6 +336,13 @@ If flag `proof-general-debug' is nil, do nothing."
 			 formatted :debug
 			 "*PG Debug*")))))
 
+;;;###autoload
+(defun proof-debug-message (msg &rest args)
+  "Issue the debugging message (format MSG ARGS) in the *Messages* buffer (and mini-buffer).
+If flag `proof-general-debug-messages' is nil, do nothing."
+  (when proof-general-debug-messages
+    (apply #'message (concat "*PG Debug* " msg) args)))
+
 ;; Utility used in the "Buffers" menu, and throughout
 (defun proof-switch-to-buffer (buf &optional noselect)
   "Switch to or display buffer BUF in other window unless already displayed.

@@ -75,6 +75,7 @@
 ;; sent immediately, send it at this point, awaiting the response.
 
 (require 'proof-config)
+(require 'proof-utils)
 (require 'proof-resolver)
 (require 'coq-state-vars)
 
@@ -122,20 +123,16 @@
 (defvar tq--oob-handler nil)
 
 (defun tq-maybe-log (src str)
-  (message "*%s* %s" src str)
   (when proof-server-log-traffic
     (proof-server-log src str)))
 
 (defun tq-log-and-send (tq question)
-  (message "QUESTION: %s" question)
-  (message "QUESTION TYPE: %s" (type-of question))
   (let* ((str-and-span 
 	  (cond 
 	   ((stringp question) (list question nil))
 	   ((symbolp question) (list (symbol-value question) nil))
 	   ((functionp question) (funcall question))
 	   (t (error "tq-queue-pop: expected string or function, got %s of type %s" question (type-of question)))))
-	 (_ (message "str and span: %s" str-and-span))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
     (tq-maybe-log "emacs" str)
@@ -260,7 +257,7 @@ to be sent."
 				 answer 
 				 (tq-call tq)
 				 (tq-span tq)))
-		    (error (message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
+		    (error (proof-debug-message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
 		(tq-queue-pop tq))
 	      (tq-process-buffer tq)))
 	   ;; partial response
@@ -276,7 +273,7 @@ to be sent."
 			     answer 
 			     (tq-call tq)
 			     (tq-span tq)))
-		(error (message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
+		(error (proof-debug-message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
 	      (tq-process-buffer tq)))))))))
 
 (provide 'coq-tq)

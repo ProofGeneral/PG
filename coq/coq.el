@@ -32,6 +32,7 @@
 
 (require 'cl-lib)
 (require 'proof)
+(require 'proof-utils)
 (require 'proof-resolver)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
@@ -593,7 +594,7 @@ Based on idea mentioned in Coq reference manual."
   (interactive)
   (proof-server-invisible-cmd-handle-result
    (coq-queries-show-intros-thunk)
-   (lambda (response _call _span)
+   (lambda (response call span)
      (let ((intros (coq-queries-get-message-string response)))
        (if intros
          (with-current-buffer proof-script-buffer
@@ -607,7 +608,7 @@ Based on idea mentioned in Coq reference manual."
            (let ((last-command-event ?.)) ;; Insert a dot
              (proof-electric-terminator)))
          ;; if no intros, call default response handler
-         (coq-server-process-response response _call _span))))))
+         (coq-server-process-response response call span))))))
 
 (defun coq-check-document ()
   "Force coqtop to check validity of entire document."

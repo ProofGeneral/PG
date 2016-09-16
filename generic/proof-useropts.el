@@ -304,6 +304,13 @@ This is only useful for PG developers."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-general-debug-messages nil
+  "*Non-nil to show certain debug messages in the mini-buffer and 
+*Messages* buffer. These messages are distinct from those gated by 
+`proof-general-debug'."
+  :type 'boolean
+  :group 'proof-user-options)
+  
 (defcustom proof-use-parser-cache t
   "*Non-nil to use a simple parsing cache.
 This can be helpful when editing and reprocessing large files.

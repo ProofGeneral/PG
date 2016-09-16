@@ -61,7 +61,6 @@ Only when three-buffer-mode is enabled."
 
 ;; display something in response buffer
 (defun coq--display-response (msg)
-  (message "DISPLAYING RESPONSE: %s" msg)
   (pg-response-message msg))
 
 ;; given a byte offset in a multibyte string, calculate the string offset

@@ -66,26 +66,17 @@
 This id is in the *last but one* prompt (variable `coq-last-but-one-state-id').
 If locked span already has a state number, then do nothing. Also updates
 `coq-last-but-one-state-id' to the last state number for next time."
-  (message "coq-set-state-infos")
   ;; infos = promt infos of the very last prompt
   ;; sp = last locked span, which we want to fill with prompt infos
   (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
 	(infos (coq-current-proof-info)))
     (setq coq-last-but-one-state-id (current-state-id-from-info infos))
-    (message "set last but one state id: %s" coq-last-but-one-state-id)
     ;; set goalcmd property if this is a goal start
     ;; (ie proofstack has changed and not a save cmd)
-    (progn 
-      (message (format "not sp: %s" (not sp)))
-      (message (format "(equal (span-property sp 'type) 'goalsave): %s" (and sp (equal (span-property sp 'type) 'goalsave))))
-      (message (format "(span-property sp 'type): %s" (and sp (span-property sp 'type))))
-      (message (format "(length (car (cdr (cdr infos)))) %s" (length (car (cdr (cdr infos))))))
-      (message (format "(length coq-last-but-one-proofstack))) %s" (length coq-last-but-one-proofstack))))
     (unless
 	(or (not sp) (equal (span-property sp 'type) 'goalsave)
 	    (<= (length (pending-proofs-from-info infos))
 		(length coq-last-but-one-proofstack)))
-      (message "setting span goalcmd for: %s" sp)
       (coq-set-span-goalcmd sp t))
     ;; testing proofstack=nil is not good here because nil is the empty list OR
     ;; the no value, so we test proofnum as it is always set at the same time.
