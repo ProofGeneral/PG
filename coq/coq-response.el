@@ -106,7 +106,9 @@ Only when three-buffer-mode is enabled."
 	err-start (+ err-start len1)
 	;; properties
 	'face 'proof-warning-face
-	'self-removing t)))))
+	'self-removing t)
+       ;; return start of error
+       err-start))))
 
 ;; handler that deletes an error span if its text is modified
 (defun coq--error-span-modification-handler (span after-change-p start end &optional len)

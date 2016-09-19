@@ -13,7 +13,6 @@
 
 (require 'coq-tq)
 (require 'coq-response)
-(require 'coq-state-info)
 (require 'coq-xml)
 
 (defvar coq-server--pending-edit-at-state-id nil
@@ -32,6 +31,9 @@ is gone and we have to close the secondary locked span."
 
 (defvar coq-server--current-span nil
   "Span associated with last response")
+
+(defvar coq-server--error-start nil
+  "Location of highlighted error")
 
 (defvar coq-server--retraction-on-error nil
   "Was the last retraction due to an error")
@@ -175,21 +177,11 @@ is gone and we have to close the secondary locked span."
       (pg-goals-display (buffer-string) t))))
 
 ;; update global state in response to status
-(defun coq-server--handle-status (maybe-current-proof all-proofs current-proof-id)
-  (let ((curr-proof-opt-val (coq-xml-val maybe-current-proof)))
-    (if (string-equal curr-proof-opt-val 'some)
-	(let* ((curr-proof-string (coq-xml-body1 maybe-current-proof))
-	       (curr-proof-name (coq-xml-body1 curr-proof-string)))
-	  (setq coq-current-proof-name curr-proof-name))
-      (setq coq-current-proof-name nil)))
-  (let* ((pending-proof-strings (coq-xml-body all-proofs))
-	 (pending-proofs (mapcar 'coq-xml-body1 pending-proof-strings)))
-    (setq coq-pending-proofs pending-proofs))
-  (let* ((proof-state-id-string (coq-xml-body1 current-proof-id))
-	 (proof-state-id (string-to-number proof-state-id-string)))
-    (setq coq-proof-state-id proof-state-id))
-  ;; used to be called as a hook at end of proof-done-advancing
-  (coq-set-state-infos))
+(defun coq-server--handle-status (_xml)
+  (when coq-server--error-start
+    (with-current-buffer proof-script-buffer
+      (goto-char coq-server--error-start))
+    (setq coq-server--error-start nil)))
 
 ;; no current goal
 (defvar coq-server--value-empty-goals-footprint
@@ -237,16 +229,8 @@ is gone and we have to close the secondary locked span."
       (dolist (goal abandoned-goals)
 	(coq-server--handle-goal goal)))))
 
-(defun coq-server--handle-item (item)
-  (pcase (or (stringp item) (coq-xml-tag item))
-    (`status 
-     (let* ((status-items (coq-xml-body item))
-	    ;; ignoring module path of proof
-	    (maybe-current-proof (nth 1 status-items))
-	    (all-proofs (nth 2 status-items))
-	    (current-proof-id (nth 3 status-items)))
-       (coq-server--handle-status maybe-current-proof all-proofs current-proof-id)))
-    (t)))
+(defun coq-server--value-status-p (xml)
+  (coq-xml-at-path xml '(value (status))))
 
 (defun coq-server--state-id-precedes (state-id-1 state-id-2)
   "Does STATE-ID-1 occur in a span before that for STATE-ID-2?"
@@ -378,8 +362,11 @@ is gone and we have to close the secondary locked span."
    xml 
    '(value (pair (state_id) (pair (union (state_id val)))))))
 
+(defun coq-server--set-span-state-id (span val)
+  (span-set-property span 'state-id val))
+
 (defun coq-server--register-state-id (span state-id)
-  (coq-set-span-state-id span state-id)
+  (coq-server--set-span-state-id span state-id)
   (puthash state-id span coq-span-state-id-tbl))
 
 (defun coq-server--end-focus (xml)
@@ -633,6 +620,8 @@ is gone and we have to close the secondary locked span."
    ((coq-server--value-goals-p xml)
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
+   ((coq-server--value-status-p xml)
+    (coq-server--handle-status xml))
    ;; some good values are unprocessed, for example, responses to Query 
    (t (proof-debug-message "Unprocessed good value: %s" xml))))
 
@@ -674,9 +663,9 @@ is gone and we have to close the secondary locked span."
       (setq coq-server--retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
-	    (coq-server--clear-response-buffer)
+      	    (coq-server--clear-response-buffer)
 	    (coq--display-response error-msg)
-	    (coq--highlight-error error-span error-start error-stop))
+	    (setq coq-server--error-start (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
 	;; indelibly color the error 
 	(let ((span-processing (or (gethash error-state-id coq-processing-span-tbl)
