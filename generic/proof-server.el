@@ -140,24 +140,17 @@ with proof-shell-ready-prover."
 (defun proof-server-start ()
   (interactive)
   (unless proof-server-process
-    (message "Starting prover")
-    (let* ((command-line-and-names (prover-command-line-and-names))
+    (let* ((command-line-and-names (prover-command-line-and-names)) 
 	   (prog-command-line (car command-line-and-names))
 	   (prog-name-list (cdr command-line-and-names))
 	   (redirect (if (eq system-type 'windows-nt)
 			     "2> NUL"
 			     "2> /dev/null")))
-      (message "Starting: %s" prog-command-line)
-      (message "Program is: %s" proof-assistant-symbol)
-      (message "Command line: %s" prog-command-line)
-      (message "Proof assistant: %s" proof-assistant)
-      (message "Prog name list: %s" prog-name-list)
       ;; leading space hides the buffer
       (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) 
 	     (the-process (apply 'start-process-shell-command (cons proof-assistant (cons server-buffer (append prog-command-line (list redirect)))))))
 	(if the-process
 	    (progn 
-	      (message "Started prover process with command line: \"%s\"" prog-command-line)
 	      (set-process-sentinel the-process 'proof-server-sentinel)
 	      (setq proof-server-process the-process
 		    proof-server-buffer server-buffer)

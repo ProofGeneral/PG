@@ -3,7 +3,11 @@
 
 (require 'pg-user)			; proof-script, new-command-advance
 
+
 (defun prover-command-line-and-names ()
+  (when proof-prog-name-ask
+    (setq proof-prog-name (read-shell-command "Run process: "
+					      proof-prog-name)))
   (let* ((prog-name-list1
 	  (if (functionp (proof-ass-sym prog-args))
 	      ;; complex assistants define <PA>-prog-args as function
