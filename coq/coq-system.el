@@ -18,7 +18,7 @@
   (require 'proof-compat)
   (proof-ready-for-assistant 'coq))
 
-(eval-when (compile)
+(cl-eval-when (compile)
   (defvar coq-prog-args nil)
   (defvar coq-debug nil))
 
