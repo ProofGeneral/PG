@@ -1100,7 +1100,14 @@ Near here means PT is either inside or just aside of a comment."
       ;; which is why we get its value first
       (tq-flush coq-server-transaction-queue) 
       (if complete-p
-          (coq-server-stop-active-workers)
+          ;; if Coq not working, stop active workers
+          ;; locked region may not reflect what Coq has processed, so reset end
+          (let ((current-span (coq-server--get-span-with-state-id coq-current-state-id)))
+            (coq-server-stop-active-workers)
+            (proof-script-clear-queue-spans-on-error nil)
+            (when current-span
+              (proof-set-locked-end (span-end current-span))))
+        ;; on interrupt, get a fail-value, resulting in Edit_at
         (interrupt-process proof-server-process)))))
 
 
