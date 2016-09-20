@@ -132,7 +132,8 @@ Only when three-buffer-mode is enabled."
 	(span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
 	(span-set-property error-span 'face proof-error-face)
 	(span-set-property error-span 'help-echo msg)
-	(span-set-property error-span 'type 'pg-error)))))
-
+	(span-set-property error-span 'type 'pg-error)))
+    ;; return start of error highlighting
+    start))
 
 (provide 'coq-response)
