@@ -1350,7 +1350,6 @@ With ARG, turn on scripting iff ARG is positive."
 ;; `proof-done-advancing'
 
 (defun proof-merge-locked ()
-  (message "USING MERGED LOCKED END: %s" proof-merged-locked-end)
   (with-current-buffer proof-script-buffer
     (proof-set-locked-end proof-merged-locked-end)
     (goto-char proof-merged-locked-end)
