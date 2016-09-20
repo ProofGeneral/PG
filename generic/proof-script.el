@@ -1835,9 +1835,7 @@ No effect if prover is busy."
       (save-restriction ;; see Trac#403
 	(widen)
 	(goto-char beg)
-	(proof-retract-until-point)
-	'(proof-shell-wait))))) ; TODO ??
-
+	(proof-retract-until-point)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
