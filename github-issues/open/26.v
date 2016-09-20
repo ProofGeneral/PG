@@ -1,4 +1,4 @@
-(* https://github.com/psteckler/ProofGeneral/issues/25 *)
+(* https://github.com/psteckler/ProofGeneral/issues/26 *)
 
 (* 
  "If I go to the end and do proof-goto-point, then the cursor stays at
