@@ -610,6 +610,7 @@ Based on idea mentioned in Coq reference manual."
 
 (defun coq-check-document ()
   "Force coqtop to check validity of entire document."
+  (interactive)
   (proof-server-send-to-prover (coq-xml-status 'true)))
 
 (defun coq-find-theorems ()
@@ -1800,6 +1801,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?l)] 'coq-LocateConstant)
 (define-key coq-keymap [(control ?n)] 'coq-LocateNotation)
 (define-key coq-keymap [(control ?w)] 'coq-ask-adapt-printing-width-and-show)
+(define-key coq-keymap [(control ?d)] 'coq-check-document)
 
 ;;(proof-eval-when-ready-for-assistant
 ;; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
