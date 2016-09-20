@@ -59,8 +59,6 @@
 
 (declare-function some "cl-extra")      ; spurious bytecomp warning
 
-(defvar coq--retraction-on-failure nil)
-
 ;; prettify is in emacs > 24.4
 ;; FIXME: this should probably be done like for smie above.
 (defvar coq-may-use-prettify nil) ; may become t below
@@ -513,7 +511,8 @@ nearest preceding span with a state id."
                spans)))
         (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
-    (unless coq-server--retraction-on-error
+    (if coq-server--retraction-on-error
+        (setq coq-server--retraction-on-error nil)
       (coq-server--clear-response-buffer))
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)
