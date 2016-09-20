@@ -117,23 +117,24 @@ Only when three-buffer-mode is enabled."
 
 ;; indelibly mark span containing an error
 (defun coq--mark-error (span msg)
-  (let ((start (span-start span))
-	(end (span-end span))
-	(ws " \t\n"))
-    (with-current-buffer proof-script-buffer 
-      (save-excursion
-	(goto-char start)
-	(skip-chars-forward ws end)
-	(setq start (point))
-	(goto-char end)
-	(skip-chars-backward ws start)
-	(setq end (point)))
-      (let ((error-span (span-make start end)))
-	(span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
-	(span-set-property error-span 'face proof-error-face)
-	(span-set-property error-span 'help-echo msg)
-	(span-set-property error-span 'type 'pg-error)))
-    ;; return start of error highlighting
-    start))
+  (when (and span (span-buffer span))
+    (let ((start (span-start span))
+	  (end (span-end span))
+	  (ws " \t\n"))
+      (with-current-buffer proof-script-buffer 
+	(save-excursion
+	  (goto-char start)
+	  (skip-chars-forward ws end)
+	  (setq start (point))
+	  (goto-char end)
+	  (skip-chars-backward ws start)
+	  (setq end (point)))
+	(let ((error-span (span-make start end)))
+	  (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
+	  (span-set-property error-span 'face proof-error-face)
+	  (span-set-property error-span 'help-echo msg)
+	  (span-set-property error-span 'type 'pg-error)))
+      ;; return start of error highlighting
+      start)))
 
 (provide 'coq-response)
