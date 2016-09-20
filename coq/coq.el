@@ -1808,6 +1808,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?c)] 'coq-Check)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?d)] 'coq-check-document)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
@@ -1822,6 +1823,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?c)] 'coq-Check)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?d)] 'coq-check-document)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
