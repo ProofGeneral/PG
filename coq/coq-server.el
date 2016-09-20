@@ -32,8 +32,8 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--current-span nil
   "Span associated with last response")
 
-(defvar coq-server--error-start nil
-  "Location of highlighted error")
+(defvar coq-server--sticky-point nil
+  "Cursor location after next Status")
 
 (defvar coq-server--retraction-on-error nil
   "Was the last retraction due to an error")
@@ -178,10 +178,10 @@ is gone and we have to close the secondary locked span."
 
 ;; update global state in response to status
 (defun coq-server--handle-status (_xml)
-  (when coq-server--error-start
+  (when coq-server--sticky-point
     (with-current-buffer proof-script-buffer
-      (goto-char coq-server--error-start))
-    (setq coq-server--error-start nil)))
+      (goto-char coq-server--sticky-point))
+    (setq coq-server--sticky-point nil)))
 
 ;; no current goal
 (defvar coq-server--value-empty-goals-footprint
@@ -577,6 +577,8 @@ is gone and we have to close the secondary locked span."
   (when (coq-server--backtrack-on-call-failure)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
+    (with-current-buffer proof-script-buffer
+      (setq coq-server--sticky-point (point)))
     ;; don't clear pending edit-at state id here
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status
@@ -665,7 +667,7 @@ is gone and we have to close the secondary locked span."
 	  (progn
       	    (coq-server--clear-response-buffer)
 	    (coq--display-response error-msg)
-	    (setq coq-server--error-start (coq--highlight-error error-span error-start error-stop)))
+	    (setq coq-server--sticky-point (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
 	;; indelibly color the error 
 	(let ((span-processing (or (gethash error-state-id coq-processing-span-tbl)
