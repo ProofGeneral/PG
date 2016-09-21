@@ -143,14 +143,22 @@
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
     (process-send-string (tq-process tq) str)))
 
-(defun tq-flush (tq)
-  ;; flush queue 
-  (setcar (tq-qpb tq) nil)
+(defun tq--finish-flush (tq)
   ;; reset complete flag
   (tq-set-complete tq)
   ;; remove any parts of any responses
   (with-current-buffer (tq-buffer tq)
     (erase-buffer)))
+
+(defun tq-flush (tq)
+  ;; flush queue 
+  (setcar (tq-qpb tq) nil)
+  (tq--finish-flush tq))
+
+(defun tq-flush-but-1 (tq)
+  ;; flush queue 
+  (setcar (tq-qpb tq) (list (car (tq-queue tq))))
+  (tq--finish-flush tq))
 
 ;;; Core functionality
 

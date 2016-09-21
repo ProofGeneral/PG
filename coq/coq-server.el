@@ -573,8 +573,10 @@ is gone and we have to close the secondary locked span."
   (not (equal state-id "0")))
 
 (defun coq-server--handle-failure-value (xml)
-  ;; remove any pending calls
-  (tq-flush coq-server-transaction-queue)
+  ;; remove pending calls, except for the one that
+  ;; generated this failure, which gets popped when control
+  ;; returns to tq-process-buffer
+  (tq-flush-but-1 coq-server-transaction-queue)
   (when (coq-server--backtrack-on-call-failure)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
