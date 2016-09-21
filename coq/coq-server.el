@@ -75,7 +75,8 @@ is gone and we have to close the secondary locked span."
   (pg-goals-display "" nil))
 
 (defun coq-server-start-transaction-queue ()
-  (setq coq-server-transaction-queue (tq-create proof-server-process 'coq-server-process-oob)))
+  (setq coq-server-transaction-queue (tq-create proof-server-process #'coq-server-process-oob
+						end-of-response-regexp other-responses-regexp)))
 
 ;; stop all active workers
 ;; which we do when we get an interrupt and there's no pending response
@@ -392,7 +393,7 @@ is gone and we have to close the secondary locked span."
 	      ;; TODO race condition here
 	      ;; not certain that this flag matches latest Edit_at
 	      ;; may not be a practical issue
-	      (setq coq-server--backtrack-on-failure nil)
+	    (setq coq-server--backtrack-on-failure nil)
 	      ;; if we backtracked on a failure, see if the next span with a state id
 	      ;; has a pg-error span on top; if so, unmark it for deletion
 	      (let* ((relevant-spans (cl-remove-if-not
@@ -869,13 +870,12 @@ is gone and we have to close the secondary locked span."
 ;; do not call directly
 (defun coq-server-send-to-prover (s special-handler)
   (tq-enqueue coq-server-transaction-queue s
-	      end-of-response-regexp other-responses-regexp
 	      ;; "closure" argument, passed to handler below
 	      ;; can be used for unusual processing on response
 	      ;; for example, to insert intros into script
 	      ;; always nil or a function symbol
 	      special-handler
 	      ;; default handler gets special-handler and coqtop response
-	      'coq-server-handle-tq-response))
+	      #'coq-server-handle-tq-response))
 
 (provide 'coq-server)

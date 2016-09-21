@@ -83,12 +83,14 @@
 
 ;;; Accessors
 
-;; This part looks like ((queue . (process . buffer)) . (response-complete . (call . span)))
+;; This part looks like ((queue . (end-regexp . (other-regexp . (process . buffer)))) . (response-complete . (call . span)))
 
 (defun tq-qpb                 (tq) (car tq))
 (defun tq-queue               (tq) (car (tq-qpb tq)))
-(defun tq-process             (tq) (car (cdr (tq-qpb tq))))
-(defun tq-buffer              (tq) (cdr (cdr (tq-qpb tq))))
+(defun tq-end-regexp          (tq) (car (cdr (tq-qpb tq))))
+(defun tq-other-regexp        (tq) (car (cdr (cdr (tq-qpb tq)))))
+(defun tq-process             (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
+(defun tq-buffer              (tq) (cdr (cdr (cdr (cdr (tq-qpb tq))))))
 
 (defun tq-state-items         (tq) (cdr tq))
 (defun tq-response-complete   (tq) (car (tq-state-items tq)))
@@ -98,21 +100,17 @@
 (defun tq-set-complete        (tq) (setcar (tq-state-items tq) t))
 
 ;; The structure of `queue' is as follows
-;; ((question end-regexp other-regexp closure . fn)
+;; ((question closure . fn)
 ;;  <other queue entries>)
 ;; question: string to send to the process
 (defun tq-queue-head-question (tq) (car (car (tq-queue tq))))
 ;; end-regexp: regular expression that matches the end of a response from
 ;; the process
-(defun tq-queue-head-end-regexp   (tq) (car (cdr (car (tq-queue tq)))))
+(defun tq-queue-head-closure   (tq) (car (cdr (car (tq-queue tq)))))
 ;; other-regexp: regular expression that matches a partial response from
 ;; the process
-(defun tq-queue-head-other-regexp   (tq) (car (cdr (cdr (car (tq-queue tq))))))
+(defun tq-queue-head-fn        (tq) (cdr (cdr (car (tq-queue tq)))))
 ;; closure: additional data to pass to the function
-(defun tq-queue-head-closure  (tq) (car (cdr (cdr (cdr (car (tq-queue tq)))))))
-;; fn: function to call upon receiving a complete response from the
-;; process
-(defun tq-queue-head-fn       (tq) (cdr (cdr (cdr (cdr (car (tq-queue tq)))))))
 
 ;; Determine whether queue is empty
 (defun tq-queue-empty         (tq) (not (tq-queue tq)))
@@ -157,16 +155,19 @@
 ;;; Core functionality
 
 ;;;###autoload
-(defun tq-create (process oob-handler)
+(defun tq-create (process oob-handler end-regexp other-regexp)
   "Create and return a transaction queue communicating with PROCESS.
 PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
 to a tcp server on another machine. The OOB-HANDLER handles responses
 from the PROCESS that are not transactional."
-  (let* ((qpb (cons nil (cons process
-			    (generate-new-buffer
-			     (concat " tq-temp-"
-				     (process-name process))))))
+  (let* ((qpb (cons nil
+		    (cons end-regexp
+			  (cons other-regexp
+				(cons process
+				      (generate-new-buffer
+				       (concat " tq-temp-"
+					       (process-name process))))))))
 	 (state (cons nil (cons nil nil)))
 	 (tq (cons qpb state)))
     (buffer-disable-undo (tq-buffer tq))
@@ -176,8 +177,8 @@ from the PROCESS that are not transactional."
 			   (tq-filter ',tq string)))
     tq))
 
-(defun tq-queue-add (tq question end-re other-re closure fn)
-  (let ((new-item (cons question (cons end-re (cons other-re (cons closure fn))))))
+(defun tq-queue-add (tq question closure fn)
+  (let ((new-item (cons question (cons closure fn))))
     (setcar (tq-qpb tq) 
 	    (nconc (tq-queue tq)
 		   (list new-item)))
@@ -193,7 +194,7 @@ from the PROCESS that are not transactional."
       (error nil)))
   (null (car tq)))
 
-(defun tq-enqueue (tq question end-regexp other-regexp closure fn)
+(defun tq-enqueue (tq question closure fn)
   "Add a transaction to transaction queue TQ.
 This sends the string QUESTION to the process that TQ communicates with.
 
@@ -208,7 +209,7 @@ OTHER-REGEXP is a regular expression to match a partial answer,
 which we can process, without allowing the next item in the queue
 to be sent."
   (let ((sendp (not (tq-queue tq)))) ;; always delay sending
-    (tq-queue-add tq (unless sendp question) end-regexp other-regexp closure fn)
+    (tq-queue-add tq (unless sendp question) closure fn)
     (when sendp
       (tq-log-and-send tq question))))
 
@@ -236,6 +237,8 @@ to be sent."
 	    ;; feedbacks not prompted by call
 	    ;; original code put response here in a *spurious* buffer
 	    (let ((oob-response (buffer-string)))
+	      (when (search-forward (tq-end-regexp tq) nil t) 
+		(tq-set-complete tq))
 	      (tq-maybe-log "coqtop-oob" oob-response)
 	      (delete-region (point-min) (point-max))
 	      (funcall tq--oob-handler oob-response (tq-call tq) (tq-span tq)))
@@ -244,7 +247,7 @@ to be sent."
 	  (cond
 	   ;; complete response
 	   ;; can safely pop item from queue and send it
-	   ((re-search-forward (tq-queue-head-end-regexp tq) nil t)
+	   ((re-search-forward (tq-end-regexp tq) nil t) 
 	    (tq-set-complete tq)
 	    (let ((answer (buffer-substring (point-min) (point))))
 	      (delete-region (point-min) (point))
@@ -262,7 +265,7 @@ to be sent."
 	      (tq-process-buffer tq)))
 	   ;; partial response
 	   ;; don't pop item from queue
-	   ((re-search-forward (tq-queue-head-other-regexp tq) nil t)
+	   ((re-search-forward (tq-other-regexp tq) nil t)
 	    (let ((answer (buffer-substring (point-min) (point))))
 	      (delete-region (point-min) (point))
 	      (condition-case err
