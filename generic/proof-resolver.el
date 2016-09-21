@@ -8,6 +8,7 @@
 (defun proof-server-log (src str)
   (with-current-buffer proof-server-log-buffer
     (setq buffer-read-only nil)
+    (goto-char (point-max))
     (insert "*" src ":\n")
     (insert str "\n")
     (setq buffer-read-only t)))
