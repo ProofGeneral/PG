@@ -253,7 +253,7 @@ files which are out of date with respect to the loaded buffers!"
   :group 'proof-user-options)
 
 (defcustom proof-prog-name-ask
-  t
+  nil
   "*If non-nil, query user which program to run for the inferior process."
   :type 'boolean
   :group 'proof-user-options)
