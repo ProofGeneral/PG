@@ -878,8 +878,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
 	    ;; Tell the prover
 	    (proof-server-invisible-command
 	     (proof-format-filename proof-shell-inform-file-processed-cmd
-				    cfile)
-	     'wait))))))
+				    cfile)))))))
 
 (defun proof-query-save-this-buffer-p ()
   "Predicate testing whether `save-some-buffers' during scripting should query."
@@ -892,8 +891,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
    ((stringp proof-shell-inform-file-retracted-cmd)
     (proof-server-invisible-command
      (proof-format-filename proof-shell-inform-file-retracted-cmd
-			    rfile)
-     'wait))
+			    rfile)))
    ;; If it's a function it might not actually be informing the prover at all,
    ;; but merely cleans up proof-included-files-list by its own magic.  We
    ;; do the same thing as in proof-shell.el.
@@ -1203,6 +1201,49 @@ a scripting buffer is killed it is always retracted."
        ;; Finally, run hooks
        (run-hooks 'proof-deactivate-scripting-hook)))))
 
+(defun proof-ready-prover-prepare-buffer (nosaves queuemode)
+
+  ;; Fire up the prover (or check it's going the right way).
+  (condition-case-unless-debug err
+      (proof-ready-prover queuemode)
+    (error (setq proof-script-buffer nil)
+	   (signal (car err) (cdr err))))
+  
+  ;; Initialise regions
+  (if (proof-locked-region-empty-p) ; leave alone if non-empty
+      (proof-init-segmentation))
+
+  ;; Turn on the minor mode, make it show up.
+  (setq proof-active-buffer-fake-minor-mode t)
+  (force-mode-line-update)
+
+  ;; A good time to ask if the user wants to save some buffers
+  ;; (idea being they may be included in imports at top of new buffer).
+  (if (and
+       proof-query-file-save-when-activating-scripting
+       (not nosaves))
+      (save-some-buffers nil #'proof-query-save-this-buffer-p))
+
+  ;; Run hooks with a variable which suggests whether or not to
+  ;; block.  NB: The hook function may send commands to the
+  ;; process which will re-enter this function, but should exit
+  ;; immediately because scripting has been turned on now.
+  (if proof-activate-scripting-hook
+      (let
+	  ((activated-interactively	(called-interactively-p 'any)))
+	(setq proof-prover-last-output-kind nil)
+	(run-hooks 'proof-activate-scripting-hook)
+	;; If activate scripting functions caused an error,
+	;; prevent switching to another buffer.  Might be better
+	;; to leave to specific instances, or simply run the hooks
+	;; as the last step before turning on scripting properly.
+	(when (or (eq 'error proof-prover-last-output-kind)
+		  (eq 'interrupt proof-prover-last-output-kind))
+	  (proof-deactivate-scripting) ;; turn off again!
+	  ;; Give an error to prevent further actions.
+	  (error 
+	   "Scripting not activated because of error or interrupt")))))
+
 (defun proof-activate-scripting (&optional nosaves queuemode)
   "Ready prover and activate scripting for the current script buffer.
 
@@ -1231,7 +1272,9 @@ activation is considered to have failed and an error is given."
   (unless (eq proof-buffer-type 'script)
     (error "Must be running in a script buffer!"))
 
-  (unless (equal (current-buffer) proof-script-buffer)
+  (if (and proof-script-buffer (equal (current-buffer) proof-script-buffer))
+
+      (proof-ready-prover-prepare-buffer nosaves queuemode)
 
     ;; TODO: narrow the scope of this save-excursion.
     ;; Where is it needed?  Maybe hook functions.
@@ -1266,47 +1309,7 @@ activation is considered to have failed and an error is given."
       ;; Set the active scripting buffer
       (setq proof-script-buffer (current-buffer))
 
-      ;; Fire up the prover (or check it's going the right way).
-      (condition-case-unless-debug err
-          (proof-ready-prover queuemode)
-        (error (setq proof-script-buffer nil)
-               (signal (car err) (cdr err))))
-
-      ;; Initialise regions
-      (if (proof-locked-region-empty-p) ; leave alone if non-empty
-	  (proof-init-segmentation))
-
-      ;; Turn on the minor mode, make it show up.
-      (setq proof-active-buffer-fake-minor-mode t)
-      (force-mode-line-update)
-
-      ;; A good time to ask if the user wants to save some buffers
-      ;; (idea being they may be included in imports at top of new buffer).
-      (if (and
-	   proof-query-file-save-when-activating-scripting
-	   (not nosaves))
-	  (save-some-buffers nil #'proof-query-save-this-buffer-p))
-
-      ;; Run hooks with a variable which suggests whether or not to
-      ;; block.  NB: The hook function may send commands to the
-      ;; process which will re-enter this function, but should exit
-      ;; immediately because scripting has been turned on now.
-      (if proof-activate-scripting-hook
-	  (let
-	      ((activated-interactively	(called-interactively-p 'any)))
-	    (setq proof-prover-last-output-kind nil)
-	    (run-hooks 'proof-activate-scripting-hook)
-	    ;; If activate scripting functions caused an error,
-	    ;; prevent switching to another buffer.  Might be better
-	    ;; to leave to specific instances, or simply run the hooks
-	    ;; as the last step before turning on scripting properly.
-	    (when (or (eq 'error proof-prover-last-output-kind)
-		      (eq 'interrupt proof-prover-last-output-kind))
-	      (proof-deactivate-scripting) ;; turn off again!
-	      ;; Give an error to prevent further actions.
-	      (error 
-	       "Scripting not activated because of error or interrupt")))))))
-
+      (proof-ready-prover-prepare-buffer nosaves queuemode))))
 
 (defun proof-toggle-active-scripting (&optional arg)
   "Toggle active scripting mode in the current buffer.
