@@ -254,10 +254,11 @@ is gone and we have to close the secondary locked span."
 
 ;; error coloring heuristic 
 (defun coq-server--error-span-at-end-of-locked (error-span)
+  ;; proof-locked-span may be detached, so lookup needed span
   (let* ((locked-span (coq-server--get-span-with-predicate
-		       (lambda (span) 
-			 (equal (span-property span 'face) 'proof-locked-face))))
-	 (locked-end (span-end locked-span))
+		      (lambda (span)
+			(equal (span-property span 'face) 'proof-locked-face))))
+	 (locked-end (or (and locked-span (span-end locked-span)) 0))
 	 (error-end (span-end error-span)))
     (>= error-end locked-end)))
 
@@ -573,7 +574,9 @@ is gone and we have to close the secondary locked span."
   (not (equal state-id "0")))
 
 (defun coq-server--handle-failure-value (xml)
-  ;; remove pending calls, except for the one that
+  ;; flush queue of actions
+  (setq proof-action-list nil)
+  ;; remove pending calls to Coq, except for the one that
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer
   (tq-flush-but-1 coq-server-transaction-queue)
@@ -680,8 +683,9 @@ is gone and we have to close the secondary locked span."
 	  (when span-processing
 	    (progn
 	      (remhash error-state-id coq-processing-span-tbl)
-	      (span-delete span-processing))))
-	(coq--mark-error error-span error-msg)))))
+	      (unless (eq error-span span-processing)
+		(span-delete span-processing))))
+	  (coq--mark-error error-span error-msg))))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)

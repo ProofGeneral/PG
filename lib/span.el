@@ -123,13 +123,21 @@
 		     (cons action (span-property span 'span-delete-actions))))
 
 ;; The next two change ordering of list of spans:
-(defun span-mapcar-spans (fn start end prop)
+(defun span-mapcar-spans (fn start end prop &optional protected-spans)
   "Map function FN over spans between START and END with property PROP."
-  (mapcar fn (spans-at-region-prop start end prop)))
+  (let* ((spans (spans-at-region-prop start end prop))
+	 (filtered-spans (if protected-spans
+			     (cl-remove-if (lambda (sp) (member sp protected-spans)) spans)
+			   spans)))
+  (mapcar fn filtered-spans)))
 
-(defun span-mapc-spans (fn start end prop)
+(defun span-mapc-spans (fn start end prop &optional protected-spans)
   "Apply function FN to spans between START and END with property PROP."
-  (mapc fn (spans-at-region-prop start end prop)))
+  (let* ((spans (spans-at-region-prop start end prop))
+	 (filtered-spans (if protected-spans
+			     (cl-remove-if (lambda (sp) (member sp protected-spans)) spans)
+			   spans)))
+  (mapc fn filtered-spans)))
 
 (defun span-mapcar-spans-inorder (fn start end prop)
   "Map function FN over spans between START and END with property PROP."
@@ -231,13 +239,13 @@ A span is before PT if it begins before the character before PT."
 ;; Generic functions built on low-level concrete ones.
 ;;
 
-(defun span-delete-spans (start end prop)
+(defun span-delete-spans (start end prop &optional protected-spans)
   "Delete all spans between START and END with property PROP set."
-  (span-mapc-spans 'span-delete start end prop))
+  (span-mapc-spans 'span-delete start end prop protected-spans))
 
-(defun span-mark-delete-spans (start end prop)
+(defun span-mark-delete-spans (start end prop &optional protected-spans)
   "Mark all spans between START and END with property PROP set for deletion."
-  (span-mapc-spans 'span-mark-delete start end prop))
+  (span-mapc-spans 'span-mark-delete start end prop protected-spans))
 
 (defun span-property-safe (span name)
   "Like span-property, but return nil if SPAN is nil."

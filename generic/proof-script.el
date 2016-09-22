@@ -64,7 +64,7 @@ kill buffer hook.  This variable is used when buffer-file-name is nil.")
   'proof-toggle-active-scripting)
 
 (defvar proof-merged-locked-end nil
-"When merging locked regions, holds value of end of merged region")
+  "When merging locked regions, holds value of end of merged region")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -169,8 +169,7 @@ Action is taken on all script buffers."
   (proof-map-buffers
    (proof-buffers-in-mode proof-mode-for-script)
    (when (span-live-p proof-locked-span)
-     (proof-span-read-only proof-locked-span)
-     '(proof-span-read-only proof-locked-secondary-span))))
+     (proof-span-read-only proof-locked-span))))
 
 (defsubst proof-set-queue-endpoints (start end)
   "Set the queue span to be START, END."
@@ -356,16 +355,16 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
 (defun proof-script-delete-spans (beg end)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
   ;; TODO 'type will change to 'pg-type when merged with trunk
-  ; (span-delete-spans beg end 'pg-type)
+					; (span-delete-spans beg end 'pg-type)
   (span-delete-spans beg end 'type)
   (span-delete-spans beg end 'idiom))
 
 ;; mark spans to indicate we may want to delete them as part of a retraction
 ;; if a proof is re-opened, some spans may not be deleted
-(defun proof-script-mark-spans-for-deletion (beg end)
+(defun proof-script-mark-spans-for-deletion (beg end &optional protected-spans)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
-  (span-mark-delete-spans beg end 'type)
-  (span-mark-delete-spans beg end 'idiom))
+  (span-mark-delete-spans beg end 'type protected-spans)
+  (span-mark-delete-spans beg end 'idiom protected-spans))
 
 (defun proof-script-delete-secondary-spans (beg end)
   "Delete secondary spans between BEG and END (currently, 'pghelp spans)."
@@ -837,7 +836,7 @@ to allow other files loaded by proof assistants to be marked read-only."
 
 ;;;###autoload
 (defun proof-register-possibly-new-processed-file
-  (file &optional informprover noquestions)
+    (file &optional informprover noquestions)
   "Register a possibly new FILE as having been processed by the prover.
 
 If INFORMPROVER is non-nil, the proof assistant will be told about this,
@@ -905,7 +904,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
       (proof-restart-buffers
        (proof-files-to-buffers
 	(cl-set-difference current-included
-			proof-included-files-list)))))))
+			   proof-included-files-list)))))))
 
 (defun proof-auto-retract-dependencies (cfile &optional informprover)
   "Perhaps automatically retract the (linear) dependencies of CFILE.
@@ -1032,7 +1031,7 @@ an error is signalled here."
 	      (progn
 		(message "%s buffer %s..." name buf)
 		(funcall fn)
-		; (proof-shell-wait) ; busy wait TODO ?
+		;; (proof-shell-wait) ; busy wait TODO ?
 		(message "%s buffer %s...done." name buf)
 		(sit-for 0))
 	    ;; Test to see if action was successful
@@ -1043,7 +1042,6 @@ an error is signalled here."
   "Deactivate scripting without asking questions or raising errors.
 If the locked region is full, register the file as processed.
 Otherwise retract it.  Errors are ignored"
-  (message "CALLED DEACTIVATE SCRIPTING AUTO")
   (ignore-errors
     (proof-deactivate-scripting
      (proof-with-script-buffer
@@ -1263,7 +1261,7 @@ activation is considered to have failed and an error is given."
       (if proof-script-buffer
 	  (proof-deactivate-scripting))
       (cl-assert (null proof-script-buffer)
-	      "Bug in proof-activate-scripting: deactivate failed.")
+		 "Bug in proof-activate-scripting: deactivate failed.")
 
       ;; Set the active scripting buffer
       (setq proof-script-buffer (current-buffer))
@@ -1423,7 +1421,7 @@ Argument SPAN has just been processed."
 		 "\n"))))))))
 
 (defun proof-make-goalsave
-  (gspan goalend savestart saveend nam &optional nestedundos)
+    (gspan goalend savestart saveend nam &optional nestedundos)
   "Make new goal-save span, using GSPAN. Subroutine of `proof-done-advancing-save'.
 Argument GOALEND is the end of the goal;."
   (unless proof-arbitrary-undo-positions
@@ -1913,8 +1911,10 @@ others)."
 	;;	  (mapc fn (reverse cmds)))
 	;; mark spans for deletion
 	;; if we create secondary locked span, we won't delete those covered by that span
-	(proof-script-mark-spans-for-deletion start end)
-	(span-delete span)
+	(let* ((spans-at-start (overlays-at start))
+	       (error-spans (cl-remove-if-not (lambda (sp) (eq (span-property sp 'type) 'pg-error))
+					      spans-at-start)))
+	  (proof-script-mark-spans-for-deletion start end error-spans))
 	;; TODO what if error marks below this span???
 	(if killfn (funcall killfn start end))))
   ;; State of scripting may have changed now
@@ -1967,72 +1967,72 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	(span target)
 	actions)
 
-	;; NB: first section only entered if proof-kill-goal-command is
-	;; non-nil.  Otherwise we expect proof-find-and-forget-fn to do
-	;; all relevent work for arbitrary retractions.  FIXME: clean up
+    ;; NB: first section only entered if proof-kill-goal-command is
+    ;; non-nil.  Otherwise we expect proof-find-and-forget-fn to do
+    ;; all relevent work for arbitrary retractions.  FIXME: clean up
 
-	;; Examine the last span in the locked region.
+    ;; Examine the last span in the locked region.
 
-	;; If the last goal or save span is not a proof or
-	;; prover processed file, we examine to see how to remove it.
-	(if (and span proof-kill-goal-command
-		 (not (or
-		       (memq (span-property span 'type)
-			     '(goalsave proverproc)))))
-	    ;; If the goal or goalsave span ends before the target span,
-	    ;; then we are retracting within the last unclosed proof,
-	    ;; and the retraction just amounts to a number of undo
-	    ;; steps.
-	    ;; FIXME: really, there shouldn't be more work to do: so
-	    ;;  why call proof-find-and-forget-fn later?
-	    (if (< (span-end span) (span-end target))
-		(progn
-		  ;; Skip comment/non-undoable spans at and immediately following target
-		  (setq span target)
-		  (while (and span
-			      (memq (span-property span 'type) '(comment proverproc)))
-		    (setq span (next-span span 'type)))
-		  ;; Calculate undos for the current open segment
-		  ;; of proof commands
-		  (setq actions (proof-setup-retract-action
-				 start end
-				 (if (null span) nil ; was: proof-no-command
-				   (funcall proof-count-undos-fn span))
-				 undo-action)
-			end start))
-	      ;; Otherwise, start the retraction by killing off the
-	      ;; currently active goal.
-	      ;; FIXME: and couldn't we move the end upwards?
-	      ;; FIXME: hack proof-nesting-depth here.  This is
-	      ;; in the wrong place: it should be done *after* the
-	      ;; retraction has succeeded.
-	      (setq proof-nesting-depth (1- proof-nesting-depth))
-	      (setq actions
-		    (proof-setup-retract-action (span-start span) end
-						(list proof-kill-goal-command)
-						undo-action
-						displayflags)
-		    end (span-start span))))
-	;; Check the start of the target span lies before the end
-	;; of the locked region (should always be true since we don't
-	;; make spans outside the locked region at the moment)...
-	;; But end may have moved backwards above: this just checks whether
-	;; there is more retraction to be done.
-	(message "retracting span: %s start: %s end: %s" span start end)
-	(when (> end start)
+    ;; If the last goal or save span is not a proof or
+    ;; prover processed file, we examine to see how to remove it.
+    (if (and span proof-kill-goal-command
+	     (not (or
+		   (memq (span-property span 'type)
+			 '(goalsave proverproc)))))
+	;; If the goal or goalsave span ends before the target span,
+	;; then we are retracting within the last unclosed proof,
+	;; and the retraction just amounts to a number of undo
+	;; steps.
+	;; FIXME: really, there shouldn't be more work to do: so
+	;;  why call proof-find-and-forget-fn later?
+	(if (< (span-end span) (span-end target))
+	    (progn
+	      ;; Skip comment/non-undoable spans at and immediately following target
+	      (setq span target)
+	      (while (and span
+			  (memq (span-property span 'type) '(comment proverproc)))
+		(setq span (next-span span 'type)))
+	      ;; Calculate undos for the current open segment
+	      ;; of proof commands
+	      (setq actions (proof-setup-retract-action
+			     start end
+			     (if (null span) nil ; was: proof-no-command
+			       (funcall proof-count-undos-fn span))
+			     undo-action)
+		    end start))
+	  ;; Otherwise, start the retraction by killing off the
+	  ;; currently active goal.
+	  ;; FIXME: and couldn't we move the end upwards?
+	  ;; FIXME: hack proof-nesting-depth here.  This is
+	  ;; in the wrong place: it should be done *after* the
+	  ;; retraction has succeeded.
+	  (setq proof-nesting-depth (1- proof-nesting-depth))
 	  (setq actions
-		;; Append a retract action to clear the entire start-end
-		;; region.
-		(nconc actions (proof-setup-retract-action
-				start end
-				nil
-				undo-action
-				displayflags)))
-	  ;; tell prover about the retraction
-	  (funcall proof-find-and-forget-fn target))
-	(let ((start (min start end))
-	      (end (proof-unprocessed-begin)))
-	  (proof-start-queue start end actions 'retracting))))
+		(proof-setup-retract-action (span-start span) end
+					    (list proof-kill-goal-command)
+					    undo-action
+					    displayflags)
+		end (span-start span))))
+    ;; Check the start of the target span lies before the end
+    ;; of the locked region (should always be true since we don't
+    ;; make spans outside the locked region at the moment)...
+    ;; But end may have moved backwards above: this just checks whether
+    ;; there is more retraction to be done.
+    (message "retracting span: %s start: %s end: %s" span start end)
+    (when (> end start)
+      (setq actions
+	    ;; Append a retract action to clear the entire start-end
+	    ;; region.
+	    (nconc actions (proof-setup-retract-action
+			    start end
+			    nil
+			    undo-action
+			    displayflags)))
+      ;; tell prover about the retraction
+      (funcall proof-find-and-forget-fn target))
+    (let ((start (min start end))
+	  (end (proof-unprocessed-begin)))
+      (proof-start-queue start end actions 'retracting))))
 
 (defun proof-retract-until-point-interactive (&optional delete-region)
   "Tell the proof process to retract until point.
@@ -2081,12 +2081,16 @@ query saves here."
       ;; spans contain state id resulting from processing that span
       ;; so leave this span processed, and work on preceding span
       ;; TODO 'type becomes 'pg-type
+      
       (let* ((span (span-at (point) 'type)))
 	;; If no span at point or previous span, retract the last span in the buffer.
 	(unless span
-	  (proof-goto-end-of-locked)
-	  (backward-char)
-	  (setq span (span-at (point) 'type)))
+	  
+					;	  (proof-goto-end-of-locked)
+					;	  (backward-char)
+					;	  (setq span (span-at (point) 'type)))
+	  (setq span (span-make (point) (point)))
+	  (span-set-property span 'type 'pg-sentinel))
 	(if span
 	    (progn
 	      (run-hooks 'proof-retract-command-hook) ;; sneak commands
