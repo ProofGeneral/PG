@@ -1751,6 +1751,15 @@ Assumes that point is at the end of a command."
   (if (proof-only-whitespace-to-locked-region-p)
       (error
        "At end of the locked region, nothing to do to!"))
+  ;; delete error spans at beginning, just past processed region
+  (save-excursion
+    (goto-char (proof-queue-or-locked-end))
+    (skip-chars-forward " \t\n")
+    (let* ((spans (overlays-at (point)))
+	   (error-spans (cl-remove-if-not
+			 (lambda (sp) (eq (span-property sp 'type) 'pg-error))
+			 spans)))
+      (mapc #'span-delete error-spans)))
   (proof-activate-scripting nil 'advancing)
   (let ((semis (save-excursion
 		 (skip-chars-backward " \t\n"
