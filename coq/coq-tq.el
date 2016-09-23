@@ -83,7 +83,9 @@
 
 ;;; Accessors
 
-;; This part looks like ((queue . (end-regexp . (other-regexp . (process . buffer)))) . (response-complete . (call . span)))
+;; A transaction queue object looks like:
+;;  (queue . (end-regexp . (other-regexp . (process . buffer)))) .  -- the car
+;;  (response-complete . (call . span)))                            -- the cdr
 
 (defun tq-qpb                 (tq) (car tq))
 (defun tq-queue               (tq) (car (tq-qpb tq)))
@@ -156,8 +158,10 @@
   (tq--finish-flush tq))
 
 (defun tq-flush-but-1 (tq)
-  ;; flush queue 
-  (setcar (tq-qpb tq) (list (car (tq-queue tq))))
+  ;; flush queue except for first item
+  (let ((item (car (tq-queue tq))))
+    (when item
+      (setcar (tq-qpb tq) (list item))))
   (tq--finish-flush tq))
 
 ;;; Core functionality
