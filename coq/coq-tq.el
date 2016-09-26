@@ -256,39 +256,30 @@ to be sent."
 	      (funcall tq--oob-handler oob-response (tq-call tq) (tq-span tq)))
 	  ;; multiple else-forms
 	  (goto-char (point-min))
-	  (cond
-	   ;; complete response
-	   ;; can safely pop item from queue and send it
-	   ((re-search-forward (tq-end-regexp tq) nil t) 
-	    (tq-set-complete tq)
-	    (let ((answer (buffer-substring (point-min) (point))))
-	      (delete-region (point-min) (point))
-	      (unwind-protect
-		  (condition-case err
-		      (progn
-			(tq-maybe-log "coqtop" answer)
-			(funcall (tq-queue-head-fn tq)
-				 (tq-queue-head-closure tq)
-				 answer 
-				 (tq-call tq)
-				 (tq-span tq)))
-		    (error (proof-debug-message "Error when processing complete Coq response: %s, response was: \"%s\"" err answer)))
-		(tq-queue-pop tq))
-	      (tq-process-buffer tq)))
-	   ;; partial response
-	   ;; don't pop item from queue
-	   ((re-search-forward (tq-other-regexp tq) nil t)
-	    (let ((answer (buffer-substring (point-min) (point))))
-	      (delete-region (point-min) (point))
-	      (condition-case err
-		  (progn
-		    (tq-maybe-log "coqtop" answer)
-		    (funcall (tq-queue-head-fn tq)
-			     (tq-queue-head-closure tq)
-			     answer 
-			     (tq-call tq)
-			     (tq-span tq)))
-		(error (proof-debug-message "Error when processing partial Coq response: %s, response was: \"%s\"" err answer)))
+	  (let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
+		 (partial (or complete (re-search-forward (tq-other-regexp tq) nil t))))
+	    (when (or complete partial)
+	      ;; for complete response, can safely pop item from queue
+	      (when complete
+		(tq-set-complete tq))
+	      (let ((answer (buffer-substring (point-min) (point))))
+		(delete-region (point-min) (point))
+		(unwind-protect
+		    (condition-case err
+			(progn
+			  (tq-maybe-log "coqtop" answer)
+			  (funcall (tq-queue-head-fn tq)
+				   (tq-queue-head-closure tq)
+				   answer 
+				   (tq-call tq)
+				   (tq-span tq)))
+		      (error (proof-debug-message
+			      (concat "Error when processing "
+				      (if complete "complete" "partial")
+				      " Coq response: %s, response was: \"%s\"") err answer)
+			     (backtrace)))
+		  (when complete
+		    (tq-queue-pop tq)))
 	      (tq-process-buffer tq)))))))))
 
 (provide 'coq-tq)
