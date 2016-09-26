@@ -253,7 +253,7 @@ Internal variable dynamically bound.")
   :group 'proof-general-internals)
 
 (defcustom proof-general-home-page
-  "https://proofgeneral.github.io/"
+  "https://proofgeneral.github.io"
   "*Web address for Proof General."
   :type 'string
   :group 'proof-general-internals)
