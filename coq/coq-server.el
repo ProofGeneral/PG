@@ -38,6 +38,9 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--retraction-on-error nil
   "Was the last retraction due to an error")
 
+(defvar coq-server--retraction-on-interrupt nil
+  "Was the last retraction due to an interrupt")
+
 (defvar coq-server--backtrack-on-failure nil
   "Was the last Edit_at backtrack due to a failure value")
 
@@ -575,7 +578,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-failure-value (xml)
   ;; flush queue of actions
-  (setq proof-action-list nil)
+  (proof-server-clear-state)
   ;; remove pending calls to Coq, except for the one that
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer
@@ -598,7 +601,7 @@ is gone and we have to close the secondary locked span."
 	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
 	      (goto-char (point-min))
 	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	      (when last-valid-span
+	      (when (and last-valid-span (span-buffer last-valid-span))
 		(goto-char (span-end last-valid-span)))))
 	  (proof-goto-point))))))
 
@@ -693,7 +696,7 @@ is gone and we have to close the secondary locked span."
   (puthash xml t coq-error-fail-tbl)
   (let* ((loc (coq-xml-at-path 
 	       xml 
-	       '(feedback (state_id) (feedback_content (loc)))))
+	       '(feedback (_) (feedback_content (loc)))))
 	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
 	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
 	 (msg-string (coq-xml-at-path 
@@ -706,7 +709,10 @@ is gone and we have to close the secondary locked span."
 	 (error-edit-id (coq-xml-at-path 
 			 xml 
 			 '(feedback (edit_id val)))))
-    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
+    ;; may get either state id or edit id
+    ;; can get error message not associated with script text
+    (when (and (> error-start 0) (> error-stop 0))
+      (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
 
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
@@ -740,7 +746,9 @@ is gone and we have to close the secondary locked span."
 			 xml 
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
-    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
+    ;; may get error message not associated with script text
+    (when (and (> error-start 0) (> error-stop 0))
+      (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
 
 (defun coq-server--color-span-on-feedback (xml tbl prop face)
   (with-current-buffer proof-script-buffer
@@ -801,7 +809,17 @@ is gone and we have to close the secondary locked span."
     (if (member status '("Idle" "Dead"))
 	(remhash worker-id coq-worker-status-tbl)
       (puthash worker-id status coq-worker-status-tbl))))
-	 
+
+(defun coq-server--handle-filedependency (xml)
+  (let* ((content (coq-xml-at-path xml '(feedback (_) (feedback_content))))
+	 (from-option (coq-xml-at-path content '(feedback_content (option val))))
+	 (from (if (equal from-option "some")
+		   (coq-xml-body1 (coq-xml-at-path content '(feedback_content (option (string)))))
+		 "<None>"))
+	 (file-string (coq-xml-at-path content '(feedback_content (option) (string))))
+	 (file (coq-xml-body1 file-string)))
+    (proof-debug-message "File dependency, from: %s dep: %s" from file)))
+
 (defun coq-server--handle-feedback (xml)
   (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
     ("processingin"
@@ -812,6 +830,8 @@ is gone and we have to close the secondary locked span."
      (coq-server--color-span-incomplete xml))
     ("complete"
      (coq-server--uncolor-span-complete xml))
+    ("filedependency"
+     (coq-server--handle-filedependency xml))
     ("workerstatus"
      (coq-server--handle-worker-status xml))
     ("errormsg" ; 8.5-only
