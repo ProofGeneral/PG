@@ -1842,10 +1842,11 @@ No effect if prover is busy."
     ;; (proof-server-interrupt-process)
     (message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
-      (save-restriction ;; see Trac#403
-	(widen)
-	(goto-char beg)
-	(proof-retract-until-point)))))
+      (save-match-data ;; see PG#41
+	(save-restriction ;; see Trac#403
+	  (widen)
+	  (goto-char beg)
+	  (proof-retract-until-point))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
