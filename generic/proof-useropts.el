@@ -304,7 +304,7 @@ This is only useful for PG developers."
   :type 'boolean
   :group 'proof-user-options)
 
-(defcustom proof-general-debug-messages nil
+(defcustom proof-general-debug-messages t
   "*Non-nil to show certain debug messages in the mini-buffer and 
 *Messages* buffer. These messages are distinct from those gated by 
 `proof-general-debug'."

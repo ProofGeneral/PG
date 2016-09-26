@@ -511,8 +511,10 @@ nearest preceding span with a state id."
                spans)))
         (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
-    (if coq-server--retraction-on-error
-        (setq coq-server--retraction-on-error nil)
+    (if (or coq-server--retraction-on-error
+            coq-server--retraction-on-interrupt)
+        (setq coq-server--retraction-on-error nil
+              coq-server--retraction-on-interrupt nil)
       (coq-server--clear-response-buffer))
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)
@@ -1097,20 +1099,27 @@ Near here means PT is either inside or just aside of a comment."
 (defun coq-interrupt-coq ()
   (when proof-server-process
     (let ((complete-p (tq-response-complete coq-server-transaction-queue)))
+      (proof-server-clear-state)
       ;; resets completed flag
       ;; which is why we get its value first
       (tq-flush coq-server-transaction-queue) 
       (if complete-p
           ;; if Coq not working, stop active workers
           ;; locked region may not reflect what Coq has processed, so reset end
-          (let ((current-span (coq-server--get-span-with-state-id coq-current-state-id)))
-            (coq-server-stop-active-workers)
-            (proof-script-clear-queue-spans-on-error nil)
-            (when current-span
-              (proof-set-locked-end (span-end current-span))))
+          (progn
+            (proof-debug-message "Stopping active workers")
+            (coq-server-stop-active-workers))
         ;; on interrupt, get a fail-value, resulting in Edit_at
-        (interrupt-process proof-server-process)))))
-
+        (when proof-server-process
+          (proof-debug-message "Sending SIGINT to Coq process")
+          (interrupt-process proof-server-process)
+          (setq coq-server-retraction-on-interrupt t)))
+      (proof-script-clear-queue-spans-on-error nil)
+      (let ((current-span (coq-server--get-span-with-state-id coq-current-state-id)))
+        (when current-span
+          (let ((end (span-end current-span)))
+            (proof-set-queue-end end)
+            (proof-set-locked-end end)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
 
@@ -1202,9 +1211,9 @@ Near here means PT is either inside or just aside of a comment."
         proof-script-imenu-generic-expression coq-generic-expression)
 
   (when (fboundp 'smie-setup) ; always use smie, old indentation code removed
-    (smie-setup coq-smie-grammar #'coq-smie-rules
-                :forward-token #'coq-smie-forward-token
-                :backward-token #'coq-smie-backward-token))
+    (smie-setup coq-smie-grammar 'coq-smie-rules
+                :forward-token 'coq-smie-forward-token
+                :backward-token 'coq-smie-backward-token))
 
   ;; old indentation code.
   ;; (require 'coq-indent)
