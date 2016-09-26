@@ -34,7 +34,8 @@ from calling `proof-server-exit'.")
 ;; since commands are queued, we don't need to wait for a prompt
 ;; server is always available if process is running
 (defun proof-server-available-p ()
-  proof-server-process)
+  (and proof-server-process
+       (eq (process-status proof-server-process) 'run)))
 
 (defun proof-server-interrupt-process ()
   (interactive)
@@ -134,12 +135,13 @@ with proof-shell-ready-prover."
   proof-server-process)
 
 (defun proof-server-sentinel (process event)
-  (message-box "%s: %s" (capitalize (symbol-name proof-assistant-symbol)) event))
+  (message-box "%s: %s" (capitalize (symbol-name proof-assistant-symbol)) event)
+  (proof-server-restart))
 
 ;;;###autoload
 (defun proof-server-start ()
   (interactive)
-  (unless proof-server-process
+  (unless (and proof-server-process (eq (process-status proof-server-process) 'run))
     (let* ((command-line-and-names (prover-command-line-and-names)) 
 	   (prog-command-line (car command-line-and-names))
 	   (prog-name-list (cdr command-line-and-names))
