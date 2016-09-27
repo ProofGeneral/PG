@@ -130,12 +130,18 @@ is gone and we have to close the secondary locked span."
      ;; 8.5
      (coq-xml-body1 goal-goal))))
 
-(defvar goal-indent " ")
+(defvar goal-indent-length 1)
+(defvar goal-indent (make-string goal-indent-length ?\s))
 
-;; length of hypothesis is maximum length of each of its lines
-;; lines within a hypothesis are separated by newlines
-(defun coq-server--hyp-length (hyp)
-  (apply 'max (mapcar 'length (split-string hyp "\n"))))
+;; length of goal or hypothesis is maximum length of each of its lines
+;; lines within a goal or hypothesis are separated by newlines
+(defun coq-server--hyps-or-goal-length (hyps-or-goal)
+  (apply 'max (mapcar 'length (split-string hyps-or-goal "\n"))))
+
+(defun coq-server--hyps-sep-width (hyps)
+  (if (null hyps)
+      0
+    (apply 'max (mapcar 'coq-server--hyps-or-goal-length hyps))))
 
 ;; make a pretty goal 
 (defun coq-server--format-goal-with-hypotheses (goal hyps)
@@ -146,13 +152,17 @@ is gone and we have to close the secondary locked span."
 	 (padding (make-string padding-len ?\s))
 	 (hyps-text (mapcar 'coq-xml-body1 hyps))
 	 (formatted-hyps (mapconcat 'identity hyps-text (concat nl-indent padding)))
-	 (hyps-width (apply 'max (cons 0 (mapcar 'coq-server--hyp-length hyps-text)))) ; cons 0 in case empty
-	 (goal-width (length goal))
+	 (hyps-width (coq-server--hyps-sep-width hyps-text))
+	 (goal-width (coq-server--hyps-or-goal-length goal))
 	 (width (max min-width (+ (max hyps-width goal-width) (* 2 padding-len))))
-	 (goal-offset (/ (- width goal-width) 2)))
-    (concat goal-indent padding formatted-hyps nl             ; hypotheses
-	    goal-indent (make-string width impl-bar-char) nl  ; implication bar
-            goal-indent (make-string goal-offset ?\s) goal))) ; the goal
+	 (goal-offset (/ (- width goal-width) 2))
+	 (indented-goal (replace-regexp-in-string
+			 "\n"
+			 (concat "\n" (make-string (+ goal-indent-length goal-offset) ?\s))
+			 goal)))
+    (concat goal-indent padding formatted-hyps nl                      ; hypotheses
+	    goal-indent (make-string width impl-bar-char) nl           ; implication bar
+            goal-indent (make-string goal-offset ?\s) indented-goal))) ; the goal
 
 (defun coq-server--format-goal-no-hypotheses (goal)
   (concat goal-indent goal))
