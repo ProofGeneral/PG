@@ -150,33 +150,30 @@ Following POLICY, which can be one of 'smart, 'horizontal,
   (delete-other-windows)
   (switch-to-buffer b1)
   (let ((pol (proof-guess-3win-display-policy policy)))
-  (save-selected-window
-    (cond
-     ((eq pol 'hybrid)
-      (split-window-horizontally)
-      (other-window 1)
-      (switch-to-buffer b2)
-      (proof-safe-split-window-vertically) ; enlarge vertically if necessary
-      (other-window 1)
-      (switch-to-buffer b3))
-     ((eq pol 'vertical)
-      (split-window-vertically)
-      (other-window 1)
-      (switch-to-buffer b2)
-      (proof-safe-split-window-vertically) ; enlarge vertically if necessary
-      (other-window 1)
-      (switch-to-buffer b3))
-     ((eq pol 'horizontal)
-      (split-window-horizontally) ; horizontally again
-      (other-window 1)
-      (switch-to-buffer b2)
-      (enlarge-window (/ (frame-width) 6) t) ; take 2/3 of width before splitting again
-      (split-window-horizontally) ; horizontally again
-      (other-window 1)
-      (switch-to-buffer b3))))))
-
-
-
+    (save-selected-window
+      (cond
+       ((eq pol 'hybrid)
+	(split-window-horizontally)
+	(other-window 1)
+	(switch-to-buffer b2)
+	(proof-safe-split-window-vertically) ; enlarge vertically if necessary
+	(other-window 1)
+	(switch-to-buffer b3))
+       ((eq pol 'vertical)
+	(split-window-vertically)
+	(other-window 1)
+	(switch-to-buffer b2)
+	(proof-safe-split-window-vertically) ; enlarge vertically if necessary
+	(other-window 1)
+	(switch-to-buffer b3))
+       ((eq pol 'horizontal)
+	(split-window-horizontally) ; horizontally again
+	(other-window 1)
+	(switch-to-buffer b2)
+	(enlarge-window (/ (frame-width) 6) t) ; take 2/3 of width before splitting again
+	(split-window-horizontally) ; horizontally again
+	(other-window 1)
+	(switch-to-buffer b3))))))
 
 (defun proof-display-three-b (&optional policy)
   "Layout three buffers in a single frame.  Only do this if buffers exist."

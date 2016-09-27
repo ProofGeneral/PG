@@ -28,7 +28,6 @@
 	    ;; XML mode complains too much
 	    (sgml-mode))))
 
-    ;; TODO : what is this?
     (setq pg-response-special-display-regexp
 	  (proof-regexp-alt goals resp))
 
