@@ -721,7 +721,7 @@ is gone and we have to close the secondary locked span."
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; can get error message not associated with script text
-    (when (and (> error-start 0) (> error-stop 0))
+    (when (> error-stop 0)
       (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
 
 ;; discard tags in richpp-formatted strings
