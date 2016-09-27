@@ -89,6 +89,11 @@ These are appended at the end of `coq-server-init-cmds'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
 
+(defcustom coq-optimise-resp-windows-enable t
+  "If non-nil (default) resize vertically response window after each command."
+  :type 'boolean
+  :group 'coq)
+
 ;; Default coq is only Private_ and _subproof
 (defcustom coq-search-blacklist-strings ; add these? _ind _rect _rec
   (list "Private_" "_subproof")
@@ -1900,7 +1905,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
           (buffer-substring p (point)))))))
 
 
-
 (defun coq-show-first-goal ()
   "Scroll the goal buffer so that the first goal is visible.
 First goal is displayed on the bottom of its window, maximizing the
@@ -1959,28 +1963,6 @@ number of hypothesis displayed, without hiding the goal"
                 (append (list (list 'proof-active-buffer-fake-minor-mode
                                     (coq-build-subgoals-string nbgoals nbunfocused)))
                         minor-mode-alist)))))))
-
-;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
-;; *after* windows resizing.
-'(add-hook 'proof-shell-handle-delayed-output-hook
-           'coq-show-first-goal)
-'(add-hook 'proof-shell-handle-delayed-output-hook
-           'coq-update-minor-mode-alist)
-'(add-hook 'proof-shell-handle-delayed-output-hook
-           (lambda ()
-             (if (proof-string-match coq-shell-proof-completed-regexp
-                                     proof-prover-last-output)
-                 (proof-clean-buffer proof-goals-buffer))))
-
-
-;; bug fixed in generic ocde, useless now:
-                                        ;(add-hook 'proof-activate-scripting-hook '(lambda () (when proof-three-window-enable (proof-layout-windows))))
-
-
-;; Adapt when displaying a normal message
-(add-hook 'proof-shell-handle-delayed-output-hook 'coq-optimise-resp-windows-if-option)
-;; Adapt when displaying an error or interrupt
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-optimise-resp-windows-if-option)
 
 ;;; DOUBLE HIT ELECTRIC TERMINATOR
 ;; Trying to have double hit on colon behave like electric terminator. The "."

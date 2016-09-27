@@ -24,7 +24,6 @@
          (frame-gls (cl-mapcar 'window-frame wins-gls)))
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
-;; TODO: remove/add hook instead? 
 (defun coq-optimise-resp-windows-if-option ()
   (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
 
@@ -61,7 +60,8 @@ Only when three-buffer-mode is enabled."
 
 ;; display something in response buffer
 (defun coq--display-response (msg)
-  (pg-response-message msg))
+  (pg-response-message msg)
+  (coq-optimise-resp-windows-if-option))
 
 ;; given a byte offset in a multibyte string, calculate the string offset
 ;; TODO find a home for this function
