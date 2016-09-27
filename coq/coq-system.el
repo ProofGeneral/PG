@@ -67,6 +67,21 @@ processes."
   :type 'boolean
   :group 'coq)
 
+(defcustom coq-async-lazy nil
+  "Use lazy mode for Coq asynchronous processing"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-num-async-workers 4
+  "Number of worker processes in async mode"
+  :type 'int
+  :group 'coq)
+
+(defcustom coq-num-async-par-workers 4
+  "Number of worker processes when using Ltac :par"
+  :type 'int
+  :group 'coq)
+
 (defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
   "The default TAGS table for the Coq library."
   :type 'string
@@ -313,7 +328,12 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   '("-ideslave" "-main-channel" "stdfds"))
 
 (defvar coq-coqtop-async-flags
-  '("-async-proofs" "on"))
+  (let ((mode (if coq-async-lazy
+		  "lazy"
+		"on")))
+    `("-async-proofs" ,mode
+      "-async-proofs-j" ,(number-to-string coq-num-async-workers)
+      "-async-proofs-tac-j" ,(number-to-string coq-num-async-par-workers))))
 
 ;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
@@ -327,7 +347,8 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
    LOAD-PATH, CURRENT-DIRECTORY: see `coq-coqc-prog-args'."
   (let* ((coqc-args (coq-coqc-prog-args load-path current-directory))
 	 (ide-args coq-coqtop-server-flags)
-	 (async-args (if coq-allow-async-proofs coq-coqtop-async-flags nil)))
+	 (async-args (if coq-allow-async-proofs
+			 coq-coqtop-async-flags)))
     (append ide-args async-args coqc-args)))
 
 (defun coq-prog-args ()
