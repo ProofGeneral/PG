@@ -18,6 +18,10 @@
 (require 'coq-parsing)
 (require 'coq-xml)
 
+;; forward declarations to silence warnings
+(declare-function coq-server-process-response "coq-server.el")
+(declare-function coq-server--clear-response-buffer "coq-server.el")
+
 ;; some handlers
 
 ;; clear user *response* buffer and

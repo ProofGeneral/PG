@@ -31,6 +31,11 @@
 
 (declare-function proof-segment-up-to "proof-script") 
 
+(declare-function proof-server-response-complete "proof-resolver.el")
+(declare-function proof-server-response-incomplete "proof-resolver.el")
+(declare-function proof-server-restart "proof-server.el")
+(declare-function proof-server-interrupt-process "proof-server.el")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Utilities: moving point in proof script buffer
