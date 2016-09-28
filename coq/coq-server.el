@@ -168,12 +168,14 @@ is gone and we have to close the secondary locked span."
   (concat goal-indent goal))
 
 ;; invariant: goals is non-empty
-(defun coq-server--display-goals (goals)
+(defun coq-server--make-goals-string (goals &optional kind-of-goals)
   (let* ((num-goals (length goals))
 	 (goal1 (car goals))
 	 (goals-rest (cdr goals))
 	 (goal-counter 1))
     (with-temp-buffer
+      (when kind-of-goals
+	(insert (format "%s goals\n\n" kind-of-goals)))
       (if (= num-goals 1)
 	  (insert "1 subgoal")
 	(insert (format "%d subgoals" num-goals)))
@@ -188,7 +190,7 @@ is gone and we have to close the secondary locked span."
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
 	(insert (coq-server--format-goal-no-hypotheses 
 		 (coq-server--goal-goal goal))))
-      (pg-goals-display (buffer-string) t))))
+      (buffer-string))))
 
 ;; update global state in response to status
 (defun coq-server--handle-status (_xml)
@@ -219,29 +221,37 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-goals (xml)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
 	 (current-goals (coq-xml-body (nth 0 all-goals)))
-	 (bg-goals (coq-xml-body (nth 1 all-goals)))
+	 ;; background goals have a different, extra structure than the other ones
+	 ;; TODO: what to do with the extra information?
+	 (bg-goals-pair (coq-xml-body1 (nth 1 all-goals)))
+	 (bg-goals (coq-xml-body (nth 1 (coq-xml-body bg-goals-pair))))
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
-	 (abandoned-goals (coq-xml-body (nth 3 all-goals))))
-    (if current-goals
+	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
+	 goal-text)
+    (if (not (or current-goals bg-goals shelved-goals abandoned-goals))
+	(progn
+	  ;; clear goals display
+	  (coq-server--clear-goals-buffer)
+	  ;; mimic the coqtop REPL, though it would be better to come via XML
+	  (coq--display-response "No more subgoals."))
+      (when abandoned-goals
+	(dolist (goal abandoned-goals)
+	  (coq-server--handle-goal goal))
+	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals 'Abandoned) goal-text)))
+      (when shelved-goals
+	(dolist (goal shelved-goals)
+	  (coq-server--handle-goal goal))
+	(setq goal-text (cons (coq-server--make-goals-string shelved-goals 'Shelved) goal-text)))
+      (when bg-goals
+	(dolist (goal bg-goals)
+	  (coq-server--handle-goal goal))
+	(setq goal-text (cons (coq-server--make-goals-string bg-goals 'Background) goal-text)))
+      (when current-goals
 	(progn
 	  (dolist (goal current-goals)
 	    (coq-server--handle-goal goal))
-	  (coq-server--display-goals current-goals))
-      (progn
-	(setq proof-prover-proof-completed 0)
-	;; clear goals display
-	(coq-server--clear-goals-buffer)
-	;; mimic the coqtop REPL, though it would be better to come via XML
-	(coq--display-response "No more subgoals.")))
-    (when bg-goals
-      (dolist (goal bg-goals)
-	(coq-server--handle-goal goal)))
-    (when shelved-goals
-      (dolist (goal shelved-goals)
-	(coq-server--handle-goal goal)))
-    (when abandoned-goals
-      (dolist (goal abandoned-goals)
-	(coq-server--handle-goal goal)))))
+	  (setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text))))
+      (pg-goals-display (mapconcat 'identity goal-text "\n\n") t))))
 
 (defun coq-server--value-status-p (xml)
   (coq-xml-at-path xml '(value (status))))
