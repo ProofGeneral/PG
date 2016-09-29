@@ -276,8 +276,7 @@ to be sent."
 		      (error (proof-debug-message
 			      (concat "Error when processing "
 				      (if complete "complete" "partial")
-				      " Coq response: %s, response was: \"%s\"") err answer)
-			     (backtrace)))
+				      " Coq response: %s, response was: \"%s\"") err answer)))
 		  (when complete
 		    (tq-queue-pop tq)))
 	      (tq-process-buffer tq)))))))))
