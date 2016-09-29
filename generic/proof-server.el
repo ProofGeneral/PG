@@ -423,6 +423,7 @@ This function should not be called if
 (defun proof-server-restart ()
   "Restart proof server."
   (interactive)
+  (run-hooks 'proof-server-restart-hook)
   (proof-server-exit t))
 
 ;; TODO move these to a good home

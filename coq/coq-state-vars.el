@@ -39,6 +39,8 @@ It's the state id returned after Init command sent.")
 	coq-last-but-one-proofnum 1
 	coq-last-but-one-proofstack nil))
 
+(add-hook 'proof-server-restart-hook 'coq-reset-state-vars)
+
 ;; we see feedback and value-fail messages twice, once for Goal, again for Status
 ;; see Bug 4850
 ;; process each one just once, because they have effects; use table to know if they've been seen
