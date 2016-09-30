@@ -135,13 +135,13 @@ is gone and we have to close the secondary locked span."
 
 ;; length of goal or hypothesis is maximum length of each of its lines
 ;; lines within a goal or hypothesis are separated by newlines
-(defun coq-server--hyps-or-goal-length (hyps-or-goal)
-  (apply 'max (mapcar 'length (split-string hyps-or-goal "\n"))))
+(defun coq-server--hyps-or-goal-width (hyps-or-goal)
+  (apply 'max (mapcar 'string-width (split-string hyps-or-goal "\n"))))
 
 (defun coq-server--hyps-sep-width (hyps)
   (if (null hyps)
       0
-    (apply 'max (mapcar 'coq-server--hyps-or-goal-length hyps))))
+    (apply 'max (mapcar 'coq-server--hyps-or-goal-width hyps))))
 
 ;; make a pretty goal 
 (defun coq-server--format-goal-with-hypotheses (goal hyps)
@@ -153,7 +153,7 @@ is gone and we have to close the secondary locked span."
 	 (hyps-text (mapcar 'coq-xml-body1 hyps))
 	 (formatted-hyps (mapconcat 'identity hyps-text (concat nl-indent padding)))
 	 (hyps-width (coq-server--hyps-sep-width hyps-text))
-	 (goal-width (coq-server--hyps-or-goal-length goal))
+	 (goal-width (coq-server--hyps-or-goal-width goal))
 	 (width (max min-width (+ (max hyps-width goal-width) (* 2 padding-len))))
 	 (goal-offset (/ (- width goal-width) 2))
 	 (indented-goal (replace-regexp-in-string
