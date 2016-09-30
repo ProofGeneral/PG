@@ -279,8 +279,8 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--error-span-at-end-of-locked (error-span)
   ;; proof-locked-span may be detached, so lookup needed span
   (let* ((locked-span (coq-server--get-span-with-predicate
-		      (lambda (span)
-			(equal (span-property span 'face) 'proof-locked-face))))
+		       (lambda (span)
+			 (equal (span-property span 'face) 'proof-locked-face))))
 	 (locked-end (or (and locked-span (span-end locked-span)) 0))
 	 (error-end (span-end error-span)))
     (>= error-end locked-end)))
@@ -414,35 +414,35 @@ is gone and we have to close the secondary locked span."
 	   (spans-after-retract (overlays-in start (point-max))))
       (if coq-server--backtrack-on-failure
 	  (progn 
-	      ;; TODO race condition here
-	      ;; not certain that this flag matches latest Edit_at
-	      ;; may not be a practical issue
+	    ;; TODO race condition here
+	    ;; not certain that this flag matches latest Edit_at
+	    ;; may not be a practical issue
 	    (setq coq-server--backtrack-on-failure nil)
-	      ;; if we backtracked on a failure, see if the next span with a state id
-	      ;; has a pg-error span on top; if so, unmark it for deletion
-	      (let* ((relevant-spans (cl-remove-if-not
-				      (lambda (sp) (span-property sp 'marked-for-deletion))
-				      spans-after-retract))
-		     (sorted-spans (sort relevant-spans
-					 (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
-		     error-span
-		     state-id-span)
-		;; see if first pg-error span overlaps first span with a state id
-		(while (and sorted-spans (or (null error-span) (null state-id-span)))
-		  (let ((span (car sorted-spans)))
-		    (when (span-property span 'state-id)
-		      (setq state-id-span span))
-		    (when (eq (span-property span 'type) 'pg-error)
-		      (setq error-span span)))
-		  (setq sorted-spans (cdr sorted-spans)))
-		(when (and state-id-span error-span
-			   (>= (span-start error-span) (span-start state-id-span))
-			   (<= (span-end error-span) (span-end state-id-span)))
-		  (span-unmark-delete error-span))))
+	    ;; if we backtracked on a failure, see if the next span with a state id
+	    ;; has a pg-error span on top; if so, unmark it for deletion
+	    (let* ((relevant-spans (cl-remove-if-not
+				    (lambda (sp) (span-property sp 'marked-for-deletion))
+				    spans-after-retract))
+		   (sorted-spans (sort relevant-spans
+				       (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
+		   error-span
+		   state-id-span)
+	      ;; see if first pg-error span overlaps first span with a state id
+	      (while (and sorted-spans (or (null error-span) (null state-id-span)))
+		(let ((span (car sorted-spans)))
+		  (when (span-property span 'state-id)
+		    (setq state-id-span span))
+		  (when (eq (span-property span 'type) 'pg-error)
+		    (setq error-span span)))
+		(setq sorted-spans (cdr sorted-spans)))
+	      (when (and state-id-span error-span
+			 (>= (span-start error-span) (span-start state-id-span))
+			 (<= (span-end error-span) (span-end state-id-span)))
+		(span-unmark-delete error-span))))
 	;; not on failure, delete pg-error spans below
 	(let* ((help-spans (cl-remove-if-not
-				(lambda (sp) (eq (span-property sp 'type) 'pg-error))
-				spans-after-retract)))
+			    (lambda (sp) (eq (span-property sp 'type) 'pg-error))
+			    spans-after-retract)))
 	  (mapc 'span-delete help-spans)))
       (let ((all-spans (overlays-in start (point-max))))
 	(mapc (lambda (span)
