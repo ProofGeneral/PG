@@ -338,6 +338,9 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 	    proof-workers-flags
 	    par-workers-flags)))
 
+(defvar coq-coqtop-no-async-flags
+  '("-async-proofs" "off"))
+
 (defvar coq-coqtop-async-lazy-flags
   '("-async-proofs" "lazy"))
 
@@ -352,8 +355,9 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   "Build a list of options for coqc. 
    LOAD-PATH, CURRENT-DIRECTORY: see `coq-coqc-prog-args'."
   (let* ((coqc-args (coq-coqc-prog-args load-path current-directory))
-	 (async-args (when coq-allow-async-proofs
-		       coq-coqtop-async-flags))
+	 (async-args (if coq-allow-async-proofs
+			 coq-coqtop-async-flags
+		       coq-coqtop-no-async-flags))
 	 (ide-args coq-coqtop-server-flags)
 	 (async-lazy-args (when (and coq-allow-async-proofs
 				     coq-async-lazy)
