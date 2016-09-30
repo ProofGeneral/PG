@@ -376,6 +376,9 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
     (proof-script-remove-all-spans-and-deactivate)
     (proof-server-clear-state)
 
+    ;; Log death
+    (proof-server-log "proof-general" "*** end prover session ***\n")
+    
     ;; Remove auxiliary windows, trying to stop proliferation of 
     ;; frames (NB: loses if user has switched buffer in special frame)
     (if (and proof-multiple-frames-enable
@@ -384,7 +387,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 
     ;; Kill associated buffer
     (let ((proof-server-buffer nil)) ;; fool kill buffer hooks
-      (dolist (buf '(proof-goals-buffer proof-response-buffer proof-server-log-buffer))
+      (dolist (buf '(proof-goals-buffer proof-response-buffer))
 	(when (buffer-live-p (symbol-value buf))
 	  ;; allow killing buffer
 	  (with-current-buffer (symbol-value buf)
