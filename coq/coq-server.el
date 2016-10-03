@@ -168,23 +168,24 @@ is gone and we have to close the secondary locked span."
   (concat goal-indent goal))
 
 ;; invariant: goals is non-empty
-(defun coq-server--make-goals-string (goals &optional kind-of-goals)
+(defun coq-server--make-goals-string (goals &optional hide-first-context kind-of-goals)
   (let* ((num-goals (length goals))
 	 (goal1 (car goals))
-	 (goals-rest (cdr goals))
+	 (goals-rest (if hide-first-context goals (cdr goals)))
 	 (goal-counter 1))
     (with-temp-buffer
       (when kind-of-goals
-	(insert (format "%s goals\n\n" kind-of-goals)))
+	(insert (format "*** %s goals ***\n" kind-of-goals)))
       (if (= num-goals 1)
 	  (insert "1 subgoal")
 	(insert (format "%d subgoals" num-goals)))
-      (insert "\n\n")
-      (insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
-      (insert (coq-server--format-goal-with-hypotheses 
-	       (coq-server--goal-goal goal1)
-	       (coq-server--goal-hypotheses goal1)))
-      (insert "\n\n")
+      (insert "\n")
+      (unless hide-first-context
+	(insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
+	(insert (coq-server--format-goal-with-hypotheses 
+		 (coq-server--goal-goal goal1)
+		 (coq-server--goal-hypotheses goal1)))
+	(insert "\n\n"))
       (dolist (goal goals-rest)
 	(setq goal-counter (1+ goal-counter))
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
@@ -237,15 +238,15 @@ is gone and we have to close the secondary locked span."
       (when abandoned-goals
 	(dolist (goal abandoned-goals)
 	  (coq-server--handle-goal goal))
-	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals 'Abandoned) goal-text)))
+	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals t 'Abandoned) goal-text)))
       (when shelved-goals
 	(dolist (goal shelved-goals)
 	  (coq-server--handle-goal goal))
-	(setq goal-text (cons (coq-server--make-goals-string shelved-goals 'Shelved) goal-text)))
+	(setq goal-text (cons (coq-server--make-goals-string shelved-goals t 'Shelved) goal-text)))
       (when bg-goals
 	(dolist (goal bg-goals)
 	  (coq-server--handle-goal goal))
-	(setq goal-text (cons (coq-server--make-goals-string bg-goals 'Background) goal-text)))
+	(setq goal-text (cons (coq-server--make-goals-string bg-goals t 'Unfocused) goal-text)))
       (when current-goals
 	(progn
 	  (dolist (goal current-goals)
