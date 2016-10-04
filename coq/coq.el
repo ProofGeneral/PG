@@ -1789,7 +1789,8 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
       (proof-invisible-command thunk))))
 
 ;; Header line mouse handler
-(global-set-key [header-line mouse-1] 'coq-header-line-mouse-handler)
+(when coq-use-header-line
+  (global-set-key [header-line mouse-1] 'coq-header-line-mouse-handler))
 
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)

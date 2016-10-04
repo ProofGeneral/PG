@@ -896,7 +896,8 @@ is gone and we have to close the secondary locked span."
 	(`message (coq-server--handle-message xml))
 	(t (proof-debug-message "Unknown coqtop response %s" xml)))
       (setq xml (coq-xml-get-next-xml))))
-  (coq-header-line-update))
+  (when coq-use-header-line
+    (coq-header-line-update)))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)

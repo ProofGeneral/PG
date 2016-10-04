@@ -9,21 +9,29 @@
 
 ;; make copies of PG faces so we can modify the copies without affecting the originals
 
+;; colors for terminals
+(defvar coq-queue-color "lightred")
+(defvar coq-locked-color "lightblue")
+(defvar coq-secondary-locked-color "lightgreen")
+(defvar coq-processing-color "darkblue")
+(defvar coq-incomplete-color "blue")
+(defvar coq-error-color "red")
+
 (defvar face-assocs
-  `((,proof-queue-face . coq-queue-face)
-    (,proof-locked-face . coq-locked-face)
-    (,proof-secondary-locked-face . coq-secondary-locked-face)
-    (,proof-processing-face . coq-processing-face)
-    (,proof-incomplete-face . coq-incomplete-face)
-    (,proof-script-highlight-error-face . coq-script-highlight-error-face)))
+  `((,proof-queue-face . (coq-queue-face . ,coq-queue-color))
+    (,proof-locked-face . (coq-locked-face . ,coq-locked-color))
+    (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
+    (,proof-processing-face . (coq-processing-face . ,coq-processing-color))
+    (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
+    (,proof-error-face . (coq-error-face . ,coq-error-color))))
 
 (defvar face-mapper-tbl (make-hash-table))
 
 (mapc (lambda (face-pair)
 	(let ((old-face (car face-pair))
-	      (new-face (cdr face-pair)))
-	  (copy-face old-face new-face)
-	  (puthash old-face new-face face-mapper-tbl)))
+	      (new-face-color (cdr face-pair)))
+	  (copy-face old-face (car new-face-color))
+	  (puthash old-face new-face-color face-mapper-tbl)))
       face-assocs)
 
 (defun coq-header-line-set-height ()
@@ -36,7 +44,7 @@
 	    coq-secondary-locked-face
 	    coq-processing-face
 	    coq-incomplete-face
-	    coq-script-highlight-error-face))))
+	    coq-error-face))))
 
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
@@ -69,33 +77,53 @@ this is start of offset, otherwise it's the end"
 	  (when queue-span
 	    (let ((start (coq-header--calc-offset (span-start queue-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end queue-span) num-lines num-cols)))
-	      (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text))))
+	      (if (display-graphic-p)
+		  (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,coq-queue-color) nil header-text)))))
 	;; update for locked region
 	(let ((locked-span (car (spans-filter all-spans 'face proof-locked-face))))
 	  (when locked-span
 	    (let ((start (coq-header--calc-offset (span-start locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end locked-span) num-lines num-cols)))
-	      (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text))))
+	      (if (display-graphic-p)
+		  (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
+	;; update for errors
+	(let ((error-spans (spans-filter all-spans 'type 'pg-error)))
+	  (dolist (span error-spans)
+	    (let* ((start (coq-header--calc-offset (span-start span) num-lines num-cols t))
+		   (end (coq-header--calc-offset (span-end span) num-lines num-cols)))
+	      (when (eq start end)
+		(if (< end num-cols)
+		    (setq end (1+ end))
+		  (setq start (1- start))))
+	      (if (display-graphic-p)
+		  (set-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
 	;; update for specially-colored spans
 	(let ((colored-spans (spans-filter all-spans 'type 'pg-special-coloring)))
 	  (dolist (span colored-spans)
 	    (let* ((old-face (span-property span 'face))
-		   (new-face (gethash old-face face-mapper-tbl))
+		   (new-face-color (gethash old-face face-mapper-tbl))
+		   (new-face (car new-face-color))
+		   (color (cdr new-face-color))
 		   (start (coq-header--calc-offset (span-start span) num-lines num-cols t))
 		   (end (coq-header--calc-offset (span-end span) num-lines num-cols)))
 	      (when (eq start end)
 		(if (< end num-cols)
 		    (setq end (1+ end))
 		  (setq start (1- start))))
-	      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text))))
+	      (if (display-graphic-p)
+		  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,color) nil header-text)))))
 	(setq header-line-format header-text)))))
 
 ;; update header line at strategic points
-(add-hook 'window-size-change-functions 'coq-header-line-update)
-(add-hook 'window-configuration-change-hook 'coq-header-line-update)
-(add-hook 'proof-server-insert-hook 'coq-header-line-update)
-(add-hook 'proof-state-change-hook 'coq-header-line-update)
-(add-hook 'after-change-functions 'coq-header-line-update)
+(when coq-use-header-line
+  (add-hook 'window-size-change-functions 'coq-header-line-update)
+  (add-hook 'window-configuration-change-hook 'coq-header-line-update)
+  (add-hook 'proof-server-insert-hook 'coq-header-line-update)
+  (add-hook 'proof-state-change-hook 'coq-header-line-update))
 
 (defun coq-header-line-mouse-handler ()
   (interactive)
@@ -132,6 +160,7 @@ this is start of offset, otherwise it's the end"
 	 (coq-header-line-init))))
    (buffer-list)))
 
-(add-hook 'proof-deactivate-scripting-hook 'coq-header-line--clear-all)
+(when coq-use-header-line
+  (add-hook 'proof-deactivate-scripting-hook 'coq-header-line--clear-all))
 
 (provide 'coq-header-line)

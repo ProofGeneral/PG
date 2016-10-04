@@ -573,8 +573,9 @@ Does nothing if `coq-use-project-file' is nil."
 			(boundp 'show-paren-data-function))
 	       (setq show-paren-data-function 'show-paren--default))))
 
-(add-hook 'coq-mode-hook
-	  'coq-header-line-init)
+(when coq-use-header-line
+  (add-hook 'coq-mode-hook
+	    'coq-header-line-init))
 
 (defun coq-toggle-use-project-file ()
   (interactive)
