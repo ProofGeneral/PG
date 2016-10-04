@@ -1139,7 +1139,7 @@ questioning the user.  It is used to make a value for
 the `kill-buffer-hook' for scripting buffers, so that when
 a scripting buffer is killed it is always retracted."
   (interactive)
-  '(message "proof-deactivate-scripting!")
+  (proof-debug-message "proof-deactivate-scripting!")
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
    ;; Examine buffer.
@@ -1154,7 +1154,7 @@ a scripting buffer is killed it is always retracted."
 	  (action     (unless complete
 			(or forcedaction
 			    (proof-deactivate-scripting-choose-action)))))
-     '(message "proof-deactivate-scripting, complete: %s action: %s"
+     (proof-debug-message "proof-deactivate-scripting, complete: %s action: %s"
 	      complete action)
 
      (if action
@@ -1445,7 +1445,7 @@ Argument GOALEND is the end of the goal;."
   "Try to return a goal name from GSPAN.
 Subroutine of `proof-done-advancing-save'."
   (let ((cmdstr (span-property gspan 'cmd)))
-    (message "cmdstr: %s" cmdstr)
+    (proof-debug-message "cmdstr: %s" cmdstr)
     (and proof-goal-with-hole-regexp
 	 (or (message "got proof-goal-with-hole-regexp") t)
 	 (proof-string-match proof-goal-with-hole-regexp cmdstr)
@@ -1840,7 +1840,7 @@ No effect if prover is busy."
     ;; was proof-shell-busy in REPL world
     ;; (message "Interrupting prover")
     ;; (proof-server-interrupt-process)
-    '(message "proof-retract-before-change beg: %s end: %s" beg end)
+    (proof-debug-message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-match-data ;; see PG#41
 	(save-restriction ;; see Trac#403
@@ -1948,14 +1948,14 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
   "Return the span which is the last goal or save before point."
   (save-excursion
     (let ((span (span-at-before (proof-unprocessed-begin) 'type)))
-      '(message "span before while: %s" span)
+      (proof-debug-message "span before while: %s" span)
       (while (and span
 		  (not (eq (span-property span 'type) 'goalsave))
 		  (or (eq (span-property span 'type) 'proof)
 		      (eq (span-property span 'type) 'comment)
 		      (eq (span-property span 'type) 'proverproc)
 		      (not (funcall proof-goal-command-p span))))
-	'(message "span in while: %s" span)
+	(proof-debug-message "span in while: %s" span)
 	(setq span (prev-span span 'type)))
       span)))
 
@@ -2031,7 +2031,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
     ;; make spans outside the locked region at the moment)...
     ;; But end may have moved backwards above: this just checks whether
     ;; there is more retraction to be done.
-    '(message "retracting span: %s start: %s end: %s" span start end)
+    (proof-debug-message "retracting span: %s start: %s end: %s" span start end)
     (when (> end start)
       (setq actions
 	    ;; Append a retract action to clear the entire start-end
