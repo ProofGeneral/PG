@@ -52,7 +52,8 @@ this is start of offset, otherwise it's the end"
   (make-string num-cols coq-header-line-char))
 
 (defun coq-header-line-update (&rest _args)
-  (when proof-script-buffer
+  (if (null proof-script-buffer)
+      (coq-header-line--clear-all)
     (with-current-buffer proof-script-buffer
       (let* ((num-cols (window-total-width (get-buffer-window)))
 	     (num-lines
