@@ -67,19 +67,29 @@ processes."
   :type 'boolean
   :group 'coq)
 
-(defcustom coq-async-lazy nil
+(defcustom coq-use-header-line t
+  "Use mouse-clickable header line to track proof progress"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-header-line-height 64
+  "Height of header line in pixels on graphical display, nil for default"
+  :type 'integer
+  :group 'coq)
+
+(defcustom coq-async-lazy t
   "Use lazy mode for Coq asynchronous processing"
   :type 'boolean
   :group 'coq)
 
 (defcustom coq-num-async-workers 4
   "Number of worker processes in async mode, nil for default"
-  :type 'int
+  :type 'integer
   :group 'coq)
 
 (defcustom coq-num-async-par-workers 4
   "Number of worker processes when using Ltac :par, nil for default"
-  :type 'int
+  :type 'integer
   :group 'coq)
 
 (defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
@@ -563,7 +573,8 @@ Does nothing if `coq-use-project-file' is nil."
 			(boundp 'show-paren-data-function))
 	       (setq show-paren-data-function 'show-paren--default))))
 
-
+(add-hook 'coq-mode-hook
+	  'coq-header-line-init)
 
 (defun coq-toggle-use-project-file ()
   (interactive)

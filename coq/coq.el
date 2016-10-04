@@ -46,6 +46,7 @@
 (require 'coq-response)
 (require 'coq-parsing)
 (require 'coq-queries)
+(require 'coq-header-line)
 (require 'coq-xml)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
@@ -642,7 +643,7 @@ Based on idea mentioned in Coq reference manual."
       (proof-invisible-command (coq-queries-print-visibility-thunk))))))
 
 (defcustom coq-remap-mouse-1 nil
-  "Wether coq mode should remap mouse button 1 to coq queries.
+  "Whether coq mode should remap mouse button 1 to coq queries.
 
 This overrides the default global binding of (control mouse-1) and
 (shift mouse-1) (buffers and faces menus). Hence it is nil by
@@ -1786,6 +1787,9 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
          (coq-queries-unset-printing-all)
          '("Printing All"))
       (proof-invisible-command thunk))))
+
+;; Header line mouse handler
+(global-set-key [header-line mouse-1] 'coq-header-line-mouse-handler)
 
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)

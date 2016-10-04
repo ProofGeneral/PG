@@ -38,10 +38,6 @@
 	    coq-incomplete-face
 	    coq-script-highlight-error-face))))
 
-(defvar coq-header-line--space-fraction
-  "Number of header line spaces per normal space"
-  4)
-
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
 this is start of offset, otherwise it's the end"
@@ -49,10 +45,13 @@ this is start of offset, otherwise it's the end"
 	 (adjusted-line (if start (1- pos-line) pos-line)))
     (/ (* adjusted-line cols) lines)))
 
-(defvar coq-header-line-char ?\+)
+(defvar coq-header-line-char ?\-)
 (defvar coq-header-line-mouse-pointer 'hand)
 
-(defun coq-header-line-update (&rest args)
+(defun coq-header-line--make-line (num-cols)
+  (make-string num-cols coq-header-line-char))
+
+(defun coq-header-line-update (&rest _args)
   (when proof-script-buffer
     (with-current-buffer proof-script-buffer
       (let* ((num-cols (window-total-width (get-buffer-window)))
@@ -61,7 +60,7 @@ this is start of offset, otherwise it's the end"
 		(goto-char (point-max))
 		(skip-chars-backward "\t\n")
 		(line-number-at-pos (point))))
-	     (header-text (make-string num-cols coq-header-line-char))
+	     (header-text (coq-header-line--make-line num-cols))
 	     (all-spans (overlays-in (point-min) (point-max))))
 	(set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
 	;; update for queue
@@ -90,9 +89,11 @@ this is start of offset, otherwise it's the end"
 	      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text))))
 	(setq header-line-format header-text)))))
 
+;; update header line at strategic points
 (add-hook 'window-configuration-hook 'coq-header-line-update)
 (add-hook 'proof-server-insert-hook 'coq-header-line-update)
 (add-hook 'proof-state-change-hook 'coq-header-line-update)
+(add-hook 'after-change-functions 'coq-header-line-update)
 
 (defun coq-header-line-mouse-handler ()
   (interactive)
@@ -100,12 +101,34 @@ this is start of offset, otherwise it's the end"
 	 (mouse-info (car event))
 	 (event-posn (cadr event))
 	 (x-pos (car (posn-x-y event-posn))))
-    (when (and proof-script-buffer x-pos (eq mouse-info 'double-down-mouse-1))
-      (with-current-buffer proof-script-buffer
-	(let* ((window-pixels (window-pixel-width (get-buffer-window)))
-	       (num-lines (line-number-at-pos (point-max)))
-	       (destination-line (/ (* x-pos num-lines) window-pixels)))
-	  (goto-char (point-min)) (forward-line (1- destination-line)))))))
+    (when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'double-down-mouse-1))
+      (let* ((window-pixels (window-pixel-width (get-buffer-window)))
+	     (num-lines (line-number-at-pos (point-max)))
+	     (destination-line (/ (* x-pos num-lines) window-pixels)))
+	(goto-char (point-min)) (forward-line (1- destination-line))))))
+
+;; called by coq-mode-hook
+;; can't use update function, because proof-script-buffer not yet set
+(defun coq-header-line-init ()
+  (let* ((num-cols (window-total-width (get-buffer-window)))
+	 (num-lines
+	  (save-excursion
+	    (goto-char (point-max))
+	    (skip-chars-backward "\t\n")
+	    (line-number-at-pos (point))))
+	 (header-text (coq-header-line--make-line num-cols)))
+    (set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
+    (setq header-line-format header-text)))
+
+;; we can safely clear header line for all Coq buffers after a retraction
+(defun coq-header-line--clear-all ()
+  (mapc
+   (lambda (buf)
+     (with-current-buffer buf
+       (when (eq major-mode 'coq-mode)
+	 (coq-header-line-init))))
+   (buffer-list)))
+
+(add-hook 'proof-deactivate-scripting-hook 'coq-header-line--clear-all)
 
 (provide 'coq-header-line)
-

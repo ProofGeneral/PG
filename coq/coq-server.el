@@ -14,7 +14,7 @@
 (require 'coq-tq)
 (require 'coq-response)
 (require 'coq-xml)
-; (require 'coq-header-line)
+(require 'coq-header-line)
 
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
@@ -896,8 +896,7 @@ is gone and we have to close the secondary locked span."
 	(`message (coq-server--handle-message xml))
 	(t (proof-debug-message "Unknown coqtop response %s" xml)))
       (setq xml (coq-xml-get-next-xml))))
-  ;; (coq-header-line-update)
-  )
+  (coq-header-line-update))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)

@@ -34,29 +34,30 @@ Only when three-buffer-mode is enabled."
   ;; call was silent, we shouldn't touch the response buffer.  See GitHub
   ;; issues https://github.com/cpitclaudel/company-coq/issues/32 and
   ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (unless (memq 'no-response-display proof-server-delayed-output-flags)
-    ;; If there is no frame with goql+response then do nothing
-    (when (and proof-three-window-enable (coq-find-threeb-frames))
-      (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting one adequat frame
-        (with-selected-frame pg-frame
-          (when (and (> (frame-height) 10)
-                     (get-buffer-window proof-response-buffer))
-            (let ((maxhgth
-                   (- (+ (with-selected-window (get-buffer-window proof-goals-buffer t) (window-text-height))
-                         (with-selected-window (get-buffer-window proof-response-buffer t) (window-text-height)))
-                      window-min-height))
-                  hgt-resp nline-resp)
-              (with-selected-window (get-buffer-window proof-response-buffer)
-                (setq hgt-resp (window-text-height))
-                (with-current-buffer proof-response-buffer
-                  (setq nline-resp ; number of lines we want for response buffer
-                        (min maxhgth (max window-min-height ; + 1 for comfort
-                                          (+ 1 (count-lines (point-max) (point-min)))))))
-                (unless (is-not-split-vertic (selected-window))
-                  (shrink-window (- hgt-resp nline-resp)))
-                (with-current-buffer proof-response-buffer
-                  (goto-char (point-min))
-                  (recenter))))))))))
+  (when proof-response-buffer
+    (unless (memq 'no-response-display proof-server-delayed-output-flags)
+      ;; If there is no frame with goql+response then do nothing
+      (when (and proof-three-window-enable (coq-find-threeb-frames))
+	(let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting one adequat frame
+	  (with-selected-frame pg-frame
+	    (when (and (> (frame-height) 10)
+		       (get-buffer-window proof-response-buffer))
+	      (let ((maxhgth
+		     (- (+ (with-selected-window (get-buffer-window proof-goals-buffer t) (window-text-height))
+			   (with-selected-window (get-buffer-window proof-response-buffer t) (window-text-height)))
+			window-min-height))
+		    hgt-resp nline-resp)
+		(with-selected-window (get-buffer-window proof-response-buffer)
+		  (setq hgt-resp (window-text-height))
+		  (with-current-buffer proof-response-buffer
+		    (setq nline-resp ; number of lines we want for response buffer
+			  (min maxhgth (max window-min-height ; + 1 for comfort
+					    (+ 1 (count-lines (point-max) (point-min)))))))
+		  (unless (is-not-split-vertic (selected-window))
+		    (shrink-window (- hgt-resp nline-resp)))
+		  (with-current-buffer proof-response-buffer
+		    (goto-char (point-min))
+		    (recenter)))))))))))
 
 ;; display something in response buffer
 (defun coq--display-response (msg)
