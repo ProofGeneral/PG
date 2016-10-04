@@ -91,21 +91,23 @@ this is start of offset, otherwise it's the end"
 
 ;; update header line at strategic points
 (add-hook 'window-size-change-functions 'coq-header-line-update)
+(add-hook 'window-configuration-change-hook 'coq-header-line-update)
 (add-hook 'proof-server-insert-hook 'coq-header-line-update)
 (add-hook 'proof-state-change-hook 'coq-header-line-update)
 (add-hook 'after-change-functions 'coq-header-line-update)
 
 (defun coq-header-line-mouse-handler ()
   (interactive)
-  (let* ((event (read-event))
-	 (mouse-info (car event))
-	 (event-posn (cadr event))
-	 (x-pos (car (posn-x-y event-posn))))
-    (when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'double-down-mouse-1))
-      (let* ((window-pixels (window-pixel-width (get-buffer-window)))
-	     (num-lines (line-number-at-pos (point-max)))
-	     (destination-line (/ (* x-pos num-lines) window-pixels)))
-	(goto-char (point-min)) (forward-line (1- destination-line))))))
+  (let ((event (read-event)))
+    (when (consp event) ; sometimes seem to get other events
+      (let* ((mouse-info (car event))
+	     (event-posn (cadr event))
+	     (x-pos (car (posn-x-y event-posn))))
+	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'double-down-mouse-1))
+	  (let* ((window-pixels (window-pixel-width (get-buffer-window)))
+		 (num-lines (line-number-at-pos (point-max)))
+		 (destination-line (/ (* x-pos num-lines) window-pixels)))
+	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
 ;; called by coq-mode-hook
 ;; can't use update function, because proof-script-buffer not yet set
