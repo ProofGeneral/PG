@@ -90,7 +90,7 @@ this is start of offset, otherwise it's the end"
 	(setq header-line-format header-text)))))
 
 ;; update header line at strategic points
-(add-hook 'window-configuration-hook 'coq-header-line-update)
+(add-hook 'window-size-change-functions 'coq-header-line-update)
 (add-hook 'proof-server-insert-hook 'coq-header-line-update)
 (add-hook 'proof-state-change-hook 'coq-header-line-update)
 (add-hook 'after-change-functions 'coq-header-line-update)
