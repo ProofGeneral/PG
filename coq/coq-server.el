@@ -14,6 +14,7 @@
 (require 'coq-tq)
 (require 'coq-response)
 (require 'coq-xml)
+; (require 'coq-header-line)
 
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
@@ -223,13 +224,12 @@ is gone and we have to close the secondary locked span."
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
 	 (current-goals (coq-xml-body (nth 0 all-goals)))
 	 ;; background goals have a different, extra structure than the other ones
-	 ;; TODO: what to do with the extra information?
-	 (bg-goals-pair (coq-xml-body1 (nth 1 all-goals)))
-	 (bg-goals (coq-xml-body (nth 1 (coq-xml-body bg-goals-pair))))
+	 (bg-goals-pairs (coq-xml-body (nth 1 all-goals)))
+	 (bg-goals nil) ; to be extracted from bg-goals-pairs
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
 	 goal-text)
-    (if (not (or current-goals bg-goals shelved-goals abandoned-goals))
+    (if (not (or current-goals bg-goals-pairs shelved-goals abandoned-goals))
 	(progn
 	  ;; clear goals display
 	  (coq-server--clear-goals-buffer)
@@ -243,9 +243,13 @@ is gone and we have to close the secondary locked span."
 	(dolist (goal shelved-goals)
 	  (coq-server--handle-goal goal))
 	(setq goal-text (cons (coq-server--make-goals-string shelved-goals t 'Shelved) goal-text)))
-      (when bg-goals
-	(dolist (goal bg-goals)
-	  (coq-server--handle-goal goal))
+      (when bg-goals-pairs
+	(dolist (pair bg-goals-pairs)
+	  ;; TODO : what is first elt of pair?
+	  (let* ((pair-goal-list (nth 1 (coq-xml-body pair)))
+		 (pair-goals (coq-xml-body pair-goal-list)))
+	    (mapc 'coq-server--handle-goal pair-goals)
+	    (setq bg-goals (append bg-goals pair-goals))))
 	(setq goal-text (cons (coq-server--make-goals-string bg-goals t 'Unfocused) goal-text)))
       (when current-goals
 	(progn
@@ -786,7 +790,6 @@ is gone and we have to close the secondary locked span."
 	  ;; if there's an existing colored span at point, re-use it,
 	  ;;  because want most recent coloring
 	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
-	    ;; TODO 'type becomes 'pg-type when merged with trunk
 	    (span-set-property span-processing 'type 'pg-special-coloring)
 	    (span-set-property span-processing prop 't)
 	    (span-set-property span-processing 'face face)
@@ -892,7 +895,9 @@ is gone and we have to close the secondary locked span."
 	(`feedback (coq-server--handle-feedback xml))
 	(`message (coq-server--handle-message xml))
 	(t (proof-debug-message "Unknown coqtop response %s" xml)))
-      (setq xml (coq-xml-get-next-xml)))))
+      (setq xml (coq-xml-get-next-xml))))
+  ;; (coq-header-line-update)
+  )
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
