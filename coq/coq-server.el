@@ -824,8 +824,13 @@ is gone and we have to close the secondary locked span."
       (remhash state-id tbl)
       (span-delete span-colored))))
 
-(defun coq-server--uncolor-span-processed (xml)
-  (coq-server--uncolor-span-on-feedback xml coq-processing-span-tbl))
+(defun coq-server--color-span-processed (xml)
+  (coq-server--uncolor-span-on-feedback xml coq-processing-span-tbl)
+  (coq-server--color-span-on-feedback
+   xml
+   coq-processing-span-tbl
+   'processed
+   'proof-processed-face))
 
 (defun coq-server--uncolor-span-complete (xml)
   ;; we also get complete feedbacks for statements that dismiss last goal in proof
@@ -856,7 +861,7 @@ is gone and we have to close the secondary locked span."
     ("processingin"
      (coq-server--color-span-processingin xml))
     ("processed"
-     (coq-server--uncolor-span-processed xml))
+     (coq-server--color-span-processed xml))
     ("incomplete"
      (coq-server--color-span-incomplete xml))
     ("complete"

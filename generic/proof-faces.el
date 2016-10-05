@@ -81,7 +81,7 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 
 (defface proof-secondary-locked-face
   (proof-face-specs
-   (:background "#eaf800")
+   (:background "#90ee90")
    (:background "lightgreen")
    (:underline t))
   "*Face for secondary locked region of proof script (processed commands)."
@@ -89,10 +89,18 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 
 (defface proof-processing-face
   (proof-face-specs
-   (:background "#00ffff")
-   (:background "lightgreen")
+   (:background "#00008b")
+   (:background "darkblue")
    (:underline t))
   "*Face for span that is being processed."
+  :group 'proof-faces)
+
+(defface proof-processed-face
+  (proof-face-specs
+   (:background "#00ff00")
+   (:background "green")
+   (:underline t))
+  "*Face for span that has been processed."
   :group 'proof-faces)
 
 (defface proof-incomplete-face
@@ -248,6 +256,7 @@ Warning messages can come from proof assistant or from Proof General itself."
 (defconst proof-tactics-name-face 'proof-tactics-name-face proof-face-compat-doc)
 (defconst proof-incomplete-face 'proof-incomplete-face proof-face-compat-doc)
 (defconst proof-processing-face 'proof-processing-face proof-face-compat-doc)
+(defconst proof-processed-face 'proof-processed-face proof-face-compat-doc)
 (defconst proof-error-face 'proof-error-face proof-face-compat-doc)
 (defconst proof-script-sticky-error-face 'proof-script-sticky-error-face proof-face-compat-doc)
 (defconst proof-script-highlight-error-face 'proof-script-highlight-error-face proof-face-compat-doc)

@@ -14,6 +14,7 @@
 (defvar coq-locked-color "lightblue")
 (defvar coq-secondary-locked-color "lightgreen")
 (defvar coq-processing-color "darkblue")
+(defvar coq-processed-color "green")
 (defvar coq-incomplete-color "blue")
 (defvar coq-error-color "red")
 
@@ -22,6 +23,7 @@
     (,proof-locked-face . (coq-locked-face . ,coq-locked-color))
     (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
     (,proof-processing-face . (coq-processing-face . ,coq-processing-color))
+    (,proof-processed-face . (coq-processed-face . ,coq-processed-color))
     (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
     (,proof-error-face . (coq-error-face . ,coq-error-color))))
 
