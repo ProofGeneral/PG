@@ -25,6 +25,7 @@
     (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
     (,proof-error-face . (coq-error-face . ,coq-error-color))))
 
+;; Table maps PG face to new face and color for TTYs
 (defvar face-mapper-tbl (make-hash-table))
 
 (mapc (lambda (face-pair)
@@ -53,6 +54,36 @@ this is start of offset, otherwise it's the end"
 	 (adjusted-line (if start (1- pos-line) pos-line)))
     (/ (* adjusted-line cols) lines)))
 
+(defun coq-header--calc-endpoints (start-pos end-pos num-lines num-cols)
+  "Given NUM-LINES in buffer and NUM-COLS in header line, calculate endpoints 
+in header line clamped to number of lines contained between START-POS and END-POS buffer positions."
+  (let* ((start (coq-header--calc-offset start-pos num-lines num-cols t))
+	 (end (coq-header--calc-offset end-pos num-lines num-cols))
+	 (start-line (line-number-at-pos start-pos))
+	 (end-line (line-number-at-pos end-pos))
+	 ;; lines in script
+	 (endpoint-lines (1+ (- end-line start-line)))
+	 ;; cols in header line
+	 (start-end-cols (1+ (- end start))))
+    (if (<= start-end-cols endpoint-lines)
+	(cons start end)
+      ;; clamp num cols in header line to num lines in script
+      (let* ((half-cols (/ start-end-cols 2.0))
+	     (half-lines (/ endpoint-lines 2.0))
+	     (center-col (+ start half-cols))
+	     (adj-start (ceiling (- center-col half-lines)))
+	     (adj-end (ceiling (+ center-col half-lines))))
+	(cons adj-start adj-end)))))
+
+(defun coq-header--tiebreak-endpoints (start end num-cols)
+  "Make sure entry in header line is not zero-width. START, END are 
+columns in header line, NUM-COLS is number of its columns."
+  (if (eq start end)
+    (if (< end num-cols)
+	(cons start (1+ end))
+      (cons (1- start) end))
+    (cons start end)))
+
 (defvar coq-header-line-char ?\-)
 (defvar coq-header-line-mouse-pointer 'hand)
 
@@ -60,6 +91,7 @@ this is start of offset, otherwise it's the end"
   (make-string num-cols coq-header-line-char))
 
 (defun coq-header-line-update (&rest _args)
+  "Update header line. _ARGS passed by some hooks, ignored"
   (if (null proof-script-buffer)
       (coq-header-line--clear-all)
     (with-current-buffer proof-script-buffer
@@ -91,12 +123,10 @@ this is start of offset, otherwise it's the end"
 	;; update for errors
 	(let ((error-spans (spans-filter all-spans 'type 'pg-error)))
 	  (dolist (span error-spans)
-	    (let* ((start (coq-header--calc-offset (span-start span) num-lines num-cols t))
-		   (end (coq-header--calc-offset (span-end span) num-lines num-cols)))
-	      (when (eq start end)
-		(if (< end num-cols)
-		    (setq end (1+ end))
-		  (setq start (1- start))))
+	    (let* ((endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+		   (start (car adj-endpoints))
+		   (end (cdr adj-endpoints)))
 	      (if (display-graphic-p)
 		  (set-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
@@ -107,12 +137,10 @@ this is start of offset, otherwise it's the end"
 		   (new-face-color (gethash old-face face-mapper-tbl))
 		   (new-face (car new-face-color))
 		   (color (cdr new-face-color))
-		   (start (coq-header--calc-offset (span-start span) num-lines num-cols t))
-		   (end (coq-header--calc-offset (span-end span) num-lines num-cols)))
-	      (when (eq start end)
-		(if (< end num-cols)
-		    (setq end (1+ end))
-		  (setq start (1- start))))
+		   (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+		   (start (car adj-endpoints))
+		   (end (cdr adj-endpoints)))
 	      (if (display-graphic-p)
 		  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,color) nil header-text)))))
