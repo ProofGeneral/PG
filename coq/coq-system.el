@@ -77,7 +77,7 @@ processes."
   :type 'integer
   :group 'coq)
 
-(defcustom coq-async-lazy t
+(defcustom coq-async-lazy nil
   "Use lazy mode for Coq asynchronous processing"
   :type 'boolean
   :group 'coq)

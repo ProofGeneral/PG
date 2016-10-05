@@ -517,10 +517,10 @@ nearest preceding span with a state id."
                spans)))
         (mapc 'span-delete processing-spans)))
     ;; if auto-retracting on error, leave error in response buffer
-    (if (or coq-server--retraction-on-error
-            coq-server--retraction-on-interrupt)
-        (setq coq-server--retraction-on-error nil
-              coq-server--retraction-on-interrupt nil)
+    (if (or coq-server-retraction-on-error
+            coq-server-retraction-on-interrupt)
+        (setq coq-server-retraction-on-error nil
+              coq-server-retraction-on-interrupt nil)
       (coq-server--clear-response-buffer))
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)

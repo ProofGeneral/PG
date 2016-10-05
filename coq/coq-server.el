@@ -36,10 +36,10 @@ is gone and we have to close the secondary locked span."
 (defvar coq-server--sticky-point nil
   "Cursor location after next Status")
 
-(defvar coq-server--retraction-on-error nil
+(defvar coq-server-retraction-on-error nil
   "Was the last retraction due to an error")
 
-(defvar coq-server--retraction-on-interrupt nil
+(defvar coq-server-retraction-on-interrupt nil
   "Was the last retraction due to an interrupt")
 
 (defvar coq-server--backtrack-on-failure nil
@@ -696,7 +696,7 @@ is gone and we have to close the secondary locked span."
 			  coq-server--current-span)))
       ;; decide where to show error 
       ;; on subsequent retraction, keep error in response buffer
-      (setq coq-server--retraction-on-error t) 
+      (setq coq-server-retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
       	    (coq-server--clear-response-buffer)
