@@ -89,8 +89,8 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 
 (defface proof-processing-face
   (proof-face-specs
-   (:background "#00008b")
-   (:background "darkblue")
+   (:background "#87cefa")
+   (:background "lightskyblue")
    (:underline t))
   "*Face for span that is being processed."
   :group 'proof-faces)
