@@ -178,15 +178,15 @@ is gone and we have to close the secondary locked span."
       (when kind-of-goals
 	(insert (format "*** %s goals ***\n" kind-of-goals)))
       (if (= num-goals 1)
-	  (insert "1 subgoal")
-	(insert (format "%d subgoals" num-goals)))
-      (insert "\n")
+	  (insert "1 subgoal\n")
+	(insert (format "%d subgoals\n" num-goals)))
       (unless hide-first-context
-	(insert (format "subgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
+	(insert (format "\nsubgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
 	(insert (coq-server--format-goal-with-hypotheses 
 		 (coq-server--goal-goal goal1)
 		 (coq-server--goal-hypotheses goal1)))
-	(insert "\n\n"))
+	(when goals-rest
+	  (insert "\n")))
       (dolist (goal goals-rest)
 	(setq goal-counter (1+ goal-counter))
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
@@ -225,16 +225,11 @@ is gone and we have to close the secondary locked span."
 	 (current-goals (coq-xml-body (nth 0 all-goals)))
 	 ;; background goals have a different, extra structure than the other ones
 	 (bg-goals-pairs (coq-xml-body (nth 1 all-goals)))
-	 (bg-goals nil) ; to be extracted from bg-goals-pairs
+	 (before-bg-goals nil)
+	 (after-bg-goals nil)
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
 	 goal-text)
-    (if (not (or current-goals bg-goals-pairs shelved-goals abandoned-goals))
-	(progn
-	  ;; clear goals display
-	  (coq-server--clear-goals-buffer)
-	  ;; mimic the coqtop REPL, though it would be better to come via XML
-	  (coq--display-response "No more subgoals."))
       (when abandoned-goals
 	(dolist (goal abandoned-goals)
 	  (coq-server--handle-goal goal))
@@ -245,18 +240,30 @@ is gone and we have to close the secondary locked span."
 	(setq goal-text (cons (coq-server--make-goals-string shelved-goals t 'Shelved) goal-text)))
       (when bg-goals-pairs
 	(dolist (pair bg-goals-pairs)
-	  ;; TODO : what is first elt of pair?
-	  (let* ((pair-goal-list (nth 1 (coq-xml-body pair)))
-		 (pair-goals (coq-xml-body pair-goal-list)))
-	    (mapc 'coq-server--handle-goal pair-goals)
-	    (setq bg-goals (append bg-goals pair-goals))))
-	(setq goal-text (cons (coq-server--make-goals-string bg-goals t 'Unfocused) goal-text)))
+	  (let* ((before-focus-pair-list (nth 0 (coq-xml-body pair)))
+		 (after-focus-pair-list (nth 1 (coq-xml-body pair)))
+		 (before-pair-goals (reverse (coq-xml-body before-focus-pair-list)))
+		 (after-pair-goals (coq-xml-body after-focus-pair-list)))
+	    (mapc 'coq-server--handle-goal before-pair-goals)
+	    (mapc 'coq-server--handle-goal after-pair-goals)
+	    (setq before-bg-goals (append before-bg-goals before-pair-goals))
+	    (setq after-bg-goals (append after-bg-goals after-pair-goals))))
+	;; cons after goals, then before goals, so see before, then after in output
+	(when after-bg-goals 
+	  (setq goal-text (cons (coq-server--make-goals-string after-bg-goals t "Unfocused (after focus)") goal-text)))
+	(when before-bg-goals 
+	  (setq goal-text (cons (coq-server--make-goals-string before-bg-goals t "Unfocused (before focus)") goal-text))))
       (when current-goals
 	(progn
 	  (dolist (goal current-goals)
 	    (coq-server--handle-goal goal))
 	  (setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text))))
-      (pg-goals-display (mapconcat 'identity goal-text "\n\n") t))))
+      (if goal-text
+	  (pg-goals-display (mapconcat 'identity goal-text "\n\n") goal-text)
+	;; else, clear goals display
+	(coq-server--clear-goals-buffer)
+	;; mimic the coqtop REPL, though it would be better to come via XML
+	(coq--display-response "No more subgoals."))))
 
 (defun coq-server--value-status-p (xml)
   (coq-xml-at-path xml '(value (status))))
