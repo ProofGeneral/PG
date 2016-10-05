@@ -18,6 +18,7 @@
 (defvar coq-incomplete-color "blue")
 (defvar coq-error-color "red")
 
+;; order here is significant, want later entries have precedence
 (defvar face-assocs
   `((,proof-queue-face . (coq-queue-face . ,coq-queue-color))
     (,proof-locked-face . (coq-locked-face . ,coq-locked-color))
@@ -29,12 +30,18 @@
 
 ;; Table maps PG face to new face and color for TTYs
 (defvar face-mapper-tbl (make-hash-table))
+;; Table maps PG face to a rank governing precedence
+(defvar face-rank-tbl (make-hash-table))
+;; rank counter
+(defvar face-rank 0)
 
 (mapc (lambda (face-pair)
 	(let ((old-face (car face-pair))
 	      (new-face-color (cdr face-pair)))
 	  (copy-face old-face (car new-face-color))
-	  (puthash old-face new-face-color face-mapper-tbl)))
+	  (puthash old-face new-face-color face-mapper-tbl)
+	  (puthash old-face face-rank face-rank-tbl)
+	  (setq face-rank (1+ face-rank))))
       face-assocs)
 
 (defun coq-header-line-set-height ()
@@ -89,6 +96,10 @@ columns in header line, NUM-COLS is number of its columns."
 (defvar coq-header-line-char ?\-)
 (defvar coq-header-line-mouse-pointer 'hand)
 
+(defun coq-header--colored-span-rank (sp)
+  (let ((face (span-property sp 'face)))
+    (gethash face face-rank-tbl)))
+
 (defun coq-header-line--make-line (num-cols)
   (make-string num-cols coq-header-line-char))
 
@@ -133,8 +144,10 @@ columns in header line, NUM-COLS is number of its columns."
 		  (set-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
 	;; update for specially-colored spans
-	(let ((colored-spans (spans-filter all-spans 'type 'pg-special-coloring)))
-	  (dolist (span colored-spans)
+	(let* ((colored-spans (spans-filter all-spans 'type 'pg-special-coloring))
+	       (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
+								      (coq-header--colored-span-rank sp2))))))
+	  (dolist (span sorted-spans)
 	    (let* ((old-face (span-property span 'face))
 		   (new-face-color (gethash old-face face-mapper-tbl))
 		   (new-face (car new-face-color))

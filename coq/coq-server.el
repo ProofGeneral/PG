@@ -796,10 +796,12 @@ is gone and we have to close the secondary locked span."
 	  (skip-chars-forward " \t\n")
 	  ;; if there's an existing colored span at point, re-use it,
 	  ;;  because want most recent coloring
-	  (let ((span-processing (span-make (point) (span-end span-with-state-id))))
+	  (let ((span-processing (span-make (point) (span-end span-with-state-id)))
+		(rank (gethash face face-rank-tbl)))
 	    (span-set-property span-processing 'type 'pg-special-coloring)
 	    (span-set-property span-processing prop 't)
 	    (span-set-property span-processing 'face face)
+	    (span-set-property span-processing 'priority rank)
 	    (puthash state-id span-processing tbl)))))))
 
 (defun coq-server--color-span-processingin (xml)
