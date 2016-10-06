@@ -377,7 +377,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
     (proof-server-clear-state)
 
     ;; Log death
-    (proof-server-log "proof-general" "*** end prover session ***\n")
+    (proof-server-log (format "** Proof General: End of %s session ***" proof-assistant) "\n")
     
     ;; Remove auxiliary windows, trying to stop proliferation of 
     ;; frames (NB: loses if user has switched buffer in special frame)
