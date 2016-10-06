@@ -1113,19 +1113,19 @@ Near here means PT is either inside or just aside of a comment."
           ;; if Coq not working, stop active workers
           ;; locked region may not reflect what Coq has processed, so reset end
           (progn
-            (proof-debug-message "Stopping active workers")
+            (message "Stopping Coq active workers")
             (coq-server-stop-active-workers))
         ;; on interrupt, get a fail-value, resulting in Edit_at
         (when proof-server-process
-          (proof-debug-message "Sending SIGINT to Coq process")
+          (message "Sending SIGINT to Coq process")
           (interrupt-process proof-server-process)
           (setq coq-server-retraction-on-interrupt t)))
-      (proof-script-clear-queue-spans-on-error nil)
       (let ((current-span (coq-server--get-span-with-state-id coq-current-state-id)))
         (when current-span
           (let ((end (span-end current-span)))
             (proof-set-queue-end end)
-            (proof-set-locked-end end)))))))
+            (proof-set-locked-end end))))
+      (coq-header-line-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
 
