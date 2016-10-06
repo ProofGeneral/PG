@@ -920,7 +920,7 @@ is gone and we have to close the secondary locked span."
     (when coq-use-header-line
       (coq-header-line-update)
       (when (> (buffer-size) 0)
-	(message "Warning: ill-formed XML from Coq")))))
+	(message "Warning: ill-formed XML from Coq: %s" (buffer-string))))))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)

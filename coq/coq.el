@@ -488,7 +488,7 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (overlays-in (point-min) (1- (span-start span))))
            (state-id-spans (cl-remove-if-not 
-                            (lambda (span) (span-property span 'state-id))
+                            (lambda (sp) (span-property sp 'state-id))
                             all-spans))
            ;; reverse sort, so that head of list is nearest SPAN
            (sorted-state-id-spans 
@@ -522,11 +522,13 @@ nearest preceding span with a state id."
         (setq coq-server-retraction-on-error nil
               coq-server-retraction-on-interrupt nil)
       (coq-server--clear-response-buffer))
+    ;; use nearest state id before this span; if none, retract buffer
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
-        (coq-server--send-retraction coq-retract-buffer-state-id t)
-      ;; use nearest state id before this span; if none, use retraction state id
-      (let ((prev-state-id (or (coq--find-previous-state-id span) coq-retract-buffer-state-id)))
-        (coq-server--send-retraction prev-state-id t)))))
+        (coq-server--send-retraction coq-retract-buffer-state-id t))
+      (let ((prev-state-id (coq--find-previous-state-id span)))
+        (if prev-state-id
+            (coq-server--send-retraction prev-state-id t)
+          (proof-retract-buffer)))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")

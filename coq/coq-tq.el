@@ -241,43 +241,44 @@ to be sent."
 
 (defun tq-process-buffer (tq)
   "Check TQ's buffer for the regexp at the head of the queue."
-  (let ((buffer (tq-buffer tq)))
-    (when (buffer-live-p buffer)
+  (let ((buffer (tq-buffer tq))
+	(done nil))
+    (while (and (not done) (buffer-live-p buffer) (> (buffer-size) 0))
       (with-current-buffer buffer
-	(when (> (buffer-size) 0)
-	  (goto-char (point-min))
-	  (let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
-		 (partial (or complete (re-search-forward (tq-other-regexp tq) nil t))))
-	    (when (or complete partial)
-	      (let ((answer (buffer-substring (point-min) (point)))
-		    (oob (tq-queue-empty tq))
-		     src
-		     fun)
-		(if oob
-		    (setq src "coqtop-oob"
-			  fun tq--oob-handler)
-		    (setq src "coqtop"
-			  fun (tq-queue-head-fn tq)))
-		;; for complete response, can safely pop item from queue
+	(setq done t)
+	(goto-char (point-min))
+	(let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
+	       (partial (or complete (re-search-forward (tq-other-regexp tq) nil t))))
+	  (when (or complete partial)
+	    (let ((answer (buffer-substring (point-min) (point)))
+		  (oob (tq-queue-empty tq))
+		  src
+		  fun)
+	      (if oob
+		  (setq src "coqtop-oob"
+			fun tq--oob-handler)
+		(setq src "coqtop"
+		      fun (tq-queue-head-fn tq)))
+	      ;; for complete response, can safely pop item from queue
+	      (when complete
+		(tq-set-complete tq))
+	      (delete-region (point-min) (point))
+	      (unwind-protect
+		  (condition-case err
+		      (progn
+			(tq-maybe-log src answer)
+			(funcall fun
+				 (tq-queue-head-closure tq)
+				 answer 
+				 (tq-call tq)
+				 (tq-span tq)))
+		    (error (proof-debug-message
+			    (concat "Error when processing "
+				    (if complete "complete" "partial")
+				    " Coq response: %s, response was: \"%s\"") err answer)))
 		(when complete
-		  (tq-set-complete tq))
-		(delete-region (point-min) (point))
-		(unwind-protect
-		    (condition-case err
-			(progn
-			  (tq-maybe-log src answer)
-			  (funcall fun
-				   (tq-queue-head-closure tq)
-				   answer 
-				   (tq-call tq)
-				   (tq-span tq)))
-		      (error (proof-debug-message
-			      (concat "Error when processing "
-				      (if complete "complete" "partial")
-				      " Coq response: %s, response was: \"%s\"") err answer)))
-		  (when complete
-		    (tq-queue-pop tq)))
-		(tq-process-buffer tq)))))))))
+		  (tq-queue-pop tq)))
+	      (setq done nil))))))))
 
 (provide 'coq-tq)
 
