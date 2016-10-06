@@ -243,32 +243,30 @@ to be sent."
   "Check TQ's buffer for the regexp at the head of the queue."
   (let ((buffer (tq-buffer tq)))
     (when (buffer-live-p buffer)
-      (set-buffer buffer)
-      (if (= 0 (buffer-size)) ()
-	(if (tq-queue-empty tq)
-	    ;; feedbacks not prompted by call
-	    ;; original code put response here in a *spurious* buffer
-	    (let ((oob-response (buffer-string)))
-	      (when (search-forward (tq-end-regexp tq) nil t) 
-		(tq-set-complete tq))
-	      (tq-maybe-log "coqtop-oob" oob-response)
-	      (delete-region (point-min) (point-max))
-	      (funcall tq--oob-handler oob-response (tq-call tq) (tq-span tq)))
-	  ;; multiple else-forms
+      (with-current-buffer buffer
+	(when (> (buffer-size) 0)
 	  (goto-char (point-min))
 	  (let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
 		 (partial (or complete (re-search-forward (tq-other-regexp tq) nil t))))
 	    (when (or complete partial)
-	      ;; for complete response, can safely pop item from queue
-	      (when complete
-		(tq-set-complete tq))
-	      (let ((answer (buffer-substring (point-min) (point))))
+	      (let ((answer (buffer-substring (point-min) (point)))
+		    (oob (tq-queue-empty tq))
+		     src
+		     fun)
+		(if oob
+		    (setq src "coqtop-oob"
+			  fun tq--oob-handler)
+		    (setq src "coqtop"
+			  fun (tq-queue-head-fn tq)))
+		;; for complete response, can safely pop item from queue
+		(when complete
+		  (tq-set-complete tq))
 		(delete-region (point-min) (point))
 		(unwind-protect
 		    (condition-case err
 			(progn
-			  (tq-maybe-log "coqtop" answer)
-			  (funcall (tq-queue-head-fn tq)
+			  (tq-maybe-log src answer)
+			  (funcall fun
 				   (tq-queue-head-closure tq)
 				   answer 
 				   (tq-call tq)
@@ -279,7 +277,7 @@ to be sent."
 				      " Coq response: %s, response was: \"%s\"") err answer)))
 		  (when complete
 		    (tq-queue-pop tq)))
-	      (tq-process-buffer tq)))))))))
+		(tq-process-buffer tq)))))))))
 
 (provide 'coq-tq)
 

@@ -79,7 +79,7 @@ is gone and we have to close the secondary locked span."
   (pg-goals-display "" nil))
 
 (defun coq-server-start-transaction-queue ()
-  (setq coq-server-transaction-queue (tq-create proof-server-process #'coq-server-process-oob
+  (setq coq-server-transaction-queue (tq-create proof-server-process 'coq-server-process-oob
 						end-of-response-regexp other-responses-regexp)))
 
 ;; stop all active workers
@@ -608,6 +608,18 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--valid-state-id (state-id)
   (not (equal state-id "0")))
 
+(defun coq-server--backtrack-to-valid-state (valid-state-id)
+  (unless (coq-server--valid-state-id valid-state-id)
+    ;; best guess at a valid state
+    (setq valid-state-id coq-current-state-id))
+  (with-current-buffer proof-script-buffer
+    (if (equal valid-state-id coq-retract-buffer-state-id)
+	(goto-char (point-min))
+      (let ((valid-span (coq-server--get-span-with-state-id valid-state-id)))
+	(when (and valid-span (span-buffer valid-span))
+	  (goto-char (span-end valid-span)))))
+    (proof-goto-point)))
+
 (defun coq-server--handle-failure-value (xml)
   ;; flush queue of actions
   (proof-server-clear-state)
@@ -627,15 +639,7 @@ is gone and we have to close the secondary locked span."
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
-	(unless (coq-server--valid-state-id last-valid-state-id)
-	  (setq last-valid-state-id coq-current-state-id))
-	(with-current-buffer proof-script-buffer
-	  (if (equal last-valid-state-id coq-retract-buffer-state-id)
-	      (goto-char (point-min))
-	    (let ((last-valid-span (coq-server--get-span-with-state-id last-valid-state-id)))
-	      (when (and last-valid-span (span-buffer last-valid-span))
-		(goto-char (span-end last-valid-span)))))
-	  (proof-goto-point))))))
+	(coq-server--backtrack-to-valid-state last-valid-state-id)))))
 
 (defun coq-server--handle-good-value (xml)
   (cond
@@ -898,20 +902,25 @@ is gone and we have to close the secondary locked span."
     (coq--display-response msg)))
 
 (defun coq-server--xml-loop (response call span)
-  (coq-xml-append-response response)
-  (coq-xml-unescape-buffer)
-  (setq coq-server--current-call call) 
-  (setq coq-server--current-span span) 
-  (let ((xml (coq-xml-get-next-xml)))
-    (while xml
-      (pcase (coq-xml-tag xml)
-	(`value (coq-server--handle-value xml))
-	(`feedback (coq-server--handle-feedback xml))
-	(`message (coq-server--handle-message xml))
-	(t (proof-debug-message "Unknown coqtop response %s" xml)))
-      (setq xml (coq-xml-get-next-xml))))
-  (when coq-use-header-line
-    (coq-header-line-update)))
+  ;; claimed invariant: response is well-formed XML
+  (when response
+    (erase-buffer)
+    (insert response)
+    (coq-xml-unescape-buffer)
+    (setq coq-server--current-call call) 
+    (setq coq-server--current-span span) 
+    (let ((xml (coq-xml-get-next-xml)))
+      (while xml
+	(pcase (coq-xml-tag xml)
+	  (`value (coq-server--handle-value xml))
+	  (`feedback (coq-server--handle-feedback xml))
+	  (`message (coq-server--handle-message xml))
+	  (t (proof-debug-message "Unknown coqtop response %s" xml)))
+	(setq xml (coq-xml-get-next-xml))))
+    (when coq-use-header-line
+      (coq-header-line-update)
+      (when (> (buffer-size) 0)
+	(message "Warning: ill-formed XML from Coq")))))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
@@ -919,7 +928,7 @@ is gone and we have to close the secondary locked span."
     (coq-server--xml-loop response call span)))
 
 ;; process OOB response from Coq
-(defun coq-server-process-oob (oob call span)
+(defun coq-server-process-oob (oob _closure call span)
   (with-current-buffer coq-xml-oob-buffer
     (coq-server--xml-loop oob call span)))
 
