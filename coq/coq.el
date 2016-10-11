@@ -1122,11 +1122,10 @@ Near here means PT is either inside or just aside of a comment."
           (message "Sending SIGINT to Coq process")
           (interrupt-process proof-server-process)
           (setq coq-server-retraction-on-interrupt t)))
-      (let ((current-span (coq-server--get-span-with-state-id coq-current-state-id)))
-        (when current-span
-          (let ((end (span-end current-span)))
-            (proof-set-queue-end end)
-            (proof-set-locked-end end))))
+      (let* ((current-span (coq-server--get-span-with-state-id coq-current-state-id))
+             (end (if current-span (span-end current-span) 1)))
+        (proof-set-queue-end end)
+        (proof-set-locked-end end))
       (coq-header-line-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
