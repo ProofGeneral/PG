@@ -1118,7 +1118,7 @@ Near here means PT is either inside or just aside of a comment."
             (message "Stopping Coq active workers")
             (coq-server-stop-active-workers))
         ;; on interrupt, get a fail-value, resulting in Edit_at
-        (when proof-server-process
+        (when (and proof-server-process (eq (process-status proof-server-process) 'run))
           (message "Sending SIGINT to Coq process")
           (interrupt-process proof-server-process)
           (setq coq-server-retraction-on-interrupt t)))
