@@ -1761,7 +1761,8 @@ Assumes that point is at the end of a command."
 			 spans)))
       (mapc #'span-delete error-spans)))
   (proof-activate-scripting nil 'advancing)
-  (let ((semis (save-excursion
+  (let ((inhibit-quit t) ; prevent inconsistent state
+	(semis (save-excursion
 		 (skip-chars-backward " \t\n"
 				      (proof-queue-or-locked-end))
 		 (proof-segment-up-to-using-cache (point)))))
@@ -2085,36 +2086,33 @@ user hasn't saved the latest edits.  Therefore it is right to
 query saves here."
   (if (proof-locked-region-empty-p)
       (error "No locked region")
-    (proof-activate-scripting)
-    ;; enforce not busy to avoid retracting items from the queue region,
-    ;; which is not supported currently, see #443
-    ;; (future: may allow retracting from queue in progress)
-    (proof-ready-prover)
-    (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
-      ;; spans contain state id resulting from processing that span
-      ;; so leave this span processed, and work on preceding span
-      ;; TODO 'type becomes 'pg-type
-      
-      (let* ((span (span-at (point) 'type)))
-	;; If no span at point or previous span, retract the last span in the buffer.
-	(unless span
-	  
+    (let ((inhibit-quit t)) ; prevent inconsistent state
+      (proof-activate-scripting)
+      ;; enforce not busy to avoid retracting items from the queue region,
+      ;; which is not supported currently, see #443
+      ;; (future: may allow retracting from queue in progress)
+      (proof-ready-prover)
+      (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
+	;; spans contain state id resulting from processing that span
+	;; so leave this span processed, and work on preceding span
+	;; TODO 'type becomes 'pg-type
+	
+	(let* ((span (span-at (point) 'type)))
+	  ;; If no span at point or previous span, retract the last span in the buffer.
+	  (unless span
+	    
 					;	  (proof-goto-end-of-locked)
 					;	  (backward-char)
 					;	  (setq span (span-at (point) 'type)))
-	  (setq span (span-make (point) (point)))
-	  (span-set-property span 'type 'pg-sentinel))
-	(if span
-	    (progn
-	      (run-hooks 'proof-retract-command-hook) ;; sneak commands
-	      (proof-retract-target span undo-action displayflags))
-	  ;; something wrong
-	  (proof-debug
-	   "proof-retract-until-point: couldn't find a span!"))))))
-
-
-
-
+	    (setq span (span-make (point) (point)))
+	    (span-set-property span 'type 'pg-sentinel))
+	  (if span
+	      (progn
+		(run-hooks 'proof-retract-command-hook) ;; sneak commands
+		(proof-retract-target span undo-action displayflags))
+	    ;; something wrong
+	    (proof-debug
+	     "proof-retract-until-point: couldn't find a span!")))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

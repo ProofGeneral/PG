@@ -426,7 +426,7 @@ is set to nil, so responses are not cleared automatically."
      (let ((inhibit-read-only t))
        (erase-buffer)
        (set-buffer-modified-p nil)))
-  (message "Response buffers cleared."))
+  (proof-debug-message "Response buffers cleared."))
 
 ;;;###autoload
 (defun pg-response-message (&rest args)

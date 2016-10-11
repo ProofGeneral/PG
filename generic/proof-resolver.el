@@ -60,7 +60,8 @@
 (defun proof-server-send-to-prover (string-or-fun &optional special-processor)
   (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
     (and proof-server-send-to-prover-fun 
-	 (funcall proof-server-send-to-prover-fun string-or-fun special-processor))))
+	 (let ((inhibit-quit t))
+	   (funcall proof-server-send-to-prover-fun string-or-fun special-processor)))))
 
 ;;;###autoload
 (defun proof-server-process-response (resp)
