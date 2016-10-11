@@ -928,7 +928,7 @@ is gone and we have to close the secondary locked span."
     (coq-server--xml-loop response call span)))
 
 ;; process OOB response from Coq
-(defun coq-server-process-oob (oob _closure call span)
+(defun coq-server-process-oob (_closure oob call span)
   (with-current-buffer coq-xml-oob-buffer
     (coq-server--xml-loop oob call span)))
 
