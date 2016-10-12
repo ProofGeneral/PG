@@ -510,7 +510,11 @@ is gone and we have to close the secondary locked span."
       ;; but leave spans beneath the focus, because we'll skip past them 
       ;;  when merging primary, secondary locked regions
       (dolist (span sorted-marked-spans)
-	(if (and found-focus-end (>= (span-end span) secondary-span-start))
+	(if (and found-focus-end
+		 ;; even though we've found the focus end, there
+		 ;; may be colored spans atop the focus end, which should 
+		 ;; be deleted, so check that these spans are past the end
+		 (>= (span-end span) secondary-span-start))
 	    ;; don't delete the span 
 	    (span-unmark-delete span)
 	  ;; look for focus end
