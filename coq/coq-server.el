@@ -47,11 +47,13 @@ is gone and we have to close the secondary locked span."
 
 (defvar coq-server-transaction-queue nil)
 
-;; regexp to know when whole response has been received
+;; regexp to know when complete response has been received
 (defvar end-of-response-regexp "</value>")
 ;; sometimes we don't get a whole response, as when looping, so need
-;;  regexp to detect a usable partial response
-(defvar other-responses-regexp "</feedback>\\|</message>")
+;;  to detect a usable partial response
+;; need start, end tags to check they match
+;; start tag may have attributes, so elide closing bracket
+(defvar other-responses-tags '(("<feedback" . "</feedback>") ("<message" . "</message>")))
 
 ;; hook function to count how many Adds are pending
 ;; comments generate items with null element
@@ -80,7 +82,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server-start-transaction-queue ()
   (setq coq-server-transaction-queue (tq-create proof-server-process 'coq-server-process-oob
-						end-of-response-regexp other-responses-regexp)))
+						end-of-response-regexp other-responses-tags)))
 
 ;; stop all active workers
 ;; which we do when we get an interrupt and there's no pending response

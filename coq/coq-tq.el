@@ -84,13 +84,13 @@
 ;;; Accessors
 
 ;; A transaction queue object looks like:
-;;  (queue . (end-regexp . (other-regexp . (process . buffer)))) .  -- the car
-;;  (response-complete . (call . span)))                            -- the cdr
+;;  (queue . (end-regexp . (other-tags . (process . buffer)))) .  -- the car
+;;  (response-complete . (call . span)))                          -- the cdr
 
 (defun tq-qpb                 (tq) (car tq))
 (defun tq-queue               (tq) (car (tq-qpb tq)))
 (defun tq-end-regexp          (tq) (car (cdr (tq-qpb tq))))
-(defun tq-other-regexp        (tq) (car (cdr (cdr (tq-qpb tq)))))
+(defun tq-other-tags          (tq) (car (cdr (cdr (tq-qpb tq)))))
 (defun tq-process             (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
 (defun tq-buffer              (tq) (cdr (cdr (cdr (cdr (tq-qpb tq))))))
 
@@ -106,13 +106,10 @@
 ;;  <other queue entries>)
 ;; question: string to send to the process
 (defun tq-queue-head-question (tq) (car (car (tq-queue tq))))
-;; end-regexp: regular expression that matches the end of a response from
-;; the process
+;; closure: function for special handling of response
 (defun tq-queue-head-closure   (tq) (car (cdr (car (tq-queue tq)))))
-;; other-regexp: regular expression that matches a partial response from
-;; the process
+;; fn: function for ordinary handling of response
 (defun tq-queue-head-fn        (tq) (cdr (cdr (car (tq-queue tq)))))
-;; closure: additional data to pass to the function
 
 ;; Determine whether queue is empty
 (defun tq-queue-empty         (tq) (not (tq-queue tq)))
@@ -167,7 +164,7 @@
 ;;; Core functionality
 
 ;;;###autoload
-(defun tq-create (process oob-handler end-regexp other-regexp)
+(defun tq-create (process oob-handler end-regexp other-tags)
   "Create and return a transaction queue communicating with PROCESS.
 PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
@@ -175,7 +172,7 @@ to a tcp server on another machine. The OOB-HANDLER handles responses
 from the PROCESS that are not transactional."
   (let* ((qpb (cons nil
 		    (cons end-regexp
-			  (cons other-regexp
+			  (cons other-tags
 				(cons process
 				      (generate-new-buffer
 				       (concat " tq-temp-"
@@ -217,7 +214,7 @@ needs, and the answer to the question.
 END-REGEXP is a regular expression to match the entire answer;
 that's how we tell where the answer ends.
 
-OTHER-REGEXP is a regular expression to match a partial answer, 
+OTHER-TAGS is a list of tag pairs to match a partial answer, 
 which we can process, without allowing the next item in the queue
 to be sent."
   (let ((sendp (not (tq-queue tq)))) ;; always delay sending
@@ -248,7 +245,18 @@ to be sent."
 	(setq done t)
 	(goto-char (point-min))
 	(let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
-	       (partial (or complete (re-search-forward (tq-other-regexp tq) nil t))))
+	       (partial complete)
+	       (tag-pairs (tq-other-tags tq)))
+	  (while (and (not partial) tag-pairs)
+	    (let* ((tag-pair (car tag-pairs))
+		   (start-tag (car tag-pair))
+		   (start-len (length start-tag))
+		   (end-tag (cdr tag-pair)))
+	      (when (and (> (buffer-size) start-len)
+			 (equal (buffer-substring 1 (1+ start-len)) start-tag)
+			 (re-search-forward end-tag nil t))
+		(setq partial t))
+	      (setq tag-pairs (cdr tag-pairs))))
 	  (when (or complete partial)
 	    (let ((answer (buffer-substring (point-min) (point)))
 		  (oob (tq-queue-empty tq))
