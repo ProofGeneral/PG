@@ -3,6 +3,7 @@
 (require 'proof-buffers)
 (require 'proof-server)
 (require 'coq-indent)
+(require 'coq-header-line)
 
 (defvar coq-time-commands nil)        ; defpacustom
 (defconst coq--time-prefix "Time "
@@ -114,7 +115,8 @@ Only when three-buffer-mode is enabled."
 ;; handler that deletes an error span if its text is modified
 (defun coq--error-span-modification-handler (span after-change-p start end &optional len)
   (when after-change-p
-    (span-delete span)))
+    (span-delete span)
+    (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
 (defun coq--mark-error (span msg)

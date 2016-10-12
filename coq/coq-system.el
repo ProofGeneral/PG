@@ -68,7 +68,7 @@ processes."
   :group 'coq)
 
 (defcustom coq-use-header-line t
-  "Use mouse-clickable header line to track proof progress"
+  "Use mouse-clickable header line"
   :type 'boolean
   :group 'coq)
 

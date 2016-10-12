@@ -1,11 +1,7 @@
-;;; coq-header-line.el -- script buffer header line to track proof progress
+;;; coq-header-line.el -- script buffer header line (and mode line info) to track proof progress
 
 (require 'proof-faces)
 (require 'coq-system)
-
-;; data used to build header line
-;; 
-(defvar header-line-data nil)
 
 ;; make copies of PG faces so we can modify the copies without affecting the originals
 
@@ -103,6 +99,12 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line--make-line (num-cols)
   (make-string num-cols coq-header-line-char))
 
+(defun coq-header--mode-line-filter (elt)
+  (and (stringp elt)
+       (let ((face (get-text-property 1 'face elt)))
+	 (or (equal face proof-processing-face)
+	     (equal face proof-processed-face)))))
+
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
   (if (null proof-script-buffer)
@@ -123,7 +125,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((start (coq-header--calc-offset (span-start queue-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end queue-span) num-lines num-cols)))
 	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-queue-color) nil header-text)))))
 	;; update for locked region
 	(let ((locked-span (car (spans-filter all-spans 'face proof-locked-face))))
@@ -131,7 +133,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((start (coq-header--calc-offset (span-start locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end locked-span) num-lines num-cols)))
 	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
 	;; update for errors
 	(let ((error-spans (spans-filter all-spans 'type 'pg-error)))
@@ -141,12 +143,16 @@ columns in header line, NUM-COLS is number of its columns."
 		   (start (car adj-endpoints))
 		   (end (cdr adj-endpoints)))
 	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
 	;; update for specially-colored spans
-	(let* ((colored-spans (spans-filter all-spans 'type 'pg-special-coloring))
+	(let* ((vanilla-spans (spans-filter all-spans 'type 'vanilla))
+	       (vanilla-count (float (length vanilla-spans)))
+	       (colored-spans (spans-filter all-spans 'type 'pg-special-coloring))
 	       (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
-								      (coq-header--colored-span-rank sp2))))))
+								      (coq-header--colored-span-rank sp2)))))
+	       (processing-count 0)
+	       (processed-count 0))
 	  (dolist (span sorted-spans)
 	    (let* ((old-face (span-property span 'face))
 		   (new-face-color (gethash old-face face-mapper-tbl))
@@ -157,9 +163,30 @@ columns in header line, NUM-COLS is number of its columns."
 		   (start (car adj-endpoints))
 		   (end (cdr adj-endpoints)))
 	      (if (display-graphic-p)
-		  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
-		(add-face-text-property start end `(:background ,color) nil header-text)))))
-	(setq header-line-format header-text)))))
+		  (add-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,color) nil header-text))))
+	  (setq header-line-format header-text)
+	  (when (consp mode-line-format)
+	    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
+					      mode-line-format)))
+	      (dolist (span colored-spans)
+		(pcase (span-property span 'face)
+		  (`proof-processing-face (setq processing-count (1+ processing-count)))
+		  (`proof-processed-face (setq processed-count (1+ processed-count)))))
+	      (let ((processing-pct
+		     (if (<= vanilla-count 0.0)
+			 " -- "
+		       (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
+		    (processed-pct
+		     (if (<= vanilla-count 0.0)
+			 " --"
+		       (format " %.1f%%%%"
+			       (* (/ processed-count vanilla-count) 100.0)))))
+		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
+		(add-text-properties 1 (length processed-pct) `(face ,proof-processed-face) processed-pct)
+		(setq mode-line-format (reverse (cons processed-pct
+						      (cons processing-pct (reverse filtered-fmt)))))))))))))
+
 
 ;; update header line at strategic points
 (when coq-use-header-line
@@ -175,7 +202,7 @@ columns in header line, NUM-COLS is number of its columns."
       (let* ((mouse-info (car event))
 	     (event-posn (cadr event))
 	     (x-pos (car (posn-x-y event-posn))))
-	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'double-down-mouse-1))
+	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'down-mouse-1))
 	  (let* ((window-pixels (window-pixel-width (get-buffer-window)))
 		 (num-lines (line-number-at-pos (point-max)))
 		 (destination-line (/ (* x-pos num-lines) window-pixels)))
@@ -192,7 +219,11 @@ columns in header line, NUM-COLS is number of its columns."
 	    (line-number-at-pos (point))))
 	 (header-text (coq-header-line--make-line num-cols)))
     (set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
-    (setq header-line-format header-text)))
+    (setq header-line-format header-text)
+    (when (consp mode-line-format)
+      (setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
+					   mode-line-format)))))
+    
 
 ;; we can safely clear header line for all Coq buffers after a retraction
 (defun coq-header-line--clear-all ()

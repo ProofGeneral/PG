@@ -865,7 +865,6 @@ flag Printing All set."
     (remove-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
     (remove-hook 'proof-retract-command-hook 'coq-reset-printing-width)))
 
-
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
 Each timme the user sends abunch of commands to Coq, check if the
@@ -886,6 +885,9 @@ width is synchronized by coq (?!)."
 ;; var. Let us put this at the end of hooks to have a chance to read local
 ;; variables first.
 (add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
+
+;; reset header line on retract
+(add-hook 'proof-retract-command-hook 'coq-header-line-init)
 
 (defvar coq-current-line-width nil
   "Current line width of the Coq printing width.
