@@ -135,6 +135,14 @@ columns in header line, NUM-COLS is number of its columns."
 	      (if (display-graphic-p)
 		  (add-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
+	;; update for secondary locked region
+	(let ((secondary-locked-span (car (spans-filter all-spans 'face proof-secondary-locked-face))))
+	  (when secondary-locked-span
+	    (let ((start (coq-header--calc-offset (span-start secondary-locked-span) num-lines num-cols t))
+		  (end (coq-header--calc-offset (span-end secondary-locked-span) num-lines num-cols)))
+	      (if (display-graphic-p)
+		  (add-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text)))))
 	;; update for errors
 	(let ((error-spans (spans-filter all-spans 'type 'pg-error)))
 	  (dolist (span error-spans)
