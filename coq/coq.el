@@ -118,7 +118,7 @@ These are appended at the end of `coq-server-init-cmds'."
           (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
     (setq coq-search-blacklist-strings-prev coq-search-blacklist-strings)
     (lambda ()
-      (list (coq-xml-query-item cmd) nil))))
+      (list (coq-xml-add-item cmd) nil))))
 
 (defpacustom search-blacklist coq-formatted-search-blacklist-strings
   "Strings to blacklist in requests to Coq environment."

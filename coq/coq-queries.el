@@ -194,9 +194,6 @@
        		  (concat ,capped-query " \"" s "\" ."))
        		 nil))))))
 
-(coq-queries--mk-string-query-fun add-search-blacklist)
-(coq-queries--mk-string-query-fun remove-search-blacklist)
-
 ;; interactive queries
 
 (defun coq-queries-guess-or-ask-for-string (s &optional dontguess)
