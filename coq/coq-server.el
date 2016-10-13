@@ -412,6 +412,7 @@ is gone and we have to close the secondary locked span."
   (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
     (coq-server--register-state-id coq-server--current-span qed-state-id)
+    (coq-server--process-queued-feedbacks qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
     ;; prevents current span from getting new tip state id
     (setq coq-server--current-span nil) 
@@ -585,7 +586,8 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--update-state-id (state-id)
   (setq coq-current-state-id state-id)
   (when coq-server--current-span
-    (coq-server--register-state-id coq-server--current-span state-id)))
+    (coq-server--register-state-id coq-server--current-span state-id)
+    (coq-server--process-queued-feedbacks state-id)))
 
 (defun coq-server--update-state-id-and-process (state-id)
   (coq-server--update-state-id state-id)
@@ -863,33 +865,58 @@ is gone and we have to close the secondary locked span."
 	 (file (coq-xml-body1 file-string)))
     (proof-debug-message "File dependency, from: %s dep: %s" from file)))
 
+;; queue feedback if there's no span with its state id
+;;  for later processing
+(defun coq-server--queue-feedback (state-id xml)
+  (let ((queue (gethash state-id coq-feedbacks-tbl)))
+    (puthash state-id (cons xml queue) coq-feedbacks-tbl)))
+
+;; process queued feedbacks in order of arrival
+;; earliest item is at end of list
+(defun coq-server--process-queued-feedbacks (state-id)
+  ;; some feedbacks re workers have the initial state id
+  ;;  which has no associated span
+  (unless (equal state-id coq-retract-buffer-state-id)
+    (let ((queue (gethash state-id coq-feedbacks-tbl)))
+      (mapc 'coq-server--handle-feedback (reverse queue)))
+    ;; flush queue for this state id
+    (remhash state-id coq-feedbacks-tbl)))
+
 (defun coq-server--handle-feedback (xml)
-  (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
-    ("processingin"
-     (coq-server--color-span-processingin xml))
-    ("processed"
-     (coq-server--color-span-processed xml))
-    ("incomplete"
-     (coq-server--color-span-incomplete xml))
-    ("complete"
-     (coq-server--uncolor-span-complete xml))
-    ("filedependency"
-     (coq-server--handle-filedependency xml))
-    ("workerstatus"
-     (coq-server--handle-worker-status xml))
-    ("errormsg" ; 8.5-only
-     (unless (gethash xml coq-error-fail-tbl)
-       (coq-server--handle-errormsg xml)))
-    ("message" ; 8.6
-     (unless (gethash xml coq-error-fail-tbl)
-       (let ((msg-level 
-	      (coq-xml-at-path 
-	       xml 
-	       '(feedback (_) (feedback_content (message (message_level val)))))))
-	 (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
-		   (equal msg-level "error") )
-	   (coq-server--handle-error xml)))))
-    (t)))
+  (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	 (span-with-state-id (and state-id ; might have edit_id
+				  (coq-server--get-span-with-state-id state-id))))
+    (if (and state-id
+	     (or (null span-with-state-id)
+		 ;; may have since-deleted span in table
+		 (null (overlay-buffer span-with-state-id))))
+	(coq-server--queue-feedback state-id xml)
+      (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
+	("processingin"
+	 (coq-server--color-span-processingin xml))
+	("processed"
+	 (coq-server--color-span-processed xml))
+	("incomplete"
+	 (coq-server--color-span-incomplete xml))
+	("complete"
+	 (coq-server--uncolor-span-complete xml))
+	("filedependency"
+	 (coq-server--handle-filedependency xml))
+	("workerstatus"
+	 (coq-server--handle-worker-status xml))
+	("errormsg" ; 8.5-only
+	 (unless (gethash xml coq-error-fail-tbl)
+	   (coq-server--handle-errormsg xml)))
+	("message" ; 8.6
+	 (unless (gethash xml coq-error-fail-tbl)
+	   (let ((msg-level 
+		  (coq-xml-at-path 
+		   xml 
+		   '(feedback (_) (feedback_content (message (message_level val)))))))
+	     (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
+		       (equal msg-level "error") )
+	       (coq-server--handle-error xml)))))
+	(t)))))
 
 ;; syntax of messages differs in 8.5 and 8.6, handle both cases
 ;; TODO : dispatch on version, maybe

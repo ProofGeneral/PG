@@ -66,13 +66,17 @@ It's the state id returned after Init command sent.")
 ;; table of active workers
 (defvar coq-worker-status-tbl (make-hash-table :test 'equal))
 
+;; map from state ids to feedback queues
+(defvar coq-feedbacks-tbl (make-hash-table :test 'equal :weakness 'value))
+
 (defun coq-reset-tables ()
   (mapc 'clrhash
 	(list coq-error-fail-tbl
 	      coq-processing-span-tbl
 	      coq-incomplete-span-tbl
 	      coq-span-state-id-tbl
-	      coq-span-edit-id-tbl)))
+	      coq-span-edit-id-tbl
+	      coq-feedbacks-tbl)))
 
 (provide 'coq-state-vars)
 
