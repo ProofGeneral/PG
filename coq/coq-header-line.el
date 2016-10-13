@@ -1,5 +1,7 @@
 ;;; coq-header-line.el -- script buffer header line (and mode line info) to track proof progress
 
+(require 'cl-lib)
+
 (require 'proof-faces)
 (require 'coq-system)
 
@@ -158,9 +160,15 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
 	;; update for specially-colored spans
-	(let* ((vanilla-spans (spans-filter all-spans 'type 'vanilla))
+	(let* ((vanilla-spans (cl-remove-if-not
+			       (lambda (sp)
+				 (eq (span-property sp 'type) 'vanilla))
+			       all-spans))
 	       (vanilla-count (float (length vanilla-spans)))
-	       (colored-spans (spans-filter all-spans 'type 'pg-special-coloring))
+	       (colored-spans (cl-remove-if-not
+			       (lambda (sp)
+				 (eq (span-property sp 'type) 'pg-special-coloring))
+			       all-spans))
 	       (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 								      (coq-header--colored-span-rank sp2)))))
 	       (processing-count 0)
@@ -193,11 +201,13 @@ columns in header line, NUM-COLS is number of its columns."
 		       (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
 		    (processed-pct
 		     (if (<= vanilla-count 0.0)
-			 " ---"
+			 " --- "
 		       (format " %.1f%%%% "
 			       (* (/ processed-count vanilla-count) 100.0))))
 		    (incomplete-text
-		     (format " %d" incomplete-count)))
+		     (if (<= vanilla-count 0.0)
+			 " ---"
+		       (format " %d" incomplete-count))))
 		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
 		(add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
 		(add-text-properties 1 (length incomplete-text) `(face ,proof-incomplete-face) incomplete-text)
