@@ -99,11 +99,15 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line--make-line (num-cols)
   (make-string num-cols coq-header-line-char))
 
+(defvar coq-header--mode-line-faces
+  `(,proof-processing-face
+    ,proof-processed-face
+    ,proof-incomplete-face))
+
 (defun coq-header--mode-line-filter (elt)
   (and (stringp elt)
        (let ((face (get-text-property 1 'face elt)))
-	 (or (equal face proof-processing-face)
-	     (equal face proof-processed-face)))))
+	 (member face coq-header--mode-line-faces))))
 
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
@@ -160,7 +164,8 @@ columns in header line, NUM-COLS is number of its columns."
 	       (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 								      (coq-header--colored-span-rank sp2)))))
 	       (processing-count 0)
-	       (processed-count 0))
+	       (processed-count 0)
+	       (incomplete-count 0))
 	  (dolist (span sorted-spans)
 	    (let* ((old-face (span-property span 'face))
 		   (new-face-color (gethash old-face face-mapper-tbl))
@@ -180,21 +185,26 @@ columns in header line, NUM-COLS is number of its columns."
 	      (dolist (span colored-spans)
 		(pcase (span-property span 'face)
 		  (`proof-processing-face (setq processing-count (1+ processing-count)))
-		  (`proof-processed-face (setq processed-count (1+ processed-count)))))
+		  (`proof-processed-face (setq processed-count (1+ processed-count)))
+		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))))
 	      (let ((processing-pct
 		     (if (<= vanilla-count 0.0)
-			 " -- "
+			 " --- "
 		       (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
 		    (processed-pct
 		     (if (<= vanilla-count 0.0)
-			 " --"
-		       (format " %.1f%%%%"
-			       (* (/ processed-count vanilla-count) 100.0)))))
+			 " ---"
+		       (format " %.1f%%%% "
+			       (* (/ processed-count vanilla-count) 100.0))))
+		    (incomplete-text
+		     (format " %d" incomplete-count)))
 		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
-		(add-text-properties 1 (length processed-pct) `(face ,proof-processed-face) processed-pct)
-		(setq mode-line-format (reverse (cons processed-pct
-						      (cons processing-pct (reverse filtered-fmt)))))))))))))
-
+		(add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
+		(add-text-properties 1 (length incomplete-text) `(face ,proof-incomplete-face) incomplete-text)
+		(setq mode-line-format (reverse
+					(cons incomplete-text
+					      (cons processed-pct
+						    (cons processing-pct (reverse filtered-fmt))))))))))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
