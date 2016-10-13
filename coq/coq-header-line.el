@@ -197,16 +197,16 @@ columns in header line, NUM-COLS is number of its columns."
 		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))))
 	      (let ((processing-pct
 		     (if (<= vanilla-count 0.0)
-			 " --- "
+			 (format " --- ") ; format avoids possibly duplicated interned string
 		       (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
 		    (processed-pct
 		     (if (<= vanilla-count 0.0)
-			 " --- "
+			 (format " --- ")
 		       (format " %.1f%%%% "
 			       (* (/ processed-count vanilla-count) 100.0))))
 		    (incomplete-text
 		     (if (<= vanilla-count 0.0)
-			 " ---"
+			 (format " ---")
 		       (format " %d" incomplete-count))))
 		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
 		(add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
