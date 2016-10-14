@@ -184,8 +184,11 @@ columns in header line, NUM-COLS is number of its columns."
 		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
 		   (start (car adj-endpoints))
 		   (end (cdr adj-endpoints)))
-	      (when (eq type 'pg-error)
-		(setq error-count (1+ error-count)))
+	      (pcase (span-property span 'face)
+		  (`proof-processing-face (setq processing-count (1+ processing-count)))
+		  (`proof-processed-face (setq processed-count (1+ processed-count)))
+		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))
+		  (`proof-error-face (setq error-count (1+ error-count))))
 	      (if (display-graphic-p)
 		  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,color) nil header-text))))
@@ -194,11 +197,6 @@ columns in header line, NUM-COLS is number of its columns."
 	  (when (consp mode-line-format)
 	    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
 					      mode-line-format)))
-	      (dolist (span colored-spans)
-		(pcase (span-property span 'face)
-		  (`proof-processing-face (setq processing-count (1+ processing-count)))
-		  (`proof-processed-face (setq processed-count (1+ processed-count)))
-		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))))
 	      (let ((processing-pct
 		     (if (<= vanilla-count 0.0)
 			 (format " --- ") ; format avoids possibly duplicated interned string
