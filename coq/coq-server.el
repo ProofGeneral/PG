@@ -750,8 +750,10 @@ is gone and we have to close the secondary locked span."
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; can get error message not associated with script text
-    (when (> error-stop 0)
-      (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
+    (if (> error-stop 0)
+	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
+      ;; if not associated with script text, show error in response buffer
+      (coq--display-response error-msg))))
 
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
@@ -786,8 +788,10 @@ is gone and we have to close the secondary locked span."
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; may get error message not associated with script text
-    (when (> error-stop 0)
-      (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
+    (if (> error-stop 0)
+	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop())
+      ;; if not associated with script text, show error in response buffer
+      (coq--display-response error-msg))))
 
 (defun coq-server--color-span-on-feedback (xml tbl prop face)
   (with-current-buffer proof-script-buffer
