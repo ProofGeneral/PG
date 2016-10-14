@@ -33,6 +33,7 @@
 (defalias 'span-detach 'delete-overlay)
 (defalias 'span-set-endpoints 'move-overlay)
 (defalias 'span-buffer 'overlay-buffer)
+(defalias 'spans-in 'overlays-in)
 
 (defun span-p (ol)
   "Check if an overlay belongs to PG."
@@ -82,6 +83,9 @@
           (when keep
             (push ol ols)))))
     ols))
+
+(defun spans-all ()
+  (overlays-in (point-min) (point-max)))
 
 (defun spans-at-point-prop (pt prop)
   (spans-filter (overlays-at pt) prop))

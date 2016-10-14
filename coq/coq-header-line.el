@@ -123,7 +123,7 @@ columns in header line, NUM-COLS is number of its columns."
 		(skip-chars-backward "\t\n")
 		(line-number-at-pos (point))))
 	     (header-text (coq-header-line--make-line num-cols))
-	     (all-spans (overlays-in (point-min) (point-max))))
+	     (all-spans (spans-all)))
 	(set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
 	;; update for queue
 	(let ((queue-span (car (spans-filter all-spans 'face proof-queue-face))))

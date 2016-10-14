@@ -278,7 +278,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--get-span-with-predicate (pred &optional span-list)
   (with-current-buffer proof-script-buffer
-    (let* ((all-spans (or span-list (overlays-in (point-min) (point-max)))))
+    (let* ((all-spans (or span-list (spans-all))))
       (cl-find-if pred all-spans))))
 
 ;; we could use the predicate mechanism, but this happens a lot
@@ -426,7 +426,7 @@ is gone and we have to close the secondary locked span."
     (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
 		      (point-min)))
-	   (spans-after-retract (overlays-in start (point-max))))
+	   (spans-after-retract (spans-in start (point-max))))
       (if coq-server--backtrack-on-failure
 	  (progn 
 	    ;; TODO race condition here
@@ -459,7 +459,7 @@ is gone and we have to close the secondary locked span."
 			    (lambda (sp) (eq (span-property sp 'type) 'pg-error))
 			    spans-after-retract)))
 	  (mapc 'span-delete help-spans)))
-      (let ((all-spans (overlays-in start (point-max))))
+      (let ((all-spans (spans-all)))
 	(mapc (lambda (span)
 		(when (or (and (span-property span 'marked-for-deletion)
 			       (not (span-property span 'self-removing)))
@@ -492,13 +492,13 @@ is gone and we have to close the secondary locked span."
     (let* ((focus-start-span (coq-server--get-span-with-state-id focus-start-state-id))
 	   (focus-end-span (coq-server--get-span-with-state-id focus-end-state-id))
 	   (last-tip-span (coq-server--get-span-with-state-id last-tip-state-id))
-	   (all-spans (overlays-in (span-start focus-start-span) (span-end last-tip-span)))
+	   (all-spans (spans-in (span-start focus-start-span) (span-end last-tip-span)))
 	   (marked-spans (cl-remove-if-not 
 			  (lambda (span) (span-property span 'marked-for-deletion))
 			  all-spans))
 	   (sorted-marked-spans 
 	    (sort marked-spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2)))))
-	   (focus-spans (overlays-in (span-start focus-start-span) (span-end focus-end-span)))
+	   (focus-spans (spans-in (span-start focus-start-span) (span-end focus-end-span)))
 	   (error-spans (cl-remove-if-not (lambda (span) (eq (span-property span 'type) 'pg-error)) focus-spans))
 	   found-focus-end
 	   secondary-span-start
@@ -553,7 +553,7 @@ is gone and we have to close the secondary locked span."
       ;; delete unless merging primary, secondary locked regions 
       ;; spans following primary locked region are valid
       (when delete-spans
-	(let* ((candidate-spans (overlays-in start end))
+	(let* ((candidate-spans (spans-in start end))
 	       (relevant-spans 
 		(cl-remove-if-not 
 		 (lambda (span) (or (span-property span 'type) (span-property span 'idiom)))
