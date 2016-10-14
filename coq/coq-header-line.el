@@ -128,7 +128,7 @@ columns in header line, NUM-COLS is number of its columns."
 		(line-number-at-pos (point))))
 	     (header-text (coq-header-line--make-line num-cols))
 	     (all-spans (spans-all))
-	     (error-count))
+	     (error-count 0))
 	(set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
 	;; update for queue
 	(let ((queue-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-queue-face)) all-spans))))
@@ -136,7 +136,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((start (coq-header--calc-offset (span-start queue-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end queue-span) num-lines num-cols)))
 	      (if (display-graphic-p)
-		  (add-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-queue-color) nil header-text)))))
 	;; update for locked region
 	(let ((locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-locked-face)) all-spans))))
@@ -144,7 +144,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((start (coq-header--calc-offset (span-start locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end locked-span) num-lines num-cols)))
 	      (if (display-graphic-p)
-		  (add-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
 	;; update for secondary locked region
 	(let ((secondary-locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-secondary-locked-face)) all-spans))))
@@ -152,20 +152,9 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((start (coq-header--calc-offset (span-start secondary-locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end secondary-locked-span) num-lines num-cols)))
 	      (if (display-graphic-p)
-		  (add-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text)))))
-	;; update for errors
-	(let ((error-spans (cl-remove-if-not (lambda (sp) (eq (span-property sp 'type) 'pg-error)) all-spans)))
-	  (setq error-count (length error-spans))
-	  (dolist (span error-spans)
-	    (let* ((endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
-		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
-		   (start (car adj-endpoints))
-		   (end (cdr adj-endpoints)))
-	      (if (display-graphic-p)
-		  (add-text-properties start end `(face coq-error-face pointer ,coq-header-line-mouse-pointer) header-text)
-		(add-face-text-property start end `(:background ,coq-error-color) nil header-text)))))
-	;; update for specially-colored spans
+	;; update for specially-colored spans, errors
 	(let* ((vanilla-spans (cl-remove-if-not
 			       (lambda (sp)
 				 (eq (span-property sp 'type) 'vanilla))
@@ -173,7 +162,9 @@ columns in header line, NUM-COLS is number of its columns."
 	       (vanilla-count (float (length vanilla-spans)))
 	       (colored-spans (cl-remove-if-not
 			       (lambda (sp)
-				 (eq (span-property sp 'type) 'pg-special-coloring))
+				 (let ((type (span-property sp 'type)))
+				   (member type '(pg-special-coloring
+						  pg-error))))
 			       all-spans))
 	       (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 								      (coq-header--colored-span-rank sp2)))))
@@ -181,7 +172,8 @@ columns in header line, NUM-COLS is number of its columns."
 	       (processed-count 0)
 	       (incomplete-count 0))
 	  (dolist (span sorted-spans)
-	    (let* ((old-face (span-property span 'face))
+	    (let* ((type (span-property span 'type))
+		   (old-face (span-property span 'face))
 		   (new-face-color (gethash old-face face-mapper-tbl))
 		   (new-face (car new-face-color))
 		   (color (cdr new-face-color))
@@ -189,10 +181,13 @@ columns in header line, NUM-COLS is number of its columns."
 		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
 		   (start (car adj-endpoints))
 		   (end (cdr adj-endpoints)))
+	      (when (eq type 'pg-error)
+		(setq error-count (1+ error-count)))
 	      (if (display-graphic-p)
-		  (add-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,color) nil header-text))))
 	  (setq header-line-format header-text)
+	  ;; update mode line indicators
 	  (when (consp mode-line-format)
 	    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
 					      mode-line-format)))
