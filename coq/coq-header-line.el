@@ -11,7 +11,7 @@
 (defvar coq-queue-color "lightred")
 (defvar coq-locked-color "lightblue")
 (defvar coq-secondary-locked-color "lightgreen")
-(defvar coq-processing-color "darkblue")
+(defvar coq-processing-color "brightblue")
 (defvar coq-processed-color "green")
 (defvar coq-incomplete-color "blue")
 (defvar coq-error-color "red")
@@ -104,16 +104,19 @@ columns in header line, NUM-COLS is number of its columns."
 (defvar coq-header--mode-line-face-tbl (make-hash-table :test 'equal))
 
 (mapc (lambda (face)
-	(puthash face t coq-header--mode-line-face-tbl))
+	(puthash face t coq-header--mode-line-face-tbl)
+	(let ((color (cdr (gethash face face-mapper-tbl))))
+	  (puthash `(:background ,color) t coq-header--mode-line-face-tbl)))
       `(,proof-processing-face
 	,proof-processed-face
 	,proof-incomplete-face
 	,proof-error-face))
 
 (defun coq-header--mode-line-filter (elt)
-  (and (stringp elt)
-       (let ((face (get-text-property 1 'face elt)))
-	 (gethash face coq-header--mode-line-face-tbl))))
+  (or (eq elt 'mode-line-end-spaces)
+      (and (stringp elt)
+	   (let ((face (get-text-property 1 'face elt)))
+	     (gethash face coq-header--mode-line-face-tbl)))))
 
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
@@ -191,6 +194,7 @@ columns in header line, NUM-COLS is number of its columns."
 	  (when (consp mode-line-format)
 	    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
 					      mode-line-format)))
+	      (message "FILTERED: %s" filtered-fmt)
 	      (dolist (span colored-spans)
 		(pcase (span-property span 'face)
 		  (`proof-processing-face (setq processing-count (1+ processing-count)))
@@ -213,15 +217,21 @@ columns in header line, NUM-COLS is number of its columns."
 		     (if (<= vanilla-count 0.0)
 			 (format " ---")
 		       (format " %d" error-count))))
-		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
-		(add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
-		(add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face) incomplete-text)
-		(add-text-properties 1 (length error-text) `(face ,proof-error-face) error-text)
-		(setq mode-line-format (reverse
-					(cons error-text
-					      (cons incomplete-text
-						    (cons processed-pct
-							  (cons processing-pct (reverse filtered-fmt)))))))))))))))
+	      (if (display-graphic-p)
+		  (progn
+		    (add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
+		    (add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
+		    (add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face) incomplete-text)
+		    (add-text-properties 1 (length error-text) `(face ,proof-error-face) error-text))
+		(add-face-text-property 1 (1- (length processing-pct)) `(:background ,(cdr (gethash proof-processing-face face-mapper-tbl))) nil processing-pct)
+		(add-face-text-property 1 (1- (length processed-pct)) `(:background ,(cdr (gethash proof-processed-face face-mapper-tbl))) nil processed-pct)
+		(add-face-text-property 1 (1- (length incomplete-text)) `(:background ,(cdr (gethash proof-incomplete-face face-mapper-tbl))) nil incomplete-text)
+		(add-face-text-property 1 (length error-text) `(:background ,(cdr (gethash proof-error-face face-mapper-tbl))) nil error-text))
+	      (setq mode-line-format (reverse
+				      (cons error-text
+					    (cons incomplete-text
+						  (cons processed-pct
+							(cons processing-pct (reverse filtered-fmt)))))))))))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
