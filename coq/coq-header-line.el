@@ -101,15 +101,19 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line--make-line (num-cols)
   (make-string num-cols coq-header-line-char))
 
-(defvar coq-header--mode-line-faces
-  `(,proof-processing-face
-    ,proof-processed-face
-    ,proof-incomplete-face))
+(defvar coq-header--mode-line-face-tbl (make-hash-table :test 'equal))
+
+(mapc (lambda (face)
+	(puthash face t coq-header--mode-line-face-tbl))
+      `(,proof-processing-face
+	,proof-processed-face
+	,proof-incomplete-face
+	,proof-error-face))
 
 (defun coq-header--mode-line-filter (elt)
   (and (stringp elt)
        (let ((face (get-text-property 1 'face elt)))
-	 (member face coq-header--mode-line-faces))))
+	 (gethash face coq-header--mode-line-face-tbl))))
 
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
@@ -123,10 +127,11 @@ columns in header line, NUM-COLS is number of its columns."
 		(skip-chars-backward "\t\n")
 		(line-number-at-pos (point))))
 	     (header-text (coq-header-line--make-line num-cols))
-	     (all-spans (spans-all)))
+	     (all-spans (spans-all))
+	     (error-count))
 	(set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
 	;; update for queue
-	(let ((queue-span (car (spans-filter all-spans 'face proof-queue-face))))
+	(let ((queue-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-queue-face)) all-spans))))
 	  (when queue-span
 	    (let ((start (coq-header--calc-offset (span-start queue-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end queue-span) num-lines num-cols)))
@@ -134,7 +139,7 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-queue-color) nil header-text)))))
 	;; update for locked region
-	(let ((locked-span (car (spans-filter all-spans 'face proof-locked-face))))
+	(let ((locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-locked-face)) all-spans))))
 	  (when locked-span
 	    (let ((start (coq-header--calc-offset (span-start locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end locked-span) num-lines num-cols)))
@@ -142,7 +147,7 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
 	;; update for secondary locked region
-	(let ((secondary-locked-span (car (spans-filter all-spans 'face proof-secondary-locked-face))))
+	(let ((secondary-locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-secondary-locked-face)) all-spans))))
 	  (when secondary-locked-span
 	    (let ((start (coq-header--calc-offset (span-start secondary-locked-span) num-lines num-cols t))
 		  (end (coq-header--calc-offset (span-end secondary-locked-span) num-lines num-cols)))
@@ -150,7 +155,8 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text)))))
 	;; update for errors
-	(let ((error-spans (spans-filter all-spans 'type 'pg-error)))
+	(let ((error-spans (cl-remove-if-not (lambda (sp) (eq (span-property sp 'type) 'pg-error)) all-spans)))
+	  (setq error-count (length error-spans))
 	  (dolist (span error-spans)
 	    (let* ((endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
 		   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
@@ -206,15 +212,21 @@ columns in header line, NUM-COLS is number of its columns."
 			       (* (/ processed-count vanilla-count) 100.0))))
 		    (incomplete-text
 		     (if (<= vanilla-count 0.0)
+			 (format " --- ")
+		       (format " %d " incomplete-count)))
+		    (error-text 
+		     (if (<= vanilla-count 0.0)
 			 (format " ---")
-		       (format " %d" incomplete-count))))
+		       (format " %d" error-count))))
 		(add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face) processing-pct)
 		(add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face) processed-pct)
-		(add-text-properties 1 (length incomplete-text) `(face ,proof-incomplete-face) incomplete-text)
+		(add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face) incomplete-text)
+		(add-text-properties 1 (length error-text) `(face ,proof-error-face) error-text)
 		(setq mode-line-format (reverse
-					(cons incomplete-text
-					      (cons processed-pct
-						    (cons processing-pct (reverse filtered-fmt))))))))))))))
+					(cons error-text
+					      (cons incomplete-text
+						    (cons processed-pct
+							  (cons processing-pct (reverse filtered-fmt)))))))))))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
