@@ -194,7 +194,6 @@ columns in header line, NUM-COLS is number of its columns."
 	  (when (consp mode-line-format)
 	    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
 					      mode-line-format)))
-	      (message "FILTERED: %s" filtered-fmt)
 	      (dolist (span colored-spans)
 		(pcase (span-property span 'face)
 		  (`proof-processing-face (setq processing-count (1+ processing-count)))
