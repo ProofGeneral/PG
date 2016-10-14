@@ -41,7 +41,7 @@ PWD=$(shell pwd)
 PROVERS=coq
 OTHER_ELISP=generic lib contrib/mmm
 ELISP_DIRS=${PROVERS} ${OTHER_ELISP}
-ELISP_EXTRAS=isar/interface isar/isartags
+ELISP_EXTRAS=
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
@@ -51,13 +51,13 @@ DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS
 BATCHEMACS=${EMACS} --batch --no-site-file -q 
 
 # Scripts to edit paths to shells
-BASH_SCRIPTS = isar/interface bin/proofgeneral
-PERL_SCRIPTS = lego/legotags coq/coqtags isar/isartags
+BASH_SCRIPTS = bin/proofgeneral
+PERL_SCRIPTS = coq/coqtags
 # Scripts to edit path to PG
 PG_SCRIPTS = bin/proofgeneral
 
 # Scripts to install to bin directory
-BIN_SCRIPTS = bin/proofgeneral lego/legotags coq/coqtags isar/isartags
+BIN_SCRIPTS = bin/proofgeneral coq/coqtags
 
 # Setting load path might be better in Elisp, but seems tricky to do
 # only during compilation.  Another idea: put a function in proof-site
