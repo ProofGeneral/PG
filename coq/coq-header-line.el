@@ -117,6 +117,8 @@ columns in header line, NUM-COLS is number of its columns."
 	   (let ((face (get-text-property 1 'face elt)))
 	     (gethash face coq-header--mode-line-face-tbl)))))
 
+(defvar coq--header-text "")
+
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
   (if (null proof-script-buffer)
@@ -128,7 +130,9 @@ columns in header line, NUM-COLS is number of its columns."
 		(goto-char (point-max))
 		(skip-chars-backward "\t\n")
 		(line-number-at-pos (point))))
-	     (header-text (coq-header-line--make-line num-cols))
+	     (header-text (if (= num-cols (length coq--header-text))
+			      coq--header-text
+			    (coq-header-line--make-line num-cols)))
 	     (all-spans (spans-all))
 	     (error-count 0))
 	(set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
