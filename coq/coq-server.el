@@ -950,12 +950,12 @@ is gone and we have to close the secondary locked span."
 	;; put another item in internal queue, if available
 	(proof-server-exec-loop)))
     (when coq-use-header-line
-      (coq-header-line-update)
-      (when (> (buffer-size) 0)
-	;; since current reponse invalid, don't send anything more
-	(tq-flush coq-server-transaction-queue)
-	(proof-debug-message "Ill-formed XML: %s" (buffer-string))
-	(message-box "Warning: received ill-formed XML from Coq.\n\nGoto an earlier good point in the script to resynch.")))))
+      (coq-header-line-update))
+    (when (> (buffer-size) 0)
+      ;; since current reponse invalid, don't send anything more
+      (tq-flush coq-server-transaction-queue)
+      (proof-debug-message "Ill-formed XML: %s" (buffer-string))
+      (message-box "Warning: received ill-formed XML from Coq.\n\nGoto an earlier good point in the script to resynch."))))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
