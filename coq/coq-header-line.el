@@ -5,8 +5,6 @@
 (require 'proof-faces)
 (require 'coq-system)
 
-;; make copies of PG faces so we can modify the copies without affecting the originals
-
 ;; colors for terminals
 (defvar coq-queue-color "lightred")
 (defvar coq-locked-color "lightblue")
@@ -16,6 +14,7 @@
 (defvar coq-incomplete-color "blue")
 (defvar coq-error-color "red")
 
+;; make copies of PG faces so we can modify the copies without affecting the originals
 ;; order here is significant, want later entries have precedence
 (defvar face-assocs
   `((,proof-queue-face . (coq-queue-face . ,coq-queue-color))
@@ -78,8 +77,8 @@ in header line clamped to number of lines contained between START-POS and END-PO
       (let* ((half-cols (/ start-end-cols 2.0))
 	     (half-lines (/ endpoint-lines 2.0))
 	     (center-col (+ start half-cols))
-	     (adj-start (ceiling (- center-col half-lines)))
-	     (adj-end (ceiling (+ center-col half-lines))))
+	     (adj-start (max 1 (ceiling (- center-col half-lines))))
+	     (adj-end (min num-cols (ceiling (+ center-col half-lines)))))
 	(cons adj-start adj-end)))))
 
 (defun coq-header--tiebreak-endpoints (start end num-cols)
@@ -266,7 +265,6 @@ columns in header line, NUM-COLS is number of its columns."
       (setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
 					   mode-line-format)))))
     
-
 ;; we can safely clear header line for all Coq buffers after a retraction
 (defun coq-header-line--clear-all ()
   (mapc
