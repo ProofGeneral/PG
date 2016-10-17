@@ -595,11 +595,9 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--pending-add-count (1- coq-server--pending-add-count)))
   ;; gotten response from all Adds, ask for goals/status
   (when (= coq-server--pending-add-count 0)
+    ;; if we've gotten responses from all Add's, ask for goals/status
     (proof-server-send-to-prover (coq-xml-goal))
-    (proof-server-send-to-prover (coq-xml-status)))
-  ;; if we've gotten responses from all Add's, ask for goals/status
-  ;; processed good value, ready to send next item
-  (proof-server-exec-loop))
+    (proof-server-send-to-prover (coq-xml-status))))
 
 ;; no backtrack on Query call (Coq bug #5041)
 (defun coq-server--backtrack-on-call-failure ()
@@ -789,7 +787,7 @@ is gone and we have to close the secondary locked span."
     ;; may get either state id or edit id
     ;; may get error message not associated with script text
     (if (> error-stop 0)
-	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop())
+	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
       ;; if not associated with script text, show error in response buffer
       (coq--display-response error-msg))))
 
@@ -948,7 +946,9 @@ is gone and we have to close the secondary locked span."
 	  (`feedback (coq-server--handle-feedback xml))
 	  (`message (coq-server--handle-message xml))
 	  (t (proof-debug-message "Unknown coqtop response %s" xml)))
-	(setq xml (coq-xml-get-next-xml))))
+	(setq xml (coq-xml-get-next-xml))
+	;; put another item in internal queue, if available
+	(proof-server-exec-loop)))
     (when coq-use-header-line
       (coq-header-line-update)
       (when (> (buffer-size) 0)
