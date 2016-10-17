@@ -725,7 +725,7 @@ is gone and we have to close the secondary locked span."
 	      (remhash error-state-id coq-processing-span-tbl)
 	      (unless (eq error-span span-processing)
 		(span-delete span-processing))))
-	  (coq--mark-error error-span error-msg))))))
+	  (coq-mark-error error-span error-start error-stop error-msg))))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)

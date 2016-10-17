@@ -119,7 +119,7 @@ Only when three-buffer-mode is enabled."
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
-(defun coq--mark-error (span msg)
+(defun coq-mark-error (span error-start error-end msg)
   (when (and span (span-buffer span))
     (let ((start (span-start span))
 	  (end (span-end span))
@@ -132,7 +132,10 @@ Only when three-buffer-mode is enabled."
 	  (goto-char end)
 	  (skip-chars-backward ws start)
 	  (setq end (point)))
-	(let ((error-span (span-make start end)))
+	(let* ((trimmed-string (buffer-substring start end))
+	       (start-offs (byte-offset-to-char-offset trimmed-string error-start))
+	       (end-offs (byte-offset-to-char-offset trimmed-string error-end))
+	       (error-span (span-make (+ start start-offs) (+ start end-offs))))
 	  (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
 	  (span-set-property error-span 'face proof-error-face)
 	  (span-set-property error-span 'help-echo msg)
