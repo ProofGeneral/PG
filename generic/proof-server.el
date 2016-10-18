@@ -317,10 +317,10 @@ contains only invisible elements for Prooftree synchronization."
 	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint)))
-
 	(and (not proof-second-action-list-active)
 	     (or (null proof-action-list)
-		 (cl-every
+		 ;; TODO when proof tree working again
+		 '(cl-every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
 

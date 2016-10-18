@@ -946,9 +946,7 @@ is gone and we have to close the secondary locked span."
 	    (`feedback (coq-server--handle-feedback xml))
 	    (`message (coq-server--handle-message xml))
 	    (t (proof-debug-message "Unknown coqtop response %s" xml)))
-	  (setq xml (coq-xml-get-next-xml))
-	  ;; put another item in internal queue, if available
-	  (proof-server-exec-loop)))
+	  (setq xml (coq-xml-get-next-xml))))
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
       (tq-flush coq-server-transaction-queue)
