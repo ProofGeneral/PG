@@ -72,11 +72,6 @@ processes."
   :type 'boolean
   :group 'coq)
 
-(defcustom coq-header-line-height 64
-  "Height of header line in pixels on graphical display, nil for default"
-  :type 'integer
-  :group 'coq)
-
 (defcustom coq-async-lazy nil
   "Use lazy mode for Coq asynchronous processing"
   :type 'boolean

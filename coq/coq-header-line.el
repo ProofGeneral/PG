@@ -6,6 +6,7 @@
 (require 'coq-system)
 
 ;; colors for terminals
+(defvar coq-header-line-color "darkgray")
 (defvar coq-queue-color "lightred")
 (defvar coq-locked-color "lightblue")
 (defvar coq-secondary-locked-color "lightgreen")
@@ -17,7 +18,8 @@
 ;; make copies of PG faces so we can modify the copies without affecting the originals
 ;; order here is significant, want later entries have precedence
 (defvar face-assocs
-  `((,proof-queue-face . (coq-queue-face . ,coq-queue-color))
+  `((header-line . (coq-header-line-face . ,coq-header-line-color))
+    (,proof-queue-face . (coq-queue-face . ,coq-queue-color))
     (,proof-locked-face . (coq-locked-face . ,coq-locked-color))
     (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
     (,proof-processing-face . (coq-processing-face . ,coq-processing-color))
@@ -33,25 +35,15 @@
 (defvar face-rank 0)
 
 (mapc (lambda (face-pair)
-	(let ((old-face (car face-pair))
-	      (new-face-color (cdr face-pair)))
-	  (copy-face old-face (car new-face-color))
+	(let* ((old-face (car face-pair))
+	       (new-face-color (cdr face-pair))
+	       (new-face (car new-face-color)))
+	  (copy-face old-face new-face)
+	  (set-face-attribute new-face nil :underline "black")
 	  (puthash old-face new-face-color face-mapper-tbl)
 	  (puthash old-face face-rank face-rank-tbl)
 	  (setq face-rank (1+ face-rank))))
       face-assocs)
-
-(defun coq-header-line-set-height ()
-  "Set height of faces used in header line"
-  (when coq-header-line-height
-    (mapc (lambda (fce)
-	    (set-face-attribute fce nil :height coq-header-line-height :strike-through "black"))
-	  '(coq-queue-face
-	    coq-locked-face
-	    coq-secondary-locked-face
-	    coq-processing-face
-	    coq-incomplete-face
-	    coq-error-face))))
 
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
@@ -136,7 +128,7 @@ columns in header line, NUM-COLS is number of its columns."
 				   coq--header-text))
 	       (all-spans (spans-all))
 	       (error-count 0))
-	  (set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
+	  (set-text-properties 1 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
 	  ;; update for queue
 	  (let ((queue-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-queue-face)) all-spans))))
 	    (when queue-span
@@ -179,8 +171,7 @@ columns in header line, NUM-COLS is number of its columns."
 		 (processed-count 0)
 		 (incomplete-count 0))
 	    (dolist (span sorted-spans)
-	      (let* ((type (span-property span 'type))
-		     (old-face (span-property span 'face))
+	      (let* ((old-face (span-property span 'face))
 		     (new-face-color (gethash old-face face-mapper-tbl))
 		     (new-face (car new-face-color))
 		     (color (cdr new-face-color))
@@ -265,7 +256,7 @@ columns in header line, NUM-COLS is number of its columns."
 	      (skip-chars-backward "\t\n")
 	      (line-number-at-pos (point))))
 	   (header-text (coq-header-line--make-line num-cols)))
-      (set-text-properties 1 num-cols `(pointer ,coq-header-line-mouse-pointer) header-text)
+      (set-text-properties 1 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
       (setq header-line-format header-text)
       (when (consp mode-line-format)
 	(setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
