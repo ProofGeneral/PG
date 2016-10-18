@@ -939,23 +939,16 @@ is gone and we have to close the secondary locked span."
     (coq-xml-unescape-buffer)
     (setq coq-server--current-call call) 
     (setq coq-server--current-span span) 
-    (let ((saw-feedback nil))
-      (let ((xml (coq-xml-get-next-xml)))
+    (let ((xml (coq-xml-get-next-xml)))
 	(while xml
 	  (pcase (coq-xml-tag xml)
 	    (`value (coq-server--handle-value xml))
-	    (`feedback
-	     ;; trip flag to update header line
-	     (setq saw-feedback t)
-	     (coq-server--handle-feedback xml))
+	    (`feedback (coq-server--handle-feedback xml))
 	    (`message (coq-server--handle-message xml))
 	    (t (proof-debug-message "Unknown coqtop response %s" xml)))
 	  (setq xml (coq-xml-get-next-xml))
 	  ;; put another item in internal queue, if available
 	  (proof-server-exec-loop)))
-      (when (and coq-use-header-line
-		 saw-feedback)
-	(coq-header-line-update)))
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
       (tq-flush coq-server-transaction-queue)

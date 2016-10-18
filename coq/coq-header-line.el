@@ -223,7 +223,9 @@ columns in header line, NUM-COLS is number of its columns."
 					  (cons error-text
 						(cons incomplete-text
 						      (cons processed-pct
-							    (cons processing-pct (reverse filtered-fmt))))))))))))))))
+							    (cons processing-pct (reverse filtered-fmt))))))))))
+	    (force-window-update proof-script-buffer)
+	    (redisplay t)))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
@@ -245,6 +247,14 @@ columns in header line, NUM-COLS is number of its columns."
 		 (destination-line (/ (* x-pos num-lines) window-pixels)))
 	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
+(defvar coq-header-line--timer-set nil)
+(defvar coq-header-line--timer-interval 1)
+
+(defun coq-header-line--start-timer ()
+  (unless coq-header-line--timer-set
+    (setq coq-header-line--timer-set t)
+    (run-at-time 1 coq-header-line--timer-interval 'coq-header-line-update)))
+
 ;; called by coq-mode-hook
 ;; can't use update function, because proof-script-buffer not yet set
 (defun coq-header-line-init ()
@@ -260,7 +270,8 @@ columns in header line, NUM-COLS is number of its columns."
       (setq header-line-format header-text)
       (when (consp mode-line-format)
 	(setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
-					     mode-line-format))))))
+					     mode-line-format)))
+      (coq-header-line--start-timer))))
     
 ;; we can safely clear header line for all Coq buffers after a retraction
 (defun coq-header-line--clear-all ()
