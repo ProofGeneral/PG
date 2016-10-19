@@ -44,7 +44,7 @@ from calling `proof-server-exit'.")
       (funcall proof-server-interrupt-fun)
     (when proof-server-process
       ;; otherwise, send a SIGINT
-      (interrupt-process proof-server-process))))
+      (interrupt-process proof-server-process t))))
 
 (defun proof-server-clear-state ()
   "Clear internal state of proof shell."

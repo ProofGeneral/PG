@@ -1122,7 +1122,7 @@ Near here means PT is either inside or just aside of a comment."
         ;; on interrupt, get a fail-value, resulting in Edit_at
         (when (and proof-server-process (eq (process-status proof-server-process) 'run))
           (message "Sending SIGINT to Coq process")
-          (interrupt-process proof-server-process)
+          (interrupt-process proof-server-process t)
           (setq coq-server-retraction-on-interrupt t)))
       (let* ((current-span (coq-server--get-span-with-state-id coq-current-state-id))
              (end (if current-span (span-end current-span) 1)))
