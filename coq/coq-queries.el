@@ -130,6 +130,7 @@
 (coq-queries--mk-bool-option-setters printing-universes)
 (coq-queries--mk-bool-option-setters printing-synth)
 (coq-queries--mk-bool-option-setters printing-wildcard)
+(coq-queries--mk-bool-option-setters silent)
 
 ;; macro to build SetOption int setters/unsetters
 (defmacro coq-queries--mk-int-option-setters (opt-name)
