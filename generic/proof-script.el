@@ -1442,6 +1442,9 @@ Argument SPAN has just been processed."
     (let ((proof-prover-last-output "")) ; comments not sent, no last output 
       (pg-set-span-helphighlights bodyspan))
 
+    ;; adjust sent region
+    (proof-set-sent-end (span-end span))
+    
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
     (save-match-data
       (setq str (buffer-substring-no-properties (span-start span)
