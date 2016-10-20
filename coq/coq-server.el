@@ -14,6 +14,7 @@
 (require 'coq-tq)
 (require 'coq-response)
 (require 'coq-xml)
+(require 'coq-span)
 (require 'coq-header-line)
 
 (defvar coq-server--pending-edit-at-state-id nil
@@ -270,35 +271,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--value-status-p (xml)
   (coq-xml-at-path xml '(value (status))))
 
-(defun coq-server--state-id-precedes (state-id-1 state-id-2)
-  "Does STATE-ID-1 occur in a span before that for STATE-ID-2?"
-  (let ((span1 (coq-server--get-span-with-state-id state-id-1))
-	(span2 (coq-server--get-span-with-state-id state-id-2)))
-    (< (span-start span1) (span-start span2))))
-
-(defun coq-server--get-span-with-predicate (pred &optional span-list)
-  (with-current-buffer proof-script-buffer
-    (let* ((all-spans (or span-list (spans-all))))
-      (cl-find-if pred all-spans))))
-
-;; we could use the predicate mechanism, but this happens a lot
-;; so use hash table
-(defun coq-server--get-span-with-state-id (state-id)
-  (gethash state-id coq-span-state-id-tbl))
-
-(defun coq-server--get-span-with-edit-id (edit-id)
-  (gethash edit-id coq-span-edit-id-tbl))
-
-;; error coloring heuristic 
-(defun coq-server--error-span-at-end-of-locked (error-span)
-  ;; proof-locked-span may be detached, so lookup needed span
-  (let* ((locked-span (coq-server--get-span-with-predicate
-		       (lambda (span)
-			 (equal (span-property span 'face) 'proof-locked-face))))
-	 (locked-end (or (and locked-span (span-end locked-span)) 0))
-	 (error-end (span-end error-span)))
-    (>= error-end locked-end)))
-
 ;; make pending Edit_at state id current
 (defun coq-server--make-edit-at-state-id-current ()
   (setq coq-current-state-id coq-server--pending-edit-at-state-id)
@@ -537,6 +509,7 @@ is gone and we have to close the secondary locked span."
 	(span-set-property span 'start-closed t) ;; TODO what are these for?
 	(span-set-property span 'end-closed t)
 	(span-set-property span 'face 'proof-secondary-locked-face)
+	(span-set-property span 'priority (gethash proof-secondary-locked-face face-rank-tbl))
 	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
 	(setq proof-locked-secondary-span span)))))
 
@@ -564,6 +537,7 @@ is gone and we have to close the secondary locked span."
   (with-current-buffer proof-script-buffer
     (let ((new-end (span-end proof-locked-secondary-span)))
       (coq-server--remove-secondary-locked-span)
+      (proof-set-sent-end new-end)
       ;; proof-done-advancing uses this to set merged locked end
       (setq proof-merged-locked-end new-end))))
 
@@ -693,6 +667,16 @@ is gone and we have to close the secondary locked span."
     (clrhash coq-error-fail-tbl)
     (list (coq-xml-add-item cmd) span)))
 
+;; error coloring heuristic 
+(defun coq-server--error-span-at-end-of-locked (error-span)
+  ;; proof-locked-span may be detached, so lookup needed span
+  (let* ((locked-span (coq-server--get-span-with-predicate
+		       (lambda (span)
+			 (equal (span-property span 'face) 'proof-locked-face))))
+	 (locked-end (or (and locked-span (span-end locked-span)) 0))
+	 (error-end (span-end error-span)))
+    (>= error-end locked-end)))
+
 (defun coq-server--display-error (error-state-id error-edit-id error-msg error-start error-stop)
   (if (and (or (null error-state-id)
 	       (not (coq-server--valid-state-id error-state-id)))
@@ -791,63 +775,6 @@ is gone and we have to close the secondary locked span."
       ;; if not associated with script text, show error in response buffer
       (coq--display-response error-msg))))
 
-(defun coq-server--color-span-on-feedback (xml tbl prop face)
-  (with-current-buffer proof-script-buffer
-    (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	   (span-with-state-id (coq-server--get-span-with-state-id state-id)))
-      ;; can see feedbacks with state id not yet associated with a span
-      ;; also can find a span with a state id that's been deleted from script buffer,
-      ;;  but not yet garbage-collected from table
-      (when (and span-with-state-id
-		 (eq (span-buffer span-with-state-id) proof-script-buffer))
-	(save-excursion
-	  (goto-char (span-start span-with-state-id))
-	  (skip-chars-forward " \t\n")
-	  ;; if there's an existing colored span at point, re-use it,
-	  ;;  because want most recent coloring
-	  (let ((span-processing (span-make (point) (span-end span-with-state-id)))
-		(rank (gethash face face-rank-tbl)))
-	    (span-set-property span-processing 'type 'pg-special-coloring)
-	    (span-set-property span-processing prop 't)
-	    (span-set-property span-processing 'face face)
-	    (span-set-property span-processing 'priority rank)
-	    (puthash state-id span-processing tbl)))))))
-
-(defun coq-server--color-span-processingin (xml)
-  (coq-server--color-span-on-feedback
-   xml
-   coq-processing-span-tbl
-   'processing-in
-   'proof-processing-face))
-
-(defun coq-server--color-span-incomplete (xml)
-  (coq-server--color-span-on-feedback
-   xml
-   coq-incomplete-span-tbl
-   'incomplete
-   'proof-incomplete-face))
-
-(defun coq-server--uncolor-span-on-feedback (xml tbl)
-  (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	 (span-colored (gethash state-id tbl)))
-    ;; may get several identical feedbacks, use just first one
-    (when span-colored
-      (remhash state-id tbl)
-      (span-delete span-colored))))
-
-(defun coq-server--color-span-processed (xml)
-  (coq-server--uncolor-span-on-feedback xml coq-processing-span-tbl)
-  (coq-server--color-span-on-feedback
-   xml
-   coq-processing-span-tbl
-   'processed
-   'proof-processed-face))
-
-(defun coq-server--uncolor-span-complete (xml)
-  ;; we also get complete feedbacks for statements that dismiss last goal in proof
-  ;; we ignore those
-  (coq-server--uncolor-span-on-feedback xml coq-incomplete-span-tbl))
-
 ;; maintain table of active workers
 (defun coq-server--handle-worker-status (xml)
   (let* ((status-pair (coq-xml-at-path xml '(feedback (state_id) (feedback_content (pair)))))
@@ -895,13 +822,13 @@ is gone and we have to close the secondary locked span."
 	(coq-server--queue-feedback state-id xml)
       (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
 	("processingin"
-	 (coq-server--color-span-processingin xml))
+	 (coq-span-color-span-processingin xml))
 	("processed"
-	 (coq-server--color-span-processed xml))
+	 (coq-span-color-span-processed xml))
 	("incomplete"
-	 (coq-server--color-span-incomplete xml))
+	 (coq-span-color-span-incomplete xml))
 	("complete"
-	 (coq-server--uncolor-span-complete xml))
+	 (coq-span-uncolor-span-complete xml))
 	("filedependency"
 	 (coq-server--handle-filedependency xml))
 	("workerstatus"

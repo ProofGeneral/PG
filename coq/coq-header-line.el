@@ -4,16 +4,18 @@
 
 (require 'proof-faces)
 (require 'coq-system)
+(require 'coq-state-vars)
 
 ;; colors for terminals
 (defvar coq-header-line-color "darkgray")
 (defvar coq-queue-color "lightred")
-(defvar coq-locked-color "lightblue")
-(defvar coq-secondary-locked-color "lightgreen")
+(defvar coq-locked-color coq-queue-color)
+(defvar coq-sent-color "lightblue")
 (defvar coq-processing-color "brightblue")
-(defvar coq-processed-color "green")
+(defvar coq-processed-color "lightblue")
 (defvar coq-incomplete-color "blue")
-(defvar coq-error-color "red")
+(defvar coq-secondary-locked-color "lightgreen")
+(defvar coq-error-color "darkred")
 
 ;; make copies of PG faces so we can modify the copies without affecting the originals
 ;; order here is significant, want later entries have precedence
@@ -21,10 +23,11 @@
   `((header-line . (coq-header-line-face . ,coq-header-line-color))
     (,proof-queue-face . (coq-queue-face . ,coq-queue-color))
     (,proof-locked-face . (coq-locked-face . ,coq-locked-color))
-    (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
+    (,proof-sent-face . (coq-sent-face . ,coq-sent-color))
     (,proof-processing-face . (coq-processing-face . ,coq-processing-color))
     (,proof-processed-face . (coq-processed-face . ,coq-processed-color))
     (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
+    (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
     (,proof-error-face . (coq-error-face . ,coq-error-color))))
 
 ;; Table maps PG face to new face and color for TTYs
@@ -32,7 +35,7 @@
 ;; Table maps PG face to a rank governing precedence
 (defvar face-rank-tbl (make-hash-table))
 ;; rank counter
-(defvar face-rank 0)
+(defvar face-rank (1+ proof-sent-priority))
 
 (mapc (lambda (face-pair)
 	(let* ((old-face (car face-pair))
@@ -128,8 +131,8 @@ columns in header line, NUM-COLS is number of its columns."
 				   coq--header-text))
 	       (all-spans (spans-all))
 	       (error-count 0))
-	  (set-text-properties 1 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
-	  ;; update for queue
+	  (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
+	  ;; update for queued region
 	  (let ((queue-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-queue-face)) all-spans))))
 	    (when queue-span
 	      (let ((start (coq-header--calc-offset (span-start queue-span) num-lines num-cols t))
@@ -138,21 +141,24 @@ columns in header line, NUM-COLS is number of its columns."
 		    (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
 		  (add-face-text-property start end `(:background ,coq-queue-color) nil header-text)))))
 	  ;; update for locked region
-	  (let ((locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-locked-face)) all-spans))))
+	  ;; proof-locked-face also used for "sent" spans, ignore those
+	  (let ((locked-span (car (cl-remove-if-not (lambda (sp) (and (not (span-property sp 'sent)) 
+								      (eq (span-property sp 'face) proof-locked-face)))
+						    all-spans))))
 	    (when locked-span
 	      (let ((start (coq-header--calc-offset (span-start locked-span) num-lines num-cols t))
 		    (end (coq-header--calc-offset (span-end locked-span) num-lines num-cols)))
 		(if (display-graphic-p)
 		    (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		  (add-face-text-property start end `(:background ,coq-locked-color) nil header-text)))))
-	  ;; update for secondary locked region
-	  (let ((secondary-locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-secondary-locked-face)) all-spans))))
-	    (when secondary-locked-span
-	      (let ((start (coq-header--calc-offset (span-start secondary-locked-span) num-lines num-cols t))
-		    (end (coq-header--calc-offset (span-end secondary-locked-span) num-lines num-cols)))
+	  ;; update for sent region
+	  (let ((sent-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-sent-face)) all-spans))))
+	    (when sent-span
+	      (let ((start (coq-header--calc-offset (span-start sent-span) num-lines num-cols t))
+		    (end (coq-header--calc-offset (span-end sent-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
-		  (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text)))))
+		    (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text)))))
 	  ;; update for specially-colored spans, errors
 	  (let* ((vanilla-spans (cl-remove-if-not
 				 (lambda (sp)
@@ -161,9 +167,13 @@ columns in header line, NUM-COLS is number of its columns."
 		 (vanilla-count (float (length vanilla-spans)))
 		 (colored-spans (cl-remove-if-not
 				 (lambda (sp)
-				   (let ((type (span-property sp 'type)))
-				     (member type '(pg-special-coloring
-						    pg-error))))
+				   (let ((type ))
+				     (eq (span-property sp 'type) 'pg-special-coloring)))
+				 all-spans))
+		 (error-spans (cl-remove-if-not
+				 (lambda (sp)
+				   (let ((type ))
+				     (eq (span-property sp 'type) 'pg-error)))
 				 all-spans))
 		 (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 									(coq-header--colored-span-rank sp2)))))
@@ -179,11 +189,32 @@ columns in header line, NUM-COLS is number of its columns."
 		     (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
 		     (start (car adj-endpoints))
 		     (end (cdr adj-endpoints)))
+		;; don't color for "sent" spans with proof-locked-face
 		(pcase (span-property span 'face)
 		  (`proof-processing-face (setq processing-count (1+ processing-count)))
 		  (`proof-processed-face (setq processed-count (1+ processed-count)))
-		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))
-		  (`proof-error-face (setq error-count (1+ error-count))))
+		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count))))
+		(if (display-graphic-p)
+		    (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-face-text-property start end `(:background ,color) nil header-text))))
+	    ;; update for secondary locked region
+	    (let ((secondary-locked-span (car (cl-remove-if-not (lambda (sp) (eq (span-property sp 'face) proof-secondary-locked-face)) all-spans))))
+	      (when secondary-locked-span
+		(let ((start (coq-header--calc-offset (span-start secondary-locked-span) num-lines num-cols t))
+		      (end (coq-header--calc-offset (span-end secondary-locked-span) num-lines num-cols)))
+		  (if (display-graphic-p)
+		      (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text)))))
+	    (dolist (span error-spans)
+	      (setq error-count (1+ error-count))
+	      (let* ((old-face proof-error-face)
+		     (new-face-color (gethash old-face face-mapper-tbl))
+		     (new-face (car new-face-color))
+		     (color (cdr new-face-color))
+		     (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+		     (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+		     (start (car adj-endpoints))
+		     (end (cdr adj-endpoints)))
 		(if (display-graphic-p)
 		    (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
 		  (add-face-text-property start end `(:background ,color) nil header-text))))
@@ -266,7 +297,7 @@ columns in header line, NUM-COLS is number of its columns."
 	      (skip-chars-backward "\t\n")
 	      (line-number-at-pos (point))))
 	   (header-text (coq-header-line--make-line num-cols)))
-      (set-text-properties 1 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
+      (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
       (setq header-line-format header-text)
       (when (consp mode-line-format)
 	(setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter

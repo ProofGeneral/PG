@@ -126,6 +126,10 @@ Proof General allows buffers in other modes also to be locked;
 these also have a non-nil value for this variable.")
 
 
+(deflocal proof-sent-span nil
+  "The span indicating what part of the script has been sent to the 
+prover.")
+
 (deflocal proof-queue-span nil
   "The queue span of the buffer.  May be detached if inactive or empty.
 Each script buffer has its own queue span, although only the active
@@ -196,6 +200,11 @@ Action is taken on all script buffers."
   (and proof-queue-span
        (span-detach proof-queue-span)))
 
+(defsubst proof-detach-sent ()
+  "Remove the span for the sent region."
+  (and proof-sent-span
+       (span-detach proof-sent-span)))
+
 (defsubst proof-detach-locked ()
   "Remove the span for the locked region."
   (and proof-locked-span
@@ -206,6 +215,14 @@ Action is taken on all script buffers."
 (defsubst proof-set-queue-start (start)
   "Set the queue span to begin at START."
   (span-set-start proof-queue-span start))
+
+;; fill out sent area past whitespace, but not newline
+(defun proof-set-sent-end (end)
+  (with-current-buffer proof-script-buffer
+    (save-excursion
+      (goto-char end)
+      (skip-chars-forward " \t")
+      (span-set-endpoints proof-sent-span 1 (point)))))
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
@@ -227,8 +244,11 @@ Otherwise set the locked region to be from (point-min) to END."
       (proof-detach-queue)
     (span-set-end proof-queue-span end)))
 
-
 ;; ** Initialise spans for a buffer
+
+(defvar proof-locked-priority 1)
+(defvar proof-queue-priority  2)
+(defvar proof-sent-priority   5)
 
 (defun proof-init-segmentation ()
   "Initialise the queue and locked spans in a proof script buffer.
@@ -236,12 +256,14 @@ Allocate spans if need be.  The spans are detached from the
 buffer, so the regions are made empty by this function.
 Also clear list of script portions."
   ;; Initialise queue span, remove it from buffer.
-  (unless proof-queue-span
+  (if proof-queue-span
+      (proof-set-queue-endpoints 1 1)
     (setq proof-queue-span (span-make 1 1))
     ;; (span-raise proof-queue-span)
     )
   (span-set-property proof-queue-span 'start-closed t)
   (span-set-property proof-queue-span 'end-open t)
+  (span-set-property proof-queue-span 'priority proof-queue-priority)
   (proof-span-read-only proof-queue-span 'always)
   (span-set-property proof-queue-span 'face 'proof-queue-face)
   (span-detach proof-queue-span)
@@ -252,9 +274,14 @@ Also clear list of script portions."
     )
   (span-set-property proof-locked-span 'start-closed t)
   (span-set-property proof-locked-span 'end-open t)
+  (span-set-property proof-locked-span 'priority proof-locked-priority)
   (proof-span-read-only proof-locked-span)
   (proof-colour-locked-span)
   (span-detach proof-locked-span)
+  (unless proof-sent-span
+    (setq proof-sent-span (span-make 1 1)))
+  (span-set-property proof-sent-span 'face 'proof-sent-face)
+  (span-set-property proof-sent-span 'priority proof-sent-priority)
   (setq proof-overlay-arrow (make-marker))
   (setq overlay-arrow-position proof-overlay-arrow)
   (setq proof-last-theorem-dependencies nil)
@@ -307,6 +334,7 @@ deactivated."
 	     (setq pg-script-portions nil)
 	     (proof-detach-queue)
 	     (proof-detach-locked)
+	     (proof-detach-sent)
 	     (proof-init-segmentation)))
        (if (eq buffer proof-script-buffer)
 	   (setq proof-script-buffer nil))))
@@ -407,6 +435,10 @@ when a queue of commands is being processed."
    (and proof-locked-span (span-end proof-locked-span))
    (point-min)))
 
+(defun proof-sent-end ()
+  "Return the end of the sent region."
+  (and proof-sent-span
+       (span-end proof-sent-span)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1370,9 +1402,9 @@ Argument SPAN has just been processed."
 	(proof-merge-locked)
       (proof-set-locked-end end))
 
-    (if (span-live-p proof-queue-span)
+    (when (span-live-p proof-queue-span)
 	(proof-set-queue-start end))
-
+    
     (cond
      ;; CASE 1: Comments just get highlighted
      ((eq (span-property span 'type) 'comment)
@@ -1770,7 +1802,7 @@ Assumes that point is at the end of a command."
 	(setq semis (cdr semis)))
     (if (null semis) ; maybe inside a string or something.
 	(error "I can't find any complete commands to process!"))
-    (run-hooks 'proof-assert-command-hook) ;; sneak commands (real ones with a prompt)
+    (run-hooks 'proof-assert-command-hook) ;; sneak commands
     (proof-assert-semis semis displayflags)))
 
 (defun proof-assert-electric-terminator ()
@@ -1832,22 +1864,25 @@ This function expects the buffer to be activated for advancing."
     (proof-extend-queue lastpos vanillas)))
 
 (defun proof-retract-before-change (beg end)
-  "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.
-No effect if prover is busy."
-  (when (and (> (proof-queue-or-locked-end) beg)
-	     (not (and (proof-inside-comment beg)
-		       (proof-inside-comment end))))
-    ;; what is condition for interrupting?
-    ;; was proof-shell-busy in REPL world
-    ;; (message "Interrupting prover")
-    ;; (proof-server-interrupt-process)
+  "For `before-change-functions'.  When BEG and END within sent region, 
+retract to BEG unless BEG and END in comment. When BEG and END within locked 
+region, retract to end of sent region."
+  (let ((retract-point
+	 (if (and (> (proof-sent-end) beg)
+		  (<= end (proof-sent-end))
+		  (not (and (proof-inside-comment beg)
+			    (proof-inside-comment end))))
+	     beg
+	   (span-end proof-sent-span))))
+    ;; TODO should we interrupt here if prover busy, as was done in proof-shell?
     (proof-debug-message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-match-data ;; see PG#41
 	(save-restriction ;; see Trac#403
 	  (widen)
-	  (goto-char beg)
+	  (goto-char retract-point)
 	  (proof-retract-until-point))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1913,8 +1948,13 @@ others)."
 	;; da: check for empty region seems odd here?
 	;; [prevents regions from being detached in set-locked-end]
 	(unless (proof-locked-region-empty-p)
-	  (proof-set-locked-end start)
-	  (proof-set-queue-end start))
+	  (save-excursion
+	    (goto-char start)
+	    (skip-chars-backward "\n")
+	    (setq start (point))
+	    (proof-set-locked-end start)
+	    (proof-set-sent-end start)
+	    (proof-set-queue-end start)))
 	;; Try to clean input history (NB: rely on order here)
 	;; PG 3.7 release: disable this, it's not yet robust.
 	;;	(let ((cmds (spans-at-region-prop start end 'cmd))

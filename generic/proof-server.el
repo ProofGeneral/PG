@@ -313,8 +313,8 @@ contains only invisible elements for Prooftree synchronization."
 
 	(unless (or proof-action-list proof-second-action-list-active)
 	; release lock, cleanup
-	  '(proof-release-lock) ; TODO
-	  (proof-detach-queue)
+	  '(proof-release-lock) ;; TODO ????
+	  '(proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint)))
 	(and (not proof-second-action-list-active)

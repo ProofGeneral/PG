@@ -69,14 +69,14 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for commands in proof script waiting to be processed."
   :group 'proof-faces)
 
-(defface proof-locked-face
+(copy-face 'proof-queue-face 'proof-locked-face)
+
+(defface proof-sent-face
   (proof-face-specs
-   ;; This colour is quite subjective and may be best chosen according
-   ;; to the type of display you have.
    (:background "#eaf8ff")
    (:background "darkslateblue")
    (:underline t))
-  "*Face for locked region of proof script (processed commands)."
+  "*Face for region of proof script sent to the prover."
   :group 'proof-faces)
 
 (defface proof-secondary-locked-face
@@ -97,8 +97,10 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 
 (defface proof-processed-face
   (proof-face-specs
-   (:background "#00ff00")
-   (:background "green")
+   ;; This colour is quite subjective and may be best chosen according
+   ;; to the type of display you have.
+   (:background "#dae8ff")
+   (:background "darkslateblue")
    (:underline t))
   "*Face for span that has been processed."
   :group 'proof-faces)
@@ -250,6 +252,7 @@ Warning messages can come from proof assistant or from Proof General itself."
 (defconst proof-face-compat-doc "Evaluates to a face name, for compatibility.")
 (defconst proof-queue-face 'proof-queue-face proof-face-compat-doc)
 (defconst proof-locked-face 'proof-locked-face proof-face-compat-doc)
+(defconst proof-sent-face 'proof-sent-face proof-face-compat-doc)
 (defconst proof-secondary-locked-face 'proof-secondary-locked-face proof-face-compat-doc)
 (defconst proof-declaration-name-face 'proof-declaration-name-face proof-face-compat-doc)
 (defconst proof-tacticals-name-face 'proof-tacticals-name-face proof-face-compat-doc)

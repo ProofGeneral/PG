@@ -74,10 +74,14 @@
 ;; have indicated that the question from the next transaction was not
 ;; sent immediately, send it at this point, awaiting the response.
 
+(require 'span)
+(require 'coq-header-line)
 (require 'proof-config)
 (require 'proof-utils)
 (require 'proof-resolver)
+(require 'proof-faces)
 (require 'coq-state-vars)
+(require 'coq-span)
 
 ;;; Code:
 
@@ -137,8 +141,11 @@
     (setcdr tq (cons nil       ; not complete
 		     (cons str ; call
 			   span)))
+    ;; update sent region
     ;; associate edit id with this span
     (when span
+      (coq-span-color-sent-span span)
+      (proof-set-sent-end (span-end span))
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
     (process-send-string (tq-process tq) str)))
 
