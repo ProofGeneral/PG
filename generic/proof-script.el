@@ -217,12 +217,16 @@ Action is taken on all script buffers."
   (span-set-start proof-queue-span start))
 
 ;; fill out sent area past whitespace, but not newline
+;; also make locked region flush with sent region
 (defun proof-set-sent-end (end)
   (with-current-buffer proof-script-buffer
     (save-excursion
       (goto-char end)
       (skip-chars-forward " \t")
-      (span-set-endpoints proof-sent-span 1 (point)))))
+      ;; adjust sent region
+      (span-set-endpoints proof-sent-span 1 (point))
+      ;; adjust locked region
+      (span-set-start proof-locked-span (point)))))
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
@@ -275,13 +279,14 @@ Also clear list of script portions."
   (span-set-property proof-locked-span 'start-closed t)
   (span-set-property proof-locked-span 'end-open t)
   (span-set-property proof-locked-span 'priority proof-locked-priority)
-  (proof-span-read-only proof-locked-span)
+  (proof-span-read-only proof-locked-span 'always)
   (proof-colour-locked-span)
   (span-detach proof-locked-span)
   (unless proof-sent-span
     (setq proof-sent-span (span-make 1 1)))
   (span-set-property proof-sent-span 'face 'proof-sent-face)
   (span-set-property proof-sent-span 'priority proof-sent-priority)
+  (proof-span-read-only proof-sent-span)
   (setq proof-overlay-arrow (make-marker))
   (setq overlay-arrow-position proof-overlay-arrow)
   (setq proof-last-theorem-dependencies nil)
@@ -1868,22 +1873,17 @@ This function expects the buffer to be activated for advancing."
 
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  When BEG and END within sent region, 
-retract to BEG unless BEG and END in comment. When BEG and END within locked 
-region, retract to end of sent region."
-  (let ((retract-point
-	 (if (and (> (proof-sent-end) beg)
-		  (<= end (proof-sent-end))
-		  (not (and (proof-inside-comment beg)
-			    (proof-inside-comment end))))
-	     beg
-	   (span-end proof-sent-span))))
+retract to BEG unless BEG and END in comment."
+  (when (and (< end (proof-sent-end))
+	     (not (and (proof-inside-comment beg)
+		       (proof-inside-comment end))))
     ;; TODO should we interrupt here if prover busy, as was done in proof-shell?
     (proof-debug-message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-match-data ;; see PG#41
 	(save-restriction ;; see Trac#403
 	  (widen)
-	  (goto-char retract-point)
+	  (goto-char beg)
 	  (proof-retract-until-point))))))
 
 
