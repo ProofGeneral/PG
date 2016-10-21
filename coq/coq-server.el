@@ -398,6 +398,8 @@ is gone and we have to close the secondary locked span."
     (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
 		      (point-min)))
+	   (sent-end (or (and retract-span (span-end retract-span))
+			 (point-min)))
 	   (spans-after-retract (spans-in start (point-max))))
       (if coq-server--backtrack-on-failure
 	  (progn 
@@ -439,7 +441,8 @@ is gone and we have to close the secondary locked span."
 			  (span-property span 'incomplete)
 			  (span-property span 'processing-in))
 		  (span-delete span)))
-	      all-spans))))
+	      all-spans))
+      (proof-set-sent-end sent-end)))
   (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--new-focus-backtrack (xml)

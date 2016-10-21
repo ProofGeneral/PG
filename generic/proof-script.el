@@ -12,7 +12,7 @@
 ;; This implements the main mode for script management, including
 ;; parsing script buffers and setting spans inside them.
 ;;
-;; Compile note: functions used here from proof-shell, pg-user,
+;; Compile note: functions used here from pg-user,
 ;; pg-response, pg-goals auto-loaded to prevent circular dependency.
 
 ;;; Code:
@@ -226,7 +226,15 @@ Action is taken on all script buffers."
       ;; adjust sent region
       (span-set-endpoints proof-sent-span 1 (point))
       ;; adjust locked region
-      (span-set-start proof-locked-span (point)))))
+      (when (and proof-locked-span (span-buffer proof-locked-span))
+	(if (= (point) (point-max))
+	    ;; sent region extends to end
+	    (proof-detach-locked)
+	  ;; set start of locked region, if its end is past sent region
+	  (if (> (span-end proof-locked-span) (point))
+	      (span-set-start proof-locked-span (1+ (point)))
+	    (proof-detach-locked)))))))
+	
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
@@ -464,6 +472,13 @@ Works on any buffer."
 (defun proof-locked-region-empty-p ()
   "Non-nil if the locked region is empty.  Works on any buffer."
   (eq (proof-unprocessed-begin) (point-min)))
+
+;;;###autoload
+(defun proof-sent-region-empty-p ()
+  "Non-nil if the sent region is empty.  Works on any buffer."
+  (or (null proof-sent-span)
+      (null (span-buffer proof-sent-span))
+      (eq (span-end proof-sent-span) (point-min))))
 
 (defun proof-only-whitespace-to-locked-region-p ()
   "Non-nil if only whitespace from char-after point and end of locked region.
@@ -1247,7 +1262,7 @@ a scripting buffer is killed it is always retracted."
 	   (signal (car err) (cdr err))))
   
   ;; Initialise regions
-  (if (proof-locked-region-empty-p) ; leave alone if non-empty
+  (if (proof-sent-region-empty-p) ; leave alone if non-empty
       (proof-init-segmentation))
 
   ;; Turn on the minor mode, make it show up.
@@ -2019,11 +2034,11 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 Notice that this necessitates retracting any spans following TARGET,
 up to the end of the locked region.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'."
-  (let ((end (proof-unprocessed-begin))
+  (let ((end (span-end proof-sent-span))
 	(start (span-start target))
 	(span target)
 	actions)
-
+    
     ;; NB: first section only entered if proof-kill-goal-command is
     ;; non-nil.  Otherwise we expect proof-find-and-forget-fn to do
     ;; all relevent work for arbitrary retractions.  FIXME: clean up
@@ -2093,7 +2108,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 
 (defun proof-retract-until-point-interactive (&optional delete-region)
   "Tell the proof process to retract until point.
-If invoked outside a locked region, undo the last successfully processed
+If invoked outside the sent region, undo the last successfully processed
 command.  If called with a prefix argument (DELETE-REGION non-nil), also
 delete the retracted region from the proof-script."
   (interactive "P")
@@ -2103,7 +2118,7 @@ delete the retracted region from the proof-script."
 (defun proof-retract-until-point (&optional undo-action displayflags)
   "Set up the proof process for retracting until point.
 This calculates the commands to undo to the current point within
-the locked region.  If invoked outside the locked region, undo
+the sent region.  If invoked outside the sent region, undo
 the last successfully processed command.  See `proof-retract-target'.
 
 After retraction has succeeded in the prover, the filter will call
@@ -2127,26 +2142,24 @@ Step 2 may seem odd -- we're undoing (in) the buffer, after all
 forward again, we hit a command that loads other files, but the
 user hasn't saved the latest edits.  Therefore it is right to
 query saves here."
-  (if (proof-locked-region-empty-p)
-      (error "No locked region")
+  (if (proof-sent-region-empty-p)
+      (error "No sent region")
     (let ((inhibit-quit t)) ; prevent inconsistent state
       (proof-activate-scripting)
       ;; enforce not busy to avoid retracting items from the queue region,
       ;; which is not supported currently, see #443
       ;; (future: may allow retracting from queue in progress)
       (proof-ready-prover)
-      (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
+      (unless (proof-sent-region-empty-p) ;; re-opening may discard locked region!
 	;; spans contain state id resulting from processing that span
 	;; so leave this span processed, and work on preceding span
 	;; TODO 'type becomes 'pg-type
-	
 	(let* ((span (span-at (point) 'type)))
 	  ;; If no span at point or previous span, retract the last span in the buffer.
 	  (unless span
-	    
-					;	  (proof-goto-end-of-locked)
-					;	  (backward-char)
-					;	  (setq span (span-at (point) 'type)))
+	    ;;	  (proof-goto-end-of-locked)
+	    ;;	  (backward-char)
+	    ;;	  (setq span (span-at (point) 'type)))
 	    (setq span (span-make (point) (point)))
 	    (span-set-property span 'type 'pg-sentinel))
 	  (if span
