@@ -821,6 +821,8 @@ is gone and we have to close the secondary locked span."
 		 (null (overlay-buffer span-with-state-id))))
 	(coq-server--queue-feedback state-id xml)
       (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
+	("filedependency"
+	 (coq-server--handle-filedependency xml))
 	("processingin"
 	 (coq-span-color-span-processingin xml))
 	("processed"
@@ -829,8 +831,6 @@ is gone and we have to close the secondary locked span."
 	 (coq-span-color-span-incomplete xml))
 	("complete"
 	 (coq-span-uncolor-span-complete xml))
-	("filedependency"
-	 (coq-server--handle-filedependency xml))
 	("workerstatus"
 	 (coq-server--handle-worker-status xml))
 	("errormsg" ; 8.5-only
@@ -869,8 +869,9 @@ is gone and we have to close the secondary locked span."
     (let ((xml (coq-xml-get-next-xml)))
 	(while xml
 	  (pcase (coq-xml-tag xml)
-	    (`value (coq-server--handle-value xml))
+	    ;; feedbacks are most common, so put first here
 	    (`feedback (coq-server--handle-feedback xml))
+	    (`value (coq-server--handle-value xml))
 	    (`message (coq-server--handle-message xml))
 	    (t (proof-debug-message "Unknown coqtop response %s" xml)))
 	  (setq xml (coq-xml-get-next-xml))))
