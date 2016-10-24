@@ -72,7 +72,7 @@ in header line clamped to number of lines contained between START-POS and END-PO
       (let* ((half-cols (/ start-end-cols 2.0))
 	     (half-lines (/ endpoint-lines 2.0))
 	     (center-col (+ start half-cols))
-	     (adj-start (max 1 (ceiling (- center-col half-lines))))
+	     (adj-start (max 0 (ceiling (- center-col half-lines))))
 	     (adj-end (min num-cols (ceiling (+ center-col half-lines)))))
 	(cons adj-start adj-end)))))
 
@@ -147,13 +147,12 @@ columns in header line, NUM-COLS is number of its columns."
 		  (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
 		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text))))
 	  ;; update for sent region
-	  (let ((sent-span proof-sent-span))
-	    (when sent-span
-	      (let ((start (coq-header--calc-offset (span-start sent-span) num-lines num-cols t))
-		    (end (coq-header--calc-offset (span-end sent-span) num-lines num-cols)))
-		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
-		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text)))))
+	  (when (and proof-sent-span (> (proof-sent-end) (point-min)))
+	    (let ((start (coq-header--calc-offset (span-start proof-sent-span) num-lines num-cols t))
+		  (end (coq-header--calc-offset (span-end proof-sent-span) num-lines num-cols)))
+	      (if (display-graphic-p)
+		  (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
+		(add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
 	  ;; update for specially-colored spans, errors
 	  (let* ((vanilla-spans (cl-remove-if-not
 				 (lambda (sp)
