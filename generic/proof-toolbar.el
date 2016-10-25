@@ -26,7 +26,6 @@
   (require 'proof-config)
   (require 'tool-bar))			; needed for some emacsen without X
 
-
 ;;
 ;; Function, icon, button names
 ;;
@@ -162,7 +161,7 @@ back the default toolbar."
 	    (> (proof-unprocessed-begin) (point-min))))
   ;; can undo only if we've processed something
    (proof-with-script-buffer
-    (> (proof-unprocessed-begin) (point-min))))
+    (> (proof-sent-end) (point-min))))
        
 ;; Delete
 
@@ -198,7 +197,8 @@ back the default toolbar."
 
 (defun proof-toolbar-retract-enable-p ()
   (proof-with-script-buffer
-   (not (proof-locked-region-empty-p))))
+   (not (and (proof-locked-region-empty-p)
+	     (proof-sent-region-empty-p)))))
 
 ;; Use
 

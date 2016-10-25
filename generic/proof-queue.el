@@ -64,19 +64,21 @@ background compilation finishes. Then those items are put into
 
 (defsubst proof-prover-invoke-callback (listitem)
   "From `proof-action-list' LISTITEM, invoke the callback on the span."
-  (condition-case nil
+  (condition-case err
       (funcall (nth 2 listitem) (car listitem))
-    (error nil)))
+    (error (message "Error on queue callback: %s" err))))
 
 (defsubst proof-prover-slurp-comments ()
   "Strip comments at front of `proof-action-list', returning items stripped.
 Comments are not sent to the prover."
-  (let (cbitems nextitem)
+  (let (cbitems
+	nextitem)
     (while (and proof-action-list
 		(not (nth 1 (setq nextitem
 				  (car proof-action-list)))))
       (setq cbitems (cons nextitem cbitems))
       (setq proof-action-list (cdr proof-action-list)))
+    ;; send back span for last comment
     (nreverse cbitems)))
 
 ;;;###autoload
@@ -86,7 +88,7 @@ If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
 This function calls `proof-add-to-queue'."
-  '(if start
+  (if start
       (proof-set-queue-endpoints start end))
   (proof-add-to-queue queueitems queuemode))
 

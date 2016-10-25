@@ -57,6 +57,11 @@
        (not (funcall proof-server-response-complete-fun))))
 
 ;;;###autoload
+(defun proof-server-everything-sent ()
+  (and proof-everything-sent-fun
+       (funcall proof-everything-sent-fun)))
+
+;;;###autoload
 (defun proof-server-send-to-prover (string-or-fun &optional special-processor)
   (when (and string-or-fun (not (and (stringp string-or-fun) (string-equal string-or-fun ""))))
     (and proof-server-send-to-prover-fun 

@@ -47,6 +47,7 @@
 (require 'coq-parsing)
 (require 'coq-queries)
 (require 'coq-header-line)
+(require 'coq-tq)
 (require 'coq-xml)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
@@ -1184,6 +1185,8 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
+  (setq proof-everything-sent-fun (lambda () (tq-queue-empty coq-server-transaction-queue)))
+  
   (setq proof-command-formatting-fun 'coq-format-command)
   (setq proof-server-interrupt-fun 'coq-interrupt-coq)
   (setq proof-server-response-complete-fun (lambda () (tq-response-complete coq-server-transaction-queue)))

@@ -247,15 +247,14 @@ the text region in the proof script after undoing."
   (proof-with-script-buffer
    (let (lastspan)
      (save-excursion
-       (unless (proof-locked-region-empty-p)
-	 (proof-debug-message "proof-unproc-begin: %s" (proof-unprocessed-begin))
-	 (proof-debug-message "span-at-before proof-unproc-begin: %s" (span-at-before (proof-unprocessed-begin) 'type))
-	 (if (setq lastspan (span-at-before (proof-unprocessed-begin) 'type))
+       (unless (proof-sent-region-empty-p)
+	 (proof-debug-message "proof-sent-end: %s" (proof-sent-end))
+	 (if (setq lastspan (span-at-before (proof-sent-end) 'type))
 	     (progn
 	       (goto-char (span-start lastspan))
 	       (proof-retract-until-point undo-action))
 	   (error "Nothing to undo!"))))
-     (if lastspan (proof-maybe-follow-locked-end
+     (when lastspan (proof-maybe-follow-locked-end
 		   (span-start lastspan))))))
 
 (defun proof-retract-buffer (&optional called-interactively)

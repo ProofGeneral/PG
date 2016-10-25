@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+ 
 ;;; proof-script.el --- Major mode for proof assistant script files.
 ;;
 ;; Copyright (C) 1994-2010 LFCS Edinburgh.
@@ -22,6 +24,7 @@
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
 (require 'proof-buffers)
+(require 'proof-resolver)
 
 (eval-when-compile
   (require 'easymenu)
@@ -165,6 +168,17 @@ Optional argument ARGS is ignored."
 	 'proof-retract-before-change
        'proof-span-give-warning))))
 
+(defun proof-span-read-only-with-predicate (span pred &optional always)
+  "Make SPAN read-only, following variable `proof-strict-read-only' or ALWAYS."
+  (if (or always (not (memq proof-strict-read-only '(nil retract))))
+      (span-read-only-subject-to-predicate span pred)
+    (span-write-warning-subject-to-predicate
+     span
+     (if (eq proof-strict-read-only 'retract)
+	 'proof-retract-before-change
+	 'proof-span-give-warning)
+     pred)))
+
 (defun proof-strict-read-only ()
   "Set spans read-only according to variable `proof-strict-read-only'.
 Action is taken on all script buffers."
@@ -224,17 +238,15 @@ Action is taken on all script buffers."
       (goto-char end)
       (skip-chars-forward " \t")
       ;; adjust sent region
-      (span-set-endpoints proof-sent-span 1 (point))
-      ;; adjust locked region
-      (when (and proof-locked-span (span-buffer proof-locked-span))
-	(if (= (point) (point-max))
-	    ;; sent region extends to end
-	    (proof-detach-locked)
-	  ;; set start of locked region, if its end is past sent region
-	  (if (> (span-end proof-locked-span) (point))
-	      (span-set-start proof-locked-span (1+ (point)))
-	    (proof-detach-locked)))))))
-	
+      (span-set-endpoints proof-sent-span 1 (point)))))
+
+(defun proof-not-in-sent-region (start end)
+  ;; called by read-only hook, to see if START and END are
+  ;; beyond sent region
+  (let ((sent-end (span-end proof-sent-span)))
+    ;; presumably, start <= end, but doesn't hurt to check
+    (and (> start sent-end)
+	 (> end sent-end))))
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
@@ -256,11 +268,13 @@ Otherwise set the locked region to be from (point-min) to END."
       (proof-detach-queue)
     (span-set-end proof-queue-span end)))
 
-;; ** Initialise spans for a buffer
+;; Span priorities in case of overlap
 
 (defvar proof-locked-priority 1)
 (defvar proof-queue-priority  2)
 (defvar proof-sent-priority   5)
+
+;; ** Initialise spans for a buffer
 
 (defun proof-init-segmentation ()
   "Initialise the queue and locked spans in a proof script buffer.
@@ -287,7 +301,12 @@ Also clear list of script portions."
   (span-set-property proof-locked-span 'start-closed t)
   (span-set-property proof-locked-span 'end-open t)
   (span-set-property proof-locked-span 'priority proof-locked-priority)
-  (proof-span-read-only proof-locked-span 'always)
+  ;; locked span overlaps with sent span
+  ;; read-only only beyond sent region
+  (proof-span-read-only-with-predicate
+   proof-locked-span
+   'proof-not-in-sent-region
+   'always)
   (proof-colour-locked-span)
   (span-detach proof-locked-span)
   (unless proof-sent-span
@@ -428,6 +447,15 @@ The position is actually one beyond the last locked character."
 	(span-end proof-locked-span))
    (point-min)))
 
+;;;###autoload
+(defun proof-sent-end ()
+  "Return end of sent region in current buffer or (point-min) otherwise.
+The position is actually one beyond the last locked character."
+  (or
+   (and proof-sent-span
+	(span-end proof-sent-span))
+   (point-min)))
+
 (defun proof-script-end ()
   "Return the character beyond the last non-whitespace character.
 This is the same position `proof-unprocessed-begin' ends up at when asserting
@@ -447,11 +475,6 @@ when a queue of commands is being processed."
    (and proof-queue-span (span-end proof-queue-span))
    (and proof-locked-span (span-end proof-locked-span))
    (point-min)))
-
-(defun proof-sent-end ()
-  "Return the end of the sent region."
-  (and proof-sent-span
-       (span-end proof-sent-span)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -475,10 +498,9 @@ Works on any buffer."
 
 ;;;###autoload
 (defun proof-sent-region-empty-p ()
-  "Non-nil if the sent region is empty.  Works on any buffer."
+  "Non-nil if the sent region is empty."
   (or (null proof-sent-span)
-      (null (span-buffer proof-sent-span))
-      (eq (span-end proof-sent-span) (point-min))))
+      (null (span-buffer proof-sent-span))))
 
 (defun proof-only-whitespace-to-locked-region-p ()
   "Non-nil if only whitespace from char-after point and end of locked region.
@@ -1207,7 +1229,7 @@ a scripting buffer is killed it is always retracted."
 			(or forcedaction
 			    (proof-deactivate-scripting-choose-action)))))
      (proof-debug-message "proof-deactivate-scripting, complete: %s action: %s"
-	      complete action)
+			  complete action)
 
      (if action
 	 (proof-protected-process-or-retract action))
@@ -1423,8 +1445,8 @@ Argument SPAN has just been processed."
       (proof-set-locked-end end))
 
     (when (span-live-p proof-queue-span)
-	(proof-set-queue-start end))
-    
+      (proof-set-queue-start end))
+
     (cond
      ;; CASE 1: Comments just get highlighted
      ((eq (span-property span 'type) 'comment)
@@ -1462,8 +1484,11 @@ Argument SPAN has just been processed."
     (let ((proof-prover-last-output "")) ; comments not sent, no last output 
       (pg-set-span-helphighlights bodyspan))
 
-    ;; adjust sent region
-    (proof-set-sent-end (span-end span))
+    ;; end of sent region includes comment if prover has sent everything before
+    ;; handle comment first in script specially
+    (when (or (= (span-start span) 1)
+	      (proof-server-everything-sent))
+      (proof-set-sent-end (span-end span)))
     
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
     (save-match-data
@@ -1803,9 +1828,9 @@ Assumes that point is at the end of a command."
 
 (defun proof-assert-until-point (&optional displayflags)
   "Process the region from the end of the locked-region until point."
-  (if (proof-only-whitespace-to-locked-region-p)
-      (error
-       "At end of the locked region, nothing to do to!"))
+  (when (proof-only-whitespace-to-locked-region-p)
+    (error
+     "At end of the locked region, nothing to do to!"))
   ;; delete error spans at beginning, just past processed region
   (save-excursion
     (goto-char (proof-queue-or-locked-end))
@@ -1821,10 +1846,10 @@ Assumes that point is at the end of a command."
 		 (skip-chars-backward " \t\n"
 				      (proof-queue-or-locked-end))
 		 (proof-segment-up-to-using-cache (point)))))
-    (if (eq 'unclosed-comment (car semis))
-	(setq semis (cdr semis)))
-    (if (null semis) ; maybe inside a string or something.
-	(error "I can't find any complete commands to process!"))
+    (when (eq 'unclosed-comment (car semis))
+      (setq semis (cdr semis)))
+    (when (null semis) ; maybe inside a string or something.
+      (error "I can't find any complete commands to process!"))
     (run-hooks 'proof-assert-command-hook) ;; sneak commands
     (proof-assert-semis semis displayflags)))
 

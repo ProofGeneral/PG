@@ -304,7 +304,9 @@ columns in header line, NUM-COLS is number of its columns."
    (lambda (buf)
      (with-current-buffer buf
        (when (eq major-mode 'coq-mode)
-	 (coq-header-line-init))))
+	 (coq-header-line-init)
+	 (force-window-update buf)
+	 (redisplay t))))
    (buffer-list)))
 
 (when coq-use-header-line

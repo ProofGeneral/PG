@@ -922,6 +922,11 @@ the proof assistant in some way."
    :type 'function
    :group 'proof-server)
 
+(defcustom proof-everything-sent-fun nil
+  "Predicate tests whether everything has been sent to prover."
+  :type 'function
+  :group 'proof-server)
+
 (defcustom proof-server-log-traffic t
   "Log traffic between emacs and prover to a buffer."
   :type 'boolean

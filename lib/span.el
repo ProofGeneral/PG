@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;;; span.el --- Datatype of "spans" for Proof General
 ;;
 ;; Copyright (C) 1998-2009 LFCS Edinburgh
@@ -39,11 +41,11 @@
   "Check if an overlay belongs to PG."
   (overlay-get ol 'pg-span))
 
-(defun span-read-only-hook (overlay after start end &optional len)
-  (message "inhibit read only: %s" inhibit-read-only)
+(defun span-read-only-hook (_overlay _after _start _end &optional _len)
   (unless inhibit-read-only
     (error "Region is read-only")))
-'(add-to-list 'debug-ignored-errors "Region is read-only")
+
+(add-to-list 'debug-ignored-errors "Region is read-only")
 
 (defun span-read-only (span)
   "Set SPAN to be read only."
@@ -51,6 +53,17 @@
   ;; (overlay-put span 'read-only t))
   (span-set-property span 'modification-hooks '(span-read-only-hook))
   (span-set-property span 'insert-in-front-hooks '(span-read-only-hook)))
+
+(defun span-make-read-only-hook-with-predicate (pred)
+  (lambda (overlay after start end &optional len)
+    (when (funcall pred start end)
+      (span-read-only-hook overlay after start end len))))
+  
+(defun span-read-only-subject-to-predicate (span pred) 
+  "Set SPAN to be read only."
+  (let ((hooks `(,(span-make-read-only-hook-with-predicate pred))))
+    (span-set-property span 'modification-hooks hooks)
+    (span-set-property span 'insert-in-front-hooks hooks)))
 
 (defun span-read-write (span)
   "Set SPAN to be writeable."
@@ -61,7 +74,19 @@
   "Give a warning message when SPAN is changed, unless `inhibit-read-only' is non-nil."
   (lexical-let ((fun fun))
     (let ((funs (list (lambda (span afterp beg end &rest args)
-			(if (and (not afterp) (not inhibit-read-only))
+			(when (and (not afterp) (not inhibit-read-only))
+			    (funcall fun beg end))))))
+      (span-set-property span 'modification-hooks funs)
+      (span-set-property span 'insert-in-front-hooks funs))))
+
+(defun span-write-warning-subject-to-predicate (span fun pred)
+  "Give a warning message when SPAN is changed and the predicate holds, 
+unless `inhibit-read-only' is non-nil."
+  (lexical-let ((fun fun))
+    (let ((funs (list (lambda (span afterp beg end &rest args)
+			(when (and (not afterp)
+				 (not inhibit-read-only)
+				 (funcall pred beg end))
 			    (funcall fun beg end))))))
       (span-set-property span 'modification-hooks funs)
       (span-set-property span 'insert-in-front-hooks funs))))
@@ -153,8 +178,6 @@
 (defun span-set-properties (span props)
   (when (and (consp props)
 	     (consp (cdr props)))
-    (message "for span: %s, setting property %s to %s"
-	     span (car props) (cadr props))
     (span-set-property span
 		       (car props) (cadr props))
     (span-set-properties span (cddr props))))

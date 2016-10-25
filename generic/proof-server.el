@@ -107,7 +107,7 @@ derived Emacs mode; here, we call the procedure directly."
   ;; A copy of the last message, verbatim, never modified.
   (setq proof-prover-last-output response)
 
-  (if proof-action-list
+  (when proof-action-list
 
     (let ((span  (caar proof-action-list))
 	  (cmd   (nth 1 (car proof-action-list)))
@@ -214,8 +214,9 @@ while SPAN is the Emacs span containing the command."
     (run-hooks 'proof-server-enqueue-hook)
 
     (when nothingthere ; process comments immediately
-      (let ((cbitems  (proof-prover-slurp-comments))) 
-	(mapc 'proof-prover-invoke-callback cbitems))) 
+      (let ((cbitems (proof-prover-slurp-comments)))
+	(mapc 'proof-prover-invoke-callback cbitems)))
+    
     ; in proof shell, have stuff about silent mode
     ; not relevant in server mode
     (if proof-action-list ;; something to do
@@ -305,8 +306,8 @@ contains only invisible elements for Prooftree synchronization."
 ;	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
 
 	(when proof-action-list
-	    ;; send the next command to the process.
-	    (proof-server-insert-action-item (car proof-action-list)))
+	  ;; send the next command to the process.
+	  (proof-server-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
 	(mapc 'proof-prover-invoke-callback cbitems)	
@@ -314,7 +315,7 @@ contains only invisible elements for Prooftree synchronization."
 	(unless (or proof-action-list proof-second-action-list-active)
 	; release lock, cleanup
 	  '(proof-release-lock) ;; TODO ????
-	  '(proof-detach-queue)
+	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint)))
 	(and (not proof-second-action-list-active)
