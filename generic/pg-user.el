@@ -248,8 +248,13 @@ the text region in the proof script after undoing."
    (let (lastspan)
      (save-excursion
        (unless (proof-sent-region-empty-p)
+	 ;; when we set the end of the sent region, we extend it
+	 ;; through whitespace, up to the next line
+	 ;; so skip back before looking for span to undo
 	 (proof-debug-message "proof-sent-end: %s" (proof-sent-end))
-	 (if (setq lastspan (span-at-before (proof-sent-end) 'type))
+	 (goto-char (proof-sent-end))
+	 (skip-chars-backward " \t\n")
+	 (if (setq lastspan (span-at-before (point) 'type))
 	     (progn
 	       (goto-char (span-start lastspan))
 	       (proof-retract-until-point undo-action))
