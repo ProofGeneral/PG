@@ -1185,7 +1185,8 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
-  (setq proof-everything-sent-fun (lambda () (tq-queue-empty coq-server-transaction-queue)))
+  (setq proof-everything-sent-fun (lambda ()
+                                    (tq-everything-sent coq-server-transaction-queue)))
   
   (setq proof-command-formatting-fun 'coq-format-command)
   (setq proof-server-interrupt-fun 'coq-interrupt-coq)

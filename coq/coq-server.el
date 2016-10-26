@@ -442,6 +442,7 @@ is gone and we have to close the secondary locked span."
 			  (span-property span 'processing-in))
 		  (span-delete span)))
 	      all-spans))
+      (proof-set-locked-end sent-end)
       (proof-set-sent-end sent-end)))
   (coq-server--make-edit-at-state-id-current))
 
