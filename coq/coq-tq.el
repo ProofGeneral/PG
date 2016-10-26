@@ -120,6 +120,19 @@
 
 ;;; added for Coq
 
+;; we've sent everything if
+;;  - the queue is empty, or
+;;  - there's one element whose "question" is nil
+;; the second case happens when we enqueue an item to the empty queue
+;; the item is sent directly, but an entry with a nil question is
+;;  put on the queue for popping when the response is received
+(defun tq-everything-sent     (tq) (let ((queue (tq-queue tq)))
+				     (or (null queue)
+					 ;; one item
+					 (and (null (cdr queue)) 
+					      ;; nil question
+					      (null (tq-queue-head-question tq))))))
+
 ;; handler for out-of-band responses from coqtop
 (defvar tq--oob-handler nil)
 
@@ -216,15 +229,8 @@ This sends the string QUESTION to the process that TQ communicates with.
 
 When the corresponding answer comes back, we call FN with two
 arguments: CLOSURE, which may contain additional data that FN
-needs, and the answer to the question.
-
-END-REGEXP is a regular expression to match the entire answer;
-that's how we tell where the answer ends.
-
-OTHER-TAGS is a list of tag pairs to match a partial answer, 
-which we can process, without allowing the next item in the queue
-to be sent."
-  (let ((sendp (not (tq-queue tq)))) ;; always delay sending
+needs, and the answer to the question."
+  (let ((sendp (tq-queue-empty tq))) ; delay sending, unless queue empty
     (tq-queue-add tq (unless sendp question) closure fn)
     (when sendp
       (tq-log-and-send tq question))))
