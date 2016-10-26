@@ -50,7 +50,8 @@
 	      (span-set-property span-processing 'type 'pg-special-coloring)
 	      (span-set-property span-processing prop 't)
 	      (span-set-property span-processing 'face face)
-	      (span-set-property span-processing 'priority rank)
+	      ;; use priority API
+	      (span-set-priority span-processing rank)
 	      (puthash state-id span-processing tbl)))))))
 
 (defun coq-span-color-span-processingin (xml)
@@ -98,6 +99,6 @@
 	(span-set-property span-sent 'type 'pg-special-coloring)
 	(span-set-property span-sent 'sent 't)
 	(span-set-property span-sent 'face proof-locked-face)
-	(span-set-property span-sent 'priority rank)))))
+	(span-set-priority span-sent rank)))))
 
 (provide 'coq-span)

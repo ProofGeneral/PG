@@ -512,7 +512,7 @@ is gone and we have to close the secondary locked span."
 	(span-set-property span 'start-closed t) ;; TODO what are these for?
 	(span-set-property span 'end-closed t)
 	(span-set-property span 'face 'proof-secondary-locked-face)
-	(span-set-property span 'priority (gethash proof-secondary-locked-face face-rank-tbl))
+	(span-set-priority span (gethash proof-secondary-locked-face face-rank-tbl))
 	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
 	(setq proof-locked-secondary-span span)))))
 

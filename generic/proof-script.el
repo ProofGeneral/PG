@@ -289,7 +289,8 @@ Also clear list of script portions."
     )
   (span-set-property proof-queue-span 'start-closed t)
   (span-set-property proof-queue-span 'end-open t)
-  (span-set-property proof-queue-span 'priority proof-queue-priority)
+  ;; use priority API
+  (span-set-priority proof-queue-span proof-queue-priority)
   (proof-span-read-only proof-queue-span 'always)
   (span-set-property proof-queue-span 'face 'proof-queue-face)
   (span-detach proof-queue-span)
@@ -300,7 +301,7 @@ Also clear list of script portions."
     )
   (span-set-property proof-locked-span 'start-closed t)
   (span-set-property proof-locked-span 'end-open t)
-  (span-set-property proof-locked-span 'priority proof-locked-priority)
+  (span-set-priority proof-locked-span proof-locked-priority)
   ;; locked span overlaps with sent span
   ;; read-only only beyond sent region
   (proof-span-read-only-with-predicate
@@ -312,7 +313,7 @@ Also clear list of script portions."
   (unless proof-sent-span
     (setq proof-sent-span (span-make 1 1)))
   (span-set-property proof-sent-span 'face 'proof-sent-face)
-  (span-set-property proof-sent-span 'priority proof-sent-priority)
+  (span-set-priority proof-sent-span proof-sent-priority)
   (proof-span-read-only proof-sent-span)
   (setq proof-overlay-arrow (make-marker))
   (setq overlay-arrow-position proof-overlay-arrow)
@@ -749,7 +750,7 @@ IDIOMSYM is a symbol and ID is a strings."
     (span-set-property controlspan 'children
 		       (cons span (span-property controlspan 'children)))
     (pg-set-span-helphighlights span proof-region-mouse-highlight-face)
-    ;; (span-set-property span 'priority 10) ; lower than default
+    ;; (span-set-priority span 10) ; lower than default
     (if proof-disappearing-proofs
 	(pg-make-element-invisible 'proof proofid))))
 
@@ -871,7 +872,7 @@ Argument FACE means add 'face property FACE to the span."
 	  (span-set-property newspan 'mouse-face mouseface)))
     (if face
 	(span-set-property newspan 'face face))
-    ;; (span-set-property newspan 'priority 50)
+    ;; (span-set-priority newspan 50)
     ))
 
 

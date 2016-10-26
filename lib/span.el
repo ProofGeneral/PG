@@ -70,6 +70,20 @@
   (span-set-property span 'modification-hooks nil)
   (span-set-property span 'insert-in-front-hooks nil))
 
+(defvar span--priority-maximum 100)
+
+(defun span-set-priority (span pr)
+  "Set priority for SPAN. To work around an apparent Emacs bug,
+we make priorities negative. Otherwise, region overlays become 
+hidden when they overlap our spans. For such negative numbers, a lesser 
+number has lower priority."
+  (if (< pr 0)
+      (error (format "Span priority %s is negative" pr))
+    (if (> pr span--priority-maximum)
+	(error (format "Span priority %s is greater than the maximum = %s"
+		       pr span--priority-maximum))
+      (span-set-property span 'priority (1- (- pr span--priority-maximum))))))
+
 (defun span-write-warning (span fun)
   "Give a warning message when SPAN is changed, unless `inhibit-read-only' is non-nil."
   (lexical-let ((fun fun))
@@ -219,7 +233,7 @@ A span is before PT if it begins before the character before PT."
   ;; FIXME: Emacs already uses a "shorter goes above" which takes care of
   ;; preventing a span from seeing another.  So don't play with
   ;; priorities, please!
-  ;; (span-set-property span 'priority 100)
+  ;; (span-set-priority span 100)
   )
 
 (defun span-string (span)
