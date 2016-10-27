@@ -76,7 +76,9 @@
   "Set priority for SPAN. To work around an apparent Emacs bug,
 we make priorities negative. Otherwise, region overlays become 
 hidden when they overlap our spans. For such negative numbers, a lesser 
-number has lower priority."
+number has lower priority. NB: some versions of Emacs may not have
+this bug, in which case we can make this function work in a version-dependent 
+way."
   (if (< pr 0)
       (error (format "Span priority %s is negative" pr))
     (if (> pr span--priority-maximum)
