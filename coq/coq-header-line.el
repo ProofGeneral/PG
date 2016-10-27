@@ -275,10 +275,14 @@ columns in header line, NUM-COLS is number of its columns."
 ;; how often to run header update, in seconds
 (defvar coq-header-line--timer-interval 0.75)
 
+(defvar coq-header-line--timer nil)
+
 (defun coq-header-line--start-timer ()
   (unless coq-header-line--timer-set
     (setq coq-header-line--timer-set t)
-    (run-at-time 1 coq-header-line--timer-interval 'coq-header-line-update)))
+    (unless coq-header-line--timer
+      (setq coq-header-line--timer
+	    (run-at-time 1 coq-header-line--timer-interval 'coq-header-line-update)))))
 
 ;; called by coq-mode-hook
 ;; can't use update function, because proof-script-buffer not yet set
