@@ -118,7 +118,7 @@ columns in header line, NUM-COLS is number of its columns."
   "Update header line. _ARGS passed by some hooks, ignored"
   (when coq-use-header-line
     (if (null proof-script-buffer)
-	(coq-header-line--clear-all)
+	(coq-header-line-clear-all)
       (with-current-buffer proof-script-buffer
 	(let* ((num-cols (window-total-width (get-buffer-window)))
 	       (num-lines
@@ -292,6 +292,7 @@ columns in header line, NUM-COLS is number of its columns."
 	      (line-number-at-pos (point))))
 	   (header-text (coq-header-line--make-line num-cols)))
       (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
+      (setq coq--header-text header-text)
       (setq header-line-format header-text)
       (when (consp mode-line-format)
 	(setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
@@ -299,17 +300,18 @@ columns in header line, NUM-COLS is number of its columns."
       (coq-header-line--start-timer))))
 
 ;; we can safely clear header line for all Coq buffers after a retraction
-(defun coq-header-line--clear-all ()
-  (mapc
-   (lambda (buf)
-     (with-current-buffer buf
-       (when (eq major-mode 'coq-mode)
-	 (coq-header-line-init)
-	 (force-window-update buf)
-	 (redisplay t))))
-   (buffer-list)))
+(defun coq-header-line-clear-all ()
+  (when coq-use-header-line
+    (mapc
+     (lambda (buf)
+       (with-current-buffer buf
+	 (when (eq major-mode 'coq-mode)
+	   (coq-header-line-init)
+	   (force-window-update buf)
+	   (redisplay t))))
+     (buffer-list))))
 
 (when coq-use-header-line
-  (add-hook 'proof-deactivate-scripting-hook 'coq-header-line--clear-all))
+  (add-hook 'proof-deactivate-scripting-hook 'coq-header-line-clear-all))
 
 (provide 'coq-header-line)

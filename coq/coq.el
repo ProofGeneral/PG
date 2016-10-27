@@ -888,7 +888,7 @@ width is synchronized by coq (?!)."
 (add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
 
 ;; reset header line on retract
-(add-hook 'proof-retract-command-hook 'coq-header-line-init)
+(add-hook 'proof-retract-command-hook 'coq-header-line-clear-all)
 
 (defvar coq-current-line-width nil
   "Current line width of the Coq printing width.
