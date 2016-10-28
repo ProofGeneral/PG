@@ -114,6 +114,63 @@ columns in header line, NUM-COLS is number of its columns."
 
 (defvar coq--header-text "")
 
+;; cached state of header line
+
+;; (start . end) of proof-queue-span
+(defvar coq-header-line--queue-cache nil)
+;; (start . end) of proof-locked-span
+(defvar coq-header-line--locked-cache nil)
+;; (start . end) of proof-sent-span
+(defvar coq-header-line--sent-cache nil)
+;; list of error spans
+(defvar coq-header-line--error-cache nil)
+
+;; flag to see if we need to do expensive color span caching
+(defvar coq-header-line--color-update-p nil)
+
+;; set flag when span color changedf
+(defun coq-header-line-set-color-update ()
+  (setq coq-header-line--color-update-p t))
+
+(defun coq-header-line--need-update (errors)
+  ;; tests in increasing order of expense
+  (or coq-header-line--color-update-p
+      (null coq-header-line--queue-cache)
+      (and proof-queue-span (span-buffer proof-queue-span)
+	   (not (and (= (span-start proof-queue-span)
+			(car coq-header-line--queue-cache))
+		     (= (span-end proof-queue-span)
+			(cdr coq-header-line--queue-cache)))))
+      (null coq-header-line--locked-cache)
+      (and proof-locked-span (span-buffer proof-locked-span)
+	   (not (and (= (span-start proof-locked-span)
+			(car coq-header-line--locked-cache))
+		     (= (span-end proof-locked-span)
+			(cdr coq-header-line--locked-cache)))))
+      (null coq-header-line--sent-cache)
+      (and proof-sent-span (span-buffer proof-sent-span)
+	   (not (and (= (span-start proof-sent-span)
+			(car coq-header-line--sent-cache))
+		     (= (span-end proof-sent-span)
+			(cdr coq-header-line--sent-cache)))))
+      (cl-set-exclusive-or errors coq-header-line--error-cache)))
+
+(defun coq-header-line--build-cache (errors)
+  (setq coq-header-line--color-update-p nil)
+  (setq coq-header-line--queue-cache
+	(and proof-queue-span
+	     (cons (span-start proof-queue-span)
+		   (span-end proof-queue-span))))
+  (setq coq-header-line--locked-cache
+	(and proof-locked-span
+	     (cons (span-start proof-locked-span)
+		   (span-end proof-locked-span))))
+  (setq coq-header-line--sent-cache
+	(and proof-sent-span
+	     (cons (span-start proof-sent-span)
+		   (span-end proof-sent-span))))
+  (setq coq-header-line--error-cache errors))
+
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
   (when coq-use-header-line
@@ -130,126 +187,130 @@ columns in header line, NUM-COLS is number of its columns."
 				     (setq coq--header-text (coq-header-line--make-line num-cols)))
 				   coq--header-text))
 	       (all-spans (spans-all))
-	       (error-count 0))
-	  (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
-	  ;; update for queued region
-	  (when (and proof-queue-span (span-buffer proof-queue-span))
-	    (let ((start (coq-header--calc-offset (span-start proof-queue-span) num-lines num-cols t))
-		  (end (coq-header--calc-offset (span-end proof-queue-span) num-lines num-cols)))
-	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
-		(add-face-text-property start end `(:background ,coq-queue-color) nil header-text))))
-	  ;; update for locked region
-	  (when (and proof-locked-span (span-buffer proof-locked-span))
-	    (let ((start (coq-header--calc-offset (span-start proof-locked-span) num-lines num-cols t))
-		  (end (coq-header--calc-offset (span-end proof-locked-span) num-lines num-cols)))
-	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
-		(add-face-text-property start end `(:background ,coq-locked-color) nil header-text))))
-	  ;; update for sent region
-	  (when (and proof-sent-span (> (proof-sent-end) (point-min)))
-	    (let ((start (coq-header--calc-offset (span-start proof-sent-span) num-lines num-cols t))
-		  (end (coq-header--calc-offset (span-end proof-sent-span) num-lines num-cols)))
-	      (if (display-graphic-p)
-		  (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
-		(add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
-	  ;; update for specially-colored spans, errors
-	  (let* ((vanilla-spans (cl-remove-if-not
-				 (lambda (sp)
-				   (eq (span-property sp 'type) 'vanilla))
-				 all-spans))
-		 (vanilla-count (float (length vanilla-spans)))
-		 (colored-spans (cl-remove-if-not
-				 (lambda (sp)
-				   (let ((type ))
-				     (eq (span-property sp 'type) 'pg-special-coloring)))
-				 all-spans))
-		 (error-spans (cl-remove-if-not
+	       (typed-spans (cl-remove-if-not
 			       (lambda (sp)
-				 (let ((type ))
-				   (eq (span-property sp 'type) 'pg-error)))
+				 (span-property sp 'type))
 			       all-spans))
-		 (sorted-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
-									(coq-header--colored-span-rank sp2)))))
-		 (processing-count 0)
-		 (processed-count 0)
-		 (incomplete-count 0))
-	    (dolist (span sorted-spans)
-	      (let* ((old-face (span-property span 'face))
-		     (new-face-color (gethash old-face face-mapper-tbl))
-		     (new-face (car new-face-color))
-		     (color (cdr new-face-color))
-		     (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
-		     (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
-		     (start (car adj-endpoints))
-		     (end (cdr adj-endpoints)))
-		;; don't color for "sent" spans with proof-locked-face
-		(pcase (span-property span 'face)
-		  (`proof-processing-face (setq processing-count (1+ processing-count)))
-		  (`proof-processed-face (setq processed-count (1+ processed-count)))
-		  (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count))))
+	       (vanilla-spans (cl-remove-if-not
+			       (lambda (sp)
+				 (eq (span-property sp 'type) 'vanilla))
+			       typed-spans))
+	       (vanilla-count (float (length vanilla-spans)))
+	       (colored-spans (cl-remove-if-not
+			       (lambda (sp)
+				 (eq (span-property sp 'type) 'pg-special-coloring))
+			       typed-spans))
+	       (error-spans (cl-remove-if-not
+			     (lambda (sp)
+			       (eq (span-property sp 'type) 'pg-error))
+			     typed-spans))
+	       (error-count 0)
+	       (processing-count 0)
+	       (processed-count 0)
+	       (incomplete-count 0))
+	  ;; see if we need to update anything
+	  (when (coq-header-line--need-update error-spans)
+	    (coq-header-line--build-cache error-spans)
+	    (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
+	    ;; update for queued region
+	    (when (and proof-queue-span (span-buffer proof-queue-span))
+	      (let ((start (coq-header--calc-offset (span-start proof-queue-span) num-lines num-cols t))
+		    (end (coq-header--calc-offset (span-end proof-queue-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
-		  (add-face-text-property start end `(:background ,color) nil header-text))))
-	    ;; update for secondary locked region
-	    (when (and proof-locked-secondary-span (span-buffer proof-locked-secondary-span))
-	      (let ((start (coq-header--calc-offset (span-start proof-locked-secondary-span) num-lines num-cols t))
-		    (end (coq-header--calc-offset (span-end proof-locked-secondary-span) num-lines num-cols)))
+		    (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-face-text-property start end `(:background ,coq-queue-color) nil header-text))))
+	    ;; update for locked region
+	    (when (and proof-locked-span (span-buffer proof-locked-span))
+	      (let ((start (coq-header--calc-offset (span-start proof-locked-span) num-lines num-cols t))
+		    (end (coq-header--calc-offset (span-end proof-locked-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
-		  (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
-	    (dolist (span error-spans)
-		    (setq error-count (1+ error-count))
-		    (let* ((old-face proof-error-face)
-			   (new-face-color (gethash old-face face-mapper-tbl))
-			   (new-face (car new-face-color))
-			   (color (cdr new-face-color))
-			   (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
-			   (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
-			   (start (car adj-endpoints))
-			   (end (cdr adj-endpoints)))
-		      (if (display-graphic-p)
-			  (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
-			(add-face-text-property start end `(:background ,color) nil header-text))))
-		  (setq header-line-format header-text)
-		  ;; update mode line indicators
-		  (when (consp mode-line-format)
-		    (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
-						      mode-line-format)))
-		      (let ((processing-pct
-			     (if (<= vanilla-count 0.0)
-				 (format " --- ") ; format avoids possibly duplicated interned string
-			       (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
-			    (processed-pct
-			     (if (<= vanilla-count 0.0)
-				 (format " --- ")
-			       (format " %.1f%%%% "
-				       (* (/ processed-count vanilla-count) 100.0))))
-			    (incomplete-text
-			     (if (<= vanilla-count 0.0)
-				 (format " --- ")
-			       (format " %d " incomplete-count)))
-			    (error-text 
-			     (if (<= vanilla-count 0.0)
-				 (format " ---")
-			       (format " %d" error-count))))
-			(if (display-graphic-p)
-			    (progn
-			      (add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face help-echo "Percentage of statements still being processed by Coq") processing-pct)
-			      (add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face help-echo "Percentage of statements processed by Coq") processed-pct)
-			      (add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face help-echo "Number of proofs not yet kernel-checked by Coq") incomplete-text)
-			      (add-text-properties 1 (length error-text) `(face ,proof-error-face help-echo "Number of errors found by Coq") error-text))
-			  (add-face-text-property 1 (1- (length processing-pct)) `(:background ,(cdr (gethash proof-processing-face face-mapper-tbl))) nil processing-pct)
-			  (add-face-text-property 1 (1- (length processed-pct)) `(:background ,(cdr (gethash proof-processed-face face-mapper-tbl))) nil processed-pct)
-			  (add-face-text-property 1 (1- (length incomplete-text)) `(:background ,(cdr (gethash proof-incomplete-face face-mapper-tbl))) nil incomplete-text)
-			  (add-face-text-property 1 (length error-text) `(:background ,(cdr (gethash proof-error-face face-mapper-tbl))) nil error-text))
-			(setq mode-line-format (reverse
-						(cons error-text
-						      (cons incomplete-text
-							    (cons processed-pct
-								  (cons processing-pct (reverse filtered-fmt))))))))))
-		  (force-window-update proof-script-buffer)
-		  (redisplay t)))))))
+		    (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-face-text-property start end `(:background ,coq-locked-color) nil header-text))))
+	    ;; update for sent region
+	    (when (and proof-sent-span (> (proof-sent-end) (point-min)))
+	      (let ((start (coq-header--calc-offset (span-start proof-sent-span) num-lines num-cols t))
+		    (end (coq-header--calc-offset (span-end proof-sent-span) num-lines num-cols)))
+		(if (display-graphic-p)
+		    (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
+		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
+	    ;; update for specially-colored spans, errors
+	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
+										 (coq-header--colored-span-rank sp2))))))
+	      (dolist (span sorted-colored-spans)
+		(let* ((old-face (span-property span 'face))
+		       (new-face-color (gethash old-face face-mapper-tbl))
+		       (new-face (car new-face-color))
+		       (color (cdr new-face-color))
+		       (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+		       (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+		       (start (car adj-endpoints))
+		       (end (cdr adj-endpoints)))
+		  (pcase (span-property span 'face)
+		    (`proof-processing-face (setq processing-count (1+ processing-count)))
+		    (`proof-processed-face (setq processed-count (1+ processed-count)))
+		    (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count))))
+		  (if (display-graphic-p)
+		      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end `(:background ,color) nil header-text))))
+	      ;; update for secondary locked region
+	      (when (and proof-locked-secondary-span (span-buffer proof-locked-secondary-span))
+		(let ((start (coq-header--calc-offset (span-start proof-locked-secondary-span) num-lines num-cols t))
+		      (end (coq-header--calc-offset (span-end proof-locked-secondary-span) num-lines num-cols)))
+		  (if (display-graphic-p)
+		      (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
+	      (dolist (span error-spans)
+		(setq error-count (1+ error-count))
+		(let* ((old-face proof-error-face)
+		       (new-face-color (gethash old-face face-mapper-tbl))
+		       (new-face (car new-face-color))
+		       (color (cdr new-face-color))
+		       (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+		       (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+		       (start (car adj-endpoints))
+		       (end (cdr adj-endpoints)))
+		  (if (display-graphic-p)
+		      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end `(:background ,color) nil header-text))))
+	      (setq header-line-format header-text)
+	      ;; update mode line indicators
+	      (when (consp mode-line-format)
+		(let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
+						  mode-line-format)))
+		  (let ((processing-pct
+			 (if (<= vanilla-count 0.0)
+			     (format " --- ") ; format avoids possibly duplicated interned string
+			   (format " %.1f%%%% " (* (/ processing-count vanilla-count) 100.0))))
+			(processed-pct
+			 (if (<= vanilla-count 0.0)
+			     (format " --- ")
+			   (format " %.1f%%%% "
+				   (* (/ processed-count vanilla-count) 100.0))))
+			(incomplete-text
+			 (if (<= vanilla-count 0.0)
+			     (format " --- ")
+			   (format " %d " incomplete-count)))
+			(error-text 
+			 (if (<= vanilla-count 0.0)
+			     (format " ---")
+			   (format " %d" error-count))))
+		    (if (display-graphic-p)
+			(progn
+			  (add-text-properties 1 (1- (length processing-pct)) `(face ,proof-processing-face help-echo "Percentage of statements still being processed by Coq") processing-pct)
+			  (add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face help-echo "Percentage of statements processed by Coq") processed-pct)
+			  (add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face help-echo "Number of proofs not yet kernel-checked by Coq") incomplete-text)
+			  (add-text-properties 1 (length error-text) `(face ,proof-error-face help-echo "Number of errors found by Coq") error-text))
+		      (add-face-text-property 1 (1- (length processing-pct)) `(:background ,(cdr (gethash proof-processing-face face-mapper-tbl))) nil processing-pct)
+		      (add-face-text-property 1 (1- (length processed-pct)) `(:background ,(cdr (gethash proof-processed-face face-mapper-tbl))) nil processed-pct)
+		      (add-face-text-property 1 (1- (length incomplete-text)) `(:background ,(cdr (gethash proof-incomplete-face face-mapper-tbl))) nil incomplete-text)
+		      (add-face-text-property 1 (length error-text) `(:background ,(cdr (gethash proof-error-face face-mapper-tbl))) nil error-text))
+		    (setq mode-line-format (reverse
+					    (cons error-text
+						  (cons incomplete-text
+							(cons processed-pct
+							      (cons processing-pct (reverse filtered-fmt))))))))))
+	      (force-window-update proof-script-buffer)
+	      (redisplay t))))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
@@ -271,18 +332,15 @@ columns in header line, NUM-COLS is number of its columns."
 		 (destination-line (/ (* x-pos num-lines) window-pixels)))
 	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
-(defvar coq-header-line--timer-set nil)
 ;; how often to run header update, in seconds
-(defvar coq-header-line--timer-interval 0.75)
+(defvar coq-header-line--timer-interval 1)
 
 (defvar coq-header-line--timer nil)
 
 (defun coq-header-line--start-timer ()
-  (unless coq-header-line--timer-set
-    (setq coq-header-line--timer-set t)
-    (unless coq-header-line--timer
-      (setq coq-header-line--timer
-	    (run-at-time 1 coq-header-line--timer-interval 'coq-header-line-update)))))
+  (unless coq-header-line--timer
+    (setq coq-header-line--timer
+	  (run-at-time 1 coq-header-line--timer-interval 'coq-header-line-update))))
 
 ;; called by coq-mode-hook
 ;; can't use update function, because proof-script-buffer not yet set
@@ -316,6 +374,10 @@ columns in header line, NUM-COLS is number of its columns."
      (buffer-list))))
 
 (when coq-use-header-line
+  ;; if process filter is taking a lot of time, 
+  ;; eventually, we'll call header line update
+  ;; but just do it once to avoid CPU hogging
+  (setq timer-max-repeats 1)
   (add-hook 'proof-deactivate-scripting-hook 'coq-header-line-clear-all))
 
 (provide 'coq-header-line)
