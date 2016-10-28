@@ -76,6 +76,8 @@
     ;; may get several identical feedbacks, use just first one
     (when span-colored
       (remhash state-id tbl)
+      ;; inform header line we've updated a span color
+      (coq-header-line-set-color-update)
       (span-delete span-colored))))
 
 (defun coq-span-color-span-processed (xml)

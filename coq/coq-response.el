@@ -136,6 +136,7 @@ Only when three-buffer-mode is enabled."
 	       (start-offs (byte-offset-to-char-offset trimmed-string error-start))
 	       (end-offs (byte-offset-to-char-offset trimmed-string error-end))
 	       (error-span (span-make (+ start start-offs) (+ start end-offs))))
+	  (coq-header-line-set-color-update)
 	  (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
 	  (span-set-property error-span 'face proof-error-face)
 	  (span-set-property error-span 'help-echo msg)
