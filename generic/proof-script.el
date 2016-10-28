@@ -237,6 +237,15 @@ Action is taken on all script buffers."
     (save-excursion
       (goto-char end)
       (skip-chars-forward " \t")
+      ;; include following processed comments
+      (when (> (proof-queue-or-locked-end) (point))
+	(let* ((spans (cl-remove-if-not
+		       (lambda (sp) (span-property sp 'type)) (spans-in (point) (proof-queue-or-locked-end))))
+	       (sorted-spans (sort spans (lambda (sp1 sp2) (< (span-start sp1) (span-start sp2))))))
+	  (while (and sorted-spans (eq (span-property (car sorted-spans) 'type) 'comment))
+	    (goto-char (span-end (car sorted-spans)))
+	    (setq sorted-spans (cdr sorted-spans)))
+	  (skip-chars-forward " \t")))
       ;; adjust sent region
       (span-set-endpoints proof-sent-span 1 (point)))))
 
