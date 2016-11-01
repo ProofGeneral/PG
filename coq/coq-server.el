@@ -677,10 +677,10 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-value (xml)
   (let ((status (coq-xml-val xml)))
     (pcase status
-      ("fail"
-       (coq-server--handle-failure-value xml))
       ("good"
-       (coq-server--handle-good-value xml)))))
+       (coq-server--handle-good-value xml))
+      ("fail"
+       (coq-server--handle-failure-value xml)))))
 
 ;; delay creating the XML so it will have the right state-id
 ;; the returned lambda captures the passed item, which is why 
