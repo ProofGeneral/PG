@@ -48,10 +48,31 @@
 	  (setq face-rank (1+ face-rank))))
       face-assocs)
 
+;; cache of positions to line numbers
+;; avoids traversing buffer
+(defvar coq-header--line-number-tbl (make-hash-table))
+;; special entry = -1 maps to buffer size that validates the entries
+(defvar coq-header--line-number-key -1)
+(puthash coq-header--line-number-key 0 coq-header--line-number-tbl)
+
+(defun coq-header--get-line-number (pos)
+  (let ((result (gethash pos coq-header--line-number-tbl)))
+    (unless result
+      (setq result (line-number-at-pos pos))
+      (puthash pos result coq-header--line-number-tbl))
+    result))
+
+(defun coq-header--validate-line-number-tbl ()
+  (let ((cached-size (gethash coq-header--line-number-key coq-header--line-number-tbl))
+	(curr-size (buffer-size)))
+    (unless (= cached-size curr-size)
+      (clrhash coq-header--line-number-tbl)
+      (puthash coq-header--line-number-key curr-size coq-header--line-number-tbl))))
+
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
 this is start of offset, otherwise it's the end"
-  (let* ((pos-line (line-number-at-pos pos))
+  (let* ((pos-line (coq-header--get-line-number pos))
 	 (adjusted-line (if start (1- pos-line) pos-line)))
     (/ (* adjusted-line cols) lines)))
 
@@ -60,10 +81,10 @@ this is start of offset, otherwise it's the end"
 in header line clamped to number of lines contained between START-POS and END-POS buffer positions."
   (let* ((start (coq-header--calc-offset start-pos num-lines num-cols t))
 	 (end (coq-header--calc-offset end-pos num-lines num-cols))
-	 (start-line (line-number-at-pos start-pos))
-	 (end-line (line-number-at-pos end-pos))
-	 ;; lines in script
-	 (endpoint-lines (1+ (- end-line start-line)))
+	 ;; no. of lines in script
+	 (endpoint-lines (max 1
+			      (- (coq-header--get-line-number end-pos)
+				 (coq-header--get-line-number start-pos))))
 	 ;; cols in header line
 	 (start-end-cols (1+ (- end start))))
     (if (<= start-end-cols endpoint-lines)
@@ -173,6 +194,29 @@ columns in header line, NUM-COLS is number of its columns."
   (setq coq-header-line--force-update-p t)
   (coq-header-line-update))
 
+;; from span, get face, color, endpoints
+(defun coq-header-line--span-info (span num-cols num-lines)
+  (let* ((old-face (span-property span 'face))
+	 (new-face-color (gethash old-face face-mapper-tbl))
+	 (new-face (car new-face-color))
+	 (color (cdr new-face-color))
+	 (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
+	 (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
+	 (start (car adj-endpoints))
+	 (end (cdr adj-endpoints)))
+    (cons (cons new-face color)
+	  (cons start end))))
+
+;; accessors for span info
+(defun coq-header-line--span-info-face (span-info)
+  (caar span-info))
+(defun coq-header-line--span-info-color (span-info)
+  (cdar span-info))
+(defun coq-header-line--span-info-start (span-info)
+  (cadr span-info))
+(defun coq-header-line--span-info-end (span-info)
+  (cddr span-info))
+
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
   (when coq-use-header-line
@@ -182,12 +226,14 @@ columns in header line, NUM-COLS is number of its columns."
 	;; see if we need to update anything
 	(when (coq-header-line--need-update)
 	  (coq-header-line--build-cache)
+	  ;; check if we need to flush line number cache
+	  (coq-header--validate-line-number-tbl)
 	  (let* ((num-cols (window-total-width (get-buffer-window)))
-		 (num-lines
+		 (num-lines 
 		  (save-excursion
 		    (goto-char (point-max))
 		    (skip-chars-backward " \t\n")
-		    (line-number-at-pos (point))))
+		    (coq-header--get-line-number (point))))
 		 (header-text (progn (unless (= num-cols (length coq--header-text))
 				       (setq coq--header-text (coq-header-line--make-line num-cols)))
 				     coq--header-text))
@@ -239,14 +285,11 @@ columns in header line, NUM-COLS is number of its columns."
 	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 										 (coq-header--colored-span-rank sp2))))))
 	      (dolist (span sorted-colored-spans)
-		(let* ((old-face (span-property span 'face))
-		       (new-face-color (gethash old-face face-mapper-tbl))
-		       (new-face (car new-face-color))
-		       (color (cdr new-face-color))
-		       (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
-		       (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
-		       (start (car adj-endpoints))
-		       (end (cdr adj-endpoints)))
+		(let* ((span-info (coq-header-line--span-info span num-cols num-lines))
+		       (new-face (coq-header-line--span-info-face span-info))
+		       (color (coq-header-line--span-info-color span-info))
+		       (start (coq-header-line--span-info-start span-info))
+		       (end (coq-header-line--span-info-end span-info)))
 		  (pcase (span-property span 'face)
 		    (`proof-processing-face (setq processing-count (1+ processing-count)))
 		    (`proof-processed-face (setq processed-count (1+ processed-count)))
@@ -264,14 +307,11 @@ columns in header line, NUM-COLS is number of its columns."
 	      ;; update for specially-colored spans
 	      (dolist (span error-spans)
 		(setq error-count (1+ error-count))
-		(let* ((old-face proof-error-face)
-		       (new-face-color (gethash old-face face-mapper-tbl))
-		       (new-face (car new-face-color))
-		       (color (cdr new-face-color))
-		       (endpoints (coq-header--calc-endpoints (span-start span) (span-end span) num-lines num-cols))
-		       (adj-endpoints (coq-header--tiebreak-endpoints (car endpoints) (cdr endpoints) num-cols))
-		       (start (car adj-endpoints))
-		       (end (cdr adj-endpoints)))
+		(let* ((span-info (coq-header-line--span-info span num-cols num-lines))
+		       (new-face (coq-header-line--span-info-face span-info))
+		       (color (coq-header-line--span-info-color span-info))
+		       (start (coq-header-line--span-info-start span-info))
+		       (end (coq-header-line--span-info-end span-info)))
 		  (if (display-graphic-p)
 		      (add-face-text-property start end new-face nil header-text)
 		    (add-face-text-property start end `(:background ,color) nil header-text))))
@@ -329,12 +369,12 @@ columns in header line, NUM-COLS is number of its columns."
 	     (x-pos (car (posn-x-y event-posn))))
 	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'down-mouse-1))
 	  (let* ((window-pixels (window-pixel-width (get-buffer-window)))
-		 (num-lines (line-number-at-pos (point-max)))
+		 (num-lines (coq-header--get-line-number (point-max)))
 		 (destination-line (/ (* x-pos num-lines) window-pixels)))
 	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
 ;; how often to run header update, in seconds
-(defvar coq-header-line--timer-interval 2)
+(defvar coq-header-line--timer-interval 4)
 
 (defvar coq-header-line--timer nil)
 
@@ -352,7 +392,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (save-excursion
 	      (goto-char (point-max))
 	      (skip-chars-backward "\t\n")
-	      (line-number-at-pos (point))))
+	      (coq-header--get-line-number (point))))
 	   (header-text (coq-header-line--make-line num-cols)))
       (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
       (setq coq--header-text header-text)
