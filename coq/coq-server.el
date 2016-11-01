@@ -636,13 +636,13 @@ is gone and we have to close the secondary locked span."
    ((coq-server--value-status-p xml)
     (coq-server--handle-status xml))
 
-   ((coq-server--value-empty-goals-p xml)
-    ;; Response to Goals, with no current goals
-    (coq-server--handle-empty-goals))
-
    ((coq-server--value-goals-p xml)
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
+
+   ((coq-server--value-empty-goals-p xml)
+    ;; Response to Goals, with no current goals
+    (coq-server--handle-empty-goals))
 
    ((coq-server--value-unit-p xml)
     ;; unit response, nothing to do
@@ -809,15 +809,17 @@ is gone and we have to close the secondary locked span."
       (puthash worker-id status coq-worker-status-tbl))))
 
 (defun coq-server--handle-filedependency (xml)
-  (let* ((content (coq-xml-at-path xml '(feedback (_) (feedback_content))))
-	 (from-option (coq-xml-at-path content '(feedback_content (option val))))
-	 (from (if (equal from-option "some")
-		   (coq-xml-body1 (coq-xml-at-path content '(feedback_content (option (string)))))
-		 "<None>"))
-	 (file-string (coq-xml-at-path content '(feedback_content (option) (string))))
-	 (file (coq-xml-body1 file-string)))
-    (proof-debug-message "File dependency, from: %s dep: %s" from file)))
-
+  ;; don't bother parsing unless we're printing the debug msg
+  (when proof-general-debug-messages
+    (let* ((content (coq-xml-at-path xml '(feedback (_) (feedback_content))))
+	   (from-option (coq-xml-at-path content '(feedback_content (option val))))
+	   (from (if (equal from-option "some")
+		     (coq-xml-body1 (coq-xml-at-path content '(feedback_content (option (string)))))
+		   "<None>"))
+	   (file-string (coq-xml-at-path content '(feedback_content (option) (string))))
+	   (file (coq-xml-body1 file-string)))
+      (proof-debug-message "File dependency, from: %s dep: %s" from file))))
+  
 ;; queue feedback if there's no span with its state id
 ;;  for later processing
 (defun coq-server--queue-feedback (state-id xml)
