@@ -339,13 +339,24 @@ to write out the traversal code by hand each time."
     (insert (coq-xml-unescape-string contents))
     (goto-char (point-min))))
 
-(defun coq-xml-get-next-xml ()
-  (ignore-errors ; returns nil if no XML available
+(defun coq-xml-get-next-xml-1 ()
+  (ignore-errors 
     (goto-char (point-min))
     (let ((xml (xml-parse-tag-1)))
       (when xml
 	(delete-region (point-min) (point)))
       xml)))
+
+(defun coq-xml-get-next-xml ()
+  (ignore-errors
+    (when (> (buffer-size) 0)
+      (let ((xml (libxml-parse-xml-region (point-min) (point-max))))
+	(if xml
+	    (delete-region (point-min) (point-max))
+	  ;; shouldn't happen, but try slow XML parser in case
+	  ;; more than one XML tree in buffer
+	  (setq xml (coq-xml-get-next-xml-1)))
+	xml))))
 
 (provide 'coq-xml)
 
