@@ -125,51 +125,53 @@ columns in header line, NUM-COLS is number of its columns."
 ;; list of error spans
 (defvar coq-header-line--error-cache nil)
 
-;; flag to see if we need to do expensive color span caching
+;; flag to see if colors have been updated
 (defvar coq-header-line--color-update-p nil)
 
-;; set flag when span color changedf
+;; flag to force update
+(defvar coq-header-line--force-update-p nil)
+
+;; set flag when span color changed
 (defun coq-header-line-set-color-update ()
   (setq coq-header-line--color-update-p t))
 
-(defun coq-header-line--need-update (errors)
+(defun coq-header-line--need-update ()
   ;; tests in increasing order of expense
-  (or coq-header-line--color-update-p
-      (null coq-header-line--queue-cache)
-      (and proof-queue-span (span-buffer proof-queue-span)
+  (or coq-header-line--force-update-p
+      coq-header-line--color-update-p
+      (and coq-header-line--queue-cache
+	   proof-queue-span (span-buffer proof-queue-span)
 	   (not (and (= (span-start proof-queue-span)
 			(car coq-header-line--queue-cache))
 		     (= (span-end proof-queue-span)
 			(cdr coq-header-line--queue-cache)))))
-      (null coq-header-line--locked-cache)
-      (and proof-locked-span (span-buffer proof-locked-span)
-	   (not (and (= (span-start proof-locked-span)
-			(car coq-header-line--locked-cache))
-		     (= (span-end proof-locked-span)
-			(cdr coq-header-line--locked-cache)))))
-      (null coq-header-line--sent-cache)
-      (and proof-sent-span (span-buffer proof-sent-span)
-	   (not (and (= (span-start proof-sent-span)
-			(car coq-header-line--sent-cache))
-		     (= (span-end proof-sent-span)
-			(cdr coq-header-line--sent-cache)))))
-      (cl-set-exclusive-or errors coq-header-line--error-cache)))
+      (and coq-header-line--locked-cache
+	   proof-locked-span (span-buffer proof-locked-span)
+	   (not (= (span-end proof-locked-span)
+		   coq-header-line--locked-cache)))
+      (and coq-header-line--sent-cache
+	   proof-sent-span (span-buffer proof-sent-span)
+	   (not (= (span-end proof-sent-span)
+		   coq-header-line--sent-cache)))))
 
-(defun coq-header-line--build-cache (errors)
+(defun coq-header-line--build-cache ()
+  (setq coq-header-line--force-update-p nil)
   (setq coq-header-line--color-update-p nil)
   (setq coq-header-line--queue-cache
-	(and proof-queue-span
+	(and proof-queue-span (span-buffer proof-queue-span)
 	     (cons (span-start proof-queue-span)
 		   (span-end proof-queue-span))))
   (setq coq-header-line--locked-cache
-	(and proof-locked-span
-	     (cons (span-start proof-locked-span)
-		   (span-end proof-locked-span))))
+	(and proof-locked-span (span-buffer proof-locked-span)
+	     (span-end proof-locked-span)))
   (setq coq-header-line--sent-cache
-	(and proof-sent-span
-	     (cons (span-start proof-sent-span)
-		   (span-end proof-sent-span))))
-  (setq coq-header-line--error-cache errors))
+	(and proof-sent-span (span-buffer proof-sent-span)
+	     (span-end proof-sent-span))))
+
+(defun coq-header-line--force-update (&rest _args)
+  "Forced update of header line. _ARGS passed by some hooks, ignored"
+  (setq coq-header-line--force-update-p t)
+  (coq-header-line-update))
 
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
@@ -177,61 +179,61 @@ columns in header line, NUM-COLS is number of its columns."
     (if (null proof-script-buffer)
 	(coq-header-line-clear-all)
       (with-current-buffer proof-script-buffer
-	(let* ((num-cols (window-total-width (get-buffer-window)))
-	       (num-lines
-		(save-excursion
-		  (goto-char (point-max))
-		  (skip-chars-backward "\t\n")
-		  (line-number-at-pos (point))))
-	       (header-text (progn (unless (= num-cols (length coq--header-text))
-				     (setq coq--header-text (coq-header-line--make-line num-cols)))
-				   coq--header-text))
-	       (all-spans (spans-all))
-	       (typed-spans (cl-remove-if-not
+	;; see if we need to update anything
+	(when (coq-header-line--need-update)
+	  (coq-header-line--build-cache)
+	  (let* ((num-cols (window-total-width (get-buffer-window)))
+		 (num-lines
+		  (save-excursion
+		    (goto-char (point-max))
+		    (skip-chars-backward " \t\n")
+		    (line-number-at-pos (point))))
+		 (header-text (progn (unless (= num-cols (length coq--header-text))
+				       (setq coq--header-text (coq-header-line--make-line num-cols)))
+				     coq--header-text))
+		 (all-spans (spans-all))
+		 (typed-spans (cl-remove-if-not
 			       (lambda (sp)
 				 (span-property sp 'type))
 			       all-spans))
-	       (vanilla-spans (cl-remove-if-not
+		 (vanilla-spans (cl-remove-if-not
+				 (lambda (sp)
+				   (eq (span-property sp 'type) 'vanilla))
+				 typed-spans))
+		 (vanilla-count (float (length vanilla-spans)))
+		 (colored-spans (cl-remove-if-not
+				 (lambda (sp)
+				   (eq (span-property sp 'type) 'pg-special-coloring))
+				 typed-spans))
+		 (error-spans (cl-remove-if-not
 			       (lambda (sp)
-				 (eq (span-property sp 'type) 'vanilla))
+				 (eq (span-property sp 'type) 'pg-error))
 			       typed-spans))
-	       (vanilla-count (float (length vanilla-spans)))
-	       (colored-spans (cl-remove-if-not
-			       (lambda (sp)
-				 (eq (span-property sp 'type) 'pg-special-coloring))
-			       typed-spans))
-	       (error-spans (cl-remove-if-not
-			     (lambda (sp)
-			       (eq (span-property sp 'type) 'pg-error))
-			     typed-spans))
-	       (error-count 0)
-	       (processing-count 0)
-	       (processed-count 0)
-	       (incomplete-count 0))
-	  ;; see if we need to update anything
-	  (when (coq-header-line--need-update error-spans)
-	    (coq-header-line--build-cache error-spans)
+		 (error-count 0)
+		 (processing-count 0)
+		 (processed-count 0)
+		 (incomplete-count 0))
 	    (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
 	    ;; update for queued region
 	    (when (and proof-queue-span (span-buffer proof-queue-span))
 	      (let ((start (coq-header--calc-offset (span-start proof-queue-span) num-lines num-cols t))
 		    (end (coq-header--calc-offset (span-end proof-queue-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-queue-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end 'coq-queue-face nil header-text)
 		  (add-face-text-property start end `(:background ,coq-queue-color) nil header-text))))
 	    ;; update for locked region
 	    (when (and proof-locked-span (span-buffer proof-locked-span))
 	      (let ((start (coq-header--calc-offset (span-start proof-locked-span) num-lines num-cols t))
 		    (end (coq-header--calc-offset (span-end proof-locked-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end 'coq-locked-face nil header-text)
 		  (add-face-text-property start end `(:background ,coq-locked-color) nil header-text))))
 	    ;; update for sent region
 	    (when (and proof-sent-span (> (proof-sent-end) (point-min)))
 	      (let ((start (coq-header--calc-offset (span-start proof-sent-span) num-lines num-cols t))
 		    (end (coq-header--calc-offset (span-end proof-sent-span) num-lines num-cols)))
 		(if (display-graphic-p)
-		    (set-text-properties start end `(face coq-sent-face pointer ,coq-header-line-mouse-pointer) header-text)
+		    (add-face-text-property start end 'coq-sent-face nil header-text)
 		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
 	    ;; update for specially-colored spans, errors
 	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
@@ -250,14 +252,14 @@ columns in header line, NUM-COLS is number of its columns."
 		    (`proof-processed-face (setq processed-count (1+ processed-count)))
 		    (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count))))
 		  (if (display-graphic-p)
-		      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		      (add-face-text-property start end new-face nil header-text)
 		    (add-face-text-property start end `(:background ,color) nil header-text))))
 	      ;; update for secondary locked region
 	      (when (and proof-locked-secondary-span (span-buffer proof-locked-secondary-span))
 		(let ((start (coq-header--calc-offset (span-start proof-locked-secondary-span) num-lines num-cols t))
 		      (end (coq-header--calc-offset (span-end proof-locked-secondary-span) num-lines num-cols)))
 		  (if (display-graphic-p)
-		      (set-text-properties start end `(face coq-secondary-locked-face pointer ,coq-header-line-mouse-pointer) header-text)
+		      (add-face-text-property start end 'coq-secondary-locked-face nil header-text)
 		    (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
 	      (dolist (span error-spans)
 		(setq error-count (1+ error-count))
@@ -270,7 +272,7 @@ columns in header line, NUM-COLS is number of its columns."
 		       (start (car adj-endpoints))
 		       (end (cdr adj-endpoints)))
 		  (if (display-graphic-p)
-		      (set-text-properties start end `(face ,new-face pointer ,coq-header-line-mouse-pointer) header-text)
+		      (add-face-text-property start end new-face nil header-text)
 		    (add-face-text-property start end `(:background ,color) nil header-text))))
 	      (setq header-line-format header-text)
 	      ;; update mode line indicators
@@ -314,10 +316,8 @@ columns in header line, NUM-COLS is number of its columns."
 
 ;; update header line at strategic points
 (when coq-use-header-line
-  (add-hook 'window-size-change-functions 'coq-header-line-update)
-  (add-hook 'window-configuration-change-hook 'coq-header-line-update)
-  (add-hook 'proof-server-insert-hook 'coq-header-line-update)
-  (add-hook 'proof-state-change-hook 'coq-header-line-update))
+  (add-hook 'window-size-change-functions 'coq-header-line--force-update)
+  (add-hook 'window-configuration-change-hook 'coq-header-line--force-update))
 
 (defun coq-header-line-mouse-handler ()
   (interactive)
