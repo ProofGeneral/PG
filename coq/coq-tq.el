@@ -286,37 +286,37 @@ needs, and the answer to the question."
 	      (setq tag-pairs (cdr tag-pairs))))
 	  (if (or complete partial)
 	      (let ((answer (buffer-substring (point-min) (point)))
-		  (oob (tq-queue-empty tq))
-		  src
-		  fun)
-	      (if oob
-		  (setq src "coqtop-oob"
-			fun tq--oob-handler)
-		(setq src "coqtop"
-		      fun (tq-queue-head-fn tq)))
-	      ;; for complete response, can safely pop item from queue
-	      (when complete
-		(tq-set-complete tq))
-	      (delete-region (point-min) (point))
-	      (unwind-protect
-		  (condition-case err
-		      (progn
-			(tq-maybe-log src answer)
-			(funcall fun
-				 (tq-queue-head-closure tq)
-				 answer 
-				 (tq-call tq)
-				 (tq-span tq)))
-		    (error (proof-debug-message
-			    (concat "Error when processing "
-				    (if complete "complete" "partial")
-				    " Coq response: %s, response was: \"%s\"") err answer)))
+		    (oob (tq-queue-empty tq))
+		    src
+		    fun)
+		(if oob
+		    (setq src "coqtop-oob"
+			  fun tq--oob-handler)
+		  (setq src "coqtop"
+			fun (tq-queue-head-fn tq)))
+		;; for complete response, can safely pop item from queue
 		(when complete
-		  (tq-queue-pop tq)))
-	      (setq done nil))
+		  (tq-set-complete tq))
+		(delete-region (point-min) (point))
+		(unwind-protect
+		    (condition-case err
+			(progn
+			  (tq-maybe-log src answer)
+			  (funcall fun
+				   (tq-queue-head-closure tq)
+				   answer 
+				   (tq-call tq)
+				   (tq-span tq)))
+		      (error (proof-debug-message
+			      (concat "Error when processing "
+				      (if complete "complete" "partial")
+				      " Coq response: %s, response was: \"%s\"") err answer)))
+		  (when complete
+		    (tq-queue-pop tq)))
+		(setq done nil))
 	    ;; unfinished response
 	    ;; in case response broken over end tag, move back
-	    (goto-char (max (point-min) (- (point) keep-len)))))))))
+	    (goto-char (max (point-min) (- (point-max) keep-len)))))))))
 
 (provide 'coq-tq)
 
