@@ -93,10 +93,11 @@
 
 (defun tq-qpb                 (tq) (car tq))
 (defun tq-queue               (tq) (car (tq-qpb tq)))
-(defun tq-end-regexp          (tq) (car (cdr (tq-qpb tq))))
-(defun tq-other-tags          (tq) (car (cdr (cdr (tq-qpb tq)))))
-(defun tq-process             (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
-(defun tq-buffer              (tq) (cdr (cdr (cdr (cdr (tq-qpb tq))))))
+(defun tq-keep-len            (tq) (car (cdr (tq-qpb tq))))
+(defun tq-end-tags            (tq) (car (cdr (cdr (tq-qpb tq)))))
+(defun tq-other-tags          (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
+(defun tq-process             (tq) (car (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
+(defun tq-buffer              (tq) (cdr (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
 
 (defun tq-state-items         (tq) (cdr tq))
 (defun tq-response-complete   (tq) (car (tq-state-items tq)))
@@ -184,19 +185,24 @@
 ;;; Core functionality
 
 ;;;###autoload
-(defun tq-create (process oob-handler end-regexp other-tags)
+(defun tq-create (process oob-handler end-tags other-tags)
   "Create and return a transaction queue communicating with PROCESS.
 PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
 to a tcp server on another machine. The OOB-HANDLER handles responses
 from the PROCESS that are not transactional."
-  (let* ((qpb (cons nil
-		    (cons end-regexp
-			  (cons other-tags
-				(cons process
-				      (generate-new-buffer
-				       (concat " tq-temp-"
-					       (process-name process))))))))
+  (let* ((all-end-tags (mapcar 'length (cons (cdr end-tags)
+					     (mapcar 'cdr other-tags))))
+	 ;; the length we have to back up if we get part of a response
+	 (keep-len (1- (apply 'max all-end-tags)))
+	 (qpb (cons nil
+		    (cons keep-len
+			  (cons end-tags
+				(cons other-tags
+				      (cons process
+					    (generate-new-buffer
+					     (concat " tq-temp-"
+						     (process-name process)))))))))
 	 (state (cons nil (cons nil nil)))
 	 (tq (cons qpb state)))
     (buffer-disable-undo (tq-buffer tq))
@@ -253,13 +259,21 @@ needs, and the answer to the question."
   "Check TQ's buffer for the regexp at the head of the queue."
   (let ((buffer (tq-buffer tq))
 	(done nil))
+    (goto-char (point-min))
     (while (and (not done) (buffer-live-p buffer) (> (buffer-size) 0))
       (with-current-buffer buffer
 	(setq done t)
-	(goto-char (point-min))
-	(let* ((complete (re-search-forward (tq-end-regexp tq) nil t))
+	(let* ((complete-tags (tq-end-tags tq))
+	       (start-tag (car complete-tags))
+	       (start-len (length start-tag))
+	       (end-tag (cdr complete-tags))
+	       (complete (and
+			  (> (buffer-size) start-len)
+			  (equal (buffer-substring 1 (1+ start-len)) start-tag)
+			  (search-forward end-tag nil t)))
 	       (partial complete)
-	       (tag-pairs (tq-other-tags tq)))
+	       (tag-pairs (tq-other-tags tq))
+	       (keep-len (tq-keep-len tq)))
 	  (while (and (not partial) tag-pairs)
 	    (let* ((tag-pair (car tag-pairs))
 		   (start-tag (car tag-pair))
@@ -267,11 +281,11 @@ needs, and the answer to the question."
 		   (end-tag (cdr tag-pair)))
 	      (when (and (> (buffer-size) start-len)
 			 (equal (buffer-substring 1 (1+ start-len)) start-tag)
-			 (re-search-forward end-tag nil t))
+			 (search-forward end-tag nil t))
 		(setq partial t))
 	      (setq tag-pairs (cdr tag-pairs))))
-	  (when (or complete partial)
-	    (let ((answer (buffer-substring (point-min) (point)))
+	  (if (or complete partial)
+	      (let ((answer (buffer-substring (point-min) (point)))
 		  (oob (tq-queue-empty tq))
 		  src
 		  fun)
@@ -299,7 +313,10 @@ needs, and the answer to the question."
 				    " Coq response: %s, response was: \"%s\"") err answer)))
 		(when complete
 		  (tq-queue-pop tq)))
-	      (setq done nil))))))))
+	      (setq done nil))
+	    ;; unfinished response
+	    ;; in case response broken over end tag, move back
+	    (goto-char (max (point-min) (- (point) keep-len)))))))))
 
 (provide 'coq-tq)
 
