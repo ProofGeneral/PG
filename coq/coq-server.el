@@ -204,6 +204,13 @@ is gone and we have to close the secondary locked span."
       (goto-char coq-server--sticky-point))
     (setq coq-server--sticky-point nil)))
 
+;; unit response
+(defvar coq-server--value-unit-footprint '(value (unit)))
+
+(defun coq-server--value-unit-p (xml)
+  (equal (coq-xml-footprint xml)
+	 coq-server--value-unit-footprint))
+
 ;; no current goal
 (defvar coq-server--value-empty-goals-footprint
   '(value (option)))
@@ -622,34 +629,47 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-good-value (xml)
   (cond
-   ((coq-server--backtrack-before-focus-p xml)
-    ;; retract before current focus
-    (coq-server--before-focus-backtrack))
-   ((coq-server--value-new-focus-p xml)
-    ;; retract re-opens a proof, creates focus
-    (coq-server--new-focus-backtrack xml))
-   ((coq-server--value-simple-backtrack-p xml)
-    ;; simple backtrack
-    (coq-server--simple-backtrack))
-   ((coq-server--value-end-focus-p xml) 
-    ;; close of focus after Add
-    (coq-server--end-focus xml))
-   ((coq-server--value-init-state-id-p xml) 
-    ;; Init, get first state id
-    (coq-server--set-init-state-id xml))
    ((coq-server--value-new-state-id-p xml) 
     ;; Add that updates state id
     (coq-server--set-new-state-id xml))
+
+   ((coq-server--value-status-p xml)
+    (coq-server--handle-status xml))
+
    ((coq-server--value-empty-goals-p xml)
     ;; Response to Goals, with no current goals
     (coq-server--handle-empty-goals))
+
    ((coq-server--value-goals-p xml)
     ;; Response to Goals, some current goals
     (coq-server--handle-goals xml))
-   ((coq-server--value-status-p xml)
-    (coq-server--handle-status xml))
+
+   ((coq-server--value-unit-p xml)
+    ;; unit response, nothing to do
+    nil)
+   
+   ((coq-server--value-simple-backtrack-p xml)
+    ;; simple backtrack
+    (coq-server--simple-backtrack))
+
+   ((coq-server--backtrack-before-focus-p xml)
+    ;; retract before current focus
+    (coq-server--before-focus-backtrack))
+
+   ((coq-server--value-new-focus-p xml)
+    ;; retract re-opens a proof, creates focus
+    (coq-server--new-focus-backtrack xml))
+
+   ((coq-server--value-end-focus-p xml) 
+    ;; close of focus after Add
+    (coq-server--end-focus xml))
+
+   ((coq-server--value-init-state-id-p xml) 
+    ;; Init, get first state id
+    (coq-server--set-init-state-id xml))
+
    ;; some good values are unprocessed, for example, responses to Query 
-   (t (proof-debug-message "Unprocessed good value: %s" xml))))
+   (t (error (format "Unknown good value: %s" xml)))))
 
 ;; we distinguish value responses by their syntactic structure
 ;; and a little bit by some global state
