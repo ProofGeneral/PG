@@ -235,7 +235,7 @@ columns in header line, NUM-COLS is number of its columns."
 		(if (display-graphic-p)
 		    (add-face-text-property start end 'coq-sent-face nil header-text)
 		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
-	    ;; update for specially-colored spans, errors
+	    ;; update for specially-colored spans
 	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
 										 (coq-header--colored-span-rank sp2))))))
 	      (dolist (span sorted-colored-spans)
@@ -261,6 +261,7 @@ columns in header line, NUM-COLS is number of its columns."
 		  (if (display-graphic-p)
 		      (add-face-text-property start end 'coq-secondary-locked-face nil header-text)
 		    (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
+	      ;; update for specially-colored spans
 	      (dolist (span error-spans)
 		(setq error-count (1+ error-count))
 		(let* ((old-face proof-error-face)
