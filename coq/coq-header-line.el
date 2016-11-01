@@ -50,7 +50,7 @@
 
 ;; cache of positions to line numbers
 ;; avoids traversing buffer
-(defvar coq-header--line-number-tbl (make-hash-table))
+(defvar coq-header--line-number-tbl (make-hash-table :test 'eq))
 ;; special entry = -1 maps to buffer size that validates the entries
 (defvar coq-header--line-number-key -1)
 (puthash coq-header--line-number-key 0 coq-header--line-number-tbl)
