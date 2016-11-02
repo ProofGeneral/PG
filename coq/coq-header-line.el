@@ -386,11 +386,6 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line-init ()
   (when coq-use-header-line
     (let* ((num-cols (window-total-width (get-buffer-window)))
-	   (num-lines
-	    (save-excursion
-	      (goto-char (point-max))
-	      (skip-chars-backward "\t\n")
-	      (coq-header--get-line-number (point))))
 	   (header-text (coq-header-line--make-line num-cols)))
       (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
       (setq coq--header-text header-text)
