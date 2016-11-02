@@ -222,17 +222,19 @@ is gone and we have to close the secondary locked span."
 	 coq-server--value-empty-goals-footprint))
 
 (defun coq-server--handle-empty-goals ()
+  (setq proof-prover-proof-completed 0)
   (coq-server--clear-goals-buffer))
 
 ;; use path instead of footprint, because inner bits may vary
 (defun coq-server--value-goals-p (xml)
   (coq-xml-at-path xml '(value (option (goals)))))
 
-(defun coq-server--handle-goal (goal)
-  ;; nothing to do, apparently
-  (and nil goal)) ;; prevents compiler warning
+;; nothing to do, apparently
+(defun coq-server--handle-goal (_goal)
+  nil)
 
 (defun coq-server--handle-goals (xml)
+  (setq proof-prover-proof-completed nil)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
 	 (current-goals (coq-xml-body (nth 0 all-goals)))
 	 ;; background goals have a different, extra structure than the other ones

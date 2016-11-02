@@ -167,7 +167,6 @@ assistant during the last group of commands.")
 If non-nil, the value counts the commands from the last command
 of the proof (starting from 1).")
 
-
 
 ;;
 ;; Internal variables

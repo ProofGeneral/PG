@@ -49,6 +49,8 @@
 (require 'coq-header-line)
 (require 'coq-tq)
 (require 'coq-xml)
+(require 'coq-company-compat)
+
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")

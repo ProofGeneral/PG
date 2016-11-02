@@ -1557,7 +1557,7 @@ Subroutine of `proof-done-advancing-save'."
      (t
       (pg-add-element 'command id bodyspan)))
 
-    (if proof-prover-proof-completed
+    (when proof-prover-proof-completed
 	(cl-incf proof-prover-proof-completed))
 
     (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
