@@ -927,7 +927,7 @@ the proof assistant in some way."
   :type 'function
   :group 'proof-server)
 
-(defcustom proof-server-log-traffic t
+(defcustom proof-server-log-traffic nil
   "Log traffic between emacs and prover to a buffer."
   :type 'boolean
   :group 'proof-server)
