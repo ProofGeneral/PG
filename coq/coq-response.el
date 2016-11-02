@@ -4,6 +4,7 @@
 (require 'proof-server)
 (require 'coq-indent)
 (require 'coq-header-line)
+(require 'coq-company-compat)
 
 (defvar coq-time-commands nil)        ; defpacustom
 (defconst coq--time-prefix "Time "
@@ -62,6 +63,7 @@ Only when three-buffer-mode is enabled."
 
 ;; display something in response buffer
 (defun coq--display-response (msg)
+  (setq proof-shell-last-response-output msg)
   (pg-response-message msg)
   (coq-optimise-resp-windows-if-option))
 

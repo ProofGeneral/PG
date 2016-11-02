@@ -16,6 +16,7 @@
 (require 'coq-xml)
 (require 'coq-span)
 (require 'coq-header-line)
+(require 'coq-company-compat)
 
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
@@ -223,6 +224,7 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-empty-goals ()
   (setq proof-prover-proof-completed 0)
+  (setq proof-shell-last-goals-output "")
   (coq-server--clear-goals-buffer))
 
 ;; use path instead of footprint, because inner bits may vary
@@ -273,7 +275,9 @@ is gone and we have to close the secondary locked span."
 	    (coq-server--handle-goal goal))
 	  (setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text))))
       (if goal-text
-	  (pg-goals-display (mapconcat 'identity goal-text "\n\n") goal-text)
+	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
+	    (setq proof-shell-last-goals-output formatted-goals)
+	    (pg-goals-display formatted-goals t))
 	;; else, clear goals display
 	(coq-server--clear-goals-buffer)
 	;; mimic the coqtop REPL, though it would be better to come via XML

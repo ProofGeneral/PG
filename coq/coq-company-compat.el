@@ -2,6 +2,15 @@
 
 ;; Compatibility file for use with company-coq
 
+;;; DECLARATIONS
+
+;; variables
+
+(defvar proof-shell-last-goals-output "")
+(defvar proof-shell-last-response-output "")
+
+;;; ALIASES
+
 ;; variables
 
 (defvaralias 'proof-shell-proof-completed 'proof-prover-proof-completed)
