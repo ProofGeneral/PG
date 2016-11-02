@@ -158,6 +158,11 @@ columns in header line, NUM-COLS is number of its columns."
   ;; tests in increasing order of expense
   (or coq-header-line--force-update-p
       coq-header-line--color-update-p
+      ;; forces update after retraction
+      (and proof-queue-span
+	   (span-detached-p proof-queue-span)
+	   proof-locked-span
+	   (span-detached-p proof-locked-span))
       (and coq-header-line--queue-cache
 	   proof-queue-span (span-buffer proof-queue-span)
 	   (not (and (= (span-start proof-queue-span)
@@ -402,16 +407,13 @@ columns in header line, NUM-COLS is number of its columns."
      (lambda (buf)
        (with-current-buffer buf
 	 (when (eq major-mode 'coq-mode)
-	   (coq-header-line-init)
-	   (force-window-update buf)
-	   (redisplay t))))
+	   (coq-header-line-init))))
      (buffer-list))))
 
 (when coq-use-header-line
   ;; if process filter is taking a lot of time, 
   ;; eventually, we'll call header line update
   ;; but just do it once to avoid CPU hogging
-  (setq timer-max-repeats 1)
-  (add-hook 'proof-deactivate-scripting-hook 'coq-header-line-clear-all))
+  (setq timer-max-repeats 1))
 
 (provide 'coq-header-line)
