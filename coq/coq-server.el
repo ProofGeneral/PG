@@ -886,7 +886,7 @@ is gone and we have to close the secondary locked span."
 	 (msg (flatten-pp (coq-xml-body message-str))))
     (coq--display-response msg)))
 
-(defun coq-server--xml-loop (response call span)
+(defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML
   (when response
     (erase-buffer)
@@ -895,14 +895,13 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--current-call call) 
     (setq coq-server--current-span span) 
     (let ((xml (coq-xml-get-next-xml)))
-	(while xml
-	  (pcase (coq-xml-tag xml)
-	    ;; feedbacks are most common, so put first here
-	    (`feedback (coq-server--handle-feedback xml))
-	    (`value (coq-server--handle-value xml))
-	    (`message (coq-server--handle-message xml))
-	    (t (proof-debug-message "Unknown coqtop response %s" xml)))
-	  (setq xml (coq-xml-get-next-xml))))
+      (pcase (coq-xml-tag xml)
+	;; feedbacks are most common, so put first here
+	(`feedback (coq-server--handle-feedback xml))
+	(`value (coq-server--handle-value xml))
+	(`message (coq-server--handle-message xml))
+	(t (proof-debug-message "Unknown coqtop response %s" xml)))
+      (setq xml (coq-xml-get-next-xml)))
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
       (tq-flush coq-server-transaction-queue)
@@ -912,12 +911,12 @@ is gone and we have to close the secondary locked span."
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
   (with-current-buffer coq-xml-response-buffer
-    (coq-server--xml-loop response call span)))
+    (coq-server--xml-parse response call span)))
 
 ;; process OOB response from Coq
 (defun coq-server-process-oob (_closure oob call span)
   (with-current-buffer coq-xml-oob-buffer
-    (coq-server--xml-loop oob call span)))
+    (coq-server--xml-parse oob call span)))
 
 (defun coq-server-handle-tq-response (special-processor response call span)
   ;; if there's a special processor, use that
