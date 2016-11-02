@@ -143,8 +143,6 @@ columns in header line, NUM-COLS is number of its columns."
 (defvar coq-header-line--locked-cache nil)
 ;; (start . end) of proof-sent-span
 (defvar coq-header-line--sent-cache nil)
-;; list of error spans
-(defvar coq-header-line--error-cache nil)
 
 ;; flag to see if colors have been updated
 (defvar coq-header-line--color-update-p nil)
