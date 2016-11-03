@@ -66,9 +66,6 @@ kill buffer hook.  This variable is used when buffer-file-name is nil.")
 (defalias 'proof-active-buffer-fake-minor-mode
   'proof-toggle-active-scripting)
 
-(defvar proof-merged-locked-end nil
-  "When merging locked regions, holds value of end of merged region")
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1438,11 +1435,13 @@ With ARG, turn on scripting iff ARG is positive."
 ;; The main function for dealing with processed spans is
 ;; `proof-done-advancing'
 
-(defun proof-merge-locked ()
+(defun proof-merge-locked (end)
   (with-current-buffer proof-script-buffer
-    (proof-set-locked-end proof-merged-locked-end)
-    (goto-char proof-merged-locked-end)
-    (setq proof-merged-locked-end nil)))
+    (proof-set-locked-end end)
+    (when (span-live-p proof-queue-span)
+      (proof-set-queue-start end))
+    (proof-set-sent-end end)
+    (goto-char end)))
 
 (defun proof-done-advancing (span)
   "The callback function for `assert-until-point'.
@@ -1454,9 +1453,7 @@ Argument SPAN has just been processed."
     ;; may have already extended locked region beyond the 
     ;; just-processed span's end
 
-    (if proof-merged-locked-end
-	(proof-merge-locked)
-      (proof-set-locked-end end))
+    (proof-set-locked-end end)
 
     (when (span-live-p proof-queue-span)
       (proof-set-queue-start end))
