@@ -704,7 +704,9 @@ is gone and we have to close the secondary locked span."
   ;; proof-locked-span may be detached, so lookup needed span
   (let* ((locked-span (coq-server--get-span-with-predicate
 		       (lambda (span)
-			 (equal (span-property span 'face) 'proof-locked-face))))
+			 (equal (span-property span 'face) 'proof-locked-face))
+		       ;; locked region always begins at point-min
+		       (overlays-at (point-min))))
 	 (locked-end (or (and locked-span (span-end locked-span)) 0))
 	 (error-end (span-end error-span)))
     (>= error-end locked-end)))
