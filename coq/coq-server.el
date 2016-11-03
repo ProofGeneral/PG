@@ -556,9 +556,7 @@ is gone and we have to close the secondary locked span."
   (with-current-buffer proof-script-buffer
     (let ((new-end (span-end proof-locked-secondary-span)))
       (coq-server--remove-secondary-locked-span)
-      (proof-set-sent-end new-end)
-      ;; proof-done-advancing uses this to set merged locked end
-      (setq proof-merged-locked-end new-end))))
+      (proof-merge-locked new-end))))
 
 ;; did we backtrack to a point before the current focus
 (defun coq-server--backtrack-before-focus-p (xml)
