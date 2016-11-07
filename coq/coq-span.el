@@ -38,10 +38,10 @@
 	    (skip-chars-forward " \t\n")
 	    ;; if there's a "sent" span here, remove it, because now we have
 	    ;; relevant feedback
-	    (let* ((spans-here (overlays-at (point)))
-		   (sent-spans (cl-remove-if-not (lambda (sp) (span-property sp 'sent))
-						 spans-here)))
-	      (mapc 'span-delete sent-spans))
+	    (mapc (lambda (sp)
+		    (when (span-property sp 'sent)
+		      (span-delete sp)))
+		  (overlays-at (point)))
 	    ;; if there's an existing colored span at point, re-use it,
 	    ;;  because want most recent coloring
 	    (let ((span-processing (or (gethash state-id tbl)
