@@ -889,9 +889,6 @@ width is synchronized by coq (?!)."
 ;; variables first.
 (add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
 
-;; reset header line on retract
-(add-hook 'proof-retract-command-hook 'coq-header-line-clear-all)
-
 (defvar coq-current-line-width nil
   "Current line width of the Coq printing width.
 Its value will be updated whenever a command is sent if
