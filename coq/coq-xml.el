@@ -308,7 +308,7 @@ to write out the traversal code by hand each time."
 (defun coq-xml-string-to-xml (s)
   (with-temp-buffer
     (insert s)
-    (car (xml-parse-region (point-min) (point-max)))))
+    (libxml-parse-xml-region (point-min) (point-max))))
 
 ;; buffer for gluing coqtop responses into XML
 ;; leading space makes buffer invisible, for the most part
