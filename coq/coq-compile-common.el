@@ -310,7 +310,9 @@ Note that the trailing dot in \"Require A.\" is not part of the module
 identifier and should therefore not be matched by this regexp.")
 
 (defconst coq-require-command-regexp
-  "\\(?:^From[ \t\n]+\\(?1:[A-Za-z0-9_']+\\(?:\\.[A-Za-z0-9_']+\\)*\\)[ \t\n]*\\)?\\(?2:Require[ \t\n]+\\(?:Import\\|Export\\)?\\)[ \t\n]*"
+  (concat "^\\(?:From[ \t\n]+\\(?1:[A-Za-z0-9_']+\\(?:\\.[A-Za-z0-9_']+\\)*\\)"
+	  "[ \t\n]*\\)?"
+	  "\\(?2:Require[ \t\n]+\\(?:Import\\|Export\\)?\\)[ \t\n]*")
   "Regular expression matching Require commands in Coq.
 Should match \"Require\" with its import and export variants up to (but not
 including) the first character of the first required module. The required
@@ -452,7 +454,11 @@ the command whose output will appear in the buffer."
       (font-lock-fontify-buffer)))
   ;; Make it so the next C-x ` will use this buffer.
   (setq next-error-last-buffer (get-buffer coq-compile-response-buffer))
-  (proof-display-and-keep-buffer coq-compile-response-buffer 1 t))
+  (proof-display-and-keep-buffer coq-compile-response-buffer 1 t)
+  ;; Partial fix for #54: ensure that the compilation response
+  ;; buffer is not in a dedicated window.
+  (mapc (lambda (w) (set-window-dedicated-p w nil))
+      (get-buffer-window-list coq-compile-response-buffer nil t)))
 
 
 ;;; save some buffers
