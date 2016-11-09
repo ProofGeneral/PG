@@ -462,12 +462,12 @@ coqtop."
   (let ((args nil))
     (dolist (opt options)
       (pcase opt
-	((or "-byte" "-op")
-	 (push opt args))
-	(`("-arg" ,concatenated-args)
-	 (setq args
-	       (append (split-string (cadr opt) coq--project-file-separator)
-		       args)))))
+        ((or "-byte" "-op")
+         (push opt args))
+        (`("-arg" ,concatenated-args)
+         (setq args
+               (append (split-string-and-unquote (cadr opt) coq--project-file-separator)
+                       args)))))
     args))
 
 (defun coq--extract-load-path-1 (option base-directory)
