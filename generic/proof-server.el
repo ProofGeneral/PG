@@ -117,14 +117,7 @@ derived Emacs mode; here, we call the procedure directly."
       
       ;; TODO why is this after the loop
       '(if proof-tree-external-display
-	   (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))
-
-    ;; ordinarily, locked region merger happens when
-    ;; items pulled off proof-action-list
-    ;; at the end of the script, that list may be empty
-    ;; so do the merger here
-    (when proof-merged-locked-end
-      (proof-merge-locked))))
+	   (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))))
 
 ;;;###autoload
 (defun proof-server-ready-prover (queuemode)
