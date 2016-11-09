@@ -4,7 +4,7 @@ This is a summary of main changes.  For details, please see
 the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
-* Changes of Proof General 5.0 from Proof General 4.3
+* Changes of Proof General 5.0 from Proof General 4.4.1
 
 ** Support for Coq asynchronous processing mode
 
@@ -27,6 +27,14 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
      https://proofgeneral.github.io/
 
    The Github repository remains for downloading the latest code.
+
+* Changes of Proof General 4.4.1 from Proof General 4.4
+
+** Generic changes
+
+*** bug fixes
+    - Using query-replace (or replace-string) in the processed region
+      doesn't wrongly jump to the first match anymore.
 
 * Changes of Proof General 4.4 from Proof General 4.3
 
