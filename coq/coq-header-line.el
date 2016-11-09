@@ -73,16 +73,19 @@
 (defun coq-header--build-line-number-vector ()
   (let ((line-number 0)
 	(line-beginning 0)
-	(entries nil))
+	(entries nil)
+	(done nil))
     (save-excursion
       (goto-char (point-min))
-      (while (< (point) (point-max))
+      (while (not done)
 	(when (bolp)
 	  (setq line-beginning (point)))
-	(when (eolp)
+	(when (or (eolp) (eobp))
 	  (let ((entry (cons line-beginning (point))))
 	    (setq entries (cons entry entries))))
-	(forward-char)))
+	(if (eobp)
+	    (setq done t)
+	  (forward-char))))
     (setq coq-header--line-number-vector (vconcat (reverse entries)))))
 
 ;; binary search for pos in line number vector
@@ -90,28 +93,28 @@
   (let* ((len (length coq-header--line-number-vector))
 	 (low-bound 0)
 	 (high-bound (1- len))
-	 (slot (floor (/ high-bound 2.0)))
-	 line-number
-	 (slot-last -1))
+	 (slot-last -1)
+	 slot
+	 line-number)
     ;; we should always find the line number in this loop
     ;; but check to avoid infinite loop, just in case
-    (while (and (not line-number) (not (= slot slot-last)))
+    (while (and (not line-number) (not (equal slot slot-last)))
+      (setq slot-last slot)
+      (setq slot (floor (/ (+ low-bound high-bound) 2.0)))
       (let* ((entry (aref coq-header--line-number-vector slot))
 	     (start (car entry))
 	     (end (cdr entry)))
-	(setq slot-last slot)
 	(cond
 	 ((< pos start) ; before interval
-	  (setq high-bound (1- slot))
-	  (setq slot (floor (/ (+ low-bound high-bound) 2.0))))
+	  (setq high-bound (1- slot)))
 	 ((> pos end)   ; after interval
-	  (setq low-bound (1+ slot))
-	  (setq slot (floor (/ (+ low-bound high-bound) 2.0))))
+	  (setq low-bound (1+ slot)))
 	 (t ; found it
 	  (setq line-number (1+ slot))))))
     ;; if loop failed, fall back to Emacs code for line number
     ;; should never happen
     (unless line-number
+      (proof-debug-message "coq-header--line-number-at-pos: failed to find line number for pos: %s" pos)
       (setq line-number (line-number-at-pos)))
     line-number))
 
