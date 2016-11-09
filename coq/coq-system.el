@@ -265,17 +265,17 @@ directory."
 See `coq-load-path' for the possible forms of ENTRY and to which
 options they are translated.  Use a non-nil PRE-V85 flag to
 request compatibility handling of flags."
-  (pcase entry
-    ((and (pred stringp) dir)
-     (list "-Q" (expand-file-name dir) "\"\""))
-    (`(ocamlimport ,dir)
-     (list "-I" (expand-file-name dir)))
-    (`(recnoimport ,dir ,alias)
-     (list "-Q" (expand-file-name dir) alias))
-    ((or `(rec ,dir ,alias) `(,dir ,alias))
-     (list "-R" (expand-file-name dir) alias))))
+    (pcase entry
+      ((and (pred stringp) dir)
+       (list "-Q" (expand-file-name dir) ""))
+      (`(ocamlimport ,dir)
+       (list "-I" (expand-file-name dir)))
+      (`(recnoimport ,dir ,alias)
+       (list "-Q" (expand-file-name dir) alias))
+      ((or `(rec ,dir ,alias) `(,dir ,alias))
+       (list "-R" (expand-file-name dir) alias))))
 
-(defun coq-include-options (load-path &optional current-directory)
+(defun coq-include-options (load-path &optional current-directory pre-v85)
   "Build the base list of include options for coqc, coqdep and coqtop.
 The options list includes all entries from argument LOAD-PATH
 \(which should be `coq-load-path' of the buffer that invoked the
