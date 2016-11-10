@@ -231,10 +231,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--value-goals-p (xml)
   (coq-xml-at-path xml '(value (option (goals)))))
 
-;; nothing to do, apparently
-(defun coq-server--handle-goal (_goal)
-  nil)
-
 (defun coq-server--handle-goals (xml)
   (setq proof-prover-proof-completed nil)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
@@ -247,12 +243,8 @@ is gone and we have to close the secondary locked span."
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
 	 goal-text)
       (when abandoned-goals
-	(dolist (goal abandoned-goals)
-	  (coq-server--handle-goal goal))
 	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals t 'Abandoned) goal-text)))
       (when shelved-goals
-	(dolist (goal shelved-goals)
-	  (coq-server--handle-goal goal))
 	(setq goal-text (cons (coq-server--make-goals-string shelved-goals t 'Shelved) goal-text)))
       (when bg-goals-pairs
 	(dolist (pair bg-goals-pairs)
@@ -260,8 +252,6 @@ is gone and we have to close the secondary locked span."
 		 (after-focus-pair-list (nth 1 (coq-xml-body pair)))
 		 (before-pair-goals (reverse (coq-xml-body before-focus-pair-list)))
 		 (after-pair-goals (coq-xml-body after-focus-pair-list)))
-	    (mapc 'coq-server--handle-goal before-pair-goals)
-	    (mapc 'coq-server--handle-goal after-pair-goals)
 	    (setq before-bg-goals (append before-bg-goals before-pair-goals))
 	    (setq after-bg-goals (append after-bg-goals after-pair-goals))))
 	;; cons after goals, then before goals, so see before, then after in output
@@ -270,10 +260,7 @@ is gone and we have to close the secondary locked span."
 	(when before-bg-goals 
 	  (setq goal-text (cons (coq-server--make-goals-string before-bg-goals t "Unfocused (before focus)") goal-text))))
       (when current-goals
-	(progn
-	  (dolist (goal current-goals)
-	    (coq-server--handle-goal goal))
-	  (setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text))))
+	(setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text)))
       (if goal-text
 	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
 	    (setq proof-shell-last-goals-output formatted-goals)
