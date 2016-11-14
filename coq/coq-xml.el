@@ -341,11 +341,12 @@ to write out the traversal code by hand each time."
 (defvar coq-xml-richpp-space-token "#SPC#")
 
 (defun coq-xml-set-space-token ()
-  (message "COQ VERSION: %s" (coq-version))
-  (setq coq-xml--space-token
-	(if (equal (coq-version) "8.5")
-	    " "
-	  coq-xml-richpp-space-token)))
+  (let* ((full-version (coq-version t))
+	 (version (substring full-version 0 3)))
+    (setq coq-xml--space-token
+	  (if (equal version "8.5")
+	      " "
+	    coq-xml-richpp-space-token))))
 
 (defun coq-xml-unescape-string (s)
   (replace-regexp-in-string "&nbsp;" coq-xml--space-token s))
