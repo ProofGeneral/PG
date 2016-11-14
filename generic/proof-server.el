@@ -140,22 +140,25 @@ with proof-shell-ready-prover."
 	   (prog-name-list (cdr command-line-and-names))
 	   (redirect (if (eq system-type 'windows-nt)
 			     "2> NUL"
-			     "2> /dev/null")))
-      ;; leading space hides the buffer
-      (let* ((server-buffer (get-buffer-create (concat " *" proof-assistant "*"))) 
-	     (the-process (apply 'start-process-shell-command (cons proof-assistant (cons server-buffer (append prog-command-line (list redirect)))))))
-	(if the-process
-	    (progn 
-	      (set-process-sentinel the-process 'proof-server-sentinel)
-	      (setq proof-server-process the-process
-		    proof-server-buffer server-buffer)
-	      (proof-prover-make-associated-buffers)
-	      (proof-server-config-done))
-	  (message-box "Failed to start prover with command line: \"%s\"" prog-command-line))))
-    (when proof-server-fiddle-frames
-      (save-selected-window
-	(save-selected-frame
-	 (proof-multiple-frames-enable))))))
+		       "2> /dev/null"))
+	   ;; leading space hides the buffer
+	   (curr-proc-conn-type process-connection-type)
+	   (_ (setq process-connection-type nil))
+	   (server-buffer (get-buffer-create (concat " *" proof-assistant "*")))
+	   (the-process (apply 'start-process-shell-command (cons proof-assistant (cons server-buffer (append prog-command-line (list redirect))))))
+	   (_ (setq process-connection-type curr-proc-conn-type)))
+      (if the-process
+	  (progn 
+	    (set-process-sentinel the-process 'proof-server-sentinel)
+	    (setq proof-server-process the-process
+		  proof-server-buffer server-buffer)
+	    (proof-prover-make-associated-buffers)
+	    (proof-server-config-done))
+	(message-box "Failed to start prover with command line: \"%s\"" prog-command-line))))
+  (when proof-server-fiddle-frames
+    (save-selected-window
+      (save-selected-frame
+       (proof-multiple-frames-enable)))))
 
 ;;;###autoload
 (defun proof-server-invisible-command (cmd)
