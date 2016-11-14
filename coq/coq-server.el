@@ -760,11 +760,13 @@ is gone and we have to close the secondary locked span."
 ;; TODO : use that information
 (defun flatten-pp (items)
   (let* ((result (mapconcat (lambda (it)
-			      (if (and (consp it) (consp (cdr it)))
-				  (flatten-pp (cddr it))
-				it))
-			    items "")))
-    result))
+				  (if (and (consp it) (consp (cdr it)))
+				      (flatten-pp (cddr it))
+				    it))
+				items "")))
+    ;; when we unescaped the response, we put a special token for spaces
+    ;; inside richpp tags, now put back the spaces
+    (replace-regexp-in-string coq-xml-richpp-space-token " " result)))
 
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)

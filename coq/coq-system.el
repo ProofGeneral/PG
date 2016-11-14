@@ -92,7 +92,7 @@ processes."
   :type 'string
   :group 'coq)
 
-(defcustom coq-pinned-version "8.5" ; TODO make nil for release
+(defcustom coq-pinned-version nil 
   "Which version of Coq you are using.
 There should be no need to set this value unless you use the trunk from
 the Coq github repository. For Coq versions with decent version numbers

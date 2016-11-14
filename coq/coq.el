@@ -1283,6 +1283,9 @@ Near here means PT is either inside or just aside of a comment."
   (if (file-exists-p coq-tags)
       (set (make-local-variable 'tags-table-list)
            (cons coq-tags tags-table-list)))
+
+  ;; unescaping
+  (coq-xml-set-space-token)
   
   (set (make-local-variable 'blink-matching-paren-dont-ignore-comments) t)
 

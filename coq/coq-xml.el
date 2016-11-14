@@ -8,6 +8,7 @@
 (require 'xml)
 (require 'cl-lib)
 (require 'coq-state-vars)
+(require 'coq-system)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
@@ -329,8 +330,25 @@ to write out the traversal code by hand each time."
   (goto-char (point-max))
   (insert s))
 
+(defvar coq-xml-richpp-space-token "##SPC##")
+
+;; the token that replaces &nbsp;
+;; in 8.5, just a space
+;; in 8.6+, a string token used to preserve structure within richpp tags
+;;  eventually replaced with a space
+(defvar coq-xml--space-token nil)
+
+(defvar coq-xml-richpp-space-token "#SPC#")
+
+(defun coq-xml-set-space-token ()
+  (message "COQ VERSION: %s" (coq-version))
+  (setq coq-xml--space-token
+	(if (equal (coq-version) "8.5")
+	    " "
+	  coq-xml-richpp-space-token)))
+
 (defun coq-xml-unescape-string (s)
-  (replace-regexp-in-string "&nbsp;" " " s))
+  (replace-regexp-in-string "&nbsp;" coq-xml--space-token s))
 
 ;; XML parser does not understand &nbsp;
 (defun coq-xml-unescape-buffer ()
