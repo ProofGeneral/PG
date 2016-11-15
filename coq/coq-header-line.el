@@ -427,7 +427,7 @@ columns in header line, NUM-COLS is number of its columns."
 	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
 ;; how often to run header update, in seconds
-(defvar coq-header-line--timer-interval 4)
+(defvar coq-header-line--timer-interval 1)
 
 (defvar coq-header-line--timer nil)
 
