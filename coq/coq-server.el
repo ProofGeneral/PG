@@ -579,9 +579,9 @@ is gone and we have to close the secondary locked span."
 
 ;; no backtrack on Query call (Coq bug #5041)
 (defun coq-server--backtrack-on-call-failure ()
-  ;; that doesn't always replace &nbsp; with a space
+  ;; always unescape to space, default unescaping might be different
   (let ((xml (coq-xml-string-to-xml
-	      (coq-xml-unescape-string coq-server--current-call))))
+	      (coq-xml-unescape-string coq-server--current-call " "))))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
 	(not (equal call-val "Query"))))))
