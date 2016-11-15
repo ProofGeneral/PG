@@ -205,7 +205,7 @@ from the PROCESS that are not transactional."
 					    (generate-new-buffer
 					     (concat " tq-temp-"
 						     (process-name process)))))))))
-	 (state (cons 0 (cons t (cons nil nil))))
+	 (state (cons 1 (cons t (cons nil nil))))
 	 (tq (cons qpb state)))
     (buffer-disable-undo (tq-buffer tq))
     (setq tq--oob-handler oob-handler)
