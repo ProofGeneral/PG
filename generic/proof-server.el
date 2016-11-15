@@ -142,11 +142,16 @@ with proof-shell-ready-prover."
 			     "2> NUL"
 		       "2> /dev/null"))
 	   ;; leading space hides the buffer
-	   (curr-proc-conn-type process-connection-type)
-	   (_ (setq process-connection-type nil))
 	   (server-buffer (get-buffer-create (concat " *" proof-assistant "*")))
-	   (the-process (apply 'start-process-shell-command (cons proof-assistant (cons server-buffer (append prog-command-line (list redirect))))))
-	   (_ (setq process-connection-type curr-proc-conn-type)))
+	   (the-process
+	    (let ((curr-proc-conn-type process-connection-type))
+	      (setq process-connection-type nil)
+	      (unwind-protect 
+		  (apply 'start-process-shell-command
+			 (cons proof-assistant
+			       (cons server-buffer
+				     (append prog-command-line (list redirect)))))
+		(setq process-connection-type curr-proc-conn-type)))))
       (if the-process
 	  (progn 
 	    (set-process-sentinel the-process 'proof-server-sentinel)
