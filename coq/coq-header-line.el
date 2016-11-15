@@ -405,8 +405,7 @@ columns in header line, NUM-COLS is number of its columns."
 						(cons incomplete-text
 						      (cons processed-pct
 							    (cons processing-pct (reverse filtered-fmt))))))))))
-	    (force-window-update proof-script-buffer)
-	    (redisplay t)))))))
+	    (force-window-update proof-script-buffer)))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
