@@ -348,8 +348,8 @@ to write out the traversal code by hand each time."
 	      " "
 	    coq-xml-richpp-space-token))))
 
-(defun coq-xml-unescape-string (s)
-  (replace-regexp-in-string "&nbsp;" coq-xml--space-token s))
+(defun coq-xml-unescape-string (s &optional token)
+  (replace-regexp-in-string "&nbsp;" (or token coq-xml--space-token) s))
 
 ;; XML parser does not understand &nbsp;
 (defun coq-xml-unescape-buffer ()
