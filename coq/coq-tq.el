@@ -88,23 +88,25 @@
 ;;; Accessors
 
 ;; A transaction queue object looks like:
-;;  (queue . (end-regexp . (other-tags . (process . buffer)))) .  -- the car
-;;  (response-complete . (call . span)))                          -- the cdr
+;;  (queue . (keep-len . (end-tags . (other-tags . (process . buffer))))) .  -- the car
+;;  (last-search-point . (response-complete . (call . span)))                -- the cdr
 
-(defun tq-qpb                 (tq) (car tq))
-(defun tq-queue               (tq) (car (tq-qpb tq)))
-(defun tq-keep-len            (tq) (car (cdr (tq-qpb tq))))
-(defun tq-end-tags            (tq) (car (cdr (cdr (tq-qpb tq)))))
-(defun tq-other-tags          (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
-(defun tq-process             (tq) (car (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
-(defun tq-buffer              (tq) (cdr (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
+(defun tq-qpb                   (tq) (car tq))
+(defun tq-queue                 (tq) (car (tq-qpb tq)))
+(defun tq-keep-len              (tq) (car (cdr (tq-qpb tq))))
+(defun tq-end-tags              (tq) (car (cdr (cdr (tq-qpb tq)))))
+(defun tq-other-tags            (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
+(defun tq-process               (tq) (car (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
+(defun tq-buffer                (tq) (cdr (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
 
-(defun tq-state-items         (tq) (cdr tq))
-(defun tq-response-complete   (tq) (car (tq-state-items tq)))
-(defun tq-call                (tq) (car (cdr (tq-state-items tq))))
-(defun tq-span                (tq) (cdr (cdr (tq-state-items tq))))
+(defun tq-state-items           (tq) (cdr tq))
+(defun tq-last-search-point     (tq) (car (tq-state-items tq)))
+(defun tq-response-complete     (tq) (car (cdr (tq-state-items tq))))
+(defun tq-call                  (tq) (car (cdr (cdr (tq-state-items tq)))))
+(defun tq-span                  (tq) (cdr (cdr (cdr (tq-state-items tq)))))
 
-(defun tq-set-complete        (tq) (setcar (tq-state-items tq) t))
+(defun tq-set-last-search-point (tq pt) (setcar (tq-state-items tq) pt))
+(defun tq-set-complete          (tq) (setcar (cdr (tq-state-items tq)) t))
 
 ;; The structure of `queue' is as follows
 ;; ((question closure . fn)
@@ -152,9 +154,9 @@
 	 (span (cadr str-and-span)))
     (tq-maybe-log "emacs" str)
     ;; call to be returned with coqtop response
-    (setcdr tq (cons nil       ; not complete
-		     (cons str ; call
-			   span)))
+    (setcdr (cdr tq) (cons nil       ; not complete
+			   (cons str ; call
+				 span)))
     ;; update sent region
     ;; associate edit id with this span
     (when span
@@ -203,7 +205,7 @@ from the PROCESS that are not transactional."
 					    (generate-new-buffer
 					     (concat " tq-temp-"
 						     (process-name process)))))))))
-	 (state (cons nil (cons nil nil)))
+	 (state (cons 0 (cons t (cons nil nil))))
 	 (tq (cons qpb state)))
     (buffer-disable-undo (tq-buffer tq))
     (setq tq--oob-handler oob-handler)
@@ -258,10 +260,14 @@ needs, and the answer to the question."
 (defun tq-process-buffer (tq)
   "Check TQ's buffer for the regexp at the head of the queue."
   (let ((buffer (tq-buffer tq))
-	(done nil))
-    (goto-char (point-min))
-    (while (and (not done) (buffer-live-p buffer) (> (buffer-size) 0))
-      (with-current-buffer buffer
+	(last-search-point (tq-last-search-point tq))
+	done)
+    (with-current-buffer buffer
+      ;; resume search where we left off, accounting for possibility
+      ;; that end tag may have begun before last point we searched to
+      (goto-char (max (- last-search-point (tq-keep-len tq))
+		      (point-min)))
+      (while (and (not done) (buffer-live-p buffer) (> (buffer-size) 0))
 	(setq done t)
 	(let* ((complete-tags (tq-end-tags tq))
 	       (start-tag (car complete-tags))
@@ -272,8 +278,7 @@ needs, and the answer to the question."
 			  (equal (buffer-substring 1 (1+ start-len)) start-tag)
 			  (search-forward end-tag nil t)))
 	       (partial complete)
-	       (tag-pairs (tq-other-tags tq))
-	       (keep-len (tq-keep-len tq)))
+	       (tag-pairs (tq-other-tags tq)))
 	  (while (and (not partial) tag-pairs)
 	    (let* ((tag-pair (car tag-pairs))
 		   (start-tag (car tag-pair))
@@ -284,7 +289,7 @@ needs, and the answer to the question."
 			 (search-forward end-tag nil t))
 		(setq partial t))
 	      (setq tag-pairs (cdr tag-pairs))))
-	  (if (or complete partial)
+	  (when (or complete partial)
 	      (let ((answer (buffer-substring (point-min) (point)))
 		    (oob (tq-queue-empty tq))
 		    src
@@ -312,11 +317,12 @@ needs, and the answer to the question."
 				      (if complete "complete" "partial")
 				      " Coq response: %s, response was: \"%s\"") err answer)))
 		  (when complete
-		    (tq-queue-pop tq)))
-		(setq done nil))
-	    ;; unfinished response
-	    ;; in case response broken over end tag, move back
-	    (goto-char (max (point-min) (- (point-max) keep-len)))))))))
+		    (tq-queue-pop tq))
+		  ;;  might be another response in the buffer, keep looping
+		  (setq done nil))))))
+      ;; we've searched to the end of buffer
+      ;; which might be empty
+      (tq-set-last-search-point tq (point-max)))))
 
 (provide 'coq-tq)
 
