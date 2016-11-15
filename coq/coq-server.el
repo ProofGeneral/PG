@@ -579,7 +579,10 @@ is gone and we have to close the secondary locked span."
 
 ;; no backtrack on Query call (Coq bug #5041)
 (defun coq-server--backtrack-on-call-failure ()
-  (let ((xml (coq-xml-string-to-xml coq-server--current-call)))
+  ;; N.B.: we can't use use coq-xml-unescape-string here, because
+  ;; that doesn't always replace &nbsp; with a space
+  (let ((xml (coq-xml-string-to-xml
+	      (replace-regexp-in-string "&nbsp;" " " coq-server--current-call))))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
 	(not (equal call-val "Query"))))))
@@ -595,8 +598,10 @@ is gone and we have to close the secondary locked span."
     (if (equal valid-state-id coq-retract-buffer-state-id)
 	(goto-char (point-min))
       (let ((valid-span (coq-server--get-span-with-state-id valid-state-id)))
-	(when (and valid-span (span-buffer valid-span))
-	  (goto-char (span-end valid-span)))))
+	(if (and valid-span (span-buffer valid-span))
+	    (goto-char (span-end valid-span))
+	  ;; can't find span to retract to, punt
+	  (goto-char (point-min)))))
     (proof-goto-point)))
 
 (defun coq-server--handle-failure-value (xml)
