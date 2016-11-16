@@ -31,7 +31,7 @@
       ;; also can find a span with a state id that's been deleted from script buffer,
       ;;  but not yet garbage-collected from table
       (when (and span-with-state-id
-		 (eq (span-buffer span-with-state-id) proof-script-buffer))
+		 (span-buffer span-with-state-id))
 	(with-current-buffer proof-script-buffer
 	  (save-excursion
 	    (goto-char (span-start span-with-state-id))
