@@ -330,8 +330,6 @@ to write out the traversal code by hand each time."
   (goto-char (point-max))
   (insert s))
 
-(defvar coq-xml-richpp-space-token "##SPC##")
-
 ;; the token that replaces &nbsp;
 ;; in 8.5, just a space
 ;; in 8.6+, a string token used to preserve structure within richpp tags
