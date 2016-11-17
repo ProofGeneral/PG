@@ -889,7 +889,6 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML
   (when response
-    (erase-buffer)
     (insert response)
     (coq-xml-unescape-buffer)
     (setq coq-server--current-call call) 
@@ -906,6 +905,7 @@ is gone and we have to close the secondary locked span."
       ;; since current reponse invalid, don't send anything more
       (tq-flush coq-server-transaction-queue)
       (proof-debug-message "Ill-formed XML: %s" (buffer-string))
+      (erase-buffer)
       (message-box "Warning: received ill-formed XML from Coq.\n\nGoto an earlier good point in the script to resynch."))))
 
 ;; process XML response from Coq
