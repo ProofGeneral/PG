@@ -146,9 +146,9 @@
 (defun tq-log-and-send (tq question)
   (let* ((str-and-span 
 	  (cond 
+	   ((functionp question) (funcall question))
 	   ((stringp question) (list question nil))
 	   ((symbolp question) (list (symbol-value question) nil))
-	   ((functionp question) (funcall question))
 	   (t (error "tq-log-and-send: expected string or function, got %s of type %s" question (type-of question)))))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
