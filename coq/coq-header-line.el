@@ -45,7 +45,7 @@
 	  (set-face-attribute new-face nil :underline "black")
 	  (puthash old-face new-face-color face-mapper-tbl)
 	  (puthash old-face face-rank face-rank-tbl)
-	  (setq face-rank (1+ face-rank))))
+	  (cl-incf face-rank)))
       face-assocs)
 
 ;; vector of pos, line number pairs
