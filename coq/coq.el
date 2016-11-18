@@ -489,17 +489,27 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (defun coq--find-previous-state-id (span)
   "Find state id for nearest span with a state id before SPAN."
   (with-current-buffer proof-script-buffer
-    (let* ((all-spans (overlays-in (point-min) (1- (span-start span))))
-           (state-id-spans (cl-remove-if-not 
-                            (lambda (sp) (span-property sp 'state-id))
-                            all-spans))
-           ;; reverse sort, so that head of list is nearest SPAN
-           (sorted-state-id-spans 
-            (sort state-id-spans 
-                  (lambda (sp1 sp2) (> (span-start sp1) (span-start sp2))))))
-      (and (consp sorted-state-id-spans)
-           (span-property (car sorted-state-id-spans) 'state-id)))))
-
+    (save-excursion
+      (goto-char (1- (span-start span)))
+      (let (state-id)
+        (while (and (not state-id) (> (point) (point-min)))
+          (let* ((spans (overlays-at (point)))
+                 (vanilla-spans (cl-remove-if-not
+                                 (lambda (sp)
+                                   (eq (span-property sp 'type) 'vanilla))
+                                 spans)))
+            (if vanilla-spans
+                (setq state-id (span-property (car vanilla-spans) 'state-id))
+              ;; search backward
+              (let ((comment-spans (cl-remove-if-not
+                                    (lambda (sp)
+                                      (eq (span-property sp 'type) 'comment))
+                                    spans)))
+                (if comment-spans
+                    (goto-char (1- (span-start (car comment-spans))))
+                  (goto-char (1- (point))))))))
+        state-id))))
+        
 ;; send a command to coqtop via XML to do retraction
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN, possibly resulting in a full retraction. Send Edit_at for the 
