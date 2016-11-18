@@ -516,7 +516,7 @@ is gone and we have to close the secondary locked span."
 	(span-set-property span 'start-closed t) ;; TODO what are these for?
 	(span-set-property span 'end-closed t)
 	(span-set-property span 'face 'proof-secondary-locked-face)
-	(span-set-priority span (gethash proof-secondary-locked-face face-rank-tbl))
+	(span-set-priority span (gethash proof-secondary-locked-face coq-face-rank-tbl))
 	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
 	(setq proof-locked-secondary-span span)))))
 
@@ -899,8 +899,7 @@ is gone and we have to close the secondary locked span."
 	(`feedback (coq-server--handle-feedback xml))
 	(`value (coq-server--handle-value xml))
 	(`message (coq-server--handle-message xml))
-	(t (proof-debug-message "Unknown coqtop response %s" xml)))
-      (setq xml (coq-xml-get-next-xml)))
+	(t (proof-debug-message "Unknown coqtop response %s" xml))))
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
       (tq-flush coq-server-transaction-queue)
