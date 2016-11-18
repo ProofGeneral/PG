@@ -32,8 +32,6 @@
 
 ;; Table maps PG face to new face and color for TTYs
 (defvar face-mapper-tbl (make-hash-table))
-;; Table maps PG face to a rank governing precedence
-(defvar face-rank-tbl (make-hash-table))
 ;; rank counter
 (defvar face-rank (1+ proof-sent-priority))
 
@@ -44,7 +42,7 @@
 	  (copy-face old-face new-face)
 	  (set-face-attribute new-face nil :underline "black")
 	  (puthash old-face new-face-color face-mapper-tbl)
-	  (puthash old-face face-rank face-rank-tbl)
+	  (puthash old-face face-rank coq-face-rank-tbl)
 	  (cl-incf face-rank)))
       face-assocs)
 
@@ -165,10 +163,6 @@ columns in header line, NUM-COLS is number of its columns."
 
 (defvar coq-header-line-char ?\-)
 (defvar coq-header-line-mouse-pointer 'hand)
-
-(defun coq-header--colored-span-rank (sp)
-  (let ((face (span-property sp 'face)))
-    (gethash face face-rank-tbl)))
 
 (defun coq-header-line--make-line (num-cols)
   (make-string num-cols coq-header-line-char))
@@ -339,8 +333,8 @@ columns in header line, NUM-COLS is number of its columns."
 		    (add-face-text-property start end 'coq-sent-face nil header-text)
 		  (add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
 	    ;; update for specially-colored spans
-	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (coq-header--colored-span-rank sp1)
-										 (coq-header--colored-span-rank sp2))))))
+	    (let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (span-property sp1 'priority)
+										 (span-property sp2 'priority))))))
 	      (dolist (span sorted-colored-spans)
 		(let* ((span-info (coq-header-line--span-info span num-cols num-lines))
 		       (new-face (coq-header-line--span-info-face span-info))
