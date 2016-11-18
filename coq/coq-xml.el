@@ -224,7 +224,7 @@ to write out the traversal code by hand each time."
            )
           ))
         )
-    (setq coq-edit-id-counter (1+ coq-edit-id-counter))
+    (cl-incf coq-edit-id-counter)
     add-block))
 
 (defun coq-xml-query-item (item)

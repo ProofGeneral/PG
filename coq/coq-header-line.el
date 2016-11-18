@@ -312,9 +312,9 @@ columns in header line, NUM-COLS is number of its columns."
 		(`pg-special-coloring
 		 (setq colored-spans (cons span colored-spans))
 		 (pcase (span-property span 'face)
-		   (`proof-processing-face (setq processing-count (1+ processing-count)))
-		   (`proof-processed-face (setq processed-count (1+ processed-count)))
-		   (`proof-incomplete-face (setq incomplete-count (1+ incomplete-count)))))
+		   (`proof-processing-face (cl-incf processing-count))
+		   (`proof-processed-face (cl-incf processed-count))
+		   (`proof-incomplete-face (cl-incf incomplete-count))))
 		(`pg-error
 		 (setq error-spans (cons span error-spans)))))
 	    ;; update for queued region
@@ -359,7 +359,7 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
 	    ;; update for error spans
 	    (dolist (span error-spans)
-	      (setq error-count (1+ error-count))
+	      (cl-incf error-count)
 	      (let* ((span-info (coq-header-line--span-info span num-cols num-lines))
 		     (new-face (coq-header-line--span-info-face span-info))
 		     (color (coq-header-line--span-info-color span-info))

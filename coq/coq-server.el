@@ -194,7 +194,7 @@ is gone and we have to close the secondary locked span."
 	(when goals-rest
 	  (insert "\n")))
       (dolist (goal goals-rest)
-	(setq goal-counter (1+ goal-counter))
+	(cl-incf goal-counter)
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
 	(insert (coq-server--format-goal-no-hypotheses 
 		 (coq-server--goal-goal goal))))

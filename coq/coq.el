@@ -1650,8 +1650,8 @@ mouse activation."
                            (search-backward-regexp
                             "Chapter\\|Section\\|End" 0 t))
                  (if (char-equal (char-after (point)) ?E)
-                     (setq count (1+ count))
-                   (setq count (1- count))))
+                     (cl-incf count)
+                   (cl-decf count)))
                (buffer-substring-no-properties
                 (progn (beginning-of-line) (forward-word 1) (point))
                 (progn (end-of-line) (point)))))))
