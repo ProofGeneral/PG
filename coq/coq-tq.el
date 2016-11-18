@@ -290,7 +290,7 @@ needs, and the answer to the question."
 		(setq partial t))
 	      (setq tag-pairs (cdr tag-pairs))))
 	  (when (or complete partial)
-	      (let ((answer (buffer-substring (point-min) (point)))
+	    (let ((answer (buffer-substring (point-min) (point)))
 		    (oob (tq-queue-empty tq))
 		    src
 		    fun)
