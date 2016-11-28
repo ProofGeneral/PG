@@ -251,12 +251,17 @@ Action is taken on all script buffers."
       (span-set-endpoints proof-sent-span 1 (point)))))
 
 (defun proof-not-in-sent-region (start end)
-  ;; called by read-only hook, to see if START and END are
+  ;; called by read-only hook for proof-locked-span, to see if START and END are
   ;; beyond sent region
+  ;; can happen that proof-locked-span has changed by the time this handler called
+  ;;  so check that endpoints are in that span
   (let ((sent-end (span-end proof-sent-span)))
     ;; presumably, start <= end, but doesn't hurt to check
     (and (> start sent-end)
-	 (> end sent-end))))
+	 (> end sent-end)
+	 proof-locked-span
+	 (<= start (span-end proof-locked-span))
+	 (<= end (span-end proof-locked-span)))))
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
