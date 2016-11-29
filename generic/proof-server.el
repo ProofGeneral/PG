@@ -128,8 +128,10 @@ with proof-shell-ready-prover."
   proof-server-process)
 
 (defun proof-server-sentinel (process event)
-  (message-box "%s: %s" (capitalize (symbol-name proof-assistant-symbol)) event)
-  (proof-server-restart))
+  (let ((prover (capitalize (symbol-name proof-assistant-symbol)))
+	(cmd "To help diagnose the issue, enable logging with \"M-x proof-server-enable-logging\"."))
+    (message-box "%s: %s\n\n%s" prover event cmd)
+    (proof-server-restart)))
 
 ;;;###autoload
 (defun proof-server-start ()

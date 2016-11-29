@@ -905,7 +905,10 @@ is gone and we have to close the secondary locked span."
       (tq-flush coq-server-transaction-queue)
       (proof-debug-message "Ill-formed XML: %s" (buffer-string))
       (erase-buffer)
-      (message-box "Warning: received ill-formed XML from Coq.\n\nGoto an earlier good point in the script to resynch."))))
+      (let ((warning "Warning: received ill-formed XML from Coq.")
+	    (advice "Goto an earlier good point in the script to resynch.")
+	    (cmd "To help diagnose the issue, enable logging with \"M-x proof-server-enable-logging\"."))
+	(message-box "%s\n\n%s\n\n%s" warning advice cmd)))))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
