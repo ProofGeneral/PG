@@ -143,7 +143,7 @@ Only when three-buffer-mode is enabled."
 	  (span-set-property error-span 'face proof-error-face)
 	  (span-set-property error-span 'help-echo msg)
 	  ;; must set priority using special call
-	  (span-set-priority error-span (gethash proof-error-face face-rank-tbl))
+	  (span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
 	  (span-set-property error-span 'type 'pg-error)))
       ;; return start of error highlighting
       start)))
