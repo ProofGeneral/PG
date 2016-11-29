@@ -13,6 +13,7 @@
 ;;
 
 (require 'proof)
+(require 'coq-error)
 
 (eval-when-compile
   (require 'proof-compat)
@@ -593,6 +594,11 @@ Does nothing if `coq-use-project-file' is nil."
 	       (setq show-paren-data-function 'show-paren--default))))
 
 (add-hook 'coq-mode-hook 'coq-header-line-init)
+
+(defun coq-next-error-init ()
+  (setq next-error-function 'coq-next-error))
+
+(add-hook 'coq-mode-hook 'coq-next-error-init)
 
 (defun coq-toggle-use-project-file ()
   (interactive)
