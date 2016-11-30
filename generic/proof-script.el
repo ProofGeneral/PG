@@ -1783,6 +1783,7 @@ The optional QUEUEFLAGS are added to each queue item."
 	(setq end (nth 2 semi))
 	;; don't add items in secondary locked region
 	(unless (and proof-locked-secondary-span
+		     (span-buffer proof-locked-secondary-span)
 		     (or (and (>= start secondary-start) (< start secondary-end))
 			 (and (> end secondary-start) (<= end secondary-end))))
 	  (setq span (span-make start end))
