@@ -68,16 +68,16 @@ Only when three-buffer-mode is enabled."
   (coq-optimise-resp-windows-if-option))
 
 ;; given a byte offset in a multibyte string, calculate the string offset
-;; TODO find a home for this function
 (defun byte-offset-to-char-offset (str byte-offset)
   (let ((len (length str))
 	(count 0)
 	(pos 0))
-    (while (and (< pos len) (< count byte-offset))
+    (while (and (< pos len)
+		(< count byte-offset))
       (let* ((char (substring str pos (1+ pos)))
 	     (unichar (string-as-unibyte char)))
-	(setq count (+ count (length unichar)))
-	(setq pos (1+ pos))))
+	(cl-incf count (length unichar))
+	(cl-incf pos)))
     pos))
 
 ;; temporarily highlight error location
@@ -121,31 +121,28 @@ Only when three-buffer-mode is enabled."
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
-(defun coq-mark-error (span error-start error-end msg)
-  (when (and span (span-buffer span))
-    (let ((start (span-start span))
-	  (end (span-end span))
-	  (ws " \t\n"))
-      (with-current-buffer proof-script-buffer 
-	(save-excursion
-	  (goto-char start)
-	  (skip-chars-forward ws end)
-	  (setq start (point))
-	  (goto-char end)
-	  (skip-chars-backward ws start)
-	  (setq end (point)))
-	(let* ((trimmed-string (buffer-substring start end))
-	       (start-offs (byte-offset-to-char-offset trimmed-string error-start))
-	       (end-offs (byte-offset-to-char-offset trimmed-string error-end))
-	       (error-span (span-make (+ start start-offs) (+ start end-offs))))
-	  (coq-header-line-set-color-update)
-	  (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
-	  (span-set-property error-span 'face proof-error-face)
-	  (span-set-property error-span 'help-echo msg)
-	  ;; must set priority using special call
-	  (span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
-	  (span-set-property error-span 'type 'pg-error)))
-      ;; return start of error highlighting
-      start)))
+(defun coq-mark-error (start end error-start error-end msg)
+  (let ((ws " \t\n"))
+    (with-current-buffer proof-script-buffer 
+      (save-excursion
+	(goto-char start)
+	(skip-chars-forward ws end)
+	(setq start (point))
+	(goto-char end)
+	(skip-chars-backward ws start)
+	(setq end (point)))
+      (let* ((trimmed-string (buffer-substring start end))
+	     (start-offs (byte-offset-to-char-offset trimmed-string error-start))
+	     (end-offs (byte-offset-to-char-offset trimmed-string error-end))
+	     (error-span (span-make (+ start start-offs) (+ start end-offs))))
+	(coq-header-line-set-color-update)
+	(span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
+	(span-set-property error-span 'face proof-error-face)
+	(span-set-property error-span 'help-echo msg)
+	;; must set priority using special call
+	(span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
+	(span-set-property error-span 'type 'pg-error)))
+    ;; return start of error highlighting
+    start))
 
 (provide 'coq-response)

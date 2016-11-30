@@ -30,7 +30,7 @@ Initially 1 because Coq initial state has id 1.")
 It's the state id returned after Init command sent.")
 
 (defun coq-reset-state-vars ()
-  (setq coq-current-state-id nil
+  (setq coq-current-state-id coq-retract-buffer-state-id
 	coq-proof-state-id "1"
 	coq-pending-proofs nil
 	coq-current-proof-name nil
@@ -63,6 +63,11 @@ It's the state id returned after Init command sent.")
 ;; edit ids are numbers, so don't need to use 'equal as test like we did for state ids
 (defvar coq-span-edit-id-tbl (make-hash-table :weakness 'value))
 
+;; associate state ids with spans
+;; for a span, this is the state id in the corresponding Add call, NOT the state id later associated
+;;  with the span
+(defvar coq-span-add-call-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
+
 ;; table maps PG face to a rank governing precedence
 (defvar coq-face-rank-tbl (make-hash-table))
 
@@ -79,6 +84,7 @@ It's the state id returned after Init command sent.")
 	      coq-incomplete-span-tbl
 	      coq-span-state-id-tbl
 	      coq-span-edit-id-tbl
+	      coq-span-add-call-state-id-tbl
 	      coq-feedbacks-tbl)))
 
 (provide 'coq-state-vars)

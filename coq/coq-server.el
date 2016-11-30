@@ -394,6 +394,16 @@ is gone and we have to close the secondary locked span."
       (coq-server--merge-locked-spans))
     (coq-server--update-state-id-and-process new-tip-state-id)))
 
+(defvar coq-server--retract-error nil)
+
+;; show error after a retract
+;; span will be detached after the retract, so save its endpoints
+(defun coq-server--queue-retract-error (span start end msg)
+  (setq coq-server--retract-error
+	(list msg
+	      (cons (span-start span) (span-end span))
+	      (cons start end))))
+
 (defun coq-server--simple-backtrack ()
   ;; delete spans marked for deletion
   (with-current-buffer proof-script-buffer
@@ -447,6 +457,17 @@ is gone and we have to close the secondary locked span."
 	      (spans-all))
       (proof-set-locked-end sent-end)
       (proof-set-sent-end sent-end)))
+  ;; mark error, if any 
+  (when coq-server--retract-error
+    (let* ((msg (nth 0 coq-server--retract-error))
+	   (endpoints (nth 1 coq-server--retract-error))
+	   (start (car endpoints))
+	   (end (cdr endpoints))
+	   (locs (nth 2 coq-server--retract-error))
+	   (error-start (car locs))
+	   (error-end (cdr locs)))
+      (setq coq-server--retract-error nil)
+      (coq-mark-error start end error-start error-end msg)))
   (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--new-focus-backtrack (xml)
@@ -619,7 +640,22 @@ is gone and we have to close the secondary locked span."
     ;; don't clear pending edit-at state id here
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status
-    (let ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val)))))
+    (let* ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val))))
+	   (loc-start (let ((pos (coq-xml-at-path xml '(value loc_s))))
+			(and pos (string-to-number pos))))
+	   (loc-end (let ((pos (coq-xml-at-path xml '(value loc_e))))
+		      (and pos (string-to-number pos))))
+	   (error-msg (or
+		      ;; 8.6
+		       (flatten-pp (coq-xml-body (coq-xml-at-path xml '(value (_) (richpp (_))))))
+		      ;; 8.5 ; 
+		      ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
+		      (mapconcat 'identity (cdr (cdr (cdr xml))) " ")))
+	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
+      ;; queue this error for retract finish
+      ;; if we mark error now, it will just disappear 
+      (when (and loc-start loc-end error-span)
+	(coq-server--queue-retract-error error-span loc-start loc-end error-msg))
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
@@ -733,7 +769,8 @@ is gone and we have to close the secondary locked span."
 	      (remhash error-state-id coq-processing-span-tbl)
 	      (unless (eq error-span span-processing)
 		(span-delete span-processing))))
-	  (coq-mark-error error-span error-start error-stop error-msg))))))
+	  (coq-mark-error (span-start error-span) (span-end error-span)
+			  error-start error-stop error-msg))))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)

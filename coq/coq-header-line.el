@@ -381,7 +381,7 @@ columns in header line, NUM-COLS is number of its columns."
 			   (format " --- ")
 			 (format " %d " incomplete-count)))
 		      (error-text 
-		       (if (<= vanilla-count 0.0)
+		       (if (and (<= vanilla-count 0.0) (<= error-count 0))
 			   (format " ---")
 			 (format " %d" error-count))))
 		  (if (display-graphic-p)
