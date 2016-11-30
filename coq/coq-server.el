@@ -654,8 +654,11 @@ is gone and we have to close the secondary locked span."
 	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear 
-      (when (and loc-start loc-end error-span)
-	(coq-server--queue-retract-error error-span loc-start loc-end error-msg))
+      (if (and loc-start loc-end error-span)
+	  (coq-server--queue-retract-error error-span loc-start loc-end error-msg)
+	;; if no location information, just print error in response buffer
+	(coq-server--clear-response-buffer)
+	(coq--display-response error-msg))
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
