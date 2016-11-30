@@ -404,6 +404,18 @@ is gone and we have to close the secondary locked span."
 	      (cons (span-start span) (span-end span))
 	      (cons start end))))
 
+(defun coq-server--show-retract-error ()
+  (when coq-server--retract-error
+    (let* ((msg (nth 0 coq-server--retract-error))
+	   (endpoints (nth 1 coq-server--retract-error))
+	   (start (car endpoints))
+	   (end (cdr endpoints))
+	   (locs (nth 2 coq-server--retract-error))
+	   (error-start (car locs))
+	   (error-end (cdr locs)))
+      (setq coq-server--retract-error nil)
+      (coq-mark-error start end error-start error-end msg))))
+
 (defun coq-server--simple-backtrack ()
   ;; delete spans marked for deletion
   (with-current-buffer proof-script-buffer
@@ -457,17 +469,7 @@ is gone and we have to close the secondary locked span."
 	      (spans-all))
       (proof-set-locked-end sent-end)
       (proof-set-sent-end sent-end)))
-  ;; mark error, if any 
-  (when coq-server--retract-error
-    (let* ((msg (nth 0 coq-server--retract-error))
-	   (endpoints (nth 1 coq-server--retract-error))
-	   (start (car endpoints))
-	   (end (cdr endpoints))
-	   (locs (nth 2 coq-server--retract-error))
-	   (error-start (car locs))
-	   (error-end (cdr locs)))
-      (setq coq-server--retract-error nil)
-      (coq-mark-error start end error-start error-end msg)))
+  (coq-server--show-retract-error)
   (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--new-focus-backtrack (xml)
@@ -485,6 +487,7 @@ is gone and we have to close the secondary locked span."
       ;; multiple else's
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
       (coq-server--create-secondary-locked-span focus-start-state-id focus-end-state-id last-tip-state-id)
+      (coq-server--show-retract-error)
       (coq-server--make-edit-at-state-id-current))))
 
 (defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
@@ -654,11 +657,13 @@ is gone and we have to close the secondary locked span."
 	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear 
-      (if (and loc-start loc-end error-span)
-	  (coq-server--queue-retract-error error-span loc-start loc-end error-msg)
-	;; if no location information, just print error in response buffer
-	(coq-server--clear-response-buffer)
-	(coq--display-response error-msg))
+      (when error-span
+	(coq-server--queue-retract-error error-span
+					 (or loc-start 0)
+					 (or loc-end (- (span-end error-span) (span-start error-span)))
+					 error-msg))
+      (coq-server--clear-response-buffer)
+      (coq--display-response error-msg)
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
