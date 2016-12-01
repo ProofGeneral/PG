@@ -631,6 +631,8 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--handle-failure-value (xml)
   ;; flush queue of actions
   (proof-server-clear-state)
+  ;; flush feedback queues
+  (clrhash coq-feedbacks-tbl)
   ;; remove pending calls to Coq, except for the one that
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer

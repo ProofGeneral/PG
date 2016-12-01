@@ -90,5 +90,3 @@ It's the state id returned after Init command sent.")
 (provide 'coq-state-vars)
 
 ;; end coq-state-vars.el
-
-
