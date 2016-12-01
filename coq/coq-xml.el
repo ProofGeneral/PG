@@ -175,31 +175,33 @@ structure of tags only."
   "Get item parsed XML following PATH, which may terminate in a 
 tag, or a tag with an attribute name. Using this function avoids having 
 to write out the traversal code by hand each time."
-  (if (and (consp path) (or (eq (car path) (coq-xml-tag xml))
-			    (eq (car path) '_))) ; wildcard tag
-    (cond 
-     ;; attribute
-     ;; nil is a symbol in this crazy world
-     ((and (symbolp (cadr path)) (not (null (cadr path)))) 
-      (coq-xml-attr-value xml (cadr path)))
-     ;; this XML node
-     ((null (cdr path)) 
-      xml)
-     ;; child nodes, want last one
-     (t (let* ((xml-children (coq-xml-body xml))
-	       (path-children (cdr path))
-	       (zipped-children (zip xml-children path-children))
-	       ;; running all of these checks validity of path
-	       (results (mapcar (lambda (consed) (coq-xml-at-path (car consed) (cdr consed)))
-				zipped-children)))
-	  (let (failed)
-	    ;; if any item is nil, the path is invalid
-	    (dolist (res results failed)
-	      (when (null res)
-		(setq failed t)))
-	    (if failed
-		nil
-	      (car (reverse results)))))))
+  (if (and (consp path)
+	   (consp xml)
+	   (or (eq (car path) (coq-xml-tag xml))
+	       (eq (car path) '_))) ; wildcard tag
+      (cond 
+       ;; attribute
+       ;; nil is a symbol in this crazy world
+       ((and (symbolp (cadr path)) (not (null (cadr path)))) 
+	(coq-xml-attr-value xml (cadr path)))
+       ;; this XML node
+       ((null (cdr path)) 
+	xml)
+       ;; child nodes, want last one
+       (t (let* ((xml-children (coq-xml-body xml))
+		 (path-children (cdr path))
+		 (zipped-children (zip xml-children path-children))
+		 ;; running all of these checks validity of path
+		 (results (mapcar (lambda (consed) (coq-xml-at-path (car consed) (cdr consed)))
+				  zipped-children)))
+	    (let (failed)
+	      ;; if any item is nil, the path is invalid
+	      (dolist (res results failed)
+		(when (null res)
+		  (setq failed t)))
+	      (if failed
+		  nil
+		(car (reverse results)))))))
     ;; return nil if end of path or tag mismatch
     nil))
 

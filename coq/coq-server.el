@@ -651,11 +651,13 @@ is gone and we have to close the secondary locked span."
 	   (loc-end (let ((pos (coq-xml-at-path xml '(value loc_e))))
 		      (and pos (string-to-number pos))))
 	   (error-msg (or
-		      ;; 8.6
-		       (flatten-pp (coq-xml-body (coq-xml-at-path xml '(value (_) (richpp (_))))))
-		      ;; 8.5 ; 
-		      ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
-		      (mapconcat 'identity (cdr (cdr (cdr xml))) " ")))
+		       ;; 8.6
+		       (let ((richpp-text (coq-xml-at-path xml '(value (_) (richpp (_))))))
+			 (and richpp-text
+			      (flatten-pp (coq-xml-body richpp-text))))
+		       ;; 8.5 ; 
+		       ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
+		       (cadr (cdr (cdr xml)))))
 	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear 
