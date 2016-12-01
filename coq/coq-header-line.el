@@ -49,6 +49,9 @@
 ;; save last number of incomplete proofs
 (defvar coq-last-incomplete-count 0)
 
+;; save last number of processed statements
+(defvar coq-last-processed-count 0)
+
 ;; vector of pos, line number pairs
 ;; to avoid scanning file for line numbers
 (defvar coq-header--line-number-vector nil)
@@ -367,9 +370,12 @@ columns in header line, NUM-COLS is number of its columns."
 		  (add-face-text-property start end `(:background ,color) nil header-text))))
 	    (setq header-line-format header-text)
 	    (when (and (= incomplete-count 0)
-		       (> coq-last-incomplete-count 0))
+		       (> coq-last-incomplete-count 0)
+		       ;; bad approximation to "user hasn't done anything since Check'ing"
+		       (= coq-last-processed-count processed-count))
 	      (message "All proof terms checked by the kernel"))
 	    (setq coq-last-incomplete-count incomplete-count)
+	    (setq coq-last-processed-count processed-count)
 	    ;; update mode line indicators
 	    (when (consp mode-line-format)
 	      (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
