@@ -24,12 +24,6 @@
 
 ;; some handlers
 
-;; clear user *response* buffer and
-;;  pass response to default response handler
-(defun coq-queries-clear-and-process-response (response call span)
-  (pg-response-clear-displays)
-  (funcall 'coq-server-process-response response call span))
-
 ;; just pass response to default response handler
 (defun coq-queries-process-response (response call span)
   (funcall 'coq-server-process-response response call span))
@@ -225,10 +219,11 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
       (proof-invisible-cmd-handle-result
        set-cmd
        'coq-queries-process-response))
+    (pg-response-clear-displays)
     (proof-invisible-cmd-handle-result
      (lambda ()
        (list (coq-xml-query-item (format (concat do " %s .") cmd)) nil))
-     'coq-queries-clear-and-process-response)
+     'coq-queries-process-response)
     (unless flag-is-set
       (proof-invisible-cmd-handle-result
        unset-cmd
@@ -260,9 +255,10 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
   "Ask for an ident and print the corresponding term."
   (let ((cmd (format (concat do " %s .")
 		     (coq-queries-guess-or-ask-for-string ask dont-guess))))
+    (pg-response-clear-displays)
     (proof-invisible-cmd-handle-result
      (lambda ()
        (list (coq-xml-query-item cmd) nil))
-     'coq-queries-clear-and-process-response)))
+     'coq-queries-process-response)))
 
 (provide 'coq-queries)
