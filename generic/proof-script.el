@@ -255,13 +255,17 @@ Action is taken on all script buffers."
   ;; beyond sent region
   ;; can happen that proof-locked-span has changed by the time this handler called
   ;;  so check that endpoints are in that span
-  (let ((sent-end (span-end proof-sent-span)))
-    ;; presumably, start <= end, but doesn't hurt to check
-    (and (> start sent-end)
-	 (> end sent-end)
-	 proof-locked-span
-	 (<= start (span-end proof-locked-span))
-	 (<= end (span-end proof-locked-span)))))
+  (when (and proof-locked-span
+	     (span-buffer proof-locked-span)
+	     proof-sent-span
+	     (span-buffer proof-sent-span))
+    (let ((sent-end (span-end proof-sent-span)))
+      ;; presumably, start <= end, but doesn't hurt to check
+      (and (> start sent-end)
+	   (> end sent-end)
+	   proof-locked-span
+	   (<= start (span-end proof-locked-span))
+	   (<= end (span-end proof-locked-span))))))
 
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
