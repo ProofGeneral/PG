@@ -231,6 +231,9 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--value-goals-p (xml)
   (coq-xml-at-path xml '(value (option (goals)))))
 
+;; was the last goal response not the empty goal?
+(defvar coq-server--last-goal-nonempty)
+
 (defun coq-server--handle-goals (xml)
   (setq proof-prover-proof-completed nil)
   (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
@@ -263,12 +266,15 @@ is gone and we have to close the secondary locked span."
 	(setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text)))
       (if goal-text
 	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
+	    (setq coq-server--last-goal-nonempty t)
 	    (setq proof-shell-last-goals-output formatted-goals)
 	    (pg-goals-display formatted-goals t))
 	;; else, clear goals display
 	(coq-server--clear-goals-buffer)
 	;; mimic the coqtop REPL, though it would be better to come via XML
-	(coq--display-response "No more subgoals."))))
+	(when coq-server--last-goal-nonempty
+	  (setq coq-server--last-goal-nonempty nil)
+	  (coq--display-response "No more subgoals.")))))
 
 (defun coq-server--value-status-p (xml)
   (coq-xml-at-path xml '(value (status))))
@@ -671,6 +677,7 @@ is gone and we have to close the secondary locked span."
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
+	(setq coq-server-retraction-on-error t)
 	(coq-server--backtrack-to-valid-state last-valid-state-id)))))
 
 (defun coq-server--handle-good-value (xml)
