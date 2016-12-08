@@ -121,7 +121,7 @@ Only when three-buffer-mode is enabled."
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
-(defun coq-mark-error (start end error-start error-end msg)
+(defun coq-mark-error (start end error-start error-end msg &optional warp)
   (let ((ws " \t\n"))
     (with-current-buffer proof-script-buffer 
       (save-excursion
@@ -141,7 +141,9 @@ Only when three-buffer-mode is enabled."
 	(span-set-property error-span 'help-echo msg)
 	;; must set priority using special call
 	(span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
-	(span-set-property error-span 'type 'pg-error)))
+	(span-set-property error-span 'type 'pg-error)
+	(when warp
+	  (goto-char (+ start start-offs)))))
     ;; return start of error highlighting
     start))
 

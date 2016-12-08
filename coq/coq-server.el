@@ -203,7 +203,7 @@ is gone and we have to close the secondary locked span."
 ;; update global state in response to status
 (defun coq-server--handle-status (_xml)
   (when coq-server--sticky-point
-    (with-current-buffer proof-script-buffer
+    '(with-current-buffer proof-script-buffer
       (goto-char coq-server--sticky-point))
     (setq coq-server--sticky-point nil)))
 
@@ -420,7 +420,7 @@ is gone and we have to close the secondary locked span."
 	   (error-start (car locs))
 	   (error-end (cdr locs)))
       (setq coq-server--retract-error nil)
-      (coq-mark-error start end error-start error-end msg))))
+      (coq-mark-error start end error-start error-end msg t))))
 
 (defun coq-server--simple-backtrack ()
   ;; delete spans marked for deletion
@@ -609,13 +609,22 @@ is gone and we have to close the secondary locked span."
     (proof-server-send-to-prover (coq-xml-status))))
 
 ;; no backtrack on Query call (Coq bug #5041)
-(defun coq-server--backtrack-on-call-failure ()
+(defun coq-server--was-query-call ()
   ;; always unescape to space, default unescaping might be different
   (let ((xml (coq-xml-string-to-xml
 	      (coq-xml-unescape-string coq-server--current-call " "))))
     (when xml
       (let ((call-val (coq-xml-at-path xml '(call val))))
-	(not (equal call-val "Query"))))))
+	(equal call-val "Query")))))
+
+(defun coq-server--was-check-document-call ()
+  (let ((xml (coq-xml-string-to-xml
+	      (coq-xml-unescape-string coq-server--current-call " "))))
+    (when xml
+      (let ((call-val (coq-xml-at-path xml '(call val)))
+	    (bool-val (coq-xml-at-path xml '(call (bool val)))))
+	(and (equal call-val "Status")
+	     (equal bool-val "true"))))))
 
 (defun coq-server--valid-state-id (state-id)
   (not (equal state-id "0")))
@@ -643,11 +652,13 @@ is gone and we have to close the secondary locked span."
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer
   (tq-flush-but-1 coq-server-transaction-queue)
-  (when (coq-server--backtrack-on-call-failure)
+  (unless (coq-server--was-query-call)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
-    (with-current-buffer proof-script-buffer
-      (setq coq-server--sticky-point (point)))
+    ;; don't move point if it was a document check error
+    (unless (coq-server--was-check-document-call)
+      (with-current-buffer proof-script-buffer
+	(setq coq-server--sticky-point (point))))
     ;; don't clear pending edit-at state id here
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status

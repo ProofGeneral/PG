@@ -112,7 +112,7 @@ without adjusting window layout."
   ;; C-c C-o is proof-display-some-buffers in universal-keys
   (define-key map [(control c) (control p)] 'proof-prf)
   (define-key map [(control c) (control r)] 'proof-retract-buffer)
-  (define-key map [(control c) (control c)] 'proof-check-document)
+  (define-key map [(control c) (control c)] 'proof-check)
   (define-key map [(control c) (control s)] 'proof-toggle-active-scripting)
   (define-key map [(control c) (control t)] 'proof-ctxt)
   (define-key map [(control c) (control i)] 'proof-query-identifier)
