@@ -135,6 +135,18 @@ SYMBOL should be 'coq-max-background-compilation-jobs"
   (setq coq--internal-max-jobs new-value)
   (coq-set-max-vio2vo-jobs))
 
+(defun coq-compile-quick-setter (symbol new-value)
+  ":set function for `coq-compile-quick' for pre 8.5 compatibility.
+Ignore any quick setting for Coq versions before 8.5."
+  (cond
+   ((or (eq new-value 'ensure-vo) (eq new-value 'no-quick))
+    t)
+   ((coq--pre-v85)
+    (message "Ignore coq-compile-quick setting %s for Coq before 8.5"
+	     new-value)
+    (setq new-value 'no-quick)))
+  (set symbol new-value))
+
 
 ;;; user options and variables
 
@@ -178,20 +190,28 @@ This option can be set/reset via menu
 
 (defcustom coq-compile-quick 'no-quick
   "Control quick compilation, vio2vo and vio/vo files auto compilation.
-This option controls whether ``-quick'' is used for parallel background
-compilation and whether up-date .vo or .vio files are used or deleted.
+This option controls whether ``-quick'' is used for parallel
+background compilation and whether up-date .vo or .vio files are
+used or deleted. Please use the customization system to change
+this option to ensure that any ``-quick'' setting is ignored for
+Coq before 8.5.
 
-Note that ``-quick'' can be noticebly slower when your sources do not
-declare section variables with ``Proof using''. Use the default `no-quick',
-if you have not yet switched to ``Proof using''. Use `quick-no-vio2vo',
-if you want quick recompilation without producing .vo files. Value
-`quick-and-vio2vo' updates missing prerequisites with ``-quick'' and
-starts vio2vo conversion on a subset of the availables cores when the
-quick recompilation finished (see also `coq-compile-vio2vo-percentage').
-Note that all the previously described modes might load .vio files and
-that you therefore might not notice certain universe inconsitencies.
-Finally, use `ensure-vo' for only importing .vo files with complete
-universe checks.
+Note that ``-quick'' can be noticebly slower when your sources do
+not declare section variables with ``Proof using''. Note that
+even if you do declare section variables, ``-quick'' is typically
+slower on small files.
+
+Use the default `no-quick', if you have not yet switched to
+``Proof using''. Use `quick-no-vio2vo', if you want quick
+recompilation without producing .vo files. Value
+`quick-and-vio2vo' updates missing prerequisites with ``-quick''
+and starts vio2vo conversion on a subset of the availables cores
+when the quick recompilation finished (see also
+`coq-compile-vio2vo-percentage'). Note that all the previously
+described modes might load .vio files and that you therefore
+might not notice certain universe inconsitencies. Finally, use
+`ensure-vo' for only importing .vo files with complete universe
+checks.
 
 Detailed description of the 4 modes:
 no-quick         Compile outdated prerequisites without ``-quick'',
@@ -221,6 +241,7 @@ ensure-vo        Delete all .vio files for prerequisites and recompile
     (const :tag "ensure vo compilation, delete vio files" ensure-vo))
   :safe (lambda (v) (member v '(no-quick quick-no-vio2vo
 					 quick-and-vio2vo ensure-vo)))
+  :set 'coq-compile-quick-setter
   :group 'coq-auto-compile)
 
 (defun coq-compile-prefer-quick ()
@@ -251,6 +272,14 @@ percentage of `coq-max-background-compilation-jobs'."
   :type 'number
   :safe 'numberp
   :set 'coq-max-vio2vo-setter
+  :group 'coq-auto-compile)
+
+(defcustom coq-compile-vio2vo-delay 2.5
+  "Delay in seconds for the vio2vo compilation.
+This delay helps to avoid running into a library inconsistency
+with 'quick-and-vio2vo, see Coq issue #5223."
+  :type 'number
+  :safe 'numberp
   :group 'coq-auto-compile)
 
 (defcustom coq-compile-command ""
