@@ -118,6 +118,7 @@ Only when three-buffer-mode is enabled."
 (defun coq--error-span-modification-handler (span after-change-p start end &optional len)
   (when after-change-p
     (span-delete span)
+    (coq-header-line-set-color-update)
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
