@@ -1378,11 +1378,11 @@ Near here means PT is either inside or just aside of a comment."
 ;;; pc: removed it and others of the same kind. Put an "option" menu instead,
 ;;; with no state variable. To have the state we should use coq command that
 ;;; output the value of the variables.
-                                        ;(defpacustom print-fully-explicit nil
-                                        ;  "Print fully explicit terms."
-                                        ;  :type 'boolean
-                                        ;  :setting ("Set Printing All. " . "Unset Printing All. "))
-                                        ;
+;;(defpacustom print-fully-explicit nil
+;;  "Print fully explicit terms."
+;;  :type 'boolean
+;;  :setting ("Set Printing All. " . "Unset Printing All. "))
+;;
 
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which an ellipsis (...) is displayed."
@@ -1394,7 +1394,6 @@ Near here means PT is either inside or just aside of a comment."
   "Whether to display timing information for each command."
   :type 'boolean
   :eval (coq-time-commands-switch))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
