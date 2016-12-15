@@ -657,12 +657,7 @@ depending on `coq-compile-quick', must be done elsewhere.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if coq-load-path-include-current
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "")
                             "Require " module-id "."))
         result)
@@ -699,7 +694,7 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-seq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
+    (cl-assert (<= (length result) 1)
 	    nil "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
@@ -758,10 +753,7 @@ and resets the internal state."
   (setq coq--compile-vio2vo-in-progress nil)
   (when coq--compile-vio2vo-delay-timer
     (cancel-timer coq--compile-vio2vo-delay-timer))
-  (when proof-action-list
-    (setq proof-shell-interrupt-pending t))
   (coq-par-unlock-ancestors-on-error)
-  (proof-release-lock)
   (proof-detach-queue)
   (setq proof-second-action-list-active nil)
   (coq-par-init-compilation-hash))
@@ -881,7 +873,7 @@ errors are reported with an error message."
 
 (defun coq-par-run-vio2vo-queue ()
   "Start delayed vio2vo compilation."
-  (assert (not coq--last-compilation-job)
+  (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and vio2vo in parallel 3")
   (setq coq--compile-vio2vo-in-progress t)
   (setq coq--compile-vio2vo-delay-timer nil)
@@ -896,7 +888,7 @@ errors are reported with an error message."
 This callback is inserted with a dummy item after the last
 require command to start vio2vo compilation after
 `coq-compile-vio2vo-delay' seconds."
-  (assert (not coq--last-compilation-job)
+  (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and vio2vo in parallel 1")
   (setq coq--compile-vio2vo-delay-timer
 	(run-at-time coq-compile-vio2vo-delay nil 'coq-par-run-vio2vo-queue)))
@@ -928,7 +920,7 @@ require command to start vio2vo compilation after
 
 (defun coq-par-add-queue-dependency (dependee dependant)
   "Add queue dependency from child job DEPENDEE to parent job DEPENDANT."
-  (assert (and (not (get dependant 'queue-dependant-waiting))
+  (cl-assert (and (not (get dependant 'queue-dependant-waiting))
 	       (not (get dependee 'queue-dependant)))
 	  nil "queue dependency cannot be added")
   (put dependant 'queue-dependant-waiting t)
@@ -1167,7 +1159,7 @@ case, the following actions are taken:
     (let ((dependant (get job 'queue-dependant)))
       (if dependant
 	  (progn
-	    (assert (not (eq coq--last-compilation-job job))
+	    (cl-assert (not (eq coq--last-compilation-job job))
 		    nil "coq--last-compilation-job invariant error")
 	    (put dependant 'queue-dependant-waiting nil)
 	    (when coq--debug-auto-compilation
@@ -1224,7 +1216,7 @@ if it reaches 0, the next transition is triggered for DEPENDANT.
 For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
 'clone jobs this 'waiting-dep -> 'waiting-queue."
   ;(message "%s: CPDCD with time %s" (get dependant 'name) dependee-time)
-  (assert (eq (get dependant 'state) 'waiting-dep)
+  (cl-assert (eq (get dependant 'state) 'waiting-dep)
 	  nil "wrong state of parent dependant job")
   (when (coq-par-time-less (get dependant 'youngest-coqc-dependency)
 			   dependee-time)
@@ -1233,7 +1225,7 @@ For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
        (append dependee-ancestor-files (get dependant 'ancestor-files)))
   (put dependant 'coqc-dependency-count
        (1- (get dependant 'coqc-dependency-count)))
-  (assert (<= 0 (get dependant 'coqc-dependency-count))
+  (cl-assert (<= 0 (get dependant 'coqc-dependency-count))
 	  nil "dependency count below zero")
   (when coq--debug-auto-compilation
     (message "%s: coqc dependency count down to %d"
@@ -1355,7 +1347,7 @@ coqdep or coqc are started for it."
 	 (get job 'required-obj-file))))
      ((eq job-state 'ready)
       (coq-par-start-vio2vo job))
-     (t (assert nil nil "coq-par-start-task with invalid job")))))
+     (t (cl-assert nil nil "coq-par-start-task with invalid job")))))
 
 (defun coq-par-start-jobs-until-full ()
   "Start background jobs until the limit is reached."
@@ -1627,7 +1619,7 @@ there is no last compilation job."
     ;; add the asserted items to the last compilation job
     (if coq--last-compilation-job
 	(progn
-	  (assert (not (coq-par-job-is-ready coq--last-compilation-job))
+	  (cl-assert (not (coq-par-job-is-ready coq--last-compilation-job))
 		  nil "last compilation job from previous compilation ready")
 	  (put coq--last-compilation-job 'queueitems
 	       (nconc (get coq--last-compilation-job 'queueitems)
@@ -1713,7 +1705,7 @@ the maximal number of background compilation jobs is started."
       (when coq--compile-vio2vo-delay-timer
 	(cancel-timer coq--compile-vio2vo-delay-timer))
       (when coq--compile-vio2vo-in-progress
-	(assert (not coq--last-compilation-job)
+	(cl-assert (not coq--last-compilation-job)
 		nil "normal compilation and vio2vo in parallel 2")
 	;; there are only vio2vo background processes
 	(coq-par-kill-all-processes)
