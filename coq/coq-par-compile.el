@@ -324,6 +324,17 @@ Used to link top-level jobs with queue dependencies.")
 (defvar coq--compile-vio2vo-delay-timer nil
   "Holds the timer for the vio2vo delay.")
 
+(defvar coq--compile-vio2vo-start-id 0
+  "Integer counter to detect races for `coq-par-require-processed'.
+Assume compilation for the last top-level ``Require'' command
+finishes but executing the ``Require'' takes so long that the
+user can assert a next ``Require'' and that the second
+compilation finishes before the first ``Require'' has been
+processed. In this case there are two `coq-par-require-processed'
+callbacks active, of which the first one must be ignored. For
+each new callback this counter is incremented and when there is a
+difference the call to `coq-par-require-processed' is ignored.")
+
 (defvar coq--par-next-id 1
   "Increased for every job and process, to get unique job names.
 The names are only used for debugging.")
@@ -882,17 +893,7 @@ errors are reported with an error message."
 		(length (cdr coq-par-vio2vo-queue)))))
   (coq-par-start-jobs-until-full))
 
-(defun coq-par-require-processed (span)
-<<<<<<< HEAD
-  "Callback for `proof-action-list' to start vio2vo compilation.
-This callback is inserted with a dummy item after the last
-require command to start vio2vo compilation after
-`coq-compile-vio2vo-delay' seconds."
-  (cl-assert (not coq--last-compilation-job)
-	  nil "normal compilation and vio2vo in parallel 1")
-  (setq coq--compile-vio2vo-delay-timer
-	(run-at-time coq-compile-vio2vo-delay nil 'coq-par-run-vio2vo-queue)))
-=======
+(defun coq-par-require-processed (race-counter)
   "Callback for `proof-action-list' to signal completion of the last require.
 This function ensures that vio2vo compilation starts after
 `coq-compile-vio2vo-delay' seconds after the last module has been
@@ -903,7 +904,8 @@ somewhere after the last require command."
   ;; require command is being processed, `coq--last-compilation-job'
   ;; might get non-nil. In this case there is a new last compilation
   ;; job that will eventually trigger vio2vo compilation.
-  (unless coq--last-compilation-job
+  (unless (or coq--last-compilation-job
+	      (not (eq race-counter coq--compile-vio2vo-start-id)))
     (setq coq--compile-vio2vo-delay-timer
 	  (run-at-time coq-compile-vio2vo-delay nil
 		       'coq-par-run-vio2vo-queue))))
@@ -915,8 +917,6 @@ somewhere after the last require command."
   ;; to the proof assistant, only the callback is called, see
   ;; proof-shell.el.
   (list nil nil callback))
->>>>>>> 687e008bc80ca6f66ca8920296c2e8dab889c752
-
 
 ;;; background job tasks
 
@@ -1150,14 +1150,18 @@ function must not be called for failed jobs."
     (when items
       (when (and (eq coq-compile-quick 'quick-and-vio2vo)
 		 (eq coq--last-compilation-job job))
-	;; Insert a notification callback for when the last require
-	;; queue item has been processed.
-	(setq items
-	      (cons
-	       (car items)		; this is the require
-	       (cons
-		(coq-par-callback-queue-item 'coq-par-require-processed)
-		(cdr items)))))
+	(let ((vio2vo-counter
+	       (setq coq--compile-vio2vo-start-id
+		     (1+ coq--compile-vio2vo-start-id))))
+	  ;; Insert a notification callback for when the last require
+	  ;; queue item has been processed.
+	  (setq items
+		(cons
+		 (car items)		; this is the require
+		 (cons
+		  (coq-par-callback-queue-item
+		   `(lambda (span) (coq-par-require-processed ,vio2vo-counter)))
+		  (cdr items))))))
       (proof-add-to-queue items 'advancing)
       (when coq--debug-auto-compilation
 	(message "%s: add %s items to action list"
@@ -1197,53 +1201,6 @@ case, the following actions are taken:
 	   (get job 'name))))
     (when coq--debug-auto-compilation
       (message "%s: has itself no queue dependency" (get job 'name)))
-<<<<<<< HEAD
-    (when (and (get job 'require-span) coq-lock-ancestors)
-      (let ((span (get job 'require-span)))
-	(dolist (anc-job (get job 'ancestors))
-	  (assert (not (eq (get anc-job 'lock-state) 'unlocked))
-		  nil "bad ancestor lock state")
-	  (when (eq (get anc-job 'lock-state) 'locked)
-	    (put anc-job 'lock-state 'asserted)
-	    (push (get anc-job 'src-file)
-		  (span-property span 'coq-locked-ancestors))))))
-    (when (get job 'queueitems)
-      (let ((items (get job 'queueitems)))
-	(when (and (eq coq--last-compilation-job job)
-		   (eq coq-compile-quick 'quick-and-vio2vo))
-	  ;; Insert the vio2vo start notification callback after the
-	  ;; require item.
-	  (setq items
-		(cons
-		 (car items)
-		 (cons
-		  ;; A proof-action-list item is
-		  ;; (SPAN COMMANDS ACTION [DISPLAYFLAGS])
-		  ;; If COMMANDS is nil, the item is processed as
-		  ;; comment and not sent to the proof assistant, see
-		  ;; proof-shell.el.
-		  (list nil nil 'coq-par-require-processed)
-		  (cdr items)))))
-	(proof-add-to-queue items 'advancing)
-	(when coq--debug-auto-compilation
-	  (message "%s: add %s items to action list"
-		   (get job 'name) (length items)))
-	(put job 'queueitems nil)))
-    (put job 'state 'ready)
-    (when coq--debug-auto-compilation
-      (message "%s: ready" (get job 'name)))
-    (let ((dependant (get job 'queue-dependant)))
-      (if dependant
-	  (progn
-	    (cl-assert (not (eq coq--last-compilation-job job))
-		    nil "coq--last-compilation-job invariant error")
-	    (put dependant 'queue-dependant-waiting nil)
-	    (when coq--debug-auto-compilation
-	      (message
-	       "%s -> %s: clear queue dependency, kickoff queue at %s"
-	       (get job 'name) (get dependant 'name) (get dependant 'name)))
-	    (coq-par-kickoff-queue-maybe dependant)
-=======
     (unless (get job 'failed)
       (coq-par-retire-top-level-job job))
     (when (and (get job 'failed) (get job 'require-span))
@@ -1292,7 +1249,6 @@ case, the following actions are taken:
 				   'coq-par-run-vio2vo-queue))))
 	    (setq coq--last-compilation-job nil)
 	    (setq proof-second-action-list-active nil)
->>>>>>> 687e008bc80ca6f66ca8920296c2e8dab889c752
 	    (when coq--debug-auto-compilation
 	      (message "clear last compilation job"))
 	    (message "Library compilation %s"
