@@ -1387,36 +1387,8 @@ Near here means PT is either inside or just aside of a comment."
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which an ellipsis (...) is displayed."
   :type 'integer
-<<<<<<< HEAD
   :setting (lambda (depth) 
              (coq-queries-set-printing-depth depth)))
-=======
-  :setting "Set Printing Depth %i . ")
-
-;;; Obsolete:
-;;(defpacustom undo-depth coq-default-undo-limit
-;;  "Depth of undo history.  Undo behaviour will break beyond this size."
-;;  :type 'integer
-;;  :setting "Set Undo %i . ")
-
-(defun coq-set-search-blacklist (s)
-  (let ((res (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
-          coq-search-blacklist-string-prev s)))
-    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-    res))
-
-
-(defun coq-get-search-blacklist (s)
-  coq-search-blacklist-string)
-
-
-(defpacustom search-blacklist coq-search-blacklist-string
-  "Strings to blacklist in requests to coq environment."
-  :type 'string
-  :get coq-get-search-blacklist
-  :setting coq-set-search-blacklist)
-
->>>>>>> a423f633e6a41ab680a51e3af320056bde249584
 
 (defpacustom time-commands nil
   "Whether to display timing information for each command."

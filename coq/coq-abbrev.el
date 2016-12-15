@@ -254,8 +254,6 @@ It was constructed with `proof-defstringset-fn'.")
      ["Unset Printing Implicit" coq-unset-printing-implicit t]
      ["Set Printing Coercions" coq-set-printing-coercions t]
      ["Unset Printing Coercions" coq-unset-printing-coercions t]
-     ["Set Printing Universes" coq-set-printing-universes t]
-     ["Unset Printing Universes" coq-unset-printing-universes t]
      ["Set Printing Synth" coq-set-printing-synth t]
      ["Unset Printing Synth" coq-unset-printing-synth t]
      ["Set Printing Universes" coq-set-printing-universes t]
