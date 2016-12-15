@@ -753,19 +753,27 @@ Used for unlocking ancestors on compilation errors."
   "Emergency cleanup for parallel background compilation.
 Kills all processes, unlocks ancestors, clears the queue region
 and resets the internal state."
-  (when coq--debug-auto-compilation
-    (message "emergency cleanup"))
-  (coq-par-kill-all-processes)
-  (setq coq-par-compilation-queue (coq-par-new-queue))
-  (setq coq--last-compilation-job nil)
-  (setq coq-par-vio2vo-queue (coq-par-new-queue))
-  (setq coq--compile-vio2vo-in-progress nil)
-  (when coq--compile-vio2vo-delay-timer
-    (cancel-timer coq--compile-vio2vo-delay-timer))
-  (coq-par-unlock-ancestors-on-error)
-  (proof-detach-queue)
-  (setq proof-second-action-list-active nil)
-  (coq-par-init-compilation-hash))
+  (interactive)				; needed for menu
+  (let (proc-killed was-busy)
+    (when coq--debug-auto-compilation
+      (message "emergency cleanup"))
+    (setq proc-killed (coq-par-kill-all-processes))
+    (when (and (boundp 'prover-was-busy)
+	       (or proc-killed coq--last-compilation-job
+		   coq--compile-vio2vo-in-progress
+		   coq--compile-vio2vo-delay-timer))
+      (setq prover-was-busy t))
+    (setq coq-par-compilation-queue (coq-par-new-queue))
+    (setq coq--last-compilation-job nil)
+    (setq coq-par-vio2vo-queue (coq-par-new-queue))
+    (setq coq--compile-vio2vo-in-progress nil)
+    (when coq--compile-vio2vo-delay-timer
+      (cancel-timer coq--compile-vio2vo-delay-timer))
+    (coq-par-unlock-all-ancestors-on-error)
+    (proof-detach-queue)
+    (setq proof-second-action-list-active nil)
+    (coq-par-init-compilation-hash)))
+
 
 (defun coq-par-process-filter (process output)
   "Store output from coq background compilation."
