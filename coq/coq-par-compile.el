@@ -712,7 +712,8 @@ function returns () if MODULE-ID comes from the standard library."
 ;;; manage background jobs
 
 (defun coq-par-kill-all-processes ()
-  "Kill all background coqc, coqdep or vio2vo compilation processes."
+  "Kill all background coqc, coqdep or vio2vo compilation processes.
+Return t if some process was killed."
   ;; need to first mark processes as killed, because delete process
   ;; starts running sentinels in the order processes terminated, so
   ;; after the first delete-process we see sentinentels of non-killed
@@ -736,7 +737,8 @@ function returns () if MODULE-ID comes from the standard library."
 		    (get (process-get process 'coq-compilation-job) 'name)
 		    (process-name process)))))
      (process-list))
-    (setq coq--current-background-jobs 0)))
+    (setq coq--current-background-jobs 0)
+    kill-needed))
 
 (defun coq-par-unlock-all-ancestors-on-error ()
   "Unlock ancestors which are not in an asserted span.
@@ -773,7 +775,6 @@ and resets the internal state."
     (proof-detach-queue)
     (setq proof-second-action-list-active nil)
     (coq-par-init-compilation-hash)))
-
 
 (defun coq-par-process-filter (process output)
   "Store output from coq background compilation."
