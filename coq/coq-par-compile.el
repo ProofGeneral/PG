@@ -1144,13 +1144,13 @@ when they transition from 'waiting-queue to 'ready:
 
 This function can safely be called for non-top-level jobs. This
 function must not be called for failed jobs."
-  (assert (not (get job 'failed))
+  (cl-assert (not (get job 'failed))
 	  nil "coq-par-retire-top-level-job precondition failed")
   (let ((span (get job 'require-span))
 	(items (get job 'queueitems)))
     (when (and span coq-lock-ancestors)
       (dolist (anc-job (get job 'ancestors))
-	(assert (not (eq (get anc-job 'lock-state) 'unlocked))
+	(cl-assert (not (eq (get anc-job 'lock-state) 'unlocked))
 		nil "bad ancestor lock state")
 	(when (eq (get anc-job 'lock-state) 'locked)
 	  (put anc-job 'lock-state 'asserted)
@@ -1232,7 +1232,7 @@ case, the following actions are taken:
       (let ((dependant (get job 'queue-dependant)))
 	(if dependant
 	    (progn
-	      (assert (not (eq coq--last-compilation-job job))
+	      (cl-assert (not (eq coq--last-compilation-job job))
 		      nil "coq--last-compilation-job invariant error")
 	      (put dependant 'queue-dependant-waiting nil)
 	      (when coq--debug-auto-compilation
@@ -1249,9 +1249,8 @@ case, the following actions are taken:
 	      ;; variables that hold the queue span are buffer local
 	      (with-current-buffer (or proof-script-buffer (current-buffer))
 		(proof-script-clear-queue-spans-on-error nil))
-	      (proof-release-lock)
 	      (when (eq coq-compile-quick 'quick-and-vio2vo)
-		(assert (not coq--compile-vio2vo-delay-timer)
+		(cl-assert (not coq--compile-vio2vo-delay-timer)
 			nil "vio2vo timer set before last compilation job")
 		(setq coq--compile-vio2vo-delay-timer
 		      (run-at-time coq-compile-vio2vo-delay nil
@@ -1381,7 +1380,7 @@ This function makes the following actions.
 		       "maybe kickoff queue")
 	       (get job 'name)
 	       (if dependant-alive "some" "no")))
-    (assert (or (not (get job 'failed)) (not dependant-alive))
+    (cl-assert (or (not (get job 'failed)) (not dependant-alive))
 	    nil "failed job with non-failing dependant")
     (when (or (and (not dependant-alive)
 		   (not (get job 'require-span))
@@ -1564,7 +1563,7 @@ Return t if job has a direct or indirect dependant that has not
 failed yet and that is in a state before 'waiting-queue. Also,
 return t if JOB has a dependant that is a top-level job which has
 not yet failed."
-  (assert (not (eq (get job 'lock-state) 'asserted))
+  (cl-assert (not (eq (get job 'lock-state) 'asserted))
 	  nil "coq-par-ongoing-compilation precondition failed")
   (cond
    ((get job 'failed)
@@ -1595,7 +1594,7 @@ not yet failed."
 	(setq res (coq-par-ongoing-compilation dep)))
       res))
    (t
-    (assert nil nil
+    (cl-assert nil nil
 	    "impossible ancestor state %s on job %s"
 	    (get job 'state) (get job 'name)))))
 
@@ -1622,7 +1621,7 @@ Mark JOB with 'queue-failed, and, if JOB is in state
 appropriate."
   (unless (or (get job 'failed) (get job 'queue-failed))
     (put job 'queue-failed t)
-    (assert (not (eq (get job 'state) 'ready))
+    (cl-assert (not (eq (get job 'state) 'ready))
 	    nil "coq-par-mark-queue-failing impossible state")
     (when coq--debug-auto-compilation
       (message "%s: mark as queue-failed, %s"
