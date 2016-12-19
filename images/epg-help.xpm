@@ -1,5 +1,5 @@
 /* XPM */
-static char * help_xpm[] = {
+static char * epg_help_xpm[] = {
 "21 24 230 2",
 "  	c None",
 ". 	c #1E4121",
