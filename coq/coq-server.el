@@ -18,6 +18,8 @@
 (require 'coq-header-line)
 (require 'coq-company-compat)
 
+(defvar coq-server-response-hook nil)
+
 (defvar coq-server--pending-edit-at-state-id nil
   "State id for an Edit_at command sent, until we get a response.")
 
@@ -961,6 +963,7 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--current-call call) 
     (setq coq-server--current-span span) 
     (let ((xml (coq-xml-get-next-xml)))
+      (run-hook-with-args coq-server-response-hook xml)
       (pcase (coq-xml-tag xml)
 	;; feedbacks are most common, so put first here
 	(`feedback (coq-server--handle-feedback xml))

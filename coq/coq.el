@@ -1116,9 +1116,12 @@ Near here means PT is either inside or just aside of a comment."
              (cm-prefix (match-string 2)))
         (concat (make-string (length cm-start) ? ) cm-prefix)))))
 
+(defun coq-response-complete ()
+  (tq-response-complete coq-server-transaction-queue))
+
 (defun coq-interrupt-coq ()
   (when proof-server-process
-    (let ((complete-p (tq-response-complete coq-server-transaction-queue)))
+    (let ((complete-p (coq-response-complete)))
       (proof-server-clear-state)
       ;; resets completed flag
       ;; which is why we get its value first

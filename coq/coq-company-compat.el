@@ -20,7 +20,7 @@
 (defalias 'proof-shell-invisible-command 'proof-prover-invisible-command)
 (defalias 'proof-shell-available-p 'proof-prover-available-p)
 (defalias 'proof-shell-live-buffer 'proof-prover-live-buffer)
-(defalias 'proof-shell-ready-prover 'proof-prover-ready-prover)
+(defalias 'proof-shell-ready-prover 'coq-response-complete)
 
 (provide 'coq-company-compat)
 
