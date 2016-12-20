@@ -1229,9 +1229,7 @@ in ordinary output, which should appear in this regexp."
 
 We assume that an error message corresponds to a failure in the last
 proof command executed.  So don't match mere warning messages with
-this regexp.  Moreover, an error message should *not* be matched as an
-eager annotation (see `proof-shell-eager-annotation-start') otherwise it
-will be lost.
+this regexp.
 
 Error messages are considered to begin from `proof-shell-error-regexp'
 and continue until the next prompt.  The variable
@@ -1308,9 +1306,7 @@ to a filename."
   "Regexp matching output indicating the assistant was interrupted.
 We assume that an interrupt message corresponds to a failure in the last
 proof command executed.  So don't match mere warning messages with
-this regexp.  Moreover, an interrupt message should not be matched as an
-eager annotation (see `proof-shell-eager-annotation-start') otherwise it
-will be lost.
+this regexp.
 
 The engine matches interrupts before errors, see `proof-shell-error-regexp'.
 
@@ -1328,30 +1324,6 @@ message.
 We also enable the QED function (save a proof) and we may automatically
 close off the proof region if another goal appears before a save
 command, depending on whether the prover supports nested proofs or not."
-  :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
-(defcustom proof-shell-clear-response-regexp nil
-  "Regexp matching output telling Proof General to clear the response buffer.
-
-More precisely, this should match a string which is bounded by
-matches on `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-This feature is useful to give the prover more control over what output
-is shown to the user.  Set to nil to disable."
-  :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
-(defcustom proof-shell-clear-goals-regexp nil
-  "Regexp matching output telling Proof General to clear the goals buffer.
-
-More precisely, this should match a string which is bounded by
-matches on `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-This feature is useful to give the prover more control over what output
-is shown to the user.  Set to nil to disable."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
@@ -1380,56 +1352,6 @@ start of the match on `proof-shell-end-goals-regexp'.
 If nil, use the whole of the output from the match on
 `proof-shell-start-goals-regexp' up to the next prompt."
   :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
-(defcustom proof-shell-eager-annotation-start nil
-  "Eager annotation field start.  A regular expression or nil.
-An \"eager annotation indicates\" to Proof General that some following output
-should be displayed (or processed) immediately and not accumulated for
-parsing later.  Note that this affects processing of output which is
-ordinarily accumulated: output which appears before the eager annotation
-start will be discarded.
-
-The start/end annotations can be used to hilight the output, but
-are stripped from display of the message in the minibuffer.
-
-It is useful to recognize (starts of) warnings or file-reading messages
-with this regexp.  You must also recognize any special messages
-from the prover to PG with this regexp (e.g. `proof-shell-clear-goals-regexp',
-`proof-shell-retract-files-regexp', etc.)
-
-See also `proof-shell-eager-annotation-start-length',
-`proof-shell-eager-annotation-end'.
-
-Set to nil to disable this feature."
-  :type '(choice regexp (const :tag "Disabled" nil))
-  :group 'proof-shell)
-
-(defcustom proof-shell-eager-annotation-start-length 10
-  "Maximum length of an eager annotation start.
-Must be set to the maximum length of the text that may match
-`proof-shell-eager-annotation-start' (at least 1).
-If this value is too low, eager annotations may be lost!
-
-This value is used internally by Proof General to optimize the process
-filter to avoid unnecessary searching."
-  :type 'integer
-  :group 'proof-shell)
-
-(defcustom proof-shell-eager-annotation-end "\n"
-  "Eager annotation field end.  A regular expression or nil.
-An eager annotation indicates to Emacs that some following output
-should be displayed or processed immediately.
-
-See also `proof-shell-eager-annotation-start'.
-
-It is nice to recognize (ends of) warnings or file-reading messages
-with this regexp.  You must also recognize (ends of) any special messages
-from the prover to PG with this regexp (e.g. `proof-shell-clear-goals-regexp',
-`proof-shell-retract-files-regexp', etc.)
-
-The default value is \"\\n\" to match up to the end of the line."
-  :type '(choice regexp (const :tag "Unset" nil))
   :group 'proof-shell)
 
 (defcustom proof-shell-strip-output-markup 'identity
