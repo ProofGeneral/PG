@@ -4,6 +4,7 @@
 (require 'proof-server)
 (require 'coq-indent)
 (require 'coq-header-line)
+(require 'coq-error)
 (require 'coq-company-compat)
 
 (defvar coq-time-commands nil)        ; defpacustom
@@ -119,6 +120,7 @@ Only when three-buffer-mode is enabled."
   (when after-change-p
     (span-delete span)
     (coq-header-line-set-color-update)
+    (coq-error-set-update)
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
@@ -135,16 +137,23 @@ Only when three-buffer-mode is enabled."
       (let* ((trimmed-string (buffer-substring start end))
 	     (start-offs (byte-offset-to-char-offset trimmed-string error-start))
 	     (end-offs (byte-offset-to-char-offset trimmed-string error-end))
-	     (error-span (span-make (+ start start-offs) (+ start end-offs))))
-	(coq-header-line-set-color-update)
-	(span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
-	(span-set-property error-span 'face proof-error-face)
-	(span-set-property error-span 'help-echo msg)
-	;; must set priority using special call
-	(span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
-	(span-set-property error-span 'type 'pg-error)
-	(when warp
-	  (goto-char (+ start start-offs)))))
+	     (spans-at-start (overlays-at (+ start start-offs)))
+	     (err-spans-at-start (cl-remove-if-not (lambda (sp)
+						     (eq (span-property sp 'type) 'pg-error))
+						   spans-at-start)))
+	;; if error span already there, assume it's a duplicate
+	(unless err-spans-at-start
+	  (let ((error-span (span-make (+ start start-offs) (+ start end-offs))))
+	    (coq-header-line-set-color-update)
+	    (coq-error-set-update)
+	    (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
+	    (span-set-property error-span 'face proof-error-face)
+	    (span-set-property error-span 'help-echo msg)
+	    ;; must set priority using special call
+	    (span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
+	    (span-set-property error-span 'type 'pg-error)
+	    (when warp
+	      (goto-char (+ start start-offs)))))))
     ;; return start of error highlighting
     start))
 
