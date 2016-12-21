@@ -1129,9 +1129,11 @@ Near here means PT is either inside or just aside of a comment."
       (if complete-p
           ;; if Coq not working, stop active workers
           ;; locked region may not reflect what Coq has processed, so reset end
-          (progn
-            (message "Stopping Coq active workers")
-            (coq-server-stop-active-workers))
+          (if (> (hash-table-size coq-worker-status-tbl) 0)
+              (progn
+                (message "Stopping Coq active workers")
+                (coq-server-stop-active-workers))
+            (message "No Coq active workers"))
         ;; on interrupt, get a fail-value, resulting in Edit_at
         (when (and proof-server-process (eq (process-status proof-server-process) 'run))
           ;; get pid of shell used to start Coq
