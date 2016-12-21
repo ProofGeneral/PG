@@ -233,10 +233,7 @@ to write out the traversal code by hand each time."
            (coq-xml-pair
             nil
             (coq-xml-state_id `((val . ,coq-current-state-id)))
-            (coq-xml-bool 'true))
-           )
-          ))
-        )
+            (coq-xml-bool 'true))))))
     (cl-incf coq-edit-id-counter)
     add-block))
 
