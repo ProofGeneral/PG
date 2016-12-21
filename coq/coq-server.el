@@ -106,6 +106,22 @@ is gone and we have to close the secondary locked span."
 ;; start transaction queue after coqtop process started
 (add-hook 'proof-server-init-hook 'coq-server-start-transaction-queue)
 
+;; run statements, rewind to state id just before statements sent
+(defun coq-server-run-and-rewind (stmts handler)
+  ;; when this function is called, may be other items on the transaction queue
+  ;; save current state id when first statement sent
+  (let (rewind-state-id)
+    (dolist (stmt stmts)
+      (proof-server-invisible-cmd-handle-result
+       (lambda ()
+	 (unless rewind-state-id
+	   (setq rewind-state-id coq-current-state-id))
+	 (list stmt nil))
+       handler))
+    (proof-server-send-to-prover
+     (lambda ()
+       (list (coq-xml-edit-at rewind-state-id) nil)))))
+
 ;; Unicode!
 (defvar impl-bar-char ?―)
 
