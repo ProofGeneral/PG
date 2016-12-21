@@ -435,9 +435,6 @@ is gone and we have to close the secondary locked span."
 	   (spans-after-retract (spans-in start (point-max))))
       (if coq-server--backtrack-on-failure
 	  (progn 
-	    ;; TODO race condition here
-	    ;; not certain that this flag matches latest Edit_at
-	    ;; may not be a practical issue
 	    (setq coq-server--backtrack-on-failure nil)
 	    ;; if we backtracked on a failure, see if the next span with a state id
 	    ;; has a pg-error span on top; if so, unmark it for deletion
@@ -478,6 +475,7 @@ is gone and we have to close the secondary locked span."
       (proof-set-locked-end sent-end)
       (proof-set-sent-end sent-end)))
   (coq-server--show-retract-error)
+  (coq-error-set-update)
   (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--new-focus-backtrack (xml)
@@ -496,6 +494,7 @@ is gone and we have to close the secondary locked span."
       (setq coq-server--start-of-focus-state-id focus-start-state-id)
       (coq-server--create-secondary-locked-span focus-start-state-id focus-end-state-id last-tip-state-id)
       (coq-server--show-retract-error)
+      (coq-error-set-update)
       (coq-server--make-edit-at-state-id-current))))
 
 (defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
@@ -592,6 +591,7 @@ is gone and we have to close the secondary locked span."
   (cl-assert proof-locked-secondary-span)
   (coq-server--remove-secondary-locked-span t)
   (setq coq-server--start-of-focus-state-id nil)
+  (coq-error-set-update)
   (coq-server--make-edit-at-state-id-current))
 
 (defun coq-server--update-state-id (state-id)
