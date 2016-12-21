@@ -91,7 +91,6 @@ derived Emacs mode; here, we call the procedure directly."
 		  (run-hooks 'proof-server-init-hook)
 		  (if (stringp proof-server-init-cmd)
 		      (proof-server-send-to-prover proof-server-init-cmd)
-;		    (proof-server-send-to-prover (car proof-server-init-cmd)))
 		    (dolist (cmd proof-server-init-cmd)
 		      (proof-server-send-to-prover cmd)))
 		  (if proof-assistant-settings
