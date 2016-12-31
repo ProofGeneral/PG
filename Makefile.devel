@@ -91,8 +91,8 @@ DEVELOPERS=\
 # The prereltag.txt is kept as a record in the distrib area
 # of the current pre-release version (currently not used explicitly
 # anywhere for web pages/whatever).
-RERELEASE_PREFIX=4\.4\.1-pre
-PRERELEASE_TAG=4.4.1-pre
+PRERELEASE_PREFIX=4\.4\.1~pre
+PRERELEASE_TAG=4.4.1~pre
 ### Formerly: PRERELEASE_TAG=4.4pre$(shell date "+%y%m%d")
 PREREL_TAG_FILE=prereltag.txt
 
@@ -301,7 +301,7 @@ tag:
 #		sed -e 's|ProofGeneral\([emacselc-]*\)-$(PRERELEASE_PREFIX)......|ProofGeneral\1-$(PRERELEASE_TAG)|g' $$f.old > $$f; \
 #		rm $$f.old; \
 #	   done) \
-	fi
+#	fi
 	if [ -z "$(NOCVS)" ]; then git add generic/$(VERSIONFILE) etc/ProofGeneral.spec && git commit -m"Set version tag for new release." ; fi
 	if [ -z "$(NOCVS)" ]; then git tag -a  "$(GIT_RELEASENAME)"; fi
 
