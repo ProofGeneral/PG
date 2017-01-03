@@ -63,69 +63,21 @@
 (defvar coq-header--line-number-key -1)
 (puthash coq-header--line-number-key 0 coq-header--line-number-tbl)
 
+;; number of chars of edit before we flush line number table
+(defvar coq-header--line-number-epsilon 15)
+
 (defun coq-header--validate-line-number-tbl ()
   (let ((cached-size (gethash coq-header--line-number-key coq-header--line-number-tbl))
 	(curr-size (buffer-size)))
-    (unless (= cached-size curr-size)
+    (unless (> (abs (- cached-size curr-size)) coq-header--line-number-epsilon)
       (clrhash coq-header--line-number-tbl)
-      (puthash coq-header--line-number-key curr-size coq-header--line-number-tbl)
-      (coq-header--build-line-number-vector))))
-
-;; create vector of (pos1 . pos2), where pos1 is line beginning, pos2 the ending
-;; index into vector is one less than the line number
-;; TODO: probably this fails in the case of narrowing
-(defun coq-header--build-line-number-vector ()
-  (let ((line-beginning 1)
-	(entries nil)
-	(done nil))
-    (save-excursion
-      (goto-char (point-min))
-      (while (not done)
-	(when (bolp)
-	  (setq line-beginning (point)))
-	(when (or (eolp) (eobp))
-	  (let ((entry (cons line-beginning (point))))
-	    (setq entries (cons entry entries))))
-	(if (eobp)
-	    (setq done t)
-	  (forward-char))))
-    (setq coq-header--line-number-vector (vconcat (reverse entries)))))
-
-;; binary search for pos in line number vector
-(defun coq-header--line-number-at-pos (pos)
-  (let* ((len (length coq-header--line-number-vector))
-	 (low-bound 0)
-	 (high-bound (1- len))
-	 (slot-last -1)
-	 slot
-	 line-number)
-    ;; we should always find the line number in this loop
-    ;; but check to avoid infinite loop, just in case
-    (while (and (not line-number) (not (equal slot slot-last)))
-      (setq slot-last slot)
-      (setq slot (floor (/ (+ low-bound high-bound) 2.0)))
-      (let* ((entry (aref coq-header--line-number-vector slot))
-	     (start (car entry))
-	     (end (cdr entry)))
-	(cond
-	 ((< pos start) ; before interval
-	  (setq high-bound (1- slot)))
-	 ((> pos end)   ; after interval
-	  (setq low-bound (1+ slot)))
-	 (t ; found it
-	  (setq line-number (1+ slot))))))
-    ;; if loop failed, fall back to Emacs code for line number
-    ;; should never happen
-    (unless line-number
-      (proof-debug-message "coq-header--line-number-at-pos: failed to find line number for pos: %s" pos)
-      (setq line-number (line-number-at-pos)))
-    line-number))
+      (puthash coq-header--line-number-key curr-size coq-header--line-number-tbl))))
 
 ;; lookup line number in table, cache it
 (defun coq-header--get-line-number (pos)
   (let ((result (gethash pos coq-header--line-number-tbl)))
     (unless result
-      (setq result (coq-header--line-number-at-pos pos))
+      (setq result (line-number-at-pos pos))
       (puthash pos result coq-header--line-number-tbl))
     result))
 
