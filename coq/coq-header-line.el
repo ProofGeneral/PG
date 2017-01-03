@@ -75,8 +75,7 @@
 ;; index into vector is one less than the line number
 ;; TODO: probably this fails in the case of narrowing
 (defun coq-header--build-line-number-vector ()
-  (let ((line-number 0)
-	(line-beginning 0)
+  (let ((line-beginning 1)
 	(entries nil)
 	(done nil))
     (save-excursion
