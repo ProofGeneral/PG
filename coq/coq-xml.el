@@ -345,19 +345,24 @@ to write out the traversal code by hand each time."
 ;; in 8.6+, a string token used to preserve structure within richpp tags
 ;;  eventually replaced with a space
 (defvar coq-xml--space-token nil)
+(defvar coq-xml--newline-token nil)
 
 (defvar coq-xml-richpp-space-token "#SPC#")
+(defvar coq-xml-richpp-newline-token "#NL#")
 
-(defun coq-xml-set-space-token ()
+(defun coq-xml-set-special-tokens ()
   (let* ((full-version (coq-version t))
 	 (version (substring full-version 0 3)))
-    (setq coq-xml--space-token
-	  (if (equal version "8.5")
-	      " "
-	    coq-xml-richpp-space-token))))
+    (if (equal version "8.5")
+	(setq coq-xml--space-token " ")
+      (setq coq-xml--space-token coq-xml-richpp-space-token
+	    coq-xml--newline-token coq-xml-richpp-newline-token))))
 
 (defun coq-xml-unescape-string (s &optional token)
-  (replace-regexp-in-string "&nbsp;" (or token coq-xml--space-token) s))
+  (let ((result (replace-regexp-in-string "&nbsp;" (or token coq-xml--space-token) s)))
+    (if coq-xml--newline-token
+	(replace-regexp-in-string "\n" coq-xml--newline-token result)
+      result)))
 
 ;; XML parser does not understand &nbsp;
 (defun coq-xml-unescape-buffer ()

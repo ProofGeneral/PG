@@ -1309,7 +1309,7 @@ Near here means PT is either inside or just aside of a comment."
            (cons coq-tags tags-table-list)))
 
   ;; unescaping
-  (coq-xml-set-space-token)
+  (coq-xml-set-special-tokens)
   
   (set (make-local-variable 'blink-matching-paren-dont-ignore-comments) t)
 

@@ -854,9 +854,11 @@ is gone and we have to close the secondary locked span."
 				      (flatten-pp (cddr it))
 				    it))
 				items "")))
-    ;; when we unescaped the response, we put a special token for spaces
-    ;; inside richpp tags, now put back the spaces
-    (replace-regexp-in-string coq-xml-richpp-space-token " " result)))
+    ;; when we unescaped the response, we put special tokens for spaces and newlines
+    ;; inside richpp tags, now put them back
+    (replace-regexp-in-string
+     coq-xml-richpp-newline-token "\n" 
+     (replace-regexp-in-string coq-xml-richpp-space-token " " result))))
 
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
