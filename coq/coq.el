@@ -1344,6 +1344,7 @@ Near here means PT is either inside or just aside of a comment."
   (setq pg-goals-error-regexp coq-error-regexp)
   (coq-init-syntax-table)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
+  (setq truncate-lines t)
   (proof-goals-config-done))
 
 (defun coq-response-config ()
