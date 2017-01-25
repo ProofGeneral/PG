@@ -87,7 +87,7 @@ is gone and we have to close the secondary locked span."
   (pg-goals-display "" nil))
 
 (defun coq-server-start-transaction-queue ()
-  (setq coq-server-transaction-queue (tq-create proof-server-process 'coq-server-process-oob
+  (setq coq-server-transaction-queue (coq-tq-create proof-server-process 'coq-server-process-oob
 						end-of-response-tags other-responses-tags)))
 
 ;; stop all active workers
@@ -669,7 +669,7 @@ is gone and we have to close the secondary locked span."
   ;; remove pending calls to Coq, except for the one that
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer
-  (tq-flush-but-1 coq-server-transaction-queue)
+  (coq-tq-flush-but-1 coq-server-transaction-queue)
   (unless (coq-server--was-query-call)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
@@ -990,7 +990,7 @@ is gone and we have to close the secondary locked span."
 	(t (proof-debug-message "Unknown coqtop response %s" xml))))
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
-      (tq-flush coq-server-transaction-queue)
+      (coq-tq-flush coq-server-transaction-queue)
       (proof-debug-message "Ill-formed XML: %s" (buffer-string))
       (erase-buffer)
       (let ((warning "Warning: received ill-formed XML from Coq.")
@@ -1020,7 +1020,7 @@ is gone and we have to close the secondary locked span."
 ;; called by proof-server-send-to-prover
 ;; do not call directly
 (defun coq-server-send-to-prover (s special-handler)
-  (tq-enqueue coq-server-transaction-queue s
+  (coq-tq-enqueue coq-server-transaction-queue s
 	      ;; "closure" argument, passed to handler below
 	      ;; can be used for unusual processing on response
 	      ;; for example, to insert intros into script

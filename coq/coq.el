@@ -1117,7 +1117,7 @@ Near here means PT is either inside or just aside of a comment."
         (concat (make-string (length cm-start) ? ) cm-prefix)))))
 
 (defun coq-response-complete ()
-  (tq-response-complete coq-server-transaction-queue))
+  (coq-tq-response-complete coq-server-transaction-queue))
 
 (defun coq-interrupt-coq ()
   (when proof-server-process
@@ -1125,7 +1125,7 @@ Near here means PT is either inside or just aside of a comment."
       (proof-server-clear-state)
       ;; resets completed flag
       ;; which is why we get its value first
-      (tq-flush coq-server-transaction-queue) 
+      (coq-tq-flush coq-server-transaction-queue) 
       (if complete-p
           ;; if Coq not working, stop active workers
           ;; locked region may not reflect what Coq has processed, so reset end
@@ -1209,11 +1209,12 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-prog-name-guess t)
 
   (setq proof-everything-sent-fun (lambda ()
-                                    (tq-everything-sent coq-server-transaction-queue)))
+                                    (coq-tq-everything-sent coq-server-transaction-queue)))
   
   (setq proof-command-formatting-fun 'coq-format-command)
   (setq proof-server-interrupt-fun 'coq-interrupt-coq)
-  (setq proof-server-response-complete-fun (lambda () (tq-response-complete coq-server-transaction-queue)))
+  (setq proof-server-response-complete-fun
+        (lambda () (coq-tq-response-complete coq-server-transaction-queue)))
   
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.

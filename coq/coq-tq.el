@@ -91,35 +91,35 @@
 ;;  (queue . (keep-len . (end-tags . (other-tags . (process . buffer))))) .  -- the car
 ;;  (last-search-point . (response-complete . (call . span)))                -- the cdr
 
-(defun tq-qpb                   (tq) (car tq))
-(defun tq-queue                 (tq) (car (tq-qpb tq)))
-(defun tq-keep-len              (tq) (car (cdr (tq-qpb tq))))
-(defun tq-end-tags              (tq) (car (cdr (cdr (tq-qpb tq)))))
-(defun tq-other-tags            (tq) (car (cdr (cdr (cdr (tq-qpb tq))))))
-(defun tq-process               (tq) (car (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
-(defun tq-buffer                (tq) (cdr (cdr (cdr (cdr (cdr (tq-qpb tq)))))))
+(defun coq-tq-qpb                   (tq) (car tq))
+(defun coq-tq-queue                 (tq) (car (coq-tq-qpb tq)))
+(defun coq-tq-keep-len              (tq) (car (cdr (coq-tq-qpb tq))))
+(defun coq-tq-end-tags              (tq) (car (cdr (cdr (coq-tq-qpb tq)))))
+(defun coq-tq-other-tags            (tq) (car (cdr (cdr (cdr (coq-tq-qpb tq))))))
+(defun coq-tq-process               (tq) (car (cdr (cdr (cdr (cdr (coq-tq-qpb tq)))))))
+(defun coq-tq-buffer                (tq) (cdr (cdr (cdr (cdr (cdr (coq-tq-qpb tq)))))))
 
-(defun tq-state-items           (tq) (cdr tq))
-(defun tq-last-search-point     (tq) (car (tq-state-items tq)))
-(defun tq-response-complete     (tq) (car (cdr (tq-state-items tq))))
-(defun tq-call                  (tq) (car (cdr (cdr (tq-state-items tq)))))
-(defun tq-span                  (tq) (cdr (cdr (cdr (tq-state-items tq)))))
+(defun coq-tq-state-items           (tq) (cdr tq))
+(defun coq-tq-last-search-point     (tq) (car (coq-tq-state-items tq)))
+(defun coq-tq-response-complete     (tq) (car (cdr (coq-tq-state-items tq))))
+(defun coq-tq-call                  (tq) (car (cdr (cdr (coq-tq-state-items tq)))))
+(defun coq-tq-span                  (tq) (cdr (cdr (cdr (coq-tq-state-items tq)))))
 
-(defun tq-set-last-search-point (tq pt) (setcar (tq-state-items tq) pt))
-(defun tq-set-complete          (tq) (setcar (cdr (tq-state-items tq)) t))
+(defun coq-tq-set-last-search-point (tq pt) (setcar (coq-tq-state-items tq) pt))
+(defun coq-tq-set-complete          (tq) (setcar (cdr (coq-tq-state-items tq)) t))
 
 ;; The structure of `queue' is as follows
 ;; ((question closure . fn)
 ;;  <other queue entries>)
 ;; question: string to send to the process
-(defun tq-queue-head-question (tq) (car (car (tq-queue tq))))
+(defun coq-tq-queue-head-question (tq) (car (car (coq-tq-queue tq))))
 ;; closure: function for special handling of response
-(defun tq-queue-head-closure   (tq) (car (cdr (car (tq-queue tq)))))
+(defun coq-tq-queue-head-closure   (tq) (car (cdr (car (coq-tq-queue tq)))))
 ;; fn: function for ordinary handling of response
-(defun tq-queue-head-fn        (tq) (cdr (cdr (car (tq-queue tq)))))
+(defun coq-tq-queue-head-fn        (tq) (cdr (cdr (car (coq-tq-queue tq)))))
 
 ;; Determine whether queue is empty
-(defun tq-queue-empty         (tq) (not (tq-queue tq)))
+(defun coq-tq-queue-empty         (tq) (not (coq-tq-queue tq)))
 
 ;;; added for Coq
 
@@ -129,21 +129,21 @@
 ;; the second case happens when we enqueue an item to the empty queue
 ;; the item is sent directly, but an entry with a nil question is
 ;;  put on the queue for popping when the response is received
-(defun tq-everything-sent     (tq) (let ((queue (tq-queue tq)))
+(defun coq-tq-everything-sent     (tq) (let ((queue (coq-tq-queue tq)))
 				     (or (null queue)
 					 ;; one item
 					 (and (null (cdr queue)) 
 					      ;; nil question
-					      (null (tq-queue-head-question tq))))))
+					      (null (coq-tq-queue-head-question tq))))))
 
 ;; handler for out-of-band responses from coqtop
 (defvar tq--oob-handler nil)
 
-(defun tq-maybe-log (src str)
+(defun coq-tq-maybe-log (src str)
   (when proof-server-log-traffic
     (proof-server-log src str)))
 
-(defun tq-log-and-send (tq question)
+(defun coq-tq-log-and-send (tq question)
   (let* ((str-and-span 
 	  (cond 
 	   ((functionp question) (funcall question))
@@ -152,7 +152,7 @@
 	   (t (error "tq-log-and-send: expected string or function, got %s of type %s" question (type-of question)))))
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
-    (tq-maybe-log "emacs" str)
+    (coq-tq-maybe-log "emacs" str)
     ;; call to be returned with coqtop response
     (setcdr (cdr tq) (cons nil       ; not complete
 			   (cons str ; call
@@ -164,31 +164,31 @@
       (proof-set-sent-end (span-end span))
       (puthash coq-current-state-id span coq-span-add-call-state-id-tbl)
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
-    (process-send-string (tq-process tq) str)))
+    (process-send-string (coq-tq-process tq) str)))
 
-(defun tq--finish-flush (tq)
+(defun coq-tq--finish-flush (tq)
   ;; reset complete flag
-  (tq-set-complete tq)
+  (coq-tq-set-complete tq)
   ;; remove any parts of any responses
-  (with-current-buffer (tq-buffer tq)
+  (with-current-buffer (coq-tq-buffer tq)
     (erase-buffer)))
 
-(defun tq-flush (tq)
+(defun coq-tq-flush (tq)
   ;; flush queue 
-  (setcar (tq-qpb tq) nil)
-  (tq--finish-flush tq))
+  (setcar (coq-tq-qpb tq) nil)
+  (coq-tq--finish-flush tq))
 
-(defun tq-flush-but-1 (tq)
+(defun coq-tq-flush-but-1 (tq)
   ;; flush queue except for first item
-  (let ((item (car (tq-queue tq))))
+  (let ((item (car (coq-tq-queue tq))))
     (when item
-      (setcar (tq-qpb tq) (list item))))
-  (tq--finish-flush tq))
+      (setcar (coq-tq-qpb tq) (list item))))
+  (coq-tq--finish-flush tq))
 
 ;;; Core functionality
 
 ;;;###autoload
-(defun tq-create (process oob-handler end-tags other-tags)
+(defun coq-tq-create (process oob-handler end-tags other-tags)
   "Create and return a transaction queue communicating with PROCESS.
 PROCESS should be a subprocess capable of sending and receiving
 streams of bytes.  It may be a local process, or it may be connected
@@ -208,69 +208,69 @@ from the PROCESS that are not transactional."
 						     (process-name process)))))))))
 	 (state (cons 1 (cons t (cons nil nil))))
 	 (tq (cons qpb state)))
-    (buffer-disable-undo (tq-buffer tq))
+    (buffer-disable-undo (coq-tq-buffer tq))
     (setq tq--oob-handler oob-handler)
     (set-process-filter process
 			`(lambda (proc string)
-			   (tq-filter ',tq string)))
+			   (coq-tq-filter ',tq string)))
     tq))
 
-(defun tq-queue-add (tq question closure fn)
+(defun coq-tq-queue-add (tq question closure fn)
   (let ((new-item (cons question (cons closure fn))))
-    (setcar (tq-qpb tq) 
-	    (nconc (tq-queue tq)
+    (setcar (coq-tq-qpb tq) 
+	    (nconc (coq-tq-queue tq)
 		   (list new-item)))
     'ok))
 
-(defun tq-queue-pop (tq)
-  (let ((queue-items (tq-queue tq)))
-    (setcar (tq-qpb tq) (cdr queue-items)))
-  (let ((question (tq-queue-head-question tq)))
+(defun coq-tq-queue-pop (tq)
+  (let ((queue-items (coq-tq-queue tq)))
+    (setcar (coq-tq-qpb tq) (cdr queue-items)))
+  (let ((question (coq-tq-queue-head-question tq)))
     (condition-case nil
 	(when question
-	  (tq-log-and-send tq question))
+	  (coq-tq-log-and-send tq question))
       (error nil)))
   (null (car tq)))
 
-(defun tq-enqueue (tq question closure fn)
+(defun coq-tq-enqueue (tq question closure fn)
   "Add a transaction to transaction queue TQ.
 This sends the string QUESTION to the process that TQ communicates with.
 
 When the corresponding answer comes back, we call FN with two
 arguments: CLOSURE, which may contain additional data that FN
 needs, and the answer to the question."
-  (let ((sendp (tq-queue-empty tq))) ; delay sending, unless queue empty
-    (tq-queue-add tq (unless sendp question) closure fn)
+  (let ((sendp (coq-tq-queue-empty tq))) ; delay sending, unless queue empty
+    (coq-tq-queue-add tq (unless sendp question) closure fn)
     (when sendp
-      (tq-log-and-send tq question))))
+      (coq-tq-log-and-send tq question))))
 
-(defun tq-close (tq)
+(defun coq-tq-close (tq)
   "Shut down transaction queue TQ, terminating the process."
-  (delete-process (tq-process tq))
-  (kill-buffer (tq-buffer tq)))
+  (delete-process (coq-tq-process tq))
+  (kill-buffer (coq-tq-buffer tq)))
 
-(defun tq-filter (tq string)
+(defun coq-tq-filter (tq string)
   "Append STRING to the TQ's buffer; then process the new data."
-  (let ((buffer (tq-buffer tq)))
+  (let ((buffer (coq-tq-buffer tq)))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
 	(goto-char (point-max))
 	(insert string)
-	(tq-process-buffer tq)))))
+	(coq-tq-process-buffer tq)))))
 
-(defun tq-process-buffer (tq)
+(defun coq-tq-process-buffer (tq)
   "Check TQ's buffer for the regexp at the head of the queue."
-  (let ((buffer (tq-buffer tq))
-	(last-search-point (tq-last-search-point tq))
+  (let ((buffer (coq-tq-buffer tq))
+	(last-search-point (coq-tq-last-search-point tq))
 	done)
     (with-current-buffer buffer
       ;; resume search where we left off, accounting for possibility
       ;; that end tag may have begun before last point we searched to
-      (goto-char (max (- last-search-point (tq-keep-len tq))
+      (goto-char (max (- last-search-point (coq-tq-keep-len tq))
 		      (point-min)))
       (while (and (not done) (buffer-live-p buffer) (> (buffer-size) 0))
 	(setq done t)
-	(let* ((complete-tags (tq-end-tags tq))
+	(let* ((complete-tags (coq-tq-end-tags tq))
 	       (start-tag (car complete-tags))
 	       (start-len (length start-tag))
 	       (end-tag (cdr complete-tags))
@@ -279,7 +279,7 @@ needs, and the answer to the question."
 			  (equal (buffer-substring 1 (1+ start-len)) start-tag)
 			  (search-forward end-tag nil t)))
 	       (partial complete)
-	       (tag-pairs (tq-other-tags tq)))
+	       (tag-pairs (coq-tq-other-tags tq)))
 	  (while (and (not partial) tag-pairs)
 	    (let* ((tag-pair (car tag-pairs))
 		   (start-tag (car tag-pair))
@@ -292,38 +292,38 @@ needs, and the answer to the question."
 	      (setq tag-pairs (cdr tag-pairs))))
 	  (when (or complete partial)
 	    (let ((answer (buffer-substring (point-min) (point)))
-		    (oob (tq-queue-empty tq))
+		    (oob (coq-tq-queue-empty tq))
 		    src
 		    fun)
 		(if oob
 		    (setq src "coqtop-oob"
 			  fun tq--oob-handler)
 		  (setq src "coqtop"
-			fun (tq-queue-head-fn tq)))
+			fun (coq-tq-queue-head-fn tq)))
 		;; for complete response, can safely pop item from queue
 		(when complete
-		  (tq-set-complete tq))
+		  (coq-tq-set-complete tq))
 		(delete-region (point-min) (point))
 		(unwind-protect
 		    (condition-case err
 			(progn
-			  (tq-maybe-log src answer)
+			  (coq-tq-maybe-log src answer)
 			  (funcall fun
-				   (tq-queue-head-closure tq)
+				   (coq-tq-queue-head-closure tq)
 				   answer 
-				   (tq-call tq)
-				   (tq-span tq)))
+				   (coq-tq-call tq)
+				   (coq-tq-span tq)))
 		      (error (proof-debug-message
 			      (concat "Error when processing "
 				      (if complete "complete" "partial")
 				      " Coq response: %s, response was: \"%s\"") err answer)))
 		  (when complete
-		    (tq-queue-pop tq))
+		    (coq-tq-queue-pop tq))
 		  ;;  might be another response in the buffer, keep looping
 		  (setq done nil))))))
       ;; we've searched to the end of buffer
       ;; which might be empty
-      (tq-set-last-search-point tq (point-max)))))
+      (coq-tq-set-last-search-point tq (point-max)))))
 
 (provide 'coq-tq)
 
