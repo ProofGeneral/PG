@@ -225,7 +225,7 @@ If inside a comment, just process until the start of the comment."
   ;; for Coq, don't allow Undo if haven't received complete response
   (if (proof-server-response-complete)
       (proof-undo-last-successful-command-1)
-    (message-box (concat proof-assistant " still working, can't undo yet"))))
+    (message (concat proof-assistant " still working, can't undo yet"))))
 
 (defun proof-undo-and-delete-last-successful-command ()
   "Undo and delete last successful command at end of locked region.
