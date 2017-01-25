@@ -354,9 +354,13 @@ to write out the traversal code by hand each time."
   (let* ((full-version (coq-version t))
 	 (version (substring full-version 0 3)))
     (if (equal version "8.5")
-	(setq coq-xml--space-token " ")
+	(progn
+	  (setq coq-xml--space-token " ")
+	  (setq coq-xml--newline-token nil))
       (setq coq-xml--space-token coq-xml-richpp-space-token
 	    coq-xml--newline-token coq-xml-richpp-newline-token))))
+
+(add-hook 'proof-server-init-hook 'coq-xml-set-special-tokens)
 
 (defun coq-xml-unescape-string (s &optional token)
   (let ((result (replace-regexp-in-string "&nbsp;" (or token coq-xml--space-token) s)))

@@ -29,6 +29,7 @@
 On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
+(require 'coq-error)
 
 (defcustom coq-prog-name
   (if (executable-find "coqtop") "coqtop"
@@ -143,6 +144,12 @@ If it doesn't look right, try `coq-autodetect-version'."
     (if version
         (message "Using Coq v%s" coq-autodetected-version)
       (message "Coq version unknown at this time. Use `coq-autodetect-version' to autodetect."))))
+
+;; for setting program name on the fly
+(defun coq-set-prog-name (name)
+  (interactive "sLocation of coqtop: ")
+  (setq coq-prog-name name
+	proof-prog-name name))
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
