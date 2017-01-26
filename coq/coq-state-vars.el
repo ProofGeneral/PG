@@ -29,6 +29,9 @@ Initially 1 because Coq initial state has id 1.")
   "State id to retract entire buffer.
 It's the state id returned after Init command sent.")
 
+(defvar coq-xml-protocol-date nil
+  "Protocol version for Coq XML protocol, as an 8-character date")
+
 (defun coq-reset-state-vars ()
   (setq coq-current-state-id coq-retract-buffer-state-id
 	coq-proof-state-id "1"
@@ -37,7 +40,8 @@ It's the state id returned after Init command sent.")
 	coq-edit-id-counter 1
 	coq-last-but-one-state-id "1"
 	coq-last-but-one-proofnum 1
-	coq-last-but-one-proofstack nil))
+	coq-last-but-one-proofstack nil
+	coq-xml-protocol-date nil))
 
 (add-hook 'proof-server-restart-hook 'coq-reset-state-vars)
 

@@ -11,15 +11,7 @@
 (require 'coq-system)
 
 (defun coq-xml-protocol-version ()
-  (save-match-data
-    (let* ((raw-version (coq-version t))
-	   (start (string-match "^[0-9]+[\\.][0-9]+" raw-version)))
-      (when start
-	(let ((major-version (substring raw-version start (match-end 0))))
-	  (pcase major-version
-	    ("8.5" "1.0")
-	    ("8.6" "1.1")
-	    (t nil)))))))
+  coq-xml-protocol-date)
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
@@ -245,6 +237,10 @@ to write out the traversal code by hand each time."
     (coq-xml-string
      item)
     (coq-xml-state_id `((val . ,coq-current-state-id))))))
+
+(defun coq-xml-about ()
+  (coq-xml-call '((val . About))
+                (coq-xml-unit)))
 
 (defun coq-xml-init ()
   (coq-xml-call '((val . Init))

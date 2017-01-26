@@ -125,6 +125,18 @@ is gone and we have to close the secondary locked span."
 ;; Unicode!
 (defvar impl-bar-char ?―)
 
+
+;; get Coq info from About call
+(defun coq-server--value-about-p (xml)
+  (coq-xml-at-path xml '(value (coq_info))))
+
+(defun coq-server--get-coq-info (xml)
+  (let* ((coq-info-items (coq-xml-body (coq-xml-at-path xml '(value (coq_info)))))
+	 ;; items are Coq version, protocol version, compilation month/year,full compilation time
+	 ;; version might be "trunk", so not so useful
+	 (coq-protocol-version-string (nth 1 coq-info-items)))
+    (setq coq-xml-protocol-date (coq-xml-body1 coq-protocol-version-string))))
+
 ;;; goal formatting
 
 (defun coq-server--goal-id (goal)
@@ -750,6 +762,10 @@ is gone and we have to close the secondary locked span."
     ;; Init, get first state id
     (coq-server--set-init-state-id xml))
 
+   ((coq-server--value-about-p xml)
+    ;; About, get Coq info
+    (coq-server--get-coq-info xml))
+   
    ;; some good values are unprocessed, for example, responses to Query 
    (t (error (format "Unknown good value: %s" xml)))))
 

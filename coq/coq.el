@@ -136,7 +136,7 @@ that do not fit in the goals window."
   :group 'coq)
 
 (defconst coq-server-init-cmds
-  (list (coq-xml-init))
+  (list (coq-xml-about) (coq-xml-init))
  "Commands to initialize Coq.")
 
 (require 'coq-syntax)
