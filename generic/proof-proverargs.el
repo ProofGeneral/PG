@@ -5,9 +5,10 @@
 
 
 (defun prover-command-line-and-names ()
-  (when proof-prog-name-ask
+  (if proof-prog-name-ask
     (setq proof-prog-name (read-shell-command "Run process: "
-					      proof-prog-name)))
+					      proof-prog-name))
+    (run-hooks 'proof-set-prog-name-hook))
   (let* ((prog-name-list1
 	  (if (functionp (proof-ass-sym prog-args))
 	      ;; complex assistants define <PA>-prog-args as function
