@@ -340,23 +340,27 @@ to write out the traversal code by hand each time."
 ;; in 8.5, just a space
 ;; in 8.6+, a string token used to preserve structure within richpp tags
 ;;  eventually replaced with a space
-(defvar coq-xml--space-token nil)
+(defvar coq-xml--space-token " ")
 (defvar coq-xml--newline-token nil)
 
 (defvar coq-xml-richpp-space-token "#SPC#")
 (defvar coq-xml-richpp-newline-token "#NL#")
 
-(defun coq-xml-set-special-tokens ()
-  (let* ((full-version (coq-version t))
-	 (version (substring full-version 0 3)))
-    (if (equal version "8.5")
-	(progn
-	  (setq coq-xml--space-token " ")
-	  (setq coq-xml--newline-token nil))
-      (setq coq-xml--space-token coq-xml-richpp-space-token
-	    coq-xml--newline-token coq-xml-richpp-newline-token))))
+(defun coq-xml--set-plain-special-tokens ()
+  (setq coq-xml--space-token " "
+	coq-xml--newline-token nil))
 
-(add-hook 'proof-server-init-hook 'coq-xml-set-special-tokens)
+(defun coq-xml--set-richpp-special-tokens ()
+  (setq coq-xml--space-token coq-xml-richpp-space-token
+	coq-xml--newline-token coq-xml-richpp-newline-token))
+
+(defun coq-xml-set-special-tokens ()
+  (let* ((xml-protocol (coq-xml-protocol-version)))
+    (pcase xml-protocol
+      ("20140312" ; 8.5
+       (coq-xml--set-plain-special-tokens))
+      (t 
+       (coq-xml--set-richpp-special-tokens)))))
 
 (defun coq-xml-unescape-string (s &optional token)
   (let ((result (replace-regexp-in-string "&nbsp;" (or token coq-xml--space-token) s)))

@@ -135,7 +135,8 @@ is gone and we have to close the secondary locked span."
 	 ;; items are Coq version, protocol version, compilation month/year,full compilation time
 	 ;; version might be "trunk", so not so useful
 	 (coq-protocol-version-string (nth 1 coq-info-items)))
-    (setq coq-xml-protocol-date (coq-xml-body1 coq-protocol-version-string))))
+    (setq coq-xml-protocol-date (coq-xml-body1 coq-protocol-version-string))
+    (coq-xml-set-special-tokens)))
 
 ;;; goal formatting
 

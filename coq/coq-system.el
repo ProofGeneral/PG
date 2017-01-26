@@ -196,13 +196,17 @@ version detection that Proof General does automatically."
   "Return non-nil if the auto-detected version of Coq is < 8.5.
 Returns nil if the version can't be detected."
   (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.5snapshot")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+    (pcase coq-version-to-use
+      ;; assume trunk is at least 8.5
+      ("trunk" nil) 
+      (t 
+       (condition-case err
+	   (coq--version< coq-version-to-use "8.5snapshot")
+	 (error
+	  (cond
+	   ((equal (substring (cadr err) 0 15) "Invalid version")
+	    (signal 'coq-unclassifiable-version  coq-version-to-use))
+	   (t (signal (car err) (cdr err))))))))))
 
 (defcustom coq-use-makefile nil
   "Whether to look for a Makefile to attempt to guess the command line.
