@@ -51,7 +51,6 @@
 (require 'coq-xml)
 (require 'coq-company-compat)
 
-
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")
 (declare-function smie-rule-parent-p "smie")
@@ -499,7 +498,11 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
                                    (eq (span-property sp 'type) 'vanilla))
                                  spans)))
             (if vanilla-spans
-                (setq state-id (span-property (car vanilla-spans) 'state-id))
+                (let ((state-id-span (car vanilla-spans)))
+                  (if (> (span-end state-id-span) (span-start span))
+                      ;; if state-id span overlaps found span, don't use it
+                      (goto-char (1- (span-start state-id-span)))
+                    (setq state-id (span-property state-id-span 'state-id))))
               ;; search backward
               (let ((comment-spans (cl-remove-if-not
                                     (lambda (sp)
