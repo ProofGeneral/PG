@@ -487,20 +487,17 @@ is gone and we have to close the secondary locked span."
 			 (<= (span-end error-span) (span-end state-id-span)))
 		(span-unmark-delete error-span))))
 	;; not on failure, delete pg-error, pg-special-coloring spans below
-	;; TODO : why aren't special-colored spans marked for deletion?
 	(let* ((help-spans (cl-remove-if-not
 			    (lambda (sp) (member (span-property sp 'type)
 						 '(pg-error pg-special-coloring)))
 			    spans-after-retract)))
 	  (mapc 'span-delete help-spans)))
-	(mapc (lambda (span)
-		(when (or (and (span-property span 'marked-for-deletion)
-			       (not (span-property span 'self-removing)))
-			  ;; also remove any incomplete, processing-in spans
-			  (span-property span 'incomplete)
-			  (span-property span 'processing-in))
-		  (span-delete span)))
-	      (spans-all))
+      ;; now remove spans marked for deletion
+      (mapc (lambda (span)
+	      (when (or (and (span-property span 'marked-for-deletion)
+			     (not (span-property span 'self-removing))))
+		(span-delete span)))
+	    (spans-all))
       (proof-set-locked-end sent-end)
       (proof-set-sent-end sent-end)))
   (coq-server--show-retract-error)
