@@ -374,12 +374,12 @@ columns in header line, NUM-COLS is number of its columns."
 
 (defun coq-header-line-mouse-handler ()
   (interactive)
-  (let ((event (read-event)))
-    (when (consp event) ; sometimes seem to get other events
+  (let ((event last-input-event))
+    (when (consp event) 
       (let* ((mouse-info (car event))
 	     (event-posn (cadr event))
 	     (x-pos (car (posn-x-y event-posn))))
-	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'down-mouse-1))
+	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'mouse-1))
 	  (let* ((window-pixels (window-pixel-width (get-buffer-window)))
 		 (num-lines (coq-header--get-line-number (point-max)))
 		 (destination-line (/ (* x-pos num-lines) window-pixels)))
