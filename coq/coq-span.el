@@ -103,6 +103,8 @@
 	(span-set-property span-sent 'type 'pg-special-coloring)
 	(span-set-property span-sent 'sent 't)
 	(span-set-property span-sent 'face proof-locked-face)
-	(span-set-priority span-sent rank)))))
+	(span-set-priority span-sent rank)
+	(coq-header-line-set-color-update)))))
+
 
 (provide 'coq-span)
