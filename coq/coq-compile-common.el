@@ -416,7 +416,7 @@ expressions in here are always matched against the .vo file name,
 regardless whether ``-quick'' would be used to compile the file
 or not."
   :type '(repeat regexp)
-  :safe (lambda (v) (every 'stringp v))
+  :safe (lambda (v) (cl-every 'stringp v))
   :group 'coq-auto-compile)
 
 (defcustom coq-coqdep-error-regexp
@@ -505,7 +505,7 @@ for instance, not make sense to let ProofGeneral check if the coq
 standard library is up-to-date. This function is always invoked
 on the .vo file name, regardless whether the file would be
 compiled with ``-quick'' or not."
-  (if (some
+  (if (cl-some
        (lambda (dir-regexp) (string-match dir-regexp lib-obj-file))
        coq-compile-ignored-directories)
       (progn
