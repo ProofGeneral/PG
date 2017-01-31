@@ -10,8 +10,23 @@
 (require 'coq-state-vars)
 (require 'coq-system)
 
+;; XML protocol versions, as returned by About command
+
+(defvar coq-xml-protocol-8.5 "20140312")
+(defun coq-xml-protocol-8.5-p (protocol)
+  (equal protocol coq-xml-protocol-8.5))
+
+(defvar coq-xml-protocol-8.6 "20150913")
+(defun coq-xml-protocol-8.6-p (protocol)
+  (equal protocol coq-xml-protocol-8.6))
+
 (defun coq-xml-protocol-version ()
   coq-xml-protocol-date)
+
+(defun coq-xml-bad-protocol ()
+  (error "Bad XML protocol \"%s\", expected one of %s"
+	 (coq-xml-protocol-version)
+	 (list coq-xml-protocol-8.5 coq-xml-protocol-8.6)))
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata

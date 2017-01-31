@@ -143,30 +143,42 @@ is gone and we have to close the secondary locked span."
 (defun coq-server--goal-id (goal)
   (coq-xml-body1 (nth 2 goal)))
 
+(defun coq-server--goal-hypotheses-8.5 (goal-hypos)
+  (coq-xml-body goal-hypos))
+
+(defun coq-server--goal-hypotheses-8.6 (goal-hypos)
+  (let ((richpp-hypos
+	 (cl-remove-if 'null
+		       (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
+			       (coq-xml-body goal-hypos)))))
+    (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
+	    richpp-hypos)))
+
 (defun coq-server--goal-hypotheses (goal)
   (let ((goal-hypos (nth 3 goal)))
-    (let* ((richpp-hypos
-	    (cl-remove-if 'null
-			  (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
-				  (coq-xml-body goal-hypos))))
-	   (flattened-hypos 
-	    (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
-		    richpp-hypos)))
-      (or 
-       ;; 8.6
-       flattened-hypos 
-       ;; 8.5
-       (coq-xml-body goal-hypos)))))
+    (pcase (coq-xml-protocol-version)
+      ((pred coq-xml-protocol-8.5-p)
+       (coq-server--goal-hypotheses-8.5 goal-hypos))
+      ((pred coq-xml-protocol-8.6-p)
+       (coq-server--goal-hypotheses-8.6 goal-hypos))
+      (_ (coq-xml-bad-protocol)))))
+
+(defun coq-server--goal-goal-8.5 (goal-goal) 
+  (coq-xml-body1 goal-goal))
+
+(defun coq-server--goal-goal-8.6 (goal-goal)
+  (let ((richpp-goal (coq-xml-at-path goal-goal '(richpp (_)))))
+    (and richpp-goal
+	 (flatten-pp (coq-xml-body richpp-goal)))))
 
 (defun coq-server--goal-goal (goal)
   (let ((goal-goal (nth 4 goal)))
-    (or 
-     ;; 8.6
-     (let ((richpp-goal (coq-xml-at-path goal-goal '(richpp (_)))))
-       (and richpp-goal
-	    (flatten-pp (coq-xml-body richpp-goal))))
-     ;; 8.5
-     (coq-xml-body1 goal-goal))))
+    (pcase (coq-xml-protocol-version)
+      ((pred coq-xml-protocol-8.5-p)
+       (coq-server--goal-goal-8.5 goal-goal))
+      ((pred coq-xml-protocol-8.6-p)
+       (coq-server--goal-goal-8.6 goal-goal))
+      (_ (coq-xml-bad-protocol)))))
 
 (defvar goal-indent-length 1)
 (defvar goal-indent (make-string goal-indent-length ?\s))
@@ -695,14 +707,16 @@ is gone and we have to close the secondary locked span."
 			(and pos (string-to-number pos))))
 	   (loc-end (let ((pos (coq-xml-at-path xml '(value loc_e))))
 		      (and pos (string-to-number pos))))
-	   (error-msg (or
-		       ;; 8.6
-		       (let ((richpp-text (coq-xml-at-path xml '(value (_) (richpp (_))))))
-			 (and richpp-text
-			      (flatten-pp (coq-xml-body richpp-text))))
-		       ;; 8.5 ; 
-		       ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
-		       (cadr (cdr (cdr xml)))))
+	   (error-msg
+	    (pcase (coq-xml-protocol-version)
+	      ((pred coq-xml-protocol-8.5-p)
+	       ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
+	       (cadr (cdr (cdr xml))))
+	      ((pred coq-xml-protocol-8.6-p)
+	       (let ((richpp-text (coq-xml-at-path xml '(value (_) (richpp (_))))))
+		 (and richpp-text
+		      (flatten-pp (coq-xml-body richpp-text)))))
+	      (_ (coq-xml-bad-protocol))))
 	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear 
@@ -976,16 +990,20 @@ is gone and we have to close the secondary locked span."
 	       (coq-server--handle-error xml)))))
 	(t)))))
 
-;; syntax of messages differs in 8.5 and 8.6, handle both cases
-;; TODO : dispatch on version, maybe
+;; syntax of messages differs in 8.5 and 8.6
 (defun coq-server--handle-message (xml)
-  (let* ((message-str-8.5 (coq-xml-at-path xml '(message (message_level) (string))))
-	 ;; The _ below is a wildcard in our search path, but the tag is actually _
-	 ;; something of a delicious irony
-	 (message-str (or message-str-8.5 
-			  (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))
-	 (msg (flatten-pp (coq-xml-body message-str))))
-    (coq--display-response msg)))
+  (let* ((message
+	  (pcase (coq-xml-protocol-version)
+	    ((pred coq-xml-protocol-8.5-p)
+	     (coq-xml-body (coq-xml-at-path xml '(message (message_level) (string)))))
+	    ((pred coq-xml-protocol-8.6-p)
+	     ;; The _ below is a wildcard in our search path, but the tag is actually _
+	     ;; something of a delicious irony
+	     (flatten-pp
+	      (coq-xml-body
+	       (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
+	    (_ (coq-xml-bad-protocol)))))
+    (coq--display-response message)))
 
 (defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML
