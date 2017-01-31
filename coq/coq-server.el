@@ -1034,13 +1034,17 @@ is gone and we have to close the secondary locked span."
 ;; called by proof-server-send-to-prover
 ;; do not call directly
 (defun coq-server-send-to-prover (s special-handler)
-  (coq-tq-enqueue coq-server-transaction-queue s
-	      ;; "closure" argument, passed to handler below
-	      ;; can be used for unusual processing on response
-	      ;; for example, to insert intros into script
-	      ;; always nil or a function symbol
-	      special-handler
-	      ;; default handler gets special-handler and coqtop response
-	      #'coq-server-handle-tq-response))
+  (if coq-server-transaction-queue
+    (coq-tq-enqueue coq-server-transaction-queue s
+		    ;; "closure" argument, passed to handler below
+		    ;; can be used for unusual processing on response
+		    ;; for example, to insert intros into script
+		    ;; always nil or a function symbol
+		    special-handler
+		    ;; default handler gets special-handler and coqtop response
+		    #'coq-server-handle-tq-response)
+    ;; discard item if transaction queue not initialized
+    ;; can happen, for example, if user does Insert Intros before Coq started
+    (message "Coq not started")))
 
 (provide 'coq-server)
