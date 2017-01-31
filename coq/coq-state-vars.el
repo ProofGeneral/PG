@@ -12,19 +12,6 @@
 
 ;; NB: state ids are strings that currently in Coq contain numbers
 
-(defvar coq-last-but-one-state-id "1"
-  "The state id we want to put in a span.
-This is the prompt number given *just before* the command was sent.
-This variable remembers this number and will be updated when
-used see coq-set-state-number.
-Initially 1 because Coq initial state has id 1.")
-
-(defvar coq-last-but-one-proofnum 1
-  "As for `coq-last-but-one-state-id' but for stack depth.")
-
-(defvar coq-last-but-one-proofstack nil
-  "As for `coq-last-but-one-state-id' but for proof stack symbols.")
-
 (defvar coq-retract-buffer-state-id nil
   "State id to retract entire buffer.
 It's the state id returned after Init command sent.")
@@ -37,11 +24,7 @@ It's the state id returned after Init command sent.")
 	coq-proof-state-id "1"
 	coq-pending-proofs nil
 	coq-current-proof-name nil
-	coq-edit-id-counter 1
-	coq-last-but-one-state-id "1"
-	coq-last-but-one-proofnum 1
-	coq-last-but-one-proofstack nil
-	coq-xml-protocol-date nil))
+	coq-edit-id-counter 1))
 
 (add-hook 'proof-server-restart-hook 'coq-reset-state-vars)
 

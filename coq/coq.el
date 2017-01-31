@@ -466,8 +466,7 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 ;; Each time the state changes (hook below), (try to) put the state number in
 ;; the last locked span (will fail if there is already a number which should
 ;; happen when going back in the script).  The state number we put is not the
-;; last one because the last one has been sent by Coq *after* the change. We
-;; use `coq-last-but-one-state-id' instead and then update it.
+;; last one because the last one has been sent by Coq *after* the change.
 
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
