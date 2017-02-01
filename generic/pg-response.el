@@ -359,10 +359,8 @@ Returns non-nil if response buffer was cleared."
 
 (defun pg-response-display (str)
   "Show STR as a response in the response buffer."
-
   (pg-response-maybe-erase t nil)
   (pg-response-display-with-face str)
-
   ;; NB: this displays an empty buffer sometimes when it's not
   ;; so useful.  It _is_ useful if the user has requested to
   ;; see the proof state and there is none
@@ -407,7 +405,6 @@ Returns non-nil if response buffer was cleared."
           (overlay-put
            (span-make start (point-max))
            'face face))
-
 	(setq buffer-read-only t)
 	(set-buffer-modified-p nil))))))
 

@@ -1,16 +1,18 @@
-;; coq-state-vars.el -- variables holding global state of the proof
+;; coq-state-vars.el -- variables holding global state
 
-;; most of these were encoded in the prompt in the old -emacs mode for coqtop
+
+              (defvar coq-auto-insert-as nil)            ; defpacustom
+              (defvar coq-time-commands nil)             ; defpacustom
+              (defvar coq-use-project-file t)            ; defpacustom
+              (defvar coq-use-editing-holes nil)         ; defpacustom
+              (defvar coq-hide-additional-subgoals nil)  ; defpacustom
+
 ;; the current state id is returned in the last <value> in response to an "Add" command
 ;; the others are in the <status> in response to a "Status" command
 
-(defvar coq-current-state-id nil)
-(defvar coq-proof-state-id "1")
-(defvar coq-pending-proofs nil)
-(defvar coq-current-proof-name nil)
-(defvar coq-edit-id-counter 1)
-
 ;; NB: state ids are strings that currently in Coq contain numbers
+(defvar coq-current-state-id nil)
+(defvar coq-edit-id-counter 1)
 
 (defvar coq-retract-buffer-state-id nil
   "State id to retract entire buffer.
@@ -21,9 +23,6 @@ It's the state id returned after Init command sent.")
 
 (defun coq-reset-state-vars ()
   (setq coq-current-state-id coq-retract-buffer-state-id
-	coq-proof-state-id "1"
-	coq-pending-proofs nil
-	coq-current-proof-name nil
 	coq-edit-id-counter 1))
 
 (add-hook 'proof-server-restart-hook 'coq-reset-state-vars)

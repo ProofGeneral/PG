@@ -282,7 +282,7 @@ or extension.
 Using %e can avoid problems with dumb proof assistants who don't
 understand ~, for example.
 
-For all these cases, the escapes in `proof-shell-filename-escapes'
+For all these cases, the escapes in `proof-server-filename-escapes'
 are processed.
 
 If STRING is in fact a function, instead invoke it on FILENAME and
@@ -292,13 +292,13 @@ return the resulting (string) value."
     (funcall string filename))
    (t
     (proof-format
-     (list (cons "%s" (proof-format proof-shell-filename-escapes
+     (list (cons "%s" (proof-format proof-server-filename-escapes
 				    (expand-file-name filename)))
-	   (cons "%e" (proof-format proof-shell-filename-escapes
+	   (cons "%e" (proof-format proof-server-filename-escapes
 				    (expand-file-name filename)))
-	   (cons "%r" (proof-format proof-shell-filename-escapes
+	   (cons "%r" (proof-format proof-server-filename-escapes
 				    filename))
-	   (cons "%m" (proof-format proof-shell-filename-escapes
+	   (cons "%m" (proof-format proof-server-filename-escapes
 				    (file-name-nondirectory
 				     (file-name-sans-extension filename)))))
      string))))

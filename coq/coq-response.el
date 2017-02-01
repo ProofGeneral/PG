@@ -63,7 +63,7 @@ Only when three-buffer-mode is enabled."
 		    (recenter)))))))))))
 
 ;; display something in response buffer
-(defun coq--display-response (msg)
+(defun coq-display-response (msg)
   (setq proof-shell-last-response-output msg)
   (pg-response-message msg)
   (coq-optimise-resp-windows-if-option))

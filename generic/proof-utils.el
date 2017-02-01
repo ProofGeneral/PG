@@ -703,11 +703,11 @@ If optional arg REALLY-WORD is non-nil, it finds just a word."
 ;; Stripping output and message
 ;;
 
-(defsubst proof-shell-strip-output-markup (string &optional push)
+(defsubst proof-server-strip-output-markup (string &optional push)
   "Strip output markup from STRING.
-Convenience function to call function `proof-shell-strip-output-markup'.
+Convenience function to call function `proof-server-strip-output-markup'.
 Optional argument PUSH is ignored."
-  (funcall proof-shell-strip-output-markup string))
+  (funcall proof-server-strip-output-markup string))
 
 (defun proof-minibuffer-message (str)
   "Output STR in minibuffer."
@@ -715,14 +715,14 @@ Optional argument PUSH is ignored."
       (message "%s" ;; to escape format characters
 	       (concat "[" proof-assistant "] "
 		       ;; TODO: rather than stripping, could try fontifying
-		       (proof-shell-strip-output-markup str)))))
+		       (proof-server-strip-output-markup str)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Extracting visible text in a buffer
 ;;
-;; NB: this is possible automatic alternative to proof-shell-strip-output,
+;; NB: this is possible automatic alternative to proof-server-strip-output,
 ;; but is more reliable to have specific setting.
 ;;
 ;; (defun proof-buffer-substring-visible (start end)

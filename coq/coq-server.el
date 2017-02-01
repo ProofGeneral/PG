@@ -16,6 +16,7 @@
 (require 'coq-xml)
 (require 'coq-span)
 (require 'coq-header-line)
+(require 'coq-state-vars)
 (require 'coq-company-compat)
 
 (defvar coq-server-response-hook nil)
@@ -80,7 +81,6 @@ is gone and we have to close the secondary locked span."
   (proof-server-send-to-prover (coq-xml-status)))
 
 (defun coq-server--clear-response-buffer ()
-  (coq--display-response "")
   (pg-response-clear-displays))
 
 (defun coq-server--clear-goals-buffer ()
@@ -103,6 +103,7 @@ is gone and we have to close the secondary locked span."
 
 ;; clear response buffer when we Add an item from the Coq script
 (add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
+
 ;; start transaction queue after coqtop process started
 (add-hook 'proof-server-init-hook 'coq-server-start-transaction-queue)
 
@@ -218,8 +219,9 @@ is gone and we have to close the secondary locked span."
   (concat goal-indent goal))
 
 ;; invariant: goals is non-empty
-(defun coq-server--make-goals-string (goals &optional hide-first-context kind-of-goals)
-  (let* ((num-goals (length goals))
+;; actual-num-goals used for actual number of goals when we're hiding subgoals
+(defun coq-server--make-goals-string (goals &optional actual-num-goals hide-first-context kind-of-goals)
+  (let* ((num-goals (or actual-num-goals (length goals)))
 	 (goal1 (car goals))
 	 (goals-rest (if hide-first-context goals (cdr goals)))
 	 (goal-counter 1))
@@ -279,8 +281,12 @@ is gone and we have to close the secondary locked span."
 
 (defun coq-server--handle-goals (xml)
   (setq proof-prover-proof-completed nil)
-  (let* ((all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
-	 (current-goals (coq-xml-body (nth 0 all-goals)))
+  (let* ((show-subgoals (not coq-hide-additional-subgoals))
+	 (all-goals (coq-xml-body (coq-xml-at-path xml '(value (option (goals))))))
+	 (all-current-goals (coq-xml-body (nth 0 all-goals)))
+	 (current-goals (if show-subgoals
+			    all-current-goals
+			  (list (car all-current-goals))))
 	 ;; background goals have a different, extra structure than the other ones
 	 (bg-goals-pairs (coq-xml-body (nth 1 all-goals)))
 	 (before-bg-goals nil)
@@ -288,11 +294,11 @@ is gone and we have to close the secondary locked span."
 	 (shelved-goals (coq-xml-body (nth 2 all-goals)))
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
 	 goal-text)
-      (when abandoned-goals
-	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals t 'Abandoned) goal-text)))
-      (when shelved-goals
-	(setq goal-text (cons (coq-server--make-goals-string shelved-goals t 'Shelved) goal-text)))
-      (when bg-goals-pairs
+      (when (and abandoned-goals show-subgoals)
+	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals nil t 'Abandoned) goal-text)))
+      (when (and shelved-goals show-subgoals)
+	(setq goal-text (cons (coq-server--make-goals-string shelved-goals nil t 'Shelved) goal-text)))
+      (when (and bg-goals-pairs show-subgoals)
 	(dolist (pair bg-goals-pairs)
 	  (let* ((before-focus-pair-list (nth 0 (coq-xml-body pair)))
 		 (after-focus-pair-list (nth 1 (coq-xml-body pair)))
@@ -302,11 +308,11 @@ is gone and we have to close the secondary locked span."
 	    (setq after-bg-goals (append after-bg-goals after-pair-goals))))
 	;; cons after goals, then before goals, so see before, then after in output
 	(when after-bg-goals 
-	  (setq goal-text (cons (coq-server--make-goals-string after-bg-goals t "Unfocused (after focus)") goal-text)))
+	  (setq goal-text (cons (coq-server--make-goals-string after-bg-goals nil t "Unfocused (after focus)") goal-text)))
 	(when before-bg-goals 
-	  (setq goal-text (cons (coq-server--make-goals-string before-bg-goals t "Unfocused (before focus)") goal-text))))
+	  (setq goal-text (cons (coq-server--make-goals-string before-bg-goals nil t "Unfocused (before focus)") goal-text))))
       (when current-goals
-	(setq goal-text (cons (coq-server--make-goals-string current-goals) goal-text)))
+	(setq goal-text (cons (coq-server--make-goals-string current-goals (length all-current-goals)) goal-text)))
       (if goal-text
 	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
 	    (setq coq-server--last-goal-nonempty t)
@@ -317,7 +323,7 @@ is gone and we have to close the secondary locked span."
 	;; mimic the coqtop REPL, though it would be better to come via XML
 	(when coq-server--last-goal-nonempty
 	  (setq coq-server--last-goal-nonempty nil)
-	  (coq--display-response "No more subgoals.")))))
+	  (coq-display-response "No more subgoals.")))))
 
 (defun coq-server--value-status-p (xml)
   (coq-xml-at-path xml '(value (status))))
@@ -726,7 +732,7 @@ is gone and we have to close the secondary locked span."
 					 (or loc-end (- (span-end error-span) (span-start error-span)))
 					 error-msg))
       (coq-server--clear-response-buffer)
-      (coq--display-response error-msg)
+      (coq-display-response error-msg)
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
 	(setq coq-server--backtrack-on-failure t)
@@ -820,7 +826,7 @@ is gone and we have to close the secondary locked span."
       ;; no context for this error      
       (progn
 	(coq-server--clear-response-buffer)
-	(coq--display-response error-msg))
+	(coq-display-response error-msg))
     (let ((error-span (or (coq-server--get-span-with-state-id error-state-id)
 			  (coq-server--get-span-with-edit-id error-edit-id)
 			  ;; no span associated with state id or edit id
@@ -832,7 +838,7 @@ is gone and we have to close the secondary locked span."
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
       	    (coq-server--clear-response-buffer)
-	    (coq--display-response error-msg)
+	    (coq-display-response error-msg)
 	    (setq coq-server--sticky-point (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
 	;; indelibly color the error 
@@ -872,7 +878,7 @@ is gone and we have to close the secondary locked span."
     (if (> error-stop 0)
 	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
       ;; if not associated with script text, show error in response buffer
-      (coq--display-response error-msg))))
+      (coq-display-response error-msg))))
 
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
@@ -914,7 +920,7 @@ is gone and we have to close the secondary locked span."
     (if (> error-stop 0)
 	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
       ;; if not associated with script text, show error in response buffer
-      (coq--display-response error-msg))))
+      (coq-display-response error-msg))))
 
 ;; maintain table of active workers
 (defun coq-server--handle-worker-status (xml)
@@ -995,7 +1001,7 @@ is gone and we have to close the secondary locked span."
   (let* ((message
 	  (pcase (coq-xml-protocol-version)
 	    ((pred coq-xml-protocol-8.5-p)
-	     (coq-xml-body (coq-xml-at-path xml '(message (message_level) (string)))))
+	     (coq-xml-body1 (coq-xml-at-path xml '(message (message_level) (string)))))
 	    ((pred coq-xml-protocol-8.6-p)
 	     ;; The _ below is a wildcard in our search path, but the tag is actually _
 	     ;; something of a delicious irony
@@ -1003,7 +1009,7 @@ is gone and we have to close the secondary locked span."
 	      (coq-xml-body
 	       (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
 	    (_ (coq-xml-bad-protocol)))))
-    (coq--display-response message)))
+    (coq-display-response message)))
 
 (defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML

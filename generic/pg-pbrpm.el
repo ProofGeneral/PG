@@ -18,6 +18,7 @@
 ;;
 ;;   (make-frame '((minibuffer . nil) (menu-bar-lines . 0) (tool-bar-lines . nil)))
 
+
 (declare-function proof-pbrpm-generate-menu "nofile")
 (declare-function insert-gui-button "nofile")
 (declare-function make-gui-button "nofile")
@@ -33,10 +34,10 @@
 
 
 ;;; Code:
+(require 'pg-goals)
 (require 'span)
 (eval-when-compile
   (require 'proof-utils))
-
 (require 'proof)
 
 ;;;
@@ -373,11 +374,11 @@ Returns (n . s) where
 	start-hyp-text hyp-name)
     (while (and pos l (not found))
       (setq start-goal (car l))
-      (setq end-goal (cadr l))
-      (setq goal-name (caddr l))
-      (setq start-concl (cadddr l))
-      (setq hyps (car (cddddr l)))
-      (setq l (cdr (cddddr l)))
+      (setq end-goal (nth 1 l))
+      (setq goal-name (nth 2 l))
+      (setq start-concl (nth 3 l))
+      (setq hyps (car (nth 4 l)))
+      (setq l (cdr (cdr (cdr (cdr (cdr l))))))
       (if (and (<= start-goal pos) (<= pos end-goal))
 	  (progn
 	    (setq found t)
@@ -388,11 +389,11 @@ Returns (n . s) where
 	      (setq the-click-info "none")
 	    (setq found nil)
 	    (while (and hyps (not found))
-	      (setq start-hyp (car hyps))
-	      (setq start-hyp-text (cadr hyps))
-	      (setq end-hyp (caddr hyps))
-	      (setq hyp-name (cadddr hyps))
-	      (setq hyps (cddddr hyps))
+	      (setq start-hyp (nth 0 hyps))
+	      (setq start-hyp-text (nth 1 hyps))
+	      (setq end-hyp (nth 2 hyps))
+	      (setq hyp-name (nth 3 hyps))
+	      (setq hyps (cdr (cdr (cdr (cdr hyps)))))
 	      (if (and (<= start-hyp pos) (<= pos end-hyp))
 		  (progn
 		    (setq found t)
@@ -418,14 +419,14 @@ If no match found, return the empty string."
   (save-excursion
     (let ((pos (point)))
       (beginning-of-line)
-      (block 'loop
+      (cl-block 'loop
 	(while (< (point) pos)
 	  (unless (search-forward-regexp pg-pbrpm-auto-select-regexp nil t)
-	    (return-from 'loop ""))
+	    (cl-return-from 'loop ""))
 	  (if (and (<= (match-beginning 0) pos)
 		   (<= pos (match-end 0)))
-	      (return-from 'loop (match-string 0))))
-	(return-from 'loop "")))))
+	      (cl-return-from 'loop (match-string 0))))
+	(cl-return-from 'loop "")))))
 
 (defun pg-pbrpm-translate-position (buffer pos)
   "return pos if buffer is goals-buffer otherwise, return the point position in

@@ -23,11 +23,6 @@
               (defvar proof-info nil)       ; dynamic scope in proof-tree-urgent-action
               (defvar action nil)       ; dynamic scope in coq-insert-as stuff
               (defvar string nil)       ; dynamic scope in coq-insert-as stuff
-              (defvar coq-auto-insert-as nil)    ; defpacustom
-              (defvar coq-time-commands nil)        ; defpacustom
-              (defvar coq-use-project-file t)        ; defpacustom
-              (defvar coq-use-editing-holes nil)    ; defpacustom
-              (defvar coq-hide-additional-subgoals nil) ; defpacustom
               (proof-ready-for-assistant 'coq))     ; compile for coq
 
 (require 'cl-lib)
@@ -74,6 +69,10 @@
 
 
 ;; ----- coq-shell configuration options
+
+(defvar coq-server-cd nil
+  ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
+  "*Command of the inferior process to change the directory.")
 
 ;;; Code:
 ;; debugging functions
@@ -142,32 +141,6 @@ that do not fit in the goals window."
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
 (require 'coq-indent)
-
-
-;; FIXME da: this was disabled (set to nil) -- why?
-;; da: 3.5: add experimental
-;; am:answer: because of bad interaction
-;; with coq -R option.
-(defvar coq-shell-cd nil
-  ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
-  "*Command of the inferior process to change the directory.")
-
-(defvar coq-goal-regexp
-  "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
-
-(defcustom coq-end-goals-regexp-show-subgoals "\n(dependent evars:"
-  "Regexp for `proof-shell-end-goals-regexp' when showing all subgoals.
-A setting of nil means show all output from Coq. See also
-`coq-hide-additional-subgoals'."
-  :type '(choice regexp (const nil))
-  :group 'coq)
-
-(defcustom coq-end-goals-regexp-hide-subgoals
-  (concat "\\(\nsubgoal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
-  "Regexp for `proof-shell-end-goals-regexp' when hiding additional subgoals.
-See also `coq-hide-additional-subgoals'."
-  :type '(choice regexp (const nil))
-  :group 'coq)
 
 ;;
 ;; prooftree customization
@@ -294,10 +267,6 @@ See also `coq-hide-additional-subgoals'."
 ;;)
 
 (defvar coq-outline-heading-end-regexp "\\.[ \t\n]")
-
-(defvar coq-shell-outline-regexp coq-goal-regexp)
-(defvar coq-shell-outline-heading-end-regexp coq-goal-regexp)
-
 
 (defconst coq-state-preserving-tactics-regexp
   (proof-regexp-alt-list coq-state-preserving-tactics))
@@ -460,14 +429,6 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 ;;   (** An id describing the state of the current proof. *)
 ;; }
 
-(defun coq-in-proof ()
-  (not (null coq-pending-proofs)))
-
-;; Each time the state changes (hook below), (try to) put the state number in
-;; the last locked span (will fail if there is already a number which should
-;; happen when going back in the script).  The state number we put is not the
-;; last one because the last one has been sent by Coq *after* the change.
-
 ;; hook for resizing windows
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
 
@@ -548,19 +509,6 @@ nearest preceding span with a state id."
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
 
-(defun coq-goal-hyp ()
-  (cond
-   ((looking-at "============================\n")
-    (goto-char (match-end 0))
-    (cons 'goal (int-to-string coq-current-goal)))
-   ((looking-at "subgoal \\([0-9]+\\) is:\n")
-    (goto-char (match-end 0))
-    (cons 'goal (match-string 1))       ;FIXME: This is dead-code!?  --Stef
-    (setq coq-current-goal (string-to-number (match-string 1))))
-   ((proof-looking-at proof-shell-assumption-regexp)
-    (cons 'hyp (match-string 1)))
-   (t nil)))
-
 (defun coq-state-preserving-p (cmd)
   ;; (or
   (proof-string-match coq-non-retractable-instruct-regexp cmd))
@@ -577,21 +525,14 @@ nearest preceding span with a state id."
       (progn
         (setq coq-hide-additional-subgoals nil)
         (error
-         "You must disable ``Time Commands'' (var coq-time-commands) first"))
-    (if coq-hide-additional-subgoals
-        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
-      (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))))
+         "You must disable ``Time Commands'' (var coq-time-commands) first"))))
 
 (defun coq-time-commands-switch ()
   "Function invoked when the user switches `coq-time-commands'.
-Resets `coq-hide-additional-subgoals' and puts nil into
-`proof-shell-end-goals-regexp' to ensure the timing is visible in
-the *goals* buffer."
+Resets `coq-hide-additional-subgoals'."
   (if coq-time-commands
-      (progn
-        (let ((coq-time-commands nil))
-          (customize-set-variable 'coq-hide-additional-subgoals nil))
-        (setq proof-shell-end-goals-regexp nil))
+      (let ((coq-time-commands nil))
+        (customize-set-variable 'coq-hide-additional-subgoals nil))
     (coq-hide-additional-subgoals-switch)))
 
 ;;
@@ -934,7 +875,7 @@ necessary.")
   "Return the probable width of goals buffer if it pops up now.
 This is a guess based on the current width of goals buffer if
 present, current pg display mode and current geometry otherwise."
-  (let (pol (proof-guess-3win-display-policy proof-three-window-mode-policy))
+  (let (pol (_proof-guess-3win-display-policy proof-three-window-mode-policy))
     (cond
      ;; goals buffer is visible, bingo
      ((coq-goals-window-width))
@@ -1234,7 +1175,6 @@ Near here means PT is either inside or just aside of a comment."
   
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
-        pg-topterm-goalhyplit-fn 'coq-goal-hyp ; TODO not used?
         proof-state-preserving-p 'coq-state-preserving-p)
 
   ;; TODO REPLACE THIS?
@@ -1408,9 +1348,8 @@ Near here means PT is either inside or just aside of a comment."
 
 (defun coq-proof-tree-get-proof-info ()
   "Coq instance of `proof-tree-get-proof-info'."
-  (let* ((info (coq-current-proof-info)))
-    (list (nth 0 info)    ; state number
-          (nth 3 info)))) ; name of current proof
+  (list coq-current-state-id    
+        "TODO: get proof name"))
 
 (defun coq-extract-instantiated-existentials (start end)
   "Coq specific function for `proof-tree-extract-instantiated-existentials'.
@@ -1461,7 +1400,7 @@ The not yet delayed output is in the region
       ;; urgent message and is therefore before
       ;; proof-shell-delayed-output-start. We therefore need to go back to
       ;; proof-marker.
-      (goto-char proof-marker)
+;;      (goto-char proof-marker)  ;; TODO proof-marker is no longer a thing, because proof shell is gone
       (unless (proof-re-search-forward
                coq-proof-tree-branch-finished-regexp end t)
         (goto-char start)
@@ -1526,14 +1465,16 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 (defun coq-bullet-p (s)
   (string-match coq-bullet-regexp-nospace s))
 
-;; Remark: `action' and `string' are known by `proof-shell-insert-hook'
+;; Remark: `action' and `string' are known by `proof-server-insert-hook'
 (defun coq-preprocessing ()
   (when coq-time-commands
-    (with-no-warnings  ;; NB: dynamic scoping of `string' and `action'
+    (with-no-warnings  
       ;; Don't add the prefix if this is a command sent internally
       (unless (or (eq action 'proof-done-invisible)
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
         (setq string (concat coq--time-prefix string))))))
+
+(add-hook 'proof-server-insert-hook 'coq-preprocessing)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1941,39 +1882,39 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
           (goto-char (match-beginning 0))
           (buffer-substring p (point)))))))
 
-
-(defun coq-show-first-goal ()
-  "Scroll the goal buffer so that the first goal is visible.
-First goal is displayed on the bottom of its window, maximizing the
-number of hypothesis displayed, without hiding the goal"
-  (interactive)
-  ;; CPC 2015-12-31: Added the check below: if the command that caused this
-  ;; call was silent, we shouldn't touch the goals buffer.  See GitHub issues
-  ;; https://github.com/cpitclaudel/company-coq/issues/32 and
-  ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (unless (memq 'no-goals-display proof-shell-delayed-output-flags)
-    (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting the good frame
-      (with-selected-frame (or pg-frame (window-frame (selected-window)))
-        ;; prefer current frame
-        (let ((goal-win (or (get-buffer-window proof-goals-buffer) (get-buffer-window proof-goals-buffer t))))
-          (if goal-win
-              (with-selected-window goal-win
-                ;; find snd goal or buffer end, if not found this goes to the
-                ;; end of buffer
-                (search-forward-regexp "subgoal 2\\|\\'")
-                (beginning-of-line)
-                ;; find something backward else than a space: bottom of concl
-                (ignore-errors (search-backward-regexp "\\S-"))
-                (recenter (- 1)) ; put bot of concl at bottom of window
-                (beginning-of-line)
-                ;; if the top of concl is hidden we may want to show it instead
-                ;; of bottom of concl
-                (when (and coq-prefer-top-of-conclusion
-                         ;; return nil if === is not visible
-                         (not (save-excursion (re-search-backward "========" (window-start) t))))
-                  (re-search-backward "========" nil t)
-                  (recenter 0))
-                (beginning-of-line))))))))
+;; TODO: syntax of goals changed, so this no longer works
+;; (defun coq-show-first-goal ()
+;;   "Scroll the goal buffer so that the first goal is visible.
+;; First goal is displayed on the bottom of its window, maximizing the
+;; number of hypothesis displayed, without hiding the goal"
+;;   (interactive)
+;;   ;; CPC 2015-12-31: Added the check below: if the command that caused this
+;;   ;; call was silent, we shouldn't touch the goals buffer.  See GitHub issues
+;;   ;; https://github.com/cpitclaudel/company-coq/issues/32 and
+;;   ;; https://github.com/cpitclaudel/company-coq/issues/8.
+;;   (unless (memq 'no-goals-display proof-shell-delayed-output-flags)
+;;     (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting the good frame
+;;       (with-selected-frame (or pg-frame (window-frame (selected-window)))
+;;         ;; prefer current frame
+;;         (let ((goal-win (or (get-buffer-window proof-goals-buffer) (get-buffer-window proof-goals-buffer t))))
+;;           (if goal-win
+;;               (with-selected-window goal-win
+;;                 ;; find snd goal or buffer end, if not found this goes to the
+;;                 ;; end of buffer
+;;                 (search-forward-regexp "subgoal 2\\|\\'")
+;;                 (beginning-of-line)
+;;                 ;; find something backward else than a space: bottom of concl
+;;                 (ignore-errors (search-backward-regexp "\\S-"))
+;;                 (recenter (- 1)) ; put bot of concl at bottom of window
+;;                 (beginning-of-line)
+;;                 ;; if the top of concl is hidden we may want to show it instead
+;;                 ;; of bottom of concl
+;;                 (when (and coq-prefer-top-of-conclusion
+;;                          ;; return nil if === is not visible
+;;                          (not (save-excursion (re-search-backward "========" (window-start) t))))
+;;                   (re-search-backward "========" nil t)
+;;                   (recenter 0))
+;;                 (beginning-of-line))))))))
 
 (defvar coq-modeline-string2 ")")
 (defvar coq-modeline-string1 ")")
@@ -1984,6 +1925,7 @@ number of hypothesis displayed, without hiding the goal"
           (if (> n 1) coq-modeline-string2
             coq-modeline-string1)))
 
+;; TODO: syntax of goals has changed, so this needs to change
 (defun coq-update-minor-mode-alist ()
   "Modify `minor-mode-alist' to display the number of subgoals in the modeline."
   (when (and proof-goals-buffer proof-script-buffer)

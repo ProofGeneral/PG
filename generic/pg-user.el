@@ -473,16 +473,16 @@ Typically, a list of syntax of commands available."
 
 (proof-define-assistant-command proof-cd
 				"Change directory to the default directory for the current buffer."
-				proof-shell-cd-cmd
-				(proof-format-filename proof-shell-cd-cmd
+				proof-server-cd-cmd
+				(proof-format-filename proof-server-cd-cmd
 						       default-directory))
 
 (defun proof-cd-sync ()
-  "If `proof-shell-cd-cmd' is set, do `proof-cd' and wait for prover ready.
+  "If `proof-server-cd-cmd' is set, do `proof-cd' and wait for prover ready.
 This is intended as a value for `proof-activate-scripting-hook'"
-  ;; The hook is set in proof-mode before proof-shell-cd-cmd may be set,
+  ;; The hook is set in proof-mode before proof-server-cd-cmd may be set,
   ;; so we explicitly test it here.
-  (when proof-shell-cd-cmd
+  (when proof-server-cd-cmd
     (proof-cd)
     '(proof-shell-wait))) ;; TODO ?
 
@@ -785,7 +785,7 @@ If NUM is negative, move upwards.  Return new span."
    ;; 	  (pg-numth-span-higher-or-lower (pg-control-span-of span) 1 'noerr)))
    (if proof-script-span-context-menu-extensions
        (funcall proof-script-span-context-menu-extensions span idiom name))
-   (if proof-shell-theorem-dependency-list-regexp
+   (if proof-server-theorem-dependency-list-regexp
        (proof-dependency-in-span-context-menu span))))
 
 (defun pg-span-undo (span)

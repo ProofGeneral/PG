@@ -301,7 +301,7 @@ without adjusting window layout."
 	  ["Trace"
 	   (proof-switch-to-buffer proof-trace-buffer)
 	   :active (buffer-live-p proof-trace-buffer)
-	   :visible proof-shell-trace-output-regexp]
+	   :visible proof-server-trace-output-regexp]
 	  ["Shell"
 	   (proof-switch-to-buffer proof-shell-buffer)
 	   :active (buffer-live-p proof-shell-buffer)]))

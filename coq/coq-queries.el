@@ -165,6 +165,7 @@
 	   (,query-fun))))))
 
 ;; call the macro
+(coq-queries--mk-query-fun cd)
 (coq-queries--mk-query-fun print-all)
 (coq-queries--mk-query-fun print-hint)
 (coq-queries--mk-query-fun print-scopes)

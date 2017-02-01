@@ -34,8 +34,6 @@
 (defun myformat (&rest args)
   (apply 'format args))
 
-(declare-function proof-shell-strip-output-markup "proof-shell"
-		  (string &optional push))
 (declare-function proof-layout-windows "pg-response" (&rest args))
 (declare-function pg-response-warning "pg-response" (&rest args))
 (declare-function proof-segment-up-to "proof-script")
@@ -149,7 +147,7 @@ with the focus between them. This span represents the second such region.")
 
 ;; ** Getters and setters
 
-(defun proof-span-give-warning (&rest args)
+(defun proof-span-give-warning (&rest _args)
   "Give a warning message.
 Optional argument ARGS is ignored."
   (unless inhibit-read-only
@@ -613,7 +611,7 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-clear-script-portions ()
   "Clear record of script portion names and types from internal list."
   (dolist (idtbl pg-script-portions)
-    (maphash (lambda (k span) (span-delete span)) (cdr idtbl))
+    (maphash (lambda (_k span) (span-delete span)) (cdr idtbl))
     (clrhash (cdr idtbl))))
 
 (defun pg-remove-element (idiom id)
@@ -739,9 +737,9 @@ IDIOMSYM is a symbol and ID is a strings."
     current-prefix-arg))
   (let ((elts    (cdr-safe (assq idiom pg-script-portions)))
 	(alterfn (if hide
-		     (lambda (k span)
+		     (lambda (_k span)
 		       (pg-set-element-span-invisible span t))
-		   (lambda (k span)
+		   (lambda (_k span)
 		     (pg-set-element-span-invisible span nil)))))
     (when elts
       (proof-with-script-buffer ; may be called from menu
@@ -787,7 +785,6 @@ Each span has a 'type property, one of:
 "
   (let ((type    (span-property span 'type))
 	(idiom   (span-property span 'idiom))
-	(name    (span-property span 'name))
 	(rawname (span-property span 'rawname)))
     (cond
      (idiom
@@ -819,7 +816,7 @@ This is used to annotate the buffer with the result of proof steps."
   ;; NOTE: Isabelle/Isar uses urgent messages (sigh) in its ordinary output.
   ;; ("Successful attempt...").  This loses here.
   (if (string= proof-prover-last-output "") ""
-    (let* ((text (proof-shell-strip-output-markup
+    (let* ((text (proof-server-strip-output-markup
 		  (if (and (boundp 'unicode-tokens-mode)
 			   unicode-tokens-mode)
 		      (unicode-tokens-encode-str proof-prover-last-output)
@@ -962,7 +959,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
       (if buffer
 	  (proof-complete-buffer-atomic buffer))
       ;; Tell the proof assistant, if we should and if we can
-      (if (and informprover proof-shell-inform-file-processed-cmd)
+      (if (and informprover proof-server-inform-file-processed-cmd)
 	  (progn
 	    (if (and
 		 proof-query-file-save-when-activating-scripting
@@ -971,7 +968,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
 		    (save-some-buffers nil #'proof-query-save-this-buffer-p)))
 	    ;; Tell the prover
 	    (proof-server-invisible-command
-	     (proof-format-filename proof-shell-inform-file-processed-cmd
+	     (proof-format-filename proof-server-inform-file-processed-cmd
 				    cfile)))))))
 
 (defun proof-query-save-this-buffer-p ()
@@ -982,17 +979,16 @@ proof assistant and Emacs has a modified buffer visiting the file."
 (defun proof-inform-prover-file-retracted (rfile)
   "Send a message to the prover to tell it RFILE has been undone."
   (cond
-   ((stringp proof-shell-inform-file-retracted-cmd)
+   ((stringp proof-server-inform-file-retracted-cmd)
     (proof-server-invisible-command
-     (proof-format-filename proof-shell-inform-file-retracted-cmd
+     (proof-format-filename proof-server-inform-file-retracted-cmd
 			    rfile)))
    ;; If it's a function it might not actually be informing the prover at all,
-   ;; but merely cleans up proof-included-files-list by its own magic.  We
-   ;; do the same thing as in proof-shell.el.
+   ;; but merely cleans up proof-included-files-list by its own magic.
    ;; FIXME: clean and amalgamate this code.
-   ((functionp proof-shell-inform-file-retracted-cmd)
+   ((functionp proof-server-inform-file-retracted-cmd)
     (let ((current-included proof-included-files-list))
-      (funcall proof-shell-inform-file-retracted-cmd rfile)
+      (funcall proof-server-inform-file-retracted-cmd rfile)
       (proof-restart-buffers
        (proof-files-to-buffers
 	(cl-set-difference current-included
@@ -1012,7 +1008,7 @@ to be turned off before calling here (because turning it off could
 otherwise change `proof-included-files-list').
 
 If INFORMPROVER is non-nil,  the proof assistant will be told about this,
-using `proof-shell-inform-file-retracted-cmd', to co-ordinate with its
+using `proof-server-inform-file-retracted-cmd', to co-ordinate with its
 internal file-management.
 
 Files which are not visited by any buffer are not retracted, on the
@@ -1322,21 +1318,19 @@ a scripting buffer is killed it is always retracted."
   ;; block.  NB: The hook function may send commands to the
   ;; process which will re-enter this function, but should exit
   ;; immediately because scripting has been turned on now.
-  (if proof-activate-scripting-hook
-      (let
-	  ((activated-interactively	(called-interactively-p 'any)))
-	(setq proof-prover-last-output-kind nil)
-	(run-hooks 'proof-activate-scripting-hook)
-	;; If activate scripting functions caused an error,
-	;; prevent switching to another buffer.  Might be better
-	;; to leave to specific instances, or simply run the hooks
-	;; as the last step before turning on scripting properly.
-	(when (or (eq 'error proof-prover-last-output-kind)
-		  (eq 'interrupt proof-prover-last-output-kind))
-	  (proof-deactivate-scripting) ;; turn off again!
-	  ;; Give an error to prevent further actions.
-	  (error 
-	   "Scripting not activated because of error or interrupt")))))
+  (when proof-activate-scripting-hook
+    (setq proof-prover-last-output-kind nil)
+    (run-hooks 'proof-activate-scripting-hook)
+    ;; If activate scripting functions caused an error,
+    ;; prevent switching to another buffer.  Might be better
+    ;; to leave to specific instances, or simply run the hooks
+    ;; as the last step before turning on scripting properly.
+    (when (or (eq 'error proof-prover-last-output-kind)
+	      (eq 'interrupt proof-prover-last-output-kind))
+      (proof-deactivate-scripting) ;; turn off again!
+      ;; Give an error to prevent further actions.
+      (error 
+       "Scripting not activated because of error or interrupt"))))
 
 (defun proof-activate-scripting (&optional nosaves queuemode)
   "Ready prover and activate scripting for the current script buffer.
@@ -1583,7 +1577,7 @@ Subroutine of `proof-done-advancing-save'."
 ;; command syntax (terminated, not terminated, or lisp-style), whether
 ;; or not PG silently ignores comments, etc.
 
-(defun proof-segment-up-to-parser (pos &optional next-command-end)
+(defun proof-segment-up-to-parser (pos &optional _next-command-end)
   "Parse the script buffer from end of queue/locked region to POS.
 This partitions the script buffer into contiguous regions, classifying
 them by type.  Return a list of lists of the form
@@ -1780,7 +1774,7 @@ The optional QUEUEFLAGS are added to each queue item."
 	(cb    'proof-done-advancing)
 	(secondary-start (and proof-locked-secondary-span (span-start proof-locked-secondary-span)))
 	(secondary-end (and proof-locked-secondary-span (span-end proof-locked-secondary-span)))
-	span alist semi item end)
+	span alist end)
     (setq semis (nreverse semis))
     (save-match-data
       (dolist (semi semis)
@@ -1883,7 +1877,7 @@ always defaults to inserting a semi (nicer might be to parse for a
 comment, and insert or skip to the next semi)."
   (let ((mrk         (point)) 
 	(termregexp  (regexp-quote proof-terminal-string))
-	ins incomment nwsp)
+	ins nwsp)
     (if (< mrk (proof-unprocessed-begin))
 	(insert proof-terminal-string) ; insert immediately in locked region
       (if (proof-only-whitespace-to-locked-region-p)
@@ -1909,7 +1903,6 @@ comment, and insert or skip to the next semi)."
 	(unless semis
 	  (error "Can't find a parseable command!"))
 	(when (eq 'unclosed-comment (caar semis))
-	  (setq incomment t)
 	  ;; delete spurious char in comment
 	  (if ins (backward-delete-char 1))
 	  (goto-char mrk)
@@ -2690,7 +2683,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 		  (cdr semis))))
       usedsemis)))
 
-(defun proof-script-after-change-function (start end prelength)
+(defun proof-script-after-change-function (start _end _prelength)
   "Value for `after-change-functions' in proof script buffers."
   (setq proof-last-edited-low-watermark
 	(min (or proof-last-edited-low-watermark (point-max))

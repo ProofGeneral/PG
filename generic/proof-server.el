@@ -185,15 +185,13 @@ with proof-shell-ready-prover."
 STRINGS is a list of strings (which will be concatenated), or a
 single string.
 
-The ACTION is unused here (hangover from proof-shell-insert), 
-while SPAN is the Emacs span containing the command."
+The ACTION may be used by the hook, while SPAN is the Emacs span containing the command."
   (cl-assert (or (stringp strings)
 	      (listp strings))
 	  nil "proof-server-insert: expected string or list argument")
-  (run-hooks 'proof-server-insert-hook)
-
   (let ((string (if (stringp strings) strings
 		  (apply 'concat strings))))
+    (run-hooks 'proof-server-insert-hook)
     (proof-server-queue-command-and-span-for-prover string span)))
 
 (defun proof-server-queue-command-and-span-for-prover (string span)

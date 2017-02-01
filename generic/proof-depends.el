@@ -227,9 +227,9 @@ NAMEFN is applied to each element of LIST to make the names."
 (defun proof-show-dependency (thm)
   "Show dependency THM using `proof-show-dependency-cmd'.
 This is simply to display the dependency somehow."
-  (if proof-shell-show-dependency-cmd ;; robustness
+  (if proof-server-show-dependency-cmd ;; robustness
       (proof-server-invisible-command
-       (format proof-shell-show-dependency-cmd thm))))
+       (format proof-server-show-dependency-cmd thm))))
 
 (defconst pg-dep-span-priority 500)
 (defconst pg-ordinary-span-priority 100)

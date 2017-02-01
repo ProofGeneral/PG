@@ -89,7 +89,7 @@ way."
 (defun span-write-warning (span fun)
   "Give a warning message when SPAN is changed, unless `inhibit-read-only' is non-nil."
   (lexical-let ((fun fun))
-    (let ((funs (list (lambda (span afterp beg end &rest args)
+    (let ((funs (list (lambda (_span afterp beg end &rest _args)
 			(when (and (not afterp) (not inhibit-read-only))
 			    (funcall fun beg end))))))
       (span-set-property span 'modification-hooks funs)
@@ -99,7 +99,7 @@ way."
   "Give a warning message when SPAN is changed and the predicate holds, 
 unless `inhibit-read-only' is non-nil."
   (lexical-let ((fun fun))
-    (let ((funs (list (lambda (span afterp beg end &rest args)
+    (let ((funs (list (lambda (_span afterp beg end &rest _args)
 			(when (and (not afterp)
 				 (not inhibit-read-only)
 				 (funcall pred beg end))
@@ -230,7 +230,7 @@ A span is before PT if it begins before the character before PT."
        (overlay-buffer span)
        (buffer-live-p (overlay-buffer span))))
 
-(defun span-raise (span)
+(defun span-raise (_span)
   "Set priority of SPAN to make it appear above other spans."
   ;; FIXME: Emacs already uses a "shorter goes above" which takes care of
   ;; preventing a span from seeing another.  So don't play with
@@ -255,7 +255,7 @@ A span is before PT if it begins before the character before PT."
         (overlays-at (posn-point (event-start event)))
         (or prop 'span))))
 
-(defun fold-spans (f &optional buffer from to maparg ignored-flags prop val)
+(defun fold-spans (f &optional buffer from to maparg _ignored-flags prop val)
   (with-current-buffer (or buffer (current-buffer))
     (let ((ols (overlays-in (or from (point-min)) (or to (point-max))))
           res)
@@ -319,7 +319,7 @@ The span will remove itself after a timeout of
     (add-timeout span-self-removing-timeout 'delete-overlay ol)
     ol))
 
-(defun span-delete-self-modification-hook (span &rest args)
+(defun span-delete-self-modification-hook (span &rest _args)
   "Hook for overlay modification-hooks, which deletes SPAN."
   (if (span-live-p span)
       (span-delete span)))
