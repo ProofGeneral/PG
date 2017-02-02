@@ -1,11 +1,11 @@
 ;; coq-state-vars.el -- variables holding global state
 
 
-              (defvar coq-auto-insert-as nil)            ; defpacustom
-              (defvar coq-time-commands nil)             ; defpacustom
-              (defvar coq-use-project-file t)            ; defpacustom
-              (defvar coq-use-editing-holes nil)         ; defpacustom
-              (defvar coq-hide-additional-subgoals nil)  ; defpacustom
+(defvar coq-auto-insert-as nil)            ; defpacustom
+(defvar coq-time-commands nil)             ; defpacustom
+(defvar coq-use-project-file t)            ; defpacustom
+(defvar coq-use-editing-holes nil)         ; defpacustom
+(defvar coq-hide-additional-subgoals nil)  ; defpacustom
 
 ;; the current state id is returned in the last <value> in response to an "Add" command
 ;; the others are in the <status> in response to a "Status" command
