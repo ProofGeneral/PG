@@ -19,6 +19,7 @@
 (require 'coq-state-vars)
 (require 'coq-company-compat)
 
+;; add hook for debugging
 (defvar coq-server-response-hook nil)
 
 (defvar coq-server--pending-edit-at-state-id nil
