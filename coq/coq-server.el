@@ -248,7 +248,7 @@ is gone and we have to close the secondary locked span."
 ;; update global state in response to status
 (defun coq-server--handle-status (_xml)
   (when coq-server--sticky-point
-    '(with-current-buffer proof-script-buffer
+    (with-current-buffer proof-script-buffer
       (goto-char coq-server--sticky-point))
     (setq coq-server--sticky-point nil)))
 
