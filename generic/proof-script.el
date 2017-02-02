@@ -2296,7 +2296,7 @@ Otherwise just do `proof-restart-buffers' to delete some spans from memory."
   ;; otherwise we can lead the user to frustration with the
   ;; dedicated windows nonsense.
   (proof-map-buffers
-   (list proof-goals-buffer proof-response-buffer proof-trace-buffer)
+   (list proof-goals-buffer proof-response-buffer)
    (bury-buffer (current-buffer))))
 
 

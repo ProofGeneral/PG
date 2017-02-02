@@ -146,14 +146,6 @@ This can be used to help multiple file handling.")
 (defvar proof-server-log-buffer nil
   "In server mode, where traffic may be logged.")
 
-(defvar proof-trace-buffer nil
-  "A tracing buffer for storing tracing output from the proof shell.
-See `proof-shell-trace-output-regexp' for details.")
-
-(defvar proof-thms-buffer nil
-  "A buffer for displaying a list of theorems from the proof assistant.
-See `proof-shell-thm-display-regexp' for details.")
-
 (defvar proof-shell-error-or-interrupt-seen nil
   "Flag indicating that an error or interrupt has just occurred.
 Set to 'error or 'interrupt if one was observed from the proof

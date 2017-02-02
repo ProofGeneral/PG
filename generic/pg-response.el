@@ -419,10 +419,6 @@ is set to nil, so responses are not cleared automatically."
 	 (let ((inhibit-read-only t))
 	   (bufhist-checkpoint-and-erase)
 	   (set-buffer-modified-p nil))))
-  (proof-with-current-buffer-if-exists proof-trace-buffer
-     (let ((inhibit-read-only t))
-       (erase-buffer)
-       (set-buffer-modified-p nil)))
   (proof-debug-message "Response buffers cleared."))
 
 ;;;###autoload
@@ -538,68 +534,6 @@ See `pg-next-error-regexp'."
 	(save-excursion
 	  (goto-char (point-min))
 	  (re-search-forward pg-next-error-regexp nil t)))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Tracing buffers
-;;
-
-(defcustom proof-trace-buffer-max-lines 10000
-  "The maximum size in lines for Proof General *trace* buffers.
-A value of 0 stands for unbounded."
-  :type 'integer
-  :group 'proof-shell)
-
-;; An analogue of pg-response-display-with-face
-(defun proof-trace-buffer-display (start end)
-  "Copy region START END from current buffer to end of the trace buffer."
-  (let ((cbuf   (current-buffer))
-	(nbuf   proof-trace-buffer))
-    (set-buffer nbuf)
-    (save-excursion
-      (goto-char (point-max))
-      (let ((inhibit-read-only t))
-	(insert ?\n)
-	(insert-buffer-substring cbuf start end)
-	(unless (bolp)
-	  (insert ?\n))))
-    (set-buffer cbuf)))
-
-(defun proof-trace-buffer-finish ()
-  "Call to complete a batch of tracing output.
-The buffer is truncated if its size is greater than `proof-trace-buffer-max-lines'."
-  (if (> proof-trace-buffer-max-lines 0)
-      (proof-with-current-buffer-if-exists proof-trace-buffer
-	(save-excursion
-	  (goto-char (point-max))
-	  (forward-line (- proof-trace-buffer-max-lines))
-	  (let ((inhibit-read-only t))
-	    (delete-region (point-min) (point)))))))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Theorems buffer
-;;
-;; [ INCOMPLETE ]
-;;
-;; Revives an old idea from Isamode: a buffer displaying a bunch
-;; of theorem names.
-;;
-;;
-
-(defun pg-thms-buffer-clear ()
-  "Clear the theorems buffer."
-  (with-current-buffer proof-thms-buffer
-    (let (start str)
-      (goto-char (point-max))
-      (newline)
-      (setq start (point))
-      (insert str)
-      (unless (bolp) (newline))
-      (set-buffer-modified-p nil))))
 
 (provide 'pg-response)
 ;;; pg-response.el ends here

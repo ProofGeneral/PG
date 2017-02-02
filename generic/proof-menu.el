@@ -56,11 +56,7 @@ without adjusting window layout."
     (setq proof-display-some-buffers-count 0)))
   (let* ((assocbufs   (cl-remove-if-not 'buffer-live-p
 				     (list proof-response-buffer
-					   proof-thms-buffer
-					   proof-trace-buffer
-					   proof-goals-buffer
-					   )))
-					;proof-shell-buffer
+					   proof-goals-buffer)))
 	 (numassoc    (length assocbufs)))
     ;; If there's no live other buffers, we don't do anything.
     (unless (zerop numassoc)
@@ -297,14 +293,7 @@ without adjusting window layout."
 	   :active (buffer-live-p proof-goals-buffer)]
 	  ["Response"
 	   (proof-switch-to-buffer proof-response-buffer t)
-	   :active (buffer-live-p proof-response-buffer)]
-	  ["Trace"
-	   (proof-switch-to-buffer proof-trace-buffer)
-	   :active (buffer-live-p proof-trace-buffer)
-	   :visible proof-server-trace-output-regexp]
-	  ["Shell"
-	   (proof-switch-to-buffer proof-shell-buffer)
-	   :active (buffer-live-p proof-shell-buffer)]))
+	   :active (buffer-live-p proof-response-buffer)]))
   "Proof General 3 window mode policy.")
 
 

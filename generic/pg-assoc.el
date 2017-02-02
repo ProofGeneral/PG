@@ -34,10 +34,7 @@
   "Return a list of the associated buffers.
 Some may be dead/nil."
   (list proof-goals-buffer
-	proof-response-buffer
-	proof-trace-buffer
-	proof-thms-buffer))
-
+	proof-response-buffer))
 
 ;;;###autoload
 (defun proof-associated-windows (&optional all-frames)
