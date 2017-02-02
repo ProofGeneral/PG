@@ -203,15 +203,15 @@ The ACTION may be used by the hook, while SPAN is the Emacs span containing the 
   (proof-server-insert (nth 1 item) (nth 2 item) (nth 0 item)))
 
 ;;;###autoload
-(defun proof-server-add-to-queue (queueitems &optional queuemode)
+(defun proof-server-add-to-queue (queue-items &optional queuemode)
   "add item to queue for 'server mode"
 
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
     (setq proof-action-list
-	  (nconc proof-action-list queueitems))
+	  (nconc proof-action-list queue-items))
 
-    (run-hooks 'proof-server-enqueue-hook)
+    (run-hook-with-args 'proof-server-enqueue-hook queue-items)
 
     (when nothingthere ; process comments immediately
       (let ((cbitems (proof-prover-slurp-comments)))

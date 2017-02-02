@@ -63,15 +63,18 @@ is gone and we have to close the secondary locked span."
 ;; start tag may have attributes, so elide closing bracket
 (defvar other-responses-tags '(("<feedback" . "</feedback>") ("<message" . "</message>")))
 
-;; hook function to count how many Adds are pending
 ;; comments generate items with null element
-(defun count-addable (items) ; helper for coq-server-count-pending-adds
+;; helper for coq-server-count-pending-adds
+(defun coq-server--count-addable (items) 
   (let ((ct 0))
     (mapc (lambda (it) (when (nth 1 it) (cl-incf ct))) items)
     ct))
 
-(defun coq-server-count-pending-adds ()
-  (setq coq-server--pending-add-count (count-addable proof-action-list)))
+;; hook function to count how many Adds are pending
+(defun coq-server-incr-pending-adds (queue-items)
+  (setq coq-server--pending-add-count
+	(+ (coq-server--count-addable queue-items)
+	   coq-server--pending-add-count)))
 
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)

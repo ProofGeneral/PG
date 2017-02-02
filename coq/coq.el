@@ -433,7 +433,7 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
 
 ;; hook to count how many Adds we're about to send
-(add-hook 'proof-server-enqueue-hook 'coq-server-count-pending-adds)
+(add-hook 'proof-server-enqueue-hook 'coq-server-incr-pending-adds)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
