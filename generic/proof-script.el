@@ -1928,7 +1928,7 @@ This function expects the buffer to be activated for advancing."
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  When BEG and END within sent region, 
 retract to BEG unless BEG and END in comment."
-  (when (and (< end (proof-sent-end))
+  (when (and (<= end (proof-sent-end))
 	     (not (and (proof-inside-comment beg)
 		       (proof-inside-comment end))))
     ;; TODO should we interrupt here if prover busy, as was done in proof-shell?
