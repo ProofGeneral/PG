@@ -228,6 +228,23 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line--span-info-end (span-info)
   (cddr span-info))
 
+(defun coq-header-line--add-text-face (start end face text)
+  ;; added c. Emacs 24.5
+  (if (fboundp 'add-face-text-property)
+      (funcall 'add-face-text-property start end face nil text)
+    ;; roll our own if missing
+    (dotimes (offs (- end start))
+      (let* ((pos (+ start offs))
+	     (faces-prop (get-text-property pos 'face text))
+	     (faces-prop-list
+	      (if (listp faces-prop)
+		  faces-prop
+		(list faces-prop))))
+	(if (null faces-prop-list)
+	    (add-text-properties pos (1+ pos) `(face ,(list face)) text)
+	  (unless (equal face (car faces-prop-list))
+	    (add-text-properties pos (1+ pos) `(face ,(cons face faces-prop-list)) text)))))))
+
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
   (when coq-use-header-line
@@ -274,22 +291,22 @@ columns in header line, NUM-COLS is number of its columns."
 		  (let ((start (coq-header--calc-offset (span-start proof-queue-span) num-lines num-cols t))
 			(end (coq-header--calc-offset (span-end proof-queue-span) num-lines num-cols)))
 		    (if (display-graphic-p)
-			(add-face-text-property start end 'coq-queue-face nil header-text)
-		      (add-face-text-property start end `(:background ,coq-queue-color) nil header-text))))
+			(coq-header-line--add-text-face start end 'coq-queue-face header-text)
+		      (coq-header-line--add-text-face start end `(:background ,coq-queue-color) header-text))))
 		;; update for locked region
 		(when (and proof-locked-span (span-buffer proof-locked-span))
 		  (let ((start (coq-header--calc-offset (span-start proof-locked-span) num-lines num-cols t))
 			(end (coq-header--calc-offset (span-end proof-locked-span) num-lines num-cols)))
 		    (if (display-graphic-p)
-			(add-face-text-property start end 'coq-locked-face nil header-text)
-		      (add-face-text-property start end `(:background ,coq-locked-color) nil header-text))))
+			(coq-header-line--add-text-face start end 'coq-locked-face header-text)
+		      (coq-header-line--add-text-face start end `(:background ,coq-locked-color) header-text))))
 		;; update for sent region
 		(when (and proof-sent-span (> (proof-sent-end) (point-min)))
 		  (let ((start (coq-header--calc-offset (span-start proof-sent-span) num-lines num-cols t))
 			(end (coq-header--calc-offset (span-end proof-sent-span) num-lines num-cols)))
 		    (if (display-graphic-p)
-			(add-face-text-property start end 'coq-sent-face nil header-text)
-		      (add-face-text-property start end `(:background ,coq-sent-color) nil header-text))))
+			(coq-header-line--add-text-face start end 'coq-sent-face header-text)
+		      (coq-header-line--add-text-face start end `(:background ,coq-sent-color) header-text))))
 		;; update for specially-colored spans
 		(let ((sorted-colored-spans (sort colored-spans (lambda (sp1 sp2) (< (span-property sp1 'priority)
 										     (span-property sp2 'priority))))))
@@ -300,15 +317,15 @@ columns in header line, NUM-COLS is number of its columns."
 			   (start (coq-header-line--span-info-start span-info))
 			   (end (coq-header-line--span-info-end span-info)))
 		      (if (display-graphic-p)
-			  (add-face-text-property start end new-face nil header-text)
-			(add-face-text-property start end `(:background ,color) nil header-text)))))
+			  (coq-header-line--add-text-face start end new-face header-text)
+			(coq-header-line--add-text-face start end `(:background ,color) header-text)))))
 		;; update for secondary locked region
 		(when (and proof-locked-secondary-span (span-buffer proof-locked-secondary-span))
 		  (let ((start (coq-header--calc-offset (span-start proof-locked-secondary-span) num-lines num-cols t))
 			(end (coq-header--calc-offset (span-end proof-locked-secondary-span) num-lines num-cols)))
 		    (if (display-graphic-p)
-			(add-face-text-property start end 'coq-secondary-locked-face nil header-text)
-		      (add-face-text-property start end `(:background ,coq-secondary-locked-color) nil header-text))))
+			(coq-header-line--add-text-face start end 'coq-secondary-locked-face header-text)
+		      (coq-header-line--add-text-face start end `(:background ,coq-secondary-locked-color) header-text))))
 		;; update for error spans
 		(dolist (span error-spans)
 		  (cl-incf error-count)
@@ -318,8 +335,8 @@ columns in header line, NUM-COLS is number of its columns."
 			 (start (coq-header-line--span-info-start span-info))
 			 (end (coq-header-line--span-info-end span-info)))
 		    (if (display-graphic-p)
-			(add-face-text-property start end new-face nil header-text)
-		      (add-face-text-property start end `(:background ,color) nil header-text))))
+			(coq-header-line--add-text-face start end new-face header-text)
+		      (coq-header-line--add-text-face start end `(:background ,color) header-text))))
 		(setq header-line-format header-text)
 		(when (and (= incomplete-count 0)
 			   (> coq-last-incomplete-count 0)
@@ -355,10 +372,10 @@ columns in header line, NUM-COLS is number of its columns."
 			    (add-text-properties 1 (1- (length processed-pct)) `(face ,proof-processed-face help-echo "Percentage of statements processed by Coq") processed-pct)
 			    (add-text-properties 1 (1- (length incomplete-text)) `(face ,proof-incomplete-face help-echo "Number of proofs not yet kernel-checked by Coq") incomplete-text)
 			    (add-text-properties 1 (length error-text) `(face ,proof-error-face help-echo "Number of errors found by Coq") error-text))
-			(add-face-text-property 1 (1- (length processing-pct)) `(:background ,(cdr (gethash proof-processing-face face-mapper-tbl))) nil processing-pct)
-			(add-face-text-property 1 (1- (length processed-pct)) `(:background ,(cdr (gethash proof-processed-face face-mapper-tbl))) nil processed-pct)
-			(add-face-text-property 1 (1- (length incomplete-text)) `(:background ,(cdr (gethash proof-incomplete-face face-mapper-tbl))) nil incomplete-text)
-			(add-face-text-property 1 (length error-text) `(:background ,(cdr (gethash proof-error-face face-mapper-tbl))) nil error-text))
+			(coq-header-line--add-text-face 1 (1- (length processing-pct)) `(:background ,(cdr (gethash proof-processing-face face-mapper-tbl))) processing-pct)
+			(coq-header-line--add-text-face 1 (1- (length processed-pct)) `(:background ,(cdr (gethash proof-processed-face face-mapper-tbl))) processed-pct)
+			(coq-header-line--add-text-face 1 (1- (length incomplete-text)) `(:background ,(cdr (gethash proof-incomplete-face face-mapper-tbl))) incomplete-text)
+			(coq-header-line--add-text-face 1 (length error-text) `(:background ,(cdr (gethash proof-error-face face-mapper-tbl))) error-text))
 		      (setq mode-line-format (reverse
 					      (cons error-text
 						    (cons incomplete-text
