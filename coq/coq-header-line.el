@@ -228,22 +228,30 @@ columns in header line, NUM-COLS is number of its columns."
 (defun coq-header-line--span-info-end (span-info)
   (cddr span-info))
 
+;; a "function pointer" 
+(defvar coq-header-line--add-text-face-fun nil)
+
+;; use native version, added c. Emacs 24.5
+(defun coq-header-line--add-text-face-native (start end face text)
+  (add-face-text-property start end face nil text))
+
+;; roll our own version, if needed
+(defun coq-header-line--add-text-face-nonnative (start end face text)
+  (dotimes (offs (- end start))
+    (let* ((pos (+ start offs))
+	   (faces-prop (get-text-property pos 'face text))
+	   (faces-prop-list
+	    (if (listp faces-prop)
+		faces-prop
+	      (list faces-prop))))
+      (if (null faces-prop-list)
+	  (add-text-properties pos (1+ pos) `(face ,(list face)) text)
+	(unless (equal face (car faces-prop-list))
+	  (add-text-properties pos (1+ pos) `(face ,(cons face faces-prop-list)) text))))))
+
+;; dispatch through function pointer
 (defun coq-header-line--add-text-face (start end face text)
-  ;; added c. Emacs 24.5
-  (if (fboundp 'add-face-text-property)
-      (funcall 'add-face-text-property start end face nil text)
-    ;; roll our own if missing
-    (dotimes (offs (- end start))
-      (let* ((pos (+ start offs))
-	     (faces-prop (get-text-property pos 'face text))
-	     (faces-prop-list
-	      (if (listp faces-prop)
-		  faces-prop
-		(list faces-prop))))
-	(if (null faces-prop-list)
-	    (add-text-properties pos (1+ pos) `(face ,(list face)) text)
-	  (unless (equal face (car faces-prop-list))
-	    (add-text-properties pos (1+ pos) `(face ,(cons face faces-prop-list)) text)))))))
+  (funcall coq-header-line--add-text-face-fun start end face text))
 
 (defun coq-header-line-update (&rest _args)
   "Update header line. _ARGS passed by some hooks, ignored"
@@ -395,11 +403,11 @@ columns in header line, NUM-COLS is number of its columns."
     (when (consp event) 
       (let* ((mouse-info (car event))
 	     (event-posn (cadr event))
-	     (x-pos (car (posn-x-y event-posn))))
+	     (x-pos (car (posn-actual-col-row event-posn))))
 	(when (and x-pos (eq major-mode 'coq-mode) (eq mouse-info 'mouse-1))
-	  (let* ((window-pixels (window-pixel-width (get-buffer-window)))
+	  (let* ((window-width (window-total-width (get-buffer-window)))
 		 (num-lines (coq-header--get-line-number (point-max)))
-		 (destination-line (/ (* x-pos num-lines) window-pixels)))
+		 (destination-line (/ (* x-pos num-lines) window-width)))
 	    (goto-char (point-min)) (forward-line (1- destination-line))))))))
 
 ;; how often to run header update, in seconds
@@ -419,6 +427,9 @@ columns in header line, NUM-COLS is number of its columns."
     (let* ((num-cols (window-total-width (get-buffer-window)))
 	   (header-text (coq-header-line--make-line num-cols)))
       (set-text-properties 0 num-cols `(face coq-header-line-face pointer ,coq-header-line-mouse-pointer) header-text)
+      (if (fboundp 'add-face-text-property)
+	  (setq coq-header-line--add-text-face-fun 'coq-header-line--add-text-face-native)
+	(setq coq-header-line--add-text-face-fun 'coq-header-line--add-text-face-nonnative))
       (setq coq--header-text header-text)
       (setq header-line-format header-text)
       (when (consp mode-line-format)
