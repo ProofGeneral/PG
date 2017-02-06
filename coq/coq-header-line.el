@@ -233,7 +233,7 @@ columns in header line, NUM-COLS is number of its columns."
 
 ;; use native version, added c. Emacs 24.5
 (defun coq-header-line--add-text-face-native (start end face text)
-  (funcall 'add-face-text-property start end face nil text))
+  (add-face-text-property start end face nil text))
 
 ;; roll our own version, if needed
 (defun coq-header-line--add-text-face-nonnative (start end face text)
