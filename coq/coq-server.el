@@ -946,7 +946,17 @@ is gone and we have to close the secondary locked span."
 	   (file-string (coq-xml-at-path content '(feedback_content (option) (string))))
 	   (file (coq-xml-body1 file-string)))
       (proof-debug-message "File dependency, from: %s dep: %s" from file))))
-  
+
+(defun coq-server--handle-fileloaded (xml)
+  ;; don't bother parsing unless we're printing the debug msg
+  (when proof-general-debug-messages
+    (let* ((contents (coq-xml-body (coq-xml-at-path xml '(feedback (_) (feedback_content)))))
+	   (namespace-string (nth 0 contents))
+	   (namespace (coq-xml-body1 namespace-string))
+	   (file-string (nth 1 contents))
+	   (file (coq-xml-body1 file-string)))
+      (proof-debug-message "File loaded, namespace: %s file: %s" namespace file))))
+
 ;; queue feedback if there's no span with its state id
 ;;  for later processing
 (defun coq-server--queue-feedback (state-id xml)
@@ -976,6 +986,8 @@ is gone and we have to close the secondary locked span."
       (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
 	("filedependency"
 	 (coq-server--handle-filedependency xml))
+	("fileloaded"
+	 (coq-server--handle-fileloaded xml))
 	("processingin"
 	 (coq-span-color-span-processingin xml))
 	("processed"
