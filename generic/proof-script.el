@@ -249,7 +249,7 @@ Action is taken on all script buffers."
 		(setq found-comment nil))
 	      (skip-chars-forward " \t"))))))
     ;; adjust sent region
-    (span-set-endpoints proof-sent-span 1 (point))))y
+    (span-set-endpoints proof-sent-span 1 (point))))
 
 (defun proof-not-in-sent-region (start end)
   ;; called by read-only hook for proof-locked-span, to see if START and END are
