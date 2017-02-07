@@ -227,26 +227,29 @@ Action is taken on all script buffers."
 
 ;; fill out sent area past whitespace, but not newline
 ;; also make locked region flush with sent region
+;; N.B. the current buffer is not always proof-script-buffer
+;; for example, can be called from `proof-complete-buffer-atomic'
 (defun proof-set-sent-end (end)
-  (with-current-buffer proof-script-buffer
-    (save-excursion
-      (goto-char end)
-      (skip-chars-forward " \t")
-      ;; include following processed comments
-      (let ((check-end (proof-queue-or-locked-end)))
-	(when (> check-end (point))
-	  (let ((found-comment t))
-	    (while found-comment
-	      (let* ((spans (overlays-at (point)))
-		     (comment-spans (cl-remove-if-not (lambda (sp) (eq (span-property sp 'type) 'comment)) spans)))
-		(if comment-spans
-		    (dolist (span comment-spans)
-		      (when (> (span-end span) (point))
-			(goto-char (span-end span))))
-		  (setq found-comment nil))
-		(skip-chars-forward " \t"))))))
-      ;; adjust sent region
-      (span-set-endpoints proof-sent-span 1 (point)))))
+  (save-excursion
+    (goto-char end)
+    (skip-chars-forward " \t")
+    ;; include following processed comments
+    (let ((check-end (proof-queue-or-locked-end)))
+      (when (>= check-end (point))
+	(let ((found-comment t))
+	  (while found-comment
+	    (let* ((spans (overlays-at (point)))
+		   (comment-spans (cl-remove-if-not
+				   (lambda (sp) (eq (span-property sp 'type) 'comment))
+				   spans)))
+	      (if comment-spans
+		  (dolist (span comment-spans)
+		    (when (> (span-end span) (point))
+		      (goto-char (span-end span))))
+		(setq found-comment nil))
+	      (skip-chars-forward " \t"))))))
+    ;; adjust sent region
+    (span-set-endpoints proof-sent-span 1 (point))))y
 
 (defun proof-not-in-sent-region (start end)
   ;; called by read-only hook for proof-locked-span, to see if START and END are
@@ -913,8 +916,10 @@ to allow other files loaded by proof assistants to be marked read-only."
 				 (proof-script-end))))
 	    ;; Reset queue and locked regions.
 	    (proof-init-segmentation)
-	    ;; End of locked region is always end of buffer
-	    (proof-set-locked-end (proof-script-end))
+	    ;; End of locked, sent regions is always end of buffer
+	    (let ((end (proof-script-end)))
+	      (proof-set-locked-end end)
+	      (proof-set-sent-end end))
 	    ;; Configure the overlay span
 	    (span-set-property span 'type 'proverproc)
 	    (pg-set-span-helphighlights span 'nohighlight))))))
@@ -1439,12 +1444,11 @@ With ARG, turn on scripting iff ARG is positive."
 ;; `proof-done-advancing'
 
 (defun proof-merge-locked (end)
-  (with-current-buffer proof-script-buffer
-    (proof-set-locked-end end)
-    (when (span-live-p proof-queue-span)
-      (proof-set-queue-start end))
-    (proof-set-sent-end end)
-    (goto-char end)))
+  (proof-set-locked-end end)
+  (when (span-live-p proof-queue-span)
+    (proof-set-queue-start end))
+  (proof-set-sent-end end)
+  (goto-char end))
 
 (defun proof-done-advancing (span)
   "The callback function for `assert-until-point'.

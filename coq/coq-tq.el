@@ -160,8 +160,9 @@
     ;; update sent region
     ;; associate edit id with this span
     (when span
-      (coq-span-color-sent-span span)
-      (proof-set-sent-end (span-end span))
+      (with-current-buffer proof-script-buffer
+	(coq-span-color-sent-span span)
+	(proof-set-sent-end (span-end span)))
       (puthash coq-current-state-id span coq-span-add-call-state-id-tbl)
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
     (process-send-string (coq-tq-process tq) str)))
