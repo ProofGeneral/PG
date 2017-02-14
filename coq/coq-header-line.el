@@ -15,10 +15,11 @@
 (defvar coq-processed-color "lightblue")
 (defvar coq-incomplete-color "blue")
 (defvar coq-secondary-locked-color "lightgreen")
+(defvar coq-warning-color "yellow")
 (defvar coq-error-color "darkred")
 
 ;; make copies of PG faces so we can modify the copies without affecting the originals
-;; order here is significant, want later entries have precedence
+;; order here is significant, want later entries to have increasing precedence
 (defvar face-assocs
   `((header-line . (coq-header-line-face . ,coq-header-line-color))
     (,proof-queue-face . (coq-queue-face . ,coq-queue-color))
@@ -28,6 +29,7 @@
     (,proof-processed-face . (coq-processed-face . ,coq-processed-color))
     (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
     (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
+    (,proof-warning-face . (coq-warning-face . ,coq-warning-color))
     (,proof-error-face . (coq-error-face . ,coq-error-color))))
 
 ;; Table maps PG face to new face and color for TTYs

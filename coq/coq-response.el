@@ -82,7 +82,7 @@ Only when three-buffer-mode is enabled."
     pos))
 
 ;; temporarily highlight error location
-(defun coq--highlight-error (span start stop)
+(defun coq--highlight-error (span start maybe-stop)
 
   ;; start and stop are byte positions
   ;; if multibyte characters, those don't correspond to character positions
@@ -92,6 +92,7 @@ Only when three-buffer-mode is enabled."
    proof-script-buffer
    (let* ((raw-string (buffer-substring-no-properties (span-start span) (span-end span)))
 	  (trimmed-string (replace-regexp-in-string "\\`[ \t\n]*" "" raw-string))
+	  (stop (if (= 0 maybe-stop) (span-end span) maybe-stop))
 	  (char-start (byte-offset-to-char-offset trimmed-string start))
 	  (char-stop (byte-offset-to-char-offset trimmed-string stop))
 	  (len0 (- char-stop char-start))
@@ -111,7 +112,9 @@ Only when three-buffer-mode is enabled."
 	err-start (+ err-start len1)
 	;; properties
 	'face 'proof-warning-face
-	'self-removing t)
+	'self-removing t
+	'priority (gethash proof-warning-face coq-face-rank-tbl))
+
        ;; return start of error
        err-start))))
 
@@ -124,37 +127,42 @@ Only when three-buffer-mode is enabled."
     (coq-header-line-update)))
 
 ;; indelibly mark span containing an error
-(defun coq-mark-error (start end error-start error-end msg &optional warp)
-  (let ((ws " \t\n"))
-    (with-current-buffer proof-script-buffer 
-      (save-excursion
-	(goto-char start)
-	(skip-chars-forward ws end)
-	(setq start (point))
-	(goto-char end)
-	(skip-chars-backward ws start)
-	(setq end (point)))
-      (let* ((trimmed-string (buffer-substring start end))
-	     (start-offs (byte-offset-to-char-offset trimmed-string error-start))
-	     (end-offs (byte-offset-to-char-offset trimmed-string error-end))
-	     (spans-at-start (overlays-at (+ start start-offs)))
-	     (err-spans-at-start (cl-remove-if-not (lambda (sp)
-						     (eq (span-property sp 'type) 'pg-error))
-						   spans-at-start)))
-	;; if error span already there, assume it's a duplicate
-	(unless err-spans-at-start
-	  (let ((error-span (span-make (+ start start-offs) (+ start end-offs))))
-	    (coq-header-line-set-color-update)
-	    (coq-error-set-update)
-	    (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
-	    (span-set-property error-span 'face proof-error-face)
-	    (span-set-property error-span 'help-echo msg)
-	    ;; must set priority using special call
-	    (span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
-	    (span-set-property error-span 'type 'pg-error)
-	    (when warp
-	      (goto-char (+ start start-offs)))))))
-    ;; return start of error highlighting
-    start))
+(defun coq-mark-error (start end error-start maybe-error-end msg &optional warp)
+  ;; mark whole sentence if maybe-error-end is 0
+  (let ((error-end
+	 (if (= maybe-error-end 0)
+	     (- end start)
+	   maybe-error-end)))
+    (let ((ws " \t\n"))
+      (with-current-buffer proof-script-buffer 
+	(save-excursion
+	  (goto-char start)
+	  (skip-chars-forward ws end)
+	  (setq start (point))
+	  (goto-char end)
+	  (skip-chars-backward ws start)
+	  (setq end (point)))
+	(let* ((trimmed-string (buffer-substring start end))
+	       (start-offs (byte-offset-to-char-offset trimmed-string error-start))
+	       (end-offs (byte-offset-to-char-offset trimmed-string error-end))
+	       (spans-at-start (overlays-at (+ start start-offs)))
+	       (err-spans-at-start (cl-remove-if-not (lambda (sp)
+						       (eq (span-property sp 'type) 'pg-error))
+						     spans-at-start)))
+	  ;; if error span already there, assume it's a duplicate
+	  (unless err-spans-at-start
+	    (let ((error-span (span-make (+ start start-offs) (+ start end-offs))))
+	      (coq-header-line-set-color-update)
+	      (coq-error-set-update)
+	      (span-set-property error-span 'modification-hooks (list 'coq--error-span-modification-handler))
+	      (span-set-property error-span 'face proof-error-face)
+	      (span-set-property error-span 'help-echo msg)
+	      ;; must set priority using special call
+	      (span-set-priority error-span (gethash proof-error-face coq-face-rank-tbl))
+	      (span-set-property error-span 'type 'pg-error)
+	      (when warp
+		(goto-char (+ start start-offs)))))))
+      ;; return start of error highlighting
+      start)))
 
 (provide 'coq-response)

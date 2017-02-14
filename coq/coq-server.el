@@ -841,7 +841,7 @@ is gone and we have to close the secondary locked span."
       (setq coq-server-retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
-      	    (coq-server--clear-response-buffer)
+	    (coq-server--clear-response-buffer)
 	    (coq-display-response error-msg)
 	    (setq coq-server--sticky-point (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
@@ -879,10 +879,7 @@ is gone and we have to close the secondary locked span."
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; can get error message not associated with script text
-    (if (> error-stop 0)
-	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
-      ;; if not associated with script text, show error in response buffer
-      (coq-display-response error-msg))))
+    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
 ;; discard tags in richpp-formatted strings
 ;; TODO : use that information
@@ -921,10 +918,7 @@ is gone and we have to close the secondary locked span."
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; may get error message not associated with script text
-    (if (> error-stop 0)
-	(coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)
-      ;; if not associated with script text, show error in response buffer
-      (coq-display-response error-msg))))
+    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
 ;; maintain table of active workers
 (defun coq-server--handle-worker-status (xml)
