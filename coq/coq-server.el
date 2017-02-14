@@ -1045,10 +1045,10 @@ is gone and we have to close the secondary locked span."
     (when (> (buffer-size) 0)
       ;; since current reponse invalid, don't send anything more
       (coq-tq-flush coq-server-transaction-queue)
-      (proof-debug-message "Ill-formed XML: %s" (buffer-string))
+      (message "*** Ill-formed XML:\n%s\n*** End of ill-formed XML" (buffer-string))
       (erase-buffer)
       (let ((warning "Warning: received ill-formed XML from Coq.")
-	    (advice "Goto an earlier good point in the script to resynch.")
+	    (advice "Goto an earlier good point in the script to resync.")
 	    (cmd "To help diagnose the issue, enable logging with \"M-x proof-server-enable-logging\"."))
 	(message-box "%s\n\n%s\n\n%s" warning advice cmd)))))
 
