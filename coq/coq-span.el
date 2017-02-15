@@ -44,9 +44,10 @@
 		  (overlays-at (point)))
 	    ;; if there's an existing colored span at point, re-use it,
 	    ;;  because want most recent coloring
-	    (let ((span (or (gethash state-id tbl)
-				       (span-make (point) (span-end span-with-state-id))))
-		  (rank (gethash face coq-face-rank-tbl)))
+	    (let* ((hashed-span (gethash state-id tbl))
+		   (span (or hashed-span
+			     (span-make (point) (span-end span-with-state-id))))
+		   (rank (gethash face coq-face-rank-tbl)))
 	      ;; inform header line we've updated a span color
 	      (coq-header-line-set-color-update)
 	      (span-set-property span 'type 'pg-special-coloring)
@@ -54,7 +55,8 @@
 	      (span-set-property span 'face face)
 	      ;; use priority API
 	      (span-set-priority span rank)
-	      (puthash state-id span tbl)))))))
+	      (unless hashed-span
+		(puthash state-id span tbl))))))))
 
 (defun coq-span-color-span-processingin (xml)
   (coq-span-color-span-on-feedback
