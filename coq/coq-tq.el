@@ -87,28 +87,39 @@
 
 ;;; Accessors
 
-;; A transaction queue object looks like:
-;;  (queue . (keep-len . (end-tags . (other-tags . (process . buffer))))) .  -- the car
-;;  (last-search-point . (response-complete . (call . span)))                -- the cdr
+;; a transaction queue object is a vector, which uses the following indices
 
-(defun coq-tq-qpb                   (tq) (car tq))
-(defun coq-tq-queue                 (tq) (car (coq-tq-qpb tq)))
-(defun coq-tq-keep-len              (tq) (car (cdr (coq-tq-qpb tq))))
-(defun coq-tq-end-tags              (tq) (car (cdr (cdr (coq-tq-qpb tq)))))
-(defun coq-tq-other-tags            (tq) (car (cdr (cdr (cdr (coq-tq-qpb tq))))))
-(defun coq-tq-process               (tq) (car (cdr (cdr (cdr (cdr (coq-tq-qpb tq)))))))
-(defun coq-tq-buffer                (tq) (cdr (cdr (cdr (cdr (cdr (coq-tq-qpb tq)))))))
+(defvar coq-tq-queue-ndx              0)
+(defvar coq-tq-keep-len-ndx           1)
+(defvar coq-tq-end-tags-ndx           2)
+(defvar coq-tq-other-tags-ndx         3)
+(defvar coq-tq-process-ndx            4)
+(defvar coq-tq-buffer-ndx             5)
+(defvar coq-tq-last-search-point-ndx  6)
+(defvar coq-tq-response-complete-ndx  7)
+(defvar coq-tq-call-ndx               8)
+(defvar coq-tq-span-ndx               9)
 
-(defun coq-tq-state-items           (tq) (cdr tq))
-(defun coq-tq-last-search-point     (tq) (car (coq-tq-state-items tq)))
-(defun coq-tq-response-complete     (tq) (car (cdr (coq-tq-state-items tq))))
-(defun coq-tq-call                  (tq) (car (cdr (cdr (coq-tq-state-items tq)))))
-(defun coq-tq-span                  (tq) (cdr (cdr (cdr (coq-tq-state-items tq)))))
+(defun coq-tq-queue                 (tq) (aref tq coq-tq-queue-ndx))
+(defun coq-tq-keep-len              (tq) (aref tq coq-tq-keep-len-ndx))
+(defun coq-tq-end-tags              (tq) (aref tq coq-tq-end-tags-ndx))
+(defun coq-tq-other-tags            (tq) (aref tq coq-tq-other-tags-ndx))
+(defun coq-tq-process               (tq) (aref tq coq-tq-process-ndx))
+(defun coq-tq-buffer                (tq) (aref tq coq-tq-buffer-ndx))
 
-(defun coq-tq-set-last-search-point (tq pt) (setcar (coq-tq-state-items tq) pt))
-(defun coq-tq-set-complete          (tq) (setcar (cdr (coq-tq-state-items tq)) t))
+(defun coq-tq-last-search-point     (tq) (aref tq coq-tq-last-search-point-ndx))
+(defun coq-tq-response-complete     (tq) (aref tq coq-tq-response-complete-ndx))
+(defun coq-tq-call                  (tq) (aref tq coq-tq-call-ndx))
+(defun coq-tq-span                  (tq) (aref tq coq-tq-span-ndx))
 
-;; The structure of `queue' is as follows
+(defun coq-tq-set-last-search-point (tq pt) (aset tq coq-tq-last-search-point-ndx pt))
+(defun coq-tq-set-queue             (tq queue) (aset tq coq-tq-queue-ndx queue))
+(defun coq-tq-set-call              (tq call) (aset tq coq-tq-call-ndx call))
+(defun coq-tq-set-span              (tq span) (aset tq coq-tq-span-ndx span))
+(defun coq-tq-set-complete          (tq) (aset tq coq-tq-response-complete-ndx t))
+(defun coq-tq-set-incomplete        (tq) (aset tq coq-tq-response-complete-ndx nil))
+
+;; The structure of a `queue' is as follows
 ;; ((question closure . fn)
 ;;  <other queue entries>)
 ;; question: string to send to the process
@@ -153,10 +164,10 @@
 	 (str (car str-and-span))
 	 (span (cadr str-and-span)))
     (coq-tq-maybe-log "emacs" str)
-    ;; call to be returned with coqtop response
-    (setcdr (cdr tq) (cons nil       ; not complete
-			   (cons str ; call
-				 span)))
+    ;; call and span to be returned with coqtop response
+    (coq-tq-set-incomplete tq)
+    (coq-tq-set-call tq str)
+    (coq-tq-set-span tq span)
     ;; update sent region
     ;; associate edit id with this span
     (when span
@@ -176,14 +187,14 @@
 
 (defun coq-tq-flush (tq)
   ;; flush queue 
-  (setcar (coq-tq-qpb tq) nil)
+  (coq-tq-set-queue tq nil)
   (coq-tq--finish-flush tq))
 
 (defun coq-tq-flush-but-1 (tq)
   ;; flush queue except for first item
   (let ((item (car (coq-tq-queue tq))))
     (when item
-      (setcar (coq-tq-qpb tq) (list item))))
+      (coq-tq-set-queue tq (list item))))
   (coq-tq--finish-flush tq))
 
 ;;; Core functionality
@@ -199,16 +210,20 @@ from the PROCESS that are not transactional."
 					     (mapcar 'cdr other-tags))))
 	 ;; the length we have to back up if we get part of a response
 	 (keep-len (1- (apply 'max all-end-tags)))
-	 (qpb (cons nil
-		    (cons keep-len
-			  (cons end-tags
-				(cons other-tags
-				      (cons process
-					    (generate-new-buffer
-					     (concat " tq-temp-"
-						     (process-name process)))))))))
-	 (state (cons 1 (cons t (cons nil nil))))
-	 (tq (cons qpb state)))
+	 (tq (vector
+	      nil      ; queue
+	      keep-len
+	      end-tags
+	      other-tags
+	      process
+	      (generate-new-buffer
+	       (concat " tq-temp-"
+		       (process-name process)))
+	      1        ; last search point
+	      t        ; response complete
+	      nil      ; call
+	      nil)))   ; span
+
     (buffer-disable-undo (coq-tq-buffer tq))
     (setq tq--oob-handler oob-handler)
     (set-process-filter process
@@ -218,20 +233,20 @@ from the PROCESS that are not transactional."
 
 (defun coq-tq-queue-add (tq question closure fn)
   (let ((new-item (cons question (cons closure fn))))
-    (setcar (coq-tq-qpb tq) 
-	    (nconc (coq-tq-queue tq)
-		   (list new-item)))
+    (coq-tq-set-queue tq
+		      (nconc (coq-tq-queue tq)
+			     (list new-item)))
     'ok))
 
 (defun coq-tq-queue-pop (tq)
   (let ((queue-items (coq-tq-queue tq)))
-    (setcar (coq-tq-qpb tq) (cdr queue-items)))
+    (coq-tq-set-queue tq (cdr queue-items)))
   (let ((question (coq-tq-queue-head-question tq)))
     (condition-case nil
 	(when question
 	  (coq-tq-log-and-send tq question))
       (error nil)))
-  (null (car tq)))
+  (null (coq-tq-queue tq)))
 
 (defun coq-tq-enqueue (tq question closure fn)
   "Add a transaction to transaction queue TQ.
