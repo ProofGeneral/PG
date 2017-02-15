@@ -1454,7 +1454,8 @@ With ARG, turn on scripting iff ARG is positive."
   "The callback function for `assert-until-point'.
 Argument SPAN has just been processed."
   (let ((end     (span-end span))
-	(cmd     (span-property span 'cmd)))
+	(cmd     (span-property span 'cmd))
+	(comment-p (eq (span-property span 'type) 'comment)))
 
     ;; if merging primary, secondary locked regions,
     ;; may have already extended locked region beyond the 
@@ -1465,21 +1466,17 @@ Argument SPAN has just been processed."
     (when (span-live-p proof-queue-span)
       (proof-set-queue-start end))
 
-    (cond
+    (if comment-p
      ;; CASE 1: Comments just get highlighted
-     ((eq (span-property span 'type) 'comment)
-      (proof-done-advancing-comment span))
-
+	(proof-done-advancing-comment span)
      ;; removed code to amalgamate spans
      ;; Coq 8.5+ lets you backtrack to arbitrary locations
-
      ;; CASE 5:  Some other kind of command (or a nested goal).
-     (t
-      (proof-done-advancing-other span)))
+      (proof-done-advancing-other span))
 
     ;; Add the processed command to the input ring
     (unless (or (not (span-live-p span))
-		(eq (span-property span 'type) 'comment))
+		comment-p)
       (pg-add-to-input-history cmd))))
 
 (defun proof-done-advancing-comment (span)
