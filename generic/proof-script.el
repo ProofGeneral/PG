@@ -191,13 +191,23 @@ Action is taken on all script buffers."
 (defun proof-set-overlay-arrow (pos)
   "Set the position of the overlay marker to POS."
   (and (markerp proof-overlay-arrow)
-       (set-marker proof-overlay-arrow
-		   (save-excursion
-		     (goto-char pos)
-		     (skip-chars-forward " \t\s\n")
-		     (unless (eq (point) (point-max))
-		       (beginning-of-line)
-		       (point))))))
+       (let ((skip-chars '(32 9 10)) ; ASCII space, tab, newline 
+	     (ch (char-after pos))
+	     (bof (point-min))
+	     (eof (point-max)))
+	 (while (and (< pos eof)
+		     (memq ch skip-chars))
+	   (cl-incf pos)
+	   (setq ch (char-after pos)))
+	 (unless (eq pos eof)
+	   (while (and (> pos bof)
+		       (not (= ch 10)))
+	     (cl-decf pos)
+	     (setq ch (char-after pos)))
+	   (when (= ch 10)
+	     (cl-incf pos))
+	   (set-marker proof-overlay-arrow pos)
+	   pos))))
 
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
@@ -232,12 +242,11 @@ Action is taken on all script buffers."
 ;; don't use save-excursion, changing point is expensive
 (defun proof-set-sent-end (end)
   (let* ((pos end)
-	 (tab 9) ; ASCII char codes
-	 (spc 32)
+	 (skip-chars '(32 9)) ; ASCII codes for tab, space
 	 (ch (char-after pos))
 	 (eof (point-max)))
     (while (and (< pos eof)
-		(or (= ch spc) (= ch tab)))
+		(memq ch skip-chars))
       (cl-incf pos)
       (setq ch (char-after pos)))
     ;; include following processed comments
@@ -256,7 +265,7 @@ Action is taken on all script buffers."
 		(setq found-comment nil))
 	      (setq ch (char-after pos))
 	      (while (and (< pos eof)
-			  (or (= ch spc) (= ch tab)))
+			  (memq ch skip-chars))
 		(cl-incf pos)
 		(setq ch (char-after pos))))))))
     ;; adjust sent region
