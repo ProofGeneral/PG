@@ -86,12 +86,12 @@ processes."
   :type 'boolean
   :group 'coq)
 
-(defcustom coq-num-async-workers 4
+(defcustom coq-num-async-workers nil
   "Number of worker processes in async mode, nil for default"
   :type 'integer
   :group 'coq)
 
-(defcustom coq-num-async-par-workers 4
+(defcustom coq-num-async-par-workers nil
   "Number of worker processes when using Ltac :par, nil for default"
   :type 'integer
   :group 'coq)
