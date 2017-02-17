@@ -229,27 +229,38 @@ Action is taken on all script buffers."
 ;; also make locked region flush with sent region
 ;; N.B. the current buffer is not always proof-script-buffer
 ;; for example, can be called from `proof-complete-buffer-atomic'
+;; don't use save-excursion, changing point is expensive
 (defun proof-set-sent-end (end)
-  (save-excursion
-    (goto-char end)
-    (skip-chars-forward " \t")
+  (let* ((pos end)
+	 (tab 9) ; ASCII char codes
+	 (spc 32)
+	 (ch (char-after pos))
+	 (eof (point-max)))
+    (while (and (< pos eof)
+		(or (= ch spc) (= ch tab)))
+      (cl-incf pos)
+      (setq ch (char-after pos)))
     ;; include following processed comments
     (let ((check-end (proof-queue-or-locked-end)))
-      (when (>= check-end (point))
+      (when (>= check-end pos)
 	(let ((found-comment t))
 	  (while found-comment
-	    (let* ((spans (overlays-at (point)))
+	    (let* ((spans (overlays-at pos))
 		   (comment-spans (cl-remove-if-not
 				   (lambda (sp) (eq (span-property sp 'type) 'comment))
 				   spans)))
 	      (if comment-spans
 		  (dolist (span comment-spans)
-		    (when (> (span-end span) (point))
-		      (goto-char (span-end span))))
+		    (when (> (span-end span) pos)
+		      (setq pos (span-end span))))
 		(setq found-comment nil))
-	      (skip-chars-forward " \t"))))))
+	      (setq ch (char-after pos))
+	      (while (and (< pos eof)
+			  (or (= ch spc) (= ch tab)))
+		(cl-incf pos)
+		(setq ch (char-after pos))))))))
     ;; adjust sent region
-    (span-set-endpoints proof-sent-span 1 (point))))
+    (span-set-endpoints proof-sent-span 1 pos)))
 
 (defun proof-not-in-sent-region (start end)
   ;; called by read-only hook for proof-locked-span, to see if START and END are
