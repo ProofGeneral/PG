@@ -212,7 +212,8 @@ Action is taken on all script buffers."
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
   (span-set-endpoints proof-locked-span start end)
-  (proof-set-overlay-arrow end))
+  (when (null proof-action-list)
+    (proof-set-overlay-arrow end)))
 
 (defsubst proof-detach-queue ()
   "Remove the span for the queue region."
