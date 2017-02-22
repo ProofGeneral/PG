@@ -1812,10 +1812,7 @@ The optional QUEUEFLAGS are added to each queue item."
 			 (and (> end secondary-start) (<= end secondary-end))))
 	  (when proof-script-trim-spans
 	    (while (memq (char-after start) proof-whitespace-chars)
-	      (cl-incf start))
-	    (while (memq (char-after end) proof-whitespace-chars)
-	      (cl-decf end))
-	    (cl-incf end))
+	      (cl-incf start)))
 	  (setq span (span-make start end))
 	  (if (eq (car semi) 'cmd)
 	      (progn ;; command span

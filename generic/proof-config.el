@@ -300,7 +300,7 @@ or `proof-script-parse-function'."
   :group 'prover-config)
 
 (defcustom proof-script-trim-spans nil
-  "Whether to trim whitespace from the ends of spans created for script
+  "Whether to trim whitespace from the start of spans created for script
 items"
   :type 'boolean
   :group 'prover-config)
