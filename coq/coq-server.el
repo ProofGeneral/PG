@@ -508,12 +508,12 @@ is gone and we have to close the secondary locked span."
 			 (>= (span-start error-span) (span-start state-id-span))
 			 (<= (span-end error-span) (span-end state-id-span)))
 		(span-unmark-delete error-span))))
-	;; not on failure, delete pg-error, pg-special-coloring spans below
-	(let* ((help-spans (cl-remove-if-not
-			    (lambda (sp) (member (span-property sp 'type)
-						 '(pg-error pg-special-coloring)))
+	;; not on failure, delete pg-error spans below
+	(let* ((error-spans (cl-remove-if-not
+			     (lambda (sp) (eq (span-property sp 'type)
+					      'pg-error))
 			    spans-after-retract)))
-	  (mapc 'span-delete help-spans)))
+	  (mapc 'span-delete error-spans)))
       ;; now remove spans marked for deletion
       (mapc (lambda (span)
 	      (when (or (and (span-property span 'marked-for-deletion)
@@ -846,17 +846,8 @@ is gone and we have to close the secondary locked span."
 	    (setq coq-server--sticky-point (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
 	;; indelibly color the error 
-	(let ((span-processing (or (gethash error-state-id coq-processing-span-tbl)
-				   coq-server--current-span)))
-	  ;; may get several processed feedbacks for one processingin
-	  ;; use first one
-	  (when span-processing
-	    (progn
-	      (remhash error-state-id coq-processing-span-tbl)
-	      (unless (eq error-span span-processing)
-		(span-delete span-processing))))
-	  (coq-mark-error (span-start error-span) (span-end error-span)
-			  error-start error-stop error-msg))))))
+	(coq-mark-error (span-start error-span) (span-end error-span)
+			error-start error-stop error-msg)))))
 
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)
@@ -989,7 +980,7 @@ is gone and we have to close the secondary locked span."
 	("incomplete"
 	 (coq-span-color-span-incomplete xml))
 	("complete"
-	 (coq-span-uncolor-span-complete xml))
+	 (coq-span-color-span-complete xml))
 	("workerstatus"
 	 (coq-server--handle-worker-status xml))
 	("errormsg" ; 8.5-only

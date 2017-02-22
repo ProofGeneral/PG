@@ -71,6 +71,8 @@ not listed here, you may not get the correct syntax colouring behaviour.")
 
 ;; Face for locked region of a script
 (copy-face 'proof-queue-face 'proof-locked-face)
+;; Face for sent script item
+(copy-face 'proof-locked-face 'proof-unprocessed-face)
 
 (defface proof-sent-face
   (proof-face-specs
@@ -91,15 +93,8 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for span that is being processed."
   :group 'proof-faces)
 
-(defface proof-processed-face
-  (proof-face-specs
-   ;; This colour is quite subjective and may be best chosen according
-   ;; to the type of display you have.
-   (:background "#dae8ff")
-   (:background "darkslateblue")
-   (:underline t))
-  "*Face for span that has been processed."
-  :group 'proof-faces)
+;; processed face same as sent face
+(copy-face 'proof-sent-face 'proof-processed-face)
 
 (defface proof-incomplete-face
   (proof-face-specs
@@ -254,6 +249,7 @@ Warning messages can come from proof assistant or from Proof General itself."
 (defconst proof-tacticals-name-face 'proof-tacticals-name-face proof-face-compat-doc)
 (defconst proof-tactics-name-face 'proof-tactics-name-face proof-face-compat-doc)
 (defconst proof-incomplete-face 'proof-incomplete-face proof-face-compat-doc)
+(defconst proof-unprocessed-face 'proof-unprocessed-face proof-face-compat-doc)
 (defconst proof-processing-face 'proof-processing-face proof-face-compat-doc)
 (defconst proof-processed-face 'proof-processed-face proof-face-compat-doc)
 (defconst proof-error-face 'proof-error-face proof-face-compat-doc)

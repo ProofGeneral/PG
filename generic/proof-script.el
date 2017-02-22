@@ -1779,6 +1779,10 @@ to the function which parses the script segment by segment."
       (if end
 	  (progn (goto-char end) 'cmd)))))
 
+(defvar proof-whitespace-chars
+  ;; whitespace used when trimming script spans
+  ;; space, tab, newline
+  (list 32 9 10))
 
 (defun proof-semis-to-vanillas (semis &optional queueflags)
   "Create vanilla spans for SEMIS and a list for the queue.
@@ -1806,6 +1810,12 @@ The optional QUEUEFLAGS are added to each queue item."
 		     (span-buffer proof-locked-secondary-span)
 		     (or (and (>= start secondary-start) (< start secondary-end))
 			 (and (> end secondary-start) (<= end secondary-end))))
+	  (when proof-script-trim-spans
+	    (while (memq (char-after start) proof-whitespace-chars)
+	      (cl-incf start))
+	    (while (memq (char-after end) proof-whitespace-chars)
+	      (cl-decf end))
+	    (cl-incf end))
 	  (setq span (span-make start end))
 	  (if (eq (car semi) 'cmd)
 	      (progn ;; command span

@@ -258,8 +258,16 @@ to write out the traversal code by hand each time."
                 (coq-xml-unit)))
 
 (defun coq-xml-init ()
-  (coq-xml-call '((val . Init))
-                (coq-xml-option '((val . none)))))
+  (let ((filename (and proof-script-buffer
+		       (buffer-file-name proof-script-buffer))))
+    ;; passing the filename allows coqtop to use .aux hints
+    (if filename
+	(coq-xml-call '((val . Init))
+		      (coq-xml-option
+		       '((val . some))
+		       (coq-xml-string filename)))
+      (coq-xml-call '((val . Init))
+		    (coq-xml-option '((val . none)))))))
 
 ;; state-id is string
 (defun coq-xml-edit-at (state-id)

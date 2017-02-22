@@ -134,7 +134,11 @@ that do not fit in the goals window."
   :group 'coq)
 
 (defconst coq-server-init-cmds
-  (list (coq-xml-about) (coq-xml-init))
+  (list
+   ;; string
+   (coq-xml-about)
+   ;; use thunk, delay in order to look at script name, nil means no associated span
+   (lambda () (list (coq-xml-init) nil)))
  "Commands to initialize Coq.")
 
 (require 'coq-syntax)
@@ -1133,6 +1137,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; (set (make-local-variable 'paragraph-separate) "\\**) *$\\|$")
   ;; (set (make-local-variable 'adaptive-fill-function) 'coq-adaptive-fill-function)
 
+  (setq proof-script-trim-spans t)
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
   (setq proof-terminal-string ".")

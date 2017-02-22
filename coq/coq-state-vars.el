@@ -38,9 +38,6 @@ It's the state id returned after Init command sent.")
 ;;  deleting from this table
 (defvar coq-processing-span-tbl (make-hash-table :test 'equal :weakness 'value))
 
-;; table mapping state ids to spans created by incomplete feedbacks
-(defvar coq-incomplete-span-tbl (make-hash-table :test 'equal :weakness 'value))
-
 ;; table mapping state ids to spans
 ;; values are weak, because spans can be deleted, as on a retract
 (defvar coq-span-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
@@ -66,8 +63,6 @@ It's the state id returned after Init command sent.")
 (defun coq-reset-tables ()
   (mapc 'clrhash
 	(list coq-error-fail-tbl
-	      coq-processing-span-tbl
-	      coq-incomplete-span-tbl
 	      coq-span-state-id-tbl
 	      coq-span-edit-id-tbl
 	      coq-span-add-call-state-id-tbl

@@ -11,6 +11,7 @@
 (defvar coq-queue-color "lightred")
 (defvar coq-locked-color coq-queue-color)
 (defvar coq-sent-color "lightblue")
+(defvar coq-unprocessed-color coq-locked-color)
 (defvar coq-processing-color "brightblue")
 (defvar coq-processed-color "lightblue")
 (defvar coq-incomplete-color "blue")
@@ -27,6 +28,7 @@
     (,proof-sent-face . (coq-sent-face . ,coq-sent-color))
     (,proof-processing-face . (coq-processing-face . ,coq-processing-color))
     (,proof-processed-face . (coq-processed-face . ,coq-processed-color))
+    (,proof-unprocessed-face . (coq-unprocessed-face . ,coq-unprocessed-color))
     (,proof-incomplete-face . (coq-incomplete-face . ,coq-incomplete-color))
     (,proof-secondary-locked-face . (coq-secondary-locked-face . ,coq-secondary-locked-color))
     (,proof-warning-face . (coq-warning-face . ,coq-warning-color))
@@ -54,34 +56,24 @@
 ;; save last number of processed statements
 (defvar coq-last-processed-count 0)
 
-;; vector of pos, line number pairs
-;; to avoid scanning file for line numbers
-(defvar coq-header--line-number-vector nil)
+;; variables for line number information
+(defvar coq-header-line--buff-size 0.0)
+(defvar coq-header-line--num-lines 0)
 
-;; cache of positions to line numbers
-;; avoids traversing buffer
-(defvar coq-header--line-number-tbl (make-hash-table :test 'eq))
-;; special entry maps to buffer size that validates the entries
-(defvar coq-header--line-number-key -1)
-(puthash coq-header--line-number-key 0 coq-header--line-number-tbl)
-
-;; number of chars of edit before we flush line number table
+;; number of chars of change before we flush line number vars
 (defvar coq-header--line-number-epsilon 15)
 
-(defun coq-header--validate-line-number-tbl ()
-  (let ((cached-size (gethash coq-header--line-number-key coq-header--line-number-tbl))
-	(curr-size (buffer-size)))
-    (unless (> (abs (- cached-size curr-size)) coq-header--line-number-epsilon)
-      (clrhash coq-header--line-number-tbl)
-      (puthash coq-header--line-number-key curr-size coq-header--line-number-tbl))))
+;; if size of file has changed beyond epsilon, update line number vars
+(defun coq-header--validate-line-number-vars ()
+  (let ((curr-size (buffer-size)))
+    (when (> (abs (- coq-header-line--buff-size curr-size)) coq-header--line-number-epsilon)
+      (setq coq-header-line--buff-size (float curr-size))
+      (setq coq-header-line--num-lines (line-number-at-pos (point-max))))))
 
-;; lookup line number in table, cache it
+;; assume lines are uniform length to calculate approximate line number
 (defun coq-header--get-line-number (pos)
-  (let ((result (gethash pos coq-header--line-number-tbl)))
-    (unless result
-      (setq result (line-number-at-pos pos))
-      (puthash pos result coq-header--line-number-tbl))
-    result))
+  (min coq-header-line--num-lines
+       (1+ (floor (* (/ pos coq-header-line--buff-size) coq-header-line--num-lines)))))
 
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
@@ -265,8 +257,8 @@ columns in header line, NUM-COLS is number of its columns."
 	(condition-case err-msg
 	    (when (coq-header-line--need-update)
 	      (coq-header-line--build-cache)
-	      ;; check if we need to flush line number cache
-	      (coq-header--validate-line-number-tbl)
+	      ;; check if we need to update line number information
+	      (coq-header--validate-line-number-vars)
 	      (let* ((num-cols (window-total-width (get-buffer-window)))
 		     (num-lines 
 		      (save-excursion
@@ -287,13 +279,16 @@ columns in header line, NUM-COLS is number of its columns."
 		(dolist (span (spans-all))
 		  (pcase (span-property span 'type)
 		    (`vanilla
-		     (cl-incf vanilla-count))
-		    (`pg-special-coloring
-		     (setq colored-spans (cons span colored-spans))
-		     (pcase (span-property span 'face)
-		       (`proof-processing-face (cl-incf processing-count))
-		       (`proof-processed-face (cl-incf processed-count))
-		       (`proof-incomplete-face (cl-incf incomplete-count))))
+		     (cl-incf vanilla-count)
+		     (let ((face (span-property span 'face)))
+		       (when face
+			 (setq colored-spans (cons span colored-spans))
+			 (pcase face
+			   (`proof-processing-face (cl-incf processing-count))
+			   (`proof-processed-face (cl-incf processed-count))
+			   ;; an incomplete Qed/Defined is also processed
+			   (`proof-incomplete-face (cl-incf incomplete-count)
+						   (cl-incf processed-count))))))
 		    (`pg-error
 		     (setq error-spans (cons span error-spans)))))
 		;; update for queued region
@@ -437,6 +432,7 @@ columns in header line, NUM-COLS is number of its columns."
       (when (consp mode-line-format)
 	(setq mode-line-format (cl-remove-if 'coq-header--mode-line-filter
 					     mode-line-format)))
+      (coq-header--validate-line-number-vars)
       (coq-header-line--start-timer))))
 
 ;; we can safely clear header line for all Coq buffers after a retraction

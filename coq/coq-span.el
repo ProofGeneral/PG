@@ -24,89 +24,55 @@
 (defun coq-server--get-span-with-edit-id (edit-id)
   (gethash edit-id coq-span-edit-id-tbl))
 
-(defun coq-span-color-span-on-feedback (xml tbl prop face)
-    (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	   (span-with-state-id (coq-server--get-span-with-state-id state-id)))
-      ;; can see feedbacks with state id not yet associated with a span
-      ;; also can find a span with a state id that's been deleted from script buffer,
-      ;;  but not yet garbage-collected from table
-      (when (and span-with-state-id
-		 (span-buffer span-with-state-id))
-	(with-current-buffer proof-script-buffer
-	  (save-excursion
-	    (goto-char (span-start span-with-state-id))
-	    (skip-chars-forward " \t\n")
-	    ;; if there's a "sent" span here, remove it, because now we have
-	    ;; relevant feedback
-	    (mapc (lambda (sp)
-		    (when (span-property sp 'sent)
-		      (span-delete sp)))
-		  (overlays-at (point)))
-	    ;; if there's an existing colored span at point, re-use it,
-	    ;;  because want most recent coloring
-	    (let* ((hashed-span (gethash state-id tbl))
-		   (span (or hashed-span
-			     (span-make (point) (span-end span-with-state-id))))
-		   (rank (gethash face coq-face-rank-tbl)))
-	      ;; inform header line we've updated a span color
-	      (coq-header-line-set-color-update)
-	      (span-set-property span 'type 'pg-special-coloring)
-	      (span-set-property span prop 't)
-	      (span-set-property span 'face face)
-	      ;; use priority API
-	      (span-set-priority span rank)
-	      (unless hashed-span
-		(puthash state-id span tbl))))))))
+(defun coq-span-color-span (span face)
+  (span-set-property span 'face face)
+  ;; inform header line we've updated a span color
+  ;; use priority API
+  (span-set-priority span (gethash face coq-face-rank-tbl))
+  (coq-header-line-set-color-update))
+
+(defun coq-span-color-span-on-feedback (xml status face &optional force-processed)
+  (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
+	 (span-with-state-id (coq-server--get-span-with-state-id state-id)))
+    ;; can see feedbacks with state id not yet associated with a span
+    ;; also can find a span with a state id that's been deleted from script buffer,
+    ;;  but not yet garbage-collected from table
+    (when (and span-with-state-id
+	       (span-buffer span-with-state-id))
+      (let ((curr-face (span-property span-with-state-id 'face)))
+	;; don't overwrite incomplete face with processed face unless force-processed
+	(unless (and (eq curr-face 'proof-incomplete-face)
+		     (eq face 'proof-processed-face)
+		     (not force-processed))
+	  (span-set-property span-with-state-id 'pg-status status)
+	  (coq-span-color-span span-with-state-id face))))))
 
 (defun coq-span-color-span-processingin (xml)
   (coq-span-color-span-on-feedback
    xml
-   coq-processing-span-tbl
-   'processing-in
+   'processing
    'proof-processing-face))
 
 (defun coq-span-color-span-incomplete (xml)
   (coq-span-color-span-on-feedback
    xml
-   coq-incomplete-span-tbl
    'incomplete
    'proof-incomplete-face))
 
-(defun coq-span-uncolor-span-on-feedback (xml tbl)
-  (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	 (span-colored (gethash state-id tbl)))
-    ;; may get several identical feedbacks, use just first one
-    (when span-colored
-      (remhash state-id tbl)
-      ;; inform header line we've updated a span color
-      (coq-header-line-set-color-update)
-      (span-delete span-colored))))
-
-(defun coq-span-color-span-processed (xml)
-  (coq-span-uncolor-span-on-feedback xml coq-processing-span-tbl)
+(defun coq-span-color-span-processed (xml &optional force)
   (coq-span-color-span-on-feedback
    xml
-   coq-processing-span-tbl
    'processed
-   'proof-processed-face))
+   'proof-processed-face
+   force))
 
-(defun coq-span-uncolor-span-complete (xml)
+(defun coq-span-color-span-complete (xml)
   ;; we also get complete feedbacks for statements that dismiss last goal in proof
   ;; we ignore those
-  (coq-span-uncolor-span-on-feedback xml coq-incomplete-span-tbl))
+  ;; force use of processed face
+  (coq-span-color-span-processed xml t))
 
 (defun coq-span-color-sent-span (span)
-  (with-current-buffer proof-script-buffer
-    (save-excursion
-      (goto-char (span-start span))
-      (skip-chars-forward " \t\n")
-      (let ((span-sent (span-make (point) (span-end span)))
-	    (rank (gethash proof-locked-face coq-face-rank-tbl)))
-	(span-set-property span-sent 'type 'pg-special-coloring)
-	(span-set-property span-sent 'sent 't)
-	(span-set-property span-sent 'face proof-locked-face)
-	(span-set-priority span-sent rank)
-	(coq-header-line-set-color-update)))))
-
+  (coq-span-color-span span 'proof-unprocessed-face))
 
 (provide 'coq-span)
