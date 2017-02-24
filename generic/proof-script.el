@@ -99,7 +99,6 @@ This uses the size of the hash table for IDIOM."
 ;;
 ;; Each span has a 'type property, one of:
 ;;
-;;  'goalsave     A goal..savegoal region in the buffer, a completed proof.
 ;;  'vanilla      Initialised in proof-semis-to-vanillas, for
 ;;  'comment      A comment outside a command.
 ;;  'proverproc   A region closed by the prover, processed outwith PG
@@ -801,7 +800,6 @@ This is based on its name and type.
 
 Each span has a 'type property, one of:
 
-    'goalsave     A goal..savegoal region in the buffer, a completed proof.
     'vanilla      Initialised in proof-semis-to-vanillas, for
     'comment      A comment outside a command.
     'proverproc   A region closed by the prover, processed outwith PG
@@ -1459,7 +1457,7 @@ With ARG, turn on scripting iff ARG is positive."
 ;; bounce the rest of the queue and do some error processing.
 ;;
 ;; When a span has been processed, it is classified as
-;; 'comment, 'goalsave, 'vanilla, etc.
+;; 'comment, 'vanilla, etc.
 ;;
 ;; The main function for dealing with processed spans is
 ;; `proof-done-advancing'
@@ -1538,37 +1536,6 @@ Argument SPAN has just been processed."
 		 "lisp error when obeying proof-shell-evaluate-elisp-comment-regexp: \n"
 		 (prin1-to-string (match-string-no-properties 1))
 		 "\n"))))))))
-
-(defun proof-make-goalsave
-    (gspan goalend savestart saveend nam &optional nestedundos)
-  "Make new goal-save span, using GSPAN. Subroutine of `proof-done-advancing-save'.
-Argument GOALEND is the end of the goal;."
-  (unless proof-arbitrary-undo-positions
-    (span-set-end gspan saveend)
-    (span-set-property gspan 'type 'goalsave))
-  (span-set-property gspan 'idiom 'proof);; links to nested proof element
-  (span-set-property gspan 'name nam)
-  (and nestedundos (span-set-property gspan 'nestedundos nestedundos))
-  (pg-set-span-helphighlights gspan proof-region-mouse-highlight-face)
-  ;; Now make a nested span covering the purported body of the proof,
-  ;; and add to buffer-local list of elements.
-  (let ((proofbodyspan
-	 (span-make goalend (if proof-script-integral-proofs
-				saveend savestart))))
-    (pg-add-proof-element nam proofbodyspan gspan)))
-
-(defun proof-get-name-from-goal (gspan)
-  "Try to return a goal name from GSPAN.
-Subroutine of `proof-done-advancing-save'."
-  (let ((cmdstr (span-property gspan 'cmd)))
-    (proof-debug-message "cmdstr: %s" cmdstr)
-    (and proof-goal-with-hole-regexp
-	 (or (message "got proof-goal-with-hole-regexp") t)
-	 (proof-string-match proof-goal-with-hole-regexp cmdstr)
-	 (or (message "got match with proof-goal-with-hole-regexp") t)
-	 (if (stringp proof-goal-with-hole-result)
-	     (replace-match proof-goal-with-hole-result nil nil cmdstr)
-	   (match-string proof-goal-with-hole-result cmdstr)))))
 
 (defun proof-done-advancing-other (span)
   (let ((bodyspan  span) ;; might take subscript after first word/line
