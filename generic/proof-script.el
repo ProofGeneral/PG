@@ -870,8 +870,7 @@ In any case, a mouse highlight and tooltip are only set if
 `proof-output-tooltips' is non-nil.
 
 Argument FACE means add 'face property FACE to the span."
-  (let* ((output     (pg-last-output-displayform))
-	 (newstart   (save-excursion
+  (let* ((newstart   (save-excursion
 		       (goto-char (span-start span))
 		       (skip-chars-forward " \n\t")
 		       (point)))
@@ -884,13 +883,11 @@ Argument FACE means add 'face property FACE to the span."
     (span-set-property span 'pg-helpspan newspan) ; link from parent
 
     (span-set-property newspan 'pghelp t)
-    (span-set-property newspan 'response output)
 
-    (when proof-output-tooltips
-      (span-set-property newspan 'help-echo
-			 (if (<= (length output) 2)
-			     (pg-span-name span)
-			   output)))
+    ;; in old PG, we set a tooltip containing Coq's last response
+    ;; because we're called from `pg-done-advancing', that only means that a
+    ;; script item has been sent to the transactional queue, so
+    ;; the last response seen may have nothing to do with `span'
 
     ;; Here's the message we used to show in minibuffer
     ;; when pg-show-hints was on:
@@ -908,11 +905,8 @@ Argument FACE means add 'face property FACE to the span."
 		  (unless mouseface 'proof-mouse-highlight-face)))
 	(when proof-output-tooltips
 	  (span-set-property newspan 'mouse-face mouseface)))
-    (if face
-	(span-set-property newspan 'face face))
-    ;; (span-set-priority newspan 50)
-    ))
-
+    (when face
+	(span-set-property newspan 'face face))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1515,8 +1509,7 @@ Argument SPAN has just been processed."
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
-    (let ((proof-prover-last-output "")) ; comments not sent, no last output 
-      (pg-set-span-helphighlights bodyspan))
+    (pg-set-span-helphighlights bodyspan)
 
     ;; end of sent region includes comment if prover has sent everything before
     ;; handle comment first in script specially
