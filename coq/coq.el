@@ -295,22 +295,19 @@ that do not fit in the goals window."
 ;; Derived modes
 ;;
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-response-mode proof-response-mode
-    "Coq Response" nil
-    (coq-response-config)))
+(define-derived-mode coq-response-mode proof-response-mode
+  "Coq Response" nil
+  (coq-response-config))
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-mode proof-mode "Coq"
-    "Major mode for Coq scripts.
+(define-derived-mode coq-mode proof-mode "Coq"
+  "Major mode for Coq scripts.
 
 \\{coq-mode-map}"
-    (coq-mode-config)))
+  (coq-mode-config))
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-goals-mode proof-goals-mode
-    "Coq Goals" nil
-    (coq-goals-mode-config)))
+(define-derived-mode coq-goals-mode proof-goals-mode
+  "Coq Goals" nil
+  (coq-goals-mode-config))
 
 ;; Indentation and navigation support via SMIE.
 
