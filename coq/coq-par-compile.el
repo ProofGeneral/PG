@@ -28,10 +28,7 @@
   (require 'proof-compat))
 
 (cl-eval-when (compile)
-  (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
-  (defvar coq-compile-before-require)       ; defpacustom
-  (defvar coq-compile-parallel-in-background) ; defpacustom
-  (defvar coq-confirm-external-compilation)); defpacustom
+  (defvar queueitems))       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
 
