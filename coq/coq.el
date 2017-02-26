@@ -7,32 +7,30 @@
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
 (eval-when-compile
-  (require 'cl-lib)
   (require 'proof-compat))
 
-(cl-eval-when (compile)
-              (require 'proof-utils)
-              (require 'span)
-              (require 'outline)
-              (require 'newcomment)
-              (require 'etags)
-              (require 'coq-queries)
-              (unless (proof-try-require 'smie)
-                (defvar smie-indent-basic nil)
-                (defvar smie-rules-function nil))
-              (defvar proof-info nil)       ; dynamic scope in proof-tree-urgent-action
-              (defvar action nil)       ; dynamic scope in coq-insert-as stuff
-              (defvar string nil)       ; dynamic scope in coq-insert-as stuff
-              (defvar old-proof-marker nil)
-                                        ; dynamic scoq in coq-proof-tree-enable-evar-callback
-              (defvar coq-auto-insert-as nil)    ; defpacustom
-              (defvar coq-time-commands nil)        ; defpacustom
-              (defvar coq-use-project-file t)        ; defpacustom
-              (defvar coq-use-editing-holes nil)    ; defpacustom
-              (defvar coq-hide-additional-subgoals nil) ; defpacustom
-              (proof-ready-for-assistant 'coq))     ; compile for coq
-
 (require 'cl-lib)
+
+(cl-eval-when (compile)
+  (require 'proof-utils)
+  (require 'span)
+  (require 'outline)
+  (require 'newcomment)
+  (require 'etags)
+  (unless (proof-try-require 'smie)
+    (defvar smie-indent-basic)
+    (defvar smie-rules-function))
+  (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
+  (defvar action)       ; dynamic scope in coq-insert-as stuff
+  (defvar string)       ; dynamic scope in coq-insert-as stuff
+  (defvar old-proof-marker)
+                                        ; dynamic scoq in coq-proof-tree-enable-evar-callback
+  (defvar coq-auto-insert-as)    ; defpacustom
+  (defvar coq-time-commands)        ; defpacustom
+  (defvar coq-use-project-file)        ; defpacustom
+  (defvar coq-use-editing-holes)    ; defpacustom
+  (defvar coq-hide-additional-subgoals)
+
 (require 'proof)
 (require 'proof-utils)
 (require 'proof-resolver)
@@ -818,7 +816,7 @@ flag Printing All set."
 
 ;; Check
 (cl-eval-when (compile)
-              (defvar coq-auto-adapt-printing-width nil)); defpacustom
+  (defvar coq-auto-adapt-printing-width)); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width

@@ -30,12 +30,9 @@
 ;;
 ;; See documentation of `holes-mode'.
 
-
-(eval-when-compile 
-  (require 'span))
-
-
 (require 'cl-lib)
+(require 'span)
+(require 'cl)
 
 ;;; Code:
 

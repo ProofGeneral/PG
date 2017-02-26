@@ -10,23 +10,13 @@
 (require 'cl-lib)	
 
 ;;; Code:
-(cl-eval-when (compile)
-  (defvar proof-assistant-menu nil) ; defined by macro in proof-menu-define-specific
-  (defvar proof-mode-map nil))
+(eval-when-compile
+  (defvar proof-assistant-menu)	  ; defined by macro in proof-menu-define-specific
+  (defvar proof-mode-map))
 
 (require 'proof-utils)    ; proof-deftoggle, proof-eval-when-ready-for-assistant
 (require 'proof-useropts)
 (require 'proof-config)
-
-
-    
-
-
-(eval-when-compile
-  (defvar proof-assistant-menu)	  ; defined by macro in proof-menu-define-specific
-  (defvar proof-mode-map))
-    
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
