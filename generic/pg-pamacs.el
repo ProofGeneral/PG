@@ -247,10 +247,6 @@ Additional properties in the ARGS prop list may include:
 		     that is particular to the running instance of the prover.
 
 This macro also extends the `proof-assistant-settings' list."
-  (eval-when-compile
-    (if (boundp 'proof-assistant-symbol)
-	;; declare variable to compiler to prevent warnings
-	(eval `(defvar ,(proof-ass-sym name)))))
   `(proof-defpacustom-fn (quote ,name) (quote ,val) (quote ,args)))
 
 

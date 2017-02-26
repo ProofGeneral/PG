@@ -29,7 +29,7 @@
   (defvar coq-time-commands)        ; defpacustom
   (defvar coq-use-project-file)        ; defpacustom
   (defvar coq-use-editing-holes)    ; defpacustom
-  (defvar coq-hide-additional-subgoals)
+  (defvar coq-hide-additional-subgoals))
 
 (require 'proof)
 (require 'proof-utils)
