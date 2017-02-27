@@ -262,30 +262,40 @@ If optional POS is present, will set point to POS.
 Otherwise move point to the end of the buffer.
 Ensure that point is visible in window."
   (when (and buffer (or force proof-auto-raise-buffers))
-    (save-excursion
-      (save-selected-window
-	(let ((window (proof-get-window-for-buffer buffer)))
-	  (when (window-live-p window) ;; [fails sometimes?]
-	    ;; Set the size and point position.
-	    (if proof-three-window-enable
-		(set-window-dedicated-p window proof-three-window-enable))
-	    (select-window window)
-	    (if proof-shrink-windows-tofit
-		(proof-resize-window-tofit)
-	      ;; If we're not shrinking to fit, allow the size of
-	      ;; this window to change.  [NB: might be nicer to
-	      ;; fix the size based on user choice]
-	      (setq window-size-fixed nil))
-	    ;; For various reasons, point may get moved around in
-	    ;; response buffer.  Attempt to normalise its position.
-	    (goto-char (or pos (point-max)))
+    (save-selected-window
+      (let ((window (proof-get-window-for-buffer buffer)))
+	(when (window-live-p window) ;; [fails sometimes?]
+	  ;; Set the size and point position.
+	  (if proof-three-window-enable
+	      (set-window-dedicated-p window proof-three-window-enable))
+	  (select-window window)
+	  (if proof-shrink-windows-tofit
+	      (proof-resize-window-tofit)
+	    ;; If we're not shrinking to fit, allow the size of
+	    ;; this window to change.  [NB: might be nicer to
+	    ;; fix the size based on user choice]
+	    (setq window-size-fixed nil))
+	  ;; calculate visibile position without moving point
+	  (let ((vis-pos (or pos (point-max)))
+		(min-pos (point-min))
+		(ws-chars '(32 9 10))) ; space, tab, newline
 	    (if pos
-		(beginning-of-line)
-	      (skip-chars-backward "\n\t "))
-	    ;; Ensure point visible.  Again, window may have died
+	      ;; find beginning of line
+	      (progn 
+		(unless (= vis-pos min-pos)
+		  (cl-decf vis-pos)
+		  (while (and (> vis-pos min-pos)
+			      (not (= (char-after vis-pos) 10)))
+		    (cl-decf vis-pos))
+		  (cl-incf vis-pos))
+	      ;; skip backwards over whitespace
+	      (while (and (> vis-pos min-pos)
+			  (memq (char-after vis-pos) ws-chars))
+		(cl-decf vis-pos)))
+	    ;; Ensure vis-pos is visible.  Again, window may have died
 	    ;; inside shrink to fit, for some reason
 	    (when (window-live-p window)
-	      (unless (pos-visible-in-window-p (point) window)
+	      (unless (pos-visible-in-window-p vis-pos window)
 		(recenter -1))
 	      (with-current-buffer buffer
 		(if (window-bottom-p window)
