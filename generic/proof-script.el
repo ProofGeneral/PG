@@ -34,6 +34,8 @@
 (defun myformat (&rest args)
   (apply 'format args))
 
+(defvar proof-action-list) ; forward declaration only!
+
 (declare-function proof-layout-windows "pg-response" (&rest args))
 (declare-function pg-response-warning "pg-response" (&rest args))
 (declare-function proof-segment-up-to "proof-script")
@@ -427,7 +429,7 @@ value of proof-locked span."
   "Remove all spans from scripting buffers via `proof-restart-buffers'."
   (proof-restart-buffers (proof-script-buffers-with-spans)))
 
-(defun proof-script-clear-queue-spans-on-error (badspan &optional interruptp)
+(defun proof-script-clear-queue-spans-on-error (badspan &optional _interruptp)
   "Remove the queue span from buffer, cleaning spans no longer queued.
 If BADSPAN is non-nil, assume that this was the span whose command
 caused the error.  Go to the start of it if `proof-follow-mode' is
@@ -445,12 +447,7 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
 	(when (eq proof-follow-mode 'locked)
 	  ;; jump to start of error: should this be configurable?
 	  (goto-char (span-start badspan))
-	  (skip-chars-forward " \t\n")))
-      (unless interruptp
-	(when proof-sticky-errors
-	  (pg-set-span-helphighlights badspan
-				      'proof-script-highlight-error-face
-				      'proof-script-sticky-error-face))))
+	  (skip-chars-forward " \t\n"))))
     (proof-script-delete-spans start end)))
 
 (defun proof-script-delete-spans (beg end)
@@ -779,21 +776,6 @@ IDIOMSYM is a symbol and ID is a strings."
   (interactive)
   (pg-show-all-portions "proof" 'hide))
 
-(defun pg-add-proof-element (name span controlspan)
-  "Add a span proof element to SPAN with name NAME and parent CONTROLSPAN."
-  (let ((proofid   (proof-next-element-id 'proof)))
-    (pg-add-element 'proof proofid span name)
-    ;; Set id in controlspan [NB: intern here means symbol-name elsewhere]
-    (span-set-property controlspan 'id (intern proofid))
-    ;; Make a navigable link between the two spans.
-    (span-set-property span 'controlspan controlspan)
-    (span-set-property controlspan 'children
-		       (cons span (span-property controlspan 'children)))
-    (pg-set-span-helphighlights span proof-region-mouse-highlight-face)
-    ;; (span-set-priority span 10) ; lower than default
-    (if proof-disappearing-proofs
-	(pg-make-element-invisible 'proof proofid))))
-
 (defun pg-span-name (span)
   "Return a user-level name for SPAN.
 This is based on its name and type.
@@ -854,60 +836,6 @@ This is used to annotate the buffer with the result of proof steps."
       
       text)))
 
-;;;###autoload
-(defun pg-set-span-helphighlights (span &optional mouseface face)
-  "Add a daughter help span for SPAN with help message, highlight, actions.
-The daughter span covers the non whitespace content of the main span.
-
-We add the last output (when non-empty) to the hover display, and
-also as the 'response property on the span.
-
-Optional argument MOUSEFACE means use the given face as a mouse highlight
-face, if it is a face, otherwise, if it is non-nil but not a face,
-do not add a mouse highlight.
-
-In any case, a mouse highlight and tooltip are only set if
-`proof-output-tooltips' is non-nil.
-
-Argument FACE means add 'face property FACE to the span."
-  (let* ((newstart   (save-excursion
-		       (goto-char (span-start span))
-		       (skip-chars-forward " \n\t")
-		       (point)))
-	 (newend     (save-excursion
-		       (goto-char (span-end span))
-		       (skip-chars-backward " \n\t")
-		       (point)))
-	 (newspan     (span-make-modifying-removing-span newstart newend)))
-    
-    (span-set-property span 'pg-helpspan newspan) ; link from parent
-
-    (span-set-property newspan 'pghelp t)
-
-    ;; in old PG, we set a tooltip containing Coq's last response
-    ;; because we're called from `pg-done-advancing', that only means that a
-    ;; script item has been sent to the transactional queue, so
-    ;; the last response seen may have nothing to do with `span'
-
-    ;; Here's the message we used to show in minibuffer
-    ;; when pg-show-hints was on:
-    ;;
-    ;; " ("
-    ;; (substitute-command-keys
-    ;;  (if (span-property span 'idiom)
-    ;;	"with point in region, \\[pg-toggle-visibility] to show/hide; "
-    ;;    "\\<pg-span-context-menu-keymap>\\[pg-span-context-menu]"))
-    ;; " for menu)")))
-
-    (span-set-property newspan 'keymap pg-span-context-menu-keymap)
-    (if (or (facep mouseface)
-	    (setq mouseface
-		  (unless mouseface 'proof-mouse-highlight-face)))
-	(when proof-output-tooltips
-	  (span-set-property newspan 'mouse-face mouseface)))
-    (when face
-	(span-set-property newspan 'face face))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -934,9 +862,7 @@ to allow other files loaded by proof assistants to be marked read-only."
 	      (proof-set-locked-end end)
 	      (proof-set-sent-end end))
 	    ;; Configure the overlay span
-	    (span-set-property span 'type 'proverproc)
-	    (pg-set-span-helphighlights span 'nohighlight))))))
-
+	    (span-set-property span 'type 'proverproc))))))
 
 ;; Note: desirable to clean odd asymmetry here: we have a nice setting
 ;; for proof-register-possibly-new-processed-file but something much
@@ -1509,7 +1435,6 @@ Argument SPAN has just been processed."
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
-    (pg-set-span-helphighlights bodyspan)
 
     ;; end of sent region includes comment if prover has sent everything before
     ;; handle comment first in script specially
@@ -1544,11 +1469,7 @@ Argument SPAN has just been processed."
       (pg-add-element 'command id bodyspan)))
 
     (when proof-prover-proof-completed
-	(cl-incf proof-prover-proof-completed))
-
-    (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
-
-
+	(cl-incf proof-prover-proof-completed))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
