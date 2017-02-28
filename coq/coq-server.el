@@ -33,6 +33,10 @@ If we undo to point before the span with this state id, the focus
 is gone and we have to close the secondary locked span."
   )
 
+(defvar coq-server--end-focus-retract-point nil
+  "When user has edited secondary locked region, point to retract to
+after closing focus")
+
 (defvar coq-server--current-call nil
   "Call associated with last response")
 
@@ -451,7 +455,13 @@ is gone and we have to close the secondary locked span."
     (setq coq-server--current-span nil) 
     (when proof-locked-secondary-span
       (coq-server--merge-locked-spans))
-    (coq-server--update-state-id-and-process new-tip-state-id)))
+    (coq-server--update-state-id-and-process new-tip-state-id)
+    ;; if user has edited within secondary locked region, retract to edit point
+    (when coq-server--end-focus-retract-point
+      (with-current-buffer proof-script-buffer
+	(goto-char coq-server--end-focus-retract-point)
+	(setq coq-server--end-focus-retract-point nil)
+	(proof-retract-until-point)))))
 
 (defvar coq-server--retract-error nil)
 
@@ -545,6 +555,15 @@ is gone and we have to close the secondary locked span."
       (coq-error-set-update)
       (coq-server--make-edit-at-state-id-current))))
 
+(defun coq-server--secondary-locked-handler (span after-p start end &optional len)
+  "Handler for edits within secondary locked region"
+  (when after-p
+    (let ((pt (if (= 0 len)
+		  end
+		start)))
+      (setq coq-server--end-focus-retract-point pt)
+      (proof-assert-until-point (span-end span)))))
+
 (defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
     (let* ((focus-start-span (coq-server--get-span-with-state-id focus-start-state-id))
@@ -592,11 +611,9 @@ is gone and we have to close the secondary locked span."
 	(beginning-of-thing 'line)
 	(setq secondary-span-start (point)))
       (let* ((span (span-make secondary-span-start secondary-span-end)))
-	(span-set-property span 'start-closed t) ;; TODO what are these for?
-	(span-set-property span 'end-closed t)
 	(span-set-property span 'face 'proof-secondary-locked-face)
 	(span-set-priority span (gethash proof-secondary-locked-face coq-face-rank-tbl))
-	(put-text-property secondary-span-start secondary-span-end 'read-only t proof-script-buffer)
+	(span-set-property span 'modification-hooks (list 'coq-server--secondary-locked-handler))
 	(setq proof-locked-secondary-span span)))))
 
 (defun coq-server--remove-secondary-locked-span (&optional delete-spans)
