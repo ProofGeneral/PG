@@ -770,7 +770,8 @@ and resets the internal state."
     (setq coq-par-vio2vo-queue (coq-par-new-queue))
     (setq coq--compile-vio2vo-in-progress nil)
     (when coq--compile-vio2vo-delay-timer
-      (cancel-timer coq--compile-vio2vo-delay-timer))
+      (cancel-timer coq--compile-vio2vo-delay-timer)
+      (setq coq--compile-vio2vo-delay-timer nil))
     (coq-par-unlock-all-ancestors-on-error)
     (proof-detach-queue)
     (setq proof-second-action-list-active nil)
@@ -1917,7 +1918,8 @@ the maximal number of background compilation jobs is started."
     ;; notification
     (when (cdr splitted-items)
       (when coq--compile-vio2vo-delay-timer
-	(cancel-timer coq--compile-vio2vo-delay-timer))
+	(cancel-timer coq--compile-vio2vo-delay-timer)
+	(setq coq--compile-vio2vo-delay-timer nil))
       (when coq--compile-vio2vo-in-progress
 	(cl-assert (not coq--last-compilation-job)
 		nil "normal compilation and vio2vo in parallel 2")
