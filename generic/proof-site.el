@@ -38,7 +38,6 @@
       ;; Main instances of PG.
       ;; only Coq these days
       (coq "Coq" "v" nil (".vo" ".glob"))
-
       )
     "Default value for `proof-assistant-table', which see.")
 
