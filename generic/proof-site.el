@@ -36,9 +36,7 @@
 (defconst proof-assistant-table-default
     '(
       ;; Main instances of PG.
-
       ;; only Coq these days
-
       (coq "Coq" "v" nil (".vo" ".glob"))
 
       )
