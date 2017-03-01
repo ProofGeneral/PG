@@ -1173,6 +1173,21 @@ Near here means PT is either inside or just aside of a comment."
   ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
+<<<<<<< HEAD
+=======
+  
+  ;; Commands sent to proof engine
+  (setq proof-showproof-command "Show. "
+        proof-context-command "Print All. "
+        proof-goal-command "Goal %s. "
+        proof-save-command "Save %s. "
+        proof-find-theorems-command "Search %s. ")
+
+  (setq proof-shell-empty-action-list-command 'coq-empty-action-list-command)
+
+;; FIXME da: Does Coq have a help or about command?
+;;	proof-info-command "Help"
+>>>>>>> 34d3aaa272e4bc38fbcb59b35f5cb8984a223a31
 
   ;; Sent to proof engine
   (setq proof-showproof-command
