@@ -123,7 +123,7 @@ These are appended at the end of `coq-server-init-cmds'."
 
 (defun coq--set-search-blacklist (s)
   (let ((cmd (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s."
-          (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
+                     (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
     (setq coq-search-blacklist-strings-prev coq-search-blacklist-strings)
     (lambda ()
       (list (coq-xml-add-item cmd) nil))))
@@ -146,7 +146,7 @@ that do not fit in the goals window."
    (coq-xml-about)
    ;; use thunk, delay in order to look at script name, nil means no associated span
    (lambda () (list (coq-xml-init) nil)))
- "Commands to initialize Coq.")
+  "Commands to initialize Coq.")
 
 (require 'coq-syntax)
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
@@ -483,7 +483,7 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
                     (goto-char (1- (span-start (car comment-spans))))
                   (goto-char (1- (point))))))))
         state-id))))
-        
+
 ;; send a command to coqtop via XML to do retraction
 (defun coq-server-find-and-forget (span)
   "Backtrack to SPAN, possibly resulting in a full retraction. Send Edit_at for the 
@@ -572,16 +572,16 @@ Based on idea mentioned in Coq reference manual."
    (lambda (response call span)
      (let ((intros (coq-queries-get-message-string response)))
        (if intros
-         (with-current-buffer proof-script-buffer
-           (indent-region (point)
-                          (progn (insert (coq--format-intros intros))
-                                 (save-excursion
-                                   (insert " ")
-                                   (point))))
-           ;; `proof-electric-terminator' moves the point in all sorts of strange
-           ;; ways, so we run it last
-           (let ((last-command-event ?.)) ;; Insert a dot
-             (proof-electric-terminator)))
+           (with-current-buffer proof-script-buffer
+             (indent-region (point)
+                            (progn (insert (coq--format-intros intros))
+                                   (save-excursion
+                                     (insert " ")
+                                     (point))))
+             ;; `proof-electric-terminator' moves the point in all sorts of strange
+             ;; ways, so we run it last
+             (let ((last-command-event ?.)) ;; Insert a dot
+               (proof-electric-terminator)))
          ;; if no intros, call default response handler
          (coq-server-process-response response call span))))))
 
@@ -814,7 +814,7 @@ flag Printing All set."
 
 ;; Check
 (cl-eval-when (compile)
-           (defvar coq-auto-adapt-printing-width nil)); defpacustom
+              (defvar coq-auto-adapt-printing-width nil)); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
@@ -952,7 +952,7 @@ goal is redisplayed."
     (when coq-highlight-id-last-regexp
       (coq-unhighlight-id-in-goals coq-highlight-id-last-regexp))
     (coq-highlight-id-in-goals re)
-       (setq coq-highlight-id-last-regexp re)))
+    (setq coq-highlight-id-last-regexp re)))
 
 ;; Items on Other Queries menu
 
@@ -1185,6 +1185,12 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-server-quit-cmd (lambda () (list (coq-xml-quit) nil)))
   (setq proof-context-command 'coq-get-context)
   
+  ;; Settings not defined with defpacustom because they have an unsupported
+  ;; type.
+  (setq proof-assistant-additional-settings
+        '(coq-compile-quick coq-compile-keep-going
+                            coq-compile-auto-save coq-lock-ancestors))
+
   (setq proof-goal-command-p 'coq-goal-command-p
         proof-find-and-forget-fn 'coq-server-find-and-forget
         proof-state-preserving-p 'coq-state-preserving-p)
@@ -1411,37 +1417,31 @@ The not yet delayed output is in the region
   (let ((start proof-shell-delayed-output-start)
         (end proof-shell-delayed-output-end)
         (state  (car proof-info)))
-  (when (> state proof-tree-last-state)
-    (with-current-buffer proof-shell-buffer
-      ;; The message "All the remaining goals are on the shelf" is processed as
-      ;; urgent message and is therefore before
-      ;; proof-shell-delayed-output-start. We therefore need to go back to
-      ;; proof-marker.
-;;      (goto-char proof-marker)  ;; TODO proof-marker is no longer a thing, because proof shell is gone
-      (unless (proof-re-search-forward
-               coq-proof-tree-branch-finished-regexp end t)
-        (goto-char start)
-        (while (proof-re-search-forward
-                coq-proof-tree-additional-subgoal-ID-regexp end t)
-          (let ((subgoal-id (match-string-no-properties 1)))
-            (unless (gethash subgoal-id proof-tree-sequent-hash)
-              ;; (message "CPTGNS new sequent %s found" subgoal-id)
-              (setq proof-action-list
-                    (cons (proof-shell-action-list-item
-                           (coq-show-sequent-command subgoal-id)
-                           (proof-tree-make-show-goal-callback (car proof-info))
-                           '(no-goals-display
-                             no-response-display
-                             proof-tree-show-subgoal))
-<<<<<<< HEAD
-                          proof-action-list)))))))))
+    (when (> state proof-tree-last-state)
+      (with-current-buffer proof-shell-buffer
+        ;; The message "All the remaining goals are on the shelf" is processed as
+        ;; urgent message and is therefore before
+        ;; proof-shell-delayed-output-start. We therefore need to go back to
+        ;; proof-marker.
+        ;;      (goto-char proof-marker)  ;; TODO proof-marker is no longer a thing, because proof shell is gone
+        (unless (proof-re-search-forward
+                 coq-proof-tree-branch-finished-regexp end t)
+          (goto-char start)
+          (while (proof-re-search-forward
+                  coq-proof-tree-additional-subgoal-ID-regexp end t)
+            (let ((subgoal-id (match-string-no-properties 1)))
+              (unless (gethash subgoal-id proof-tree-sequent-hash)
+                ;; (message "CPTGNS new sequent %s found" subgoal-id)
+                (setq proof-action-list
+                      (cons (proof-shell-action-list-item
+                             (coq-show-sequent-command subgoal-id)
+                             (proof-tree-make-show-goal-callback (car proof-info))
+                             '(no-goals-display
+                               no-response-display
+                               proof-tree-show-subgoal))
+                            proof-action-list))))))))))
 
-=======
-                          proof-action-list))))))))))
-  
->>>>>>> 6d1f608c6e7c39eff89b9461a2f4ea7ff1b19899
 (add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-get-new-subgoals)
-
 
 (defun coq-find-begin-of-unfinished-proof ()
   "Return start position of current unfinished proof or nil."
@@ -1707,10 +1707,10 @@ mouse activation."
            "Command (TAB to see list, default Require Import) : "
            reqkinds-kinds-table nil nil nil nil "Require Import")))
     (cl-loop do
-          (setq s (completing-read "Name (empty to stop) : "
-                                   (coq-build-accessible-modules-list)))
-          (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
-          while (not (string-equal s "")))))
+             (setq s (completing-read "Name (empty to stop) : "
+                                      (coq-build-accessible-modules-list)))
+             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
+             while (not (string-equal s "")))))
 
 ;; TODO add module closing
 (defun coq-end-Section ()
