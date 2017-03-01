@@ -15,6 +15,9 @@
 ;; coqtop response so we can set the state id in the span metadata.
 ;; 
 
+;; Instead of the consed data structure for the queue and associated data,
+;; we use a cl-lib structure.
+
 ;; Another modification is that we can log the strings sent to the process.
 ;; That way, we see the correct order of calls and responses, which we would 
 ;; not see if we logged the sent strings at the time of queueing.
@@ -74,6 +77,7 @@
 ;; have indicated that the question from the next transaction was not
 ;; sent immediately, send it at this point, awaiting the response.
 
+(require 'cl-lib)
 (require 'span)
 (require 'coq-header-line)
 (require 'proof-config)
@@ -85,43 +89,31 @@
 
 ;;; Code:
 
-;;; Accessors
+;; a transaction queue object is a cl-lib structure
 
-;; a transaction queue object is a vector, which uses the following indices
+(cl-defstruct coq-tq
+	      "Coq transaction queue"
+	      queue
+	      keep-len
+	      end-tags
+	      other-tags
+	      process
+	      buffer
+	      last-search-point
+	      response-complete
+	      call
+	      span)
 
-(defvar coq-tq-queue-ndx              0)
-(defvar coq-tq-keep-len-ndx           1)
-(defvar coq-tq-end-tags-ndx           2)
-(defvar coq-tq-other-tags-ndx         3)
-(defvar coq-tq-process-ndx            4)
-(defvar coq-tq-buffer-ndx             5)
-(defvar coq-tq-last-search-point-ndx  6)
-(defvar coq-tq-response-complete-ndx  7)
-(defvar coq-tq-call-ndx               8)
-(defvar coq-tq-span-ndx               9)
+(defun coq-tq-set-last-search-point (tq pt) (setf (coq-tq-last-search-point tq) pt))
+(defun coq-tq-set-queue             (tq queue) (setf (coq-tq-queue tq) queue))
+(defun coq-tq-set-call              (tq call) (setf (coq-tq-call tq) call))
+(defun coq-tq-set-span              (tq span) (setf (coq-tq-span tq) span))
+(defun coq-tq-set-complete          (tq) (setf (coq-tq-response-complete tq) t))
+(defun coq-tq-set-incomplete        (tq) (setf (coq-tq-response-complete tq) nil))
 
-(defun coq-tq-queue                 (tq) (aref tq coq-tq-queue-ndx))
-(defun coq-tq-keep-len              (tq) (aref tq coq-tq-keep-len-ndx))
-(defun coq-tq-end-tags              (tq) (aref tq coq-tq-end-tags-ndx))
-(defun coq-tq-other-tags            (tq) (aref tq coq-tq-other-tags-ndx))
-(defun coq-tq-process               (tq) (aref tq coq-tq-process-ndx))
-(defun coq-tq-buffer                (tq) (aref tq coq-tq-buffer-ndx))
+;; The structure of a `queue' is a possibly empty list of improper lists, with each element:
+;;  (question closure . fn)
 
-(defun coq-tq-last-search-point     (tq) (aref tq coq-tq-last-search-point-ndx))
-(defun coq-tq-response-complete     (tq) (aref tq coq-tq-response-complete-ndx))
-(defun coq-tq-call                  (tq) (aref tq coq-tq-call-ndx))
-(defun coq-tq-span                  (tq) (aref tq coq-tq-span-ndx))
-
-(defun coq-tq-set-last-search-point (tq pt) (aset tq coq-tq-last-search-point-ndx pt))
-(defun coq-tq-set-queue             (tq queue) (aset tq coq-tq-queue-ndx queue))
-(defun coq-tq-set-call              (tq call) (aset tq coq-tq-call-ndx call))
-(defun coq-tq-set-span              (tq span) (aset tq coq-tq-span-ndx span))
-(defun coq-tq-set-complete          (tq) (aset tq coq-tq-response-complete-ndx t))
-(defun coq-tq-set-incomplete        (tq) (aset tq coq-tq-response-complete-ndx nil))
-
-;; The structure of a `queue' is as follows
-;; ((question closure . fn)
-;;  <other queue entries>)
 ;; question: string to send to the process
 (defun coq-tq-queue-head-question (tq) (car (car (coq-tq-queue tq))))
 ;; closure: function for special handling of response
@@ -210,20 +202,19 @@ from the PROCESS that are not transactional."
 					     (mapcar 'cdr other-tags))))
 	 ;; the length we have to back up if we get part of a response
 	 (keep-len (1- (apply 'max all-end-tags)))
-	 (tq (vector
-	      nil      ; queue
-	      keep-len
-	      end-tags
-	      other-tags
-	      process
-	      (generate-new-buffer
-	       (concat " tq-temp-"
-		       (process-name process)))
-	      1        ; last search point
-	      t        ; response complete
-	      nil      ; call
-	      nil)))   ; span
-
+	 (tq (make-coq-tq
+	      :queue nil
+	      :keep-len keep-len
+	      :end-tags end-tags
+	      :other-tags other-tags
+	      :process process
+	      :buffer (generate-new-buffer
+		       (concat " tq-temp-"
+			       (process-name process)))
+	      :last-search-point 1
+	      :response-complete t
+	      :call nil
+	      :span nil)))
     (buffer-disable-undo (coq-tq-buffer tq))
     (setq tq--oob-handler oob-handler)
     (set-process-filter process
