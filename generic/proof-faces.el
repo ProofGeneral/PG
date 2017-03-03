@@ -69,11 +69,6 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for commands in proof script waiting to be processed."
   :group 'proof-faces)
 
-;; Face for locked region of a script
-(copy-face 'proof-queue-face 'proof-locked-face)
-;; Face for sent script item
-(copy-face 'proof-locked-face 'proof-unprocessed-face)
-
 (defface proof-sent-face
   (proof-face-specs
    (:background "#eaf8ff")
@@ -81,6 +76,15 @@ not listed here, you may not get the correct syntax colouring behaviour.")
    (:underline t))
   "*Face for region of proof script sent to the prover."
   :group 'proof-faces)
+
+;; Face for locked region of a script
+
+(if (display-graphic-p)
+    (copy-face 'proof-queue-face 'proof-locked-face)
+  (copy-face 'proof-sent-face 'proof-locked-face))
+  
+;; Face for sent script item
+(copy-face 'proof-locked-face 'proof-unprocessed-face)
 
 ;; Face for secondary locked region of a script
 (copy-face 'proof-sent-face 'proof-secondary-locked-face)
