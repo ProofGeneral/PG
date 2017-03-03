@@ -1,0 +1,22 @@
+# simple file example
+
+CODE=$(cat <<EOF
+  (defun process-file (file)
+    (switch-to-buffer (find-file file))
+    (proof-process-buffer))
+  (process-file "scripts/example.v"))
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should see in response buffer:
+
+ Interactive Module Example started
+ and_commutative is defined
+ Module Example is defined
+
+check that buffer and header line are all blue
+should be one darker blue block in header line, for the Qed
+EOF
+)
+

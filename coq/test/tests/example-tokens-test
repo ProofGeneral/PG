@@ -1,0 +1,26 @@
+# Unicode tokens example
+
+CODE=$(cat <<EOF
+  (require 'proof-auxmodes)
+  (require 'proof-unicode-tokens)
+  (defun process-file (file)
+    (switch-to-buffer (find-file file))
+    (proof-process-buffer))
+  (customize-set-variable 'coq-unicode-tokens-enable t)
+  (proof-unicode-tokens-enable)
+  (process-file "scripts/example-tokens.v"))
+EOF
+)
+
+ADVICE=$(cat <<EOF
+You should see in both the script buffer and *responses* buffer:
+
+  - instances of blackboard N for "nat".
+  - instances of forall symbol.
+  - instances of double-arrow for implication
+  - Greek alpha, beta, delta, and gamma, except where marked otherwise
+  - subscripting and superscripting where marked
+
+EOF
+)
+
