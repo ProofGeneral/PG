@@ -1226,7 +1226,7 @@ flag Printing All set."
 (defun coq-empty-action-list-command (cmd)
   (when (or (and (string-match coq-save-command-regexp-strict cmd)
                  (> (length coq-last-but-one-proofstack) 1))
-            (and (string-match "\\(S\\|uns\\)et\\s-+Printing" cmd)
+            (and (string-match "\\(S\\|Uns\\)et\\s-+Printing" cmd)
                  (> (length coq-last-but-one-proofstack) 0)))
     (list "Show.")))
 
