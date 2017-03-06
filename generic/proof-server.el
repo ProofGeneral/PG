@@ -160,11 +160,11 @@ with proof-shell-ready-prover."
 		  proof-server-buffer server-buffer)
 	    (proof-prover-make-associated-buffers)
 	    (proof-server-config-done))
-	(message-box "Failed to start prover with command line: \"%s\"" prog-command-line))))
-  (when proof-server-fiddle-frames
-    (save-selected-window
-      (save-selected-frame
-       (proof-multiple-frames-enable)))))
+	(message-box "Failed to start prover with command line: \"%s\"" prog-command-line)))
+    (when proof-server-fiddle-frames
+      (save-selected-window
+	(save-selected-frame
+	 (proof-multiple-frames-enable))))))
 
 ;;;###autoload
 (defun proof-server-invisible-command (cmd)
