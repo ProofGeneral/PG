@@ -253,7 +253,6 @@ dragging the separating bars.
   'hybrid. The default value is 'smart which sets the automatic
   behaviour described above."
   (interactive)
-  (backtrace)
   (cond
    (proof-multiple-frames-enable
     ;; If we are coming from single frame mode, delete associated
