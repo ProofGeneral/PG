@@ -30,6 +30,13 @@
 (defun coq-optimise-resp-windows-if-option ()
   (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
 
+;; *Experimental* auto shrink response buffer in three windows mode. Things get
+;; a bit messed up if the response buffer is not at the right place (below
+;; goals buffer) TODO: Have this linked to proof-resize-window-tofit in
+;; proof-utils.el + customized by the "shrink to fit" menu entry
+;;  + have it on by default when in three windows mode.
+;; The philosophy is that if goals and response are on the same column, their
+;; cumulated size should not change.
 (defun coq-optimise-resp-windows ()
   "Resize response buffer to optimal size.
 Only when three-buffer-mode is enabled."
@@ -37,30 +44,29 @@ Only when three-buffer-mode is enabled."
   ;; call was silent, we shouldn't touch the response buffer.  See GitHub
   ;; issues https://github.com/cpitclaudel/company-coq/issues/32 and
   ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (when proof-response-buffer
-    (unless (memq 'no-response-display proof-server-delayed-output-flags)
-      ;; If there is no frame with goql+response then do nothing
-      (when (and proof-three-window-enable (coq-find-threeb-frames))
-	(let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting one adequat frame
-	  (with-selected-frame pg-frame
-	    (when (and (> (frame-height) 10)
-		       (get-buffer-window proof-response-buffer))
-	      (let ((maxhgth
-		     (- (+ (with-selected-window (get-buffer-window proof-goals-buffer t) (window-text-height))
-			   (with-selected-window (get-buffer-window proof-response-buffer t) (window-text-height)))
-			window-min-height))
-		    hgt-resp nline-resp)
-		(with-selected-window (get-buffer-window proof-response-buffer)
-		  (setq hgt-resp (window-text-height))
-		  (with-current-buffer proof-response-buffer
-		    (setq nline-resp ; number of lines we want for response buffer
-			  (min maxhgth (max window-min-height ; + 1 for comfort
-					    (+ 1 (count-lines (point-max) (point-min)))))))
-		  (unless (is-not-split-vertic (selected-window))
-		    (shrink-window (- hgt-resp nline-resp)))
-		  (with-current-buffer proof-response-buffer
-		    (goto-char (point-min))
-		    (recenter)))))))))))
+  (unless (memq 'no-response-display proof-server-delayed-output-flags)
+    ;; If there is no frame with goql+response then do nothing
+    (let ((threeb-frames (coq-find-threeb-frames)))
+      (when (and proof-three-window-enable threeb-frames)
+        (let ((pg-frame (car threeb-frames))) ; selecting one adequate frame
+          (with-selected-frame pg-frame
+            (let ((response-window (get-buffer-window proof-response-buffer t))
+                  (goals-window (get-buffer-window proof-goals-buffer t)))
+              (when (and response-window
+                         (> (frame-height) 10))
+                (with-selected-window (get-buffer-window proof-response-buffer)
+                  (with-current-buffer proof-response-buffer
+                    (let* ((response-height (window-text-height response-window))
+                           (goals-height (window-text-height goals-window))
+                           (maxhgth (- (+ response-height goals-height)
+                                       window-min-height))
+                           (nline-resp ; number of lines we want for response buffer
+                            (min maxhgth (max window-min-height ; + 1 for comfort
+                                              (+ 1 (count-lines (point-max) (point-min)))))))
+                      (unless (is-not-split-vertic (selected-window))
+                        (shrink-window (- response-height nline-resp)))
+                      (goto-char (point-min))
+                      (recenter))))))))))))
 
 ;; display something in response buffer
 (defun coq-display-response (msg)
