@@ -92,7 +92,12 @@ after closing focus")
   (pg-response-clear-displays))
 
 (defun coq-server--clear-goals-buffer ()
-  (pg-goals-display "" nil))
+  (pg-goals-display "" nil)
+  (coq-optimise-resp-windows-if-option))
+
+(defun coq-server--show-goals (goals)
+  (pg-goals-display goals t)
+  (coq-optimise-resp-windows-if-option))
 
 (defun coq-server-start-transaction-queue ()
   (setq coq-server-transaction-queue (coq-tq-create proof-server-process 'coq-server-process-oob
@@ -325,7 +330,7 @@ after closing focus")
 	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
 	    (setq coq-server--last-goal-nonempty t)
 	    (setq proof-shell-last-goals-output formatted-goals)
-	    (pg-goals-display formatted-goals t))
+	    (coq-server--show-goals formatted-goals))
 	;; else, clear goals display
 	(coq-server--clear-goals-buffer)
 	;; mimic the coqtop REPL, though it would be better to come via XML
