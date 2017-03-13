@@ -17,4 +17,15 @@
 	(debug-msg "EXPECTED: %s" expected)
 	(debug-msg "GOT:      %s" got)))))
 
+(defun pause-to-refresh (&optional msg)
+  ;; let processing finish
+  (sleep-for 1)
+  ;; make sure we can see the script
+  (redisplay)
+  (when msg
+    (message msg))
+  ;; allow human to eyeball what's happened
+  (sleep-for 5))
+
+
 
