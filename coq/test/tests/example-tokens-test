@@ -1,11 +1,9 @@
 # Unicode tokens example
 
 CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
   (require 'proof-auxmodes)
   (require 'proof-unicode-tokens)
-  (defun process-file (file)
-    (switch-to-buffer (find-file file))
-    (proof-process-buffer))
   (customize-set-variable 'coq-unicode-tokens-enable t)
   (proof-unicode-tokens-enable)
   (process-file "scripts/example-tokens.v"))
