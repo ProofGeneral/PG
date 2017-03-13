@@ -14,7 +14,7 @@ PGHOME="$PWD/../.."
 PROOF_SITE="$PGHOME/generic/proof-site.el"
 LOG_FILE="test.log"
 
-ALL_TESTS="example-test example-tokens-test"
+ALL_TESTS="example-test example-tokens-test ex-module-test"
 
 # look for tests on command-line
 TESTS=$* 
@@ -78,8 +78,6 @@ read -p "View all test results? (Y/N):" REPLY
 if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ] ; then
     echo
     echo "Showing results from log file:" $LOG_FILE
-    echo
-    echo "ALL RESULTS:"
     echo
     cat $LOG_FILE | awk '{ printf("%s %-25s %s %-5s\n",$1,$2,$3,$4) }'
 fi
