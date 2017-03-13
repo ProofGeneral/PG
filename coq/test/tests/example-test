@@ -1,10 +1,16 @@
 # simple file example
 
 CODE=$(cat <<EOF
-  (defun process-file (file)
-    (switch-to-buffer (find-file file))
-    (proof-process-buffer))
-  (process-file "scripts/example.v"))
+  (load-file "lib/testlib.el")
+  (process-file "scripts/example.v")
+  ;; TODO : find better way to know processing done
+  (sleep-for 1)
+  (let ((expected
+"Interactive Module Example started
+and_commutative is defined
+Module Example is defined
+"))
+    (verify-response expected))
 EOF
 )
 
