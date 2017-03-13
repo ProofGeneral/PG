@@ -3,7 +3,15 @@
 # test script harness for Proof General for Coq w/ XML protocol
 # Author: Paul Steckler
 
-PROOF_SITE="$HOME/ProofGeneral/generic/proof-site.el"
+# change directory if script run outside its own directory
+if [ ! -d "$PWD/../../coq/test" ]; then
+    echo "Changing directory to" $(dirname $0)
+    cd $(dirname $0)
+fi
+
+PGHOME="$PWD/../.."
+
+PROOF_SITE="$PGHOME/generic/proof-site.el"
 LOG_FILE="test.log"
 
 ALL_TESTS="example-test example-tokens-test"
@@ -17,7 +25,7 @@ if [ "$TESTS" = "" ] ; then
 fi
 
 LOG_FILE="test.log"
-EMACS_FLAGS="-geometry 100x60"
+EMACS_FLAGS="-q -geometry 100x60"
 
 function run_test {
     EXPR="(progn (load-file \"$PROOF_SITE\")"$CODE")"
@@ -69,9 +77,12 @@ read -p "View all test results? (Y/N):" REPLY
     
 if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ] ; then
     echo
+    echo "Showing results from log file:" $LOG_FILE
+    echo
     echo "ALL RESULTS:"
     echo
     cat $LOG_FILE | awk '{ printf("%s %-25s %s %-5s\n",$1,$2,$3,$4) }'
 fi
 
+echo
 echo Done.
