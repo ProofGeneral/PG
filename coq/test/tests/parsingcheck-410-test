@@ -1,0 +1,25 @@
+# simple file example
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (process-file "scripts/parsingcheck-410.v")
+  (sleep-for 1)
+  (let ((expecting 
+"Setting notation at level 0.
+Setting notation at level 0.
+"))
+    (verify-response expecting))
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should see in response buffer:
+
+  Setting notation at level 0.
+  Setting notation at level 0.
+
+Check that buffer and header line are all blue
+No incomplete blocks in header line
+EOF
+)
+
