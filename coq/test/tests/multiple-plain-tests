@@ -1,0 +1,23 @@
+# simple file example
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (process-file "scripts/multiple-plain/a.v")
+  (pause-to-refresh "Next, will process b.v")
+  (process-file "b.v")
+  (pause-to-refresh "Next, will process c.v")
+  (proof-server-restart)
+  (process-file "c.v")
+  (pause-to-refresh "Finally, will process a.v again")
+  (proof-server-restart)
+  (process-file "a.v")
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should each file, a.v, b.v, c.v, then a.v again, fully and successfully processed
+There should be a pause after each file is processed
+EOF
+)
+
+
