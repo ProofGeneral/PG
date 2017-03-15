@@ -1813,31 +1813,32 @@ Also insert holes at insertion positions."
   (proof-ready-prover)
   (let* (cmd)
     (setq cmd (read-string "Build match for type: "))
-    (proof-invisible-cmd-handle-result
-     (lambda ()
-       (list (coq-xml-query-item (concat "Show Match " cmd " ."))
-             nil))
-     (lambda (response _call _span)
-       (let* ((the-match (coq-queries-get-message-string response))
-              (match (replace-regexp-in-string "=> \n" "=> #\n" the-match)))
-         ;; if error, it will be displayed in response buffer (see def of
-         ;; proof-invisible-cmd-get-result), otherwise:
-         (unless (proof-string-match coq-error-regexp match)
-           (with-current-buffer proof-script-buffer
-             (let ((start (point)))
-               (insert match)
-               (indent-region start (point) nil)
-               (let ((n (holes-replace-string-by-holes-backward start)))
-                 (cl-case n
-                          (0 nil)				; no hole, stay here.
-                          (1
-                           (goto-char start)
-                           (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-                          (t
-                           (goto-char start)
-                           (message
-                            (substitute-command-keys
-                             "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))))))))
+    (let ((thunk
+           (lambda ()
+             (list (coq-xml-query-item (concat "Show Match " cmd " ."))
+                   nil)))
+          (handler (lambda (response _call _span)
+                     (let* ((the-match (coq-queries-get-message-string response))
+                            (match (replace-regexp-in-string "=> \n" "=> #\n" the-match)))
+                       ;; if error, it will be displayed in response buffer (see def of
+                       ;; proof-invisible-cmd-get-result), otherwise:
+                       (unless (proof-string-match coq-error-regexp match)
+                         (with-current-buffer proof-script-buffer
+                           (let ((start (point)))
+                             (insert match)
+                             (indent-region start (point) nil)
+                             (let ((n (holes-replace-string-by-holes-backward start)))
+                               (cl-case n
+                                        (0 nil)				; no hole, stay here.
+                                        (1
+                                         (goto-char start)
+                                         (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+                                        (t
+                                         (goto-char start)
+                                         (message
+                                          (substitute-command-keys
+                                           "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))))
+      (proof-invisible-cmd-handle-result thunk handler))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
