@@ -32,7 +32,8 @@ remove references to other provers
 
 remove uses of proof-trace-buffer, proof-thms-buffer? DONE
 
-Update mmm contrib?
+Update mmm contrib? (This should go away, as it will in vanilla PG, per the
+suggestion of Jonas Bernoulli.)
 
 What about Makefile.travis?
 
