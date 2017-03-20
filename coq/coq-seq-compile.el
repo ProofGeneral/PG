@@ -328,7 +328,7 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
+    (cl-assert (<= (length result) 1)
             "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
