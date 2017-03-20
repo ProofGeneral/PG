@@ -1,11 +1,19 @@
 ;;; library of helper code for PG+coq tests
 
-(defun process-file (file)
+(defun use-file (file)
   (switch-to-buffer (find-file file))
+  (proof-activate-scripting))
+
+(defun process-file (file)
+  (use-file file)
   (proof-process-buffer))
 
+(defun retract-file (file)
+  (use-file file)
+  (proof-retract-buffer))
+
 (defun debug-msg (msg &rest args)
-  (let ((str (format msg args)))
+  (let ((str (apply 'format msg args)))
     (princ str 'external-debugging-output)
     (princ "\n" 'external-debugging-output)))
 
@@ -25,7 +33,7 @@
   (when msg
     (message msg))
   ;; allow human to eyeball what's happened
-  (sleep-for 5))
+  (sleep-for 3))
 
 
 
