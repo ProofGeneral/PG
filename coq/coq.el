@@ -334,7 +334,11 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
   (coq-server--clear-goals-buffer)
   (when proof-script-buffer
     (with-current-buffer proof-script-buffer
-      (mapc 'span-delete (overlays-in (point-min) (point-max)))))
+      (let ((pg-spans (cl-remove-if-not
+                       (lambda (sp)
+                         (span-property sp 'type))
+                       (spans-all))))
+      (mapc 'span-delete pg-spans))))
   (proof-init-segmentation))
 
 ;;
