@@ -724,6 +724,8 @@ after closing focus")
   ;; generated this failure, which gets popped when control
   ;; returns to tq-process-buffer
   (coq-tq-flush-but-1 coq-server-transaction-queue)
+  ;; no more pending Adds 
+  (setq coq-server--pending-add-count 0)
   (unless (coq-server--was-query-call)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
