@@ -968,6 +968,8 @@ goal is redisplayed."
 
 (proof-definvisible coq-set-printing-all (coq-queries-set-printing-all-thunk))
 (proof-definvisible coq-unset-printing-all (coq-queries-unset-printing-all-thunk))
+(proof-definvisible coq-set-printing-implicit (coq-queries-set-printing-implicit-thunk))
+(proof-definvisible coq-unset-printing-implicit (coq-queries-unset-printing-implicit-thunk))
 (proof-definvisible coq-set-printing-synth (coq-queries-set-printing-synth-thunk))
 (proof-definvisible coq-unset-printing-synth (coq-queries-unset-printing-synth-thunk))
 (proof-definvisible coq-set-printing-coercions (coq-queries-set-printing-coercions-thunk))
