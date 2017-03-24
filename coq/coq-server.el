@@ -503,9 +503,9 @@ after closing focus")
 	  (progn 
 	    (setq coq-server--backtrack-on-failure nil)
 	    ;; if there is a secondary locked region, the failure must have been in the primary locked region
-	    ;; so delete secondary region and the PG spans it contains
+	    ;; control jumps there, so let user know this is unexpected
 	    (when proof-locked-secondary-span
-	      (coq-server--remove-secondary-locked-span t))
+	      (message "Error when processing proof to close focus"))
 	    ;; if we backtracked on a failure, see if the next span with a state id
 	    ;; has a pg-error span on top; if so, unmark it for deletion
 	    (let* ((relevant-spans (cl-remove-if-not
