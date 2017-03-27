@@ -992,6 +992,8 @@ after closing focus")
 	 (span-with-state-id (and state-id ; might have edit_id
 				  (coq-server--get-span-with-state-id state-id))))
     (if (and state-id
+	     ;; don't queue if dummy state id
+	     (not (equal state-id "0")) 
 	     (or (null span-with-state-id)
 		 ;; may have since-deleted span in table
 		 (null (overlay-buffer span-with-state-id))))
@@ -1015,14 +1017,23 @@ after closing focus")
 	 (unless (gethash xml coq-error-fail-tbl)
 	   (coq-server--handle-errormsg xml)))
 	("message" ; 8.6
-	 (unless (gethash xml coq-error-fail-tbl)
-	   (let ((msg-level 
-		  (coq-xml-at-path 
-		   xml 
-		   '(feedback (_) (feedback_content (message (message_level val)))))))
-	     (when (or (equal msg-level "warning") ;; TODO have we seen a warning in the wild?
-		       (equal msg-level "error") )
-	       (coq-server--handle-error xml)))))
+	 (let ((msg-level 
+		(coq-xml-at-path 
+		 xml 
+		 '(feedback (_) (feedback_content (message (message_level val)))))))
+	   (pcase msg-level
+	     ("error"
+	      (unless (gethash xml coq-error-fail-tbl)
+		(coq-server--handle-error xml)))
+	     ("warning"
+	      (unless (gethash xml coq-error-fail-tbl)
+		(coq-server--handle-error xml)))
+	     ("notice"
+	      (let ((notice (coq-xml-at-path
+			     xml
+			     '(feedback (_) (feedback_content
+					     (message (message_level) (option) (richpp (_))))))))
+		(coq-display-response (flatten-pp (coq-xml-body notice))))))))
 	(t)))))
 
 ;; syntax of messages differs in 8.5 and 8.6
