@@ -14,7 +14,7 @@ PGHOME="$PWD/../.."
 PROOF_SITE="$PGHOME/generic/proof-site.el"
 LOG_FILE="test.log"
 
-ALL_TESTS="example-test example-tokens-test ex-module-test prove-as-you-go-test multiple-plain-tests"
+ALL_TESTS="example-test print-query-test example-tokens-test ex-module-test prove-as-you-go-test multiple-plain-tests"
 
 # look for tests on command-line
 TESTS=$* 
