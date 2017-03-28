@@ -1021,19 +1021,16 @@ after closing focus")
 		(coq-xml-at-path 
 		 xml 
 		 '(feedback (_) (feedback_content (message (message_level val)))))))
-	   (pcase msg-level
-	     ("error"
-	      (unless (gethash xml coq-error-fail-tbl)
-		(coq-server--handle-error xml)))
-	     ("warning"
-	      (unless (gethash xml coq-error-fail-tbl)
-		(coq-server--handle-error xml)))
-	     ("notice"
-	      (let ((notice (coq-xml-at-path
+	   (cond 
+	    ((member msg-level '("error" "warning"))
+	     (unless (gethash xml coq-error-fail-tbl)
+	       (coq-server--handle-error xml)))
+	    ((member msg-level '("notice" "info" "debug"))
+	      (let ((richpp (coq-xml-at-path
 			     xml
 			     '(feedback (_) (feedback_content
 					     (message (message_level) (option) (richpp (_))))))))
-		(coq-display-response (flatten-pp (coq-xml-body notice))))))))
+		(coq-display-response (flatten-pp (coq-xml-body richpp))))))))
 	(t)))))
 
 ;; syntax of messages differs in 8.5 and 8.6
