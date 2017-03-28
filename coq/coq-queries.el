@@ -177,7 +177,7 @@
 (coq-queries--mk-query-fun show-tree)
 
 ;; macro to build Query string commands
-(defmacro coq-queries--mk-string-query-fun (query)
+(defmacro coq-queries--mk-string-query-fun (query &optional quotep)
   (let* ((query-name-str (symbol-name query))
 	 (query-fun (intern (concat "coq-queries-" query-name-str)))
 	 (capped-query (replace-regexp-in-string "-" " " (capitalize query-name-str))))
@@ -187,8 +187,14 @@
        (defun ,query-fun (s)
        	 (lambda ()
        	   (list (coq-xml-query-item
-       		  (concat ,capped-query " \"" s "\" ."))
+		  (if ,quotep
+		      (concat ,capped-query " \"" s "\".")
+		    (concat ,capped-query " " s ".")))
        		 nil))))))
+
+(coq-queries--mk-string-query-fun print)
+(coq-queries--mk-string-query-fun check)
+(coq-queries--mk-string-query-fun about)
 
 ;; interactive queries
 
