@@ -755,7 +755,7 @@ after closing focus")
 		 (and richpp-text
 		      (flatten-pp (coq-xml-body richpp-text)))))
 	      (_ (coq-xml-bad-protocol))))
-	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
+	   (error-span (gethash last-valid-state-id coq-span-state-id-tbl)))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear 
       (when error-span
