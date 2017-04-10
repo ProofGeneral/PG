@@ -67,52 +67,25 @@ Q. I have just installed Emacs, ProofGeneral and a proof assistant.
 
 A. You need to enable Unicode Tokens by the menu item:
 
-<<<<<<< HEAD
-      Proof-General -> Quick Options -> Display -> Unicode Tokens
-  
-    To enable it automatically every time you use Proof General,
-    use 
-
-      Proof-General -> Quick Options -> Save Options
-=======
     Proof-General -> Options -> Unicode Tokens
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
 
    To enable it automatically every time you use Proof General,
    use
 
     Proof-General -> Options -> Save Options
 
-<<<<<<< HEAD
------------------------------------------------------------------
-=======
    after doing this.
 
    Note that we don't do this by default, because from the system's
    perspective it is difficult to determine if this will succeed ---
    or just produce funny characters that confuse new users even more.
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
 
-   If you are using Isabelle, the wrapper script will load Tokens
-   from any location, and you can enable it by passing the option
-   "-x true".
-
------------------------------------------------------------------
-
-<<<<<<< HEAD
-A.  Unfortunately this is a bug in the display engine inside
-    certain versions of Emacs, for example the default version
-    of emacs, Emacs 23.3.1 on Ubuntu 11.10, suffers from.
-
-    The solution is to switch to another version (e.g. Emacs 23.2).
-=======
 Q. With Unicode symbols enabled, the symbols look a mess, e.g.
    compressed and overlap one another.
 
 A. Unfortunately this is a bug in the display engine inside
    certain versions of Emacs, for example the default version
    of emacs, Emacs 23.3.1 on Ubuntu 11.10, suffers.
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
 
    The solution is to switch to another version (e.g. Emacs 23.2).
    (See Trac#409: <http://proofgeneral.inf.ed.ac.uk/trac/ticket/409>)
@@ -156,15 +129,6 @@ A. This can happen if you enabled "Use Three Panes" and then change
 Q. I have a problem installing/using Proof General, what can I do?
 
 A. Please check the documentation carefully, particularly the
-<<<<<<< HEAD
-    requirements for a full-featured and recent Emacs version, as
-    mentioned in INSTALL (see "Dependency on Other Emacs Packages").  
-    If you still cannot solve your problem, try to contact someone
-    else who is using Proof General with a similar setup.  The
-    best way to do this may be through the user mailing list for your
-    proof assistant.  If you think the problem is Proof General related,
-    consult the PG Wiki and Trac pages.
-=======
    requirements for a full-featured and recent Emacs version, as
    mentioned in [INSTALL](INSTALL) (see "Dependency on Other Emacs Packages").  
    If you still cannot solve your problem, try to contact someone
@@ -197,20 +161,11 @@ A. The proof process is waiting for more input because of the missing
    parenthesis, but Proof General doesn't realise this and waits for a
    response.  You should type something in the proof shell buffer
    (\*isabelle*), or interrupt the process with `C-c C-c` or the Stop button.
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
 
 -----------------------------------------------------------------
 
 Q. How can I keep the Proof General option settings across sessions?
 
-<<<<<<< HEAD
-A. For options set in the Proof General -> Options menu use the 
-    "Save Options" menu item (Proof General -> Quick Options -> Save Options).
-
-    For other options set via customize (Proof General -> Advanced -> 
-    Customize), use the customize buttons, or M-x customize-save-customized.
-
-=======
 A. For options set in the `Proof General -> Options` menu use the
    "Save Options" menu item (`Proof General -> Options -> Save Options`).
 
@@ -249,51 +204,14 @@ A. Your Emacs distribution includes a version of xml.el which has
 
 -----------------------------------------------------------------
 
-Q. Undo behaviour in Coq seems to stop working with very long
-   sequences of commands.
-
-A. Coq has a limited history for Undo.  Change
-
-    Coq -> Settings -> Undo Depth
-
-   to something higher.  Default is 200 (100 outside PG).
-
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
------------------------------------------------------------------
-
 Q. Can I join any mailing lists for Proof General?
 
-<<<<<<< HEAD
 A. Yes, there are two mailing lists available, one for users, and another
 for those interested in developing Proof General. Visit this Web site
 for full details:
 
     http://proofgeneral.inf.ed.ac.uk/mailinglist
-    
 
-
-
-=======
-A. Of course, email <proofgeneral-request@informatics.ed.ac.uk>
-   with the line "subscribe" in the message body, to join the
-   users' and announcements list.
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
-
-   There is also a list for developers, proofgeneral-devel:
-   <http://proofgeneral.inf.ed.ac.uk/mailinglist>
-   for more details.
-
-
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-=======
 Q. Emacs appears to hang when the prover process is started.
 
 A. One thing is to check the variable `comint-process-echoes` which
@@ -350,4 +268,3 @@ A. One thing is to check the variable `comint-process-echoes` which
    enabled by default (to disable, customize `proof-shell-unicode`).
    This is also used by the Isabelle startup scripts.  Coq 8.1 and
    later do not use non-ASCII characters in output.
->>>>>>> 462e3efa33e9ceeb19ede020d6471c3bb0215ea6
