@@ -49,7 +49,7 @@
 (eval-and-compile
   ;; WARNING: do not edit next line (constant is edited in Makefile.devel)
 
-  (defconst proof-general-version "Proof General Version 5.0pre."
+  (defconst proof-general-version "Proof General Version 5.0-git."
     "Version string identifying Proof General release."))
 
 (defconst proof-general-short-version
