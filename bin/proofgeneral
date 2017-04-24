@@ -20,16 +20,31 @@
 # NB: no trailing backslash here!
 # On Mac, maybe:
 # /Applications/Emacs.app/Contents/MacOS/Emacs/site-lisp/ProofGeneral
-PGHOMEDEFAULT=$HOME/ProofGeneral
 
-NAME=`basename $0`
+
+EMACS_FOR_OSX_EMACS="/Applications/Emacs.app/Contents/MacOS/Emacs"
+AQUAMACS_EMACS="/Applications/Aquamacs.app/Contents/MacOS/Aquamacs"
+
+readlink_canonicalize() {
+    # detect whether readlink understands the -f option (e.g. GNU readlink)
+    if readlink -f . 1>/dev/null 2>&1; then
+        readlink -n -f "$@"
+    # otherwise fall back to perl
+    else
+        perl -MCwd -e 'print Cwd::abs_path($ARGV[0])' "$@"
+    fi
+}
+
+
+PGHOMEDEFAULT="${HOME}/ProofGeneral"
+NAME="$(basename "$0")"
 
 HELP="Usage: proofgeneral [OPTION] [FILE]...
 Launches Emacs Proof General, editing the proof script FILE.
 
 Options:
   --emacs <EMACS>     startup Proof General with emacs binary <EMACS>
-  --pghome <PGDIR>    startup Proof General from directory PGDIR
+  --pghome <PGHOME>    startup Proof General from directory PGHOME
   -h, --help          show this help and exit
   -v, --version       output version information and exit
 
@@ -63,7 +78,7 @@ while
 	PGHOME="$2"
 	shift;;
     --version|-v) 
-	VERSION=`grep proof-general-version $PGHOME/generic/proof-site.el | head -1 | sed -e 's/.*Version //g' | sed -e 's/\. .*//g'`
+        VERSION="$(grep proof-general-version "$PGHOME"/generic/proof-site.el | head -1 | sed -e 's/.*Version //g' | sed -e 's/\. .*//g')"
 	echo "$NAME" "--- script to launch Proof General $VERSION"
 	echo "$VERSIONBLURB"
 	exit 0;;
@@ -74,7 +89,7 @@ do shift; done
 # Try to find Proof General directory
 if [ -z "$PGHOME" ] || [ ! -d "$PGHOME" ]; then
     # default relative to this script, otherwise PGHOMEDEFAULT
-    MYDIR="`readlink --canonicalize "$0" | sed -ne 's,/bin/proofgeneral$,,p'`"
+    MYDIR="$( readlink_canonicalize "$0" | sed -ne 's,/bin/proofgeneral$,,p')"
     if [ -d "$MYDIR/generic" ]; then
 	PGHOME="$MYDIR"
     elif [ -d "$PGHOMEDEFAULT" ]; then
@@ -85,10 +100,19 @@ if [ -z "$PGHOME" ] || [ ! -d "$PGHOME" ]; then
     fi
 fi
 
+# check for Emacs for OS X and Aquamacs
+if [ -z "$EMACS" ] && [ "$(uname)" = 'Darwin' ]; then
+    if [ -x "$EMACS_FOR_OSX_EMACS" ]; then
+        EMACS="$EMACS_FOR_OSX_EMACS"
+    elif [ -x "$AQUAMACS_EMACS" ]; then
+        EMACS="$AQUAMACS_EMACS"
+    fi
+fi
+
 # Try to find an Emacs executable 
 if [ -z "$EMACS" ] || [ ! -x "$EMACS" ]; then
     if which emacs > /dev/null; then 
-	EMACS=`which emacs`
+        EMACS="$(which emacs)"
     else 
 	echo "$NAME: cannot find an Emacs executable.  Change PATH, set EMACS, use --emacs to specify." 1>&2
 	exit 1
@@ -96,10 +120,10 @@ if [ -z "$EMACS" ] || [ ! -x "$EMACS" ]; then
 fi
 
 # User may use .proofgeneral in preference to .emacs or .xemacs/init.el
-if [ -f $HOME/.proofgeneral ]; then
-    STARTUP="-q -l $HOME/.proofgeneral"
+if [ -f "$HOME/.proofgeneral" ]; then
+    exec "$EMACS" -q -l "$HOME/.proofgeneral" \
+        -eval "(or (featurep (quote proof-site)) (load \"$PGHOME/generic/proof-site.el\"))" -f proof-splash-display-screen "$@"
 else
-    STARTUP=""
+    exec "$EMACS" \
+        -eval "(or (featurep (quote proof-site)) (load \"$PGHOME/generic/proof-site.el\"))" -f proof-splash-display-screen "$@"
 fi
-
-exec $EMACS $STARTUP -eval "(or (featurep (quote proof-site)) (load \"$PGHOME/generic/proof-site.el\"))" -f proof-splash-display-screen "$@"
