@@ -172,4 +172,7 @@ Only when three-buffer-mode is enabled."
       ;; return start of error highlighting
       start)))
 
+(defun coq-response-clear-response-buffer ()
+  (pg-response-clear-displays))
+
 (provide 'coq-response)

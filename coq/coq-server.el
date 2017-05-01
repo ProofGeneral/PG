@@ -89,9 +89,6 @@ after closing focus")
     (proof-server-send-to-prover (coq-xml-goal)))
   (proof-server-send-to-prover (coq-xml-status)))
 
-(defun coq-server--clear-response-buffer ()
-  (pg-response-clear-displays))
-
 (defun coq-server-start-transaction-queue ()
   (setq coq-server-transaction-queue (coq-tq-create proof-server-process 'coq-server-process-oob
 						end-of-response-tags other-responses-tags)))
@@ -108,7 +105,7 @@ after closing focus")
 	   coq-worker-status-tbl))
 
 ;; clear response buffer when we Add an item from the Coq script
-(add-hook 'proof-server-insert-hook 'coq-server--clear-response-buffer)
+(add-hook 'proof-server-insert-hook 'coq-response-clear-response-buffer)
 
 ;; start transaction queue after coqtop process started
 (add-hook 'proof-server-init-hook 'coq-server-start-transaction-queue)
@@ -647,7 +644,7 @@ after closing focus")
 	 (or loc-start 0)
 	 (or loc-end (- (span-end error-span) (span-start error-span)))
 	 error-msg))
-      (coq-server--clear-response-buffer)
+      (coq-response-clear-response-buffer)
       (coq-display-response error-msg)
       (unless (gethash xml coq-error-fail-tbl)
 	(puthash xml t coq-error-fail-tbl)
@@ -741,7 +738,7 @@ after closing focus")
 	   (null error-edit-id))
       ;; no context for this error      
       (progn
-	(coq-server--clear-response-buffer)
+	(coq-response-clear-response-buffer)
 	(coq-display-response error-msg))
     (let ((error-span (or (coq-server--get-span-with-state-id error-state-id)
 			  (coq-server--get-span-with-edit-id error-edit-id)
@@ -753,7 +750,7 @@ after closing focus")
       (setq coq-server-retraction-on-error t) 
       (if (coq-server--error-span-at-end-of-locked error-span)
 	  (progn
-	    (coq-server--clear-response-buffer)
+	    (coq-response-clear-response-buffer)
 	    (coq-display-response error-msg)
 	    (setq coq-server--sticky-point (coq--highlight-error error-span error-start error-stop)))
 	;; error in middle of processed region
