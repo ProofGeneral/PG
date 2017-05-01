@@ -152,11 +152,11 @@
 	      (beginning-of-line)))))))
 
 (defun coq-goals-clear-goals-buffer ()
-  (pg-goals-display "" nil)
+  (pg-goals-display "" t) ; keep response, not showing new goal
   (coq-optimise-resp-windows-if-option))
 
 (defun coq-goals-show-goals (goals)
-  (pg-goals-display goals t)
+  (pg-goals-display goals nil)
   (coq-optimise-resp-windows-if-option)
   (coq-goals--show-first-goal))
 

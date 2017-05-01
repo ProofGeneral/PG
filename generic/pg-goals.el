@@ -92,8 +92,7 @@ so the response buffer should not be cleared."
       ;; Erase the response buffer if need be, maybe removing the
       ;; window.  Indicate it should be erased before the next output.
 
-      ;; TODO do we still need to call this?
-      ;; (pg-response-maybe-erase t t nil keepresponse)
+      (pg-response-maybe-erase t t nil keepresponse)
 
       ;; Erase the goals buffer and add in the new string
 
