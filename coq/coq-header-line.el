@@ -66,7 +66,8 @@
 ;; if size of file has changed beyond epsilon, update line number vars
 (defun coq-header--validate-line-number-vars ()
   (let ((curr-size (buffer-size)))
-    (when (> (abs (- coq-header-line--buff-size curr-size)) coq-header--line-number-epsilon)
+    (when (or (= coq-header-line--buff-size 0.0)
+	      (> (abs (- coq-header-line--buff-size curr-size)) coq-header--line-number-epsilon))
       (setq coq-header-line--buff-size (float curr-size))
       (setq coq-header-line--num-lines (line-number-at-pos (point-max))))))
 
