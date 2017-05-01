@@ -13,6 +13,7 @@
 
 (require 'coq-tq)
 (require 'coq-response)
+(require 'coq-goals)
 (require 'coq-xml)
 (require 'coq-span)
 (require 'coq-header-line)
@@ -91,14 +92,6 @@ after closing focus")
 (defun coq-server--clear-response-buffer ()
   (pg-response-clear-displays))
 
-(defun coq-server--clear-goals-buffer ()
-  (pg-goals-display "" nil)
-  (coq-optimise-resp-windows-if-option))
-
-(defun coq-server--show-goals (goals)
-  (pg-goals-display goals t)
-  (coq-optimise-resp-windows-if-option))
-
 (defun coq-server-start-transaction-queue ()
   (setq coq-server-transaction-queue (coq-tq-create proof-server-process 'coq-server-process-oob
 						end-of-response-tags other-responses-tags)))
@@ -136,10 +129,6 @@ after closing focus")
      (lambda ()
        (list (coq-xml-edit-at rewind-state-id) nil)))))
 
-;; Unicode!
-(defvar impl-bar-char ?―)
-
-
 ;; get Coq info from About call
 (defun coq-server--value-about-p (xml)
   (coq-xml-at-path xml '(value (coq_info))))
@@ -151,112 +140,6 @@ after closing focus")
 	 (coq-protocol-version-string (nth 1 coq-info-items)))
     (setq coq-xml-protocol-date (coq-xml-body1 coq-protocol-version-string))
     (coq-xml-set-special-tokens)))
-
-;;; goal formatting
-
-(defun coq-server--goal-id (goal)
-  (coq-xml-body1 (nth 2 goal)))
-
-(defun coq-server--goal-hypotheses-8.5 (goal-hypos)
-  (coq-xml-body goal-hypos))
-
-(defun coq-server--goal-hypotheses-8.6 (goal-hypos)
-  (let ((richpp-hypos
-	 (cl-remove-if 'null
-		       (mapcar (lambda (hy) (coq-xml-at-path hy '(richpp (_))))
-			       (coq-xml-body goal-hypos)))))
-    (mapcar (lambda (rhy) `(_ nil ,(flatten-pp (coq-xml-body rhy))))
-	    richpp-hypos)))
-
-(defun coq-server--goal-hypotheses (goal)
-  (let ((goal-hypos (nth 3 goal)))
-    (pcase (coq-xml-protocol-version)
-      ((pred coq-xml-protocol-8.5-p)
-       (coq-server--goal-hypotheses-8.5 goal-hypos))
-      ((pred coq-xml-protocol-8.6-p)
-       (coq-server--goal-hypotheses-8.6 goal-hypos))
-      (_ (coq-xml-bad-protocol)))))
-
-(defun coq-server--goal-goal-8.5 (goal-goal) 
-  (coq-xml-body1 goal-goal))
-
-(defun coq-server--goal-goal-8.6 (goal-goal)
-  (let ((richpp-goal (coq-xml-at-path goal-goal '(richpp (_)))))
-    (and richpp-goal
-	 (flatten-pp (coq-xml-body richpp-goal)))))
-
-(defun coq-server--goal-goal (goal)
-  (let ((goal-goal (nth 4 goal)))
-    (pcase (coq-xml-protocol-version)
-      ((pred coq-xml-protocol-8.5-p)
-       (coq-server--goal-goal-8.5 goal-goal))
-      ((pred coq-xml-protocol-8.6-p)
-       (coq-server--goal-goal-8.6 goal-goal))
-      (_ (coq-xml-bad-protocol)))))
-
-(defvar goal-indent-length 1)
-(defvar goal-indent (make-string goal-indent-length ?\s))
-
-;; length of goal or hypothesis is maximum length of each of its lines
-;; lines within a goal or hypothesis are separated by newlines
-(defun coq-server--hyps-or-goal-width (hyps-or-goal)
-  (apply 'max (mapcar 'string-width (split-string hyps-or-goal "\n"))))
-
-(defun coq-server--hyps-sep-width (hyps)
-  (if (null hyps)
-      0
-    (apply 'max (mapcar 'coq-server--hyps-or-goal-width hyps))))
-
-;; make a pretty goal 
-(defun coq-server--format-goal-with-hypotheses (goal hyps)
-  (let* ((nl "\n")
-	 (nl-indent (concat nl goal-indent))
-	 (min-width 5)   ; minimum width of implication bar
-	 (padding-len 1) ; on either side of hypotheses or goals
-	 (padding (make-string padding-len ?\s))
-	 (hyps-text (mapcar 'coq-xml-body1 hyps))
-	 (formatted-hyps (mapconcat 'identity hyps-text (concat nl-indent padding)))
-	 (hyps-width (coq-server--hyps-sep-width hyps-text))
-	 (goal-width (coq-server--hyps-or-goal-width goal))
-	 (width (max min-width (+ (max hyps-width goal-width) (* 2 padding-len))))
-	 (goal-offset (/ (- width goal-width) 2))
-	 (indented-goal (replace-regexp-in-string
-			 "\n"
-			 (concat "\n" (make-string (+ goal-indent-length goal-offset) ?\s))
-			 goal)))
-    (concat goal-indent padding formatted-hyps nl                      ; hypotheses
-	    goal-indent (make-string width impl-bar-char) nl           ; implication bar
-            goal-indent (make-string goal-offset ?\s) indented-goal))) ; the goal
-
-(defun coq-server--format-goal-no-hypotheses (goal)
-  (concat goal-indent goal))
-
-;; invariant: goals is non-empty
-;; actual-num-goals used for actual number of goals when we're hiding subgoals
-(defun coq-server--make-goals-string (goals &optional actual-num-goals hide-first-context kind-of-goals)
-  (let* ((num-goals (or actual-num-goals (length goals)))
-	 (goal1 (car goals))
-	 (goals-rest (if hide-first-context goals (cdr goals)))
-	 (goal-counter 1))
-    (with-temp-buffer
-      (when kind-of-goals
-	(insert (format "*** %s goals ***\n" kind-of-goals)))
-      (if (= num-goals 1)
-	  (insert "1 subgoal\n")
-	(insert (format "%d subgoals\n" num-goals)))
-      (unless hide-first-context
-	(insert (format "\nsubgoal 1 (ID %s):\n" (coq-server--goal-id goal1)))
-	(insert (coq-server--format-goal-with-hypotheses 
-		 (coq-server--goal-goal goal1)
-		 (coq-server--goal-hypotheses goal1)))
-	(when goals-rest
-	  (insert "\n")))
-      (dolist (goal goals-rest)
-	(cl-incf goal-counter)
-	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-server--goal-id goal)))
-	(insert (coq-server--format-goal-no-hypotheses 
-		 (coq-server--goal-goal goal))))
-      (buffer-string))))
 
 ;; update global state in response to status
 (defun coq-server--handle-status (_xml)
@@ -283,7 +166,7 @@ after closing focus")
 (defun coq-server--handle-empty-goals ()
   (setq proof-prover-proof-completed 0)
   (setq proof-shell-last-goals-output "")
-  (coq-server--clear-goals-buffer))
+  (coq-goals-clear-goals-buffer))
 
 ;; use path instead of footprint, because inner bits may vary
 (defun coq-server--value-goals-p (xml)
@@ -308,9 +191,9 @@ after closing focus")
 	 (abandoned-goals (coq-xml-body (nth 3 all-goals)))
 	 goal-text)
       (when (and abandoned-goals show-subgoals)
-	(setq goal-text (cons (coq-server--make-goals-string abandoned-goals nil t 'Abandoned) goal-text)))
+	(setq goal-text (cons (coq-goals-make-goals-string abandoned-goals nil t 'Abandoned) goal-text)))
       (when (and shelved-goals show-subgoals)
-	(setq goal-text (cons (coq-server--make-goals-string shelved-goals nil t 'Shelved) goal-text)))
+	(setq goal-text (cons (coq-goals-make-goals-string shelved-goals nil t 'Shelved) goal-text)))
       (when (and bg-goals-pairs show-subgoals)
 	(dolist (pair bg-goals-pairs)
 	  (let* ((before-focus-pair-list (nth 0 (coq-xml-body pair)))
@@ -321,18 +204,18 @@ after closing focus")
 	    (setq after-bg-goals (append after-bg-goals after-pair-goals))))
 	;; cons after goals, then before goals, so see before, then after in output
 	(when after-bg-goals 
-	  (setq goal-text (cons (coq-server--make-goals-string after-bg-goals nil t "Unfocused (after focus)") goal-text)))
+	  (setq goal-text (cons (coq-goals-make-goals-string after-bg-goals nil t "Unfocused (after focus)") goal-text)))
 	(when before-bg-goals 
-	  (setq goal-text (cons (coq-server--make-goals-string before-bg-goals nil t "Unfocused (before focus)") goal-text))))
+	  (setq goal-text (cons (coq-goals-make-goals-string before-bg-goals nil t "Unfocused (before focus)") goal-text))))
       (when current-goals
-	(setq goal-text (cons (coq-server--make-goals-string current-goals (length all-current-goals)) goal-text)))
+	(setq goal-text (cons (coq-goals-make-goals-string current-goals (length all-current-goals)) goal-text)))
       (if goal-text
 	  (let ((formatted-goals (mapconcat 'identity goal-text "\n\n")))
 	    (setq coq-server--last-goal-nonempty t)
 	    (setq proof-shell-last-goals-output formatted-goals)
-	    (coq-server--show-goals formatted-goals))
+	    (coq-goals-show-goals formatted-goals))
 	;; else, clear goals display
-	(coq-server--clear-goals-buffer)
+	(coq-goals-clear-goals-buffer)
 	;; mimic the coqtop REPL, though it would be better to come via XML
 	(when coq-server--last-goal-nonempty
 	  (setq coq-server--last-goal-nonempty nil)
@@ -753,7 +636,7 @@ after closing focus")
 	      ((pred coq-xml-protocol-8.6-p)
 	       (let ((richpp-text (coq-xml-at-path xml '(value (_) (richpp (_))))))
 		 (and richpp-text
-		      (flatten-pp (coq-xml-body richpp-text)))))
+		      (coq-xml-flatten-pp (coq-xml-body richpp-text)))))
 	      (_ (coq-xml-bad-protocol))))
 	   (error-span (gethash last-valid-state-id coq-span-add-call-state-id-tbl)))
       ;; queue this error for retract finish
@@ -901,20 +784,6 @@ after closing focus")
     ;; can get error message not associated with script text
     (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
-;; discard tags in richpp-formatted strings
-;; TODO : use that information
-(defun flatten-pp (items)
-  (let* ((result (mapconcat (lambda (it)
-				  (if (and (consp it) (consp (cdr it)))
-				      (flatten-pp (cddr it))
-				    it))
-				items "")))
-    ;; when we unescaped the response, we put special tokens for spaces and newlines
-    ;; inside richpp tags, now put them back
-    (replace-regexp-in-string
-     coq-xml-richpp-newline-token "\n" 
-     (replace-regexp-in-string coq-xml-richpp-space-token " " result))))
-
 ;; this is for 8.6
 (defun coq-server--handle-error (xml)
   ;; memoize this response
@@ -929,7 +798,7 @@ after closing focus")
 	 (msg-string (coq-xml-at-path 
 		      xml
 		      '(feedback (_) (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
-	 (error-msg (flatten-pp (coq-xml-body msg-string)))
+	 (error-msg (coq-xml-flatten-pp (coq-xml-body msg-string)))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
 			  '(feedback (state_id val))))
@@ -1031,7 +900,7 @@ after closing focus")
 			     xml
 			     '(feedback (_) (feedback_content
 					     (message (message_level) (option) (richpp (_))))))))
-		(coq-display-response (flatten-pp (coq-xml-body richpp))))))))
+		(coq-display-response (coq-xml-flatten-pp (coq-xml-body richpp))))))))
 	(t)))))
 
 ;; syntax of messages differs in 8.5 and 8.6
@@ -1043,7 +912,7 @@ after closing focus")
 	    ((pred coq-xml-protocol-8.6-p)
 	     ;; The _ below is a wildcard in our search path, but the tag is actually _
 	     ;; something of a delicious irony
-	     (flatten-pp
+	     (coq-xml-flatten-pp
 	      (coq-xml-body
 	       (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
 	    (_ (coq-xml-bad-protocol)))))

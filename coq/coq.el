@@ -2009,40 +2009,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
           (goto-char (match-beginning 0))
           (buffer-substring p (point)))))))
 
-;; TODO: syntax of goals changed, so this no longer works
-;; (defun coq-show-first-goal ()
-;;   "Scroll the goal buffer so that the first goal is visible.
-;; First goal is displayed on the bottom of its window, maximizing the
-;; number of hypothesis displayed, without hiding the goal"
-;;   (interactive)
-;;   ;; CPC 2015-12-31: Added the check below: if the command that caused this
-;;   ;; call was silent, we shouldn't touch the goals buffer.  See GitHub issues
-;;   ;; https://github.com/cpitclaudel/company-coq/issues/32 and
-;;   ;; https://github.com/cpitclaudel/company-coq/issues/8.
-;;   (unless (memq 'no-goals-display proof-shell-delayed-output-flags)
-;;     (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting the good frame
-;;       (with-selected-frame (or pg-frame (window-frame (selected-window)))
-;;         ;; prefer current frame
-;;         (let ((goal-win (or (get-buffer-window proof-goals-buffer) (get-buffer-window proof-goals-buffer t))))
-;;           (if goal-win
-;;               (with-selected-window goal-win
-;;                 ;; find snd goal or buffer end, if not found this goes to the
-;;                 ;; end of buffer
-;;                 (search-forward-regexp "subgoal 2\\|\\'")
-;;                 (beginning-of-line)
-;;                 ;; find something backward else than a space: bottom of concl
-;;                 (ignore-errors (search-backward-regexp "\\S-"))
-;;                 (recenter (- 1)) ; put bot of concl at bottom of window
-;;                 (beginning-of-line)
-;;                 ;; if the top of concl is hidden we may want to show it instead
-;;                 ;; of bottom of concl
-;;                 (when (and coq-prefer-top-of-conclusion
-;;                          ;; return nil if === is not visible
-;;                          (not (save-excursion (re-search-backward "========" (window-start) t))))
-;;                   (re-search-backward "========" nil t)
-;;                   (recenter 0))
-;;                 (beginning-of-line))))))))
-
 (defvar coq-modeline-string2 ")")
 (defvar coq-modeline-string1 ")")
 (defvar coq-modeline-string0 " Script(")

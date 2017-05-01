@@ -405,5 +405,19 @@ to write out the traversal code by hand each time."
 	(delete-region (point-min) (point-max)))
       xml)))
 
+;; discard tags in richpp-formatted strings
+;; TODO : use that information
+(defun coq-xml-flatten-pp (items)
+  (let* ((result (mapconcat (lambda (it)
+				  (if (and (consp it) (consp (cdr it)))
+				      (coq-xml-flatten-pp (cddr it))
+				    it))
+				items "")))
+    ;; when we unescaped the response, we put special tokens for spaces and newlines
+    ;; inside richpp tags, now put them back
+    (replace-regexp-in-string
+     coq-xml-richpp-newline-token "\n" 
+     (replace-regexp-in-string coq-xml-richpp-space-token " " result))))
+
 (provide 'coq-xml)
 
