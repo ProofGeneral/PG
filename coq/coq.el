@@ -1165,6 +1165,7 @@ Near here means PT is either inside or just aside of a comment."
 
   (setq proof-assistant-home-page coq-www-home-page)
 
+  (setq proof-prog-name coq-prog-name)
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 

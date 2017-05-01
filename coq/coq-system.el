@@ -145,11 +145,6 @@ If it doesn't look right, try `coq-autodetect-version'."
         (message "Using Coq v%s" coq-autodetected-version)
       (message "Coq version unknown at this time. Use `coq-autodetect-version' to autodetect."))))
 
-(defun coq-set-prog-name ()
-  (setq proof-prog-name coq-prog-name))
-
-(add-hook 'proof-set-prog-name-hook 'coq-set-prog-name)
-
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
 Interactively (with INTERACTIVE-P), show that number."
