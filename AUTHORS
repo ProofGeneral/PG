@@ -1,13 +1,14 @@
 Current Authors/Maintainers:
 
-   David Aspinall      (all)
    Pierre Courtieu     (coq)
    Erik Martin-Dorel   (coq, website)
    Clément Pit-Claudel (coq)
    Paul Steckler       (coq)
+   Henrik Tews         (proof tree)
 
 Previous Authors:
 
+   David Aspinall     (all)
    Christoph Raffalli (phox)
    Makarius Wenzel    (isar)
    Stefan Berghofer   (isar)
@@ -15,6 +16,7 @@ Previous Authors:
    Healfdene Goguen   (coq, generic, doc)
    Thomas Kleymann    (lego, doc, generic)
    Patrick Loiseleur  (coq)
+   Stefan Monnier     (coq)
    David von Oheimb   (x-symbol)
    Dilip Sequeira     (lego)
    Graham Dutton      (web support)
