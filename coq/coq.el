@@ -822,9 +822,8 @@ flag Printing All set."
 
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
-(defun coq-set-auto-adapt-printing-width (&optional val symb); args are for :set compatibility
+(defun coq-set-auto-adapt-printing-width (&optional _val _symb); args are for :set compatibility
   "Function called when setting `auto-adapt-printing-width'"
-  (setq symb val) ;; FIXME this is wrong (it should be 'set', but it would set nil sometimes)
   (if coq-auto-adapt-printing-width
       (progn
         (add-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
