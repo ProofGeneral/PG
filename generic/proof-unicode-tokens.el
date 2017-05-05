@@ -21,9 +21,9 @@
 (eval-when-compile
   (require 'cl-lib))
 
-(cl-eval-when (compile)
-    (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
-    (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
+(eval-when-compile
+  (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
+  (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 
 (require 'proof-config)			; config variables
 

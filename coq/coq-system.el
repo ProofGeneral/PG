@@ -20,7 +20,7 @@
   (require 'cl-lib)
   (require 'proof-compat))
 
-(cl-eval-when (compile)
+(eval-when-compile
   (defvar coq-prog-args)
   (defvar coq-debug))
 
