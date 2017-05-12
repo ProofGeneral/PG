@@ -9,7 +9,7 @@ on recent Linux systems:
  Emacs 25 (dev)      -- next version, should work
  Emacs 23.2, earlier -- obsolete versions, do NOT work
 
-and (main) prover versions:  Coq 8.4, Coq 8.5
+and (main) prover versions:  Coq 8.4, Coq 8.5, Coq 8.6
 
 See below for notes about other operating systems.
 
