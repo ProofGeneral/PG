@@ -68,6 +68,9 @@ after closing focus")
 ;; start tag may have attributes, so elide closing bracket
 (defvar other-responses-tags '(("<feedback" . "</feedback>") ("<message" . "</message>")))
 
+;; are we expecting a message from an infoH command?
+(defvar coq-server-expecting-infoh-notice nil)
+
 ;; comments generate items with null element
 ;; helper for coq-server-count-pending-adds
 (defun coq-server--count-addable (items) 
@@ -913,7 +916,24 @@ after closing focus")
 	      (coq-xml-body
 	       (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
 	    (_ (coq-xml-bad-protocol)))))
-    (coq-display-response message)))
+    ;; if we sent an infoH command, use result here
+    (if (and coq-server-expecting-infoh-notice
+	     (equal (coq-xml-at-path
+		     xml
+		     '(message (message_level val)))
+		    "notice"))
+	(progn
+	  (setq coq-server-expecting-infoh-notice nil)
+	  (with-current-buffer proof-script-buffer
+	    (save-excursion
+	      ;; TODO: look for eqn:XX and go before it.
+	      ;; Go just before the last "."
+	      (goto-char (proof-unprocessed-begin))
+	      (coq-script-parse-cmdend-forward)
+	      (coq-script-parse-cmdend-backward)
+	      (insert (concat " as [" message "]")))))
+      ;; otherwise, just display message 
+      (coq-display-response message))))
 
 (defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML
@@ -963,14 +983,14 @@ after closing focus")
 ;; do not call directly
 (defun coq-server-send-to-prover (s special-handler)
   (if coq-server-transaction-queue
-    (coq-tq-enqueue coq-server-transaction-queue s
-		    ;; "closure" argument, passed to handler below
-		    ;; can be used for unusual processing on response
-		    ;; for example, to insert intros into script
-		    ;; always nil or a function symbol
-		    special-handler
-		    ;; default handler gets special-handler and coqtop response
-		    #'coq-server-handle-tq-response)
+      (coq-tq-enqueue coq-server-transaction-queue s
+		      ;; "closure" argument, passed to handler below
+		      ;; can be used for unusual processing on response
+		      ;; for example, to insert intros into script
+		      ;; always nil or a function symbol
+		      special-handler
+		      ;; default handler gets special-handler and coqtop response
+		      #'coq-server-handle-tq-response)
     ;; discard item if transaction queue not initialized
     ;; can happen, for example, if user does Insert Intros before Coq started
     (message "Coq not started")))

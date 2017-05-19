@@ -73,9 +73,6 @@
 
 ;; ----- coq-server configuration options
 
-
-;; ----- coq-shell configuration options
-
 (defvar coq-server-cd nil
   ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
@@ -1776,25 +1773,16 @@ Warning: this makes the error messages (and location) wrong.")
            (newcmd (if (coq-tactic-already-has-an-as-close cmd)
                        nil
                      (coq-hack-cmd-for-infoH cmd))))
-      (when newcmd ; FIXME: we stop if as already there, replace it instead?
-        (proof-server-invisible-cmd-handle-result
+      ;; insert of infoH response handled in coq-server
+      ;; FIXME: we stop if as already there, replace it instead?
+      (when (and newcmd (not (coq-tactic-already-has-an-as-close newcmd)))
+        (proof-server-send-to-prover
          (lambda ()
            (list
-            (coq-xml-query-item newcmd)
-            nil))
-         (lambda (response _call _span)
-           (let ((result (coq-queries-get-message-string response)))
-             (if (null result) ;; TODO bug? in 8.5 XML protocol, don't get any string back
-                 (coq-queries-process-response response nil nil) ; show error if no valid response
-               (unless (coq-tactic-already-has-an-as-close newcmd) ;; FIXME ???
-                 (with-current-buffer proof-script-buffer
-                   (save-excursion
-                     ;; TODO: look for eqn:XX and go before it.
-                     ;; Go just before the last "."
-                     (goto-char (proof-unprocessed-begin))
-                     (coq-script-parse-cmdend-forward)
-                     (coq-script-parse-cmdend-backward)
-                     (insert (concat " as [" result "]")))))))))))))
+            (progn
+              (setq coq-server-expecting-infoh-notice t)
+              (coq-xml-add-item newcmd))
+            nil)))))))
 
 ;; Trying to propose insertion of "as" for a whole region. But iterating
 ;; proof-assert-next-command-interactive is probably wrong if some error occur
