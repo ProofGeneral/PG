@@ -1316,6 +1316,9 @@ It is used:
 (defconst coq-context-marker-regexp
   (concat (regexp-opt '("ltac" "constr" "uconstr") 'symbols) ":"))
 
+(defconst coq-context-marker-regexp
+  (concat (regexp-opt '("ltac" "constr" "uconstr") 'symbols) ":"))
+
 ;;
 ;; font-lock
 ;;
