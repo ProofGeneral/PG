@@ -22,5 +22,5 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
-(define-package "proof-general" "4.4.1~pre" "A generic front-end for proof assistants (interactive theorem provers)"
+(define-package "proof-general" "5.0-git" "A generic front-end for proof assistants (interactive theorem provers)"
   '((emacs "24.4")))
