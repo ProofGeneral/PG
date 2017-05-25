@@ -21,22 +21,12 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+;;
 ;;; Code:
 
-(if (featurep 'proof-autoloads) (error "Already loaded"))
-  
-(eval-when-compile
-  (require 'cl-lib))
-
-(eval-when-compile
-  (require 'pg-vars)
-  (require 'proof-config))
-
-(provide 'proof-autoloads)
-
 
-;;;### (autoloads (bufhist-exit bufhist-init bufhist-mode) "../lib/bufhist"
-;;;;;;  "../lib/bufhist.el" (22396 10805 387884 342000))
+;;;### (autoloads nil "../lib/bufhist" "../lib/bufhist.el" (22809
+;;;;;;  53233 391612 83000))
 ;;; Generated autoloads from ../lib/bufhist.el
 
 (autoload 'bufhist-mode "../lib/bufhist" "\
@@ -67,8 +57,8 @@ Stop keeping ring history for current buffer.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (22534 33903
-;;;;;;  295571 905000))
+;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (22823 12903
+;;;;;;  959899 968000))
 ;;; Generated autoloads from ../lib/holes.el
 
 (autoload 'holes-set-make-active-hole "../lib/holes" "\
@@ -181,8 +171,8 @@ Insert S, expand it and replace #s and @{]s by holes.
 
 ;;;***
 
-;;;### (autoloads (maths-menu-mode) "../lib/maths-menu" "../lib/maths-menu.el"
-;;;;;;  (22396 10805 387884 342000))
+;;;### (autoloads nil "../lib/maths-menu" "../lib/maths-menu.el"
+;;;;;;  (22809 53300 315610 620000))
 ;;; Generated autoloads from ../lib/maths-menu.el
 
 (autoload 'maths-menu-mode "../lib/maths-menu" "\
@@ -195,8 +185,56 @@ This mode is only useful with a font which can display the maths repertoire.
 
 ;;;***
 
-;;;### (autoloads nil "pg-assoc" "pg-assoc.el" (22534 33902 927571
-;;;;;;  913000))
+;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (22823 12937
+;;;;;;  336397 308000))
+;;; Generated autoloads from ../lib/pg-dev.el
+
+(autoload 'profile-pg "../lib/pg-dev" "\
+Configure Proof General for profiling.  Use M-x elp-results to see results.
+
+\(fn)" t nil)
+
+;;;***
+
+;;;### (autoloads nil "../lib/texi-docstring-magic" "../lib/texi-docstring-magic.el"
+;;;;;;  (22809 52836 439620 759000))
+;;; Generated autoloads from ../lib/texi-docstring-magic.el
+
+(autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
+Update all texi docstring magic annotations in buffer.
+With prefix arg, no errors on unknown symbols.  (This results in
+@def .. @end being deleted if not known).
+
+\(fn &optional NOERROR)" t nil)
+
+;;;***
+
+;;;### (autoloads nil "../lib/unicode-chars" "../lib/unicode-chars.el"
+;;;;;;  (22809 52794 599621 674000))
+;;; Generated autoloads from ../lib/unicode-chars.el
+
+(autoload 'unicode-chars-list-chars "../lib/unicode-chars" "\
+Insert each Unicode character into a buffer.
+Lets you see which characters are available for literal display
+in your emacs font.
+
+\(fn)" t nil)
+
+;;;***
+
+;;;### (autoloads nil "../lib/unicode-tokens" "../lib/unicode-tokens.el"
+;;;;;;  (22823 13128 703248 848000))
+;;; Generated autoloads from ../lib/unicode-tokens.el
+
+(autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
+Return a unicode encoded version presentation of STR.
+
+\(fn STR)" nil nil)
+
+;;;***
+
+;;;### (autoloads nil "pg-assoc" "pg-assoc.el" (22823 11935 349466
+;;;;;;  793000))
 ;;; Generated autoloads from pg-assoc.el
 
 (autoload 'proof-associated-buffers "pg-assoc" "\
@@ -220,19 +258,8 @@ Return the list of frames displaying at least one associated buffer.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (22534 33903
-;;;;;;  295571 905000))
-;;; Generated autoloads from ../lib/pg-dev.el
-
-(autoload 'profile-pg "../lib/pg-dev" "\
-Configure Proof General for profiling.  Use M-x elp-results to see results.
-
-\(fn)" t nil)
-
-;;;***
-
-;;;### (autoloads nil "pg-goals" "pg-goals.el" (22534 33902 939571
-;;;;;;  912000))
+;;;### (autoloads nil "pg-goals" "pg-goals.el" (22809 52106 467636
+;;;;;;  715000))
 ;;; Generated autoloads from pg-goals.el
 
 (autoload 'proof-goals-config-done "pg-goals" "\
@@ -242,9 +269,8 @@ Initialise the goals buffer after the child has been configured.
 
 ;;;***
 
-;;;### (autoloads (pg-movie-export-directory pg-movie-export-from
-;;;;;;  pg-movie-export) "pg-movie" "pg-movie.el" (22396 10805 375884
-;;;;;;  342000))
+;;;### (autoloads nil "pg-movie" "pg-movie.el" (22806 14820 653214
+;;;;;;  888000))
 ;;; Generated autoloads from pg-movie.el
 
 (autoload 'pg-movie-export "pg-movie" "\
@@ -266,8 +292,8 @@ Existing XML files are overwritten.
 
 ;;;***
 
-;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (22534 33902 951571
-;;;;;;  912000))
+;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (22823 11935 325466
+;;;;;;  434000))
 ;;; Generated autoloads from pg-pamacs.el
 
 (autoload 'proof-defpacustom-fn "pg-pamacs" "\
@@ -283,7 +309,9 @@ which can be changed by sending commands.
 In this case, NAME stands for the internal setting, flag, etc,
 for the proof assistant, and a :setting and :type value should be
 provided.  The :type of NAME should be one of 'integer, 'float,
-'boolean, 'string.
+'boolean, 'string. Other types are not supported (see
+`proof-menu-entry-for-setting'). They will yield an error when
+constructing the proof assistant menu.
 
 The function `proof-assistant-format' is used to format VAL.
 
@@ -310,8 +338,8 @@ This macro also extends the `proof-assistant-settings' list.
 
 ;;;***
 
-;;;### (autoloads nil "pg-response" "pg-response.el" (22534 33902
-;;;;;;  963571 912000))
+;;;### (autoloads nil "pg-response" "pg-response.el" (22823 11935
+;;;;;;  325466 434000))
 ;;; Generated autoloads from pg-response.el
 
 (autoload 'proof-response-mode "pg-response" "\
@@ -380,8 +408,8 @@ See `pg-next-error-regexp'.
 
 ;;;***
 
-;;;### (autoloads nil "pg-user" "pg-user.el" (22543 47048 358827
-;;;;;;  735000))
+;;;### (autoloads nil "pg-user" "pg-user.el" (22823 11935 321466
+;;;;;;  376000))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
@@ -507,7 +535,7 @@ Enable or disable autosend behaviour.
 
 ;;;***
 
-;;;### (autoloads nil "pg-xml" "pg-xml.el" (22534 33902 991571 911000))
+;;;### (autoloads nil "pg-xml" "pg-xml.el" (22809 52510 463627 884000))
 ;;; Generated autoloads from pg-xml.el
 
 (autoload 'pg-xml-parse-string "pg-xml" "\
@@ -517,8 +545,8 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-depends" "proof-depends.el" (22534 33903
-;;;;;;  31571 910000))
+;;;### (autoloads nil "proof-depends" "proof-depends.el" (22806 14847
+;;;;;;  289610 736000))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -535,8 +563,8 @@ Make some menu entries showing proof dependencies of SPAN.
 
 ;;;***
 
-;;;### (autoloads (proof-indent-line) "proof-indent" "proof-indent.el"
-;;;;;;  (22396 10805 379884 342000))
+;;;### (autoloads nil "proof-indent" "proof-indent.el" (22809 52245
+;;;;;;  507633 676000))
 ;;; Generated autoloads from proof-indent.el
 
 (autoload 'proof-indent-line "proof-indent" "\
@@ -546,8 +574,8 @@ Indent current line of proof script, if indentation enabled.
 
 ;;;***
 
-;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (22534
-;;;;;;  33903 39571 910000))
+;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (22823
+;;;;;;  11935 313466 256000))
 ;;; Generated autoloads from proof-maths-menu.el
 
 (autoload 'proof-maths-menu-set-global "proof-maths-menu" "\
@@ -567,8 +595,8 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-menu" "proof-menu.el" (22534 33903 51571
-;;;;;;  910000))
+;;;### (autoloads nil "proof-menu" "proof-menu.el" (22823 12832 590836
+;;;;;;  504000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -593,28 +621,8 @@ Construct and return PG auxiliary menu used in non-scripting buffers.
 
 ;;;***
 
-;;;### (autoloads nil "proof-mmm" "proof-mmm.el" (22534 33903 55571
-;;;;;;  910000))
-;;; Generated autoloads from proof-mmm.el
-
-(autoload 'proof-mmm-set-global "proof-mmm" "\
-Set global status of MMM mode for PG buffers to be FLAG.
-
-\(fn FLAG)" nil nil)
-
-(autoload 'proof-mmm-enable "proof-mmm" "\
-Turn on or off MMM mode in Proof General script buffer.
-This invokes `mmm-mode' to toggle the setting for the current
-buffer, and then sets PG's option for default to match.
-Also we arrange to have MMM mode turn itself on automatically
-in future if we have just activated it for this buffer.
-
-\(fn)" t nil)
-
-;;;***
-
-;;;### (autoloads nil "proof-queue" "proof-queue.el" (22543 56021
-;;;;;;  527693 854000))
+;;;### (autoloads nil "proof-queue" "proof-queue.el" (22809 52040
+;;;;;;  531638 156000))
 ;;; Generated autoloads from proof-queue.el
 
 (autoload 'proof-start-queue "proof-queue" "\
@@ -636,8 +644,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads nil "proof-resolver" "proof-resolver.el" (22543
-;;;;;;  54220 307687 511000))
+;;;### (autoloads nil "proof-resolver" "proof-resolver.el" (22809
+;;;;;;  52464 291628 893000))
 ;;; Generated autoloads from proof-resolver.el
 
 (autoload 'proof-ready-prover "proof-resolver" "\
@@ -697,8 +705,8 @@ The queue mode is set to 'advancing
 
 ;;;***
 
-;;;### (autoloads nil "proof-script" "proof-script.el" (22543 57082
-;;;;;;  15697 589000))
+;;;### (autoloads nil "proof-script" "proof-script.el" (22809 52496
+;;;;;;  15628 200000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-colour-locked "proof-script" "\
@@ -733,24 +741,6 @@ Non-nil if the locked region is empty.  Works on any buffer.
 Non-nil if the sent region is empty.
 
 \(fn)" nil nil)
-
-(autoload 'pg-set-span-helphighlights "proof-script" "\
-Add a daughter help span for SPAN with help message, highlight, actions.
-The daughter span covers the non whitespace content of the main span.
-
-We add the last output (when non-empty) to the hover display, and
-also as the 'response property on the span.
-
-Optional argument MOUSEFACE means use the given face as a mouse highlight
-face, if it is a face, otherwise, if it is non-nil but not a face,
-do not add a mouse highlight.
-
-In any case, a mouse highlight and tooltip are only set if
-`proof-output-tooltips' is non-nil.
-
-Argument FACE means add 'face property FACE to the span.
-
-\(fn SPAN &optional MOUSEFACE FACE)" nil nil)
 
 (autoload 'proof-register-possibly-new-processed-file "proof-script" "\
 Register a possibly new FILE as having been processed by the prover.
@@ -798,8 +788,8 @@ finish setup which depends on specific proof assistant configuration.
 
 ;;;***
 
-;;;### (autoloads nil "proof-server" "proof-server.el" (22543 57160
-;;;;;;  407697 865000))
+;;;### (autoloads nil "proof-server" "proof-server.el" (22809 52646
+;;;;;;  215624 917000))
 ;;; Generated autoloads from proof-server.el
 
 (defsubst proof-server-live-buffer nil "\
@@ -846,15 +836,14 @@ Send STRINGS to the prover.
 STRINGS is a list of strings (which will be concatenated), or a
 single string.
 
-The ACTION is unused here (hangover from proof-shell-insert), 
-while SPAN is the Emacs span containing the command.
+The ACTION may be used by the hook, while SPAN is the Emacs span containing the command.
 
 \(fn STRINGS ACTION SPAN)" nil nil)
 
 (autoload 'proof-server-add-to-queue "proof-server" "\
 add item to queue for 'server mode
 
-\(fn QUEUEITEMS &optional QUEUEMODE)" nil nil)
+\(fn QUEUE-ITEMS &optional QUEUEMODE)" nil nil)
 
 (autoload 'proof-server-exec-loop "proof-server" "\
 Main loop processing the `proof-action-list', called from server process filter.
@@ -879,8 +868,8 @@ contains only invisible elements for Prooftree synchronization.
 
 ;;;***
 
-;;;### (autoloads nil "proof-site" "proof-site.el" (22534 33903 107571
-;;;;;;  909000))
+;;;### (autoloads nil "proof-site" "proof-site.el" (22823 11935 305466
+;;;;;;  137000))
 ;;; Generated autoloads from proof-site.el
 
 (autoload 'proof-ready-for-assistant "proof-site" "\
@@ -891,8 +880,8 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'.
 
 ;;;***
 
-;;;### (autoloads nil "proof-splash" "proof-splash.el" (22534 26101
-;;;;;;  113888 114000))
+;;;### (autoloads nil "proof-splash" "proof-splash.el" (22823 11935
+;;;;;;  305466 137000))
 ;;; Generated autoloads from proof-splash.el
 
 (autoload 'proof-splash-display-screen "proof-splash" "\
@@ -910,8 +899,8 @@ Make sure the user gets welcomed one way or another.
 
 ;;;***
 
-;;;### (autoloads (proof-format) "proof-syntax" "proof-syntax.el"
-;;;;;;  (22396 10805 379884 342000))
+;;;### (autoloads nil "proof-syntax" "proof-syntax.el" (22809 52306
+;;;;;;  171632 350000))
 ;;; Generated autoloads from proof-syntax.el
 
 (defsubst proof-replace-regexp-in-string (regexp rep string) "\
@@ -926,8 +915,8 @@ may be a string or sexp evaluated to get a string.
 
 ;;;***
 
-;;;### (autoloads nil "proof-toolbar" "proof-toolbar.el" (22542 35000
-;;;;;;  558067 470000))
+;;;### (autoloads nil "proof-toolbar" "proof-toolbar.el" (22809 52546
+;;;;;;  563627 95000))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
@@ -946,7 +935,7 @@ Menu made from the Proof General toolbar commands.
 ;;;***
 
 ;;;### (autoloads nil "proof-unicode-tokens" "proof-unicode-tokens.el"
-;;;;;;  (22534 33903 143571 908000))
+;;;;;;  (22823 12891 423713 168000))
 ;;; Generated autoloads from proof-unicode-tokens.el
 
 (autoload 'proof-unicode-tokens-mode-if-enabled "proof-unicode-tokens" "\
@@ -973,8 +962,8 @@ is changed.
 
 ;;;***
 
-;;;### (autoloads nil "proof-utils" "proof-utils.el" (22534 33903
-;;;;;;  159571 908000))
+;;;### (autoloads nil "proof-utils" "proof-utils.el" (22809 52416
+;;;;;;  947629 928000))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-debug "proof-utils" "\
@@ -991,55 +980,20 @@ If flag `proof-general-debug-messages' is nil, do nothing.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/texi-docstring-magic" "../lib/texi-docstring-magic.el"
-;;;;;;  (22534 33903 327571 904000))
-;;; Generated autoloads from ../lib/texi-docstring-magic.el
-
-(autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
-Update all texi docstring magic annotations in buffer.
-With prefix arg, no errors on unknown symbols.  (This results in
-@def .. @end being deleted if not known).
-
-\(fn &optional NOERROR)" t nil)
-
-;;;***
-
-;;;### (autoloads (unicode-chars-list-chars) "../lib/unicode-chars"
-;;;;;;  "../lib/unicode-chars.el" (22396 10805 391884 342000))
-;;; Generated autoloads from ../lib/unicode-chars.el
-
-(autoload 'unicode-chars-list-chars "../lib/unicode-chars" "\
-Insert each Unicode character into a buffer.
-Lets you see which characters are available for literal display
-in your emacs font.
-
-\(fn)" t nil)
-
-;;;***
-
-;;;### (autoloads nil "../lib/unicode-tokens" "../lib/unicode-tokens.el"
-;;;;;;  (22534 33903 331571 904000))
-;;; Generated autoloads from ../lib/unicode-tokens.el
-
-(autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
-Return a unicode encoded version presentation of STR.
-
-\(fn STR)" nil nil)
-
-;;;***
-
 ;;;### (autoloads nil nil ("../lib/local-vars-list.el" "../lib/pg-fontsets.el"
 ;;;;;;  "../lib/proof-compat.el" "../lib/span.el" "pg-autotest.el"
 ;;;;;;  "pg-custom.el" "pg-pbrpm.el" "pg-vars.el" "proof-auxmodes.el"
 ;;;;;;  "proof-buffers.el" "proof-config.el" "proof-faces.el" "proof-proverargs.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22543 57724
-;;;;;;  46151 632000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (22823 13230
+;;;;;;  117685 921000))
 
 ;;;***
 
+(provide 'proof-autoloads)
 ;; Local Variables:
 ;; version-control: never
+;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
-
 ;;; proof-autoloads.el ends here

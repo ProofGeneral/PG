@@ -424,7 +424,7 @@ This function also initialises the important tables for the mode."
     ;; hairy logic based on Coq-style vs Isabelle-style configs
     (if (string= "" (format unicode-tokens-token-format ""))
 	;; no special token format, parse separate words/symbols
-        (let* ((tokextra (cl-remove "^\\(?:\\sw\\|\\s_\\)+$" toks :test 'string-match))
+       (let* ((tokextra (cl-remove "^\\(?:\\sw\\|\\s_\\)+$" toks :test 'string-match))
                (toksymbwrd (cl-set-difference toks tokextra))
 	       ;; indentifier that are not pure words
 	       (toksymb (cl-remove "^\\(?:\\sw\\)+$" toksymbwrd :test 'string-match))

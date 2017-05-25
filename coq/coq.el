@@ -2155,9 +2155,9 @@ are non-nil at the same time, this gives priority to the former."
 ;; Setting the new mapping for terminator, overrides the following in proof-script:
 ;; (define-key proof-mode-map (vector (aref proof-terminal-string 0)) 'proof-electric-terminator)
 
-                                        ;(define-key proof-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert)
+;(define-key proof-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert)
 (define-key coq-mode-map (kbd ".") 'coq-terminator-insert)
-                                        ;(define-key coq-mode-map (kbd ";") 'coq-terminator-insert) ; for french keyboards
+;(define-key coq-mode-map (kbd ";") 'coq-terminator-insert) ; for french keyboards
 
 ;;;;;;;;;;;;;;
 

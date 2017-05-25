@@ -334,8 +334,7 @@ without adjusting window layout."
   (proof-deftoggle-fn
    (proof-ass-sym unicode-tokens-enable) 'proof-unicode-tokens-toggle)
   (proof-deftoggle-fn
-   (proof-ass-sym maths-menu-enable) 'proof-maths-menu-toggle)
-  (proof-deftoggle-fn (proof-ass-sym mmm-enable) 'proof-mmm-toggle))
+   (proof-ass-sym maths-menu-enable) 'proof-maths-menu-toggle))
 
 (defun proof-keep-response-history ()
   "Enable associated buffer histories following `proof-keep-response-history'."
@@ -386,7 +385,7 @@ without adjusting window layout."
        :style radio
        :selected (eq proof-autosend-all nil)
        :active proof-autosend-enable
-       :help "Automatically try out the next commmand"]
+       :help "Automatically try out the next command"]
        ["Send Whole Buffer"
 	(customize-set-variable 'proof-autosend-all t)
 	:style radio
@@ -530,12 +529,6 @@ without adjusting window layout."
       :selected (and (boundp 'maths-menu-mode) maths-menu-mode)
       :help "Maths menu for inserting Unicode characters"]
 
-     ["Multiple Modes" (proof-mmm-toggle (if mmm-mode 0 1))
-      :active (proof-mmm-support-available)
-      :style toggle
-      :selected (and (boundp 'mmm-mode) mmm-mode)
-      :help "Allow multiple major modes"]
-
      ["Index Menu" proof-imenu-toggle
       :active (stringp (locate-library "imenu"))
       :style toggle
@@ -583,7 +576,6 @@ without adjusting window layout."
    'proof-strict-read-only
    (proof-ass-sym unicode-tokens-enable)
    (proof-ass-sym maths-menu-enable)
-   (proof-ass-sym mmm-enable)
    'proof-toolbar-enable
    'proof-keep-response-history
    'proof-imenu-enable
