@@ -1,12 +1,6 @@
 Stuff to do to clean up the code
 --------------------------------
 
-Fold in changes in main PG repo - DONE
-
-Localize all state - DONE, somewhat
-
-Use cl-lib throughout - DONE
-
 Consistent naming; using pg- prefix throughout?
 
 Either update or ditch the Adapting document
@@ -18,32 +12,17 @@ generic/proof-resolver.el probably doesn't need much of what's there
 ditch generic/proof-shell.el, but there is code that uses it, so careful
 DONE, although proof-tree, some other code still references it
 
-Makefile.devel mentions cvs; update that to git, or ditch this Makefile?
-
-generic/proof-easy-config is probably ditchable - DONE
-
-Go through autoloads, see what's what, rebuild autoloads
+Makefile.devel mentions cvs; update that to git?
 
 Is generic/pg-xml.el still used? It's used in pg-movie.el, pgip.el
 Bits of it are redundant with coq/coq-xml.el
 
-in bin/proofgeneral, make it executable
-remove references to other provers
-
-remove uses of proof-trace-buffer, proof-thms-buffer? DONE
-
-Update mmm contrib? (This should go away, as it will in vanilla PG, per the
-suggestion of Jonas Bernoulli.)
-
 What about Makefile.travis?
-
-Add me (Paul Steckler) to author list in relevant files
 
 Get Travis CI to work with this branch
 
 Update these files:
 
-AUTHORS  
 BUGS
 CHANGES
 COMPATIBILITY 
@@ -55,7 +34,6 @@ REGISTER (is this still used?)
 TAGS
 
 Document how communications works, coq-tq, coq-server
-
 
 
 
