@@ -36,7 +36,7 @@
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
-(require 'coq-local-vars)               ; setting coq args via file variables 
+(require 'coq-local-vars)               ; setting coq args via file variables
                                         ;   (prefer _CoqProject file instead)
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
@@ -89,7 +89,7 @@ These are appended at the end of `coq-shell-init-cmd'."
   :group 'coq)
 
 ;; Default coq is only Private_ and _subproof
-(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
+(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
  "\"Private_\" \"_subproof\""
   "String for blacklisting strings from requests to coq environment."
   :type 'string
@@ -169,7 +169,7 @@ See also `coq-hide-additional-subgoals'."
 
 ;; Ignore all commands that start a proof. Otherwise "Proof" will appear
 ;; as superfluous node in the proof tree. Note that we cannot ignore Proof,
-;; because, Fixpoint does not display the proof goal, see Coq bug #2776. 
+;; because, Fixpoint does not display the proof goal, see Coq bug #2776.
 (defcustom coq-proof-tree-ignored-commands-regexp
   (concat "^\\(\\(Show\\)\\|\\(Locate\\)\\|"
           "\\(Theorem\\)\\|\\(Lemma\\)\\|\\(Remark\\)\\|\\(Fact\\)\\|"
@@ -403,7 +403,7 @@ annotation-start) if found."
 ;; This is a modified version of the same function in generic/proof-shell.el.
 ;; Using function coq-search-urgent-message instead of regex
 ;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages. 
+;; such. i.e. "Time" messages.
 (defun proof-shell-process-urgent-messages ()
   "Scan the shell buffer for urgent messages.
 Scanning starts from `proof-shell-urgent-message-scanner' or
@@ -415,33 +415,33 @@ We update `proof-shell-urgent-message-marker' to point to last message found.
 
 This is a subroutine of `proof-shell-filter'."
   (let ((pt (point)) (end t)
-	lastend laststart
-	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
-			 (marker-position scomint-last-input-end))))
+        lastend laststart
+        (initstart (max  (marker-position proof-shell-urgent-message-scanner)
+                         (marker-position scomint-last-input-end))))
     (goto-char initstart)
     (while (and end (setq laststart (coq-search-urgent-message))
                 )
 ;      (setq laststart (match-beginning 0))
       (if (setq end
-		(re-search-forward proof-shell-eager-annotation-end nil t))
-	  (save-excursion
-	    (setq lastend end)
-	    ;; Process the region including the annotations
-	    (proof-shell-process-urgent-message laststart lastend))))
+                (re-search-forward proof-shell-eager-annotation-end nil t))
+          (save-excursion
+            (setq lastend end)
+            ;; Process the region including the annotations
+            (proof-shell-process-urgent-message laststart lastend))))
 
     (set-marker
      proof-shell-urgent-message-scanner
      (if end ;; couldn't find message start; move forward to avoid rescanning
-	 (max initstart
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
+         (max initstart
+              (- (point)
+                 (1+ proof-shell-eager-annotation-start-length)))
        ;; incomplete message; leave marker at start of message
        laststart))
 
     ;; Set position of last urgent message found
     (if lastend
-	(set-marker proof-shell-urgent-message-marker lastend))
-	
+        (set-marker proof-shell-urgent-message-marker lastend))
+
     (goto-char pt)))
 
 ;; Due to the architecture of proofgeneral, informative message put *before*
@@ -994,7 +994,7 @@ silently UNSETCMD. See `coq-command-with-set-unset'."
 
 
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    
+
 
   ;;   (proof-shell-ready-prover)
   ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
@@ -1289,7 +1289,7 @@ necessary.")
   (coq-buffer-window-width proof-goals-buffer))
 (defun coq-response-window-width ()
   (coq-buffer-window-width proof-response-buffer))
- 
+
 (defun coq-guess-goal-buffer-at-next-command ()
   "Return the probable width of goals buffer if it pops up now.
 This is a guess based on the current width of goals buffer if
@@ -1510,8 +1510,8 @@ Near here means PT is either inside or just aside of a comment."
 (defun proof-shell-process-interactive-prompt-regexp ()
   "Action taken when `proof-shell-interactive-prompt-regexp' is observed."
   (when (and (proof-shell-live-buffer)
-	     ; not already visible
-	     t)
+             ; not already visible
+             t)
     (switch-to-buffer proof-shell-buffer)
     (coq-display-debug-goal)
     (message "Prover expects input in %s buffer (if debug mode: h<return> for help))" proof-shell-buffer)))
@@ -1519,7 +1519,7 @@ Near here means PT is either inside or just aside of a comment."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+;;;###autoload
 (defun coq-mode-config ()
   ;; SMIE needs this.
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
@@ -1534,7 +1534,7 @@ Near here means PT is either inside or just aside of a comment."
   (set (make-local-variable 'fill-paragraph-function) 'coq-fill-paragraph-function)
 
   ;; TODO (but only for paragraphs in comments)
-  ;; (set (make-local-variable 'paragraph-start)  "[ 	]*\\((\\**\\|$\\)")
+  ;; (set (make-local-variable 'paragraph-start)  "[    ]*\\((\\**\\|$\\)")
   ;; (set (make-local-variable 'paragraph-separate) "\\**) *$\\|$")
   ;; (set (make-local-variable 'adaptive-fill-function) 'coq-adaptive-fill-function)
 
@@ -1559,7 +1559,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; We manage file saveing via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
-  
+
   ;; Commands sent to proof engine
   (setq proof-showproof-command "Show. "
         proof-context-command "Print All. "
@@ -1589,9 +1589,9 @@ Near here means PT is either inside or just aside of a comment."
 
   (setq proof-save-command-regexp coq-save-command-regexp
         proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
-	proof-save-with-hole-regexp coq-save-with-hole-regexp
-	proof-goal-with-hole-regexp coq-goal-with-hole-regexp
-	proof-nested-undo-regexp coq-state-changing-commands-regexp
+        proof-save-with-hole-regexp coq-save-with-hole-regexp
+        proof-goal-with-hole-regexp coq-goal-with-hole-regexp
+        proof-nested-undo-regexp coq-state-changing-commands-regexp
         proof-script-imenu-generic-expression coq-generic-expression)
 
   (when (fboundp 'smie-setup) ; always use smie, old indentation code removed
@@ -1609,8 +1609,8 @@ Near here means PT is either inside or just aside of a comment."
   ;;  proof-indent-close-regexp    coq-indent-close-regexp)
   ;; (make-local-variable 'indent-region-function)
   ;; (setq indent-region-function 'coq-indent-region)
-  
-  
+
+
 
   ;; span menu
   (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
@@ -1647,7 +1647,7 @@ Near here means PT is either inside or just aside of a comment."
   (if (file-exists-p coq-tags)
       (set (make-local-variable 'tags-table-list)
            (cons coq-tags tags-table-list)))
-  
+
   (set (make-local-variable 'blink-matching-paren-dont-ignore-comments) t)
 
   (when coq-may-use-prettify
@@ -1732,7 +1732,7 @@ Near here means PT is either inside or just aside of a comment."
    proof-tree-show-sequent-command 'coq-show-sequent-command
    proof-tree-find-undo-position 'coq-proof-tree-find-undo-position
    )
-        
+
   (proof-shell-config-done))
 
 
@@ -1921,7 +1921,7 @@ The not yet delayed output is in the region
                              no-response-display
                              proof-tree-show-subgoal))
                           proof-action-list))))))))))
-  
+
 (add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-get-new-subgoals)
 
 
@@ -1942,7 +1942,7 @@ The not yet delayed output is in the region
              (span-property span 'goalcmd))
         (span-start span)
       nil)))
-    
+
 (defun coq-proof-tree-find-undo-position (state)
   "Return the position for undo state STATE.
 This is the Coq incarnation of `proof-tree-find-undo-position'."
@@ -2193,15 +2193,15 @@ mouse activation."
   (interactive)
   (let ((count 1)) ; The number of section already "Ended" + 1
     (let ((section
-	   (save-excursion
-	     (progn
-	       (while (and (> count 0)
-			   (search-backward-regexp
-			    "Chapter\\|Section\\|End" 0 t))
-		 (if (char-equal (char-after (point)) ?E)
-		     (setq count (1+ count))
-		   (setq count (1- count))))
-	       (buffer-substring-no-properties
+           (save-excursion
+             (progn
+               (while (and (> count 0)
+                           (search-backward-regexp
+                            "Chapter\\|Section\\|End" 0 t))
+                 (if (char-equal (char-after (point)) ?E)
+                     (setq count (1+ count))
+                   (setq count (1- count))))
+               (buffer-substring-no-properties
           (progn (beginning-of-line) (forward-word 1) (point))
           (progn (end-of-line) (point)))))))
       (insert (concat "End" section)))))
@@ -2233,7 +2233,7 @@ Based on idea mentioned in Coq reference manual."
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
 ;; destruct foo., where foo is a name.
-(defvar coq-auto-as-hack-hyp-name-regex 
+(defvar coq-auto-as-hack-hyp-name-regex
   (concat "\\(" "induction\\|destruct" "\\)\\s-+\\(" coq-id-shy "\\)\\s-*\\.")
   "Regexp of commands needing a hack to generate correct \"as\" close.
 tacitcs like destruct and induction reuse hypothesis names by
@@ -2247,7 +2247,7 @@ Warning: this makes the error messages (and location) wrong.")
 (defun coq-hack-cmd-for-infoH (s)
   "return the tactic S hacked with infoH tactical."
   (cond
-   ((string-match ";" s) s) ;; composed tactic cannot be treated 
+   ((string-match ";" s) s) ;; composed tactic cannot be treated
    ((string-match coq-auto-as-hack-hyp-name-regex s)
     (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
    ((string-match coq-keywords-accepting-as-regex s)
@@ -2327,13 +2327,13 @@ Also insert holes at insertion positions."
           (indent-region start (point) nil)
           (let ((n (holes-replace-string-by-holes-backward start)))
             (case n
-	(0 nil)				; no hole, stay here.
-	(1
-	 (goto-char start)
-	 (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	(t
-	 (goto-char start)
-	 (message
+        (0 nil)				; no hole, stay here.
+        (1
+         (goto-char start)
+         (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+        (t
+         (goto-char start)
+         (message
           (substitute-command-keys
            "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
 
@@ -2389,7 +2389,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?q)] 'coq-query)
 (define-key coq-keymap [(control ?r)] 'coq-insert-requires)
 ; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
-; anyway company-coq should provide an "as!<TAB>". 
+; anyway company-coq should provide an "as!<TAB>".
 (define-key coq-keymap [(?\[)] 'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
@@ -2549,7 +2549,7 @@ buffer."
               (lgth (cadr mtch)))
           (goto-char (+ (proof-unprocessed-begin) 1))
           (coq-find-real-start)
-          
+
           ;; utf8 adaptation is made in coq-get-last-error-location above
           (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
             (goto-char (+ (point) pos))
@@ -2656,9 +2656,9 @@ number of hypothesis displayed, without hiding the goal"
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
 ;; *after* windows resizing.
 (add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-show-first-goal)
+          'coq-show-first-goal)
 (add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-update-minor-mode-alist)
+          'coq-update-minor-mode-alist)
 (add-hook 'proof-shell-handle-delayed-output-hook
           (lambda ()
             (if (proof-string-match coq-shell-proof-completed-regexp
@@ -2711,7 +2711,7 @@ Only when three-buffer-mode is enabled."
                         (goto-char (point-min))
                         (recenter)))))))))))))
 
-;; TODO: remove/add hook instead? 
+;; TODO: remove/add hook instead?
 (defun coq-optimise-resp-windows-if-option ()
   (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
 
@@ -2760,7 +2760,7 @@ It will be restored if double hit terminator is toggle off.")
 
 ;; We redefine the keybinding when we go in and out of double hit mode, even if
 ;; in principle coq-terminator-insert is compatible with
-;; proof-electric-terminator. This may be overprudent but I suspect that  
+;; proof-electric-terminator. This may be overprudent but I suspect that
 (defun coq-double-hit-enable ()
   "Disables electric terminator since double hit is a replacement.
 This function is called by `proof-set-value' on `coq-double-hit-enable'."
@@ -2855,7 +2855,7 @@ are non-nil at the same time, this gives priority to the former."
 
 ;; This was done in coq-compile-common, but it is actually a good idea even
 ;; when "compile when require" is off. When switching scripting buffer, let us
-;; restart the coq shell process, so that it applies local coqtop options. 
+;; restart the coq shell process, so that it applies local coqtop options.
 (add-hook 'proof-deactivate-scripting-hook
           'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
           t)
