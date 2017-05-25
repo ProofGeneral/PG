@@ -4,7 +4,7 @@
 @c
 @c
 @c TODO:  
-@c   MMM support, Theorem dependencies, history in script and response,
+@c   Theorem dependencies, history in script and response,
 @c   identifier info commands
 
 
@@ -5450,7 +5450,7 @@ URL of web page for Isabelle.
 
 
 
-@c FIXME todo: theorem dependencies, MMM
+@c FIXME todo: theorem dependencies
 
 
 @c =================================================================
@@ -6083,10 +6083,9 @@ Summer Schools.  Many new features have been added to enhance Coq mode
 Support has been added for the useful Emacs packages Speedbar
 @c @uref{http://cedet.sourceforge.net/speedbar.shtml,Speedbar} 
 and Index Menu, both usually distributed with Emacs.  Compatible
-versions of the Emacs packages Math-Menu (for Unicode symbols) and MMM
-Mode (for multiple modes in one buffer) are bundled with Proof General.
-An experimental Unicode Tokens package has been added which will replace
-X-Symbol.
+versions of the Emacs packages Math-Menu (for Unicode symbols)
+are bundled with Proof General. An experimental Unicode Tokens package has been
+added which will replace X-Symbol.
 
 See the @file{CHANGES} file in the distribution for more complete
 details of changes since version 3.5, and the appendix

@@ -1,34 +1,7 @@
 ;;; coq-tq.el --- utility to maintain a transaction queue
 
 ;; modified version of tq.el from Emacs distribution
-
-;; TODO mention returning current call
-;;      handlers for partial responses
-
-;; The main modification is that queue may contain elements that are thunks, as 
-;; well as strings. That allows us to invoke the thunk just before sending 
-;; its results to the process, which allows capturing state variables that 
-;; may have been changed by previous responses, in particular the state-id 
-;; in a <value> response from coqtop. The thunk returns a list consisting 
-;; of the span associated with a Coq sentence and the sentence wrapped 
-;; in XML, suitable to send to coqtop. We return the span along with the 
-;; coqtop response so we can set the state id in the span metadata.
-;; 
-
-;; Instead of the consed data structure for the queue and associated data,
-;; we use a cl-lib structure.
-
-;; Another modification is that we can log the strings sent to the process.
-;; That way, we see the correct order of calls and responses, which we would 
-;; not see if we logged the sent strings at the time of queueing.
-
-;; When creating the transaction queue, we pass a handler for out-of-band data.
-
-;; Finally, the enqueue function does not take the optional delay-sending argument.
-;; We always delay sending until the last response has been received.
-
-
-;; ****************************************************************************
+;; modified in 2016, 2017
 
 ;; Copyright (C) 1985-1987, 1992, 2001-2013 Free Software Foundation,
 ;; Inc.
@@ -55,27 +28,27 @@
 
 ;;; Commentary:
 
-;; This file manages receiving a stream asynchronously, parsing it
-;; into transactions, and then calling the associated handler function
-;; upon the completion of each transaction.
+;; The main modification is that queue may contain elements that are thunks, as 
+;; well as strings. That allows us to invoke the thunk just before sending 
+;; its results to the process, which allows capturing state variables that 
+;; may have been changed by previous responses, in particular the state-id 
+;; in a <value> response from coqtop. The thunk returns a list consisting 
+;; of the span associated with a Coq sentence and the sentence wrapped 
+;; in XML, suitable to send to coqtop. We return the span along with the 
+;; coqtop response so we can set the state id in the span metadata.
+;; 
 
-;; Our basic structure is the queue/process/buffer triple.  Each entry
-;; of the queue part is a list of question, regexp, closure, and
-;; function that is consed to the last element.
+;; Instead of the consed data structure for the queue and associated data,
+;; we use a cl-lib structure.
 
-;; A transaction queue may be created by calling `tq-create'.
+;; Another modification is that we can log the strings sent to the process.
+;; That way, we see the correct order of calls and responses, which we would 
+;; not see if we logged the sent strings at the time of queueing.
 
-;; A request may be added to the queue by calling `tq-enqueue'.  If
-;; the `delay-question' argument is non-nil, we will wait to send the
-;; question to the process until it has finished sending other input.
-;; Otherwise, once a request is enqueued, we send the given question
-;; immediately to the process.
+;; When creating the transaction queue, we pass a handler for out-of-band data.
 
-;; We then buffer bytes from the process until we see the regexp that
-;; was provided in the call to `tq-enqueue'.  Then we call the
-;; provided function with the closure and the collected bytes.  If we
-;; have indicated that the question from the next transaction was not
-;; sent immediately, send it at this point, awaiting the response.
+;; Finally, the enqueue function does not take the optional delay-sending argument.
+;; We always delay sending until the last response has been received.
 
 (require 'cl-lib)
 (require 'span)
