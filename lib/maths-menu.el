@@ -5,7 +5,7 @@
 ;; Portions ,A)(B Copyright 1994-2012, David Aspinall and University of Edinburgh
 ;; Portions ,A)(B Copyright 1985-2014, Free Software Foundation, Inc
 ;; Portions ,A)(B Copyright 2001-2006, Pierre Courtieu
-;; Portions ,A)(B Copyright 2010, Erik Martin-Dorel and ,AI(Bcole Normale Sup,Ai(Brieure de Lyon
+;; Portions ,A)(B Copyright 2010, Erik Martin-Dorel
 ;; Portions ,A)(B Copyright 2012, Hendrik Tews
 ;; Portions ,A)(B Copyright 2017, Cl,Ai(Bment Pit-Claudel
 ;; Portions ,A)(B Copyright 2016-2017, Massachusetts Institute of Technology

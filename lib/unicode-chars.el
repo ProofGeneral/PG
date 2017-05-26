@@ -3,7 +3,7 @@
 ;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
 ;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
 ;; Portions © Copyright 2001-2006, Pierre Courtieu
-;; Portions © Copyright 2010, Erik Martin-Dorel and École Normale Supérieure de Lyon
+;; Portions © Copyright 2010, Erik Martin-Dorel
 ;; Portions © Copyright 2012, Hendrik Tews
 ;; Portions © Copyright 2017, Clément Pit-Claudel
 ;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
