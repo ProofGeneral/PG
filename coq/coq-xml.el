@@ -35,13 +35,34 @@
 
 ;; XML protocol versions, as returned by About command
 
-(defvar coq-xml-protocol-8.5 "20140312")
-(defun coq-xml-protocol-8.5-p (protocol)
-  (equal protocol coq-xml-protocol-8.5))
+(defvar coq-xml-valid-protocols nil)
 
-(defvar coq-xml-protocol-8.6 "20150913")
-(defun coq-xml-protocol-8.6-p (protocol)
-  (equal protocol coq-xml-protocol-8.6))
+;; macro to build associate Coq version with XML protocol version (a YYYYMMDD date)
+(defmacro coq-xml-declare-protocol-version (version date)
+  (let* ((string-version (number-to-string version))
+	 (version-protocol (intern (concat "coq-xml-protocol-" string-version)))
+	 (version-pred (intern (concat "coq-xml-protocol-" string-version "-p")))
+	 (or-later-protocols (intern (concat "coq-xml-" string-version "-or-later-protocols")))
+	 (or-later-pred (intern (concat "coq-xml-protocol-" string-version "-or-later-p"))))
+    (princ (format "Defining via macro: %s\n"
+		   (list version-protocol version-pred
+			 or-later-protocols or-later-pred)))
+    `(progn
+       (defvar ,version-protocol ,date)
+       ;; put new protocol at end of list of valid protocols
+       (setq coq-xml-valid-protocols
+	     (reverse (cons ,version-protocol (reverse coq-xml-valid-protocols))))
+       (defun ,version-pred (protocol)
+	 (equal protocol ,version-protocol))
+       (defvar ,or-later-protocols
+	 (member ,version-protocol coq-xml-valid-protocols))
+       (defun ,or-later-pred (protocol)
+	 (member protocol ,or-later-protocols)))))
+    
+;; make sure these are in version order
+(coq-xml-declare-protocol-version 8.5 "20140312")
+(coq-xml-declare-protocol-version 8.6 "20150913")
+(coq-xml-declare-protocol-version 8.7 "20170413")
 
 (defun coq-xml-protocol-version ()
   coq-xml-protocol-date)
@@ -49,7 +70,7 @@
 (defun coq-xml-bad-protocol ()
   (error "Bad XML protocol \"%s\", expected one of %s"
 	 (coq-xml-protocol-version)
-	 (list coq-xml-protocol-8.5 coq-xml-protocol-8.6)))
+	 coq-xml-valid-protocols))
 
 ;; these are the same escapes as in Coq's lib/xml_printer.ml, 
 ;; function buffer_pcdata
@@ -181,6 +202,10 @@
   "XML block with `unit' tag"
   (coq-xml-block "unit" nil nil))
 
+(defun coq-xml-route-id ()
+  "XML block with `route_id' tag"
+  (coq-xml-block "route_id" `(val . ,coq-route-id-counter) nil))
+
 ;; convenience functions so we don't have to write out traversals by hand
 
 (defun coq-xml-footprint (xml)
@@ -268,13 +293,22 @@ to write out the traversal code by hand each time."
     add-block))
 
 (defun coq-xml-query-item (item)
+  (let ((item-pair (coq-xml-pair
+		    nil
+		    (coq-xml-string
+		     item)
+		    (coq-xml-state_id `((val . ,coq-current-state-id))))))
   (coq-xml-call
    '((val . Query))
-   (coq-xml-pair
-    nil
-    (coq-xml-string
-     item)
-    (coq-xml-state_id `((val . ,coq-current-state-id))))))
+   ;; Coq 8.7+ uses route id, earlier versions do not
+   (if (coq-xml-protocol-8.7-or-later-p (coq-xml-protocol-version))
+       (prog1 (coq-xml-pair
+	       nil
+	       (coq-xml-route-id)
+	       item-pair)
+	 ;; increment route id for next Query
+	 (cl-incf coq-route-id-counter))
+     item-pair))))
 
 (defun coq-xml-about ()
   (coq-xml-call '((val . About))
@@ -402,8 +436,8 @@ to write out the traversal code by hand each time."
 
 (defun coq-xml-set-special-tokens ()
   (let* ((xml-protocol (coq-xml-protocol-version)))
-    (pcase xml-protocol
-      ("20140312" ; 8.5
+    (cond 
+      ((coq-xml-protocol-8.5-p (coq-xml-protocol-version))
        (coq-xml--set-plain-special-tokens))
       (t 
        (coq-xml--set-richpp-special-tokens)))))
