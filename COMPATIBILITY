@@ -9,7 +9,7 @@ on recent Linux systems:
  Emacs 25 (dev)      -- next version, should work
  Emacs 23.2, earlier -- obsolete versions, do NOT work
 
-and (main) prover versions:  Coq 8.4, Coq 8.5, Coq 8.6
+and (main) prover versions:  Coq 8.5, Coq 8.6, Coq 8.7
 
 See below for notes about other operating systems.
 
@@ -29,8 +29,8 @@ by compiling from the FSF CVS. See the Emacs Wiki at
 http://www.emacswiki.org/emacs/EmacsForMacOS for more.
 
 Note that macOS compatibility isn't thoroughly tested.  If you discover
-problems, please send a report and/or fix to the PG tracker.  Please
-add tips to the wiki page above.
+problems, please send an issue and/or pull request to the PG Github repo.
+Please add tips to the wiki page above.
 
 
 Running on Windows
