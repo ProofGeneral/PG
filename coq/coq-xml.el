@@ -52,10 +52,10 @@
 	     (reverse (cons ,version-protocol (reverse coq-xml-valid-protocols))))
        (defun ,version-pred (protocol)
 	 (equal protocol ,version-protocol))
-       (defvar ,or-later-protocols
+       (defun ,or-later-protocols ()
 	 (member ,version-protocol coq-xml-valid-protocols))
        (defun ,or-later-pred (protocol)
-	 (member protocol ,or-later-protocols)))))
+	 (member protocol (,or-later-protocols))))))
     
 ;; make sure these are in version order
 (coq-xml-declare-protocol-version 8.5 "20140312")

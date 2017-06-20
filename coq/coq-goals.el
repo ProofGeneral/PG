@@ -178,7 +178,7 @@
   (coq-optimise-resp-windows-if-option))
 
 (defun coq-goals-show-goals (goals)
-  (pg-goals-display goals nil)
+  (pg-goals-display goals t)
   (coq-optimise-resp-windows-if-option)
   (coq-goals--show-first-goal))
 
