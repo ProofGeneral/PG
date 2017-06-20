@@ -655,7 +655,7 @@ after closing focus")
 	      ((pred coq-xml-protocol-8.5-p)
 	       ;; can't use coq-xml-at-path, message not in tags (see bug 4849)
 	       (cadr (cdr (cdr xml))))
-	      ((pred coq-xml-protocol-8.6-p)
+	      ((pred coq-xml-protocol-8.6-or-later-p)
 	       (let ((richpp-text (coq-xml-at-path xml '(value (_) (richpp (_))))))
 		 (and richpp-text
 		      (coq-xml-flatten-pp (coq-xml-body richpp-text)))))
@@ -806,7 +806,7 @@ after closing focus")
     ;; can get error message not associated with script text
     (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
-;; this is for 8.6
+;; this is for 8.6+
 (defun coq-server--handle-error (xml)
   ;; memoize this response
   (puthash xml t coq-error-fail-tbl)
@@ -908,7 +908,7 @@ after closing focus")
 	("errormsg" ; 8.5-only
 	 (unless (gethash xml coq-error-fail-tbl)
 	   (coq-server--handle-errormsg xml)))
-	("message" ; 8.6
+	("message" ; 8.6+
 	 (let ((msg-level 
 		(coq-xml-at-path 
 		 xml 
@@ -925,13 +925,13 @@ after closing focus")
 		(coq-display-response (coq-xml-flatten-pp (coq-xml-body richpp))))))))
 	(t)))))
 
-;; syntax of messages differs in 8.5 and 8.6
+;; syntax of messages differs in 8.5 and 8.6+
 (defun coq-server--handle-message (xml)
   (let* ((message
 	  (pcase (coq-xml-protocol-version)
 	    ((pred coq-xml-protocol-8.5-p)
 	     (coq-xml-body1 (coq-xml-at-path xml '(message (message_level) (string)))))
-	    ((pred coq-xml-protocol-8.6-p)
+	    ((pred coq-xml-protocol-8.6-or-later-p)
 	     ;; The _ below is a wildcard in our search path, but the tag is actually _
 	     ;; something of a delicious irony
 	     (coq-xml-flatten-pp

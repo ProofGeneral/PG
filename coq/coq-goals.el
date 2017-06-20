@@ -51,7 +51,7 @@
     (pcase (coq-xml-protocol-version)
       ((pred coq-xml-protocol-8.5-p)
        (coq-goals--goal-hypotheses-8.5 goal-hypos))
-      ((pred coq-xml-protocol-8.6-p)
+      ((pred coq-xml-protocol-8.6-or-later-p)
        (coq-goals--goal-hypotheses-8.6 goal-hypos))
       (_ (coq-xml-bad-protocol)))))
 
@@ -68,7 +68,7 @@
     (pcase (coq-xml-protocol-version)
       ((pred coq-xml-protocol-8.5-p)
        (coq-goals--goal-goal-8.5 goal-goal))
-      ((pred coq-xml-protocol-8.6-p)
+      ((pred coq-xml-protocol-8.6-or-later-p)
        (coq-goals--goal-goal-8.6 goal-goal))
       (_ (coq-xml-bad-protocol)))))
 

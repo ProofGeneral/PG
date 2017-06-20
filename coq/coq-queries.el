@@ -55,11 +55,12 @@
 	  message)
       (while (and xml (not message))
 	(when (string-equal (coq-xml-at-path xml '(message (message_level val))) "notice")
-	  (let* ((message-xml (or
-			      ;; 8.5
-			      (coq-xml-at-path xml '(message (message_level) (string)))
-			      ;; 8.6
-			      (coq-xml-at-path xml '(message (message_level) (option) (richpp (_)))))))
+	  (let* ((message-xml
+		  (pcase (coq-xml-protocol-version)
+		    ((pred coq-xml-protocol-8.5-p)
+		     (coq-xml-at-path xml '(message (message_level) (string))))
+		    ((pred coq-xml-protocol-8.6-or-later-p)
+		     (coq-xml-at-path xml '(message (message_level) (option) (richpp (_))))))))
 	    (when message-xml
 	      (setq message (coq-xml-body1 message-xml)))))
 	(setq xml (coq-xml-get-next-xml)))

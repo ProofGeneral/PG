@@ -34,6 +34,7 @@
 ;; NB: state ids are strings that currently in Coq contain numbers
 (defvar coq-current-state-id nil)
 (defvar coq-edit-id-counter 1)
+(defvar coq-route-id-counter 1)
 
 (defvar coq-retract-buffer-state-id nil
   "State id to retract entire buffer.
@@ -44,7 +45,8 @@ It's the state id returned after Init command sent.")
 
 (defun coq-reset-state-vars ()
   (setq coq-current-state-id coq-retract-buffer-state-id
-	coq-edit-id-counter 1))
+	coq-edit-id-counter 1
+	coq-route-id-counter 1))
 
 (add-hook 'proof-server-restart-hook 'coq-reset-state-vars)
 
