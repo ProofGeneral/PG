@@ -202,7 +202,7 @@
 
 (defun coq-xml-route-id ()
   "XML block with `route_id' tag"
-  (coq-xml-block "route_id" `(val . ,coq-route-id-counter) nil))
+  (coq-xml-block "route_id" `((val . ,coq-route-id-counter)) nil))
 
 ;; convenience functions so we don't have to write out traversals by hand
 
