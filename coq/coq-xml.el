@@ -44,9 +44,7 @@
 	 (version-pred (intern (concat "coq-xml-protocol-" string-version "-p")))
 	 (or-later-protocols (intern (concat "coq-xml-" string-version "-or-later-protocols")))
 	 (or-later-pred (intern (concat "coq-xml-protocol-" string-version "-or-later-p"))))
-    (princ (format "Defining via macro: %s\n"
-		   (list version-protocol version-pred
-			 or-later-protocols or-later-pred)))
+    (princ (format "Declaring XML protocol for Coq %s\n" version))
     `(progn
        (defvar ,version-protocol ,date)
        ;; put new protocol at end of list of valid protocols
