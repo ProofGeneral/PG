@@ -87,9 +87,9 @@ See also `coq-prog-env' to adjust the environment."
 (defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
   "The coq library directory, as reported by \"coqtop -where\".")
 
-(defcustom coq-allow-async-proofs t
+(defcustom coq-allow-async-proofs (not (member system-type '(windows-nt cygwin)))
   "Whether to allow coqtop to run asynchronous proofs using worker 
-processes."
+processes. By default, not enabled for Windows, for stability reasons."
   :type 'boolean
   :group 'coq)
 
