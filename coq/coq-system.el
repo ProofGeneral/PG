@@ -194,6 +194,7 @@ Interactively (with INTERACTIVE-P), show that number."
   ;; -snapshot is only supported by Emacs 24.5, not 24.3
   (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
                                 ("^pl$" . 0)
+				("^~alpha$" . -3)
                                 ,@version-regexp-alist)))
     (version< v1 v2)))
 

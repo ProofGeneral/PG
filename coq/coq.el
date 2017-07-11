@@ -721,6 +721,10 @@ With flag Printing All if some prefix arg is given (C-u)."
       (coq-queries-ask-show-all "About" "About")
     (coq-queries-ask "About" "About")))
 
+(defun coq-Search (withprintingall)
+  (interactive "P")
+  (coq-queries-ask "Search" "Search"))
+
 (defun coq-About-with-implicits ()
   "Ask for an ident and print information on it."
   (interactive)
@@ -1918,6 +1922,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?o)] 'coq-SearchIsos)
 (define-key coq-keymap [(control ?p)] 'coq-Print)
 (define-key coq-keymap [(control ?b)] 'coq-About)
+(define-key coq-keymap [(control ?a)] 'coq-Search)
 (define-key coq-keymap [(control ?c)] 'coq-Check)
 (define-key coq-keymap [?h] 'coq-PrintHint)
 (define-key coq-keymap [(control ?l)] 'coq-LocateConstant)
@@ -1936,6 +1941,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?r] 'proof-store-response-win)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?g] 'proof-store-goals-win)
@@ -1951,6 +1957,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] 'proof-store-response-win)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] 'proof-store-goals-win)
