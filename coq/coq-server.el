@@ -882,15 +882,18 @@ after closing focus")
 (defun coq-server--handle-feedback (xml)
   (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
 	 (span-with-state-id (and state-id ; might have edit_id
-				  (coq-server--get-span-with-state-id state-id))))
-    (if (and state-id
+				  (coq-server--get-span-with-state-id state-id)))
+	 (feedback-content (coq-xml-at-path xml '(feedback (_) (feedback_content val)))))
+    ;; queue feedback if it's not a message and no span to associate it with
+    (if (and (not (equal feedback-content "message"))
+	     state-id
 	     ;; don't queue if dummy state id
 	     (not (equal state-id "0")) 
 	     (or (null span-with-state-id)
 		 ;; may have since-deleted span in table
 		 (null (overlay-buffer span-with-state-id))))
 	(coq-server--queue-feedback state-id xml)
-      (pcase (coq-xml-at-path xml '(feedback (_) (feedback_content val)))
+      (pcase feedback-content
 	("filedependency"
 	 (coq-server--handle-filedependency xml))
 	("fileloaded"
