@@ -95,8 +95,10 @@
 
 ;; assume lines are uniform length to calculate approximate line number
 (defun coq-header--get-line-number (pos)
-  (min coq-header-line--num-lines
-       (1+ (floor (* (/ pos coq-header-line--buff-size) coq-header-line--num-lines)))))
+  (if (zerop coq-header-line--buff-size)
+      1
+    (min coq-header-line--num-lines
+	 (1+ (floor (* (/ pos coq-header-line--buff-size) coq-header-line--num-lines))))))
 
 (defun coq-header--calc-offset (pos lines cols &optional start)
   "Calculate offset into COLS for POS in a buffer of LINES; START means
@@ -410,7 +412,8 @@ columns in header line, NUM-COLS is number of its columns."
 							  (cons processed-pct
 								(cons processing-pct (reverse filtered-fmt))))))))))
 		(force-window-update proof-script-buffer)))
-	  (error (message "Error during header update: %s" err-msg)))))))
+	  (error
+	   (message "Error during header update: %s" err-msg)))))))
 
 ;; update header line at strategic points
 (when coq-use-header-line
