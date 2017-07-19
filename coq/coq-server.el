@@ -926,6 +926,8 @@ after closing focus")
 			     '(feedback (_) (feedback_content
 					     (message (message_level) (option) (richpp (_))))))))
 		(coq-display-response (coq-xml-flatten-pp (coq-xml-body richpp))))))))
+	("addedaxiom" nil) ;; do nothing
+	("inprogress" nil) ;; do nothing
 	(t)))))
 
 ;; syntax of messages differs in 8.5 and 8.6+
