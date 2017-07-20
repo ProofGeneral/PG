@@ -259,7 +259,7 @@ Action is taken on all script buffers."
 ;; don't use save-excursion, changing point is expensive
 (defun proof-set-sent-end (end)
   (let* ((pos end)
-	 (skip-chars '(32 9)) ; ASCII codes for tab, space
+	 (skip-chars '(32 9 10)) ; ASCII codes for tab, space, newline
 	 (ch (char-after pos))
 	 (eof (point-max)))
     (while (and (< pos eof)
