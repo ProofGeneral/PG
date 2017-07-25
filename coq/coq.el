@@ -723,7 +723,7 @@ With flag Printing All if some prefix arg is given (C-u)."
 
 (defun coq-Search (withprintingall)
   (interactive "P")
-  (coq-queries-ask "Search" "Search"))
+  (coq-queries-ask-quoted "Search" "Search"))
 
 (defun coq-About-with-implicits ()
   "Ask for an ident and print information on it."

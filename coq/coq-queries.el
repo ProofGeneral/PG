@@ -276,14 +276,19 @@ More precisely it executes SET-CMD, then DO, finally UNSETCMD."
    ;; option to test
    '("Printing" "Implicits")))
 
-(defun coq-queries-ask (ask do &optional dont-guess)
+(defun coq-mk-queries-ask (fmt ask do dont-guess)
   "Ask for an ident and print the corresponding term."
-  (let ((cmd (format (concat do " %s .")
+  (let ((cmd (format (concat do fmt)
 		     (coq-queries-guess-or-ask-for-string ask dont-guess))))
     (pg-response-clear-displays)
     (proof-invisible-cmd-handle-result
      (lambda ()
        (list (coq-xml-query-item cmd) nil))
      'coq-queries-process-response)))
+
+(defun coq-queries-ask (ask do &optional dont-guess)
+  (coq-mk-queries-ask " %s ." ask do dont-guess))
+(defun coq-queries-ask-quoted (ask do &optional dont-guess)
+  (coq-mk-queries-ask " \"%s\" ." ask do dont-guess))
 
 (provide 'coq-queries)
