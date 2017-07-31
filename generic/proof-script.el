@@ -259,8 +259,9 @@ Action is taken on all script buffers."
 ;; don't use save-excursion, changing point is expensive
 (defun proof-set-sent-end (end)
   (let* ((pos end)
-	 (skip-chars '(32 9 10)) ; ASCII codes for tab, space, newline
+	 (skip-chars '(32 9 10)) ; tab, space, newline
 	 (ch (char-after pos))
+	 (bof (point-min))
 	 (eof (point-max)))
     (while (and (< pos eof)
 		(memq ch skip-chars))
@@ -285,6 +286,16 @@ Action is taken on all script buffers."
 			  (memq ch skip-chars))
 		(cl-incf pos)
 		(setq ch (char-after pos))))))))
+    ;; find end of last statement
+    (when (> pos bof)
+      (cl-decf pos))
+    (setq ch (char-after pos))
+    (while (and (> pos bof)
+		(memq ch skip-chars))
+      (cl-decf pos)
+      (setq ch (char-after pos)))
+    (when (> pos bof)
+      (cl-incf pos))
     ;; adjust sent region
     (span-set-endpoints proof-sent-span 1 pos)))
 
