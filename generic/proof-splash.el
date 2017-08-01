@@ -68,7 +68,8 @@ Proof General."
     nil
     (concat "Version " proof-general-short-version ".")
     nil
-    (concat "© LFCS, University of Edinburgh & contributors " proof-general-version-year)
+    (concat "© Copyright University of Edinburgh & other contributors " proof-general-version-year)
+    (concat "See sources for full copyright information")
     nil
     nil
     :link '("    Read the "
