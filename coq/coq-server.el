@@ -806,20 +806,21 @@ after closing focus")
     ;; can get error message not associated with script text
     (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
 
+;; <feedback object="state" route="0"><state_id val="6"/><feedback_content val="message"><message><message_level val="error"/><option val="none"/><richpp><_><pp>MSG&nbsp;ERROR</pp></_></richpp></message></feedback_content></feedback>
+
 ;; this is for 8.6+
 (defun coq-server--handle-error (xml)
   ;; memoize this response
   (puthash xml t coq-error-fail-tbl)
-  ;; TODO what happens when there's no location?
   ;; can get a state id or edit id, so use _ in path
   (let* ((loc (coq-xml-at-path
 	       xml
 	       '(feedback (_) (feedback_content (message (message_level) (option (loc)))))))
-	 (error-start (string-to-number (coq-xml-attr-value loc 'start)))
-	 (error-stop (string-to-number (coq-xml-attr-value loc 'stop)))
+	 (error-start (and loc (string-to-number (coq-xml-attr-value loc 'start))))
+	 (error-stop (and loc (string-to-number (coq-xml-attr-value loc 'stop))))
 	 (msg-string (coq-xml-at-path 
 		      xml
-		      '(feedback (_) (feedback_content (message (message_level) (option (loc)) (richpp (_)))))))
+		      '(feedback (_) (feedback_content (message (message_level) (option) (richpp (_)))))))
 	 (error-msg (coq-xml-flatten-pp (coq-xml-body msg-string)))
 	 (error-state-id (coq-xml-at-path 
 			  xml 
