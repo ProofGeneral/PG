@@ -1,11 +1,27 @@
 ;;; proof-faces.el --- Faces for Proof General
 ;;
-;; Copyright (C) 2009 LFCS Edinburgh.
-;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; In an ideal world, faces should work sensibly:
@@ -69,14 +85,43 @@ not listed here, you may not get the correct syntax colouring behaviour.")
   "*Face for commands in proof script waiting to be processed."
   :group 'proof-faces)
 
-(defface proof-locked-face
+(defface proof-sent-face
   (proof-face-specs
-   ;; This colour is quite subjective and may be best chosen according
-   ;; to the type of display you have.
    (:background "#eaf8ff")
    (:background "darkslateblue")
    (:underline t))
-  "*Face for locked region of proof script (processed commands)."
+  "*Face for region of proof script sent to the prover."
+  :group 'proof-faces)
+
+;; Face for locked region of a script
+
+(if (display-graphic-p)
+    (copy-face 'proof-queue-face 'proof-locked-face)
+  (copy-face 'proof-sent-face 'proof-locked-face))
+  
+;; Face for sent script item
+(copy-face 'proof-locked-face 'proof-unprocessed-face)
+
+;; Face for secondary locked region of a script
+(copy-face 'proof-sent-face 'proof-secondary-locked-face)
+
+(defface proof-processing-face
+  (proof-face-specs
+   (:background "#87cefa")
+   (:background "lightskyblue")
+   (:underline t))
+  "*Face for span that is being processed."
+  :group 'proof-faces)
+
+;; processed face same as sent face
+(copy-face 'proof-sent-face 'proof-processed-face)
+
+(defface proof-incomplete-face
+  (proof-face-specs
+   (:background "#33cccc")
+   (:background "lightred")
+   (:underline t))
+  "*Face for span that ends an incomplete proof."
   :group 'proof-faces)
 
 (defface proof-declaration-name-face
@@ -218,9 +263,15 @@ Warning messages can come from proof assistant or from Proof General itself."
 (defconst proof-face-compat-doc "Evaluates to a face name, for compatibility.")
 (defconst proof-queue-face 'proof-queue-face proof-face-compat-doc)
 (defconst proof-locked-face 'proof-locked-face proof-face-compat-doc)
+(defconst proof-sent-face 'proof-sent-face proof-face-compat-doc)
+(defconst proof-secondary-locked-face 'proof-secondary-locked-face proof-face-compat-doc)
 (defconst proof-declaration-name-face 'proof-declaration-name-face proof-face-compat-doc)
 (defconst proof-tacticals-name-face 'proof-tacticals-name-face proof-face-compat-doc)
 (defconst proof-tactics-name-face 'proof-tactics-name-face proof-face-compat-doc)
+(defconst proof-incomplete-face 'proof-incomplete-face proof-face-compat-doc)
+(defconst proof-unprocessed-face 'proof-unprocessed-face proof-face-compat-doc)
+(defconst proof-processing-face 'proof-processing-face proof-face-compat-doc)
+(defconst proof-processed-face 'proof-processed-face proof-face-compat-doc)
 (defconst proof-error-face 'proof-error-face proof-face-compat-doc)
 (defconst proof-script-sticky-error-face 'proof-script-sticky-error-face proof-face-compat-doc)
 (defconst proof-script-highlight-error-face 'proof-script-highlight-error-face proof-face-compat-doc)

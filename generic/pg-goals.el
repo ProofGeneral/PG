@@ -1,19 +1,32 @@
 ;; pg-goals.el ---  Proof General goals buffer mode.
-;;
-;; Copyright (C) 1994-2009 LFCS, University of Edinburgh.
-;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
-;;            Thomas Kleymann and Dilip Sequeira
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
 ;;; Code:
 (eval-when-compile
   (require 'easymenu)			; easy-menu-add, etc
-  (require 'cl)				; incf
   (require 'span)			; span-*
   (defvar proof-goals-mode-menu)	; defined by macro below
   (defvar proof-assistant-menu))	; defined by macro in proof-menu
@@ -85,32 +98,33 @@ If KEEPRESPONSE is non-nil, we assume that a response message
 corresponding to this goals message has already been displayed
 before this goals message (see `proof-shell-handle-delayed-output'),  
 so the response buffer should not be cleared."
-  (save-excursion
-    ;; Response buffer may be out of date. It may contain (error)
-    ;; messages relating to earlier proof states
+  (when proof-goals-buffer
+    (with-current-buffer proof-goals-buffer
+      ;; Response buffer may be out of date. It may contain (error)
+      ;; messages relating to earlier proof states
 
-    ;; Erase the response buffer if need be, maybe removing the
-    ;; window.  Indicate it should be erased before the next output.
-    (pg-response-maybe-erase t t nil keepresponse)
+      ;; Erase the response buffer if need be, maybe removing the
+      ;; window.  Indicate it should be erased before the next output.
 
-    ;; Erase the goals buffer and add in the new string
-    (set-buffer proof-goals-buffer)
+      (pg-response-maybe-erase t t nil keepresponse)
 
-    (setq buffer-read-only nil)
+      ;; Erase the goals buffer and add in the new string
 
-    (unless (eq 0 (buffer-size))
-      (bufhist-checkpoint-and-erase))
+      (setq buffer-read-only nil)
 
-    ;; Only display if string is non-empty.
-    (unless (string-equal string "")
-      (insert string))
+      (unless (eq 0 (buffer-size))
+	(bufhist-checkpoint-and-erase))
 
-    (setq buffer-read-only t)
-    (set-buffer-modified-p nil)
-    
-    ;; Keep point at the start of the buffer.
-    (proof-display-and-keep-buffer
-     proof-goals-buffer (point-min))))
+      ;; Only display if string is non-empty.
+      (unless (string-equal string "")
+	(insert string))
+
+      (setq buffer-read-only t)
+      (set-buffer-modified-p nil)
+      
+      ;; Keep point at the start of the buffer.
+      (proof-display-and-keep-buffer
+       proof-goals-buffer (point-min)))))
 
 ;;
 ;; Actions in the goals buffer

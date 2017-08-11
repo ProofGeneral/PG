@@ -1,22 +1,33 @@
 ;; coq-syntax.el Font lock expressions for Coq
-;; Copyright (C) 1997-2007, 2009 LFCS Edinburgh.
-;; Authors: Thomas Kleymann, Healfdene Goguen, Pierre Courtieu
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-;; coq-syntax.el,v 11.13 2013/07/10 14:59:08 pier Exp
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
 (require 'proof-syntax)
 (require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
+(require 'span)
 
-(eval-when-compile
-  (require 'span)
-  (defvar coq-goal-command-regexp nil)
-  (defvar coq-save-command-regexp-strict nil))
-
-
- ;;; keyword databases
+;;; keyword databases
 
 (defcustom coq-user-tactics-db nil
   "User defined tactic information.  See `coq-syntax-db' for
@@ -556,7 +567,6 @@ so for the following reasons:
      ("Print" "p" "Print #." nil "Print")
      ("Pwd" nil "Pwd." nil "Pwd")
      ("Search" nil "Search #" nil "Search")
-     ("SearchAbout" nil "SearchAbout #" nil "SearchAbout")
      ("SearchPattern" nil "SearchPattern (#)" nil "SearchPattern")
      ("SearchRewrite" nil "SearchRewrite #" nil "SearchRewrite")
      ("Show" nil "Show #." nil "Show")
@@ -706,22 +716,26 @@ so for the following reasons:
     ("Set Nonrecursive Elimination Schemes" nil "Set Nonrecursive Elimination Schemes" t "Set Nonrecursive\\s-+Elimination\\s-+Schemes")
     ("Set Parsing Explicit" nil "Set Parsing Explicit" t "Set Parsing\\s-+Explicit")
     ("Set Primitive Projections" nil "Set Primitive Projections" t "Set Primitive\\s-+Projections")
-    ("Set Printing All" nil "Set Printing All" t "Set Printing\\s-+All")
-    ("Set Printing Coercions" nil "Set Printing Coercions" t "Set Printing\\s-+Coercions")
-    ("Set Printing Depth" nil "Set Printing Depth" t "Set Printing\\s-+Depth")
-    ("Set Printing Existential Instances" nil "Set Printing Existential Instances" t "Set Printing\\s-+Existential\\s-+Instances")
-    ("Set Printing Implicit" nil "Set Printing Implicit" t "Set Printing\\s-+Implicit")
-    ("Set Printing Implicit Defensive" nil "Set Printing Implicit Defensive" t "Set Printing\\s-+Implicit\\s-+Defensive")
-    ("Set Printing Matching" nil "Set Printing Matching" t "Set Printing\\s-+Matching")
-    ("Set Printing Notations" nil "Set Printing Notations" t "Set Printing\\s-+Notations")
-    ("Set Printing Primitive Projection Compatibility" nil "Set Printing Primitive Projection Compatibility" t "Set Printing\\s-+Primitive\\s-+Projection\\s-+Compatibility")
-    ("Set Printing Primitive Projection Parameters" nil "Set Printing Primitive Projection Parameters" t "Set Printing\\s-+Primitive\\s-+Projection\\s-+Parameters")
-    ("Set Printing Projections" nil "Set Printing Projections" t "Set Printing\\s-+Projections")
-    ("Set Printing Records" nil "Set Printing Records" t "Set Printing\\s-+Records")
-    ("Set Printing Synth" nil "Set Printing Synth" t "Set Printing\\s-+Synth")
-    ("Set Printing Universes" nil "Set Printing Universes" t "Set Printing\\s-+Universes")
-    ("Set Printing Width" nil "Set Printing Width" t "Set Printing\\s-+Width")
-    ("Set Printing Wildcard" nil "Set Printing Wildcard" t "Set Printing\\s-+Wildcard")
+    ("Set Printing All" nil "Set Printing All" t "Set\\s-+Printing\\s-+All")
+    ("Set Printing Coercions" nil "Set Printing Coercions" t "Set\\s-+Printing\\s-+Coercions")
+    ("Set Printing Compact Contexts" nil "Set Printing Compact Contexts" t "Set\\s-+Printing\\s-+Compact\\s-+Contexts")
+    ("Set Printing Depth" nil "Set Printing Depth" t "Set\\s-+Printing\\s-+Depth")
+    ("Set Printing Existential Instances" nil "Set Printing Existential Instances" t "Set\\s-+Printing\\s-+Existential\\s-+Instances")
+    ("Set Printing Goal Tags" nil "Set Printing Goal Tags" t "Set\\s-+Printing\\s-+Goal\\s-+Tags")
+    ("Set Printing Goal Names" nil "Set Printing Goal Names" t "Set\\s-+Printing\\s-+Goal\\s-+Names")
+    ("Set Printing Implicit" nil "Set Printing Implicit" t "Set\\s-+Printing\\s-+Implicit")
+    ("Set Printing Implicit Defensive" nil "Set Printing Implicit Defensive" t "Set\\s-+Printing\\s-+Implicit\\s-+Defensive")
+    ("Set Printing Matching" nil "Set Printing Matching" t "Set\\s-+Printing\\s-+Matching")
+    ("Set Printing Notations" nil "Set Printing Notations" t "Set\\s-+Printing\\s-+Notations")
+    ("Set Printing Primitive Projection Compatibility" nil "Set Printing Primitive Projection Compatibility" t "Set\\s-+Printing\\s-+Primitive\\s-+Projection\\s-+Compatibility")
+    ("Set Printing Primitive Projection Parameters" nil "Set Printing Primitive Projection Parameters" t "Set\\s-+Printing\\s-+Primitive\\s-+Projection\\s-+Parameters")
+    ("Set Printing Projections" nil "Set Printing Projections" t "Set\\s-+Printing\\s-+Projections")
+    ("Set Printing Records" nil "Set Printing Records" t "Set\\s-+Printing\\s-+Records")
+    ("Set Printing Synth" nil "Set Printing Synth" t "Set\\s-+Printing\\s-+Synth")
+    ("Set Printing Unfocused" nil "Set Printing Unfocused" t "Set\\s-+Printing\\s-+Unfocused")
+    ("Set Printing Universes" nil "Set Printing Universes" t "Set\\s-+Printing\\s-+Universes")
+    ("Set Printing Width" nil "Set Printing Width" t "Set\\s-+Printing\\s-+Width")
+    ("Set Printing Wildcard" nil "Set Printing Wildcard" t "Set\\s-+Printing\\s-+Wildcard")
     ("Set Program Mode" nil "Set Program Mode" t "Set Program\\s-+Mode")
     ("Set Proof Using Clear Unused" nil "Set Proof Using Clear Unused" t "Set Proof\\s-+Using\\s-+Clear\\s-+Unused")
     ("Set Record Elimination Schemes" nil "Set Record Elimination Schemes" t "Set Record\\s-+Elimination\\s-+Schemes")
@@ -762,11 +776,11 @@ so for the following reasons:
     ("Set Silent" nil "Set Silent" t "Set Silent")
     ("Set Undo" nil "Set Undo" t "Set Undo")
     ("Set Search Blacklist" nil "Set Search Blacklist" t "Set Search\\s-+Blacklist")
-    ("Set Printing Coercion" nil "Set Printing Coercion" t "Set Printing\\s-+Coercion")
-    ("Set Printing If" nil "Set Printing If" t "Set Printing\\s-+If")
-    ("Set Printing Let" nil "Set Printing Let" t "Set Printing\\s-+Let")
-    ("Set Printing Record" nil "Set Printing Record" t "Set Printing\\s-+Record")
-    ("Set Printing Constructor" nil "Set Printing Constructor" t "Set Printing\\s-+Constructor")
+    ("Set Printing Coercion" nil "Set Printing Coercion" t "Set\\s-+Printing\\s-+Coercion")
+    ("Set Printing If" nil "Set Printing If" t "Set\\s-+Printing\\s-+If")
+    ("Set Printing Let" nil "Set Printing Let" t "Set\\s-+Printing\\s-+Let")
+    ("Set Printing Record" nil "Set Printing Record" t "Set\\s-+Printing\\s-+Record")
+    ("Set Printing Constructor" nil "Set Printing Constructor" t "Set\\s-+Printing\\s-+Constructor")
     ("Solve Obligations" "oblssolve" "Solve Obligations using #." t "Solve\\s-+Obligations")
     ("Local Strategy" nil "Local Strategy # [#]." t "Local\\s-+Strategy")
     ("Strategy" nil "Strategy # [#]." t "Strategy")
@@ -978,7 +992,7 @@ so for the following reasons:
  of STRG matching REGEXP. Empty match are counted once."
   (let ((nbmatch 0) (str strg))
     (while (and (proof-string-match regexp str) (not (string-equal str "")))
-      (incf nbmatch)
+      (cl-incf nbmatch)
       (if (= (match-end 0) 0) (setq str (substring str 1))
         (setq str (substring str (match-end 0)))))
     nbmatch))
@@ -1203,11 +1217,17 @@ It is used:
 (defvar coq-symbols-regexp (regexp-opt coq-symbols))
 
 ;; ----- regular expressions
-(defvar coq-error-regexp "^\\(Error:\\|Discarding pattern\\|Syntax error:\\|System Error:\\|User Error:\\|User error:\\|Anomaly[:.]\\|Toplevel input[,]\\)"
+(defvar coq-error-regexp "^\\(In nested Ltac call\\|Error:\\|Discarding pattern\\|Syntax error:\\|System Error:\\|User Error:\\|User error:\\|Anomaly[:.]\\|Toplevel input[,]\\)"
   "A regexp indicating that the Coq process has identified an error.")
 
+;; april2017: coq-8.7 removes special chars definitely and puts
+;; <infomsg> and <warning> around all messages except errors.
+;; We let our legacy regexp for some years and remove them, say, in 2020.
 (defvar coq-shell-eager-annotation-start
-   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<infomsg>")
+   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<infomsg>\\|<warning>")
+
+(defvar coq-shell-eager-annotation-end
+  "\377\\|done\\]\\|</infomsg>\\|</warning>\\|\\*\\*\\*\\*\\*\\*\\|) >")
 
 (defvar coq-id "\\(@\\|_\\|\\w\\)\\(\\w\\|\\s_\\)*") ;; Coq ca start an id with @ or _
 (defvar coq-id-shy "\\(?:@\\|_\\|\\w\\)\\(?:\\w\\|\\s_\\)*")

@@ -1,25 +1,26 @@
 ;;; unicode-tokens.el --- Support for control and symbol tokens
-;;
-;; Copyright(C) 2008-2010 David Aspinall / LFCS Edinburgh
-;; Author:    David Aspinall <David.Aspinall@ed.ac.uk>
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
-;; This is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
 
-;; This software is distributed in the hope that it will be useful,
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -41,15 +42,11 @@
 ;;; Code:
 ;;
 
-(require 'cl)
+(require 'cl-lib)
 (require 'quail)
 
 (eval-when-compile
-  (require 'maths-menu)		; nuke compile warnings
-  ;; Emacs <24 compatibility
-  (when (and (fboundp 'flet)
-	     (not (get 'flet 'byte-obsolete-info)))
-    (defalias 'cl-flet 'flet)))
+  (require 'maths-menu))		; nuke compile warnings
 
 ;;
 ;; Customizable user options
@@ -427,16 +424,16 @@ This function also initialises the important tables for the mode."
     ;; hairy logic based on Coq-style vs Isabelle-style configs
     (if (string= "" (format unicode-tokens-token-format ""))
 	;; no special token format, parse separate words/symbols
- 	(let* ((tokextra (remove* "^\\(?:\\sw\\|\\s_\\)+$" toks :test 'string-match))
-               (toksymbwrd (set-difference toks tokextra))
-               ;; indentifier that are not pure words
-               (toksymb (remove* "^\\(?:\\sw\\)+$" toksymbwrd :test 'string-match))
-               ;; pure words
-               (tokwrd (set-difference toksymbwrd toksymb))
+       (let* ((tokextra (cl-remove "^\\(?:\\sw\\|\\s_\\)+$" toks :test 'string-match))
+               (toksymbwrd (cl-set-difference toks tokextra))
+	       ;; indentifier that are not pure words
+	       (toksymb (cl-remove "^\\(?:\\sw\\)+$" toksymbwrd :test 'string-match))
+	       ;; pure words
+	       (tokwrd (cl-set-difference toksymbwrd toksymb))
 	       (idorop
 		(concat "\\(\\_<"
-                        (regexp-opt toksymb)
-                        "\\_>\\|\\(?:\\<"
+			(regexp-opt toksymb)
+			"\\_>\\|\\(?:\\<"
 			(regexp-opt tokwrd)
 			"\\>\\)\\|\\(?:\\B"
 			(regexp-opt tokextra)
@@ -459,7 +456,7 @@ This function also initialises the important tables for the mode."
 The check is with `char-displayable-p'."
   (cond
    ((stringp comp)
-    (reduce (lambda (x y) (and x (char-displayable-p y)))
+    (cl-reduce (lambda (x y) (and x (char-displayable-p y)))
  	    comp
  	    :initial-value t))
    ((characterp comp)
@@ -516,7 +513,7 @@ The face property is set to the :family and :slant attriubutes taken from
 					    (car props) (cadr props))
 	    (setq props (cddr props)))))
     (unless (or unicode-tokens-show-symbols
-		(intersection unicode-tokens-fonts propsyms))
+		(cl-intersection unicode-tokens-fonts propsyms))
       (font-lock-append-text-property
        start end 'face
        ;; just use family and slant to enhance merging with other faces
@@ -678,7 +675,7 @@ Calculated from `unicode-tokens-token-name-alist' and
 `unicode-tokens-shortcut-alist'."
   (let ((unicode-tokens-quail-define-rules
 	 (list 'quail-define-rules)))
-    (let ((ulist (copy-list unicode-tokens-shortcut-alist))
+    (let ((ulist (cl-copy-list unicode-tokens-shortcut-alist))
 	  ustring shortcut)
       (setq ulist (sort ulist 'unicode-tokens-map-ordering))
       (while ulist
@@ -712,7 +709,7 @@ Available annotations chosen from `unicode-tokens-control-regions'."
 			"Annotate region with: "
 			unicode-tokens-control-regions nil
 			'requirematch))))
-  (assert (assoc name unicode-tokens-control-regions))
+  (cl-assert (assoc name unicode-tokens-control-regions))
   (let* ((entry (assoc name unicode-tokens-control-regions))
 	 (beg   (region-beginning))
 	 (end   (region-end))
@@ -734,7 +731,7 @@ Available annotations chosen from `unicode-tokens-control-regions'."
 		      "Insert control symbol: "
 		      unicode-tokens-control-characters
 		      nil 'requirematch)))
-  (assert (assoc name unicode-tokens-control-characters))
+  (cl-assert (assoc name unicode-tokens-control-characters))
   (insert (format unicode-tokens-control-char-format
 		  (cadr (assoc name unicode-tokens-control-characters)))))
 
@@ -831,7 +828,7 @@ but multiple characters in the underlying buffer."
 	    (error "Cannot find token before point"))
 	  (when token
 	    (let* ((tokennumber
-		    (search (list token) unicode-tokens-token-list :test 'equal))
+		    (cl-search (list token) unicode-tokens-token-list :test 'equal))
 		   (numtoks
 		    (hash-table-count unicode-tokens-hash-table))
 		   (newtok
@@ -941,7 +938,7 @@ Starts from point."
 			     'face
 			     'header-line))
 	    (insert " "))
-	  (incf count)
+	  (cl-incf count)
 	  (if (null toks)
 	      (insert " ")
 	    (insert-text-button

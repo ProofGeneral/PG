@@ -1,11 +1,27 @@
 ;;; proof-useropts.el --- Global user options for Proof General
-;;
-;; Copyright (C) 2009, 2010, 2011 LFCS Edinburgh.
-;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; User options for Proof General.
@@ -43,6 +59,7 @@ approximation we test whether proof-config is fully-loaded yet."
   (set-default sym value)
   (when (and
 	 (not noninteractive)
+	 (not (bound-and-true-p byte-compile-current-file))
 	 (featurep 'pg-custom)
 	 (featurep 'proof-config))
       (if (fboundp sym)
@@ -304,6 +321,13 @@ This is only useful for PG developers."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-general-debug-messages nil
+  "*Non-nil to show certain debug messages in the mini-buffer and 
+*Messages* buffer. These messages are distinct from those gated by 
+`proof-general-debug'."
+  :type 'boolean
+  :group 'proof-user-options)
+  
 (defcustom proof-use-parser-cache t
   "*Non-nil to use a simple parsing cache.
 This can be helpful when editing and reprocessing large files.

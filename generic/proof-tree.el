@@ -1,11 +1,26 @@
-;;; tree-tree.el --- Proof General prooftree communication.
-;;
-;; Copyright (C) 2012 Hendrik Tews
-;; Authors:   Hendrik Tews
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+;;; proof-tree.el --- Proof General prooftree communication.
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 ;;; Commentary:
 ;;
 ;; Generic code for the communication with prooftree. Prooftree
@@ -86,11 +101,12 @@
 
 ;;; Code:
 
-(require 'cl)
+(eval-when-compile 
+  (require 'cl-lib))
 
-(eval-when (compile)
-  (require 'proof-shell))
-
+(eval-when-compile
+  (require 'proof-resolver)
+  (require 'proof-queue))
 
 ;;
 ;; User options
@@ -1218,7 +1234,7 @@ position of the current proof."
 	       (equal proof-script-buffer (current-buffer)))
     (error
      "Enabling prooftree inside a proof outside the current scripting buffer"))
-  (proof-shell-ready-prover)
+  (proof-ready-prover)
   (assert proof-locked-span)
   (message "Start proof-tree display for current proof")
   (save-excursion

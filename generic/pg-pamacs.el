@@ -1,10 +1,26 @@
 ;;; pg-pamacs.el --- Macros for per-proof assistant configuration
-;;
-;; Copyright (C) 2010, 2011  LFCS Edinburgh, David Aspinall.
-;;
-;; Author: David Aspinall <da@longitude>
-;; Keywords: internal
 
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 ;;; Commentary:
 ;;
 ;; Macros for defining per-assistant customization settings.
@@ -23,7 +39,6 @@
 ;; There are two mechanisms for accessing generic vars:
 ;;
 ;; (proof-ass name)  or (proof-assistant-name)
-;;
 ;;
 
 (require 'proof-site)			; proof-assitant-symbol
@@ -155,6 +170,8 @@ Usage: (defpgdefault SYM VALUE)"
 ;;;###autoload
 (defun proof-defpacustom-fn (name val args)
   "As for macro `defpacustom' but evaluating arguments."
+  (unless (and proof-assistant (not (string= proof-assistant "")))
+    (error "No proof assistant defined"))
   (let (newargs setting evalform type descr)
     (while args
       (cond
@@ -163,11 +180,6 @@ Usage: (defpgdefault SYM VALUE)"
 	(setq args (cdr args)))
        ((eq (car args) :eval)
 	(setq evalform (cadr args))
-	(setq args (cdr args)))
-       ((eq (car args) :pgipcmd)
-	;; Construct a function which yields a PGIP string
-	(setq setting `(lambda (x)
-			  (pg-pgip-string-of-command (proof-assistant-format ,(cadr args) x))))
 	(setq args (cdr args)))
        ((eq (car args) :pggroup)
 	;; use the group as a prefix to the name, and set a pggroup property on it
@@ -248,19 +260,10 @@ Additional properties in the ARGS prop list may include:
 		     For example, \"Timing\", \"Tracing\", etc.  Used
 		     to generate sub-menus in the UI.
 
- pgipgcmd  string    Alternative to :setting.
-		     Send a PGIP formatted command based on given string.
-
  pgdynamic flag      If flag is non-nil, this setting is a dynamic one
 		     that is particular to the running instance of the prover.
-		     Automatically set by preferences configured from PGIP 
-		     askprefs message.
 
 This macro also extends the `proof-assistant-settings' list."
-  (eval-when-compile
-    (if (boundp 'proof-assistant-symbol)
-	;; declare variable to compiler to prevent warnings
-	(eval `(defvar ,(proof-ass-sym name) nil "Dummy for compilation."))))
   `(proof-defpacustom-fn (quote ,name) (quote ,val) (quote ,args)))
 
 

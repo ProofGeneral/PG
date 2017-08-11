@@ -1,47 +1,74 @@
+;;; -*- lexical-binding: t -*-
+
 ;; coq.el --- Major mode for Coq proof assistant  -*- coding: utf-8 -*-
-;; Copyright (C) 1994-2009 LFCS Edinburgh.
-;; Authors: Healfdene Goguen, Pierre Courtieu
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
-;;
-;; $Id$
 
+;; This file is part of Proof General.
 
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
 (eval-when-compile
-  (require 'cl)
   (require 'proof-compat))
 
-(eval-when (compile)
+(require 'cl-lib)
+
+(eval-when-compile
   (require 'proof-utils)
   (require 'span)
   (require 'outline)
   (require 'newcomment)
   (require 'etags)
   (unless (proof-try-require 'smie)
-    (defvar smie-indent-basic nil)
-    (defvar smie-rules-function nil))
-  (defvar proof-info nil)       ; dynamic scope in proof-tree-urgent-action
-  (defvar action nil)       ; dynamic scope in coq-insert-as stuff
-  (defvar string nil)       ; dynamic scope in coq-insert-as stuff
-  (defvar old-proof-marker nil)
-                         ; dynamic scoq in coq-proof-tree-enable-evar-callback
-  (defvar coq-auto-insert-as nil)    ; defpacustom
-  (defvar coq-time-commands nil)        ; defpacustom
-  (defvar coq-use-project-file t)        ; defpacustom
-  (defvar coq-use-editing-holes nil)    ; defpacustom
-  (defvar coq-hide-additional-subgoals nil) ; defpacustom
-  (proof-ready-for-assistant 'coq))     ; compile for coq
+    (defvar smie-indent-basic)
+    (defvar smie-rules-function))
+  (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
+  (defvar action)       ; dynamic scope in coq-insert-as stuff
+  (defvar string)       ; dynamic scope in coq-insert-as stuff
+  (defvar old-proof-marker)
+  (defvar coq-keymap)
+  (defvar coq-one-command-per-line)
+  (defvar coq-auto-insert-as)    ; defpacustom
+  (defvar coq-time-commands)        ; defpacustom
+  (defvar coq-use-project-file)        ; defpacustom
+  (defvar coq-use-editing-holes)    ; defpacustom
+  (defvar coq-hide-additional-subgoals))
 
 (require 'proof)
+(require 'proof-utils)
+(require 'proof-resolver)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
+(require 'coq-state-vars)               ; global state of the proof
 (require 'coq-local-vars)               ; setting coq args via file variables 
                                         ;   (prefer _CoqProject file instead)
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-
+(require 'coq-server)
+(require 'coq-response)
+(require 'coq-parsing)
+(require 'coq-queries)
+(require 'coq-header-line)
+(require 'coq-tq)
+(require 'coq-xml)
+(require 'coq-company-compat)
 
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")
@@ -62,8 +89,11 @@
       (defvar coq-may-use-prettify t)
     (defvar prettify-symbols-alist nil)))
 
+;; ----- coq-server configuration options
 
-;; ----- coq-shell configuration options
+(defvar coq-server-cd nil
+  ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
+  "*Command of the inferior process to change the directory.")
 
 ;;; Code:
 ;; debugging functions
@@ -71,29 +101,52 @@
 (defvar coq-debug nil)
 ;; End debugging
 
-;; Obsolete
-;;(defcustom coq-default-undo-limit 500
-;;  "Maximum number of Undo's possible when doing a proof."
-;;  :type 'number
-;;  :group 'coq)
+(defcustom coq-server-log-traffic t
+  "In server mode, log traffic between emacs and coqtop to a buffer"
+  :type 'boolean
+  :group 'coq)
 
-(defcustom coq-user-init-cmd nil
+(defcustom coq-user-init-cmds nil
   "user defined init commands for Coq.
-These are appended at the end of `coq-shell-init-cmd'."
+These are appended at the end of `coq-server-init-cmds'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
 
 (defcustom coq-optimise-resp-windows-enable t
-  "If non-nil (default) resize vertically response windw after each command."
+  "If non-nil (default) resize vertically response window after each command."
   :type 'boolean
   :group 'coq)
 
 ;; Default coq is only Private_ and _subproof
-(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
- "\"Private_\" \"_subproof\""
-  "String for blacklisting strings from requests to coq environment."
-  :type 'string
+(defcustom coq-search-blacklist-strings ; add these? _ind _rect _rec
+  (list "Private_" "_subproof")
+  "Strings to blacklist for search requests to Coq environment."
+  :type '(list string)
   :group 'coq)
+
+;; add quotes to blacklist strings, concat into single string
+(defun coq-format-blacklist-strings (bstrs)
+  (mapconcat (lambda (s) (format "\"%s\"" s)) bstrs " "))
+
+(defvar coq-formatted-search-blacklist-strings (coq-format-blacklist-strings coq-search-blacklist-strings))
+
+;; this remembers the previous value of coq-search-blacklist-string, so that we
+;; can cook a remove+add blacklist command each time the variable is changed.
+;; initially we put it at current value of coq-search-blacklist-string.
+(defvar coq-search-blacklist-strings-prev coq-search-blacklist-strings)
+
+(defun coq--set-search-blacklist (s)
+  (let ((cmd (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s."
+                     (coq-format-blacklist-strings coq-search-blacklist-strings-prev) s)))
+    (setq coq-search-blacklist-strings-prev coq-search-blacklist-strings)
+    (lambda ()
+      (list (coq-xml-add-item cmd) nil))))
+
+(defpacustom search-blacklist coq-formatted-search-blacklist-strings
+  "Strings to blacklist in requests to Coq environment."
+  :type 'string
+  :get coq-formatted-search-blacklist-strings
+  :setting coq--set-search-blacklist)
 
 (defcustom coq-prefer-top-of-conclusion nil
   "prefer start of the conclusion over its end when displaying goals
@@ -101,62 +154,18 @@ that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
 
-;; this remembers the previous value of coq-search-blacklist-string, so that we
-;; can cook a remove+add blacklist command each time the variable is changed.
-;; initially we put it at current value of coq-search-blacklist-string.
-(defvar coq-search-blacklist-string-prev coq-search-blacklist-string)
-
-;TODO: remove Set Undo xx. It is obsolete since coq-8.5 at least.
-;;`(,(format "Set Undo %s . " coq-default-undo-limit) "Set Printing Width 75.")
-(defconst coq-shell-init-cmd
-  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) coq-user-init-cmd)
- "Command to initialize the Coq Proof Assistant.")
-
+(defconst coq-server-init-cmds
+  (list
+   ;; string
+   (coq-xml-about)
+   ;; use thunk, delay in order to look at script name, nil means no associated span
+   (lambda () (list (coq-xml-init) nil)))
+  "Commands to initialize Coq.")
 
 (require 'coq-syntax)
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
 (require 'coq-indent)
-
-
-;; Command to reset the Coq Proof Assistant
-(defconst coq-shell-restart-cmd "Reset Initial.\n ")
-
-(defvar coq-shell-prompt-pattern
-  "\\(?:\n\\(?:[^\n\371]+\371\\|<prompt>[^\n]+</prompt>\\)\\)"
-  "*The prompt pattern for the inferior shell running coq.")
-
-;; FIXME da: this was disabled (set to nil) -- why?
-;; da: 3.5: add experimental
-;; am:answer: because of bad interaction
-;; with coq -R option.
-(defvar coq-shell-cd nil
-;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
-  "*Command of the inferior process to change the directory.")
-
-(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
-  "*Regular expression indicating that the proof has been completed.")
-
-(defvar coq-goal-regexp
-  "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
-
-
-(defconst coq-interrupt-regexp "User Interrupt."
-  "Regexp corresponding to an interrupt.")
-
-(defcustom coq-end-goals-regexp-show-subgoals "\n(dependent evars:"
-  "Regexp for `proof-shell-end-goals-regexp' when showing all subgoals.
-A setting of nil means show all output from Coq. See also
-`coq-hide-additional-subgoals'."
-  :type '(choice regexp (const nil))
-  :group 'coq)
-
-(defcustom coq-end-goals-regexp-hide-subgoals
-  (concat "\\(\nsubgoal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
-  "Regexp for `proof-shell-end-goals-regexp' when hiding additional subgoals.
-See also `coq-hide-additional-subgoals'."
-  :type '(choice regexp (const nil))
-  :group 'coq)
 
 ;;
 ;; prooftree customization
@@ -274,7 +283,7 @@ See also `coq-hide-additional-subgoals'."
 
 ;; FIXME, deal with interacive "Definition"
 (defvar coq-outline-regexp
-;;  (concat "(\\*\\|"
+  ;;  (concat "(\\*\\|"
   (concat "[ ]*" (regexp-opt
                   '(
                     "Ltac" "Corr" "Modu" "Sect" "Chap" "Goal"
@@ -283,10 +292,6 @@ See also `coq-hide-additional-subgoals'."
 ;;)
 
 (defvar coq-outline-heading-end-regexp "\\.[ \t\n]")
-
-(defvar coq-shell-outline-regexp coq-goal-regexp)
-(defvar coq-shell-outline-heading-end-regexp coq-goal-regexp)
-
 
 (defconst coq-state-preserving-tactics-regexp
   (proof-regexp-alt-list coq-state-preserving-tactics))
@@ -306,27 +311,19 @@ See also `coq-hide-additional-subgoals'."
 ;; Derived modes
 ;;
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-shell-mode proof-shell-mode
-    "Coq Shell" nil
-    (coq-shell-mode-config)))
-
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-response-mode proof-response-mode
+(define-derived-mode coq-response-mode proof-response-mode
   "Coq Response" nil
-    (coq-response-config)))
+  (coq-response-config))
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-mode proof-mode "Coq"
-    "Major mode for Coq scripts.
+(define-derived-mode coq-mode proof-mode "Coq"
+  "Major mode for Coq scripts.
 
 \\{coq-mode-map}"
-    (coq-mode-config)))
+  (coq-mode-config))
 
-(eval-and-compile ;; FIXME: Why?
-  (define-derived-mode coq-goals-mode proof-goals-mode
-    "Coq Goals" nil
-    (coq-goals-mode-config)))
+(define-derived-mode coq-goals-mode proof-goals-mode
+  "Coq Goals" nil
+  (coq-goals-mode-config))
 
 ;; Indentation and navigation support via SMIE.
 
@@ -341,19 +338,23 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (require 'smie nil 'noerror)
 (require 'coq-smie nil 'noerror)
 
+(defun coq-reset-all-state ()
+  (coq-reset-state-vars)
+  (coq-reset-tables)
+  (coq-response-clear-response-buffer)
+  (coq-goals-clear-goals-buffer)
+  (when proof-script-buffer
+    (with-current-buffer proof-script-buffer
+      (let ((pg-spans (cl-remove-if-not
+                       (lambda (sp)
+                         (span-property sp 'type))
+                       (spans-all))))
+      (mapc 'span-delete pg-spans))))
+  (proof-init-segmentation))
 
 ;;
 ;; Auxiliary code for Coq modes
 ;;
-
-;; finding the main frame of pg.
-(defun coq-find-threeb-frames ()
-  "Return a list of frames displaying both response and goals buffers."
-  (let* ((wins-resp (get-buffer-window-list proof-response-buffer nil t))
-         (wins-gls (get-buffer-window-list proof-goals-buffer nil t))
-         (frame-resp (cl-mapcar 'window-frame wins-resp))
-         (frame-gls (cl-mapcar 'window-frame wins-gls)))
-    (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
 
 (defun coq-remove-trailing-blanks (s)
@@ -363,119 +364,6 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 (defun coq-remove-starting-blanks (s)
   (string-match "\\`\\s-*" s)
   (substring s (match-end 0) (length s)))
-
-
-;; Messages dispalyed by "Time" are always following or preceding the real
-;; result, if it follows we want it to be non urgent, otherwise the result
-;; would not be shown in response buffer. If it is before, then we want it
-;; urgent so that it is displayed.
-(defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching proof-shell-eager-annotation-start
-  that should maybe not be classified as urgent messages.")
-
-;; return the end position if found, nil otherwise
-(defun coq-non-urgent-eager-annotation ()
-  (save-excursion
-    (when (and (looking-at coq-eager-no-urgent-regex)
-               (re-search-forward proof-shell-eager-annotation-end nil t))
-      (let ((res (match-end 0))); robustify
-        ;; if there is something else than a prompt here then this eager
-        ;; annotation is left urgent (return nil), otherwise it is not urgent
-        ;; (return position of the end of the annotation)
-        (when (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
-          res)))))
-
-;; Looking for eager annotation which does not match coq-eager-no-urgent-regex
-(defun coq-search-urgent-message ()
-  "Find forward the next really urgent message.
-Return the position of the beginning of the message (after the
-annotation-start) if found."
-  (let ((again t) (found nil) (start-start nil) (end-end nil)
-        (eager proof-shell-eager-annotation-start))
-    (while again
-      (setq start-start (and (re-search-forward eager nil 'limit)
-                             (match-beginning 0)))
-      (setq end-end (and start-start (coq-non-urgent-eager-annotation)))
-      (unless end-end
-        (setq again nil) ; exit while
-        ;; display message (this prints the message once now but it will be
-        ;; reprinted as a normal output, bad?)
-        ;;(proof-shell-process-urgent-message start-start end-end)
-        ))
-    (and start-start (goto-char start-start))))
-
-;; This is a modified version of the same function in generic/proof-shell.el.
-;; Using function coq-search-urgent-message instead of regex
-;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages. 
-(defun proof-shell-process-urgent-messages ()
-  "Scan the shell buffer for urgent messages.
-Scanning starts from `proof-shell-urgent-message-scanner' or
-`scomint-last-input-end', which ever is later.  We deal with strings
-between regexps `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-We update `proof-shell-urgent-message-marker' to point to last message found.
-
-This is a subroutine of `proof-shell-filter'."
-  (let ((pt (point)) (end t)
-	lastend laststart
-	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
-			 (marker-position scomint-last-input-end))))
-    (goto-char initstart)
-    (while (and end (setq laststart (coq-search-urgent-message))
-                )
-;      (setq laststart (match-beginning 0))
-      (if (setq end
-		(re-search-forward proof-shell-eager-annotation-end nil t))
-	  (save-excursion
-	    (setq lastend end)
-	    ;; Process the region including the annotations
-	    (proof-shell-process-urgent-message laststart lastend))))
-
-    (set-marker
-     proof-shell-urgent-message-scanner
-     (if end ;; couldn't find message start; move forward to avoid rescanning
-	 (max initstart
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
-       ;; incomplete message; leave marker at start of message
-       laststart))
-
-    ;; Set position of last urgent message found
-    (if lastend
-	(set-marker proof-shell-urgent-message-marker lastend))
-	
-    (goto-char pt)))
-
-;; Due to the architecture of proofgeneral, informative message put *before*
-;; the goal disappear unless marked as "urgent", i.e. being enclosed with
-;; "eager-annotation" syntax. Since we don't want the Warning color to be used
-;; for simple informative message, we have to redefine this function to use
-;; normal face when the "eager annotation" is acutally not a warning. This is a
-;; modified version of the same function in generic/proof-shell.el.
-(defun proof-shell-process-urgent-message-default (start end)
-  "A subroutine of `proof-shell-process-urgent-message'."
-  ;; Clear the response buffer this time, but not next, leave window.
-  (pg-response-maybe-erase nil nil)
-  (proof-minibuffer-message
-   (buffer-substring-no-properties
-    (save-excursion
-      (re-search-forward proof-shell-eager-annotation-start end nil)
-      (point))
-    (min end
-         (save-excursion (end-of-line) (point))
-         (+ start 75))))
-  (let*
-      ((face
-        (progn (goto-char start)
-               (if (looking-at "<infomsg>") 'default
-                 'proof-eager-annotation-face)))
-       (str (proof-shell-strip-eager-annotations start end))
-       (strnotrailingspace
-        (coq-remove-starting-blanks (coq-remove-trailing-blanks str))))
-    (pg-response-display-with-face strnotrailingspace))) ; face
-
 
 ;;;;;;;;;;; Trying to accept { and } as terminator for empty commands. Actually
 ;;;;;;;;;;; I am experimenting two new commands "{" and "}" (without no
@@ -525,14 +413,14 @@ This is a subroutine of `proof-shell-filter'."
 ;; resetting its content if ERASE non nil.
 (defun proof-store-buffer-win (buffer &optional erase)
   (proof-with-current-buffer-if-exists buffer
-    (let ((newbuffer nil))
-      (set-buffer buffer)
-      (setq newbuffer (coq-clone-buffer-response-mode "*response-freeze*" erase))
-      (let ((win (display-buffer-other-frame newbuffer))
-            (win-point-min (save-window-excursion
-                             (switch-to-buffer-other-frame newbuffer)
-                             (point-min))))
-      (set-window-point win win-point-min)))))
+                                       (let ((newbuffer nil))
+                                         (set-buffer buffer)
+                                         (setq newbuffer (coq-clone-buffer-response-mode "*response-freeze*" erase))
+                                         (let ((win (display-buffer-other-frame newbuffer))
+                                               (win-point-min (save-window-excursion
+                                                                (switch-to-buffer-other-frame newbuffer)
+                                                                (point-min))))
+                                           (set-window-point win win-point-min)))))
 
 (defun proof-store-response-win (&optional erase)
   (interactive "P")
@@ -555,134 +443,23 @@ This is a subroutine of `proof-shell-filter'."
         (cons (match-string 1 s)
               (build-list-id-from-string (match-string 2 s)))))))
 
-;; Use the statenumber inside the coq prompt to backtrack more easily
-(defun coq-last-prompt-info (s)
-  "Extract info from the coq prompt S.  See `coq-last-prompt-info-safe'."
-  (let ((lastprompt (or s (error "No prompt !!?")))
-        (regex
-         (concat ">\\(" coq-id-shy "\\) < \\([0-9]+\\) |\\(\\(?:" coq-id-shy
-                 "|?\\)*\\)| \\([0-9]+\\) < ")))
-    (when (string-match regex lastprompt)
-      (let ((current-proof-name (match-string 1 lastprompt))
-            (state-number (string-to-number (match-string 2 lastprompt)))
-            (proof-state-number (string-to-number (match-string 4 lastprompt)))
-            ;; bind pending-proofs last, because build-list-id-from-string
-            ;; modifies the match data
-            (pending-proofs
-             (build-list-id-from-string (match-string 3 lastprompt))))
-        (list state-number proof-state-number pending-proofs
-              (if pending-proofs current-proof-name nil))))))
+;; 
+;; type status = {
+;;   status_path : string list;
+;;   (** Module path of the current proof *)
+;;   status_proofname : string option;
+;;   (** Current proof name. [None] if no focussed proof is in progress *)
+;;   status_allproofs : string list;
+;;   (** List of all pending proofs. Order is not significant *)
+;;   status_proofnum : int;
+;;   (** An id describing the state of the current proof. *)
+;; }
 
+;; hook for resizing windows
+(add-hook 'proof-server-init-hook 'coq-optimise-resp-windows-if-option)
 
-(defun coq-last-prompt-info-safe ()
-  "Return a list with all informations from the last prompt.
-The list contains in the following order the state number, the
-proof stack depth, a list with the names of all pending proofs,
-and as last element the name of the current proof (or nil if
-there is none)."
-  (coq-last-prompt-info proof-shell-last-prompt))
-
-(defvar coq-last-but-one-statenum 1
-  "The state number we want to put in a span.
-This is the prompt number given *just before* the command was sent.
-This variable remembers this number and will be updated when
-used see coq-set-state-number.
-Initially 1 because Coq initial state has number 1.")
-
-(defvar coq-last-but-one-proofnum 1
-  "As for `coq-last-but-one-statenum' but for stack depth.")
-
-(defvar coq-last-but-one-proofstack '()
-  "As for `coq-last-but-one-statenum' but for proof stack symbols.")
-
-(defsubst coq-get-span-statenum (span)
-  "Return the state number of the SPAN."
-  (span-property span 'statenum))
-
-(defsubst coq-get-span-proofnum (span)
-  "Return the proof number of the SPAN."
-  (span-property span 'proofnum))
-
-(defsubst coq-get-span-proofstack (span)
-  "Return the proof stack (names of pending proofs) of the SPAN."
-  (span-property span 'proofstack))
-
-(defsubst coq-set-span-statenum (span val)
-  "Set the state number of the SPAN to VAL."
-  (span-set-property span 'statenum val))
-
-(defsubst coq-get-span-goalcmd (span)
-  "Return the 'goalcmd flag of the SPAN."
-  (span-property span 'goalcmd))
-
-(defsubst coq-set-span-goalcmd (span val)
-  "Set the 'goalcmd flag of the SPAN to VAL."
-  (span-set-property span 'goalcmd val))
-
-(defsubst coq-set-span-proofnum (span val)
-  "Set the proof number of the SPAN to VAL."
-  (span-set-property span 'proofnum val))
-
-(defsubst coq-set-span-proofstack (span val)
-  "Set the proof stack (names of pending proofs) of the SPAN to VAL."
-  (span-set-property span 'proofstack val))
-
-(defsubst proof-last-locked-span ()
-  (with-current-buffer proof-script-buffer
-    (span-at (- (proof-unprocessed-begin) 1) 'type)))
-
-;; Each time the state changes (hook below), (try to) put the state number in
-;; the last locked span (will fail if there is already a number which should
-;; happen when going back in the script).  The state number we put is not the
-;; last one because the last one has been sent by Coq *after* the change. We
-;; use `coq-last-but-one-statenum' instead and then update it.
-
-;;TODO update docstring and comment
-
-(defun coq-set-state-infos ()
-  "Set the last locked span's state number to the number found last time.
-This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
-If locked span already has a state number, then do nothing. Also updates
-`coq-last-but-one-statenum' to the last state number for next time."
-  (if proof-shell-last-prompt
-      ;; da: did test proof-script-buffer here, but that seems wrong
-      ;; since restart needs to reset these values.
-      ;; infos = promt infos of the very last prompt
-      ;; sp = last locked span, which we want to fill with prompt infos
-      (let ((sp    (if proof-script-buffer (proof-last-locked-span)))
-            (infos (or (coq-last-prompt-info-safe)
-                       ;; the line above seems to return nil sometimes, let us
-                       ;; issue a warning when this happens, so that we
-                       ;; understand why.
-                       (and (display-warning
-                             'proof-general
-                             "oops nothing returned by (coq-last-prompt-info-safe)!!!" :debug) nil)
-                       '(0 0 nil nil))))
-        (unless (or (not sp) (coq-get-span-statenum sp))
-          (coq-set-span-statenum sp coq-last-but-one-statenum))
-        (setq coq-last-but-one-statenum (car infos))
-        ;; set goalcmd property if this is a goal start
-        ;; (ie proofstack has changed and not a save cmd)
-        (unless
-            (or (not sp) (equal (span-property sp 'type) 'goalsave)
-                (<= (length (car (cdr (cdr infos))))
-                    (length coq-last-but-one-proofstack)))
-          (coq-set-span-goalcmd sp t))
-        ;; testing proofstack=nil is not good here because nil is the empty list OR
-        ;; the no value, so we test proofnum as it is always set at the same time.
-        ;; This is why this test is done before the next one (which sets proofnum)
-        (unless (or (not sp) (coq-get-span-proofnum sp))
-          (coq-set-span-proofstack sp coq-last-but-one-proofstack))
-        (setq coq-last-but-one-proofstack (car (cdr (cdr infos))))
-        (unless (or (not sp) (coq-get-span-proofnum sp))
-          (coq-set-span-proofnum sp coq-last-but-one-proofnum))
-        (setq coq-last-but-one-proofnum (car (cdr infos))))))
-
-;; This hook seems the one we want.
-;; WARNING! It is applied once after each command PLUS once before a group of
-;; commands is started
-(add-hook 'proof-state-change-hook 'coq-set-state-infos)
-
+;; hook to count how many Adds we're about to send
+(add-hook 'proof-server-enqueue-hook 'coq-server-incr-pending-adds)
 
 (defun count-not-intersection (l notin)
   "Return the number of elts of L that are not in NOTIN."
@@ -694,77 +471,78 @@ If locked span already has a state number, then do nothing. Also updates
     res
     ))
 
-;; Simplified version of backtracking which uses state numbers, proof stack depth and
-;; pending proofs put inside the coq (> v8.1) prompt. It uses the new coq command
-;; "Backtrack". The prompt is like this:
-;;      state                        proof stack
-;;      num                           depth
-;;       __                              _
-;; aux < 12 |aux|SmallStepAntiReflexive| 4 < \371
-;; ^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^     ^
-;; usual           pending proofs           usual
-;;                                          special char
-;; exemple:
-;; to go (back) from 12 |lema1|lema2...|leman| xx
-;; to                8  |lemb1|lemb2...|lembm| 5
-;; we must do "Backtrack 8 5 naborts"
-;; where naborts is the number of lemais that are not lembis
+(defun coq--find-previous-state-id (span)
+  "Find state id for nearest span with a state id before SPAN."
+  (with-current-buffer proof-script-buffer
+    (save-excursion
+      (goto-char (1- (span-start span)))
+      (let (state-id)
+        (while (and (not state-id) (> (point) (point-min)))
+          (let* ((spans (overlays-at (point)))
+                 (vanilla-spans (cl-remove-if-not
+                                 (lambda (sp)
+                                   (eq (span-property sp 'type) 'vanilla))
+                                 spans)))
+            (if vanilla-spans
+                (let ((state-id-span (car vanilla-spans)))
+                  (if (> (span-end state-id-span) (span-start span))
+                      ;; if state-id span overlaps found span, don't use it
+                      (goto-char (1- (span-start state-id-span)))
+                    (setq state-id (span-property state-id-span 'state-id))))
+              ;; search backward
+              (let ((comment-spans (cl-remove-if-not
+                                    (lambda (sp)
+                                      (eq (span-property sp 'type) 'comment))
+                                    spans)))
+                (if comment-spans
+                    (goto-char (1- (span-start (car comment-spans))))
+                  (goto-char (1- (point))))))))
+        state-id))))
 
-;; Rem: We could deal with suspend and resume with more work. We would need a new coq
-;; command, because it is better to backtrack with *one* command (because
-;; proof-change-hook used above is not exactly called at right times).
-
-(defun coq-find-and-forget (span)
-  "Backtrack to SPAN.  Using the \"Backtrack n m p\" coq command."
-  (if (eq (span-property span 'type) 'proverproc)
+;; send a command to coqtop via XML to do retraction
+(defun coq-server-find-and-forget (span)
+  "Backtrack to SPAN, possibly resulting in a full retraction. Send Edit_at for the 
+nearest preceding span with a state id."
+  (unless 
       ;; processed externally (i.e. Require, etc), nothing to do
       ;; (should really be unlocked when we undo the Require).
-      nil
-  (let* (ans (naborts 0) (nundos 0)
-             (proofdepth (coq-get-span-proofnum span))
-             (proofstack (coq-get-span-proofstack span))
-             (span-staten (coq-get-span-statenum span))
-             (naborts (count-not-intersection
-                       coq-last-but-one-proofstack proofstack)))
-    ;; if we move outside of any proof, coq does not print anything, so clean
-    ;; the goals buffer otherwise the old one will still be displayed
-    (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-    (unless (and
-             ;; return nil (was proof-no-command) in this case:
-             ;; this is more efficient as backtrack x y z may be slow
-             (equal coq-last-but-one-proofstack proofstack)
-             (= coq-last-but-one-proofnum proofdepth)
-             (= coq-last-but-one-statenum span-staten))
-      (list
-       (format "Backtrack %s %s %s . "
-               (int-to-string span-staten)
-               (int-to-string proofdepth)
-               naborts))))))
+      (eq (span-property span 'type) 'proverproc) ; TODO is this needed?
+    ;; remove any processing spans beneath this span
+    ;; because we'll need to re-do then
+    ;; we don't know the keys for these spans in the span table
+    ;; that's OK, values are weakly held in that table
+    (with-current-buffer proof-script-buffer
+      (let* ((spans (overlays-in (span-end span) (point-max)))
+             (processing-spans 
+              (cl-remove-if-not 
+               (lambda (sp) (span-property sp 'processing-in)) 
+               spans)))
+        (mapc 'span-delete processing-spans)))
+    ;; if auto-retracting on error, leave error in response buffer
+    (if (or coq-server-retraction-on-error
+            coq-server-retraction-on-interrupt)
+        (setq coq-server-retraction-on-error nil
+              coq-server-retraction-on-interrupt nil)
+      (coq-response-clear-response-buffer))
+    ;; use nearest state id before this span; if none, retract buffer
+    (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
+        (coq-server--send-retraction coq-retract-buffer-state-id t)
+      (let ((prev-state-id (coq--find-previous-state-id span)))
+        (if prev-state-id
+            (coq-server--send-retraction prev-state-id t)
+          (proof-retract-buffer))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
 
-(defun coq-goal-hyp ()
-  (cond
-   ((looking-at "============================\n")
-    (goto-char (match-end 0))
-    (cons 'goal (int-to-string coq-current-goal)))
-   ((looking-at "subgoal \\([0-9]+\\) is:\n")
-    (goto-char (match-end 0))
-    (cons 'goal (match-string 1))       ;FIXME: This is dead-code!?  --Stef
-    (setq coq-current-goal (string-to-number (match-string 1))))
-   ((proof-looking-at proof-shell-assumption-regexp)
-    (cons 'hyp (match-string 1)))
-   (t nil)))
-
 (defun coq-state-preserving-p (cmd)
   ;; (or
-   (proof-string-match coq-non-retractable-instruct-regexp cmd))
-  ;; (and
-  ;;  (not (proof-string-match coq-retractable-instruct-regexp cmd))
-  ;;  (or
-  ;;   (message "Unknown command, hopes this won't desynchronize ProofGeneral")
-  ;;   t))))
+  (proof-string-match coq-non-retractable-instruct-regexp cmd))
+;; (and
+;;  (not (proof-string-match coq-retractable-instruct-regexp cmd))
+;;  (or
+;;   (message "Unknown command, hopes this won't desynchronize ProofGeneral")
+;;   t))))
 
 
 (defun coq-hide-additional-subgoals-switch ()
@@ -773,21 +551,14 @@ If locked span already has a state number, then do nothing. Also updates
       (progn
         (setq coq-hide-additional-subgoals nil)
         (error
-         "You must disable ``Time Commands'' (var coq-time-commands) first"))
-    (if coq-hide-additional-subgoals
-        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
-      (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))))
+         "You must disable ``Time Commands'' (var coq-time-commands) first"))))
 
 (defun coq-time-commands-switch ()
   "Function invoked when the user switches `coq-time-commands'.
-Resets `coq-hide-additional-subgoals' and puts nil into
-`proof-shell-end-goals-regexp' to ensure the timing is visible in
-the *goals* buffer."
+Resets `coq-hide-additional-subgoals'."
   (if coq-time-commands
-      (progn
-        (let ((coq-time-commands nil))
-          (customize-set-variable 'coq-hide-additional-subgoals nil))
-        (setq proof-shell-end-goals-regexp nil))
+      (let ((coq-time-commands nil))
+        (customize-set-variable 'coq-hide-additional-subgoals nil))
     (coq-hide-additional-subgoals-switch)))
 
 ;;
@@ -796,99 +567,67 @@ the *goals* buffer."
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
-  "Enumerates the different kinds of notation information one can ask to coq.")
+  "Enumerates the different kinds of notation information one can get from Coq.")
+
+;; helper for insert intros
+(defun coq--format-intros (output)
+  "Create an “intros” form from the OUTPUT of “Show Intros”."
+  (let* ((shints (replace-regexp-in-string "[\r\n ]*\\'" "" output)))
+    (if (or (string= "" shints)
+	    (string-match coq-error-regexp shints))
+	(error "Don't know what to intro")
+      (format "intros %s" shints))))
+
+(defun coq-insert-intros ()
+  "Insert an intros command with names given by Show Intros.
+Based on idea mentioned in Coq reference manual."
+  (interactive)
+  (proof-server-invisible-cmd-handle-result
+   (coq-queries-show-intros-thunk)
+   (lambda (response call span)
+     (let ((intros (coq-queries-get-message-string response)))
+       (if intros
+           (with-current-buffer proof-script-buffer
+             (indent-region (point)
+                            (progn (insert (coq--format-intros intros))
+                                   (save-excursion
+                                     (insert " ")
+                                     (point))))
+             ;; `proof-electric-terminator' moves the point in all sorts of strange
+             ;; ways, so we run it last
+             (let ((last-command-event ?.)) ;; Insert a dot
+               (proof-electric-terminator)))
+         ;; if no intros, call default response handler
+         (coq-server-process-response response call span))))))
+
+(defun coq-check-document ()
+  "Force coqtop to check validity of entire document."
+  (interactive)
+  (proof-server-send-to-prover (coq-xml-status 'true)))
+
+(defun coq-find-theorems ()
+  (coq-queries-ask "Find theorems" "Search" nil))
+
+(defun coq-get-context ()
+  (proof-server-invisible-command
+   (coq-queries-print-all-thunk)))
 
 (defun coq-PrintScope ()
-  "Show information on notations. Coq specific."
+  "Show information on Coq notations."
   (interactive)
   (let*
       ((mods
         (completing-read "Infos on notation (TAB to see list): "
                          notation-print-kinds-table))
-       (s (read-string  "Name (empty for all): "))
-       (all (string-equal s "")))
+       (s (read-string  "Name (empty for all): ")))
     (cond
      ((and (string-equal mods "Print Scope(s)") (string-equal s ""))
-      (proof-shell-invisible-command (format "Print Scopes.")))
+      (proof-invisible-command (coq-queries-print-scopes-thunk)))
      (t
-      (proof-shell-invisible-command (format "%s %s ." mods s)))
-     )
-    )
-  )
-
-(defun coq-remove-trailing-dot (s)
-  "Return the string S without its trailing \".\" if any.
-Return nil if S is nil."
-  (if (and s (string-match "\\.\\'" s))
-      (substring s 0 (- (length s) 1))
-    s))
-
-(defun coq-remove-heading-quote (s)
-  "Return the string S without its heading \"\'\" if any.
-Return nil if S is nil."
-  (if (and s (string-match "\\`'" s))
-      (substring s 1 (length s))
-    s))
-
-(defun coq-clean-id-at-point (s)
-  (coq-remove-heading-quote (coq-remove-trailing-dot s)))
-
-(defun coq-is-symbol-or-punct (c)
-  "Return non nil if character C is a punctuation or a symbol constituent.
-If C is nil, return nil."
-  (when c
-    (or (equal (char-syntax c) ?\.) (equal (char-syntax c) ?\_))))
-
-(defun coq-grab-punctuation-left (pos)
-  "Return a string made of punctuations chars found immediately before position POS."
-  (let ((res nil)
-        (currpos pos))
-    (while (coq-is-symbol-or-punct (char-before currpos))
-      (setq res (concat (char-to-string (char-before currpos)) res))
-      (setq currpos (- currpos 1)))
-    res))
-
-
-(defun coq-grab-punctuation-right (pos)
-  "Return a string made of punctuations chars found immediately after position POS."
-  (let ((res nil)
-        (currpos pos))
-    (while (coq-is-symbol-or-punct (char-after currpos))
-      (setq res (concat res (char-to-string (char-after currpos))))
-      (setq currpos (+ currpos 1)))
-    res))
-
-(defun coq-notation-at-position (pos)
-  "Return the notation at current point.
-Support dot.notation.of.modules."
-  (coq-with-altered-syntax-table
-   (when (or (coq-grab-punctuation-left pos) (coq-grab-punctuation-right pos))
-     (concat (coq-grab-punctuation-left pos)
-             (coq-grab-punctuation-right pos)))))
-
-(defun coq-string-starts-with-symbol (s)
-  (eq 0 (string-match "\\s_" s)))
-
-;; remove trailing dot if any.
-(defun coq-id-at-point ()
-  "Return the identifier at current point.
-Support dot.notation.of.modules."
-  (coq-with-altered-syntax-table
-   (let* ((symb (cond
-                 ((fboundp 'symbol-near-point) (symbol-near-point))
-                 ((fboundp 'symbol-at-point) (symbol-at-point))))
-          (symbclean (when symb (coq-clean-id-at-point (symbol-name symb)))))
-     (when (and symb (not (zerop (length symbclean))))
-       symbclean))))
-
-
-(defun coq-id-or-notation-at-point ()
-  (or (coq-id-at-point)
-      (let ((notation (coq-notation-at-position (point))))
-        (if notation (concat "\"" notation "\"") ""))))
+      (proof-invisible-command (coq-queries-print-visibility-thunk))))))
 
 (defcustom coq-remap-mouse-1 nil
-  "Wether coq mode should remap mouse button 1 to coq queries.
+  "Whether coq mode should remap mouse button 1 to coq queries.
 
 This overrides the default global binding of (control mouse-1) and
 (shift mouse-1) (buffers and faces menus). Hence it is nil by
@@ -916,93 +655,10 @@ is nil (t by default)."
                      (if (and ctrl shft) (if id "Check" "Locate")
                        (if shft (if id "About" "Locate")
                          (if ctrl (if id "Print" "Locate")))))))
-         (proof-shell-invisible-command
+         (proof-invisible-command
           (format (concat  cmd " %s . ")
                   ;; Notation need to be surrounded by ""
                   (if id id (concat "\"" notat "\"")))))))))
-
-(defun coq-guess-or-ask-for-string (s &optional dontguess)
-  "Asks for a coq identifier with message S.
-If DONTGUESS is non nil, propose a default value as follows:
-
-If region is active, propose its containt as default value.
-
-Otherwise propose identifier at point if any."
-  (let* ((guess
-          (cond
-           (dontguess nil)
-           ((use-region-p)
-            (buffer-substring-no-properties (region-beginning) (region-end)))
-           (t (coq-id-or-notation-at-point)))))
-    (read-string
-     (if guess (concat s " (default " guess "): ") (concat s ": "))
-     nil 'proof-minibuffer-history guess)))
-
-
-(defun coq-ask-do (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    (proof-shell-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (proof-shell-invisible-command
-     (format (concat do " %s . ") (funcall postform cmd)))))
-
-
-(defun coq-flag-is-on-p (testcmd)
-  (proof-shell-ready-prover)
-  (proof-shell-invisible-command (format testcmd) 'wait)
-  (let ((resp proof-shell-last-response-output))
-    (string-match "is on\\>" resp)))
-
-(defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd testcmd)
-  "Play commands SETCMD then CMD and then silently UNSETCMD."
-  (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
-         (flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
-    (unless flag-is-on (proof-shell-invisible-command
-                        (format " %s . " (funcall postform setcmd)) 'wait))
-    (proof-shell-invisible-command
-     (format " %s . " (funcall postform cmd)) 'wait)
-    (unless flag-is-on (proof-shell-invisible-command-invisible-result
-                        (format " %s . " (funcall postform unsetcmd))))))
-
-(defun coq-ask-do-set-unset (ask do setcmd unsetcmd
-                                 &optional dontguess postformatcmd tescmd)
-  "Ask for an ident id and execute command DO in SETCMD mode.
-More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
-  (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd tescmd)))
-    (proof-shell-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (coq-command-with-set-unset setcmd (concat do " " cmd) unsetcmd postformatcmd)))
-
-
-(defun coq-ask-do-show-implicits (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (coq-ask-do-set-unset ask do
-                        "Set Printing Implicit"
-                        "Unset Printing Implicit"
-                        dontguess postformatcmd
-                        "Test Printing Implicit"))
-
-(defun coq-ask-do-show-all (ask do &optional dontguess postformatcmd)
-  "Ask for an ident and print the corresponding term."
-  (coq-ask-do-set-unset ask do
-                        "Set Printing All"
-                        "Unset Printing All"
-                        dontguess postformatcmd
-                        "Test Printing All"))
-
-
-  ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    
-
-  ;;   (proof-shell-ready-prover)
-  ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-  ;;   (coq-command-with-set-unset
-  ;;    "Set Printing Implicit"
-  ;;    (format (concat do " %s . ") cmd)
-  ;;    "Unset Printing Implicit" )
-  ;;   ))
-
 
 (defsubst coq-put-into-brackets (s)
   (concat "[ " s " ]"))
@@ -1011,7 +667,6 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
   (if (coq-is-symbol-or-punct (string-to-char s))
       (concat "\"" s "\"")
     s))
-
 
 (defun coq-build-removed-pattern (s)
   (concat " -\"" s "\""))
@@ -1026,122 +681,109 @@ More precisely it executes SETCMD, then DO id and finally silently UNSETCMD."
   "Search a term whose type is isomorphic to given type.
 This is specific to `coq-mode'."
   (interactive)
-  (coq-ask-do
+  (coq-queries-ask
    "SearchPattern (parenthesis mandatory), ex: (?X1 + _ = _ + ?X1)"
    "SearchPattern" nil))
 
 (defun coq-SearchConstant ()
   (interactive)
-  (coq-ask-do "Search constant" "Search"))
+  (coq-queries-ask "Search constant" "Search"))
 
 (defun coq-SearchRewrite ()
   (interactive)
-  (coq-ask-do "SearchRewrite" "SearchRewrite" nil))
+  (coq-queries-ask "SearchRewrite" "SearchRewrite" nil))
 
-;; TODO SearchAbout become Search in v8.5, change when V8.4 becomes old.
-(defun coq-SearchAbout ()
-  (interactive)
-  (coq-ask-do
-   ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
-   ;;  "_ind" "_rec" "R_" "_equation"
-   "SearchAbout (ex: \"eq_\" eq -bool)"
-   "SearchAbout")
-  (message "use [Coq/Settings/Search Blacklist] to change blacklisting."))
+;; N.B. SearchAbout was replaced bySearch in v8.5
+;; so it's removed here
 
-
-
-(defun coq-Print (withprintingall)
+(defun coq-Print (with-printing-all)
   "Ask for an ident and print the corresponding term.
 With flag Printing All if some prefix arg is given (C-u)."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "Print" "Print")
-    (coq-ask-do "Print" "Print")))
+  (if with-printing-all
+      (coq-queries-ask-show-all "Print" "Print")
+    (coq-queries-ask "Print" "Print")))
 
 (defun coq-Print-with-implicits ()
   "Ask for an ident and print the corresponding term."
   (interactive)
-  (coq-ask-do-show-implicits "Print" "Print"))
+  (coq-queries-ask-show-implicits "Print" "Print"))
 
 (defun coq-Print-with-all ()
   "Ask for an ident and print the corresponding term."
   (interactive)
-  (coq-ask-do-show-all "Print" "Print"))
+  (coq-queries-ask-show-all "Print" "Print"))
 
 (defun coq-About (withprintingall)
   "Ask for an ident and print information on it."
   (interactive "P")
   (if withprintingall
-      (coq-ask-do-show-all "About" "About")
-    (coq-ask-do "About" "About")))
+      (coq-queries-ask-show-all "About" "About")
+    (coq-queries-ask "About" "About")))
+
+(defun coq-Search (withprintingall)
+  (interactive "P")
+  (coq-queries-ask-quoted "Search" "Search"))
 
 (defun coq-About-with-implicits ()
   "Ask for an ident and print information on it."
   (interactive)
-  (coq-ask-do-show-implicits "About" "About"))
+  (coq-queries-ask-show-implicits "About" "About"))
 
 (defun coq-About-with-all ()
   "Ask for an ident and print information on it."
   (interactive)
-  (coq-ask-do-show-all "About" "About"))
+  (coq-queries-ask-show-all "About" "About"))
 
 
 (defun coq-LocateConstant ()
   "Locate a constant."
   (interactive)
-  (coq-ask-do "Locate" "Locate"))
+  (coq-queries-ask "Locate" "Locate"))
 
 (defun coq-LocateLibrary ()
   "Locate a library."
   (interactive)
-  (coq-ask-do "Locate Library" "Locate Library"))
+  (coq-queries-ask "Locate Library" "Locate Library"))
 
 (defun coq-LocateNotation ()
   "Locate a notation.  Put it automatically into quotes.
 This is specific to `coq-mode'."
   (interactive)
-  (coq-ask-do
+  (coq-queries-ask
    "Locate notation (ex: \'exists\' _ , _)" "Locate"
    ))
 
-(defun coq-set-undo-limit (undos)
-  (proof-shell-invisible-command (format "Set Undo %s . " undos)))
-
-(defun coq-Pwd ()
-  "Display the current Coq working directory."
-  (interactive)
-  (proof-shell-invisible-command "Pwd."))
-
 (defun coq-Inspect ()
   (interactive)
-  (coq-ask-do "Inspect how many objects back?" "Inspect" t))
+  (coq-queries-ask "Inspect how many objects back?" "Inspect" t))
 
 (defun coq-PrintSection()
   (interactive)
-  (coq-ask-do "Print Section" "Print Section" t))
+  (coq-queries-ask "Print Section" "Print Section" t))
 
 (defun coq-Print-implicit ()
   "Ask for an ident and print the corresponding term."
   (interactive)
-  (coq-ask-do "Print Implicit" "Print Implicit"))
+  (coq-queries-ask "Print Implicit" "Print Implicit"))
 
 (defun coq-Check (withprintingall)
   "Ask for a term and print its type.
 With flag Printing All if some prefix arg is given (C-u)."
   (interactive "P")
   (if withprintingall
-      (coq-ask-do-show-all "Check" "Check")
-    (coq-ask-do "Check" "Check")))
+      (coq-queries-ask-show-all "Check" "Check")
+    (coq-queries-ask "Check" "Check")))
 
 (defun coq-Check-show-implicits ()
   "Ask for a term and print its type."
   (interactive)
-  (coq-ask-do-show-implicits "Check" "Check"))
+  (coq-queries-ask-show-implicits "Check" "Check"))
 
 (defun coq-Check-show-all ()
   "Ask for a term and print its type."
   (interactive)
-  (coq-ask-do-show-all "Check" "Check"))
+  (coq-queries-ask-show-all "Check" "Check"))
 
 (defun coq-get-response-string-at (&optional pt)
   "Go forward from PT until reaching a 'response property, and return it.
@@ -1157,49 +799,41 @@ must be in locked region."
         (forward-char))
       (span-property (span-at (point) 'response) 'response))))
 
-(defun coq-Show (withprintingall)
+(defun coq-Show (with-printing-all)
   "Ask for a number i and show the ith goal.
 Ask for a number i and show the ith current goal. With non-nil
 prefix argument and not on the locked span, show the goal with
 flag Printing All set."
-; Disabled:
-;  "Ask for a number i and show the ith goal, or show ancient goal.
-;If point is on a locked span, show the corresponding coq
-;output (i.e. for tactics: the goal after the tactic). Otherwise
-;ask for a number i and show the ith current goal. With non-nil
-;prefix argument and not on the locked span, show the goal with
-;flag Printing All set."
-;
+  ;; Disabled:
+  ;;  "Ask for a number i and show the ith goal, or show ancient goal.
+  ;;If point is on a locked span, show the corresponding coq
+  ;;output (i.e. for tactics: the goal after the tactic). Otherwise
+  ;;ask for a number i and show the ith current goal. With non-nil
+  ;;prefix argument and not on the locked span, show the goal with
+  ;;flag Printing All set."
   (interactive "P")
-  ;; Disabling this as this relies on 'response attribute that is empty when
-  ;; the command was processed silently. We should first have a coq command
-  ;; asking to print the goal at a given state.
+  ;; Disabling this because we don't ask for a goal after every state, which would be
+  ;; expensive. If Coq offered a way to query for the goal at a state id, we could query
+  ;; for that
   (if (proof-in-locked-region-p)
-      (let ((s (coq-get-response-string-at)))
-        (if (zerop (length (coq-get-response-string-at)))
-            (message "Cannot show the state at this point: Coq was silent during this command.")
-          (set-buffer proof-response-buffer)
-          (let ((inhibit-read-only 'titi))
-            (pg-response-display s)
-            (proof-display-and-keep-buffer proof-response-buffer)
-            (coq-optimise-resp-windows))))
-    (if withprintingall
-        (coq-ask-do-show-all "Show goal number" "Show" t)
-      (coq-ask-do "Show goal number" "Show" t))))
+      (message "Can't ask for non-current goal")
+    (if with-printing-all
+        (coq-queries-ask-show-all "Show goal number" "Show")
+      (coq-queries-ask "Show goal number" "Show" t))))
 
 (defun coq-Show-with-implicits ()
   "Ask for a number i and show the ith goal."
   (interactive)
-  (coq-ask-do-show-implicits "Show goal number" "Show" t))
+  (coq-queries-ask-show-implicits "Show goal number" "Show"))
 
 (defun coq-Show-with-all ()
   "Ask for a number i and show the ith goal."
   (interactive)
-  (coq-ask-do-show-all "Show goal number" "Show" t))
+  (coq-queries-ask-show-all "Show goal number" "Show"))
 
 ;; Check
-(eval-when (compile)
-  (defvar coq-auto-adapt-printing-width nil)); defpacustom
+(eval-when-compile
+  (defvar coq-auto-adapt-printing-width)); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
@@ -1208,16 +842,15 @@ flag Printing All set."
 
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
-(defun coq-set-auto-adapt-printing-width (&optional symb val); args are for :set compatibility
+(defun coq-set-auto-adapt-printing-width (&optional val symb); args are for :set compatibility
   "Function called when setting `auto-adapt-printing-width'"
-  (setq symb val)
+  (setq symb val) ;; FIXME this is wrong (it should be 'set', but it would set nil sometimes)
   (if coq-auto-adapt-printing-width
       (progn
         (add-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
         (add-hook 'proof-retract-command-hook 'coq-reset-printing-width))
     (remove-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
     (remove-hook 'proof-retract-command-hook 'coq-reset-printing-width)))
-
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
@@ -1240,7 +873,7 @@ width is synchronized by coq (?!)."
 ;; variables first.
 (add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
 
-(defvar coq-shell-current-line-width nil
+(defvar coq-current-line-width nil
   "Current line width of the Coq printing width.
 Its value will be updated whenever a command is sent if
 necessary.")
@@ -1248,17 +881,17 @@ necessary.")
 ;; Resetting the known printing width (for when we don't know it, for example
 ;; when retracting.
 (defun coq-reset-printing-width ()
-  (setq coq-shell-current-line-width nil))
+  (setq coq-current-line-width nil))
 
 (defun coq-buffer-window-width (buffer)
   "Return the width of a window currently displaying BUFFER."
   (let*
       ((buf-wins (get-buffer-window-list buffer nil t))
-       (dummy (if (not (eq 1 (length buf-wins)))
-                  (display-warning
-                   'proof-general
-                   "Zero or more than one goals window, guessing window width."
-                   :debug)))
+       (_ (if (not (eq 1 (length buf-wins)))
+              (display-warning
+               'proof-general
+               "Zero or more than one goals window, guessing window width."
+               :debug)))
        (buf-win (car buf-wins)));; TODO return the widest one instead of the first?
     ;; return nil if no goal buffer found
     (and buf-win (window-width buf-win))))
@@ -1268,12 +901,12 @@ necessary.")
   (coq-buffer-window-width proof-goals-buffer))
 (defun coq-response-window-width ()
   (coq-buffer-window-width proof-response-buffer))
- 
+
 (defun coq-guess-goal-buffer-at-next-command ()
   "Return the probable width of goals buffer if it pops up now.
 This is a guess based on the current width of goals buffer if
 present, current pg display mode and current geometry otherwise."
-  (let (pol (proof-guess-3win-display-policy proof-three-window-mode-policy))
+  (let (pol (_proof-guess-3win-display-policy proof-three-window-mode-policy))
     (cond
      ;; goals buffer is visible, bingo
      ((coq-goals-window-width))
@@ -1303,14 +936,15 @@ goal is redisplayed."
   (interactive)
   (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
     ;; if no available width, or unchanged, do nothing
-    (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-      (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
-      (setq coq-shell-current-line-width wdth)
-      ;; Show iff show non nil and some proof is under way
-      (when (and show (not (null (caddr (coq-last-prompt-info-safe)))))
-        (proof-shell-invisible-command (format "Show.") t nil 'no-error-display)))))
+    (when (and wdth (not (equal wdth coq-current-line-width)))
+      (let* ((print-width (1- wdth))
+             (print-thunk (coq-queries-set-printing-width print-width)))
+        (proof-invisible-command print-thunk)
+        (when show
+          (proof-invisible-command (lambda () (list (coq-xml-goal) nil)))))
+      (setq coq-current-line-width wdth))))
 
-(defun coq-adapt-printing-width-and-show(&optional show width)
+(defun coq-adapt-printing-width-and-show(&optional _ width)
   (interactive)
   (coq-adapt-printing-width t width))
 
@@ -1340,31 +974,27 @@ goal is redisplayed."
     (coq-highlight-id-in-goals re)
     (setq coq-highlight-id-last-regexp re)))
 
+;; Items on Other Queries menu
 
-(proof-definvisible coq-PrintHint "Print Hint. ")
+(proof-definvisible coq-print-hint (coq-queries-print-hint-thunk))
+(proof-definvisible coq-show-tree (coq-queries-show-tree-thunk))
+(proof-definvisible coq-show-proof (coq-queries-show-proof-thunk))
+(proof-definvisible coq-show-conjectures (coq-queries-show-conjectures-thunk))
+(proof-definvisible coq-show-intros (coq-queries-show-intros-thunk))
 
-;; Items on show menu
-(proof-definvisible coq-show-tree "Show Tree.")
-(proof-definvisible coq-show-proof "Show Proof.")
-(proof-definvisible coq-show-conjectures "Show Conjectures.")
-(proof-definvisible coq-show-intros "Show Intros.") ; see coq-insert-intros below
-(proof-definvisible coq-set-printing-implicit "Set Printing Implicit.")
-(proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
-(proof-definvisible coq-set-printing-all "Set Printing All.")
-(proof-definvisible coq-unset-printing-all "Unset Printing All.")
-(proof-definvisible coq-set-printing-synth "Set Printing Synth.")
-(proof-definvisible coq-unset-printing-synth "Unset Printing Synth.")
-(proof-definvisible coq-set-printing-coercions "Set Printing Coercions.")
-(proof-definvisible coq-unset-printing-coercions "Unset Printing Coercions.")
-(proof-definvisible coq-set-printing-universes "Set Printing Universes.")
-(proof-definvisible coq-unset-printing-universes "Unset Printing Universes.")
-(proof-definvisible coq-set-printing-wildcards "Set Printing Wildcard.")
-(proof-definvisible coq-unset-printing-wildcards "Unset Printing Wildcard.")
-; Takes an argument
-;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
-;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
-
-
+(proof-definvisible coq-set-printing-all (coq-queries-set-printing-all-thunk))
+(proof-definvisible coq-unset-printing-all (coq-queries-unset-printing-all-thunk))
+(proof-definvisible coq-set-printing-implicit (coq-queries-set-printing-implicit-thunk))
+(proof-definvisible coq-unset-printing-implicit (coq-queries-unset-printing-implicit-thunk))
+(proof-definvisible coq-set-printing-synth (coq-queries-set-printing-synth-thunk))
+(proof-definvisible coq-unset-printing-synth (coq-queries-unset-printing-synth-thunk))
+(proof-definvisible coq-set-printing-coercions (coq-queries-set-printing-coercions-thunk))
+(proof-definvisible coq-unset-printing-coercions (coq-queries-unset-printing-coercions-thunk))
+(proof-definvisible coq-set-printing-universes (coq-queries-set-printing-universes-thunk))
+(proof-definvisible coq-unset-printing-universes (coq-queries-unset-printing-universes-thunk))
+(proof-definvisible coq-set-printing-wildcards (coq-queries-set-printing-wildcard-thunk))
+(proof-definvisible coq-unset-printing-wildcards (coq-queries-unset-printing-wildcard-thunk))
+(proof-definvisible coq-pwd (coq-queries-pwd-thunk))
 
 (defun coq-Compile ()
   "Compiles current buffer."
@@ -1380,11 +1010,11 @@ goal is redisplayed."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Holes mode switch
-;; TODO: have this plugged agian when we have abbreviation without holes
+;; TODO: have this plugged again when we have abbreviation without holes
 ;; For now holes are always enabled.
-;(defpacustom use-editing-holes t
-;  "Enable holes for editing."
-;  :type 'boolean)
+                                        ;(defpacustom use-editing-holes t
+                                        ;  "Enable holes for editing."
+                                        ;  :type 'boolean)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1444,7 +1074,7 @@ Near here means PT is either inside or just aside of a comment."
            (save-excursion (forward-char) (coq-looking-at-comment)))
       (coq-get-comment-region (+ (point) 1))))))
 
-(defun coq-fill-paragraph-function (n)
+(defun coq-fill-paragraph-function (_)
   "Coq mode specific fill-paragraph function. Fills only comment at point."
   (let ((reg (coq-near-comment-region)))
     (when reg
@@ -1462,7 +1092,43 @@ Near here means PT is either inside or just aside of a comment."
              (cm-prefix (match-string 2)))
         (concat (make-string (length cm-start) ? ) cm-prefix)))))
 
+(defun coq-response-complete ()
+  (coq-tq-response-complete coq-server-transaction-queue))
 
+(defun coq-interrupt-coq ()
+  (when proof-server-process
+    (let ((complete-p (coq-response-complete)))
+      (proof-server-clear-state)
+      ;; resets completed flag
+      ;; which is why we get its value first
+      (coq-tq-flush coq-server-transaction-queue) 
+      (if complete-p
+          ;; if Coq not working, stop active workers
+          ;; locked region may not reflect what Coq has processed, so reset end
+          (if (> (hash-table-size coq-worker-status-tbl) 0)
+              (progn
+                (message "Stopping Coq active workers")
+                (coq-server-stop-active-workers))
+            (message "No Coq active workers"))
+        ;; on interrupt, get a fail-value, resulting in Edit_at
+        (when (and proof-server-process (eq (process-status proof-server-process) 'run))
+          ;; get pid of shell used to start Coq
+          (let* ((coq-shell-pid (process-id proof-server-process)) 
+                 ;; those pids with the shell pid as parent (should be just one)
+                 (coq-pids (cl-remove-if-not (lambda (pid)
+                                               (let ((ppid (cdr (assoc 'ppid (process-attributes pid)))))
+                                                 (and ppid (= coq-shell-pid ppid))))
+                                             (list-system-processes))))
+            (mapc (lambda (pid)
+                    (message "Sending SIGINT to Coq process: %s" pid)
+                    (signal-process pid 'SIGINT))
+                  coq-pids)
+            (setq coq-server-retraction-on-interrupt t))))
+      (let* ((current-span (coq-server--get-span-with-state-id coq-current-state-id))
+             (end (if current-span (span-end current-span) 1)))
+        (proof-set-queue-end end)
+        (proof-set-locked-end end))
+      (coq-header-line-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
 
@@ -1480,20 +1146,7 @@ Near here means PT is either inside or just aside of a comment."
             (when (looking-at "Goal")
               (pg-goals-display (buffer-substring (point) pt2) nil))))))))
 
-;; overwrite the generic one, interactive prompt is Debug mode;; try to display
-;; the debug goal in the goals buffer.
-(defun proof-shell-process-interactive-prompt-regexp ()
-  "Action taken when `proof-shell-interactive-prompt-regexp' is observed."
-  (when (and (proof-shell-live-buffer)
-	     ; not already visible
-	     t)
-    (switch-to-buffer proof-shell-buffer)
-    (coq-display-debug-goal)
-    (message "Prover expects input in %s buffer (if debug mode: h<return> for help))" proof-shell-buffer)))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defun coq-mode-config ()
   ;; SMIE needs this.
@@ -1513,6 +1166,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; (set (make-local-variable 'paragraph-separate) "\\**) *$\\|$")
   ;; (set (make-local-variable 'adaptive-fill-function) 'coq-adaptive-fill-function)
 
+  (setq proof-script-trim-spans t)
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
   (setq proof-terminal-string ".")
@@ -1531,45 +1185,54 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-guess-command-line 'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
-  ;; We manage file saveing via coq-compile-auto-save and for coq
+  (setq proof-everything-sent-fun (lambda ()
+                                    (coq-tq-everything-sent coq-server-transaction-queue)))
+  
+  (setq proof-command-formatting-fun 'coq-format-command)
+  (setq proof-server-interrupt-fun 'coq-interrupt-coq)
+  (setq proof-server-response-complete-fun
+        (lambda () (coq-tq-response-complete coq-server-transaction-queue)))
+  
+  ;; We manage file saving via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
-  
-  ;; Commands sent to proof engine
-  (setq proof-showproof-command "Show. "
-        proof-context-command "Print All. "
-        proof-goal-command "Goal %s. "
-        proof-save-command "Save %s. "
-        proof-find-theorems-command "Search %s. ")
-;; FIXME da: Does Coq have a help or about command?
-;;	proof-info-command "Help"
 
+  ;; Sent to proof engine
+  (setq proof-showproof-command
+        (lambda () (list (coq-xml-goal) nil)))
+  (setq proof-goal-command "Goal %s. "
+        proof-save-command "Save %s. ")
+  ;; FIXME da: Does Coq have a help or about command?
+  ;;	proof-info-command "Help"
+
+  (setq proof-server-quit-cmd (lambda () (list (coq-xml-quit) nil)))
+  (setq proof-context-command 'coq-get-context)
+  
   ;; Settings not defined with defpacustom because they have an unsupported
   ;; type.
   (setq proof-assistant-additional-settings
         '(coq-compile-quick coq-compile-keep-going
-          coq-compile-auto-save coq-lock-ancestors))
+                            coq-compile-auto-save coq-lock-ancestors))
 
   (setq proof-goal-command-p 'coq-goal-command-p
-        proof-find-and-forget-fn 'coq-find-and-forget
-        pg-topterm-goalhyplit-fn 'coq-goal-hyp
+        proof-find-and-forget-fn 'coq-server-find-and-forget
         proof-state-preserving-p 'coq-state-preserving-p)
 
-  (setq proof-query-identifier-command "Check %s.")
+  ;; TODO REPLACE THIS?
+  '(setq proof-query-identifier-command "Check %s.")
   ;;TODO: from v8.5 this wold be better:
   ;;(setq proof-query-identifier-command "About %s.")
 
-  (setq proof-save-command-regexp coq-save-command-regexp
-        proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
-	proof-save-with-hole-regexp coq-save-with-hole-regexp
-	proof-goal-with-hole-regexp coq-goal-with-hole-regexp
-	proof-nested-undo-regexp coq-state-changing-commands-regexp
+  (setq proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
+        proof-save-with-hole-regexp coq-save-with-hole-regexp
+        proof-goal-with-hole-regexp coq-goal-with-hole-regexp
+        proof-nested-undo-regexp coq-state-changing-commands-regexp
         proof-script-imenu-generic-expression coq-generic-expression)
 
   (when (fboundp 'smie-setup) ; always use smie, old indentation code removed
-    (smie-setup coq-smie-grammar #'coq-smie-rules
-                  :forward-token #'coq-smie-forward-token
-                  :backward-token #'coq-smie-backward-token))
+    (smie-setup coq-smie-grammar 'coq-smie-rules
+                :forward-token 'coq-smie-forward-token
+                :backward-token 'coq-smie-backward-token))
 
   ;; old indentation code.
   ;; (require 'coq-indent)
@@ -1583,12 +1246,11 @@ Near here means PT is either inside or just aside of a comment."
   ;; (setq indent-region-function 'coq-indent-region)
   
   
-
   ;; span menu
   (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+  '(setq proof-shell-start-silent-cmd "Set Silent. "
+         proof-shell-stop-silent-cmd "Unset Silent. ")
 
   (coq-init-syntax-table)
   ;; we can cope with nested comments
@@ -1598,15 +1260,24 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-script-font-lock-keywords coq-font-lock-keywords-1)
 
   ;; FIXME: have abbreviation without holes
-  ;(if coq-use-editing-holes (holes-mode 1))
+                                        ;(if coq-use-editing-holes (holes-mode 1))
   (holes-mode 1)
+
+  (setq 
+   proof-server-send-to-prover-fun 'coq-server-send-to-prover
+   proof-server-make-command-thunk-fun 'coq-server-make-add-command-thunk
+   proof-server-process-response-fun 'coq-server-process-response
+   proof-server-init-cmd coq-server-init-cmds
+   proof-server-retract-buffer-hook 'coq-reset-all-state
+   proof-find-theorems-command 'coq-find-theorems
+   proof-check-command 'coq-check-document)
 
   ;; prooftree config
   (setq
    proof-tree-configured t
    proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
    proof-tree-find-begin-of-unfinished-proof
-     'coq-find-begin-of-unfinished-proof)
+   'coq-find-begin-of-unfinished-proof)
 
   (proof-config-done)
 
@@ -1619,7 +1290,7 @@ Near here means PT is either inside or just aside of a comment."
   (if (file-exists-p coq-tags)
       (set (make-local-variable 'tags-table-list)
            (cons coq-tags tags-table-list)))
-  
+
   (set (make-local-variable 'blink-matching-paren-dont-ignore-comments) t)
 
   (when coq-may-use-prettify
@@ -1628,104 +1299,32 @@ Near here means PT is either inside or just aside of a comment."
 
   (setq proof-cannot-reopen-processed-files nil)
 
-  (add-hook 'proof-activate-scripting-hook 'proof-cd-sync nil t))
+  (add-hook 'proof-activate-scripting-hook 'proof-cd-sync nil t)
 
-(defun coq-shell-mode-config ()
-  (setq
-   proof-shell-cd-cmd coq-shell-cd
-   proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\""   . "\\\""))
-   proof-shell-clear-goals-regexp coq-shell-proof-completed-regexp
-   proof-shell-proof-completed-regexp coq-shell-proof-completed-regexp
-   proof-shell-error-regexp coq-error-regexp
-   proof-shell-interrupt-regexp coq-interrupt-regexp
-   proof-shell-assumption-regexp coq-id
-   pg-subterm-first-special-char ?\360
-   ;; The next three represent path annotation information
-   pg-subterm-start-char ?\372          ; not done
-   pg-subterm-sep-char ?\373            ; not done
-   pg-subterm-end-char ?\374            ; not done
-   pg-topterm-regexp "\375"
+  (proof-eval-when-ready-for-assistant
+   (easy-menu-define proof-goals-mode-aux-menu
+     proof-goals-mode-map
+     "Menu for Proof General goals buffer."
+     (cons "Coq" coq-other-buffers-menu-entries)))
 
-   ;; FIXME: ideally, the eager annotation should just be a single "special" char,
-   ;; this requires changes in Coq.
-   proof-shell-eager-annotation-start coq-shell-eager-annotation-start
-   proof-shell-eager-annotation-start-length 32
+  (proof-eval-when-ready-for-assistant
+   (easy-menu-define proof-goals-mode-aux-menu
+     proof-response-mode-map
+     "Menu for Proof General response buffer."
+     (cons "Coq" coq-other-buffers-menu-entries))))
 
-   proof-shell-interactive-prompt-regexp "TcDebug "
-
-   ;; ****** is added at the end of warnings in emacs mode, this is temporary I
-   ;;        want xml like tags, and I want them removed before warning display.
-   ;; I want the same for errors -> pgip
-
-   proof-shell-eager-annotation-end "\377\\|done\\]\\|</infomsg>\\|\\*\\*\\*\\*\\*\\*\\|) >" ; done
-   proof-shell-annotated-prompt-regexp coq-shell-prompt-pattern
-   proof-shell-result-start "\372 Pbp result \373"
-   proof-shell-result-end "\372 End Pbp result \373"
-
-;   proof-shell-start-goals-regexp          "^\\(?:(dependent evars:[^)]*)\\s-+\\)?[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-end-goals-regexp
-   (if coq-hide-additional-subgoals
-       (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
-     (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))
-
-   proof-shell-init-cmd coq-shell-init-cmd
-
-   proof-no-fully-processed-buffer t
-
-   ;; Coq has no global settings?
-   ;; (proof-assistant-settings-cmd)
-
-   proof-shell-restart-cmd coq-shell-restart-cmd
-   pg-subterm-anns-use-stack t)
-
-  (coq-init-syntax-table)
-  ;; (holes-mode 1)  da: does the shell really need holes mode on?
-  (setq proof-shell-font-lock-keywords 'coq-font-lock-keywords-1)
-
-  ;; prooftree config
-  (setq
-   proof-tree-ignored-commands-regexp coq-proof-tree-ignored-commands-regexp
-   proof-tree-navigation-command-regexp coq-navigation-command-regexp
-   proof-tree-cheating-regexp coq-proof-tree-cheating-regexp
-   proof-tree-new-layer-command-regexp coq-proof-tree-new-layer-command-regexp
-   proof-tree-current-goal-regexp coq-proof-tree-current-goal-regexp
-   proof-tree-update-goal-regexp coq-proof-tree-update-goal-regexp
-   proof-tree-existential-regexp coq-proof-tree-existential-regexp
-   proof-tree-existentials-state-start-regexp
-                      coq-proof-tree-existentials-state-start-regexp
-   proof-tree-existentials-state-end-regexp
-                        coq-proof-tree-existentials-state-end-regexp
-   proof-tree-additional-subgoal-ID-regexp
-                              coq-proof-tree-additional-subgoal-ID-regexp
-   proof-tree-branch-finished-regexp coq-proof-tree-branch-finished-regexp
-   proof-tree-extract-instantiated-existentials
-     'coq-extract-instantiated-existentials
-   proof-tree-show-sequent-command 'coq-show-sequent-command
-   proof-tree-find-undo-position 'coq-proof-tree-find-undo-position
-   )
-        
-  (proof-shell-config-done))
-
-
-(proof-eval-when-ready-for-assistant
-    (easy-menu-define proof-goals-mode-aux-menu
-      proof-goals-mode-map
-      "Menu for Proof General goals buffer."
-      (cons "Coq" coq-other-buffers-menu-entries)))
-
-(proof-eval-when-ready-for-assistant
-    (easy-menu-define proof-goals-mode-aux-menu
-      proof-response-mode-map
-      "Menu for Proof General response buffer."
-      (cons "Coq" coq-other-buffers-menu-entries)))
-
+;; formatter for user commands entered in minibuffer
+(defun coq-format-command (cmd)
+  (lambda ()
+    (list (coq-xml-query-item cmd)
+          nil)))
 
 (defun coq-goals-mode-config ()
   (setq pg-goals-change-goal "Show %s . ")
   (setq pg-goals-error-regexp coq-error-regexp)
   (coq-init-syntax-table)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
+  (setq truncate-lines t)
   (proof-goals-config-done))
 
 (defun coq-response-config ()
@@ -1757,7 +1356,7 @@ Near here means PT is either inside or just aside of a comment."
   :eval (coq-hide-additional-subgoals-switch))
 
 
-;
+                                        ;
 ;;; FIXME: to handle "printing all" properly, we should change the state
 ;;; of the variables that also depend on it.
 ;;; da:
@@ -1765,46 +1364,22 @@ Near here means PT is either inside or just aside of a comment."
 ;;; pc: removed it and others of the same kind. Put an "option" menu instead,
 ;;; with no state variable. To have the state we should use coq command that
 ;;; output the value of the variables.
-;(defpacustom print-fully-explicit nil
-;  "Print fully explicit terms."
-;  :type 'boolean
-;  :setting ("Set Printing All. " . "Unset Printing All. "))
-;
+;;(defpacustom print-fully-explicit nil
+;;  "Print fully explicit terms."
+;;  :type 'boolean
+;;  :setting ("Set Printing All. " . "Unset Printing All. "))
+;;
 
 (defpacustom printing-depth 50
-  "Depth of pretty printer formatting, beyond which dots are displayed."
+  "Depth of pretty printer formatting, beyond which an ellipsis (...) is displayed."
   :type 'integer
-  :setting "Set Printing Depth %i . ")
-
-;;; Obsolete:
-;;(defpacustom undo-depth coq-default-undo-limit
-;;  "Depth of undo history.  Undo behaviour will break beyond this size."
-;;  :type 'integer
-;;  :setting "Set Undo %i . ")
-
-(defun coq-set-search-blacklist (s)
-  (let ((res (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
-          coq-search-blacklist-string-prev s)))
-    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-    res))
-
-
-(defun coq-get-search-blacklist (s)
-  coq-search-blacklist-string)
-
-
-(defpacustom search-blacklist coq-search-blacklist-string
-  "Strings to blacklist in requests to coq environment."
-  :type 'string
-  :get 'coq-get-search-blacklist
-  :setting coq-set-search-blacklist)
-
+  :setting (lambda (depth) 
+             (coq-queries-set-printing-depth depth)))
 
 (defpacustom time-commands nil
   "Whether to display timing information for each command."
   :type 'boolean
   :eval (coq-time-commands-switch))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1814,13 +1389,8 @@ Near here means PT is either inside or just aside of a comment."
 
 (defun coq-proof-tree-get-proof-info ()
   "Coq instance of `proof-tree-get-proof-info'."
-  (let* ((info (or (coq-last-prompt-info-safe) '(0 0 nil nil))))
-         ;; info is now a list with
-         ;; * the state number
-         ;; * the proof stack depth
-         ;; * the list of all open proofs
-         ;; * the name of the current proof or nil
-    (list (car info) (nth 3 info))))
+  (list coq-current-state-id    
+        "TODO: get proof name"))
 
 (defun coq-extract-instantiated-existentials (start end)
   "Coq specific function for `proof-tree-extract-instantiated-existentials'.
@@ -1870,32 +1440,31 @@ The not yet delayed output is in the region
   (let ((start proof-shell-delayed-output-start)
         (end proof-shell-delayed-output-end)
         (state  (car proof-info)))
-  (when (> state proof-tree-last-state)
-    (with-current-buffer proof-shell-buffer
-      ;; The message "All the remaining goals are on the shelf" is processed as
-      ;; urgent message and is therefore before
-      ;; proof-shell-delayed-output-start. We therefore need to go back to
-      ;; proof-marker.
-      (goto-char proof-marker)
-      (unless (proof-re-search-forward
-               coq-proof-tree-branch-finished-regexp end t)
-        (goto-char start)
-        (while (proof-re-search-forward
-                coq-proof-tree-additional-subgoal-ID-regexp end t)
-          (let ((subgoal-id (match-string-no-properties 1)))
-            (unless (gethash subgoal-id proof-tree-sequent-hash)
-              ;; (message "CPTGNS new sequent %s found" subgoal-id)
-              (setq proof-action-list
-                    (cons (proof-shell-action-list-item
-                           (coq-show-sequent-command subgoal-id)
-                           (proof-tree-make-show-goal-callback (car proof-info))
-                           '(no-goals-display
-                             no-response-display
-                             proof-tree-show-subgoal))
-                          proof-action-list))))))))))
-  
-(add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-get-new-subgoals)
+    (when (> state proof-tree-last-state)
+      (with-current-buffer proof-shell-buffer
+        ;; The message "All the remaining goals are on the shelf" is processed as
+        ;; urgent message and is therefore before
+        ;; proof-shell-delayed-output-start. We therefore need to go back to
+        ;; proof-marker.
+        ;;      (goto-char proof-marker)  ;; TODO proof-marker is no longer a thing, because proof shell is gone
+        (unless (proof-re-search-forward
+                 coq-proof-tree-branch-finished-regexp end t)
+          (goto-char start)
+          (while (proof-re-search-forward
+                  coq-proof-tree-additional-subgoal-ID-regexp end t)
+            (let ((subgoal-id (match-string-no-properties 1)))
+              (unless (gethash subgoal-id proof-tree-sequent-hash)
+                ;; (message "CPTGNS new sequent %s found" subgoal-id)
+                (setq proof-action-list
+                      (cons (proof-shell-action-list-item
+                             (coq-show-sequent-command subgoal-id)
+                             (proof-tree-make-show-goal-callback (car proof-info))
+                             '(no-goals-display
+                               no-response-display
+                               proof-tree-show-subgoal))
+                            proof-action-list))))))))))
 
+(add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-get-new-subgoals)
 
 (defun coq-find-begin-of-unfinished-proof ()
   "Return start position of current unfinished proof or nil."
@@ -1906,7 +1475,7 @@ The not yet delayed output is in the region
     (while (and span
                 (span-property span 'proofstack)
                 (not (span-property span 'goalcmd)))
-          (setq span (span-at (1- (span-start span)) 'type)))
+      (setq span (span-at (1- (span-start span)) 'type)))
     ;; Beware of completed proofs! They have type goalsave and for
     ;; strange reasons the whole completed proof has the goalcmd property.
     (if (and span
@@ -1914,16 +1483,16 @@ The not yet delayed output is in the region
              (span-property span 'goalcmd))
         (span-start span)
       nil)))
-    
+
 (defun coq-proof-tree-find-undo-position (state)
   "Return the position for undo state STATE.
 This is the Coq incarnation of `proof-tree-find-undo-position'."
   (let ((span-res nil)
         (span-cur (span-at (1- (proof-unprocessed-begin)) 'type))
         (state (1- state)))
-    ;; go backward as long as the statenum property in the span is greater or
+    ;; go backward as long as the state-id property in the span is greater or
     ;; equal than state
-    (while (<= state (span-property span-cur 'statenum))
+    (while (<= state (span-property span-cur 'state-id))
       (setq span-res span-cur)
       (setq span-cur (span-at (1- (span-start span-cur)) 'type)))
     (span-start span-res)))
@@ -2038,16 +1607,16 @@ result of `coq-proof-tree-get-proof-info'."
 (defun coq-bullet-p (s)
   (string-match coq-bullet-regexp-nospace s))
 
-;; Remark: `action' and `string' are known by `proof-shell-insert-hook'
+;; Remark: `action' and `string' are known by `proof-server-insert-hook'
 (defun coq-preprocessing ()
   (when coq-time-commands
-    (with-no-warnings  ;; NB: dynamic scoping of `string' and `action'
+    (with-no-warnings  
       ;; Don't add the prefix if this is a command sent internally
       (unless (or (eq action 'proof-done-invisible)
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
         (setq string (concat coq--time-prefix string))))))
 
-(add-hook 'proof-shell-insert-hook 'coq-preprocessing)
+(add-hook 'proof-server-insert-hook 'coq-preprocessing)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2068,21 +1637,28 @@ mouse activation."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Context-senstive in-span menu additions
+;; Context-sensitive in-span menu additions
 ;;
 
-(defun coq-create-span-menu (span idiom name)
+(defun coq-create-span-menu (span idiom _)
   (if (eq idiom 'proof)
       (let ((thm (span-property span 'name)))
         (list (vector
                "Check" ; useful?
-               `(proof-shell-invisible-command
-                 ,(format "Check %s." thm)))
-              (vector
-               "Print"
-               `(proof-shell-invisible-command
-                 ,(format "Print %s." thm)))))))
-
+               `(proof-invisible-command
+                 (lambda ()
+                   (list 
+                    (coq-xml-query-item 
+                     ,(format "Check %s." thm))
+                    nil)))
+               (vector
+                "Print"
+                `(proof-invisible-command
+                  (lambda ()
+                    (list 
+                     (coq-xml-query-item 
+                      ,(format "Print %s." thm))
+                     nil)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2103,8 +1679,8 @@ mouse activation."
 (defun coq-directories-files (l)
   (let* ((file-list-list (mapcar 'directory-files l))
          (file-list (apply 'append file-list-list))
-         (filtered-list (remove-if-not 'coq-postfix-.v-p file-list)))
-  filtered-list))
+         (filtered-list (cl-remove-if-not 'coq-postfix-.v-p file-list)))
+    filtered-list))
 
 (defun coq-remove-dot-v-extension (s)
   (substring s 0 -2))
@@ -2115,7 +1691,7 @@ mouse activation."
 (defun coq-build-accessible-modules-list ()
   (let* ((pth (or coq-load-path '(".")))
          (cleanpth (mapcar 'coq-load-path-to-paths pth))
-         (existingpth (remove-if-not 'file-exists-p cleanpth))
+         (existingpth (cl-remove-if-not 'file-exists-p cleanpth))
          (file-list (coq-directories-files existingpth)))
     (mapcar 'coq-remove-dot-v-extension file-list)))
 
@@ -2153,11 +1729,11 @@ mouse activation."
           (completing-read
            "Command (TAB to see list, default Require Import) : "
            reqkinds-kinds-table nil nil nil nil "Require Import")))
-    (loop do
-          (setq s (completing-read "Name (empty to stop) : "
-                                   (coq-build-accessible-modules-list)))
-          (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
-          while (not (string-equal s "")))))
+    (cl-loop do
+             (setq s (completing-read "Name (empty to stop) : "
+                                      (coq-build-accessible-modules-list)))
+             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
+             while (not (string-equal s "")))))
 
 ;; TODO add module closing
 (defun coq-end-Section ()
@@ -2165,41 +1741,18 @@ mouse activation."
   (interactive)
   (let ((count 1)) ; The number of section already "Ended" + 1
     (let ((section
-	   (save-excursion
-	     (progn
-	       (while (and (> count 0)
-			   (search-backward-regexp
-			    "Chapter\\|Section\\|End" 0 t))
-		 (if (char-equal (char-after (point)) ?E)
-		     (setq count (1+ count))
-		   (setq count (1- count))))
-	       (buffer-substring-no-properties
-          (progn (beginning-of-line) (forward-word 1) (point))
-          (progn (end-of-line) (point)))))))
+           (save-excursion
+             (progn
+               (while (and (> count 0)
+                           (search-backward-regexp
+                            "Chapter\\|Section\\|End" 0 t))
+                 (if (char-equal (char-after (point)) ?E)
+                     (cl-incf count)
+                   (cl-decf count)))
+               (buffer-substring-no-properties
+                (progn (beginning-of-line) (forward-word 1) (point))
+                (progn (end-of-line) (point)))))))
       (insert (concat "End" section)))))
-
-(defun coq--format-intros (output)
-  "Create an “intros” form from the OUTPUT of “Show Intros”."
-  (let* ((shints (replace-regexp-in-string "[\r\n ]*\\'" "" output)))
-    (if (or (string= "" shints)
-            (string-match coq-error-regexp shints))
-        (error "Don't know what to intro")
-      (format "intros %s" shints))))
-
-(defun coq-insert-intros ()
-  "Insert an intros command with names given by Show Intros.
-Based on idea mentioned in Coq reference manual."
-  (interactive)
-  (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
-    (indent-region (point)
-                   (progn (insert (coq--format-intros output))
-                          (save-excursion
-                            (insert (if coq-one-command-per-line "\n" " "))
-                            (point))))
-    ;; `proof-electric-terminator' moves the point in all sorts of strange
-    ;; ways, so we run it last
-    (let ((last-command-event ?.)) ;; Insert a dot
-      (proof-electric-terminator))))
 
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
@@ -2231,38 +1784,27 @@ Warning: this makes the error messages (and location) wrong.")
   "Return t if the last tactic of locked region contains an \"as\" close."
   (save-excursion (string-match "\\<as\\>" s)))
 
-
 (defun coq-insert-as-in-next-command ()
   (interactive)
   (save-excursion
     (goto-char (proof-unprocessed-begin))
     (coq-find-real-start)
     (let* ((pt (point))
-           (dummy (coq-script-parse-cmdend-forward))
+           (_ (coq-script-parse-cmdend-forward))
            (cmd (buffer-substring pt (point)))
            (newcmd (if (coq-tactic-already-has-an-as-close cmd)
                        nil
                      (coq-hack-cmd-for-infoH cmd))))
-      (when newcmd ; FIXME: we stop if as already there, replace it instead?
-        (proof-shell-invisible-command newcmd t)
-        (let* ((str (string-match "<infoH>\\([^<]*\\)</infoH>"
-                                  ;; proof-shell-last-response-output would be
-                                  ;; smaller/faster but since this message is output
-                                  ;; *before* resulting goals, it is not detected as
-                                  ;; a response message.
-                                  proof-shell-last-output))
-               (substr  (or (and str (match-string 1 proof-shell-last-output)) ""))
-               ;; emptysubstr = t if substr is empty or contains only spaces and |
-               (emptysubstr (and (string-match "\\(\\s-\\||\\)*" substr)
-                                 (eq (length substr) (length (match-string 0 substr)))))) ; idem
-          (unless (or emptysubstr (coq-tactic-already-has-an-as-close newcmd)) ;; FIXME
-            (save-excursion
-              ;; TODO: look for eqn:XX and go before it.
-              ;; Go just before the last "."
-              (goto-char (proof-unprocessed-begin))
-              (coq-script-parse-cmdend-forward)
-              (coq-script-parse-cmdend-backward)
-              (insert (concat " as [" substr "]")))))))))
+      ;; insert of infoH response handled in coq-server
+      ;; FIXME: we stop if as already there, replace it instead?
+      (when (and newcmd (not (coq-tactic-already-has-an-as-close newcmd)))
+        (proof-server-send-to-prover
+         (lambda ()
+           (list
+            (progn
+              (setq coq-server-expecting-infoh-notice t)
+              (coq-xml-add-item newcmd))
+            nil)))))))
 
 ;; Trying to propose insertion of "as" for a whole region. But iterating
 ;; proof-assert-next-command-interactive is probably wrong if some error occur
@@ -2277,36 +1819,40 @@ Warning: this makes the error messages (and location) wrong.")
 ;;       (coq-insert-as-in-next-command)
 ;;       (proof-assert-next-command-interactive))))
 
-
-
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
 Based on idea mentioned in Coq reference manual.
 Also insert holes at insertion positions."
   (interactive)
-  (proof-shell-ready-prover)
-  (let* ((cmd))
+  (proof-ready-prover)
+  (let* (cmd)
     (setq cmd (read-string "Build match for type: "))
-    (let* ((thematch
-           (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (match (replace-regexp-in-string "=> \n" "=> #\n" thematch)))
-      ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp match)
-        (let ((start (point)))
-          (insert match)
-          (indent-region start (point) nil)
-          (let ((n (holes-replace-string-by-holes-backward start)))
-            (case n
-	(0 nil)				; no hole, stay here.
-	(1
-	 (goto-char start)
-	 (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	(t
-	 (goto-char start)
-	 (message
-          (substitute-command-keys
-           "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+    (let ((thunk
+           (lambda ()
+             (list (coq-xml-query-item (concat "Show Match " cmd " ."))
+                   nil)))
+          (handler (lambda (response _call _span)
+                     (let* ((the-match (coq-queries-get-message-string response))
+                            (match (replace-regexp-in-string "=> \n" "=> #\n" the-match)))
+                       ;; if error, it will be displayed in response buffer (see def of
+                       ;; proof-invisible-cmd-get-result), otherwise:
+                       (unless (proof-string-match coq-error-regexp match)
+                         (with-current-buffer proof-script-buffer
+                           (let ((start (point)))
+                             (insert match)
+                             (indent-region start (point) nil)
+                             (let ((n (holes-replace-string-by-holes-backward start)))
+                               (cl-case n
+                                        (0 nil)				; no hole, stay here.
+                                        (1
+                                         (goto-char start)
+                                         (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+                                        (t
+                                         (goto-char start)
+                                         (message
+                                          (substitute-command-keys
+                                           "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))))
+      (proof-invisible-cmd-handle-result thunk handler))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -2336,22 +1882,28 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (interactive)
   (coq-insert-from-db coq-terms-db "Kind of term"))
 
-
-(defun coq-query (showall)
+(defun coq-query (show-all)
   "Ask for a query, with completion, and send to Coq."
   (interactive "P")
-  (let ((q (coq-build-command-from-db coq-queries-commands-db "which Query?")))
-    (if showall
-        (coq-command-with-set-unset
-         "Set Printing All" q "Unset Printing All" nil "Test Printing All")
-      (proof-shell-invisible-command q))))
+  (let* ((query (coq-build-command-from-db coq-queries-commands-db "which Query?"))
+         (thunk (lambda () (list (coq-xml-query-item (concat query " ."))))))
+    (if show-all
+        (coq-queries-ask-set-unset
+         thunk
+         (coq-queries-set-printing-all)
+         (coq-queries-unset-printing-all)
+         '("Printing All"))
+      (proof-invisible-command thunk))))
 
+;; Header line mouse handler
+(when coq-use-header-line
+  (global-set-key [header-line mouse-1] 'coq-header-line-mouse-handler))
 
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)
 (define-key coq-keymap [(control ?m)] 'coq-insert-match)
 (define-key coq-keymap [(control ?()] 'coq-insert-section-or-module)
-(define-key coq-keymap [(control ?))] 'coq-end-Section)
+  (define-key coq-keymap [(control ?))] 'coq-end-Section)
 (define-key coq-keymap [(control ?t)] 'coq-insert-tactic)
 (define-key coq-keymap [?t] 'coq-insert-tactical)
 (define-key coq-keymap [?!] 'coq-insert-solve-tactic) ; will work in tty
@@ -2359,35 +1911,37 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control return)] 'coq-insert-command)
 (define-key coq-keymap [(control ?q)] 'coq-query)
 (define-key coq-keymap [(control ?r)] 'coq-insert-requires)
-; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
-; anyway company-coq should provide an "as!<TAB>". 
+;; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
+;; anyway company-coq should provide an "as!<TAB>". 
 (define-key coq-keymap [(?\[)] 'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
-; Query commands
+;; Query commands
 (define-key coq-keymap [(control ?s)] 'coq-Show)
 (define-key coq-keymap [?r] 'proof-store-response-win)
 (define-key coq-keymap [?g] 'proof-store-goals-win)
 (define-key coq-keymap [(control ?o)] 'coq-SearchIsos)
 (define-key coq-keymap [(control ?p)] 'coq-Print)
 (define-key coq-keymap [(control ?b)] 'coq-About)
-(define-key coq-keymap [(control ?a)] 'coq-SearchAbout)
+(define-key coq-keymap [(control ?a)] 'coq-Search)
 (define-key coq-keymap [(control ?c)] 'coq-Check)
 (define-key coq-keymap [?h] 'coq-PrintHint)
 (define-key coq-keymap [(control ?l)] 'coq-LocateConstant)
 (define-key coq-keymap [(control ?n)] 'coq-LocateNotation)
 (define-key coq-keymap [(control ?w)] 'coq-ask-adapt-printing-width-and-show)
+(define-key coq-keymap [(control ?d)] 'coq-check-document)
 
-;(proof-eval-when-ready-for-assistant
-; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
+;;(proof-eval-when-ready-for-assistant
+;; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
-;(proof-eval-when-ready-for-assistant
-; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
+;;(proof-eval-when-ready-for-assistant
+;; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?c)] 'coq-Check)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?d)] 'coq-check-document)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?r] 'proof-store-response-win)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?g] 'proof-store-goals-win)
@@ -2399,10 +1953,11 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?c)] 'coq-Check)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?d)] 'coq-check-document)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] 'proof-store-response-win)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] 'proof-store-goals-win)
@@ -2438,101 +1993,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; error handling
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-(defvar last-coq-error-location nil
-  "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
-
-
-;; I don't use proof-shell-last-ouput here since it is not always set to the
-;; really last output (specially when a *tactic* gives an error) instead I go
-;; directly to the response buffer. This allows also to clean the response
-;; buffer (better to only scroll it?)
-(defun coq-get-last-error-location (&optional parseresp clean)
-  "Return location information on last error sent by coq.
-Return a two elements list (POS LEN) if successful, nil otherwise.
-POS is the number of characters preceding the underlined expression,
-and LEN is its length.
-Coq error message must be like this:
-
-\"
-> command with an error here ...
->                       ^^^^
-\"
-
-If PARSERESP is nil, don't really parse response buffer but take the value of
-`last-coq-error-location' instead, otherwise parse response buffer and updates
-`last-coq-error-location'.
-
-If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
-  (if (not parseresp) last-coq-error-location
-    ;; proof-shell-handle-error-or-interrupt-hook is called from shell buffer
-    ;; then highlight the corresponding error location
-    (proof-with-current-buffer-if-exists proof-response-buffer
-      (goto-char (point-max)) ;\nToplevel input, character[^:]:\n
-      (when (re-search-backward "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n" nil t)
-        (let ((text (match-string 1))
-              (pos (length (match-string 2)))
-              (len (length (match-string 3))))
-          ;; clean the response buffer from ultra-ugly underlined command line
-          ;; parsed above. Don't kill the first \n
-          (let ((inhibit-read-only t))
-            (when clean (delete-region (match-beginning 0) (match-end 0))))
-          (when proof-shell-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
-            ;; `pos' and `len' are actually specified in bytes, apparently. So
-            ;; let's convert them, assuming the encoding used is utf-8.
-            ;; Presumably in Emacs-23 we could use `string-bytes' for that
-            ;; since the internal encoding happens to use utf-8 as well.
-            ;; Actually in coq-8.3 one utf8 char = one space so we do not need
-            ;; this at all
-            (let ((bytes text)) ;(encode-coding-string text 'utf-8-unix)
-              ;; Check that pos&len make sense in `bytes', if not give up.
-              (when (>= (length bytes) (+ pos len))
-                ;; We assume here that `text' is a single line and use \n as
-                ;; a marker so we can find it back after decoding.
-                (setq bytes (concat (substring bytes 0 pos)
-                                    "\n" (substring bytes pos (+ pos len))))
-                (let ((chars (decode-coding-string bytes 'utf-8-unix)))
-                  (setq pos (string-match "\n" chars))
-                  (setq len (- (length chars) pos 1))))))
-          (setq last-coq-error-location (list pos len)))))))
-
-
-(defun coq-highlight-error (&optional parseresp clean)
-  "Parses the last coq output looking at an error message. Highlight the text
-pointed by it. Coq error message must be like this:
-
-\"
-> command with an error here ...
->                       ^^^^
-\"
-
-If PARSERESP is nil, don't really parse response buffer but take the value of
-`last-coq-error-location' instead, otherwise parse response buffer and updates
-`last-coq-error-location'.
-
-If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
-  (proof-with-current-buffer-if-exists proof-script-buffer
-    (let ((mtch (coq-get-last-error-location parseresp clean)))
-      (when mtch
-        (let ((pos (car mtch))
-              (lgth (cadr mtch)))
-          (goto-char (+ (proof-unprocessed-begin) 1))
-          (coq-find-real-start)
-          
-          ;; utf8 adaptation is made in coq-get-last-error-location above
-          (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
-            (goto-char (+ (point) pos))
-            (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
-                                          'face 'proof-warning-face)))))))
-
-(defun coq-highlight-error-hook ()
-  (coq-highlight-error t t))
-
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-highlight-error-hook t)
-
-
 ;;
 ;; Scroll response buffer to maximize display of first goal
 ;;
@@ -2559,41 +2019,6 @@ buffer."
           (goto-char (match-beginning 0))
           (buffer-substring p (point)))))))
 
-
-
-(defun coq-show-first-goal ()
-  "Scroll the goal buffer so that the first goal is visible.
-First goal is displayed on the bottom of its window, maximizing the
-number of hypothesis displayed, without hiding the goal"
-  (interactive)
-  ;; CPC 2015-12-31: Added the check below: if the command that caused this
-  ;; call was silent, we shouldn't touch the goals buffer.  See GitHub issues
-  ;; https://github.com/cpitclaudel/company-coq/issues/32 and
-  ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (unless (memq 'no-goals-display proof-shell-delayed-output-flags)
-    (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting the good frame
-      (with-selected-frame (or pg-frame (window-frame (selected-window)))
-        ;; prefer current frame
-        (let ((goal-win (or (get-buffer-window proof-goals-buffer) (get-buffer-window proof-goals-buffer t))))
-          (if goal-win
-              (with-selected-window goal-win
-                ;; find snd goal or buffer end, if not found this goes to the
-                ;; end of buffer
-                (search-forward-regexp "subgoal 2\\|\\'")
-                (beginning-of-line)
-                ;; find something backward else than a space: bottom of concl
-                (ignore-errors (search-backward-regexp "\\S-"))
-                (recenter (- 1)) ; put bot of concl at bottom of window
-                (beginning-of-line)
-                ;; if the top of concl is hidden we may want to show it instead
-                ;; of bottom of concl
-                (when (and coq-prefer-top-of-conclusion
-                         ;; return nil if === is not visible
-                         (not (save-excursion (re-search-backward "========" (window-start) t))))
-                  (re-search-backward "========" nil t)
-                  (recenter 0))
-                (beginning-of-line))))))))
-
 (defvar coq-modeline-string2 ")")
 (defvar coq-modeline-string1 ")")
 (defvar coq-modeline-string0 " Script(")
@@ -2603,6 +2028,7 @@ number of hypothesis displayed, without hiding the goal"
           (if (> n 1) coq-modeline-string2
             coq-modeline-string1)))
 
+;; TODO: syntax of goals has changed, so this needs to change
 (defun coq-update-minor-mode-alist ()
   "Modify `minor-mode-alist' to display the number of subgoals in the modeline."
   (when (and proof-goals-buffer proof-script-buffer)
@@ -2619,80 +2045,6 @@ number of hypothesis displayed, without hiding the goal"
                 (append (list (list 'proof-active-buffer-fake-minor-mode
                                     (coq-build-subgoals-string nbgoals nbunfocused)))
                         minor-mode-alist)))))))
-
-
-
-
-
-;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
-;; *after* windows resizing.
-(add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-show-first-goal)
-(add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-update-minor-mode-alist)
-(add-hook 'proof-shell-handle-delayed-output-hook
-          (lambda ()
-            (if (proof-string-match coq-shell-proof-completed-regexp
-                                    proof-shell-last-output)
-                (proof-clean-buffer proof-goals-buffer))))
-
-
-(defun is-not-split-vertic (selected-window)
-  (<= (- (frame-height) (window-height)) 2))
-
-;; bug fixed in generic ocde, useless now:
-;(add-hook 'proof-activate-scripting-hook '(lambda () (when proof-three-window-enable (proof-layout-windows))))
-
-;; *Experimental* auto shrink response buffer in three windows mode. Things get
-;; a bit messed up if the response buffer is not at the right place (below
-;; goals buffer) TODO: Have this linked to proof-resize-window-tofit in
-;; proof-utils.el + customized by the "shrink to fit" menu entry
-;;  + have it on by default when in three windows mode.
-;; The philosophy is that if goals and response are on the same column, their
-;; cumulated size should not change.
-(defun coq-optimise-resp-windows ()
-  "Resize response buffer to optimal size.
-Only when three-buffer-mode is enabled."
-  ;; CPC 2015-12-31: Added the check below: if the command that caused this
-  ;; call was silent, we shouldn't touch the response buffer.  See GitHub
-  ;; issues https://github.com/cpitclaudel/company-coq/issues/32 and
-  ;; https://github.com/cpitclaudel/company-coq/issues/8.
-  (unless (memq 'no-response-display proof-shell-delayed-output-flags)
-    ;; If there is no frame with goql+response then do nothing
-    (when (and proof-three-window-enable (coq-find-threeb-frames))
-      (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting one adequat frame
-        (with-selected-frame pg-frame
-          (when (and (> (frame-height) 10)
-                     (get-buffer-window proof-response-buffer))
-            (let ((maxhgth
-                   (- (+ (with-selected-window (get-buffer-window proof-goals-buffer t) (window-text-height))
-                         (with-selected-window (get-buffer-window proof-response-buffer t) (window-text-height)))
-                      window-min-height))
-                  hgt-resp nline-resp)
-              (with-selected-window (get-buffer-window proof-response-buffer)
-                (setq hgt-resp (window-text-height))
-                (with-current-buffer proof-response-buffer
-                  (setq nline-resp ; number of lines we want for response buffer
-                        (min maxhgth (max window-min-height ; + 1 for comfort
-                                          (+ 1 (count-lines (point-max) (point-min)))))))
-                (unless (is-not-split-vertic (selected-window))
-                  (shrink-window (- hgt-resp nline-resp)))
-                (with-current-buffer proof-response-buffer
-                  (goto-char (point-min))
-                  (recenter))))))))))
-
-;; TODO: remove/add hook instead? 
-(defun coq-optimise-resp-windows-if-option ()
-  (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
-
-;; TODO: I would rather have a response-insert-hook thant this two hooks
-;; Careful: coq-optimise-resp-windows must be called BEFORE proof-show-first-goal,
-;; i.e. added in hook AFTER it.
-
-;; Adapt when displaying a normal message
-(add-hook 'proof-shell-handle-delayed-output-hook 'coq-optimise-resp-windows-if-option)
-;; Adapt when displaying an error or interrupt
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-optimise-resp-windows-if-option)
 
 ;;; DOUBLE HIT ELECTRIC TERMINATOR
 ;; Trying to have double hit on colon behave like electric terminator. The "."
@@ -2721,8 +2073,8 @@ is the coq terminator \".\" key. For example one can do this:
 
 (setq coq-double-hit-hot-key (kbd \";\"))
 
-to use semi-colon instead (on french keyboard, it is the same key
-as \".\" but without shift.")
+                                  to use semi-colon instead (on french keyboard, it is the same key
+                                                                as \".\" but without shift.")
 
 (defvar coq-double-hit-hot-keybinding nil
   "The keybinding that was erased by double hit terminator enabling.
@@ -2738,10 +2090,10 @@ This function is called by `proof-set-value' on `coq-double-hit-enable'."
     (proof-electric-terminator-toggle 0))
   ;; this part switch between bindings of coq-double-hit-hot-key: the nominal
   ;; one and coq-terminator-insert
-;  (if (not coq-double-hit-enable)
-;      (define-key coq-mode-map (kbd coq-double-hit-hot-key) coq-double-hit-hot-keybinding)
-;    (setq coq-double-hit-hot-keybinding (key-binding coq-double-hit-hot-key))
-;    (define-key coq-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert))
+  ;; (if (not coq-double-hit-enable)
+  ;;     (define-key coq-mode-map (kbd coq-double-hit-hot-key) coq-double-hit-hot-keybinding)
+  ;;    (setq coq-double-hit-hot-keybinding (key-binding coq-double-hit-hot-key))
+  ;;    (define-key coq-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert))
   )
 
 
@@ -2814,20 +2166,13 @@ are non-nil at the same time, this gives priority to the former."
 (define-key coq-mode-map (kbd ".") 'coq-terminator-insert)
 ;(define-key coq-mode-map (kbd ";") 'coq-terminator-insert) ; for french keyboards
 
-;; Activation of ML4PG functionality
-(declare-function ml4pg-select-mode "ml4pg") ;; Avoids copilation warnings
-
-(defun coq-activate-ml4pg ()
-  (let ((filename (concatenate 'string proof-home-directory "contrib/ML4PG/ml4pg.el")))
-    (when (file-exists-p filename) (load-file filename) (ml4pg-select-mode))))
-
 ;;;;;;;;;;;;;;
 
 ;; This was done in coq-compile-common, but it is actually a good idea even
 ;; when "compile when require" is off. When switching scripting buffer, let us
 ;; restart the coq shell process, so that it applies local coqtop options. 
 (add-hook 'proof-deactivate-scripting-hook
-          'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
+          'coq-switch-buffer-kill-proof-server ;; this function is in coq-compile-common
           t)
 
 
@@ -2837,8 +2182,6 @@ are non-nil at the same time, this gives priority to the former."
 (defun proof-delete-other-frames () (proof-delete-all-associated-windows))
 
 (provide 'coq)
-
-
 
 ;;   Local Variables: ***
 ;;   fill-column: 79 ***

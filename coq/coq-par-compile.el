@@ -1,11 +1,27 @@
 ;; coq-par-compile.el --- parallel compilation of required modules
-;; Copyright (C) 1994-2012 LFCS Edinburgh.
-;; Authors: Hendrik Tews
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;; Maintainer: Hendrik Tews <hendrik@askra.de>
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This file implements compilation of required modules. The
@@ -27,11 +43,8 @@
 (eval-when-compile
   (require 'proof-compat))
 
-(eval-when (compile)
-  (defvar queueitems nil)       ; dynamic scope in p-s-extend-queue-hook
-  (defvar coq-compile-before-require nil)       ; defpacustom
-  (defvar coq-compile-parallel-in-background nil) ; defpacustom
-  (defvar coq-confirm-external-compilation nil)); defpacustom
+(eval-when-compile
+  (defvar queueitems))       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
 
@@ -560,7 +573,7 @@ belonging to the circle."
 Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqdep-prog-args coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (coq-coqdep-prog-args coq-load-path (file-name-directory lib-src-file))
          (list lib-src-file)))
 
 (defun coq-par-coqc-arguments (lib-src-file coq-load-path)
@@ -568,7 +581,7 @@ load-path options to coqdep."
 Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqc-prog-args coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (coq-coqc-prog-args coq-load-path (file-name-directory lib-src-file))
          (list lib-src-file)))
 
 (defun coq-par-analyse-coq-dep-exit (status output command)
@@ -667,12 +680,7 @@ depending on `coq-compile-quick', must be done elsewhere.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if (and coq-load-path-include-current (coq--pre-v85))
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "")
                             "Require " module-id "."))
         result)
@@ -709,7 +717,7 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-seq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
+    (cl-assert (<= (length result) 1)
 	    nil "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
@@ -946,7 +954,7 @@ errors are reported with an error message."
 
 (defun coq-par-run-vio2vo-queue ()
   "Start delayed vio2vo compilation."
-  (assert (not coq--last-compilation-job)
+  (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and vio2vo in parallel 3")
   (setq coq--compile-vio2vo-in-progress t)
   (setq coq--compile-vio2vo-delay-timer nil)
@@ -981,7 +989,6 @@ somewhere after the last require command."
   ;; proof-shell.el.
   (list nil nil callback))
 
-
 ;;; background job tasks
 
 (defun coq-par-job-coqc-finished (job)
@@ -1008,7 +1015,7 @@ somewhere after the last require command."
 
 (defun coq-par-add-queue-dependency (dependee dependant)
   "Add queue dependency from child job DEPENDEE to parent job DEPENDANT."
-  (assert (and (not (get dependant 'queue-dependant-waiting))
+  (cl-assert (and (not (get dependant 'queue-dependant-waiting))
 	       (not (get dependee 'queue-dependant)))
 	  nil "queue dependency cannot be added")
   (put dependant 'queue-dependant-waiting t)
@@ -1199,13 +1206,13 @@ when they transition from 'waiting-queue to 'ready:
 
 This function can safely be called for non-top-level jobs. This
 function must not be called for failed jobs."
-  (assert (not (get job 'failed))
+  (cl-assert (not (get job 'failed))
 	  nil "coq-par-retire-top-level-job precondition failed")
   (let ((span (get job 'require-span))
 	(items (get job 'queueitems)))
     (when (and span coq-lock-ancestors)
       (dolist (anc-job (get job 'ancestors))
-	(assert (not (eq (get anc-job 'lock-state) 'unlocked))
+	(cl-assert (not (eq (get anc-job 'lock-state) 'unlocked))
 		nil "bad ancestor lock state")
 	(when (eq (get anc-job 'lock-state) 'locked)
 	  (put anc-job 'lock-state 'asserted)
@@ -1287,7 +1294,7 @@ case, the following actions are taken:
       (let ((dependant (get job 'queue-dependant)))
 	(if dependant
 	    (progn
-	      (assert (not (eq coq--last-compilation-job job))
+	      (cl-assert (not (eq coq--last-compilation-job job))
 		      nil "coq--last-compilation-job invariant error")
 	      (put dependant 'queue-dependant-waiting nil)
 	      (when coq--debug-auto-compilation
@@ -1304,9 +1311,8 @@ case, the following actions are taken:
 	      ;; variables that hold the queue span are buffer local
 	      (with-current-buffer (or proof-script-buffer (current-buffer))
 		(proof-script-clear-queue-spans-on-error nil))
-	      (proof-release-lock)
 	      (when (eq coq-compile-quick 'quick-and-vio2vo)
-		(assert (not coq--compile-vio2vo-delay-timer)
+		(cl-assert (not coq--compile-vio2vo-delay-timer)
 			nil "vio2vo timer set before last compilation job")
 		(setq coq--compile-vio2vo-delay-timer
 		      (run-at-time coq-compile-vio2vo-delay nil
@@ -1359,7 +1365,7 @@ if it reaches 0, the next transition is triggered for DEPENDANT.
 For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
 'clone jobs this 'waiting-dep -> 'waiting-queue."
   ;(message "%s: CPDCD with time %s" (get dependant 'name) dependee-time)
-  (assert (eq (get dependant 'state) 'waiting-dep)
+  (cl-assert (eq (get dependant 'state) 'waiting-dep)
 	  nil "wrong state of parent dependant job")
   (when (coq-par-time-less (get dependant 'youngest-coqc-dependency)
 			   dependee-time)
@@ -1368,7 +1374,7 @@ For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
        (append dependee-ancestors (get dependant 'ancestors)))
   (put dependant 'coqc-dependency-count
        (1- (get dependant 'coqc-dependency-count)))
-  (assert (<= 0 (get dependant 'coqc-dependency-count))
+  (cl-assert (<= 0 (get dependant 'coqc-dependency-count))
 	  nil "dependency count below zero")
   (when coq--debug-auto-compilation
     (message "%s: coqc dependency count down to %d"
@@ -1436,7 +1442,7 @@ This function makes the following actions.
 		       "maybe kickoff queue")
 	       (get job 'name)
 	       (if dependant-alive "some" "no")))
-    (assert (or (not (get job 'failed)) (not dependant-alive))
+    (cl-assert (or (not (get job 'failed)) (not dependant-alive))
 	    nil "failed job with non-failing dependant")
     (when (or (and (not dependant-alive)
 		   (not (get job 'require-span))
@@ -1509,7 +1515,7 @@ coqdep or coqc are started for it."
 	 (get job 'required-obj-file))))
      ((eq job-state 'ready)
       (coq-par-start-vio2vo job))
-     (t (assert nil nil "coq-par-start-task with invalid job")))))
+     (t (cl-assert nil nil "coq-par-start-task with invalid job")))))
 
 (defun coq-par-start-jobs-until-full ()
   "Start background jobs until the limit is reached."
@@ -1619,7 +1625,7 @@ Return t if job has a direct or indirect dependant that has not
 failed yet and that is in a state before 'waiting-queue. Also,
 return t if JOB has a dependant that is a top-level job which has
 not yet failed."
-  (assert (not (eq (get job 'lock-state) 'asserted))
+  (cl-assert (not (eq (get job 'lock-state) 'asserted))
 	  nil "coq-par-ongoing-compilation precondition failed")
   (cond
    ((get job 'failed)
@@ -1650,7 +1656,7 @@ not yet failed."
 	(setq res (coq-par-ongoing-compilation dep)))
       res))
    (t
-    (assert nil nil
+    (cl-assert nil nil
 	    "impossible ancestor state %s on job %s"
 	    (get job 'state) (get job 'name)))))
 
@@ -1677,7 +1683,7 @@ Mark JOB with 'queue-failed, and, if JOB is in state
 appropriate."
   (unless (or (get job 'failed) (get job 'queue-failed))
     (put job 'queue-failed t)
-    (assert (not (eq (get job 'state) 'ready))
+    (cl-assert (not (eq (get job 'state) 'ready))
 	    nil "coq-par-mark-queue-failing impossible state")
     (when coq--debug-auto-compilation
       (message "%s: mark as queue-failed, %s"
@@ -1890,7 +1896,7 @@ there is no last compilation job."
     ;; add the asserted items to the last compilation job
     (if coq--last-compilation-job
 	(progn
-	  (assert (not (coq-par-job-is-ready coq--last-compilation-job))
+	  (cl-assert (not (coq-par-job-is-ready coq--last-compilation-job))
 		  nil "last compilation job from previous compilation ready")
 	  (put coq--last-compilation-job 'queueitems
 	       (nconc (get coq--last-compilation-job 'queueitems)
@@ -1976,7 +1982,7 @@ the maximal number of background compilation jobs is started."
 	(cancel-timer coq--compile-vio2vo-delay-timer)
 	(setq coq--compile-vio2vo-delay-timer nil))
       (when coq--compile-vio2vo-in-progress
-	(assert (not coq--last-compilation-job)
+	(cl-assert (not coq--last-compilation-job)
 		nil "normal compilation and vio2vo in parallel 2")
 	;; there are only vio2vo background processes
 	(coq-par-kill-all-processes)
@@ -1994,7 +2000,7 @@ the maximal number of background compilation jobs is started."
 	(message "return control, no background jobs")))))
 
 (defun coq-par-preprocess-require-commands ()
-  "Coq function for `proof-shell-extend-queue-hook' doing parallel compilation.
+  "Coq function for `proof-extend-queue-hook' doing parallel compilation.
 If `coq-compile-before-require' is non-nil, this function starts
 the compilation (if necessary) of the dependencies
 ansynchronously in parallel in the background. This function only

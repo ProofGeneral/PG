@@ -1,0 +1,39 @@
+# multiple files
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (process-file "scripts/multiple-plain/a.v")
+  (pause-to-refresh "Next, will process b.v")
+  (process-file "b.v")
+  (pause-to-refresh "Next, will process c.v")
+  (proof-server-restart)
+  (process-file "c.v")
+  (pause-to-refresh "Will process a.v again")
+  (proof-server-restart)
+  (process-file "a.v")
+  (pause-to-refresh "Testing multiple-file recompilation...")
+  (setq coq-compile-before-require t)
+  (pause-to-refresh "Processing f.v...")
+  (process-file "multiple-files-single-dir/f.v")
+  (pause-to-refresh "Saving d.v")
+  (find-file "d.v")
+  (set-buffer-modified-p t)
+  (save-buffer)
+  (pause-to-refresh "Retracting f.v")
+  (retract-file "f.v")
+  (message "Done with test")
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should each file, a.v, b.v, c.v, then a.v again, fully and successfully processed
+
+There should be a pause after each file is processed
+
+The file f.v, which uses other files in its directory, should be
+successfully processed, then the file d.v is saved, then f.v is
+successfully retracted
+EOF
+)
+
+

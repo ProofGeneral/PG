@@ -1,12 +1,26 @@
 ;; proof-syntax.el --- Functions for dealing with syntax
-;;
-;; Copyright (C) 1997-2001, 2010 LFCS Edinburgh.
-;; Authors:   David Aspinall, Healfdene Goguen,
-;;	      Thomas Kleymann, Dilip Sequiera
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 
 (require 'font-lock)
 (require 'proof-config)			; proof-case-fold-search
@@ -282,7 +296,7 @@ or extension.
 Using %e can avoid problems with dumb proof assistants who don't
 understand ~, for example.
 
-For all these cases, the escapes in `proof-shell-filename-escapes'
+For all these cases, the escapes in `proof-server-filename-escapes'
 are processed.
 
 If STRING is in fact a function, instead invoke it on FILENAME and
@@ -292,13 +306,13 @@ return the resulting (string) value."
     (funcall string filename))
    (t
     (proof-format
-     (list (cons "%s" (proof-format proof-shell-filename-escapes
+     (list (cons "%s" (proof-format proof-server-filename-escapes
 				    (expand-file-name filename)))
-	   (cons "%e" (proof-format proof-shell-filename-escapes
+	   (cons "%e" (proof-format proof-server-filename-escapes
 				    (expand-file-name filename)))
-	   (cons "%r" (proof-format proof-shell-filename-escapes
+	   (cons "%r" (proof-format proof-server-filename-escapes
 				    filename))
-	   (cons "%m" (proof-format proof-shell-filename-escapes
+	   (cons "%m" (proof-format proof-server-filename-escapes
 				    (file-name-nondirectory
 				     (file-name-sans-extension filename)))))
      string))))

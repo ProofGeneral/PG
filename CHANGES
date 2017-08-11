@@ -4,6 +4,30 @@ This is a summary of main changes.  For details, please see
 the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
+* Changes of Proof General 5.0 from Proof General 4.4.1
+
+** Support for Coq asynchronous processing mode
+
+   Proof General now uses Coq's XML protocol, rather than the REPL,
+   allowing it to use asynchronous processing feature. Proof General
+   now requires Coq 8.5 or higher.
+
+** Removal of support for other provers
+
+   Proof General interacts with Coq using its XML protocol, which
+   works much differently than the REPL. All the other formerly-supported
+   provers also interacted with Proof General via a REPL. Because the
+   REPL code no longer exists in Proof General, no other provers are
+   currently supported.
+
+** New home page
+
+   The home page for Proof General is now at
+   
+     https://proofgeneral.github.io/
+
+   The Github repository remains for downloading the latest code.
+
 * Changes of Proof General 4.4.1 from Proof General 4.4
 
 ** Generic changes
@@ -11,6 +35,12 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 *** bug fixes
     - Using query-replace (or replace-string) in the processed region
       doesn't wrongly jump to the first match anymore.
+
+*** remove key-binding for proof-electric-terminator-toggle
+    - The default key-binding for proof-electric-terminator-toggle
+      (C-c .) was too easy to enter by mistake. And it was not that
+      useful as we can expect users to configure electric-terminator
+      once and for all. Hence the removal of this default key-binding.
 
 ** Coq changes
 

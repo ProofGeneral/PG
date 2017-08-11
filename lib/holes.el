@@ -1,38 +1,38 @@
 ;;; holes.el --- a little piece of elisp to define holes in your buffer
-;;
-;; Copyright (C) 2001 Pierre Courtieu
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;; This file uses spans, an interface for extent (XEmacs) and overlays
 ;; (emacs), by Healfdene Goguen for the proofgeneral mode.
-;;
-;; Credits also to Stefan Monnier for great help in making this file
-;; cleaner.
-;;
-;; Further cleanups by David Aspinall.
-;;
-;; This software is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public
-;; License version 2, as published by the Free Software Foundation.
-;;
-;; This software is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-;;
-;; See the GNU General Public License version 2 for more details
-;; (enclosed in the file GPL).
-;;
+
 ;; See documentation in variable holes-short-doc.
 ;;
-
 ;;; Commentary:
 ;;
 ;; See documentation of `holes-mode'.
 
-
-(eval-when-compile 
-  (require 'span))
+(require 'cl-lib)
+(require 'span)
 (require 'cl)
 
 ;;; Code:
@@ -179,7 +179,7 @@ This is not the keymap used on holes's overlay (see `hole-map' instead).")
 
 (defun holes-copy-active-region ()
   "Copy and retuurn the active region."
-  (assert mark-active nil "the region is not active now.")
+  (cl-assert mark-active nil "the region is not active now.")
   (copy-region-as-kill (region-beginning) (region-end))
   (car kill-ring))
 
@@ -189,19 +189,19 @@ This is not the keymap used on holes's overlay (see `hole-map' instead).")
 
 (defun holes-hole-start-position (hole)
   "Return start position of HOLE."
-  (assert (holes-is-hole-p hole) t 
+  (cl-assert (holes-is-hole-p hole) t 
 	  "holes-hole-start-position: %s is not a hole")
   (span-start hole))
 
 (defun holes-hole-end-position (hole)
   "Return end position of HOLE."
-  (assert (holes-is-hole-p hole) t "holes-hole-end-position: %s is not a hole")
+  (cl-assert (holes-is-hole-p hole) t "holes-hole-end-position: %s is not a hole")
   (span-end hole))
 
 (defun holes-hole-buffer (hole)
   "Return the buffer of HOLE."
   "Internal."
-  (assert (holes-is-hole-p hole) t "holes-hole-buffer: %s is not a hole")
+  (cl-assert (holes-is-hole-p hole) t "holes-hole-buffer: %s is not a hole")
   (span-buffer hole))
 
 (defun holes-hole-at (&optional pos)
@@ -220,7 +220,7 @@ active-hole-marker variable)."
   "Return the position of the start of the active hole.
 See `active-hole-buffer' to get its buffer.  Returns an error if
 active hole doesn't exist (the marker is set to nothing)."
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "holes-active-hole-start-position: no active hole")
   (holes-hole-start-position holes-active-hole))
 
@@ -228,7 +228,7 @@ active hole doesn't exist (the marker is set to nothing)."
   "Return the position of the start of the active hole.
 See `active-hole-buffer' to get its buffer.  Returns an error if
 active hole doesn't exist (the marker is set to nothing)."
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "holes-active-hole-end-position: no active hole")
   (holes-hole-end-position holes-active-hole))
 
@@ -237,7 +237,7 @@ active hole doesn't exist (the marker is set to nothing)."
   "Return the buffer containing the active hole.
 Raise an error if the active hole is not set.  Don't care if the
 active hole is empty."
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "holes-active-hole-buffer: no active hole")
   (holes-hole-buffer holes-active-hole))
 
@@ -245,7 +245,7 @@ active hole is empty."
   "Set point to active hole.
 Raises an error if active-hole is not set."
   (interactive)
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "holes-goto-active-hole: no active hole")
   (goto-char (holes-active-hole-start-position)))
 
@@ -254,7 +254,7 @@ Raises an error if active-hole is not set."
   "Highlight a HOLE with the `active-hole-face'.
 DON'T USE this as it would break synchronization (non active hole
 highlighted)."
-  (assert (holes-is-hole-p hole) t
+  (cl-assert (holes-is-hole-p hole) t
 	  "holes-highlight-hole-as-active: %s is not a hole")
   (set-span-face hole 'active-hole-face))
 
@@ -262,7 +262,7 @@ highlighted)."
   "Highlight a HOLE with the not active face.
 DON'T USE this as it would break synchronization (active hole non
 highlighted)."
-  (assert (holes-is-hole-p hole) t
+  (cl-assert (holes-is-hole-p hole) t
 	  "holes-highlight-hole: %s is not a hole")
   (set-span-face hole 'inactive-hole-face))
 
@@ -282,7 +282,7 @@ the active hole is already disable."
 (defun holes-set-active-hole (hole)
   "Set active hole to HOLE.
 Error if HOLE is not a hole."
-  (assert (holes-is-hole-p hole) t
+  (cl-assert (holes-is-hole-p hole) t
 	  "holes-set-active-hole: %s is not a hole")
   (if (holes-active-hole-exist-p) 
       (holes-highlight-hole holes-active-hole))
@@ -327,7 +327,7 @@ the span."
 
 (defun holes-clear-hole (hole)
   "Clear the HOLE."
-  (assert (holes-is-hole-p hole) t
+  (cl-assert (holes-is-hole-p hole) t
 	  "holes-clear-hole: %s is not a hole")
   (if (and (holes-active-hole-exist-p) 
 	   (eq holes-active-hole hole))
@@ -365,7 +365,7 @@ hole found, return nil."
 
 (defun holes-next-after-active-hole ()
   "Internal."
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "next-active-hole: no active hole")
   (holes-next (holes-active-hole-end-position)
 	      (holes-active-hole-buffer)))
@@ -438,7 +438,7 @@ goal(FIXME?).  Use `replace-active-hole' instead."
 Like `holes-replace-active-hole', but then sets the active hole to the
 following hole if it exists."
   (interactive)
-  (assert (holes-active-hole-exist-p) t
+  (cl-assert (holes-active-hole-exist-p) t
 	  "holes-replace-update-active-hole: no active hole")
   (if (holes-active-hole-exist-p)
       (let ((nxthole (holes-next-after-active-hole)))
@@ -557,8 +557,8 @@ Sets `holes-active-hole' to the next hole if it exists."
   "Moves the point to current active hole (if any and if in current buffer).
 Destroy it and makes the next hole active if any."
   (interactive)
-  (assert (holes-active-hole-exist-p) nil "no active hole")
-  (assert (eq (current-buffer) (holes-active-hole-buffer)) nil
+  (cl-assert (holes-active-hole-exist-p) nil "no active hole")
+  (cl-assert (eq (current-buffer) (holes-active-hole-buffer)) nil
 	  "active hole not in this buffer")
   (holes-goto-active-hole)
   (holes-delete-update-active-hole))
@@ -587,7 +587,7 @@ created.  Return the number of holes created."
   (let ((n 0))
     (save-excursion
       (while (re-search-backward holes-empty-hole-regexp limit t)
-	(incf n)
+	(cl-incf n)
 	(if (not (match-end 1))
 	    (holes-make-hole (match-beginning 0) (match-end 0))
 	  (holes-make-hole (match-beginning 1) (match-end 1))
@@ -601,10 +601,9 @@ created.  Return the number of holes created."
   "Default hook after a skeleton insertion: put holes at each interesting position."
   ;; Not all versions of skeleton provide `skeleton-positions' and the
   ;; corresponding @ operation :-(
-  (unless (boundp 'mmm-inside-insert-by-key) ; pc: this hack is ok for me
-    (when (boundp 'skeleton-positions)
-      (dolist (pos skeleton-positions)	;; put holes here
-	(holes-set-make-active-hole pos pos)))))
+  (when (boundp 'skeleton-positions)
+    (dolist (pos skeleton-positions)	;; put holes here
+      (holes-set-make-active-hole pos pos))))
 
 (defconst holes-jump-doc
   (concat "Hit \\[holes-set-point-next-hole-destroy] to jump "
@@ -620,7 +619,7 @@ ALWAYSJUMP is non nil, jump to the first hole even if more than
 one."
   (unless noindent (save-excursion (indent-region pos (point) nil)))
   (let ((n (holes-replace-string-by-holes-backward pos)))
-    (case n
+    (cl-case n
       (0 nil)				; no hole, stay here.
       (1
        (goto-char pos)

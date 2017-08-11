@@ -26,15 +26,14 @@ A. The recommended way to set `coq-prog-name` is to create a file
 
 -----------------------------------------------------------------
 
-Q. The prover process produces some useful output I'd like to
-   keep a note of, how do I do that?
+Q. Coq produces some useful output I'd like to keep a note of, how do I do that?
 
 A. Some people cut and paste into comments in their source files.
    But you can easily make new files or temporary buffers in Emacs:
 
    * copy text from \*response* or \*goals* buffer
    * `C-x b <enter new name> RET`
-   * Switch to correct mode, e.g.: `M-x isar-response-mode RET`
+   * Switch to correct mode: `M-x coq-mode RET`
    * Paste text, the highlighting/sumbols should appear correctly.
 
 -----------------------------------------------------------------
@@ -80,12 +79,6 @@ A. You need to enable Unicode Tokens by the menu item:
    Note that we don't do this by default, because from the system's
    perspective it is difficult to determine if this will succeed ---
    or just produce funny characters that confuse new users even more.
-
-   If you are using Isabelle, the wrapper script will load Tokens
-   from any location, and you can enable it by passing the option
-   "-x true".
-
------------------------------------------------------------------
 
 Q. With Unicode symbols enabled, the symbols look a mess, e.g.
    compressed and overlap one another.
@@ -211,28 +204,13 @@ A. Your Emacs distribution includes a version of xml.el which has
 
 -----------------------------------------------------------------
 
-Q. Undo behaviour in Coq seems to stop working with very long
-   sequences of commands.
-
-A. Coq has a limited history for Undo.  Change
-
-    Coq -> Settings -> Undo Depth
-
-   to something higher.  Default is 200 (100 outside PG).
-
------------------------------------------------------------------
-
 Q. Can I join any mailing lists for Proof General?
 
-A. Of course, email <proofgeneral-request@informatics.ed.ac.uk>
-   with the line "subscribe" in the message body, to join the
-   users' and announcements list.
+A. Yes, there are two mailing lists available, one for users, and another
+for those interested in developing Proof General. Visit this Web site
+for full details:
 
-   There is also a list for developers, proofgeneral-devel:
-   <http://proofgeneral.inf.ed.ac.uk/mailinglist>
-   for more details.
-
------------------------------------------------------------------
+    http://proofgeneral.inf.ed.ac.uk/mailinglist
 
 Q. Emacs appears to hang when the prover process is started.
 

@@ -1,10 +1,26 @@
 ;;; pg-autotest.el --- Simple testing framework for Proof General
-;;
-;; Copyright (C) 2005, 2009-11 LFCS Edinburgh, David Aspinall.
-;; Authors:   David Aspinall
-;;
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 ;;; Commentary:
 ;;
 ;; Support for running a series of scripted UI tests.
@@ -14,14 +30,11 @@
 ;; -- add macros for defining test suites
 ;; -- add more precise functional tests to check results
 ;; -- add negative tests
-;;
-;; $Id$
 
 (require 'proof-splash)
 (setq proof-splash-enable nil)		; prevent splash when testing
 
 (require 'proof)
-(require 'proof-shell)
 (require 'proof-utils)
 
 ;;; Code:
@@ -231,7 +244,7 @@ completely processing the buffer as the last step."
 		 (when proof-shell-busy
 		   (pg-autotest-message
 		    " random jump: interrupting prover")
-		   (proof-interrupt-process)))
+		   (proof-server-interrupt-process)))
 	     (proof-shell-wait))
 	   (decf jumps)))))
   (unless (proof-locked-region-full-p)

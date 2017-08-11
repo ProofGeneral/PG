@@ -1,11 +1,27 @@
 ;; proof-utils.el --- Proof General utility functions and macros
-;;
-;; Copyright (C) 1998-2002, 2009, 2011 LFCS Edinburgh.
-;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; Loading note: this file is required immediately from proof.el, so
@@ -50,7 +66,6 @@
 (require 'bufhist)			; bufhist
 (require 'proof-syntax)			; syntax utils
 (require 'proof-autoloads)		; interface fns
-(require 'scomint)			; for proof-shell-live-buffer
 
 ;;; Code:
 
@@ -165,7 +180,7 @@ Restrict to BUFLIST if it's set."
 A hook function for `kill-buffer-hook'.
 This is a fairly crude and not-entirely-robust way to prevent the
 user accidently killing an associated buffer."
-  (if (and (proof-shell-live-buffer) proof-buffer-type)
+  (if proof-buffer-type
       (progn
 	(let ((bufname (buffer-name)))
 	  (bufhist-erase-buffer)
@@ -241,7 +256,7 @@ C-c C-l."
   ;; IF there *isn't* a visible window showing buffer...
   (unless (get-buffer-window buffer 0)
     (if proof-three-window-enable
-        (if (< proof-advertise-layout-count 30) (incf proof-advertise-layout-count)
+        (if (< proof-advertise-layout-count 30) (cl-incf proof-advertise-layout-count)
           (message (substitute-command-keys "Hit \\[proof-layout-windows] to reset layout"))
           (setq proof-advertise-layout-count 0)))
     ;; THEN either we are in 2 wins mode and we must switch the assoc
@@ -278,32 +293,41 @@ C-c C-l."
 If optional POS is present, will set point to POS.
 Otherwise move point to the end of the buffer.
 Ensure that point is visible in window."
-  (if (or force proof-auto-raise-buffers)
-    (save-excursion
+  (when (and buffer (or force proof-auto-raise-buffers))
     (save-selected-window
       (let ((window (proof-get-window-for-buffer buffer)))
-	(if (window-live-p window) ;; [fails sometimes?]
-	    (progn
-	      ;; Set the size and point position.
-	      (if proof-three-window-enable
-		  (set-window-dedicated-p window proof-three-window-enable))
-	      (select-window window)
-	      (if proof-shrink-windows-tofit
-		  (proof-resize-window-tofit)
-		;; If we're not shrinking to fit, allow the size of
-		;; this window to change.  [NB: might be nicer to
-		;; fix the size based on user choice]
-		(setq window-size-fixed nil))
-	      ;; For various reasons, point may get moved around in
-	      ;; response buffer.  Attempt to normalise its position.
-	      (goto-char (or pos (point-max)))
-	      (if pos
-		  (beginning-of-line)
-		(skip-chars-backward "\n\t "))
-	      ;; Ensure point visible.  Again, window may have died
+	(when (window-live-p window) ;; [fails sometimes?]
+	  ;; Set the size and point position.
+	  (if proof-three-window-enable
+	      (set-window-dedicated-p window proof-three-window-enable))
+	  (select-window window)
+	  (if proof-shrink-windows-tofit
+	      (proof-resize-window-tofit)
+	    ;; If we're not shrinking to fit, allow the size of
+	    ;; this window to change.  [NB: might be nicer to
+	    ;; fix the size based on user choice]
+	    (setq window-size-fixed nil))
+	  ;; calculate visibile position without moving point
+	  (let ((vis-pos (or pos (point-max)))
+		(min-pos (point-min))
+		(ws-chars '(32 9 10))) ; space, tab, newline
+	    (if pos
+		;; find beginning of line
+		(progn 
+		  (unless (= vis-pos min-pos)
+		    (cl-decf vis-pos)
+		    (while (and (> vis-pos min-pos)
+				(not (= (char-after vis-pos) 10)))
+		      (cl-decf vis-pos))
+		    (cl-incf vis-pos))
+		  ;; skip backwards over whitespace
+		  (while (and (> vis-pos min-pos)
+			      (memq (char-after vis-pos) ws-chars))
+		    (cl-decf vis-pos)))
+	      ;; Ensure vis-pos is visible.  Again, window may have died
 	      ;; inside shrink to fit, for some reason
 	      (when (window-live-p window)
-		(unless (pos-visible-in-window-p (point) window)
+		(unless (pos-visible-in-window-p vis-pos window)
 		  (recenter -1))
 		(with-current-buffer buffer
 		  (if (window-bottom-p window)
@@ -352,6 +376,13 @@ If flag `proof-general-debug' is nil, do nothing."
 	(display-warning 'proof-general
 			 formatted :debug
 			 "*PG Debug*")))))
+
+;;;###autoload
+(defun proof-debug-message (msg &rest args)
+  "Issue the debugging message (format MSG ARGS) in the *Messages* buffer (and mini-buffer).
+If flag `proof-general-debug-messages' is nil, do nothing."
+  (when proof-general-debug-messages
+    (apply #'message (concat "*PG Debug* " msg) args)))
 
 ;; Utility used in the "Buffers" menu, and throughout
 (defun proof-switch-to-buffer (buf &optional noselect)
@@ -411,7 +442,7 @@ or if the window is the only window of its frame."
 	  ;; weird test cases:
 	  ;; cur=45, max=23, desired=121, extraline=0
 	  ;; current height
-	  ;;; ((cur-height (window-height window))
+	  ;;; (cur-height (window-height window))
 	   ;; Most window is allowed to grow to
 	  ((max-height
 	     (/ (frame-height (window-frame window))
@@ -475,40 +506,6 @@ or if the window is the only window of its frame."
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Function for submitting bug reports.
-;;
-
-(defun proof-submit-bug-report ()
-  "Submit an bug report or other report for Proof General."
-  (interactive)
-  (require 'reporter)
-  (let
-      ((reporter-prompt-for-summary-p
-	"(Very) brief summary of problem or suggestion: "))
-    (reporter-submit-bug-report
-     "da+pg-bugs@inf.ed.ac.uk"
-     "Proof General"
-     (list 'proof-general-version 'proof-assistant)
-     nil nil
-     "*** Proof General now uses Trac for project management and bug reporting, please go to:
-***
-***    http://proofgeneral.inf.ed.ac.uk/trac/search
-***
-*** To see if your bug has been reported already, and a new ticket if not.
-*** To report a bug, either register yourself as a user, or use the generic account
-*** username \"pgemacs\" with password \"pgemacs\"
-***
-*** Please only continue with this email mechanism instead IF YOU REALLY MUST.
-*** The address is not monitored very often and quite possibly will be ignored.
-***
-*** When reporting a bug, please include a small test case for us to repeat it.
-*** Please also check that it is not already covered in the BUGS or FAQ files that came with
-*** the distribution, or the latest versions at
-***    http://proofgeneral.inf.ed.ac.uk/BUGS  and
-***    http://proofgeneral.inf.ed.ac.uk/FAQ ")))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -638,7 +635,7 @@ KEY is added onto proof assistant map."
 (defmacro proof-definvisible (fn string &optional key)
   "Define function FN to send STRING to proof assistant, optional keydef KEY.
 This is intended for defining proof assistant specific functions.
-STRING is sent using `proof-shell-invisible-command', which see.
+STRING is sent using `proof-server-invisible-command', which see.
 STRING may be a string or a function which returns a string.
 KEY is added onto proof assistant map."
   `(progn
@@ -651,10 +648,7 @@ KEY is added onto proof assistant map."
 		  "an instruction")
 		" to the proof assistant.")
        (interactive)
-       ,(if (stringp string)
-	    (list 'proof-shell-invisible-command string)
-	  (list 'proof-shell-invisible-command (eval string))))))
-
+       ,(list 'proof-server-invisible-command string))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -751,11 +745,11 @@ If optional arg REALLY-WORD is non-nil, it finds just a word."
 ;; Stripping output and message
 ;;
 
-(defsubst proof-shell-strip-output-markup (string &optional push)
+(defsubst proof-server-strip-output-markup (string &optional push)
   "Strip output markup from STRING.
-Convenience function to call function `proof-shell-strip-output-markup'.
+Convenience function to call function `proof-server-strip-output-markup'.
 Optional argument PUSH is ignored."
-  (funcall proof-shell-strip-output-markup string))
+  (funcall proof-server-strip-output-markup string))
 
 (defun proof-minibuffer-message (str)
   "Output STR in minibuffer."
@@ -763,14 +757,14 @@ Optional argument PUSH is ignored."
       (message "%s" ;; to escape format characters
 	       (concat "[" proof-assistant "] "
 		       ;; TODO: rather than stripping, could try fontifying
-		       (proof-shell-strip-output-markup str)))))
+		       (proof-server-strip-output-markup str)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Extracting visible text in a buffer
 ;;
-;; NB: this is possible automatic alternative to proof-shell-strip-output,
+;; NB: this is possible automatic alternative to proof-server-strip-output,
 ;; but is more reliable to have specific setting.
 ;;
 ;; (defun proof-buffer-substring-visible (start end)
@@ -789,7 +783,6 @@ Optional argument PUSH is ignored."
 ;;     (unless (get-text-property end 'invisible)
 ;;       (setq result (concat result (buffer-substring-no-properties
 ;;				   pos end))))))
-
 
 (provide 'proof-utils)
 ;;; proof-utils.el ends here

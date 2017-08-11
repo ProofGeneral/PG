@@ -1,15 +1,30 @@
 ;; pg-xml.el --- XML functions for Proof General
-;;
-;; Copyright (C) 2000-2002 LFCS Edinburgh.
-;; Author:     David Aspinall <David.Aspinall@ed.ac.uk>
-;; License:    GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 ;; XML functions for Proof General.
 ;;
 
-(require 'cl)
+(require 'cl-lib)
 
 (require 'xml)
 
@@ -78,7 +93,7 @@ Optional START and END bound the parse."
 (defun pg-xml-child-elts (node)
   "Return list of *element* children of NODE (ignoring strings)."
   (let ((children (xml-node-children node)))
-    (mapcan (lambda (x) (if (listp x) (list x))) children)))
+    (cl-mapcan (lambda (x) (if (listp x) (list x))) children)))
 
 (defun pg-xml-child-elt (node)
   "Return unique element child of NODE."
@@ -122,10 +137,10 @@ Optional START and END bound the parse."
   "Convert the XML trees in XMLS into a string (without additional indentation)."
   (let* (strs
 	 (insertfn    (lambda (&rest args)
-			(setq strs (cons (reduce 'concat args) strs)))))
+			(setq strs (cons (cl-reduce 'concat args) strs)))))
     (dolist (xml xmls)
       (pg-xml-output-internal xml nil insertfn))
-    (reduce 'concat (reverse strs))))
+    (cl-reduce 'concat (reverse strs))))
 
 ;; based on xml-debug-print from xml.el
 
@@ -165,66 +180,6 @@ Output with indentation INDENT-STRING (or none if nil)."
 
 (defun pg-xml-cdata (str)
   (concat "<!\\[CDATA\\[" str "\\]"))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Auxiliary functions for parsing common bits of PGIP
-;;
-
-(defsubst pg-pgip-get-area (node &optional optional defaultval)
-  (pg-xml-get-attr 'area node optional defaultval))
-
-(defun pg-pgip-get-icon (node &optional optional defaultval)
-  "Return the <icon> child of NODE, or nil if none."
-  (pg-xml-get-child 'icon node))
-
-(defsubst pg-pgip-get-name (node &optional optional defaultval)
-  (pg-xml-get-attr 'name node optional defaultval))
-
-(defsubst pg-pgip-get-version (node &optional optional defaultval)
-  (pg-xml-get-attr 'version node optional defaultval))
-
-(defsubst pg-pgip-get-descr (node &optional optional defaultval)
-  (pg-xml-get-attr 'descr node optional defaultval))
-
-(defsubst pg-pgip-get-thmname (node &optional optional defaultval)
-  (pg-xml-get-attr 'thmname node optional defaultval))
-
-(defsubst pg-pgip-get-thyname (node &optional optional defaultval)
-  (pg-xml-get-attr 'thmname node optional defaultval))
-
-(defsubst pg-pgip-get-url (node &optional optional defaultval)
-  (pg-xml-get-attr 'url node optional defaultval))
-
-(defsubst pg-pgip-get-srcid (node &optional optional defaultval)
-  (pg-xml-get-attr 'srcid node optional defaultval))
-
-(defsubst pg-pgip-get-proverid (node &optional optional defaultval)
-  (pg-xml-get-attr 'proverid node optional defaultval))
-
-(defsubst pg-pgip-get-symname (node &optional optional defaultval)
-  (pg-xml-get-attr 'name node optional defaultval))
-
-(defsubst pg-pgip-get-prefcat (node &optional optional defaultval)
-  (pg-xml-get-attr 'prefcategory node optional defaultval))
-
-(defsubst pg-pgip-get-default (node &optional optional defaultval)
-  (pg-xml-get-attr 'default node optional defaultval))
-
-(defsubst pg-pgip-get-objtype (node &optional optional defaultval)
-  (pg-xml-get-attr 'objtype node optional defaultval))
-
-(defsubst pg-pgip-get-value (node)
-  (pg-xml-get-text-content node))
-
-(defalias 'pg-pgip-get-displaytext 'pg-pgip-get-pgmltext)
-
-(defun pg-pgip-get-pgmltext (node)
-  ;; TODO: fetch text or markup XML with text properties
-  (pg-xml-get-text-content node))
-
-
-
 
 (provide 'pg-xml)
 ;;; pg-xml.el ends here

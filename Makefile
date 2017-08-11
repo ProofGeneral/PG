@@ -33,29 +33,24 @@ EMACS=$(shell if [ -z "`which emacs`" ]; then echo "Emacs executable not found";
 PREFIX=$(DESTDIR)/usr
 DEST_PREFIX=$(DESTDIR)/usr
 
-PROVERS=acl2 ccc coq hol98 isar lego hol-light phox pgshell pgocaml pghaskell
-OTHER_ELISP=generic lib contrib/mmm
+PROVERS=coq
+OTHER_ELISP=generic lib
 ELISP_DIRS=${PROVERS} ${OTHER_ELISP}
 ELISP_EXTRAS=
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
-DOC_EXAMPLES=acl2/*.acl2 hol98/*.sml isar/*.thy lclam/*.lcm lego/*.l pgshell/*.pgsh phox/*.phx plastic/*.lf twelf/*.elf
+DOC_EXAMPLES=
 DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS 
 
 BATCHEMACS=${EMACS} --batch --no-site-file -q 
 
 # Scripts to edit paths to shells
-BASH_SCRIPTS = isar/interface bin/proofgeneral
-PERL_SCRIPTS = lego/legotags coq/coqtags isar/isartags
-# Scripts to edit path to PG
-# the scripts target (part of install) and the cleanscripts target
-# (part of clean) work only under the assumption that PG_SCRIPTS is a subset of
-# the union of BASH_SCRIPTS and PERL_SCRIPTS.
-PG_SCRIPTS = bin/proofgeneral
+BASH_SCRIPTS =
+PERL_SCRIPTS = coq/coqtags
 
 # Scripts to install to bin directory
-BIN_SCRIPTS = bin/proofgeneral lego/legotags coq/coqtags isar/isartags
+BIN_SCRIPTS = coq/coqtags
 
 # Setting load path might be better in Elisp, but seems tricky to do
 # only during compilation.  Another idea: put a function in proof-site
@@ -236,7 +231,7 @@ doc.%: FORCE
 ## scripts: try to patch bash and perl scripts with correct paths
 ##
 .PHONY: scripts
-scripts: bashscripts perlscripts pgscripts
+scripts: bashscripts perlscripts
 
 .PHONY: bashscripts
 bashscripts:
@@ -260,18 +255,10 @@ perlscripts:
 	   sed -i.orig "s|^#.*!.*/bin/perl.*$$|#!$$perl|" $$i; \
 	 done)
 
-# FIXME: this next edit is really for install case, shouldn't be made
-# just when user types 'make'
-.PHONY: pgscripts
-pgscripts: bashscripts perlscripts
-	(for i in $(PG_SCRIPTS); do \
-	   sed -i.rm "s|PGHOMEDEFAULT=.*$$|PGHOMEDEFAULT=${DEST_ELISP}|" $$i; \
-	 done)
-
 # Set PGHOME path in scripts back to default location.
 .PHONY: cleanscripts
 cleanscripts:
-	(for i in $(PG_SCRIPTS) $(BASH_SCRIPTS) $(PERL_SCRIPTS); do \
+	(for i in $(BASH_SCRIPTS) $(PERL_SCRIPTS); do \
 	   if [ -f $$i.rm ] ; then \
 	     rm -f $$i.rm; \
 	   fi; \

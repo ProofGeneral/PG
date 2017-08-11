@@ -84,16 +84,17 @@ DEVELOPERS=\
 -u "gklein	Gerwin Klein	gerwin.klein@nicta.com.au" \
 -u "assia	Assia Mahboubi	assia.mahboubi@inria.fr" \
 -u "monnier	Stefan Monnier	monnier@iro.umontreal.ca" \
--u "tews	Hendrik Tews	hendrik@askra.de"
+-u "tews	Hendrik Tews	hendrik@askra.de" \
+-u "steck	Paul Steckler	steck@stecksoft.com"
 
 # PRERELEASE_PREFIX is used to match PRERELEASE_TAG in sed
 # line in tag target below, which edits $(DOWNLOADHTML)
 # The prereltag.txt is kept as a record in the distrib area
 # of the current pre-release version (currently not used explicitly
 # anywhere for web pages/whatever).
-PRERELEASE_PREFIX=4\.4\.1~pre
-PRERELEASE_TAG=4.4.1~pre
-### Formerly: PRERELEASE_TAG=4.4pre$(shell date "+%y%m%d")
+PRERELEASE_PREFIX=5\.0-git
+PRERELEASE_TAG=5.0-git
+### Formerly: PRERELEASE_TAG=5.0~pre$(shell date "+%y%m%d")
 PREREL_TAG_FILE=prereltag.txt
 
 # Path to web pages in repository, used for automatically
@@ -443,6 +444,8 @@ rpmrelease: rpm
 ##     This requires sudo powers for mounting, and
 ##     (on Ubuntu), packages hfsplus and hfsprogs
 ##
+## Warning: the following line was removed below so Contents/MacOS'll be empty:
+##     mv $(NAME)/bin/proofgeneral Contents/MacOS;
 DMGBUILD=$(DISTBUILDIR)/dmg
 dmg:
 	rm -rf $(DMGBUILD)
@@ -455,7 +458,6 @@ dmg:
 	$(TAR) -xpzf $(DISTBUILDIR)/$(RELEASENAMETGZ); \
 	mkdir -p Contents/Resources; \
 	mkdir -p Contents/MacOS; \
-	mv $(NAME)/bin/proofgeneral Contents/MacOS; \
 	mv $(NAME)/* Contents/Resources; \
 	rm -rf $(NAME) $(RELEASENAME); \
 	mkdir $(NAME).app; \

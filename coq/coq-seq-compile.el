@@ -1,11 +1,27 @@
 ;; coq-seq-compile.el --- sequential compilation of required modules
-;; Copyright (C) 1994-2012 LFCS Edinburgh.
-;; Authors: Hendrik Tews
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;; Maintainer: Hendrik Tews <hendrik@askra.de>
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This file implements compilation of required modules. The
@@ -18,11 +34,8 @@
 (eval-when-compile
   (require 'proof-compat))
 
-(eval-when (compile)
-  (defvar queueitems nil)       ; dynamic scope in p-s-extend-queue-hook
-  (defvar coq-compile-before-require nil)       ; defpacustom
-  (defvar coq-compile-parallel-in-background nil)       ; defpacustom
-  (defvar coq-confirm-external-compilation nil)); defpacustom
+(eval-when-compile
+  (defvar queueitems))       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
 
@@ -74,7 +87,7 @@ dependencies are absolute too and the simplified treatment of
 break."
   (let ((coqdep-arguments
          ;; FIXME should this use coq-coqdep-prog-args?
-         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file))
 		(list lib-src-file)))
         coqdep-status coqdep-output)
     (when coq--debug-auto-compilation
@@ -113,7 +126,7 @@ Display errors in buffer `coq--compile-response-buffer'."
   (message "Recompile %s" src-file)
   (let ((coqc-arguments
          (nconc
-          (coq-coqc-prog-args coq-load-path (file-name-directory src-file) (coq--pre-v85))
+          (coq-coqc-prog-args coq-load-path (file-name-directory src-file))
 	  (list src-file)))
         coqc-status)
     (coq-init-compile-response-buffer
@@ -295,12 +308,7 @@ decent error message.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if coq-load-path-include-current
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "") "Require " module-id "."))
         result)
     (unwind-protect
@@ -333,7 +341,7 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
+    (cl-assert (<= (length result) 1)
             "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
@@ -366,7 +374,7 @@ queue."
                                  span module-obj-file)))))
 
 (defun coq-seq-preprocess-require-commands ()
-  "Coq function for `proof-shell-extend-queue-hook'.
+  "Coq function for `proof-extend-queue-hook'.
 If `coq-compile-before-require' is non-nil, this function performs the
 compilation (if necessary) of the dependencies."
   (if coq-compile-before-require

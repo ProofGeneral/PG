@@ -1,11 +1,26 @@
 ;;; proof-unicode-tokens.el --- Support Unicode tokens package
 ;;
-;; Copyright (C) 2008, 2009 David Aspinall / LFCS Edinburgh
-;; Author:    David Aspinall <David.Aspinall@ed.ac.uk>
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
 ;;
 ;;; Commentary:
 ;;
@@ -19,12 +34,11 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(eval-when (compile)
-    (require 'scomint)
-    (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
-    (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
+(eval-when-compile
+  (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
+  (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 
 (require 'proof-config)			; config variables
 
@@ -34,7 +48,6 @@
 (defun proof-unicode-tokens-init ()
   "Set tables and configure hooks for modes."
   (proof-unicode-tokens-configure)
-  (add-hook 'proof-shell-init-hook 'proof-unicode-tokens-configure-prover)
   (let ((hooks (mapcar (lambda (m)
 			 (intern (concat (symbol-name m) "-hook")))
 		       (list
@@ -122,7 +135,7 @@ Switch off tokens in all script buffers, recalculate maps, turn on again."
 	      'proof-unicode-tokens-reconfigure)))
 
 ;;;
-;;; Interface to shell
+;;; Configuration interface to server
 ;;;
 
 (defun proof-unicode-tokens-configure-prover ()
@@ -131,17 +144,13 @@ Switch off tokens in all script buffers, recalculate maps, turn on again."
     (proof-unicode-tokens-deactivate-prover)))
 
 (defun proof-unicode-tokens-activate-prover ()
-  (when (and proof-tokens-activate-command
-	     (proof-shell-live-buffer)
-	     (proof-shell-available-p))
-    (proof-shell-invisible-command-invisible-result
+  (when proof-tokens-activate-command
+    (proof-server-invisible-command-invisible-result
      proof-tokens-activate-command)))
 
 (defun proof-unicode-tokens-deactivate-prover ()
-  (when (and proof-tokens-deactivate-command
-	     (proof-shell-live-buffer)
-	     (proof-shell-available-p))
-    (proof-shell-invisible-command-invisible-result
+  (when proof-tokens-deactivate-command
+    (proof-server-invisible-command-invisible-result
      proof-tokens-deactivate-command)))
 
 (provide 'proof-unicode-tokens)

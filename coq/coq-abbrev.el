@@ -1,13 +1,29 @@
 ;;; coq-abbrev.el --- coq abbrev table and menus for ProofGeneral mode
-;;
-;; Copyright (C) 1994-2009 LFCS Edinburgh.
-;; Authors: Healfdene Goguen, Pierre Courtieu
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-(require 'proof)
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 (require 'coq-syntax)
+(require 'coq-queries)
 
 (defun holes-show-doc ()
   (interactive)
@@ -71,7 +87,7 @@
     ;; DA: how about above, just temporarily disable saving?
     (message "Coq default abbrevs loaded")))
 
-(unless noninteractive
+(unless (or noninteractive (bound-and-true-p byte-compile-current-file))
   (coq-install-abbrevs))
 ;;;;;
 
@@ -98,7 +114,7 @@ It was constructed with `proof-defstringset-fn'.")
 
 ;; The coq menu partly built from tables
 
-;; Common part (scrit, response and goals buffers)
+;; Common part (script, response and goals buffers)
 (defconst coq-menu-common-entries
   `(
     ["Toggle 3 Windows Mode" proof-three-window-toggle
@@ -251,7 +267,7 @@ It was constructed with `proof-defstringset-fn'.")
     [ "Store Response" proof-store-response-win :help "Stores the content of response buffer in a dedicated buffer"]
     [ "Store Goal" proof-store-goals-win  :help "Stores the content of goals buffer in a dedicated buffer"]
     ("OTHER QUERIES"
-     ["Print Hint" coq-PrintHint t]
+     ["Print Hint" coq-print-hint t]
      ["Show ith Goal..." coq-Show t]
      ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
      ["Show ith Goal... (show all)" coq-Show-with-all t]
@@ -270,12 +286,10 @@ It was constructed with `proof-defstringset-fn'.")
      ["About...(show all)" coq-About-with-all t]
      ["Search..." coq-SearchConstant t]
      ["SearchRewrite..." coq-SearchRewrite t]
-     ["SearchAbout (hiding principles)..." coq-SearchAbout t]
-     ["SearchAbout..." coq-SearchAbout-all t]
      ["SearchPattern..." coq-SearchIsos t]
      ["Locate constant..." coq-LocateConstant t]
      ["Locate Library..." coq-LocateLibrary t]
-     ["Pwd" coq-Pwd t]
+     ["Pwd" coq-pwd t]
      ["Inspect..." coq-Inspect t]
      ["Print Section..." coq-PrintSection t]
      ""
@@ -289,18 +303,19 @@ It was constructed with `proof-defstringset-fn'.")
      ["Unset Printing Implicit" coq-unset-printing-implicit t]
      ["Set Printing Coercions" coq-set-printing-coercions t]
      ["Unset Printing Coercions" coq-unset-printing-coercions t]
+     ["Set Printing Compact Contexts" coq-set-printing-implicit t]
+     ["Unset Printing Compact Contexts" coq-unset-printing-implicit t]
      ["Set Printing Synth" coq-set-printing-synth t]
      ["Unset Printing Synth" coq-unset-printing-synth t]
      ["Set Printing Universes" coq-set-printing-universes t]
      ["Unset Printing Universes" coq-unset-printing-universes t]
+     ["Set Printing Unfocused" coq-set-printing-unfocused t]
+     ["Unset Printing Unfocused" coq-unset-printing-unfocused t]
      ["Set Printing Wildcards" coq-set-printing-wildcards t]
      ["Unset Printing Wildcards" coq-unset-printing-wildcards t]
-     ["Set Printing Width" coq-ask-adapt-printing-width-and-show t])
-    ""
-    ["ML4PG" (coq-activate-ml4pg) :help "Activates ML4PG: machine-learning methods for Proof General"]
-    ))
+     ["Set Printing Width" coq-ask-adapt-printing-width-and-show t])))
 
-(defpgdefault menu-entries
+(setq-default coq-menu-entries
   (append coq-menu-common-entries
   `(
     ""
@@ -338,12 +353,10 @@ It was constructed with `proof-defstringset-fn'.")
      ["help" coq-local-vars-list-show-doc t]
      ["Compile" coq-Compile t]))))
 
-(defpgdefault help-menu-entries
+(setq-default coq-help-menu-entries
   '(["help on setting prog name persistently for a file" 
      coq-local-vars-list-show-doc t]))
 
-(defpgdefault other-buffers-menu-entries coq-menu-common-entries)
-
-
+(setq-default coq-other-buffers-menu-entries coq-menu-common-entries)
 
 (provide 'coq-abbrev)

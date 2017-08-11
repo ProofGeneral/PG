@@ -1,11 +1,27 @@
 ;;; proof-toolbar.el --- Toolbar for Proof General
 ;;
-;; Copyright (C) 1998-2009  David Aspinall / LFCS.
-;; Author:    David Aspinall <David.Aspinall@ed.ac.uk>
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; It's a little bit tricky to add prover-specific items:
@@ -25,7 +41,6 @@
   (require 'proof-utils)
   (require 'proof-config)
   (require 'tool-bar))			; needed for some emacsen without X
-
 
 ;;
 ;; Function, icon, button names
@@ -153,11 +168,17 @@ back the default toolbar."
 
 (defalias 'proof-toolbar-undo 'proof-undo-last-successful-command)
 
+;; for Coq, we should only undo when we've received a complete response
+;; but if we test that here, the Undo button is often disabled when
+;;  we don't want; instead, test that condition when we press the button
 (defun proof-toolbar-undo-enable-p ()
-  (proof-with-script-buffer
-   (and (proof-shell-available-p)
-	(> (proof-unprocessed-begin) (point-min)))))
-
+  '(message "proof-toolbar-undo-enable-p: %s"
+	   (proof-with-script-buffer
+	    (> (proof-unprocessed-begin) (point-min))))
+  ;; can undo only if we've processed something
+   (proof-with-script-buffer
+    (> (proof-sent-end) (point-min))))
+       
 ;; Delete
 
 (defalias 'proof-toolbar-delete 'proof-undo-and-delete-last-successful-command)
@@ -165,7 +186,6 @@ back the default toolbar."
 (defun proof-toolbar-delete-enable-p ()
   (proof-with-script-buffer
    (and (not buffer-read-only)
-	(proof-shell-available-p)
 	(> (proof-unprocessed-begin) (point-min)))))
 
 ;; Home
@@ -193,7 +213,8 @@ back the default toolbar."
 
 (defun proof-toolbar-retract-enable-p ()
   (proof-with-script-buffer
-   (not (proof-locked-region-empty-p))))
+   (not (and (proof-locked-region-empty-p)
+	     (proof-sent-region-empty-p)))))
 
 ;; Use
 
@@ -206,11 +227,17 @@ back the default toolbar."
 
 ;; Restart
 
-(defalias 'proof-toolbar-restart 'proof-shell-restart)
+(defalias 'proof-toolbar-restart 'proof-server-restart)
+(defalias 'proof-toolbar-restart-enable-p 'proof-server-available-p)
 
 ;; Goal
 
 (defalias 'proof-toolbar-goal 'proof-issue-goal)
+
+;; Check document
+
+(defalias 'proof-toolbar-check 'proof-check)
+(defalias 'proof-toolbar-check-enable-p 'proof-check-available-p)
 
 ;; QED
 
@@ -219,23 +246,22 @@ back the default toolbar."
 (defun proof-toolbar-qed-enable-p ()
   (proof-with-script-buffer
    (and proof-save-command
-	proof-shell-proof-completed
-	(proof-shell-available-p))))
+	proof-prover-proof-completed)))
 
 ;; State
 
 (defalias 'proof-toolbar-state 'proof-prf)
-(defalias 'proof-toolbar-state-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-state-enable-p 'proof-server-available-p)
 
 ;; Context
 
-(defalias 'proof-toolbar-context 'proof-ctxt)
-(defalias 'proof-toolbar-context-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-context 'proof-get-context)
+(defalias 'proof-toolbar-context-enable-p 'proof-context-available-p)
 
 ;; Command
 
 (defalias 'proof-toolbar-command 'proof-minibuffer-cmd)
-(defalias 'proof-toolbar-command-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-command-enable-p 'proof-server-available-p)
 
 ;; Help  (I was an alias for this)
 
@@ -246,12 +272,12 @@ back the default toolbar."
 ;; Find
 
 (defalias 'proof-toolbar-find 'proof-find-theorems)
-(defalias 'proof-toolbar-find-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-find-enable-p 'proof-server-available-p)
 
 ;; Info
 
 (defalias 'proof-toolbar-info 'proof-query-identifier)
-(defalias 'proof-toolbar-info-enable-p 'proof-shell-available-p)
+(defalias 'proof-toolbar-info-enable-p 'proof-server-available-p)
 
 ;; Visibility (not on toolbar)
 
@@ -262,8 +288,8 @@ back the default toolbar."
 
 ;; Interrupt
 
-(defalias 'proof-toolbar-interrupt 'proof-interrupt-process)
-(defun proof-toolbar-interrupt-enable-p () proof-shell-busy)
+(defalias 'proof-toolbar-interrupt 'proof-server-interrupt-process)
+(defun proof-toolbar-interrupt-enable-p () (lambda (_) t))
 
 ;;
 ;; Scripting Menu

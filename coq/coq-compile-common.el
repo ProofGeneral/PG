@@ -1,28 +1,40 @@
 ;; coq-compile-common.el --- common part of compilation feature
-;; Copyright (C) 1994-2012 LFCS Edinburgh.
-;; Authors: Hendrik Tews
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;; Maintainer: Hendrik Tews <hendrik@askra.de>
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This file holds constants, options and some general functions for
 ;; the compilation feature.
 ;;
 
-
-(require 'proof-shell)
 (require 'coq-system)
+(require 'compile)
 
-(eval-when (compile)
+(eval-when-compile
   ;;(defvar coq-pre-v85 nil)
-  (require 'compile)
-  (defvar coq-confirm-external-compilation nil); defpacustom
-  (defvar coq-compile-parallel-in-background nil) ; defpacustom
-  (proof-ready-for-assistant 'coq))     ; compile for coq
-
+  (defvar coq-confirm-external-compilation); defpacustom
+  (defvar coq-compile-parallel-in-background)) ; defpacustom
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -34,12 +46,12 @@
 ;; coq-par-compile, respectively. However, the :initialization
 ;; function of a defcustom seems to be evaluated when reading the
 ;; defcustom form. Therefore, these functions must be defined already,
-;; when the defpacustum coq-compile-parallel-in-background is read.
+;; when the defcustom coq-compile-parallel-in-background is read.
 
 (defun coq-par-enable ()
   "Enable parallel compilation.
 Must be used together with `coq-seq-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-par-preprocess-require-commands)
   (add-hook 'proof-shell-signal-interrupt-hook
 	    'coq-par-user-interrupt)
@@ -49,7 +61,7 @@ Must be used together with `coq-seq-disable'."
 (defun coq-par-disable ()
   "Disable parallel compilation.
 Must be used together with `coq-seq-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-par-preprocess-require-commands)
   (remove-hook 'proof-shell-signal-interrupt-hook
 	       'coq-par-user-interrupt)
@@ -59,13 +71,13 @@ Must be used together with `coq-seq-enable'."
 (defun coq-seq-enable ()
   "Enable sequential synchronous compilation.
 Must be used together with `coq-par-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-seq-preprocess-require-commands))
 
 (defun coq-seq-disable ()
   "Disable sequential synchronous compilation.
 Must be used together with `coq-par-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-seq-preprocess-require-commands))
 
 
@@ -157,7 +169,7 @@ Ignore any quick setting for Coq versions before 8.5."
   :group 'coq
   :package-version '(ProofGeneral . "4.1"))
 
-(defpacustom compile-before-require nil
+(defcustom coq-compile-before-require nil
   "If non-nil, check dependencies of required modules and compile if necessary.
 If non-nil ProofGeneral intercepts \"Require\" commands and checks if the
 required library module and its dependencies are up-to-date. If not, they
@@ -169,7 +181,9 @@ This option can be set/reset via menu
   :safe 'booleanp
   :group 'coq-auto-compile)
 
-(defpacustom compile-parallel-in-background nil
+(proof-deftoggle coq-compile-before-require)
+
+(defcustom coq-compile-parallel-in-background nil
   "Choose the internal compilation method.
 When Proof General compiles itself, you have the choice between
 two implementations. If this setting is nil, then Proof General
@@ -184,8 +198,12 @@ This option can be set/reset via menu
 `Coq -> Auto Compilation -> Compile Parallel In Background'."
   :type 'boolean
   :safe 'booleanp
-  :group 'coq-auto-compile
-  :eval (coq-switch-compilation-method))
+  :group 'coq-auto-compile)
+
+(proof-deftoggle coq-compile-parallel-in-background)
+
+(defun coq-compile-parallel-in-background ()
+  (coq-switch-compilation-method))
 
 ;; defpacustom fails to call :eval during inititialization, see trac #456
 (coq-switch-compilation-method)
@@ -407,7 +425,7 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
-(defpacustom confirm-external-compilation t
+(defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
 Otherwise start the external compilation without confirmation.
 
@@ -430,7 +448,7 @@ expressions in here are always matched against the .vo file name,
 regardless whether ``-quick'' would be used to compile the file
 or not."
   :type '(repeat regexp)
-  :safe (lambda (v) (every 'stringp v))
+  :safe (lambda (v) (cl-every 'stringp v))
   :group 'coq-auto-compile)
 
 (defcustom coq-coqdep-error-regexp
@@ -519,7 +537,7 @@ for instance, not make sense to let ProofGeneral check if the coq
 standard library is up-to-date. This function is always invoked
 on the .vo file name, regardless whether the file would be
 compiled with ``-quick'' or not."
-  (if (some
+  (if (cl-some
        (lambda (dir-regexp) (string-match dir-regexp lib-obj-file))
        coq-compile-ignored-directories)
       (progn
@@ -696,15 +714,15 @@ current buffer (which contains the Require command) to
 
 ;;; kill coqtop on script buffer change
 
-(defun coq-switch-buffer-kill-proof-shell ()
-  "Kill the proof shell without asking the user.
+(defun coq-switch-buffer-kill-proof-server ()
+  "Kill the proof server without asking the user.
 This function is for `proof-deactivate-scripting-hook'. It kills
-the proof shell without asking the user for
+the proof server without asking the user for
 confirmation (assuming she agreed already on switching the active
 scripting buffer). This is needed to ensure the load path is
 correct in the new scripting buffer."
-  (unless proof-shell-exit-in-progress
-    (proof-shell-exit t)))
+  (unless proof-server-exit-in-progress
+    (proof-server-exit t)))
 
 ;; This is now always done (in coq.el)
 ;(add-hook 'proof-deactivate-scripting-hook

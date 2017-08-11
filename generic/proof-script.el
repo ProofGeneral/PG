@@ -1,40 +1,60 @@
+;;; -*- lexical-binding: t -*-
+
 ;;; proof-script.el --- Major mode for proof assistant script files.
-;;
-;; Copyright (C) 1994-2010 LFCS Edinburgh.
-;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
-;;            Thomas Kleymann and Dilip Sequeira
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; $Id$
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This implements the main mode for script management, including
 ;; parsing script buffers and setting spans inside them.
 ;;
-;; Compile note: functions used here from proof-shell, pg-user,
+;; Compile note: functions used here from pg-user,
 ;; pg-response, pg-goals auto-loaded to prevent circular dependency.
 
 ;;; Code:
 
-(require 'cl)				; various
+(require 'cl-lib)			; various
 (require 'span)				; abstraction of overlays/extents
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
+(require 'proof-buffers)
+(require 'proof-resolver)
 
 (eval-when-compile
   (require 'easymenu)
   (defvar proof-mode-menu nil)
   (defvar proof-assistant-menu nil))
 
-(declare-function proof-shell-strip-output-markup "proof-shell"
-		  (string &optional push))
-(declare-function proof-shell-make-associated-buffers "proof-shell" ())
+(defun myformat (&rest args)
+  (apply 'format args))
+
+(defvar proof-action-list) ; forward declaration only!
+
 (declare-function proof-layout-windows "pg-response" (&rest args))
 (declare-function pg-response-warning "pg-response" (&rest args))
 (declare-function proof-segment-up-to "proof-script")
 (declare-function proof-autosend-enable "pg-user")
-(declare-function proof-interrupt-process "pg-shell")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -50,7 +70,7 @@
 
 (deflocal proof-script-buffer-file-name nil
   ;; NB: if buffer-file-name is nil for some other reason, this may break.
-   "A copied value of buffer-file-name to cope with `find-alternative-file'.
+  "A copied value of buffer-file-name to cope with `find-alternative-file'.
 The `find-alternative-file' function has a nasty habit of setting the
 buffer file name to nil before running kill buffer, which breaks PG's
 kill buffer hook.  This variable is used when buffer-file-name is nil.")
@@ -96,7 +116,6 @@ This uses the size of the hash table for IDIOM."
 ;;
 ;; Each span has a 'type property, one of:
 ;;
-;;  'goalsave     A goal..savegoal region in the buffer, a completed proof.
 ;;  'vanilla      Initialised in proof-semis-to-vanillas, for
 ;;  'comment      A comment outside a command.
 ;;  'proverproc   A region closed by the prover, processed outwith PG
@@ -120,6 +139,11 @@ from the buffer.
 Proof General allows buffers in other modes also to be locked;
 these also have a non-nil value for this variable.")
 
+
+(deflocal proof-sent-span nil
+  "The span indicating what part of the script has been sent to the 
+prover.")
+
 (deflocal proof-queue-span nil
   "The queue span of the buffer.  May be detached if inactive or empty.
 Each script buffer has its own queue span, although only the active
@@ -132,10 +156,14 @@ scripting buffer may have an active queue span.")
 (deflocal proof-overlay-arrow nil
   "Marker holding the overlay arrow position for this buffer.")
 
+;; global variable
+(defvar proof-locked-secondary-span nil
+  "If there's an edit within the locked span, that may result in two locked regions, 
+with the focus between them. This span represents the second such region.")
 
 ;; ** Getters and setters
 
-(defun proof-span-give-warning (&rest args)
+(defun proof-span-give-warning (&rest _args)
   "Give a warning message.
 Optional argument ARGS is ignored."
   (unless inhibit-read-only
@@ -145,10 +173,22 @@ Optional argument ARGS is ignored."
   "Make SPAN read-only, following variable `proof-strict-read-only' or ALWAYS."
   (if (or always (not (memq proof-strict-read-only '(nil retract))))
       (span-read-only span)
-    (span-write-warning span
-			(if (eq proof-strict-read-only 'retract)
-			    'proof-retract-before-change
-			  'proof-span-give-warning))))
+    (span-write-warning 
+     span
+     (if (eq proof-strict-read-only 'retract)
+	 'proof-retract-before-change
+       'proof-span-give-warning))))
+
+(defun proof-span-read-only-with-predicate (span pred &optional always)
+  "Make SPAN read-only, following variable `proof-strict-read-only' or ALWAYS."
+  (if (or always (not (memq proof-strict-read-only '(nil retract))))
+      (span-read-only-subject-to-predicate span pred)
+    (span-write-warning-subject-to-predicate
+     span
+     (if (eq proof-strict-read-only 'retract)
+	 'proof-retract-before-change
+	 'proof-span-give-warning)
+     pred)))
 
 (defun proof-strict-read-only ()
   "Set spans read-only according to variable `proof-strict-read-only'.
@@ -157,8 +197,8 @@ Action is taken on all script buffers."
   (interactive)
   (proof-map-buffers
    (proof-buffers-in-mode proof-mode-for-script)
-   (if (span-live-p proof-locked-span)
-       (proof-span-read-only proof-locked-span))))
+   (when (span-live-p proof-locked-span)
+     (proof-span-read-only proof-locked-span))))
 
 (defsubst proof-set-queue-endpoints (start end)
   "Set the queue span to be START, END."
@@ -167,23 +207,39 @@ Action is taken on all script buffers."
 (defun proof-set-overlay-arrow (pos)
   "Set the position of the overlay marker to POS."
   (and (markerp proof-overlay-arrow)
-       (set-marker proof-overlay-arrow
-		   (save-excursion
-		     (goto-char pos)
-		     (skip-chars-forward " \t\s\n")
-		     (unless (eq (point) (point-max))
-		       (beginning-of-line)
-		       (point))))))
+       (let ((skip-chars '(32 9 10)) ; ASCII space, tab, newline 
+	     (ch (char-after pos))
+	     (bof (point-min))
+	     (eof (point-max)))
+	 (while (and (< pos eof)
+		     (memq ch skip-chars))
+	   (cl-incf pos)
+	   (setq ch (char-after pos)))
+	 (unless (eq pos eof)
+	   (while (and (> pos bof)
+		       (not (= ch 10)))
+	     (cl-decf pos)
+	     (setq ch (char-after pos)))
+	   (when (= ch 10)
+	     (cl-incf pos))
+	   (set-marker proof-overlay-arrow pos)
+	   pos))))
 
 (defsubst proof-set-locked-endpoints (start end)
   "Set the locked span to be START, END."
   (span-set-endpoints proof-locked-span start end)
-  (proof-set-overlay-arrow end))
+  (when (null proof-action-list)
+    (proof-set-overlay-arrow end)))
 
 (defsubst proof-detach-queue ()
   "Remove the span for the queue region."
   (and proof-queue-span
        (span-detach proof-queue-span)))
+
+(defsubst proof-detach-sent ()
+  "Remove the span for the sent region."
+  (and proof-sent-span
+       (span-detach proof-sent-span)))
 
 (defsubst proof-detach-locked ()
   "Remove the span for the locked region."
@@ -196,6 +252,70 @@ Action is taken on all script buffers."
   "Set the queue span to begin at START."
   (span-set-start proof-queue-span start))
 
+;; fill out sent area past whitespace, but not newline
+;; also make locked region flush with sent region
+;; N.B. the current buffer is not always proof-script-buffer
+;; for example, can be called from `proof-complete-buffer-atomic'
+;; don't use save-excursion, changing point is expensive
+(defun proof-set-sent-end (end)
+  (let* ((pos end)
+	 (skip-chars '(32 9 10)) ; tab, space, newline
+	 (ch (char-after pos))
+	 (bof (point-min))
+	 (eof (point-max)))
+    (while (and (< pos eof)
+		(memq ch skip-chars))
+      (cl-incf pos)
+      (setq ch (char-after pos)))
+    ;; include following processed comments
+    (let ((check-end (proof-queue-or-locked-end)))
+      (when (>= check-end pos)
+	(let ((found-comment t))
+	  (while found-comment
+	    (let* ((spans (overlays-at pos))
+		   (comment-spans (cl-remove-if-not
+				   (lambda (sp) (eq (span-property sp 'type) 'comment))
+				   spans)))
+	      (if comment-spans
+		  (dolist (span comment-spans)
+		    (when (> (span-end span) pos)
+		      (setq pos (span-end span))))
+		(setq found-comment nil))
+	      (setq ch (char-after pos))
+	      (while (and (< pos eof)
+			  (memq ch skip-chars))
+		(cl-incf pos)
+		(setq ch (char-after pos))))))))
+    ;; find end of last statement
+    (when (> pos bof)
+      (cl-decf pos))
+    (setq ch (char-after pos))
+    (while (and (> pos bof)
+		(memq ch skip-chars))
+      (cl-decf pos)
+      (setq ch (char-after pos)))
+    (when (> pos bof)
+      (cl-incf pos))
+    ;; adjust sent region
+    (span-set-endpoints proof-sent-span 1 pos)))
+
+(defun proof-not-in-sent-region (start end)
+  ;; called by read-only hook for proof-locked-span, to see if START and END are
+  ;; beyond sent region
+  ;; can happen that proof-locked-span has changed by the time this handler called
+  ;;  so check that endpoints are in that span
+  (when (and proof-locked-span
+	     (span-buffer proof-locked-span)
+	     proof-sent-span
+	     (span-buffer proof-sent-span))
+    (let ((sent-end (span-end proof-sent-span)))
+      ;; presumably, start <= end, but doesn't hurt to check
+      (and (> start sent-end)
+	   (> end sent-end)
+	   proof-locked-span
+	   (<= start (span-end proof-locked-span))
+	   (<= end (span-end proof-locked-span))))))
+
 (defsubst proof-set-locked-end (end)
   "Set the end of the locked region to be END.
 If END is at or before (point-min), remove the locked region.
@@ -205,7 +325,7 @@ Otherwise set the locked region to be from (point-min) to END."
       (proof-detach-locked)
     (proof-set-locked-endpoints
      (point-min)
-      ;; safety in case called with end>point-max
+     ;; safety in case called with end>point-max
      (min (point-max) end))))
 
 (defsubst proof-set-queue-end (end)
@@ -216,6 +336,11 @@ Otherwise set the locked region to be from (point-min) to END."
       (proof-detach-queue)
     (span-set-end proof-queue-span end)))
 
+;; Span priorities in case of overlap
+
+(defvar proof-locked-priority 1)
+(defvar proof-queue-priority  2)
+(defvar proof-sent-priority   5)
 
 ;; ** Initialise spans for a buffer
 
@@ -225,25 +350,39 @@ Allocate spans if need be.  The spans are detached from the
 buffer, so the regions are made empty by this function.
 Also clear list of script portions."
   ;; Initialise queue span, remove it from buffer.
-  (unless proof-queue-span
+  (if proof-queue-span
+      (proof-set-queue-endpoints 1 1)
     (setq proof-queue-span (span-make 1 1))
     ;; (span-raise proof-queue-span)
     )
   (span-set-property proof-queue-span 'start-closed t)
   (span-set-property proof-queue-span 'end-open t)
+  ;; use priority API
+  (span-set-priority proof-queue-span proof-queue-priority)
   (proof-span-read-only proof-queue-span 'always)
   (span-set-property proof-queue-span 'face 'proof-queue-face)
   (span-detach proof-queue-span)
   ;; Initialise locked span, remove it from buffer
   (unless proof-locked-span
-      (setq proof-locked-span (span-make 1 1))
-      ;; (span-raise proof-locked-span)
-      )
+    (setq proof-locked-span (span-make 1 1))
+    ;; (span-raise proof-locked-span)
+    )
   (span-set-property proof-locked-span 'start-closed t)
   (span-set-property proof-locked-span 'end-open t)
-  (proof-span-read-only proof-locked-span)
+  (span-set-priority proof-locked-span proof-locked-priority)
+  ;; locked span overlaps with sent span
+  ;; read-only only beyond sent region
+  (proof-span-read-only-with-predicate
+   proof-locked-span
+   'proof-not-in-sent-region
+   'always)
   (proof-colour-locked-span)
   (span-detach proof-locked-span)
+  (unless proof-sent-span
+    (setq proof-sent-span (span-make 1 1)))
+  (span-set-property proof-sent-span 'face 'proof-sent-face)
+  (span-set-priority proof-sent-span proof-sent-priority)
+  (proof-span-read-only proof-sent-span)
   (setq proof-overlay-arrow (make-marker))
   (setq overlay-arrow-position proof-overlay-arrow)
   (setq proof-last-theorem-dependencies nil)
@@ -255,8 +394,8 @@ Also clear list of script portions."
   "Alter the colour of all locked regions according to variable `proof-colour-locked'."
   (interactive)
   (proof-map-buffers (proof-buffers-in-mode proof-mode-for-script)
-   (and (span-live-p proof-locked-span)
-	(proof-colour-locked-span))))
+		     (and (span-live-p proof-locked-span)
+			  (proof-colour-locked-span))))
 
 (defun proof-colour-locked-span ()
   "Alter the colour of the locked region according to variable `proof-colour-locked'."
@@ -272,8 +411,8 @@ next time an error is processed."
   ;; TODO: we need to tag spans separately as error spans, and
   ;; map over all spans in all buffers.
   )
-  
-  
+
+
 
 ;; ** Restarting and clearing spans
 
@@ -296,6 +435,7 @@ deactivated."
 	     (setq pg-script-portions nil)
 	     (proof-detach-queue)
 	     (proof-detach-locked)
+	     (proof-detach-sent)
 	     (proof-init-segmentation)))
        (if (eq buffer proof-script-buffer)
 	   (setq proof-script-buffer nil))))
@@ -315,7 +455,7 @@ value of proof-locked span."
   "Remove all spans from scripting buffers via `proof-restart-buffers'."
   (proof-restart-buffers (proof-script-buffers-with-spans)))
 
-(defun proof-script-clear-queue-spans-on-error (badspan &optional interruptp)
+(defun proof-script-clear-queue-spans-on-error (badspan &optional _interruptp)
   "Remove the queue span from buffer, cleaning spans no longer queued.
 If BADSPAN is non-nil, assume that this was the span whose command
 caused the error.  Go to the start of it if `proof-follow-mode' is
@@ -324,27 +464,31 @@ caused the error.  Go to the start of it if `proof-follow-mode' is
 If INTERRUPTP is non-nil, do not consider BADSPAN itself as faulty.
 
 This is a subroutine used in proof-shell-handle-{error,interrupt}."
-    (let ((start (proof-unprocessed-begin))
-	  (end   (proof-queue-or-locked-end))
-	  (infop (span-live-p badspan)))
-      (proof-detach-queue)
-      (when infop
-	(unless proof-autosend-running
-	  (when (eq proof-follow-mode 'locked)
-	    ;; jump to start of error: should this be configurable?
-	    (goto-char (span-start badspan))
-	    (skip-chars-forward " \t\n")))
-	(unless interruptp
-	  (when proof-sticky-errors
-	    (pg-set-span-helphighlights badspan
-					'proof-script-highlight-error-face
-					'proof-script-sticky-error-face))))
-      (proof-script-delete-spans start end)))
+  (let ((start (proof-unprocessed-begin))
+	(end   (proof-queue-or-locked-end))
+	(infop (span-live-p badspan)))
+    (proof-detach-queue)
+    (when infop
+      (unless proof-autosend-running
+	(when (eq proof-follow-mode 'locked)
+	  ;; jump to start of error: should this be configurable?
+	  (goto-char (span-start badspan))
+	  (skip-chars-forward " \t\n"))))
+    (proof-script-delete-spans start end)))
 
 (defun proof-script-delete-spans (beg end)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
+  ;; TODO 'type will change to 'pg-type when merged with trunk
+					; (span-delete-spans beg end 'pg-type)
   (span-delete-spans beg end 'type)
   (span-delete-spans beg end 'idiom))
+
+;; mark spans to indicate we may want to delete them as part of a retraction
+;; if a proof is re-opened, some spans may not be deleted
+(defun proof-script-mark-spans-for-deletion (beg end &optional protected-spans)
+  "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
+  (span-mark-delete-spans beg end 'type protected-spans)
+  (span-mark-delete-spans beg end 'idiom protected-spans))
 
 (defun proof-script-delete-secondary-spans (beg end)
   "Delete secondary spans between BEG and END (currently, 'pghelp spans)."
@@ -367,6 +511,15 @@ The position is actually one beyond the last locked character."
 	(span-end proof-locked-span))
    (point-min)))
 
+;;;###autoload
+(defun proof-sent-end ()
+  "Return end of sent region in current buffer or (point-min) otherwise.
+The position is actually one beyond the last locked character."
+  (or
+   (and proof-sent-span
+	(span-end proof-sent-span))
+   (point-min)))
+
 (defun proof-script-end ()
   "Return the character beyond the last non-whitespace character.
 This is the same position `proof-unprocessed-begin' ends up at when asserting
@@ -387,7 +540,6 @@ when a queue of commands is being processed."
    (and proof-locked-span (span-end proof-locked-span))
    (point-min)))
 
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -407,6 +559,12 @@ Works on any buffer."
 (defun proof-locked-region-empty-p ()
   "Non-nil if the locked region is empty.  Works on any buffer."
   (eq (proof-unprocessed-begin) (point-min)))
+
+;;;###autoload
+(defun proof-sent-region-empty-p ()
+  "Non-nil if the sent region is empty."
+  (or (null proof-sent-span)
+      (null (span-buffer proof-sent-span))))
 
 (defun proof-only-whitespace-to-locked-region-p ()
   "Non-nil if only whitespace from char-after point and end of locked region.
@@ -463,7 +621,7 @@ Does nothing if there is no active scripting buffer, or if
 Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
   (interactive)
   (unless (eq proof-follow-mode 'ignore)
-    (if (eq proof-shell-last-output-kind 'error)
+    (if (eq proof-prover-last-output-kind 'error)
 	(proof-goto-end-of-locked-if-pos-not-visible-in-window)))
   (proof-with-current-buffer-if-exists
    proof-script-buffer
@@ -473,7 +631,7 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun proof-end-of-locked-visible-p ()
   "Return non-nil if end of locked region is visible."
   (let* ((pos (proof-with-current-buffer-if-exists proof-script-buffer
-		(proof-unprocessed-begin)))
+						   (proof-unprocessed-begin)))
 	 (win (and pos (get-buffer-window proof-script-buffer t))))
     (and win (pos-visible-in-window-p pos))))
 
@@ -499,7 +657,7 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-clear-script-portions ()
   "Clear record of script portion names and types from internal list."
   (dolist (idtbl pg-script-portions)
-    (maphash (lambda (k span) (span-delete span)) (cdr idtbl))
+    (maphash (lambda (_k span) (span-delete span)) (cdr idtbl))
     (clrhash (cdr idtbl))))
 
 (defun pg-remove-element (idiom id)
@@ -513,13 +671,13 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-get-element (idiomsym id)
   "Return proof script element of type IDIOM identifier ID.
 IDIOM is a symbol, ID is a string."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
   (let ((idsym  (intern id))
 	(elts   (cdr-safe (assq idiomsym pg-script-portions))))
     (if elts
 	(gethash idsym elts))))
-    
+
 (defun pg-add-element (idiomsym id span &optional name)
   "Add element of type IDIOMSYM with identifier ID, referred to by SPAN.
 This records the element in `pg-script-portions' and sets span
@@ -532,9 +690,9 @@ NAME does not need to be unique.
 
 NAME is a name that comes from the proof script or prover output.
 It is recorded in the span with the 'rawname property."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
-  (if name (assert (stringp name)))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
+  (if name (cl-assert (stringp name)))
   (let* ((idsym    (intern id))
 	 (rawname  name)
 	 (name	   (or name id))
@@ -564,7 +722,7 @@ It is recorded in the span with the 'rawname property."
 
     ;; Nice behaviour in with isearch: open invisible regions temporarily.
     (span-set-property span 'isearch-open-invisible
-      'pg-open-invisible-span)
+		       'pg-open-invisible-span)
     (span-set-property span 'isearch-open-invisible-temporary
 		       'pg-open-invisible-span)))
 
@@ -585,11 +743,11 @@ and `buffer-invisibility-spec'."
 		       (if invisiblep 
 			   (cons invisible-prop invisible-rest)
 			 invisible-rest))))
-		       
+
 (defun pg-toggle-element-span-visibility (span)
   "Toggle visibility of SPAN."
   (pg-set-element-span-invisible span
-   (not (span-property span 'invisible))))
+				 (not (span-property span 'invisible))))
 
 (defun pg-open-invisible-span (span &optional invisible)
   "Function for `isearch-open-invisible' property."
@@ -625,9 +783,9 @@ IDIOMSYM is a symbol and ID is a strings."
     current-prefix-arg))
   (let ((elts    (cdr-safe (assq idiom pg-script-portions)))
 	(alterfn (if hide
-		     (lambda (k span)
+		     (lambda (_k span)
 		       (pg-set-element-span-invisible span t))
-		   (lambda (k span)
+		   (lambda (_k span)
 		     (pg-set-element-span-invisible span nil)))))
     (when elts
       (proof-with-script-buffer ; may be called from menu
@@ -644,28 +802,12 @@ IDIOMSYM is a symbol and ID is a strings."
   (interactive)
   (pg-show-all-portions "proof" 'hide))
 
-(defun pg-add-proof-element (name span controlspan)
-  "Add a span proof element to SPAN with name NAME and parent CONTROLSPAN."
-  (let ((proofid   (proof-next-element-id 'proof)))
-    (pg-add-element 'proof proofid span name)
-    ;; Set id in controlspan [NB: intern here means symbol-name elsewhere]
-    (span-set-property controlspan 'id (intern proofid))
-    ;; Make a navigable link between the two spans.
-    (span-set-property span 'controlspan controlspan)
-    (span-set-property controlspan 'children
-		       (cons span (span-property controlspan 'children)))
-    (pg-set-span-helphighlights span proof-region-mouse-highlight-face)
-    ;; (span-set-property span 'priority 10) ; lower than default
-    (if proof-disappearing-proofs
-	(pg-make-element-invisible 'proof proofid))))
-
 (defun pg-span-name (span)
   "Return a user-level name for SPAN.
 This is based on its name and type.
 
 Each span has a 'type property, one of:
 
-    'goalsave     A goal..savegoal region in the buffer, a completed proof.
     'vanilla      Initialised in proof-semis-to-vanillas, for
     'comment      A comment outside a command.
     'proverproc   A region closed by the prover, processed outwith PG
@@ -673,7 +815,6 @@ Each span has a 'type property, one of:
 "
   (let ((type    (span-property span 'type))
 	(idiom   (span-property span 'idiom))
-	(name    (span-property span 'name))
 	(rawname (span-property span 'rawname)))
     (cond
      (idiom
@@ -690,26 +831,26 @@ Each span has a 'type property, one of:
      ((eq type 'vanilla)   "Command")
      ((eq type 'pbp)       "PBP command")
      ((eq type 'proverproc)
-			   "Prover-processed"))))
+      "Prover-processed"))))
 
 (defvar pg-span-context-menu-keymap
   (let ((map (make-sparse-keymap
 	      "Keymap for context-sensitive menus on spans")))
-      (define-key map [down-mouse-3] 'pg-span-context-menu)
-      map)
-    "Keymap for the span context menu.")
+    (define-key map [down-mouse-3] 'pg-span-context-menu)
+    map)
+  "Keymap for the span context menu.")
 
 (defun pg-last-output-displayform ()
-  "Return displayable form of `proof-shell-last-output'.
+  "Return displayable form of `proof-prover-last-output'.
 This is used to annotate the buffer with the result of proof steps."
   ;; NOTE: Isabelle/Isar uses urgent messages (sigh) in its ordinary output.
   ;; ("Successful attempt...").  This loses here.
-  (if (string= proof-shell-last-output "") ""
-    (let* ((text (proof-shell-strip-output-markup
+  (if (string= proof-prover-last-output "") ""
+    (let* ((text (proof-server-strip-output-markup
 		  (if (and (boundp 'unicode-tokens-mode)
 			   unicode-tokens-mode)
-		      (unicode-tokens-encode-str proof-shell-last-output)
-		    proof-shell-last-output))))
+		      (unicode-tokens-encode-str proof-prover-last-output)
+		    proof-prover-last-output))))
 
       ;; HACK: for Isabelle which puts ugly leading \n's around proofstate.
       (if (and (> (length text) 0)
@@ -718,68 +859,8 @@ This is used to annotate the buffer with the result of proof steps."
       (if (and (> (length text) 0)
 	       (string= (substring text -1) "\n"))
 	  (setq text (substring text 0 -1)))
-	
+      
       text)))
-
-;;;###autoload
-(defun pg-set-span-helphighlights (span &optional mouseface face)
-  "Add a daughter help span for SPAN with help message, highlight, actions.
-The daughter span covers the non whitespace content of the main span.
-
-We add the last output (when non-empty) to the hover display, and
-also as the 'response property on the span.
-
-Optional argument MOUSEFACE means use the given face as a mouse highlight
-face, if it is a face, otherwise, if it is non-nil but not a face,
-do not add a mouse highlight.
-
-In any case, a mouse highlight and tooltip are only set if
-`proof-output-tooltips' is non-nil.
-
-Argument FACE means add 'face property FACE to the span."
-  (let* ((output     (pg-last-output-displayform))
-	 (newstart   (save-excursion
-		       (goto-char (span-start span))
-		       (skip-chars-forward " \n\t")
-		       (point)))
-	 (newend     (save-excursion
-		       (goto-char (span-end span))
-		       (skip-chars-backward " \n\t")
-		       (point)))
-	 (newspan     (span-make-modifying-removing-span newstart newend)))
-    
-    (span-set-property span 'pg-helpspan newspan) ; link from parent
-
-    (span-set-property newspan 'pghelp t)
-    (span-set-property newspan 'response output)
-
-    (when proof-output-tooltips
-      (span-set-property newspan 'help-echo
-			 (if (<= (length output) 2)
-			     (pg-span-name span)
-			   output)))
-
-    ;; Here's the message we used to show in minibuffer
-    ;; when pg-show-hints was on:
-    ;;
-    ;; " ("
-    ;; (substitute-command-keys
-    ;;  (if (span-property span 'idiom)
-    ;;	"with point in region, \\[pg-toggle-visibility] to show/hide; "
-    ;;    "\\<pg-span-context-menu-keymap>\\[pg-span-context-menu]"))
-    ;; " for menu)")))
-
-    (span-set-property newspan 'keymap pg-span-context-menu-keymap)
-    (if (or (facep mouseface)
-	    (setq mouseface
-		  (unless mouseface 'proof-mouse-highlight-face)))
-	(when proof-output-tooltips
-	  (span-set-property newspan 'mouse-face mouseface)))
-    (if face
-	(span-set-property newspan 'face face))
-    ;; (span-set-property newspan 'priority 50)
-    ))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -798,16 +879,16 @@ to allow other files loaded by proof assistants to be marked read-only."
   (with-current-buffer buffer
     (save-excursion ;; prevent point moving if user viewing file
       (if (< (proof-unprocessed-begin) (proof-script-end))
-	(let ((span (span-make (proof-unprocessed-begin)
-			       (proof-script-end))))
-	  ;; Reset queue and locked regions.
-	  (proof-init-segmentation)
-	  ;; End of locked region is always end of buffer
-	  (proof-set-locked-end (proof-script-end))
-	  ;; Configure the overlay span
-	  (span-set-property span 'type 'proverproc)
-	  (pg-set-span-helphighlights span 'nohighlight))))))
-
+	  (let ((span (span-make (proof-unprocessed-begin)
+				 (proof-script-end))))
+	    ;; Reset queue and locked regions.
+	    (proof-init-segmentation)
+	    ;; End of locked, sent regions is always end of buffer
+	    (let ((end (proof-script-end)))
+	      (proof-set-locked-end end)
+	      (proof-set-sent-end end))
+	    ;; Configure the overlay span
+	    (span-set-property span 'type 'proverproc))))))
 
 ;; Note: desirable to clean odd asymmetry here: we have a nice setting
 ;; for proof-register-possibly-new-processed-file but something much
@@ -816,7 +897,7 @@ to allow other files loaded by proof assistants to be marked read-only."
 
 ;;;###autoload
 (defun proof-register-possibly-new-processed-file
-  (file &optional informprover noquestions)
+    (file &optional informprover noquestions)
   "Register a possibly new FILE as having been processed by the prover.
 
 If INFORMPROVER is non-nil, the proof assistant will be told about this,
@@ -839,8 +920,8 @@ proof assistant and Emacs has a modified buffer visiting the file."
 	   (not informprover)
 	   (buffer-modified-p buffer)
 	   (pg-response-warning (concat "Changes to "
-				  (buffer-name buffer)
-				  " have not been saved!")))
+					(buffer-name buffer)
+					" have not been saved!")))
       ;; Add the new file onto the front of the list
       (setq proof-included-files-list
 	    (cons cfile proof-included-files-list))
@@ -848,7 +929,7 @@ proof assistant and Emacs has a modified buffer visiting the file."
       (if buffer
 	  (proof-complete-buffer-atomic buffer))
       ;; Tell the proof assistant, if we should and if we can
-      (if (and informprover proof-shell-inform-file-processed-cmd)
+      (if (and informprover proof-server-inform-file-processed-cmd)
 	  (progn
 	    (if (and
 		 proof-query-file-save-when-activating-scripting
@@ -856,10 +937,9 @@ proof assistant and Emacs has a modified buffer visiting the file."
 		(unwind-protect
 		    (save-some-buffers nil #'proof-query-save-this-buffer-p)))
 	    ;; Tell the prover
-	    (proof-shell-invisible-command
-	     (proof-format-filename proof-shell-inform-file-processed-cmd
-				    cfile)
-	     'wait))))))
+	    (proof-server-invisible-command
+	     (proof-format-filename proof-server-inform-file-processed-cmd
+				    cfile)))))))
 
 (defun proof-query-save-this-buffer-p ()
   "Predicate testing whether `save-some-buffers' during scripting should query."
@@ -869,22 +949,20 @@ proof assistant and Emacs has a modified buffer visiting the file."
 (defun proof-inform-prover-file-retracted (rfile)
   "Send a message to the prover to tell it RFILE has been undone."
   (cond
-   ((stringp proof-shell-inform-file-retracted-cmd)
-    (proof-shell-invisible-command
-     (proof-format-filename proof-shell-inform-file-retracted-cmd
-			    rfile)
-     'wait))
+   ((stringp proof-server-inform-file-retracted-cmd)
+    (proof-server-invisible-command
+     (proof-format-filename proof-server-inform-file-retracted-cmd
+			    rfile)))
    ;; If it's a function it might not actually be informing the prover at all,
-   ;; but merely cleans up proof-included-files-list by its own magic.  We
-   ;; do the same thing as in proof-shell.el.
+   ;; but merely cleans up proof-included-files-list by its own magic.
    ;; FIXME: clean and amalgamate this code.
-   ((functionp proof-shell-inform-file-retracted-cmd)
+   ((functionp proof-server-inform-file-retracted-cmd)
     (let ((current-included proof-included-files-list))
-      (funcall proof-shell-inform-file-retracted-cmd rfile)
+      (funcall proof-server-inform-file-retracted-cmd rfile)
       (proof-restart-buffers
        (proof-files-to-buffers
-	(set-difference current-included
-			proof-included-files-list)))))))
+	(cl-set-difference current-included
+			   proof-included-files-list)))))))
 
 (defun proof-auto-retract-dependencies (cfile &optional informprover)
   "Perhaps automatically retract the (linear) dependencies of CFILE.
@@ -900,7 +978,7 @@ to be turned off before calling here (because turning it off could
 otherwise change `proof-included-files-list').
 
 If INFORMPROVER is non-nil,  the proof assistant will be told about this,
-using `proof-shell-inform-file-retracted-cmd', to co-ordinate with its
+using `proof-server-inform-file-retracted-cmd', to co-ordinate with its
 internal file-management.
 
 Files which are not visited by any buffer are not retracted, on the
@@ -955,9 +1033,9 @@ retracted using `proof-auto-retract-dependencies'."
 		    (or buffer-file-name
 			proof-script-buffer-file-name))))
 	(proof-debug (concat "Unregistering file " cfile
-			       (if (not (member cfile
-						proof-included-files-list))
-				   " (not registered, no action)." ".")))
+			     (if (not (member cfile
+					      proof-included-files-list))
+				 " (not registered, no action)." ".")))
 	(if (member cfile proof-included-files-list)
 	    (progn
 	      (proof-auto-retract-dependencies cfile informprover)
@@ -1011,7 +1089,7 @@ an error is signalled here."
 	      (progn
 		(message "%s buffer %s..." name buf)
 		(funcall fn)
-		(proof-shell-wait) ; busy wait
+		;; (proof-shell-wait) ; busy wait TODO ?
 		(message "%s buffer %s...done." name buf)
 		(sit-for 0))
 	    ;; Test to see if action was successful
@@ -1048,14 +1126,14 @@ Returns 'retract, 'process or finally nil if user declined."
       (switch-to-buffer proof-script-buffer t))
     (let ((action  (cond
 		    ((y-or-n-p
-		      (format
+		      (myformat
 		       "Scripting incomplete in buffer %s, retract? "
 		       proof-script-buffer))
 		     'retract)
 		    ((and
 		      (not proof-no-fully-processed-buffer)
 		      (y-or-n-p
-		       (format
+		       (myformat
 			"Completely process buffer %s instead? "
 			proof-script-buffer)))
 		     'process))))
@@ -1121,6 +1199,7 @@ questioning the user.  It is used to make a value for
 the `kill-buffer-hook' for scripting buffers, so that when
 a scripting buffer is killed it is always retracted."
   (interactive)
+  (proof-debug-message "proof-deactivate-scripting!")
   (proof-with-current-buffer-if-exists 
    proof-script-buffer
    ;; Examine buffer.
@@ -1135,6 +1214,9 @@ a scripting buffer is killed it is always retracted."
 	  (action     (unless complete
 			(or forcedaction
 			    (proof-deactivate-scripting-choose-action)))))
+     (proof-debug-message "proof-deactivate-scripting, complete: %s action: %s"
+			  complete action)
+
      (if action
 	 (proof-protected-process-or-retract action))
      
@@ -1179,6 +1261,46 @@ a scripting buffer is killed it is always retracted."
        ;; Finally, run hooks
        (run-hooks 'proof-deactivate-scripting-hook)))))
 
+(defun proof-ready-prover-prepare-buffer (nosaves queuemode)
+
+  ;; Fire up the prover (or check it's going the right way).
+  (condition-case-unless-debug err
+      (proof-ready-prover queuemode)
+    (error (setq proof-script-buffer nil)
+	   (signal (car err) (cdr err))))
+  
+  ;; Initialise regions
+  (if (proof-sent-region-empty-p) ; leave alone if non-empty
+      (proof-init-segmentation))
+
+  ;; Turn on the minor mode, make it show up.
+  (setq proof-active-buffer-fake-minor-mode t)
+  (force-mode-line-update)
+
+  ;; A good time to ask if the user wants to save some buffers
+  ;; (idea being they may be included in imports at top of new buffer).
+  (if (and
+       proof-query-file-save-when-activating-scripting
+       (not nosaves))
+      (save-some-buffers nil #'proof-query-save-this-buffer-p))
+
+  ;; Run hooks with a variable which suggests whether or not to
+  ;; block.  NB: The hook function may send commands to the
+  ;; process which will re-enter this function, but should exit
+  ;; immediately because scripting has been turned on now.
+  (when proof-activate-scripting-hook
+    (setq proof-prover-last-output-kind nil)
+    (run-hooks 'proof-activate-scripting-hook)
+    ;; If activate scripting functions caused an error,
+    ;; prevent switching to another buffer.  Might be better
+    ;; to leave to specific instances, or simply run the hooks
+    ;; as the last step before turning on scripting properly.
+    (when (or (eq 'error proof-prover-last-output-kind)
+	      (eq 'interrupt proof-prover-last-output-kind))
+      (proof-deactivate-scripting) ;; turn off again!
+      ;; Give an error to prevent further actions.
+      (error 
+       "Scripting not activated because of error or interrupt"))))
 
 (defun proof-activate-scripting (&optional nosaves queuemode)
   "Ready prover and activate scripting for the current script buffer.
@@ -1208,7 +1330,9 @@ activation is considered to have failed and an error is given."
   (unless (eq proof-buffer-type 'script)
     (error "Must be running in a script buffer!"))
 
-  (unless (equal (current-buffer) proof-script-buffer)
+  (if (and proof-script-buffer (equal (current-buffer) proof-script-buffer))
+
+      (proof-ready-prover-prepare-buffer nosaves queuemode)
 
     ;; TODO: narrow the scope of this save-excursion.
     ;; Where is it needed?  Maybe hook functions.
@@ -1216,10 +1340,10 @@ activation is considered to have failed and an error is given."
       ;; If there's another buffer currently active, we need to
       ;; deactivate it (also fixing up the included files list).
       (when proof-script-buffer
-	    (proof-deactivate-scripting)
-	    ;; Test whether deactivation worked
-	    (if proof-script-buffer
-		(error
+	(proof-deactivate-scripting)
+	;; Test whether deactivation worked
+	(if proof-script-buffer
+	    (error
 	     "You cannot have more than one active scripting buffer!")))
 
       ;; Ensure this buffer is off the included files list.  If we
@@ -1237,53 +1361,13 @@ activation is considered to have failed and an error is given."
       ;; proof-unregister-buffer-file-name.
       (if proof-script-buffer
 	  (proof-deactivate-scripting))
-      (assert (null proof-script-buffer)
-	      "Bug in proof-activate-scripting: deactivate failed.")
+      (cl-assert (null proof-script-buffer)
+		 "Bug in proof-activate-scripting: deactivate failed.")
 
       ;; Set the active scripting buffer
       (setq proof-script-buffer (current-buffer))
 
-      ;; Fire up the prover (or check it's going the right way).
-      (condition-case-unless-debug err
-          (proof-shell-ready-prover queuemode)
-        (error (setq proof-script-buffer nil)
-               (signal (car err) (cdr err))))
-
-      ;; Initialise regions
-      (if (proof-locked-region-empty-p) ; leave alone if non-empty
-	  (proof-init-segmentation))
-
-      ;; Turn on the minor mode, make it show up.
-      (setq proof-active-buffer-fake-minor-mode t)
-      (force-mode-line-update)
-
-      ;; A good time to ask if the user wants to save some buffers
-      ;; (idea being they may be included in imports at top of new buffer).
-      (if (and
-	   proof-query-file-save-when-activating-scripting
-	   (not nosaves))
-	  (save-some-buffers nil #'proof-query-save-this-buffer-p))
-
-      ;; Run hooks with a variable which suggests whether or not to
-      ;; block.  NB: The hook function may send commands to the
-      ;; process which will re-enter this function, but should exit
-      ;; immediately because scripting has been turned on now.
-      (if proof-activate-scripting-hook
-	  (let
-	      ((activated-interactively	(called-interactively-p 'any)))
-	    (setq proof-shell-last-output-kind nil)
-	    (run-hooks 'proof-activate-scripting-hook)
-	    ;; If activate scripting functions caused an error,
-	    ;; prevent switching to another buffer.  Might be better
-	    ;; to leave to specific instances, or simply run the hooks
-	    ;; as the last step before turning on scripting properly.
-	    (when (or (eq 'error proof-shell-last-output-kind)
-		      (eq 'interrupt proof-shell-last-output-kind))
-	      (proof-deactivate-scripting) ;; turn off again!
-	      ;; Give an error to prevent further actions.
-	      (error 
-	       "Scripting not activated because of error or interrupt")))))))
-
+      (proof-ready-prover-prepare-buffer nosaves queuemode))))
 
 (defun proof-toggle-active-scripting (&optional arg)
   "Toggle active scripting mode in the current buffer.
@@ -1319,78 +1403,46 @@ With ARG, turn on scripting iff ARG is positive."
 ;; bounce the rest of the queue and do some error processing.
 ;;
 ;; When a span has been processed, it is classified as
-;; 'comment, 'goalsave, 'vanilla, etc.
+;; 'comment, 'vanilla, etc.
 ;;
 ;; The main function for dealing with processed spans is
 ;; `proof-done-advancing'
+
+(defun proof-merge-locked (end)
+  (proof-set-locked-end end)
+  (when (span-live-p proof-queue-span)
+    (proof-set-queue-start end))
+  (proof-set-sent-end end)
+  (goto-char end))
 
 (defun proof-done-advancing (span)
   "The callback function for `assert-until-point'.
 Argument SPAN has just been processed."
   (let ((end     (span-end span))
-	(cmd     (span-property span 'cmd)))
+	(cmd     (span-property span 'cmd))
+	(comment-p (eq (span-property span 'type) 'comment)))
+
+    ;; if merging primary, secondary locked regions,
+    ;; may have already extended locked region beyond the 
+    ;; just-processed span's end
 
     (proof-set-locked-end end)
 
-    (if (span-live-p proof-queue-span)
-	(proof-set-queue-start end))
+    (when (span-live-p proof-queue-span)
+      (proof-set-queue-start end))
 
-    (cond
+    (if comment-p
      ;; CASE 1: Comments just get highlighted
-     ((eq (span-property span 'type) 'comment)
-      (proof-done-advancing-comment span))
-
-     ;; CASE 2: Save command seen, now we may amalgamate spans.
-     ((and (proof-string-match-safe proof-save-command-regexp cmd)
-	   (funcall proof-really-save-command-p span cmd)
-	   (decf proof-nesting-depth) ;; [always non-nil/true]
-	   (if proof-nested-goals-history-p
-	       ;; For now, we only support this nesting behaviour:
-	       ;; don't amalgamate unless the nesting depth is 0,
-	       ;; i.e. we're in a top-level proof.
-	       ;; This assumes prover keeps history for nested proofs.
-	       ;; (True for Isabelle/Isar).
-	       (eq proof-nesting-depth 0)
-	     t))
-      (proof-done-advancing-save span))
-
-     ;; CASE 3: Proof completed one step or more ago, non-save
-     ;; command seen, no nested goals allowed.
-     ;;
-     ;; We make a fake goal-save from any previous
-     ;; goal to the command before the present one.
-     ;;
-     ;; This allows smooth undoing in proofs which have no "qed"
-     ;; statements.  If your proof assistant doesn't allow these
-     ;; "unclosed" proofs, then you can safely set
-     ;; proof-completed-proof-behaviour.
-     ((and
-       proof-shell-proof-completed
-       (or (and (eq proof-completed-proof-behaviour 'extend)
-		(>= proof-shell-proof-completed 0))
-	   (and (eq proof-completed-proof-behaviour 'closeany)
-		(> proof-shell-proof-completed 0))
-	   (and (eq proof-completed-proof-behaviour 'closegoal)
-		(funcall proof-goal-command-p span))))
-      (proof-done-advancing-autosave span))
-
-     ;; CASE 4: A "Require" type of command is seen (Coq).
-     ;; Case 4 has been flushed, because its functionality has been
-     ;; superseeded by the new auto-compilation feature for Coq.
-
+	(proof-done-advancing-comment span)
+     ;; removed code to amalgamate spans
+     ;; Coq 8.5+ lets you backtrack to arbitrary locations
      ;; CASE 5:  Some other kind of command (or a nested goal).
-     (t
-      (proof-done-advancing-other span)))
+      (proof-done-advancing-other span))
 
     ;; Add the processed command to the input ring
     (unless (or (not (span-live-p span))
-		(eq (span-property span 'type) 'comment))
-      (pg-add-to-input-history cmd)))
-
-  ;; Finally: state of scripting may have changed now, run hooks.
-  (run-hooks 'proof-state-change-hook))
-
-
+		comment-p)
+      (pg-add-to-input-history cmd))))
 
 (defun proof-done-advancing-comment (span)
   "A subroutine of `proof-done-advancing'.  Add comment element for SPAN."
@@ -1409,9 +1461,13 @@ Argument SPAN has just been processed."
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
-    (let ((proof-shell-last-output "")) ; comments not sent, no last output 
-      (pg-set-span-helphighlights bodyspan))
 
+    ;; end of sent region includes comment if prover has sent everything before
+    ;; handle comment first in script specially
+    (when (or (= (span-start span) 1)
+	      (proof-server-everything-sent))
+      (proof-set-sent-end (span-end span)))
+    
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
     (save-match-data
       (setq str (buffer-substring-no-properties (span-start span)
@@ -1425,216 +1481,21 @@ Argument SPAN has just been processed."
 		 (prin1-to-string (match-string-no-properties 1))
 		 "\n"))))))))
 
-
-(defun proof-done-advancing-save (span)
-  "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
-  (unless (or (eq proof-shell-proof-completed 1)
-	      (eq proof-assistant-symbol 'isar))
-    ;; We expect saves to succeed only for recently completed top-level proofs.
-    ;; NB: not true in Isar, because save commands can perform proof.
-    (proof-debug
-     (format
-      "PG: save command with proof-shell-proof-completed=%s, proof-nesting-depth=%s"
-      proof-shell-proof-completed proof-nesting-depth)))
-
-  (setq proof-shell-proof-completed nil)
-
-  ;; FIXME: need subroutine here:
-  (let ((gspan     span)		  ; putative goal span
-	(savestart (span-start span))
-	(saveend   (span-end span))
-	(cmd       (span-property span 'cmd))
-	lev nestedundos nam next)
-
-    (and proof-save-with-hole-regexp
-	 (proof-string-match proof-save-with-hole-regexp cmd)
-	 ;; Give a message of a name if one can be determined
-	 (proof-minibuffer-message
-	  (format "proved %s"
-		  (setq nam
-			(if (stringp proof-save-with-hole-result)
-			    (replace-match proof-save-with-hole-result nil nil cmd)
-			  (match-string proof-save-with-hole-result cmd))))))
-
-    ;; Search back for a goal command, deleting spans along the way:
-    ;; they may be amalgamated into a single goal-save region, which
-    ;; corresponds to the prover discarding the proof history.
-    (setq lev 1)
-    (setq nestedundos 0)
-    (while (and gspan (> lev 0))
-      (setq next (prev-span gspan 'type))
-      (unless proof-arbitrary-undo-positions
-	(span-delete gspan))
-      (setq gspan next)
-      (if gspan
-	  (progn
-	    (setq cmd (span-property gspan 'cmd))
-	    (cond
-	     ;; Ignore comments [may have null cmd setting]
-	     ((eq (span-property gspan 'type) 'comment))
-	     ;; Nested goal saves: add in any nestedcmds
-	     ((eq (span-property gspan 'type) 'goalsave)
-	      (setq nestedundos
-		    (+ nestedundos 1
-		       (or (span-property gspan 'nestedundos) 0))))
-	     ;; Increment depth for a nested save, in case
-	     ;; prover supports history of nested proofs
-	     ((and proof-nested-goals-history-p
-		   proof-save-command-regexp
-		   (proof-string-match proof-save-command-regexp cmd))
-	      (incf lev))
-	     ;; Decrement depth when a goal is hit
-	     ((funcall proof-goal-command-p gspan)
-	      (decf lev))
-	     ;; Remainder cases: see if command matches something we
-	     ;; should count for a global undo
-	     ((and proof-nested-undo-regexp
-		   (proof-string-match proof-nested-undo-regexp cmd))
-	      (incf nestedundos))
-	     ))))
-
-    (if (not gspan)
-	;; No goal span found!  Issue a warning and do nothing more.
-	(pg-response-warning
-	 "Proof General: script management confused, couldn't find goal span for save.")
-
-      ;; If the name isn't set, try to set it from the goal, or as a
-      ;; final desparate attempt, set the name to
-      ;; proof-unnamed-theorem-name (Coq uses a default name for
-      ;; unnamed theorems, believe it or not, and issues a
-      ;; name-binding error for two unnamed theorems in a row!).
-      (setq nam (or nam
-		    (proof-get-name-from-goal gspan)
-		    proof-unnamed-theorem-name))
-
-      (proof-make-goalsave gspan (span-end gspan)
-			   savestart saveend nam nestedundos)
-
-      ;; *** Theorem dependencies ***
-      (if proof-last-theorem-dependencies
-	  (proof-depends-process-dependencies nam gspan)))))
-
-(defun proof-make-goalsave
-  (gspan goalend savestart saveend nam &optional nestedundos)
-  "Make new goal-save span, using GSPAN. Subroutine of `proof-done-advancing-save'.
-Argument GOALEND is the end of the goal;."
-  (unless proof-arbitrary-undo-positions
-    (span-set-end gspan saveend)
-    (span-set-property gspan 'type 'goalsave))
-  (span-set-property gspan 'idiom 'proof);; links to nested proof element
-  (span-set-property gspan 'name nam)
-  (and nestedundos (span-set-property gspan 'nestedundos nestedundos))
-  (pg-set-span-helphighlights gspan proof-region-mouse-highlight-face)
-  ;; Now make a nested span covering the purported body of the proof,
-  ;; and add to buffer-local list of elements.
-  (let ((proofbodyspan
-	 (span-make goalend (if proof-script-integral-proofs
-				saveend savestart))))
-    (pg-add-proof-element nam proofbodyspan gspan)))
-
-(defun proof-get-name-from-goal (gspan)
-  "Try to return a goal name from GSPAN.
-Subroutine of `proof-done-advancing-save'."
-  (let ((cmdstr (span-property gspan 'cmd)))
-    (and proof-goal-with-hole-regexp
-	 (proof-string-match proof-goal-with-hole-regexp cmdstr)
-	 (if (stringp proof-goal-with-hole-result)
-	     (replace-match proof-goal-with-hole-result nil nil cmdstr)
-	   (match-string proof-goal-with-hole-result cmdstr)))))
-
-
-;; FIXME: this next function should be more like proof-done-advancing-save,
-;; perhaps simplifying the proof-completed-proof-behaviour functionality,
-;; which isn't seriously used in any prover.  At the moment the behaviour
-;; here is incomplete compared with proof-done-advancing-save.
-;; NB: in this function we assume non-nested proofs, which explains
-;; some of the logic.  There is no attempt to fix up proof-nesting-depth.
-;; NB: 'extend behaviour is not currently compatible with appearance of
-;; save commands, since proof-done-advancing-save allow for goalspan
-;; already existing.
-(defun proof-done-advancing-autosave (span)
-  "A subroutine of `proof-done-advancing'."
-
-  ;; In the extend case, the context of proof grows until hit a save
-  ;; or new goal.
-  (if (eq proof-completed-proof-behaviour 'extend)
-      (incf proof-shell-proof-completed)
-    (setq proof-shell-proof-completed nil))
-
-  (let* ((swallow  (eq proof-completed-proof-behaviour 'extend))
-	 (gspan    (if swallow span (prev-span span 'type)))
-	 (newend   (if swallow (span-end span) (span-start span)))
-	 (cmd      (span-property span 'cmd))
-	 (newgoal  (funcall proof-goal-command-p span))
-	 nam hitsave dels ncmd)
-    ;; Search backwards to see if we can find a previous goal
-    ;; before a save or the start of the buffer.
-    ;; FIXME: this should really do the work done in
-    ;; proof-done-advancing-save above, too, with nested undos, etc.
-    (while ;; big ugly condition
-	(and
-	 gspan
-	 (or
-	  (eq (span-property gspan 'type) 'comment)
-	  (and
-	   (setq ncmd (span-property gspan 'cmd))
-	   (setq cmd ncmd) ; dynamic scope for funcall below
-	   (not (funcall proof-goal-command-p gspan))
-	   (not
-	    (and proof-save-command-regexp
-		 (proof-string-match proof-save-command-regexp cmd)
-		 (funcall proof-really-save-command-p span cmd)
-		 (setq hitsave t))))))
-      (setq dels (cons gspan dels))
-      (setq gspan (prev-span gspan 'type)))
-    (cond
-     ((or hitsave (null gspan))
-      (proof-debug
-	 "Proof General strangeness: unclosed proof completed, but couldn't find its start!")
-      (pg-set-span-helphighlights span))
-     ((and swallow newgoal)
-      ;; If extending the region, goalsave already there; just highlight new region
-      (setq proof-shell-proof-completed nil)
-      (pg-set-span-helphighlights span))
-     (t
-      ;; If, search back through spans, we haven't hit a save or the
-      ;; start of the buffer, we make a fake goal-save region.
-
-      ;; Delete spans between the previous goal and new command
-      (mapc 'span-delete dels)
-
-      ;; Try to set the name from the goal... [as above]
-      (setq nam (or (proof-get-name-from-goal gspan)
-		    proof-unnamed-theorem-name))
-
-      ;; NB: if extending an already closed region, ought to delete
-      ;; the body and extend that too: currently we make multiple nested
-      ;; bodies, a bit messy.
-      ;; (NB: savestart used for nested region: here use saveend)
-      (proof-make-goalsave gspan
-			   (+ (span-start gspan)
-			      (length (or (span-property-safe gspan 'cmd))))
-			   newend newend nam)))))
-
 (defun proof-done-advancing-other (span)
   (let ((bodyspan  span) ;; might take subscript after first word/line
 	(id        (proof-next-element-id 'command)))
-  ;; Hidable regions for commands: the problem is that they have no
-  ;; natural surrounding region, so makes it difficult to define a
-  ;; region for revealing again.
-  (cond
-   ((funcall proof-goal-command-p span)
-    (pg-add-element 'statement id bodyspan)
-    (incf proof-nesting-depth))
-   (t
-    (pg-add-element 'command id bodyspan)))
+    ;; Hidable regions for commands: the problem is that they have no
+    ;; natural surrounding region, so makes it difficult to define a
+    ;; region for revealing again.
+    (cond
+     ((funcall proof-goal-command-p span)
+      (pg-add-element 'statement id bodyspan)
+      (cl-incf proof-nesting-depth))
+     (t
+      (pg-add-element 'command id bodyspan)))
 
-  (if proof-shell-proof-completed
-      (incf proof-shell-proof-completed))
-
-  (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
-
-
+    (when proof-prover-proof-completed
+	(cl-incf proof-prover-proof-completed))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1645,7 +1506,7 @@ Subroutine of `proof-done-advancing-save'."
 ;; command syntax (terminated, not terminated, or lisp-style), whether
 ;; or not PG silently ignores comments, etc.
 
-(defun proof-segment-up-to-parser (pos &optional next-command-end)
+(defun proof-segment-up-to-parser (pos &optional _next-command-end)
   "Parse the script buffer from end of queue/locked region to POS.
 This partitions the script buffer into contiguous regions, classifying
 them by type.  Return a list of lists of the form
@@ -1694,7 +1555,7 @@ to the function which parses the script segment by segment."
 	   ((null type))		; nothing left in buffer
 	   (t
 	    (error
-  "Proof-segment-up-to-parser: bad TYPE value from proof-script-parse-function")))
+	     "Proof-segment-up-to-parser: bad TYPE value from proof-script-parse-function")))
 	  ;;
 	  (if seg
 	      (progn
@@ -1781,37 +1642,37 @@ to the function which parses the script segment by segment."
     (if (looking-at proof-script-comment-start-regexp)
 	;; Find end of comment
 	(if (proof-script-generic-parse-find-comment-end) 'comment)
-    ;; Handle non-comments: assumed to be commands
-    (when (looking-at proof-script-command-start-regexp)
-      ;; We've got at least the beginnings of a command, skip past it
-      (goto-char (match-end 0))
-      (let (foundstart)
-	;; Find next command start
-	(while (and (setq
-		     foundstart
-		     (and
-		      (re-search-forward proof-script-command-start-regexp
-					 nil 'movetolimit)
-		      (and (match-beginning 0)
-			   ;; jiggery pokery here is to move outside a
-			   ;; comment in case a comment start is considered to
-			   ;; be a command start (for non fly-past behaviour)
-			   (goto-char (match-beginning 0)))))
-		    (proof-buffer-syntactic-context)
-		    (goto-char (1+ (point))))
-	  ;; loop while in a string/comment before the next command start
-	  )
-	(unless (proof-buffer-syntactic-context)  ; not inside a comment/string
-	  (cond
-	   (foundstart			; found a second command start
-	    (goto-char foundstart)	; beginning of command start
-	    (skip-chars-backward " \t\n") ; end of previous command
-	    'cmd)
-	   ((eq (point) (point-max))	  ; At the end of the buffer
-	    (skip-chars-backward " \t\n") ; benefit of the doubt, let
-	    'cmd)))		      ; the PA moan if it's incomplete
-	    ;; Return nil otherwise, no complete command found
-	)))))
+      ;; Handle non-comments: assumed to be commands
+      (when (looking-at proof-script-command-start-regexp)
+	;; We've got at least the beginnings of a command, skip past it
+	(goto-char (match-end 0))
+	(let (foundstart)
+	  ;; Find next command start
+	  (while (and (setq
+		       foundstart
+		       (and
+			(re-search-forward proof-script-command-start-regexp
+					   nil 'movetolimit)
+			(and (match-beginning 0)
+			     ;; jiggery pokery here is to move outside a
+			     ;; comment in case a comment start is considered to
+			     ;; be a command start (for non fly-past behaviour)
+			     (goto-char (match-beginning 0)))))
+		      (proof-buffer-syntactic-context)
+		      (goto-char (1+ (point))))
+	    ;; loop while in a string/comment before the next command start
+	    )
+	  (unless (proof-buffer-syntactic-context)  ; not inside a comment/string
+	    (cond
+	     (foundstart			; found a second command start
+	      (goto-char foundstart)	; beginning of command start
+	      (skip-chars-backward " \t\n") ; end of previous command
+	      'cmd)
+	     ((eq (point) (point-max))	  ; At the end of the buffer
+	      (skip-chars-backward " \t\n") ; benefit of the doubt, let
+	      'cmd)))		      ; the PA moan if it's incomplete
+	  ;; Return nil otherwise, no complete command found
+	  )))))
 
 
 (defun proof-script-generic-parse-sexp ()
@@ -1825,6 +1686,10 @@ to the function which parses the script segment by segment."
       (if end
 	  (progn (goto-char end) 'cmd)))))
 
+(defvar proof-whitespace-chars
+  ;; whitespace used when trimming script spans
+  ;; space, tab, newline
+  (list 32 9 10))
 
 (defun proof-semis-to-vanillas (semis &optional queueflags)
   "Create vanilla spans for SEMIS and a list for the queue.
@@ -1840,37 +1705,46 @@ The optional QUEUEFLAGS are added to each queue item."
   (let ((start (proof-queue-or-locked-end))
 	(file  (or (buffer-file-name) (buffer-name)))
 	(cb    'proof-done-advancing)
-	span alist semi item end)
+	(secondary-start (and proof-locked-secondary-span (span-start proof-locked-secondary-span)))
+	(secondary-end (and proof-locked-secondary-span (span-end proof-locked-secondary-span)))
+	span alist end)
     (setq semis (nreverse semis))
     (save-match-data
       (dolist (semi semis)
 	(setq end (nth 2 semi))
-	(setq span  (span-make start end))
-	(if (eq (car semi) 'cmd)
-	    (progn ;; command span
-	      (let* ((cmd  (nth 1 semi))
-		     (qcmd (if proof-script-preprocess
-			       (funcall proof-script-preprocess
-					file
-					;; ignore spaces at start of command
-					(+ start (save-excursion
-						   (goto-char start)
-						   (skip-chars-forward " \t\n")))
-					end
-					cmd)
-			     (list cmd)))
-		     (qitem  (list span qcmd cb queueflags)))
-		(span-set-property span 'type 'vanilla)
-		(span-set-property span 'cmd cmd)
-		(setq alist (cons qitem alist))))
-	  ;; ignored text
-	  (let ((qitem  
-		 (list span nil cb queueflags))) ; nil was `proof-no-command' 
-	  (span-set-property span 'type 'comment)
-	    (setq alist (cons qitem alist))))
+	;; don't add items in secondary locked region
+	(unless (and proof-locked-secondary-span
+		     (span-buffer proof-locked-secondary-span)
+		     (or (and (>= start secondary-start) (< start secondary-end))
+			 (and (> end secondary-start) (<= end secondary-end))))
+	  (when proof-script-trim-spans
+	    (while (memq (char-after start) proof-whitespace-chars)
+	      (cl-incf start)))
+	  (setq span (span-make start end))
+	  (if (eq (car semi) 'cmd)
+	      (progn ;; command span
+		(let* ((cmd  (nth 1 semi))
+		       (qcmd (if proof-script-preprocess
+				 (funcall proof-script-preprocess
+					  file
+					  ;; ignore spaces at start of command
+					  (+ start (save-excursion
+						     (goto-char start)
+						     (skip-chars-forward " \t\n")))
+					  end
+					  cmd)
+			       (list cmd)))
+		       (qitem  (list span qcmd cb queueflags)))
+		  (span-set-property span 'type 'vanilla)
+		  (span-set-property span 'cmd cmd)
+		  (setq alist (cons qitem alist))))
+	    ;; ignored text
+	    (let ((qitem  
+		   (list span nil cb queueflags))) ; nil was `proof-no-command' 
+	      (span-set-property span 'type 'comment)
+	      (setq alist (cons qitem alist)))))
 	(setq start end)))
     (nreverse alist)))
-
 
 
 
@@ -1905,19 +1779,29 @@ Assumes that point is at the end of a command."
 
 (defun proof-assert-until-point (&optional displayflags)
   "Process the region from the end of the locked-region until point."
-  (if (proof-only-whitespace-to-locked-region-p)
-      (error
-	 "At end of the locked region, nothing to do to!"))
+  (when (proof-only-whitespace-to-locked-region-p)
+    (error
+     "At end of the locked region, nothing to do to!"))
+  ;; delete error spans at beginning, just past processed region
+  (save-excursion
+    (goto-char (proof-queue-or-locked-end))
+    (skip-chars-forward " \t\n")
+    (let* ((spans (overlays-at (point)))
+	   (error-spans (cl-remove-if-not
+			 (lambda (sp) (eq (span-property sp 'type) 'pg-error))
+			 spans)))
+      (mapc #'span-delete error-spans)))
   (proof-activate-scripting nil 'advancing)
-  (let ((semis (save-excursion
+  (let ((inhibit-quit t) ; prevent inconsistent state
+	(semis (save-excursion
 		 (skip-chars-backward " \t\n"
 				      (proof-queue-or-locked-end))
 		 (proof-segment-up-to-using-cache (point)))))
-    (if (eq 'unclosed-comment (car semis))
-	(setq semis (cdr semis)))
-    (if (null semis) ; maybe inside a string or something.
-	(error "I can't find any complete commands to process!"))
-    (run-hooks 'proof-assert-command-hook) ;; sneak commands (real ones with a prompt)
+    (when (eq 'unclosed-comment (car semis))
+      (setq semis (cdr semis)))
+    (when (null semis) ; maybe inside a string or something.
+      (error "I can't find any complete commands to process!"))
+    (run-hooks 'proof-assert-command-hook) ;; sneak commands
     (proof-assert-semis semis displayflags)))
 
 (defun proof-assert-electric-terminator ()
@@ -1929,7 +1813,7 @@ always defaults to inserting a semi (nicer might be to parse for a
 comment, and insert or skip to the next semi)."
   (let ((mrk         (point)) 
 	(termregexp  (regexp-quote proof-terminal-string))
-	ins incomment nwsp)
+	ins nwsp)
     (if (< mrk (proof-unprocessed-begin))
 	(insert proof-terminal-string) ; insert immediately in locked region
       (if (proof-only-whitespace-to-locked-region-p)
@@ -1955,7 +1839,6 @@ comment, and insert or skip to the next semi)."
 	(unless semis
 	  (error "Can't find a parseable command!"))
 	(when (eq 'unclosed-comment (caar semis))
-	  (setq incomment t)
 	  ;; delete spurious char in comment
 	  (if ins (backward-delete-char 1))
 	  (goto-char mrk)
@@ -1971,7 +1854,7 @@ We assume that the list is contiguous and begins at (proof-queue-or-locked-end).
 We also delete help spans which appear in the same region (in the expectation
 that these may be overwritten).
 This function expects the buffer to be activated for advancing."
-  (assert semis nil "proof-assert-semis: argument must be a list")
+  (cl-assert semis nil "proof-assert-semis: argument must be a list")
   (let ((startpos  (proof-queue-or-locked-end))
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
@@ -1979,22 +1862,19 @@ This function expects the buffer to be activated for advancing."
     (proof-extend-queue lastpos vanillas)))
 
 (defun proof-retract-before-change (beg end)
-  "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.
-No effect if prover is busy."
-  (when (and (> (proof-queue-or-locked-end) beg)
+  "For `before-change-functions'.  When BEG and END within sent region, 
+retract to BEG unless BEG and END in comment."
+  (when (and (<= end (proof-sent-end))
 	     (not (and (proof-inside-comment beg)
 		       (proof-inside-comment end))))
-    (when proof-shell-busy
-      (message "Interrupting prover")
-      (proof-interrupt-process)
-      (proof-shell-wait))
+    ;; TODO should we interrupt here if prover busy, as was done in proof-shell?
+    (proof-debug-message "proof-retract-before-change beg: %s end: %s" beg end)
     (save-excursion
       (save-match-data ;; see PG#41
-        (save-restriction ;; see Trac#403
-          (widen)
-          (goto-char beg)
-          (proof-retract-until-point)
-          (proof-shell-wait))))))
+	(save-restriction ;; see Trac#403
+	  (widen)
+	  (goto-char beg)
+	  (proof-retract-until-point))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2020,10 +1900,10 @@ No effect if prover is busy."
 (defun proof-insert-sendback-command (cmd)
   "Insert CMD into the proof script, execute assert-until-point."
   (proof-with-script-buffer
-    (proof-goto-end-of-locked)
-    (insert "\n") ;; could be user opt
-    (insert cmd)
-    (proof-assert-until-point)))
+   (proof-goto-end-of-locked)
+   (insert "\n") ;; could be user opt
+   (insert cmd)
+   (proof-assert-until-point)))
 
 
 
@@ -2053,7 +1933,7 @@ is that undoing never leaves prover in a \"proof just completed\"
 state, which is true for some proof assistants (but probably not
 others)."
   ;; TODO: need to fixup proof-nesting-depth
-  (setq proof-shell-proof-completed nil)
+  (setq proof-prover-proof-completed nil)
   (if (span-live-p span)
       (let ((start (span-start span))
 	    (end (span-end span))
@@ -2061,19 +1941,28 @@ others)."
 	;; da: check for empty region seems odd here?
 	;; [prevents regions from being detached in set-locked-end]
 	(unless (proof-locked-region-empty-p)
-	  (proof-set-locked-end start)
-	  (proof-set-queue-end start))
+	  (save-excursion
+	    (goto-char start)
+	    (skip-chars-backward "\n")
+	    (setq start (point))
+	    (proof-set-locked-end start)
+	    (proof-set-sent-end start)
+	    (proof-set-queue-end start)))
 	;; Try to clean input history (NB: rely on order here)
-;; PG 3.7 release: disable this, it's not yet robust.
-;;	(let ((cmds (spans-at-region-prop start end 'cmd))
-;;	      (fn   (lambda (span)
-;;		      (unless (eq (span-property span 'type) 'comment)
-;;			(pg-remove-from-input-history
-;;			 (span-property span 'cmd))))))
-;;	  (mapc fn (reverse cmds)))
-
-	(proof-script-delete-spans start end)
-	(span-delete span)
+	;; PG 3.7 release: disable this, it's not yet robust.
+	;;	(let ((cmds (spans-at-region-prop start end 'cmd))
+	;;	      (fn   (lambda (span)
+	;;		      (unless (eq (span-property span 'type) 'comment)
+	;;			(pg-remove-from-input-history
+	;;			 (span-property span 'cmd))))))
+	;;	  (mapc fn (reverse cmds)))
+	;; mark spans for deletion
+	;; if we create secondary locked span, we won't delete those covered by that span
+	(let* ((spans-at-start (overlays-at start))
+	       (error-spans (cl-remove-if-not (lambda (sp) (eq (span-property sp 'type) 'pg-error))
+					      spans-at-start)))
+	  (proof-script-mark-spans-for-deletion start end error-spans))
+	;; TODO what if error marks below this span???
 	(if killfn (funcall killfn start end))))
   ;; State of scripting may have changed now
   (run-hooks 'proof-state-change-hook))
@@ -2089,17 +1978,18 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
     (span-set-property span 'remove-action remove-action)
     (list (list span proof-commands 'proof-done-retracting displayflags))))
 
-
 (defun proof-last-goal-or-goalsave ()
   "Return the span which is the last goal or save before point."
   (save-excursion
     (let ((span (span-at-before (proof-unprocessed-begin) 'type)))
+      (proof-debug-message "span before while: %s" span)
       (while (and span
 		  (not (eq (span-property span 'type) 'goalsave))
 		  (or (eq (span-property span 'type) 'proof)
 		      (eq (span-property span 'type) 'comment)
 		      (eq (span-property span 'type) 'proverproc)
 		      (not (funcall proof-goal-command-p span))))
+	(proof-debug-message "span in while: %s" span)
 	(setq span (prev-span span 'type)))
       span)))
 
@@ -2119,13 +2009,11 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 Notice that this necessitates retracting any spans following TARGET,
 up to the end of the locked region.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'."
-  (let ((end   (proof-unprocessed-begin))
+  (let ((end (span-end proof-sent-span))
 	(start (span-start target))
-	(span  (if proof-arbitrary-undo-positions
-		   target
-		 (proof-last-goal-or-goalsave)))
+	(span target)
 	actions)
-
+    
     ;; NB: first section only entered if proof-kill-goal-command is
     ;; non-nil.  Otherwise we expect proof-find-and-forget-fn to do
     ;; all relevent work for arbitrary retractions.  FIXME: clean up
@@ -2169,33 +2057,33 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	  (setq actions
 		(proof-setup-retract-action (span-start span) end
 					    (list proof-kill-goal-command)
-						    undo-action
-						    displayflags)
+					    undo-action
+					    displayflags)
 		end (span-start span))))
     ;; Check the start of the target span lies before the end
     ;; of the locked region (should always be true since we don't
     ;; make spans outside the locked region at the moment)...
     ;; But end may have moved backwards above: this just checks whether
     ;; there is more retraction to be done.
-    (if (> end start)
-	(setq actions
-	      ;; Append a retract action to clear the entire start-end
-	      ;; region.  Rely on proof-find-and-forget-fn to
-	      ;; calculate a command which "forgets" back to the first
-	      ;; definition, declaration, or whatever that comes after
-	      ;; the target span.
-	      (nconc actions (proof-setup-retract-action
-			      start end
-			      (funcall proof-find-and-forget-fn target)
-			      undo-action
-			      displayflags))))
-
-    (proof-start-queue (min start end) (proof-unprocessed-begin) 
-		       actions 'retracting)))
+    (proof-debug-message "retracting span: %s start: %s end: %s" span start end)
+    (when (> end start)
+      (setq actions
+	    ;; Append a retract action to clear the entire start-end
+	    ;; region.
+	    (nconc actions (proof-setup-retract-action
+			    start end
+			    nil
+			    undo-action
+			    displayflags)))
+      ;; tell prover about the retraction
+      (funcall proof-find-and-forget-fn target))
+    (let ((start (min start end))
+	  (end (proof-unprocessed-begin)))
+      (proof-start-queue start end actions 'retracting))))
 
 (defun proof-retract-until-point-interactive (&optional delete-region)
   "Tell the proof process to retract until point.
-If invoked outside a locked region, undo the last successfully processed
+If invoked outside the sent region, undo the last successfully processed
 command.  If called with a prefix argument (DELETE-REGION non-nil), also
 delete the retracted region from the proof-script."
   (interactive "P")
@@ -2205,7 +2093,7 @@ delete the retracted region from the proof-script."
 (defun proof-retract-until-point (&optional undo-action displayflags)
   "Set up the proof process for retracting until point.
 This calculates the commands to undo to the current point within
-the locked region.  If invoked outside the locked region, undo
+the sent region.  If invoked outside the sent region, undo
 the last successfully processed command.  See `proof-retract-target'.
 
 After retraction has succeeded in the prover, the filter will call
@@ -2229,31 +2117,33 @@ Step 2 may seem odd -- we're undoing (in) the buffer, after all
 forward again, we hit a command that loads other files, but the
 user hasn't saved the latest edits.  Therefore it is right to
 query saves here."
-  (if (proof-locked-region-empty-p)
-      (error "No locked region")
-    (proof-activate-scripting)
-    ;; enforce not busy to avoid retracting items from the queue region,
-    ;; which is not supported currently, see #443
-    ;; (future: may allow retracting from queue in progress)
-    (proof-shell-ready-prover)
-    (unless (proof-locked-region-empty-p) ;; re-opening may discard locked region!
-      (let ((span (span-at (point) 'type)))
-	;; If no span at point, retracts the last span in the buffer.
-	(unless span
-	  (proof-goto-end-of-locked)
-	  (backward-char)
-	  (setq span (span-at (point) 'type)))
-	(if span
-	    (progn
-	      (run-hooks 'proof-retract-command-hook) ;; sneak commands (real ones with a prompt)
-	      (proof-retract-target span undo-action displayflags))
-	  ;; something wrong
-	  (proof-debug
-	   "proof-retract-until-point: couldn't find a span!"))))))
-
-
-
-
+  (if (proof-sent-region-empty-p)
+      (error "No sent region")
+    (let ((inhibit-quit t)) ; prevent inconsistent state
+      (proof-activate-scripting)
+      ;; enforce not busy to avoid retracting items from the queue region,
+      ;; which is not supported currently, see #443
+      ;; (future: may allow retracting from queue in progress)
+      (proof-ready-prover)
+      (unless (proof-sent-region-empty-p) ;; re-opening may discard locked region!
+	;; spans contain state id resulting from processing that span
+	;; so leave this span processed, and work on preceding span
+	;; TODO 'type becomes 'pg-type
+	(let* ((span (span-at (point) 'type)))
+	  ;; If no span at point or previous span, retract the last span in the buffer.
+	  (unless span
+	    ;;	  (proof-goto-end-of-locked)
+	    ;;	  (backward-char)
+	    ;;	  (setq span (span-at (point) 'type)))
+	    (setq span (span-make (point) (point)))
+	    (span-set-property span 'type 'pg-sentinel))
+	  (if span
+	      (progn
+		(run-hooks 'proof-retract-command-hook) ;; sneak commands
+		(proof-retract-target span undo-action displayflags))
+	    ;; something wrong
+	    (proof-debug
+	     "proof-retract-until-point: couldn't find a span!")))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2317,7 +2207,7 @@ This hook also gives a warning in case this is the active scripting buffer."
   (setq proof-script-buffer-file-name buffer-file-name)
   (if (eq (current-buffer) proof-script-buffer)
       (pg-response-warning
-"Active scripting buffer changed name; synchronization risked if prover tracks filenames!"))
+       "Active scripting buffer changed name; synchronization risked if prover tracks filenames!"))
   (proof-script-set-buffer-hooks))
 
 (defun proof-script-set-buffer-hooks ()
@@ -2342,7 +2232,7 @@ Otherwise just do `proof-restart-buffers' to delete some spans from memory."
   ;; otherwise we can lead the user to frustration with the
   ;; dedicated windows nonsense.
   (proof-map-buffers
-   (list proof-goals-buffer proof-response-buffer proof-trace-buffer)
+   (list proof-goals-buffer proof-response-buffer)
    (bury-buffer (current-buffer))))
 
 
@@ -2461,18 +2351,18 @@ For this function to work properly, you must configure
       (setq str (span-property span 'cmd))
       (cond ((eq (span-property span 'type) 'vanilla)
 	     (unless (proof-stringfn-match proof-ignore-for-undo-count str)
-	       (incf ct)))
+	       (cl-incf ct)))
 	    ((eq (span-property span 'type) 'pbp)
 	     (setq i 0)
 	     (while (< i (length str))
 	       (if (string-equal (substring str i (+ i tl)) proof-terminal-string)
-		   (incf ct))
-	       (incf i))))
+		   (cl-incf ct))
+	       (cl-incf i))))
       (setq span (next-span span 'type)))
     (if (= ct 0)
 	nil ; was proof-no-command
       (cond ((stringp proof-undo-n-times-cmd)
-	     (list (format proof-undo-n-times-cmd ct)))
+	     (list (myformat proof-undo-n-times-cmd ct)))
 	    ((functionp proof-undo-n-times-cmd)
 	     (list (funcall proof-undo-n-times-cmd ct)))))))
 
@@ -2511,7 +2401,7 @@ with something different."
 		   (proof-string-match proof-ignore-for-undo-count cmd))))
 	 ;; some named element: use generic forget-id function; finish.
 	 ((setq name (span-property span 'name))
-	  (setq ans (format proof-forget-id-command name))
+	  (setq ans (myformat proof-forget-id-command name))
 	  (setq span nil)))
 	(if ans (setq answers (cons ans answers)))
 	(if span (setq span (next-span span 'type))))
@@ -2530,14 +2420,15 @@ with something different."
 (defconst proof-script-important-settings
   '(proof-script-comment-start			;
     proof-script-comment-end
-    proof-save-command-regexp		; [actually, some provers may not have save command]
-;    proof-goal-command-regexp		; not needed if proof-goal-command-p is set
-;    proof-goal-with-hole-regexp		; non-essential?
-;    proof-save-with-hole-regexp		; non-essential?
-;    proof-showproof-command		; non-essential
-;    proof-goal-command			; non-essential
-;    proof-save-command			; do
-;    proof-kill-goal-command		; do
+    proof-server-response-complete-fun
+    ;;    proof-goal-command-regexp		; not needed if proof-goal-command-p is set
+    ;;    proof-goal-with-hole-regexp		; non-essential?
+    ;;    proof-save-with-hole-regexp		; non-essential?
+    ;;    proof-showproof-command		; non-essential
+    ;;    proof-goal-command			; non-essential
+    ;;
+    ;;    proof-save-command			; do
+    ;;    proof-kill-goal-command		; do
     ))
 
 
@@ -2565,9 +2456,10 @@ finish setup which depends on specific proof assistant configuration."
   ;; Additional key def for (first character of) terminal string
   (if proof-terminal-string
       (progn
-	(define-key proof-mode-map
-	  (vconcat [(control c)] (vector (aref proof-terminal-string 0)))
-	  'proof-electric-terminator-toggle)
+;; This key-binding was disabled following a request in PG issue #160.
+;;	(define-key proof-mode-map
+;;	  (vconcat [(control c)] (vector (aref proof-terminal-string 0)))
+;;	  'proof-electric-terminator-toggle)
 	(define-key proof-mode-map (vector (aref proof-terminal-string 0))
 	  'proof-electric-terminator)))
 
@@ -2596,14 +2488,14 @@ finish setup which depends on specific proof assistant configuration."
 
   ;; Invisibility management: show ellipsis
   (mapc (lambda (p)
-	    (add-to-invisibility-spec 
-	     (cons (pg-invisible-prop p) t)))
-	  pg-all-idioms)
+	  (add-to-invisibility-spec 
+	   (cons (pg-invisible-prop p) t)))
+	pg-all-idioms)
 
   ;; If we're excited to get going straightaway, make and layout windows
   (when proof-layout-windows-on-visit-file
-      (proof-shell-make-associated-buffers)
-      (proof-layout-windows))
+    (proof-prover-make-associated-buffers)
+    (proof-layout-windows))
 
   ;; Make sure the user has been welcomed!
   (proof-splash-message))
@@ -2646,14 +2538,14 @@ Choice of function depends on configuration setting."
     (set (make-local-variable 'imenu-generic-expression)
 	 (or
 	  proof-script-imenu-generic-expression
-	     (delq nil
-	       (list
-		(if proof-goal-with-hole-regexp
-		    (list nil proof-goal-with-hole-regexp
-			  proof-goal-with-hole-result))
-		(if proof-save-with-hole-regexp
-		    (list "Saves" proof-save-with-hole-regexp
-			  proof-save-with-hole-result))))))))
+	  (delq nil
+		(list
+		 (if proof-goal-with-hole-regexp
+		     (list nil proof-goal-with-hole-regexp
+			   proof-goal-with-hole-result))
+		 (if proof-save-with-hole-regexp
+		     (list "Saves" proof-save-with-hole-regexp
+			   proof-save-with-hole-result))))))))
 
 
 
@@ -2728,15 +2620,15 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 		  (cdr semis))))
       usedsemis)))
 
-(defun proof-script-after-change-function (start end prelength)
+(defun proof-script-after-change-function (start _end _prelength)
   "Value for `after-change-functions' in proof script buffers."
   (setq proof-last-edited-low-watermark
 	(min (or proof-last-edited-low-watermark (point-max))
 	     start))
   (if (and (markerp proof-overlay-arrow)
 	   (marker-position proof-overlay-arrow)
-	   ; only move marker up:
-	   ;(< start (marker-position proof-overlay-arrow))
+	   ;; only move marker up:
+	   ;; (< start (marker-position proof-overlay-arrow))
 	   (>= start (proof-queue-or-locked-end)))
       (proof-set-overlay-arrow (proof-queue-or-locked-end))))
 
@@ -2744,8 +2636,6 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
   "Set `after-change-functions' for script buffers."
   (add-hook 'after-change-functions
 	    'proof-script-after-change-function nil t))
-
-
 
 (provide 'proof-script)
 ;;; proof-script.el ends here

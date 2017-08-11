@@ -1,0 +1,36 @@
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (find-file ".autotest.v")
+  (erase-buffer) ; just in case exists
+  (setq buffer-file-name nil)
+  (proof-electric-terminator-toggle 1)
+  (insert "Module test") ; no "\n"
+  (proof-electric-terminator)
+  (insert " Goal forall (A B:Prop),(A /\\\\ B) -> (B /\\\\ A)")
+  (proof-electric-terminator)
+  (insert "\ntauto.")
+  (backward-char)
+  (proof-electric-terminator)
+  (goto-char (point-max)) 
+  (insert "\nQed.\nEnd test")
+  (proof-electric-terminator)
+  (sleep-for 1)
+  (let ((expected
+"Interactive Module test started
+Unnamed_thm is defined
+Module test is defined
+"))
+      (verify-response expected))     
+EOF
+)
+
+
+ADVICE=$(cat <<EOF
+Make sure script has been fully processed.
+
+Should see in response buffer:
+  Interactive Module test started
+  Unnamed_thm is defined
+  Module test is defined
+EOF
+)

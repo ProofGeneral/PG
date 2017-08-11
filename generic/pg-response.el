@@ -1,12 +1,27 @@
 ;; pg-response.el --- Proof General response buffer mode.
 ;;
-;; Copyright (C) 1994-2010 LFCS Edinburgh.
-;; Authors:   David Aspinall, Healfdene Goguen,
-;;		Thomas Kleymann and Dilip Sequeira
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;; pg-response.el,v 12.10 2012/09/25 09:44:18 pier Exp
-;;
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This mode is used for the response buffer proper, and
@@ -23,7 +38,6 @@
 
 (require 'pg-assoc)
 (require 'span)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -99,33 +113,21 @@ Internal variable, setting this will have no effect!")
   "List of GNU Emacs frame parameters for secondary frames.")
 
 (defun proof-multiple-frames-enable ()
-  ; special-display-regexps is obsolete, let us let it for a while and
-  ; remove it later
-  (unless (eval-when-compile (boundp 'display-buffer-alist))
-    (let ((spdres (cons
-		   pg-response-special-display-regexp
-		   proof-multiframe-parameters)))
-      (if proof-multiple-frames-enable
-	  (add-to-list 'special-display-regexps spdres)
-	(setq special-display-regexps
-	      (delete spdres special-display-regexps)))))
-  ; This is the current way to do it
-  (when (eval-when-compile (boundp 'display-buffer-alist))
-    (let
-	((display-buffer-entry
-	  (cons pg-response-special-display-regexp
-	    `((display-buffer-reuse-window display-buffer-pop-up-frame) .
-	      ((reusable-frames . t)
-	       (pop-up-frame-parameters
-		.
-		,proof-multiframe-parameters))))))
-      (if proof-multiple-frames-enable
-	  (add-to-list
-	   'display-buffer-alist
-	   display-buffer-entry)
-	;(add-to-list 'display-buffer-alist (proof-buffer-dislay))
-	(setq display-buffer-alist
-	      (delete display-buffer-entry display-buffer-alist)))))
+  (let
+      ((display-buffer-entry
+        (cons pg-response-special-display-regexp
+          `((display-buffer-reuse-window display-buffer-pop-up-frame) .
+            ((reusable-frames . t)
+             (pop-up-frame-parameters
+              .
+              ,proof-multiframe-parameters))))))
+    (if proof-multiple-frames-enable
+        (add-to-list
+         'display-buffer-alist
+         display-buffer-entry)
+      ;(add-to-list 'display-buffer-alist (proof-buffer-dislay))
+      (setq display-buffer-alist
+            (delete display-buffer-entry display-buffer-alist))))
   (proof-layout-windows))
 
 (defun proof-three-window-enable ()
@@ -134,7 +136,7 @@ Internal variable, setting this will have no effect!")
 
 (defun proof-guess-3win-display-policy (&optional policy)
   "Return the 3 windows mode layout policy from user choice POLICY.
-If POLIY is smart then guess the good policy from the current
+If POLICY is smart then guess the good policy from the current
 frame geometry, otherwise follow POLICY."
   (if (eq policy 'smart)
       (cond
@@ -181,9 +183,6 @@ Following POLICY, which can be one of 'smart, 'horizontal,
       (other-window 1)
       (switch-to-buffer b3)
       (set-window-dedicated-p (selected-window) proof-three-window-enable))))))
-
-
-
 
 (defun proof-display-three-b (&optional policy)
   "Layout three buffers in a single frame.  Only do this if buffers exist."
@@ -369,10 +368,8 @@ Returns non-nil if response buffer was cleared."
 
 (defun pg-response-display (str)
   "Show STR as a response in the response buffer."
-
   (pg-response-maybe-erase t nil)
   (pg-response-display-with-face str)
-
   ;; NB: this displays an empty buffer sometimes when it's not
   ;; so useful.  It _is_ useful if the user has requested to
   ;; see the proof state and there is none
@@ -417,7 +414,6 @@ Returns non-nil if response buffer was cleared."
           (overlay-put
            (span-make start (point-max))
            'face face))
-
 	(setq buffer-read-only t)
 	(set-buffer-modified-p nil))))))
 
@@ -432,11 +428,7 @@ is set to nil, so responses are not cleared automatically."
 	 (let ((inhibit-read-only t))
 	   (bufhist-checkpoint-and-erase)
 	   (set-buffer-modified-p nil))))
-  (proof-with-current-buffer-if-exists proof-trace-buffer
-     (let ((inhibit-read-only t))
-       (erase-buffer)
-       (set-buffer-modified-p nil)))
-  (message "Response buffers cleared."))
+  (proof-debug-message "Response buffers cleared."))
 
 ;;;###autoload
 (defun pg-response-message (&rest args)
@@ -521,9 +513,7 @@ and start at the first error."
 			  ;; Pop up a window.
 			  (display-buffer
                            proof-response-buffer
-                           (and (eval-when-compile
-                                  (boundp 'display-buffer-alist))
-                                proof-multiple-frames-enable
+                           (and proof-multiple-frames-enable
                                 (cons nil proof-multiframe-parameters))))))
 		  ;; Make sure the response buffer stays where it is,
 		  ;; and make sure source buffer is visible
@@ -551,69 +541,6 @@ See `pg-next-error-regexp'."
 	(save-excursion
 	  (goto-char (point-min))
 	  (re-search-forward pg-next-error-regexp nil t)))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Tracing buffers
-;;
-
-(defcustom proof-trace-buffer-max-lines 10000
-  "The maximum size in lines for Proof General *trace* buffers.
-A value of 0 stands for unbounded."
-  :type 'integer
-  :group 'proof-shell)
-
-;; An analogue of pg-response-display-with-face
-(defun proof-trace-buffer-display (start end)
-  "Copy region START END from current buffer to end of the trace buffer."
-  (let ((cbuf   (current-buffer))
-	(nbuf   proof-trace-buffer))
-    (set-buffer nbuf)
-    (save-excursion
-      (goto-char (point-max))
-      (let ((inhibit-read-only t))
-	(insert ?\n)
-	(insert-buffer-substring cbuf start end)
-	(unless (bolp)
-	  (insert ?\n))))
-    (set-buffer cbuf)))
-
-(defun proof-trace-buffer-finish ()
-  "Call to complete a batch of tracing output.
-The buffer is truncated if its size is greater than `proof-trace-buffer-max-lines'."
-  (if (> proof-trace-buffer-max-lines 0)
-      (proof-with-current-buffer-if-exists proof-trace-buffer
-	(save-excursion
-	  (goto-char (point-max))
-	  (forward-line (- proof-trace-buffer-max-lines))
-	  (let ((inhibit-read-only t))
-	    (delete-region (point-min) (point)))))))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Theorems buffer
-;;
-;; [ INCOMPLETE ]
-;;
-;; Revives an old idea from Isamode: a buffer displaying a bunch
-;; of theorem names.
-;;
-;;
-
-(defun pg-thms-buffer-clear ()
-  "Clear the theorems buffer."
-  (with-current-buffer proof-thms-buffer
-    (let (start str)
-      (goto-char (point-max))
-      (newline)
-      (setq start (point))
-      (insert str)
-      (unless (bolp) (newline))
-      (set-buffer-modified-p nil))))
-
 
 (provide 'pg-response)
 ;;; pg-response.el ends here

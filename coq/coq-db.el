@@ -1,9 +1,27 @@
 ;;; coq-db.el --- coq keywords database utility functions
-;;
-;; Author: Pierre Courtieu <courtieu@lri.fr>
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
-;;
-;;
+
+;; This file is part of Proof General.
+
+;; Portions © Copyright 1994-2012, David Aspinall and University of Edinburgh
+;; Portions © Copyright 1985-2014, Free Software Foundation, Inc
+;; Portions © Copyright 2001-2006, Pierre Courtieu
+;; Portions © Copyright 2010, Erik Martin-Dorel
+;; Portions © Copyright 2012, Hendrik Tews
+;; Portions © Copyright 2017, Clément Pit-Claudel
+;; Portions © Copyright 2016-2017, Massachusetts Institute of Technology
+
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 2.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; We store all information on keywords (tactics or command) in big
@@ -13,9 +31,6 @@
 ;;
 
 ;;; Code:
-
-(eval-when-compile
-  (require 'cl))
 
 (require 'proof-config)			; for proof-face-specs, a macro
 (require 'proof-syntax)			; for proof-ids-to-regexp
@@ -203,7 +218,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  t)))
 	    (setq res (nconc res (list menu-entry)))));; append *in place*
 	(setq l (cdr l))
-	(decf size)))
+	(cl-decf size)))
     res))
 
 
@@ -284,7 +299,7 @@ See `coq-syntax-db' for DB structure."
 (defface coq-solve-tactics-face
   (proof-face-specs
    (:foreground "red") ; pour les fonds clairs
-   (:foreground "red") ; pour les fond fonc�s
+   (:foreground "red") ; pour les fond fonc駸
    ()) ; pour le noir et blanc
   "Face for names of closing tactics in proof scripts."
   :group 'proof-faces)
@@ -295,7 +310,7 @@ See `coq-syntax-db' for DB structure."
 (defface coq-cheat-face
   (proof-face-specs
    (:background "red") ; pour les fonds clairs
-   (:background "red") ; pour les fond fonc�s
+   (:background "red") ; pour les fond fonc駸
    ()) ; pour le noir et blanc
   "Face for names of cheating tactics in proof scripts."
   :group 'proof-faces)
