@@ -16,10 +16,24 @@
  proof-script-command-end-regexp"[.][ \n\t\r]"
  proof-script-comment-start	"(*"
  proof-script-comment-end	"*)"
+ proof-script-syntax-table-entries
+   '(?( "()1"
+     ?) ")(4"
+     ?* ". 23"
+     ?$ "w"
+     ?_ "w"
+     ?. "w")
+ proof-shell-syntax-table-entries
+   '(?( "()1"
+     ?) ")(4"
+     ?* ". 23"
+     ?$ "w"
+     ?_ "w"
+     ?. "w")
  proof-goal-command-regexp	(concat "^" phox-goal-regexp)
  proof-save-command-regexp	"^save"
- proof-goal-with-hole-regexp	(concat "^" phox-goal-regexp "\\(\\([a-zA-Z0-9_']*\\)\\) ")
- proof-save-with-hole-regexp	"save \\(\\([a-zA-Z0-9_']*\\)\\).[ \n\t\r]"
+ proof-goal-with-hole-regexp	(concat "^" phox-goal-regexp "\\(\\([a-zA-Z0-9_$]*\\)\\) ")
+ proof-save-with-hole-regexp	"save \\(\\([a-zA-Z0-9_$]*\\)\\).[ \n\t\r]"
  proof-non-undoables-regexp	"\\(undo\\)\\|\\(abort\\)\\|\\(show\\)\\(.*\\)[ \n\t\r]"
  proof-goal-command		"fact \"%s\"."
  proof-save-command		"save \"%s\"."
@@ -71,11 +85,6 @@ Symbol can be the symbol directly, no lookup needed."
    nil
    `((,pattern
       (0 (progn
-	   ;;Non-working section kind of able to compose multi-char strings:
-	   ;; (compose-string-to-region (match-beginning 1) (match-end 1)
-	   ;; 				  ,symbol
-	   ;; 				  'decompose-region)
-	   ;; (put-text-property (match-beginning 1) (match-end 1) 'display ,symbol)
 	   (compose-region (match-beginning 1) (match-end 1)
 	   		   ,symbol
 	   		   'decompose-region)
@@ -88,11 +97,18 @@ Symbol can be the symbol directly, no lookup needed."
 						      (cl-second x)))
           patterns))
 
-(defun phox-escape-regex (str)
+(defun phox-symbol-regex (str)
   "Gets a string, e.g. Alpha, returns the regexp matching the escaped
 version of it in Phox code, with no chars in [a-z0-9A-Z] after it."
   (interactive "MString:")
-  (concat "\\(" str "\\)"))
+  (concat "[^!%&*+,-/:;≤=>@\\^`#|~]\\(" str "\\)[^!%&*+,-/:;≤=>@\\^`#|~]"))
+
+(defun phox-word-regex (str)
+  "Gets a string, e.g. Alpha, returns the regexp matching the escaped
+version of it in Phox code, with no chars in [a-z0-9A-Z] after it."
+  (interactive "MString:")
+  (concat "\\b\\(" str "\\)\\b"))
+
 
 ;;Goto http://www.fileformat.info/info/unicode/block/mathematical_operators/list.htm and copy the needed character
 (defun phox-unicode-simplified ()
@@ -102,11 +118,19 @@ their unicode counterpart"
   (substitute-patterns-with-unicode-symbol
    (list
     ;;These need to be on top, before the versions which are not subscriptet
-    (list (phox-escape-regex "/\\\\")"∀")
-    (list (phox-escape-regex "\\\\/")"∃")
-    (list (phox-escape-regex "->")"→")
-    (list (phox-escape-regex "&")"∧")
-    (list (phox-escape-regex "\\bor\\b")"∨")
+    (list (phox-symbol-regex "<=")"≤")
+    (list (phox-symbol-regex ">=")"≥")
+    (list (phox-symbol-regex "!=")"≠")
+    (list (phox-symbol-regex ":<")"∈")
+    (list (phox-symbol-regex ":") "∈")
+    (list (phox-symbol-regex "/\\\\")"∀")
+    (list (phox-symbol-regex "\\\\/")"∃")
+    (list (phox-symbol-regex "<->")"↔")
+    (list (phox-symbol-regex "-->")"⟶")
+    (list (phox-symbol-regex "->")"→")
+    (list (phox-symbol-regex "~")"¬")
+    (list (phox-symbol-regex "&")"∧")
+    (list (phox-word-regex "or")"∨")
     )))
 
 (add-hook 'phox-mode-hook 'phox-unicode-simplified)
