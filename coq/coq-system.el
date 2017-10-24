@@ -22,6 +22,15 @@
   (defvar coq-prog-args)
   (defvar coq-debug))
 
+;; Arbitrary arguments can already be passed through _CoqProject.
+;; However this is not true for all assistants, so we don't modify the
+;; (defpgcustom prog-args) declaration.
+(defun coq--string-list-p (obj)
+  "Determine if OBJ is a list of strings."
+  (or (null obj) (and (consp obj) (stringp (car obj)) (coq--string-list-p (cdr obj)))))
+
+(put 'coq-prog-args 'safe-local-variable #'coq--string-list-p)
+
 (defcustom coq-prog-env nil
   "List of environment settings d to pass to Coq process.
 On Windows you might need something like:
