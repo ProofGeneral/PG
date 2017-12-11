@@ -432,7 +432,8 @@ This is a subroutine of `proof-shell-filter'."
     (set-marker
      proof-shell-urgent-message-scanner
      (if end ;; couldn't find message start; move forward to avoid rescanning
-	 (max initstart
+         (max (or lastend 1) ;; goto after last end urgent msg
+              ;; or near the end of current output if that jumps farther.
 	      (- (point)
 		 (1+ proof-shell-eager-annotation-start-length)))
        ;; incomplete message; leave marker at start of message
