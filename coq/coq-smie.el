@@ -586,12 +586,28 @@ The point should be at the beginning of the command name."
       (goto-char (1- (point))) "{|")
 
      ((and (zerop (length tok)) (member (char-before) '(?\{ ?\}))
-	   (save-excursion
-	     (forward-char -1)
-	     (let ((nxttok (coq-smie-backward-token))) ;; recursive call
-	       (coq-is-cmdend-token nxttok))))
+           (save-excursion
+             (forward-char -1)
+             (if (and (looking-at "{")
+                      (looking-back "\\([0-9]+\\s-*:\\s-*\\)" nil t))
+                 (goto-char (match-beginning 0)))
+             (let ((nxttok (coq-smie-backward-token))) ;; recursive call
+               (coq-is-cmdend-token nxttok))))
       (forward-char -1)
-      (if (looking-at "{") "{ subproof" "} subproof"))
+      (if (looking-at "}") "} subproof"
+        (if (and (looking-at "{")
+                 (looking-back "\\([0-9]+\\s-*:\\s-*\\)" nil t))
+            (goto-char (match-beginning 0)))
+        "{ subproof"
+        ))
+
+     ;; ((and (zerop (length tok)) (member (char-before) '(?\{ ?\}))
+     ;;       (save-excursion
+     ;;         (forward-char -1)
+     ;;         (let ((nxttok (coq-smie-backward-token))) ;; recursive call
+     ;;           (coq-is-cmdend-token nxttok))))
+     ;;  (forward-char -1)
+     ;;  (if (looking-at "{") "{ subproof" "} subproof"))
 
      ((and (equal tok ":") (looking-back "\\<\\(constr\\|ltac\\|uconstr\\)" nil))
       ": ltacconstr")
@@ -618,6 +634,9 @@ The point should be at the beginning of the command name."
      ((member tok '("*;" "-*;" "|-*;" "*|-*;"))
       ;; FIXME; can be "; ltac" too
       (forward-char (- (length tok) 1)) "; tactic")
+     ;; bullet detected, is it really a bullet? we have to traverse
+     ;; recursively any other bullet or "n:{" "}". this is the work of
+     ;; coq-empty-command-p
      ((and (string-match coq-bullet-regexp-nospace tok)
 	   (save-excursion (coq-empty-command-p)))
       (concat tok " bullet"))
