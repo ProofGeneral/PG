@@ -2535,38 +2535,38 @@ Mode map
   (setq twelf-server-display-commands (not twelf-server-display-commands)))
 
 (defconst twelf-options-menu
-  (` ("Options"
-      (, (toggle "Display Commands" '(twelf-toggle-server-display-commands)
-		 'twelf-server-display-commands))
-      ("chatter"
-       (, (radio "0" '(twelf-set "chatter" 0) '(= twelf-chatter 0)))
-       (, (radio "1" '(twelf-set "chatter" 1) '(= twelf-chatter 1)))
-       (, (radio "2" '(twelf-set "chatter" 2) '(= twelf-chatter 2)))
-       (, (radio "3*" '(twelf-set "chatter" 3) '(= twelf-chatter 3)))
-       (, (radio "4" '(twelf-set "chatter" 4) '(= twelf-chatter 4)))
-       (, (radio "5" '(twelf-set "chatter" 5) '(= twelf-chatter 5)))
-       (, (radio "6" '(twelf-set "chatter" 6) '(= twelf-chatter 6))))
-      (, (toggle "doubleCheck" '(twelf-toggle-double-check)
-		 '(string-equal twelf-double-check "true")))
-      ("Print."
-       (, (toggle "implicit" '(twelf-toggle-print-implicit)
-		  '(string-equal twelf-print-implicit "true")))
-       ["depth" (twelf-set-parm "Print.depth") t]
-       ["length" (twelf-set-parm "Print.length") t]
-       ["indent" (twelf-set-parm "Print.indent") t]
-       ["width" (twelf-set-parm "Print.width") t])
-      ("Prover."
-       ["strategy" (twelf-set-parm "Prover.strategy") t]
-       ["maxSplit" (twelf-set-parm "Prover.maxSplit") t]
-       ["maxRecurse" (twelf-set-parm "Prover.maxRecurse") t])
-      ;;["Trace" nil nil]
-       ;; (, (radio "0" '(twelf-set "trace" 0) '(= twelf-trace 0)))
-       ;; (, (radio "1" '(twelf-set "trace 1) '(= twelf-trace 1)))
-       ;; (, (radio "2" '(twelf-set "trace" 2) '(= twelf-trace 2))))
-      ;;["Untrace" nil nil]
-      ;;(, (disable-form "Untrace" '(twelf-set "trace" 0)
-      ;;	       '(not (= twelf-trace 0))))
-      ["Reset Menubar" twelf-reset-menu t]))
+  `("Options"
+    (, (toggle "Display Commands" '(twelf-toggle-server-display-commands)
+	       'twelf-server-display-commands))
+    ("chatter"
+     (, (radio "0" '(twelf-set "chatter" 0) '(= twelf-chatter 0)))
+     (, (radio "1" '(twelf-set "chatter" 1) '(= twelf-chatter 1)))
+     (, (radio "2" '(twelf-set "chatter" 2) '(= twelf-chatter 2)))
+     (, (radio "3*" '(twelf-set "chatter" 3) '(= twelf-chatter 3)))
+     (, (radio "4" '(twelf-set "chatter" 4) '(= twelf-chatter 4)))
+     (, (radio "5" '(twelf-set "chatter" 5) '(= twelf-chatter 5)))
+     (, (radio "6" '(twelf-set "chatter" 6) '(= twelf-chatter 6))))
+    (, (toggle "doubleCheck" '(twelf-toggle-double-check)
+	       '(string-equal twelf-double-check "true")))
+    ("Print."
+     (, (toggle "implicit" '(twelf-toggle-print-implicit)
+		'(string-equal twelf-print-implicit "true")))
+     ["depth" (twelf-set-parm "Print.depth") t]
+     ["length" (twelf-set-parm "Print.length") t]
+     ["indent" (twelf-set-parm "Print.indent") t]
+     ["width" (twelf-set-parm "Print.width") t])
+    ("Prover."
+     ["strategy" (twelf-set-parm "Prover.strategy") t]
+     ["maxSplit" (twelf-set-parm "Prover.maxSplit") t]
+     ["maxRecurse" (twelf-set-parm "Prover.maxRecurse") t])
+    ;;["Trace" nil nil]
+    ;; (, (radio "0" '(twelf-set "trace" 0) '(= twelf-trace 0)))
+    ;; (, (radio "1" '(twelf-set "trace 1) '(= twelf-trace 1)))
+    ;; (, (radio "2" '(twelf-set "trace" 2) '(= twelf-trace 2))))
+    ;;["Untrace" nil nil]
+    ;;(, (disable-form "Untrace" '(twelf-set "trace" 0)
+    ;;	       '(not (= twelf-trace 0))))
+    ["Reset Menubar" twelf-reset-menu t])
   "Menu to change options in Twelf mode.")
 
 (defconst twelf-timers-menu
@@ -2583,12 +2583,12 @@ Mode map
   "Fontify current buffer using font-lock minor mode.")
 
 (defconst twelf-syntax-menu
-  (` ("Syntax Highlighting"
-      ["Highlight Declaration" twelf-font-fontify-decl t]
-      ["Highlight Buffer" twelf-font-fontify-buffer t]
-      ;(, (toggle "Immediate Highlighting" 'toggle-twelf-font-immediate
-      ;'font-lock-mode))
-      ))
+  `("Syntax Highlighting"
+    ["Highlight Declaration" twelf-font-fontify-decl t]
+    ["Highlight Buffer" twelf-font-fontify-buffer t]
+    ;;(, (toggle "Immediate Highlighting" 'toggle-twelf-font-immediate
+    ;;'font-lock-mode))
+    )
   "Menu for syntax highlighting in Twelf mode.")
 
 (easy-menu-define twelf-menu (list twelf-mode-map)
