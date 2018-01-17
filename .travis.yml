@@ -1,5 +1,5 @@
 language: emacs-lisp
-sudo: false
+sudo: true
 
 env:
   - EMACS_TARGET=emacs-24.3

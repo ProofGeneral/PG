@@ -15,6 +15,7 @@ prepare-emacs-git:
 	cd /tmp/emacs && ./autogen.sh
 
 prepare-emacs: prepare-$(EMACS_TARGET)
+	echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
 	cd /tmp/emacs && ./configure --prefix="$(HOME)" --without-all --with-x-toolkit=no --without-x --with-xml2 && make -j2 install
 
 before_install: prepare-emacs
