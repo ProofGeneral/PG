@@ -378,7 +378,14 @@ Comments are ignored, of course."
       (coq-empty-command-p))
      ;; other bulleting syntax
      ((looking-at "{\\|}\\|-\\|\\+\\|\\*") (coq-empty-command-p))
-     ;; not a bullet, we foound something else, it shoulf be either a
+     ;; vernacular controls Time, Fail, Redirect, Timeout
+     ((or (and (looking-at "e\\>") (looking-back "\\<Tim") (- (point) 3))
+          (and (looking-at "l\\>") (looking-back "\\<Fai") (- (point) 3))
+          (and (looking-at "\"") (looking-back "\\<Redirect\\s-+\"[^\"]+"))
+          (and (looking-at "[[:digit:]]\\_>") (looking-back "\\<Timeout\\s-+[[:digit:]]*")))
+      (goto-char (match-beginning 0))
+      (coq-empty-command-p))
+     ;; not a bullet, we found something else, it should be either a
      ;; dot or the beginning of the file, otherwise we are in the
      ;; middle of a command
      (t (looking-at "\\.\\|\\`"))
