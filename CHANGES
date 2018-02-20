@@ -6,8 +6,6 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 * Changes of Proof General 4.4.1 from Proof General 4.4
 
-* Changes of Proof General 4.4.1 from Proof General 4.4
-
 ** Generic changes
 
 *** bug fixes
@@ -20,6 +18,12 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
       (C-c .) was too easy to enter by mistake. And it was not that
       useful as we can expect users to configure electric-terminator
       once and for all. Hence the removal of this default key-binding.
+
+*** add another (fallback) key-binding for proof-goto-point
+    - The default key-binding for proof-goto-point (C-c <C-return>)
+      was not available in TTYs. Now, this function can also be run
+      with "C-c RET", which happens to be automatically trigerred if
+      we type "C-c <C-return>" in a TTY.
 
 ** Coq changes
 

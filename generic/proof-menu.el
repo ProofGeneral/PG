@@ -113,6 +113,7 @@ without adjusting window layout."
   ;; C-c C-v is proof-minibuffer-cmd in universal-keys
   ;; C-c C-. is proof-goto-end-of-locked in universal-keys
   (define-key map [(control c) (control return)] 'proof-goto-point)
+  (define-key map [(control c) (control m)] 'proof-goto-point) ; fallback for tty
   (define-key map [(control c) ?v] 'pg-toggle-visibility)
   (define-key map [(control meta mouse-3)] 'proof-mouse-goto-point)
   ;; NB: next binding overwrites comint-find-source-code.
