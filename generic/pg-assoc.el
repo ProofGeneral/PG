@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
 ;;            Thomas Kleymann and Dilip Sequeira
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -40,10 +39,7 @@
   "Return a list of the associated buffers.
 Some may be dead/nil."
   (list proof-goals-buffer
-	proof-response-buffer
-	proof-trace-buffer
-	proof-thms-buffer))
-
+	proof-response-buffer))
 
 ;;;###autoload
 (defun proof-associated-windows (&optional all-frames)
@@ -66,13 +62,13 @@ argument ALL-FRAMES has the same meaning than for
 
 (defun proof-filter-associated-windows (lw)
   "Remove windows of LW not displaying at least one associated buffer."
-  (remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
+  (cl-remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
 
 
 ;;;###autoload
 (defun proof-associated-frames ()
   "Return the list of frames displaying at least one associated buffer."
-  (remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
+  (cl-remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
 		 (frame-list)))
 
 (provide 'pg-assoc)

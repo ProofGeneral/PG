@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -141,19 +140,17 @@ This can be used to help multiple file handling.")
 (defvar proof-shell-buffer nil
   "Process buffer where the proof assistant is run.")
 
+(defvar proof-server-buffer nil
+  "Process buffer where the proof assistant is run.")
+
 (defvar proof-goals-buffer nil
   "The goals buffer.")
 
 (defvar proof-response-buffer nil
   "The response buffer.")
 
-(defvar proof-trace-buffer nil
-  "A tracing buffer for storing tracing output from the proof shell.
-See `proof-shell-trace-output-regexp' for details.")
-
-(defvar proof-thms-buffer nil
-  "A buffer for displaying a list of theorems from the proof assistant.
-See `proof-shell-thm-display-regexp' for details.")
+(defvar proof-server-log-buffer nil
+  "In server mode, where traffic may be logged.")
 
 (defvar proof-shell-error-or-interrupt-seen nil
   "Flag indicating that an error or interrupt has just occurred.
@@ -163,11 +160,10 @@ assistant during the last group of commands.")
 (defvar pg-response-next-error nil
   "Error counter in response buffer to count for next error message.")
 
-(defvar proof-shell-proof-completed nil
+(defvar proof-prover-proof-completed nil
   "Flag indicating that a completed proof has just been observed.
 If non-nil, the value counts the commands from the last command
 of the proof (starting from 1).")
-
 
 
 ;;
@@ -177,18 +173,18 @@ of the proof (starting from 1).")
 ;; -- here to avoid compiler warnings and minimise requires.
 ;;
 
-(defvar proof-shell-silent nil
-  "A flag, non-nil if PG thinks the prover is silent.")
-
 (defvar proof-shell-last-prompt ""
   "A raw record of the last prompt seen from the proof system.
 This is the string matched by `proof-shell-annotated-prompt-regexp'.")
 
-(defvar proof-shell-last-output ""
-  "A record of the last string seen from the proof system.
-This is raw string, for internal use only.")
+(defvar proof-prover-silent nil
+  "A flag, non-nil if PG thinks the prover is silent.")
 
-(defvar proof-shell-last-output-kind nil
+(defvar proof-prover-last-output ""
+  "A record of the last string seen from the proof system. 
+This is a raw string, for internal use only.")
+
+(defvar proof-prover-last-output-kind nil
   "A symbol denoting the type of the last output string from the proof system.
 Specifically:
 
@@ -198,15 +194,15 @@ Specifically:
  'response	 A response message
  'goals		 A goals (proof state) display
  'systemspecific Something specific to a particular system,
-		  -- see `proof-shell-handle-output-system-specific'
+		  -- see `proof-handle-output-system-specific'
 
-The output corresponding to this will be in `proof-shell-last-output'.
+The output corresponding to this will be in `proof-prover-last-output'.
 
-See also `proof-shell-proof-completed' for further information about
+See also `proof-prover-proof-completed' for further information about
 the proof process output, when ends of proofs are spotted.
 
 This variable can be used for instance specific functions which want
-to examine `proof-shell-last-output'.")
+to examine `proof-prover-last-output'.")
 
 (defvar proof-assistant-settings nil
  "Settings kept in Proof General for current proof assistant.
@@ -285,12 +281,12 @@ Internal variable dynamically bound.")
 
 (defcustom proof-universal-keys
   '(([(control c) ?`]		. proof-next-error)
-    ([(control c) (control c)]  . proof-interrupt-process)
+    ([(control c) (control c)]  . proof-server-interrupt-process)
     ([(control c) (control n)]  . proof-assert-next-command-interactive)
     ([(control c) (control u)]  . proof-undo-last-successful-command)
     ([(control c) (control p)]  . proof-prf)
     ([(control c) (control l)]  . proof-layout-windows)
-    ([(control c) (control x)]  . proof-shell-exit)
+    ([(control c) (control x)]  . proof-server-exit)
     ([(control c) (control v)]  . proof-minibuffer-cmd)
     ([(control c) (control w)]  . pg-response-clear-displays)
     ([(control c) (control ?.)] . proof-goto-end-of-locked)

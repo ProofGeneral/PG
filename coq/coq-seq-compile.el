@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -80,7 +79,7 @@ dependencies are absolute too and the simplified treatment of
 break."
   (let ((coqdep-arguments
          ;; FIXME should this use coq-coqdep-prog-args?
-         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+         (nconc (coq-include-options coq-load-path (file-name-directory lib-src-file))
 		(list lib-src-file)))
         coqdep-status coqdep-output)
     (when coq--debug-auto-compilation
@@ -119,7 +118,7 @@ Display errors in buffer `coq--compile-response-buffer'."
   (message "Recompile %s" src-file)
   (let ((coqc-arguments
          (nconc
-          (coq-coqc-prog-args coq-load-path (file-name-directory src-file) (coq--pre-v85))
+          (coq-coqc-prog-args coq-load-path (file-name-directory src-file))
 	  (list src-file)))
         coqc-status)
     (coq-init-compile-response-buffer
@@ -301,12 +300,7 @@ decent error message.
 
 A peculiar consequence of the current implementation is that this
 function returns () if MODULE-ID comes from the standard library."
-  (let ((coq-load-path
-         (if coq-load-path-include-current
-             (cons default-directory coq-load-path)
-           coq-load-path))
-        (coq-load-path-include-current nil)
-        (temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+  (let ((temp-require-file (make-temp-file "ProofGeneral-coq" nil ".v"))
         (coq-string (concat (if from (concat "From " from " ") "") "Require " module-id "."))
         result)
     (unwind-protect
@@ -339,7 +333,7 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
+    (cl-assert (<= (length result) 1)
             "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
@@ -372,7 +366,7 @@ queue."
                                  span module-obj-file)))))
 
 (defun coq-seq-preprocess-require-commands ()
-  "Coq function for `proof-shell-extend-queue-hook'.
+  "Coq function for `proof-extend-queue-hook'.
 If `coq-compile-before-require' is non-nil, this function performs the
 compilation (if necessary) of the dependencies."
   (if coq-compile-before-require

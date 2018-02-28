@@ -1,59 +1,53 @@
-# Proof General — Organize your proofs! 
+# Proof General — Organize your proofs!
 
-[![Build Status](https://travis-ci.org/ProofGeneral/PG.svg?branch=master)](https://travis-ci.org/ProofGeneral/PG)
+Proof General is an Emacs interface for Coq.
+--------------------------------------------
 
-Proof General is a generic Emacs interface for proof assistants.
-The aim of the Proof General project is to provide a powerful, generic
-environment for using interactive proof assistants.
+This is version 5.0-git of Proof General, which relies on Coq's XML
+protocol to support asynchronous proof processing. That mechanism
+allows Coq to work on more than one proof at a time, potentially
+speeding proof development.
 
-This is version 4.4.1~pre of Proof General.
+Older versions of Proof General used a *Proof Shell*, essentially a
+read-eval-print loop (REPL), to interact with Coq and other proof
+assistants.  That very generic mechanism allowed Proof General to
+support a number of other proof assistants. The more specialized XML
+protocol allows Coq to send messages at any time, so that a REPL is
+not an appropriate communication mechanism. Because the Proof Shell
+has been removed, this version of Proof General supports only Coq.
 
-## Setup
+Setup
+-----
 
-Remove old versions of Proof General, then download and install the new release from GitHub:
+Remove any old versions of Proof General, then download and install the
+new release from GitHub:
 
-```sh
-git clone https://github.com/ProofGeneral/PG ~/.emacs.d/lisp/PG
-cd ~/.emacs.d/lisp/PG
+```
+git clone https://github.com/ProofGeneral/PG
+cd PG
+git checkout async
 make
 ```
 
-Then add the following to your `.emacs`:
+Then add the following to your .emacs:
 
-```elisp
+```
 ;; Open .v files with Proof General's Coq mode
-(load "~/.emacs.d/lisp/PG/generic/proof-site")
+(load "<path-to>/PG/generic/proof-site")
 ```
 
-If Proof General complains about a version mismatch, make sure that the shell's `emacs` is indeed your usual Emacs. If not, run the Makefile again with an explicit path to Emacs. On macOS in particular you'll probably need something like
+If Proof General complains about a version mismatch, make sure that
+the shell's Emacs is indeed your usual Emacs. If not, run the Makefile
+again with an explicit path to Emacs. On MacOS in particular you'll
+probably need something like
 
-```sh
+```
 make clean; make EMACS=/Applications/Emacs.app/Contents/MacOS/Emacs
 ```
 
-## More info
+Switching between Proof General versions
+----------------------------------------
 
-See:
-
-* [INSTALL](INSTALL) for installation details
-* [COPYING](COPYING) for license details
-* [COMPATIBILITY](COMPATIBILITY) for version compatibility information
-* [FAQ.md](FAQ.md) for frequently asked questions
-* [coq/README](coq/README) for additional notes specific to the Coq prover
-
-Links:
-
-* [https://proofgeneral.github.io/doc](https://proofgeneral.github.io/doc) for online documentation of Proof General
-* [http://proofgeneral.inf.ed.ac.uk/mailinglist](http://proofgeneral.inf.ed.ac.uk/mailinglist) for mailing list information
-
-Supported proof assistants:
-
-* Full support for latest versions of: [Coq](https://coq.inria.fr/)
-* Support for previous versions of:
-  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/),
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego),
-  [PhoX](http://www.lama.univ-savoie.fr/~RAFFALLI/phox.html)
-* Experimental (less useful): CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
-* Obsolete instances: Demoisa, Lambda-Clam, Plastic
-
-A few example proofs are included in each prover subdirectory.
+Please see the file HOWTO-USE for more detailed installation
+instructions. That file explains how to switch between this version of
+Proof General and the legacy, Proof Shell-based version.

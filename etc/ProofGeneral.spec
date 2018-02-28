@@ -1,6 +1,6 @@
 Summary:	Proof General, Emacs interface for Proof Assistants
 Name:		ProofGeneral
-Version:	4.4.1~pre
+Version:	5.0-git
 Release:	1
 Group:		Text Editors/Integrated Development Environments (IDE)
 License:	GPL
@@ -14,11 +14,7 @@ Prefixes:	/usr/share/emacs /usr/bin /usr/share/info
 BuildArchitectures: noarch
 
 %description
-Proof General is a generic Emacs interface for proof assistants,
-suitable for use by pacifists and Emacs militants alike.
-It is supplied ready-customized for LEGO, Coq, and Isabelle.
-You can adapt Proof General to other proof assistants if you know a
-little bit of Emacs Lisp.
+Proof General is an Emacs interface for Coq.
 
 To use Proof General, use the command `proofgeneral', which launches
 Emacs with Proof General loaded.
@@ -58,14 +54,12 @@ fi
 
 %post
 /sbin/install-info /usr/share/info/ProofGeneral.info* /usr/share/info/dir
-/sbin/install-info /usr/share/info/PG-adapting.info* /usr/share/info/dir
 if [ -x /usr/bin/gtk-update-icon-cache ]; then
   gtk-update-icon-cache -q /usr/share/icons/hicolor
 fi
 
 %preun
 /sbin/install-info --delete /usr/share/info/ProofGeneral.info* /usr/share/info/dir
-/sbin/install-info --delete /usr/share/info/PG-adapting.info* /usr/share/info/dir
 
 %postun
 if [ -x /usr/bin/gtk-update-icon-cache ]; then

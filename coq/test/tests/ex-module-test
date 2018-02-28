@@ -1,0 +1,15 @@
+# simple file example
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (process-file "scripts/ex-module.v")
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should see no errors, file has been fully processed.
+
+Should be two darker blue blocks in header line, for two Save's.
+EOF
+)
+

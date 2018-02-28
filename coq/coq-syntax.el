@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Thomas Kleymann, Healfdene Goguen, Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -564,7 +563,6 @@ so for the following reasons:
      ("Print" "p" "Print #." nil "Print")
      ("Pwd" nil "Pwd." nil "Pwd")
      ("Search" nil "Search #" nil "Search")
-     ("SearchAbout" nil "SearchAbout #" nil "SearchAbout")
      ("SearchPattern" nil "SearchPattern (#)" nil "SearchPattern")
      ("SearchRewrite" nil "SearchRewrite #" nil "SearchRewrite")
      ("Show" nil "Show #." nil "Show")
@@ -990,7 +988,7 @@ so for the following reasons:
  of STRG matching REGEXP. Empty match are counted once."
   (let ((nbmatch 0) (str strg))
     (while (and (proof-string-match regexp str) (not (string-equal str "")))
-      (incf nbmatch)
+      (cl-incf nbmatch)
       (if (= (match-end 0) 0) (setq str (substring str 1))
         (setq str (substring str (match-end 0)))))
     nbmatch))

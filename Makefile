@@ -216,7 +216,6 @@ install-doc: doc.info doc.pdf
 	mkdir -p ${INFODIR}
 	cp -pf doc/*.info ${INFODIR}
 	/sbin/install-info ${INFODIR}/ProofGeneral.info* ${INFODIR}/dir
-	/sbin/install-info ${INFODIR}/PG-adapting.info* ${INFODIR}/dir
 	mkdir -p ${DOCDIR}
 	for f in ${DOC_FILES}; do cp -pf $$f ${DOCDIR}; done
 	for f in ${DOC_EXAMPLES}; do mkdir -p ${DOCDIR}/`dirname $$f`; cp -pf $$f ${DOCDIR}/$$f; done

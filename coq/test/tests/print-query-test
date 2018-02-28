@@ -1,0 +1,27 @@
+# Print query test
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (use-file "scripts/example.v")
+  (proof-invisible-command (coq-queries-print "nat"))
+  (sleep-for 1)
+  (let ((expected
+"Inductive nat : Set :=  O : nat | S : nat -> nat
+
+For S: Argument scope is [nat_scope]
+"))
+    (verify-response expected))
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Test of "Print" query.
+
+Should see in response buffer:
+
+ Inductive nat : Set :=  O : nat | S : nat -> nat
+
+ For S: Argument scope is [nat_scope]
+EOF
+)
+

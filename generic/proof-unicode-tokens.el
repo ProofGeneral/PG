@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:    David Aspinall <David.Aspinall@ed.ac.uk>
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -25,10 +24,9 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (eval-when-compile
-  (require 'scomint)
   (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
   (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 
@@ -40,7 +38,6 @@
 (defun proof-unicode-tokens-init ()
   "Set tables and configure hooks for modes."
   (proof-unicode-tokens-configure)
-  (add-hook 'proof-shell-init-hook 'proof-unicode-tokens-configure-prover)
   (let ((hooks (mapcar (lambda (m)
 			 (intern (concat (symbol-name m) "-hook")))
 		       (list
@@ -128,7 +125,7 @@ Switch off tokens in all script buffers, recalculate maps, turn on again."
 	      'proof-unicode-tokens-reconfigure)))
 
 ;;;
-;;; Interface to shell
+;;; Configuration interface to server
 ;;;
 
 (defun proof-unicode-tokens-configure-prover ()
@@ -137,17 +134,13 @@ Switch off tokens in all script buffers, recalculate maps, turn on again."
     (proof-unicode-tokens-deactivate-prover)))
 
 (defun proof-unicode-tokens-activate-prover ()
-  (when (and proof-tokens-activate-command
-	     (proof-shell-live-buffer)
-	     (proof-shell-available-p))
-    (proof-shell-invisible-command-invisible-result
+  (when proof-tokens-activate-command
+    (proof-server-invisible-command-invisible-result
      proof-tokens-activate-command)))
 
 (defun proof-unicode-tokens-deactivate-prover ()
-  (when (and proof-tokens-deactivate-command
-	     (proof-shell-live-buffer)
-	     (proof-shell-available-p))
-    (proof-shell-invisible-command-invisible-result
+  (when proof-tokens-deactivate-command
+    (proof-server-invisible-command-invisible-result
      proof-tokens-deactivate-command)))
 
 (provide 'proof-unicode-tokens)

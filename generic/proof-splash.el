@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:    David Aspinall
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;; 
@@ -59,7 +58,8 @@ Proof General."
     nil
     (concat "Version " proof-general-short-version ".")
     nil
-    (concat "© LFCS, University of Edinburgh & contributors " proof-general-version-year)
+    (concat "© Copyright University of Edinburgh & other contributors " proof-general-version-year)
+    (concat "See sources for full copyright information")
     nil
     nil
     :link '("    Read the "

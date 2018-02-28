@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
 ;;            Thomas Kleymann and Dilip Sequeira
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;; Keywords: languages
 
@@ -42,7 +41,7 @@
 (require 'proof-auxmodes)		; auxmode functions
 (require 'proof-script)			; script mode
 (require 'proof-tree)			; proof tree visualization with prooftree
-(require 'proof-shell)			; shell mode
+(require 'proof-server)			; server functionality
 
 (provide 'proof)
 ;;; proof.el ends here

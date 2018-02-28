@@ -19,7 +19,6 @@ default:
 	$(MAKE) doc
 
 %:
-	$(MAKE) -f Makefile.doc DOCNAME=PG-adapting MAKE="$(MAKE) -f Makefile.doc" $@
 	$(MAKE) -f Makefile.doc DOCNAME=ProofGeneral MAKE="$(MAKE) -f Makefile.doc" $@ 
 
 ##

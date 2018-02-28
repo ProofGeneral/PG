@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors:   David Aspinall, Healfdene Goguen,
 ;;		Thomas Kleymann and Dilip Sequeira
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -30,7 +29,6 @@
 
 (require 'pg-assoc)
 (require 'span)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -129,7 +127,7 @@ Internal variable, setting this will have no effect!")
 
 (defun proof-guess-3win-display-policy (&optional policy)
   "Return the 3 windows mode layout policy from user choice POLICY.
-If POLIY is smart then guess the good policy from the current
+If POLICY is smart then guess the good policy from the current
 frame geometry, otherwise follow POLICY."
   (if (eq policy 'smart)
       (cond
@@ -176,9 +174,6 @@ Following POLICY, which can be one of 'smart, 'horizontal,
       (other-window 1)
       (switch-to-buffer b3)
       (set-window-dedicated-p (selected-window) proof-three-window-enable))))))
-
-
-
 
 (defun proof-display-three-b (&optional policy)
   "Layout three buffers in a single frame.  Only do this if buffers exist."
@@ -364,10 +359,8 @@ Returns non-nil if response buffer was cleared."
 
 (defun pg-response-display (str)
   "Show STR as a response in the response buffer."
-
   (pg-response-maybe-erase t nil)
   (pg-response-display-with-face str)
-
   ;; NB: this displays an empty buffer sometimes when it's not
   ;; so useful.  It _is_ useful if the user has requested to
   ;; see the proof state and there is none
@@ -412,7 +405,6 @@ Returns non-nil if response buffer was cleared."
           (overlay-put
            (span-make start (point-max))
            'face face))
-
 	(setq buffer-read-only t)
 	(set-buffer-modified-p nil))))))
 
@@ -427,11 +419,7 @@ is set to nil, so responses are not cleared automatically."
 	 (let ((inhibit-read-only t))
 	   (bufhist-checkpoint-and-erase)
 	   (set-buffer-modified-p nil))))
-  (proof-with-current-buffer-if-exists proof-trace-buffer
-     (let ((inhibit-read-only t))
-       (erase-buffer)
-       (set-buffer-modified-p nil)))
-  (message "Response buffers cleared."))
+  (proof-debug-message "Response buffers cleared."))
 
 ;;;###autoload
 (defun pg-response-message (&rest args)
@@ -544,69 +532,6 @@ See `pg-next-error-regexp'."
 	(save-excursion
 	  (goto-char (point-min))
 	  (re-search-forward pg-next-error-regexp nil t)))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Tracing buffers
-;;
-
-(defcustom proof-trace-buffer-max-lines 10000
-  "The maximum size in lines for Proof General *trace* buffers.
-A value of 0 stands for unbounded."
-  :type 'integer
-  :group 'proof-shell)
-
-;; An analogue of pg-response-display-with-face
-(defun proof-trace-buffer-display (start end)
-  "Copy region START END from current buffer to end of the trace buffer."
-  (let ((cbuf   (current-buffer))
-	(nbuf   proof-trace-buffer))
-    (set-buffer nbuf)
-    (save-excursion
-      (goto-char (point-max))
-      (let ((inhibit-read-only t))
-	(insert ?\n)
-	(insert-buffer-substring cbuf start end)
-	(unless (bolp)
-	  (insert ?\n))))
-    (set-buffer cbuf)))
-
-(defun proof-trace-buffer-finish ()
-  "Call to complete a batch of tracing output.
-The buffer is truncated if its size is greater than `proof-trace-buffer-max-lines'."
-  (if (> proof-trace-buffer-max-lines 0)
-      (proof-with-current-buffer-if-exists proof-trace-buffer
-	(save-excursion
-	  (goto-char (point-max))
-	  (forward-line (- proof-trace-buffer-max-lines))
-	  (let ((inhibit-read-only t))
-	    (delete-region (point-min) (point)))))))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Theorems buffer
-;;
-;; [ INCOMPLETE ]
-;;
-;; Revives an old idea from Isamode: a buffer displaying a bunch
-;; of theorem names.
-;;
-;;
-
-(defun pg-thms-buffer-clear ()
-  "Clear the theorems buffer."
-  (with-current-buffer proof-thms-buffer
-    (let (start str)
-      (goto-char (point-max))
-      (newline)
-      (setq start (point))
-      (insert str)
-      (unless (bolp) (newline))
-      (set-buffer-modified-p nil))))
-
 
 (provide 'pg-response)
 ;;; pg-response.el ends here

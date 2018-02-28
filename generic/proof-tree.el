@@ -1,4 +1,4 @@
-;;; tree-tree.el --- Proof General prooftree communication.
+;;; proof-tree.el --- Proof General prooftree communication.
 
 ;; This file is part of Proof General.
 
@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors:   Hendrik Tews
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -93,11 +92,12 @@
 
 ;;; Code:
 
-(require 'cl)
+(eval-when-compile 
+  (require 'cl-lib))
 
 (eval-when-compile
-  (require 'proof-shell))
-
+  (require 'proof-resolver)
+  (require 'proof-queue))
 
 ;;
 ;; User options
@@ -1225,7 +1225,7 @@ position of the current proof."
 	       (equal proof-script-buffer (current-buffer)))
     (error
      "Enabling prooftree inside a proof outside the current scripting buffer"))
-  (proof-shell-ready-prover)
+  (proof-ready-prover)
   (assert proof-locked-span)
   (message "Start proof-tree display for current proof")
   (save-excursion

@@ -1,0 +1,36 @@
+Stuff to do to clean up the code
+--------------------------------
+
+Consistent naming; using pg- prefix throughout?
+
+Either update or ditch the Adapting document
+We could describe how to use different protocols
+Right now, all the comms stuff is in coq/, though
+
+generic/proof-resolver.el probably doesn't need much of what's there
+
+ditch generic/proof-shell.el, but there is code that uses it, so careful
+DONE, although proof-tree, some other code still references it
+
+Makefile.devel mentions cvs; update that to git?
+
+Is generic/pg-xml.el still used? It's used in pg-movie.el, pgip.el
+Bits of it are redundant with coq/coq-xml.el
+
+What about Makefile.travis?
+
+Get Travis CI to work with this branch
+
+Update these files:
+
+BUGS
+CHANGES
+COMPATIBILITY
+COPYING
+FAQ
+INSTALL
+README.md
+REGISTER (is this still used?)
+TAGS
+
+Document how communications works, coq-tq, coq-server

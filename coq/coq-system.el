@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Hendrik Tews, Pierre Courtieu
 ;; Maintainer: Pierre.Courtieu<Pierre.Courtieu@cnam.fr>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -25,8 +24,10 @@
 
 (require 'proof)
 
+(require 'coq-error)
+
 (eval-when-compile
-  (require 'cl)
+  (require 'cl-lib)
   (require 'proof-compat))
 
 (eval-when-compile
@@ -38,10 +39,12 @@
 On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
+(require 'coq-error)
 
 (defcustom coq-prog-name
   (if (executable-find "coqtop") "coqtop"
     (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")))
+
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
@@ -77,12 +80,38 @@ See also `coq-prog-env' to adjust the environment."
 (defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
   "The coq library directory, as reported by \"coqtop -where\".")
 
+(defcustom coq-allow-async-proofs (not (member system-type '(windows-nt cygwin)))
+  "Whether to allow coqtop to run asynchronous proofs using worker 
+processes. By default, not enabled for Windows, for stability reasons."
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-use-header-line t
+  "Use mouse-clickable header line"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-async-lazy nil
+  "Use lazy mode for Coq asynchronous processing"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-num-async-workers nil
+  "Number of worker processes in async mode, nil for default"
+  :type 'integer
+  :group 'coq)
+
+(defcustom coq-num-async-par-workers nil
+  "Number of worker processes when using Ltac :par, nil for default"
+  :type 'integer
+  :group 'coq)
+
 (defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
   "The default TAGS table for the Coq library."
   :type 'string
   :group 'coq)
 
-(defcustom coq-pinned-version nil
+(defcustom coq-pinned-version nil 
   "Which version of Coq you are using.
 There should be no need to set this value unless you use the trunk from
 the Coq github repository. For Coq versions with decent version numbers
@@ -158,6 +187,7 @@ Interactively (with INTERACTIVE-P), show that number."
   ;; -snapshot is only supported by Emacs 24.5, not 24.3
   (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
                                 ("^pl$" . 0)
+				("^~alpha$" . -3)
                                 ,@version-regexp-alist)))
     (version< v1 v2)))
 
@@ -172,13 +202,17 @@ version detection that Proof General does automatically."
   "Return non-nil if the auto-detected version of Coq is < 8.5.
 Returns nil if the version can't be detected."
   (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.5snapshot")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+    (pcase coq-version-to-use
+      ;; assume trunk is at least 8.5
+      ("trunk" nil) 
+      (t 
+       (condition-case err
+	   (coq--version< coq-version-to-use "8.5snapshot")
+	 (error
+	  (cond
+	   ((equal (substring (cadr err) 0 15) "Invalid version")
+	    (signal 'coq-unclassifiable-version  coq-version-to-use))
+	   (t (signal (car err) (cdr err))))))))))
 
 (defun coq--post-v86 ()
   "Return t if the auto-detected version of Coq is >= 8.6.
@@ -263,11 +297,8 @@ A plain string maps to -Q ... \"\" in 8.5, and -I ... in 8.4.
 
 Under normal circumstances this list does not need to
 contain the coq standard library or \".\" for the current
-directory (see `coq-load-path-include-current').
-
-WARNING: if you use coq <= 8.4, the meaning of these options is
-not the same (-I is for coq path)."
-  :type '(repeat (choice (string :tag "simple directory without path (-Q \"\") in 8.5, -I in 8.4")
+directory."
+  :type '(repeat (choice (string :tag "simple directory without path (-Q \"\") in 8.5")
                          (list :tag
                                "recursive directory with path (-R ... ...)"
                                (const rec)
@@ -293,36 +324,11 @@ not the same (-I is for coq path)."
 
 (make-variable-buffer-local 'coq-load-path)
 
-(defcustom coq-load-path-include-current t
-  "If `t' let coqdep search the current directory too.
-Should be `t' for normal users. If `t' pass -Q dir \"\" to coqdep when
-processing files in directory \"dir\" in addition to any entries
-in `coq-load-path'.
-
-This setting is only relevant with Coq < 8.5."
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
-
-(make-obsolete-variable 'coq-load-path-include-current "Coq 8.5 does not need it" "4.3")
-
-(defun coq-option-of-load-path-entry (entry &optional pre-v85)
+(defun coq-option-of-load-path-entry (entry)
   "Translate a single ENTRY from `coq-load-path' into options.
 See `coq-load-path' for the possible forms of ENTRY and to which
 options they are translated.  Use a non-nil PRE-V85 flag to
 request compatibility handling of flags."
-  (if pre-v85
-      ;; FIXME Which base directory do we expand against? Should the entries of
-      ;; load-path just always be absolute?
-      ;; NOTE we don't handle 'recnoimport in 8.4, and we don't handle 'nonrec
-      ;; in 8.5.
-      (pcase entry
-        ((or (and (pred stringp) dir) `(ocamlimport ,dir))
-         (list "-I" (expand-file-name dir)))
-        (`(nonrec ,dir ,alias)
-         (list "-I" (expand-file-name dir) "-as" alias))
-        ((or `(rec ,dir ,alias) `(,dir ,alias))
-         (list "-R" (expand-file-name dir) alias)))
     (pcase entry
       ((and (pred stringp) dir)
        (list "-Q" (expand-file-name dir) ""))
@@ -331,49 +337,36 @@ request compatibility handling of flags."
       (`(recnoimport ,dir ,alias)
        (list "-Q" (expand-file-name dir) alias))
       ((or `(rec ,dir ,alias) `(,dir ,alias))
-       (list "-R" (expand-file-name dir) alias)))))
+       (list "-R" (expand-file-name dir) alias))))
 
 (defun coq-include-options (load-path &optional current-directory pre-v85)
   "Build the base list of include options for coqc, coqdep and coqtop.
 The options list includes all entries from argument LOAD-PATH
 \(which should be `coq-load-path' of the buffer that invoked the
-compilation) prefixed with suitable options and (for coq<8.5), if
-`coq-load-path-include-current' is enabled, the directory base of
-FILE.  The resulting list is fresh for every call, callers can
-append more arguments with `nconc'.
+compilation) prefixed with suitable options. The resulting list is fresh 
+for every call, callers can append more arguments with `nconc'.
 
-CURRENT-DIRECTORY should be an absolute directory name.  It can be nil if
-`coq-load-path-include-current' is nil.
-
-A non-nil PRE-V85 flag requests compatibility handling of flags."
+CURRENT-DIRECTORY should be an absolute directory name."
   (unless (coq-load-path-safep load-path)
     (error "Invalid value in coq-load-path"))
-  (when (and pre-v85 coq-load-path-include-current)
-    (cl-assert current-directory)
-    (push current-directory load-path))
   (cl-loop for entry in load-path
-           append (coq-option-of-load-path-entry entry pre-v85)))
+           append (coq-option-of-load-path-entry entry)))
 
-(defun coq--options-test-roundtrip-1 (coq-project parsed pre-v85)
-  "Run a sanity check on COQ-PROJECT's PARSED options.
-If PRE-V85 is non-nil, use compatibility mode."
+(defun coq--options-test-roundtrip-1 (coq-project parsed)
+  "Run a sanity check on COQ-PROJECT's PARSED options."
   (let* ((concatenated (apply #'append parsed))
-         (coq-load-path-include-current nil)
          (extracted (coq--extract-load-path parsed nil))
-         (roundtrip (coq-include-options extracted nil pre-v85)))
-    (princ (format "[%s] with compatibility flag set to %S: " coq-project pre-v85))
+         (roundtrip (coq-include-options extracted nil)))
+    (princ (format "[%s]: " coq-project))
     (if (equal concatenated roundtrip)
         (princ "OK\n")
       (princ (format "Failed.\n:: Original:  %S\n:: LoadPath: %S\n:: Roundtrip: %S\n"
                      concatenated extracted roundtrip)))))
 
-(defun coq--options-test-roundtrip (coq-project &optional v85-only)
-  "Run a sanity check on COQ-PROJECT.
-If V85-ONLY is non-nil, do not check the compatibility code."
+(defun coq--options-test-roundtrip (coq-project)
+  "Run a sanity check on COQ-PROJECT."
   (let ((parsed (coq--read-options-from-project-file coq-project)))
-    (coq--options-test-roundtrip-1 coq-project parsed nil)
-    (unless v85-only
-      (coq--options-test-roundtrip-1 coq-project parsed t))))
+    (coq--options-test-roundtrip-1 coq-project parsed)))
 
 (defun coq--options-test-roundtrips ()
   "Run sanity tests on coq-project parsing code.
@@ -385,37 +378,70 @@ options of a few coq-project files does the right thing."
     (coq--options-test-roundtrip "-R /test Test")
     (coq--options-test-roundtrip "-I /test")))
 
-(defun coq-coqdep-prog-args (load-path &optional current-directory pre-v85)
+(defun coq-coqdep-prog-args (load-path &optional current-directory)
   "Build a list of options for coqdep.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
-  (coq-include-options load-path current-directory pre-v85))
+LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
+  (coq-include-options load-path current-directory))
 
-(defun coq-coqc-prog-args (load-path &optional current-directory pre-v85)
+(defun coq-coqc-prog-args (load-path &optional current-directory)
   "Build a list of options for coqc.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
+LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
-  (append (remove "-emacs" coq-prog-args)
-          (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
-            (coq-coqdep-prog-args coq-load-path current-directory pre-v85))))
+  (append coq-prog-args
+	  (coq-coqdep-prog-args coq-load-path current-directory)))
+
+(defvar coq-coqtop-server-flags
+					; TODO allow ports for main-channel
+					; TODO add control-channel ports
+  '("-ideslave" "-main-channel" "stdfds"))
+
+(defvar coq-coqtop-async-flags
+  (let ((proof-workers-flags
+	 (and coq-num-async-workers
+	      `("-async-proofs-j" ,(number-to-string coq-num-async-workers))))
+	(par-workers-flags
+	 (and coq-num-async-par-workers
+	      `("-async-proofs-tac-j" ,(number-to-string coq-num-async-par-workers)))))
+    (append '("-async-proofs" "on")
+	    proof-workers-flags
+	    par-workers-flags)))
+
+(defvar coq-coqtop-no-async-flags
+  '("-async-proofs" "off"))
+
+(defvar coq-coqtop-async-lazy-flags
+  '("-async-proofs" "lazy"))
 
 ;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
 ;; Coq process, see 'defpacustom prog-args' in pg-custom.el for
 ;; documentation.
 
-(defun coq-coqtop-prog-args (load-path &optional current-directory pre-v85)
-  ;; coqtop always adds the current directory to the LoadPath, so don't
-  ;; include it in the -Q options. This is not true for coqdep.
-  "Build a list of options for coqc.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (cons "-emacs" (coq-coqc-prog-args load-path current-directory pre-v85)))
+(defun coq-coqtop-prog-args (load-path &optional current-directory)
+  ;; coqtop always adds the current directory to the LoadPath, so don't                                                                                                
+  ;; include it in the -Q options. This is not true for coqdep.                                                                                                        
+  "Build a list of options for coqc. 
+   LOAD-PATH, CURRENT-DIRECTORY: see `coq-coqc-prog-args'."
+  (let* ((coqc-args (coq-coqc-prog-args load-path current-directory))
+	 (async-args (if coq-allow-async-proofs
+			 coq-coqtop-async-flags
+		       coq-coqtop-no-async-flags))
+	 (ide-args coq-coqtop-server-flags)
+	 (async-lazy-args (when (and coq-allow-async-proofs
+				     coq-async-lazy)
+			    coq-coqtop-async-lazy-flags)))
+    (append async-args ide-args async-lazy-args coqc-args)))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."
   (coq-load-project-file)
   (coq-autodetect-version)
-  (coq-coqtop-prog-args coq-load-path))
+  (if (coq--pre-v85)
+      (progn
+	(message-box "Proof General requires Coq v8.5 or later.\nDetected Coq version %s" coq-autodetected-version)
+	nil)
+    (coq-coqtop-prog-args coq-load-path)))
 
 (defcustom coq-use-project-file t
   "If t, when opening a coq file read the dominating _CoqProject.
@@ -475,22 +501,22 @@ alreadyopen is t if buffer already existed."
 If ARITY is nil, return SWITCH."
   (if arity
       (let ((arguments
-             (condition-case-unless-debug nil
-                 (cl-subseq raw-args 0 arity)
-               (warn "Invalid _CoqProject: not enough arguments for %S" switch))))
-        (cons switch arguments))
+	     (condition-case-unless-debug nil
+		 (cl-subseq raw-args 0 arity)
+	       (warn "Invalid _CoqProject: not enough arguments for %S" switch))))
+	(cons switch arguments))
     switch))
 
 (defun coq--read-options-from-project-file (contents)
   "Read options from CONTENTS of _CoqProject.
 Returns a mixed list of option-value pairs and strings."
   (let ((raw-args (split-string-and-unquote contents coq--project-file-separator))
-        (options nil))
+	(options nil))
     (while raw-args
       (let* ((switch (pop raw-args))
-             (arity (cdr (assoc switch coq--makefile-switch-arities))))
-        (push (coq--read-one-option-from-project-file switch arity raw-args) options)
-        (setq raw-args (nthcdr (or arity 0) raw-args))))
+	     (arity (cdr (assoc switch coq--makefile-switch-arities))))
+	(push (coq--read-one-option-from-project-file switch arity raw-args) options)
+	(setq raw-args (nthcdr (or arity 0) raw-args))))
     options))
 
 (defun coq--extract-prog-args (options)
@@ -508,7 +534,7 @@ coqtop."
          (setq args
                (append (split-string-and-unquote (cadr opt) coq--project-file-separator)
                        args)))))
-    (cons "-emacs" args)))
+    args))
 
 (defun coq--extract-load-path-1 (option base-directory)
   "Convert one _CoqProject OPTION, relative to BASE-DIRECTORY."
@@ -525,8 +551,8 @@ coqtop."
 OPTIONS is a list or conses (switch . arguments) and strings.
 Paths are taken relative to BASE-DIRECTORY."
   (cl-loop for opt in options
-           for extracted = (coq--extract-load-path-1 opt base-directory)
-           when extracted collect extracted))
+	   for extracted = (coq--extract-load-path-1 opt base-directory)
+	   when extracted collect extracted))
 
 ;; optional args allow to implement the precedence of dir/file local vars
 (defun coq-load-project-file-with-avoid (&optional avoidargs avoidpath)
@@ -535,28 +561,28 @@ If AVOIDARGS or AVOIDPATH is set, do not set the corresponding
 variable."
   (pcase-let* ((`(,proj-file-buf ,no-kill) (coq-find-project-file)))
     (if (not proj-file-buf)
-        (message "Coq project file not detected.")
+	(message "Coq project file not detected.")
       (let* ((contents (with-current-buffer proj-file-buf (buffer-string)))
-             (options (coq--read-options-from-project-file contents))
-             (proj-file-name (buffer-file-name proj-file-buf))
-             (proj-file-dir (file-name-directory proj-file-name)))
-        (unless avoidargs (setq coq-prog-args (coq--extract-prog-args options)))
-        (unless avoidpath (setq coq-load-path (coq--extract-load-path options proj-file-dir)))
-        (let ((msg
-               (cond
-                ((and avoidpath avoidargs) "Coqtop args and load path")
-                (avoidpath "Coqtop load path")
-                (avoidargs "Coqtop args")
-                (t ""))))
-          (message
-           "Coq project file detected: %s%s." proj-file-name
-           (if (or avoidpath avoidargs)
-               (concat "\n(" msg " overridden by dir/file local values)")
-             "")))
-        (when coq-debug
-          (message "coq-prog-args: %S" coq-prog-args)
-          (message "coq-load-path: %S" coq-load-path))
-        (unless no-kill (kill-buffer proj-file-buf))))))
+	     (options (coq--read-options-from-project-file contents))
+	     (proj-file-name (buffer-file-name proj-file-buf))
+	     (proj-file-dir (file-name-directory proj-file-name)))
+	(unless avoidargs (setq coq-prog-args (coq--extract-prog-args options)))
+	(unless avoidpath (setq coq-load-path (coq--extract-load-path options proj-file-dir)))
+	(let ((msg
+	       (cond
+		((and avoidpath avoidargs) "Coqtop args and load path")
+		(avoidpath "Coqtop load path")
+		(avoidargs "Coqtop args")
+		(t ""))))
+	  (message
+	   "Coq project file detected: %s%s." proj-file-name
+	   (if (or avoidpath avoidargs)
+	       (concat "\n(" msg " overridden by dir/file local values)")
+	     "")))
+	(when coq-debug
+	  (message "coq-prog-args: %S" coq-prog-args)
+	  (message "coq-load-path: %S" coq-load-path))
+	(unless no-kill (kill-buffer proj-file-buf))))))
 
 (defun coq-load-project-file ()
   "Set `coq-prog-args' and `coq-load-path' according to _CoqProject file.
@@ -569,7 +595,7 @@ feature."
   (when coq-use-project-file
     ;; Let us reread dir/file local vars, in case the user mmodified them
     (let* ((oldargs (assoc 'coq-prog-args file-local-variables-alist))
-           (oldpath (assoc 'coq-load-path file-local-variables-alist)))
+	   (oldpath (assoc 'coq-load-path file-local-variables-alist)))
       (coq-load-project-file-with-avoid oldargs oldpath))))
 
 
@@ -596,19 +622,20 @@ Does nothing if `coq-use-project-file' is nil."
 ;; need to make this hook local.
 ;; hack-local-variables-hook seems to hack local and dir local vars.
 (add-hook 'coq-mode-hook
-          '(lambda ()
-             (add-hook 'hack-local-variables-hook
-                       'coq-load-project-file
-                       nil t)))
+	  '(lambda ()
+	     (add-hook 'hack-local-variables-hook
+		       'coq-load-project-file
+		       nil t)))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook
-          '(lambda ()
-             (when (and (fboundp 'show-paren--default)
-                        (boundp 'show-paren-data-function))
-               (setq show-paren-data-function 'show-paren--default))))
+	  '(lambda ()
+	     (when (and (fboundp 'show-paren--default)
+			(boundp 'show-paren-data-function))
+	       (setq show-paren-data-function 'show-paren--default))))
 
-
+(add-hook 'coq-mode-hook 'coq-header-line-init)
+(add-hook 'coq-mode-hook 'coq-error-start-timer)
 
 (defun coq-toggle-use-project-file ()
   (interactive)
@@ -640,32 +667,30 @@ then be set using local file variables."
   (if (local-variable-p 'coq-prog-name (current-buffer))
       coq-prog-name
     (let* ((dir (or (file-name-directory filename) "."))
-           (makedir
-            (cond
-             ((file-exists-p (concat dir "Makefile")) ".")
-             ;; ((file-exists-p (concat dir "../Makefile")) "..")
-             ;; ((file-exists-p (concat dir "../../Makefile")) "../..")
-             (t nil))))
+	   (makedir
+	    (cond
+	     ((file-exists-p (concat dir "Makefile")) ".")
+	     ;; ((file-exists-p (concat dir "../Makefile")) "..")
+	     ;; ((file-exists-p (concat dir "../../Makefile")) "../..")
+	     (t nil))))
       (if (and coq-use-makefile makedir)
-          (let*
-              ;;TODO, add dir name when makefile is in .. or ../..
-              ;;
-              ;; da: FIXME: this code causes problems if the make
-              ;; command fails.  It should not be used by default
-              ;; and should be made more robust.
-              ;;
-              ((compiled-file (concat (substring
-                                       filename 0
-                                       (string-match ".v$" filename)) ".vo"))
-               (command (shell-command-to-string
-                         (concat  "cd " dir ";"
-                                  "make -n -W " filename " " compiled-file
-                                  "| sed s/coqc/coqtop/"))))
-            (message command)
-            (setq coq-prog-args nil)
-            (concat
-             (substring command 0 (string-match " [^ ]*$" command))
-             "-emacs"))
-        coq-prog-name))))
+	  (let*
+	      ;;TODO, add dir name when makefile is in .. or ../..
+	      ;;
+	      ;; da: FIXME: this code causes problems if the make
+	      ;; command fails.  It should not be used by default
+	      ;; and should be made more robust.
+	      ;;
+	      ((compiled-file (concat (substring
+				       filename 0
+				       (string-match ".v$" filename)) ".vo"))
+	       (command (shell-command-to-string
+			 (concat  "cd " dir ";"
+				  "make -n -W " filename " " compiled-file
+				  "| sed s/coqc/coqtop/"))))
+	    (message command)
+	    (setq coq-prog-args nil)
+	    (substring command 0 (string-match " [^ ]*$" command)))
+	coq-prog-name))))
 
 ;;; coq-system.el ends here

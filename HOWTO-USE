@@ -1,0 +1,71 @@
+How to try out Proof General with the coqtop XML protocol
+-----------------------------------------------------------------------
+
+1) Get the code from Github
+
+The repo is at:
+
+ https://github.com/psteckler/ProofGeneral
+
+You should clone the repo via ssh or https.
+
+2) Switch to the branch that supports the XML protocol
+
+ $ git checkout server-protocol
+
+3) In the ProofGeneral directory that was created via cloning:
+
+ $ make
+
+-----------------------------------------------------------------------------
+
+You're probably already a Proof General user, so you'll want a way to
+switch between the current distribution, and this experimental
+version. Here's one way to do that on Linux, assuming you're running
+bash as your shell.
+
+In your .emacs file, add something like:
+
+  (defun pg-xml ()
+    (load-file "<path-to>/ProofGeneral/generic/proof-site.el"))
+
+And in your ~/.bashrc, add a line like:
+
+  alias emacs-pg-xml="<path-to>/emacs -eval \"(pg-xml)\""
+
+Run:
+
+  $ source ~/.bashrc
+
+Then, to run a Coq script foo.v:
+
+  $ emacs-pg-xml foo.v
+
+To run the current Proof General distribution, you can setup another
+.emacs load function and bash alias:
+
+  (defun pg ()
+    (load-file "<path-to>/ProofGeneral/generic/proof-site.el"))
+
+  alias emacs-pg="<path-to>/emacs -eval \"(pg)\""
+
+The Proof General code is still experimental. There are some debugging
+messages available, not printed by default. To enable those, in the
+file generic/proof-useropts.el, set the variable
+`proof-general-debug-messages' to non-nil. These debug messages appear
+in the *Messages* buffer. Also, by default, all traffic between Emacs
+and Coq is logged to the buffer *coq-log*. Disabling that logging may
+speed things up; you can do that by setting the variable
+`proof-server-log-traffic' in generic/proof-config.el to nil.
+
+Please note, this code is of alpha quality. If you discover a bug,
+please work out the steps to reproduce it. Unless such logging is
+disabled, as described above, there's a transcript of the traffic
+between Emacs and coqtop in the buffer *coq-log*, which may be
+helpful. Please create a new issue in the Github repo above (not in
+the standard PG repo).
+
+Thanks for trying out the code!
+
+
+

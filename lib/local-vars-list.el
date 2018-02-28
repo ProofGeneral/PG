@@ -8,20 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
-
-;; This software is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public
-;; License version 2, as published by the Free Software Foundation.
-;;
-;; This software is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-;;
-;; See the GNU General Public License version 2 for more details
-;; (enclosed in the file GPL).
 
 ;;; Commentary:
 ;;

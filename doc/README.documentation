@@ -9,10 +9,9 @@ your convenience.  Otherwise you will need to run
 	make pdf
 	make html
 
-according to what format you'd like.  Everything is generated
-from the master Texinfo files ProofGeneral.texi and PG-adapting.texi,
-so you'll need the proper tools for conversion.  Check Makefile.doc
-for details.
+according to what format you'd like.  Everything is generated from the
+master Texinfo file ProofGeneral.texi, so you'll need the proper tools
+for conversion.  Check Makefile.doc for details.
 
 Front Image for Manual
 ----------------------

@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;; 
@@ -43,33 +42,8 @@
 (defconst proof-assistant-table-default
     '(
       ;; Main instances of PG.
-
-      (isar "Isabelle" "thy")
+      ;; only Coq these days
       (coq "Coq" "v" nil (".vo" ".glob"))
-      (easycrypt "EasyCrypt" "ec" "\\.eca?\\'")
-
-      ;; Obscure instances or conflict with other Emacs modes.
-
-      ;; (phox "PhoX" "phx")
-      ;; (lego "LEGO" "l")
-      ;; (ccc    "CASL Consistency Checker" "ccc")
-
-      ;; (hol-light "HOL Light" "ml") ; [for testing]
-
-      ;; Cut-and-paste management only
-
-      (pgshell	 "PG-Shell" "pgsh")
-      (pgocaml	 "PG-OCaml" "pgml")
-      (pghaskell "PG-Haskell" "pghci")
-      
-      ;; Incomplete/obsolete:
-
-      ;; (hol98	"HOL" "sml")
-      ;; (acl2	"ACL2" "acl2")
-      ;; (twelf	"Twelf" "elf")
-      ;; (plastic "Plastic" "lf")        ; obsolete
-      ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
-      ;; (demoisa "Isabelle Demo" "ML")  ; obsolete
       )
     "Default value for `proof-assistant-table', which see.")
 
@@ -80,7 +54,8 @@
 
 (eval-and-compile
   ;; WARNING: do not edit next line (constant is edited in Makefile.devel)
-  (defconst proof-general-version "Proof General Version 4.4.1~pre."
+
+  (defconst proof-general-version "Proof General Version 5.0-git."
     "Version string identifying Proof General release."))
 
 (defconst proof-general-short-version
@@ -89,7 +64,7 @@
       (string-match "Version \\([^ ]+\\)\\." proof-general-version)
       (match-string 1 proof-general-version))))
 
-(defconst proof-general-version-year "2016")
+(defconst proof-general-version-year "2017")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -293,7 +268,6 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
        (setq proof-assistant-symbol (quote ,assistantsym))
        ;; define the per-prover settings which depend on above
        (require 'pg-custom)
-       (setq proof-mode-for-shell (proof-ass-sym shell-mode))
        (setq proof-mode-for-response (proof-ass-sym response-mode))
        (setq proof-mode-for-goals (proof-ass-sym goals-mode))
        (setq proof-mode-for-script (proof-ass-sym mode))

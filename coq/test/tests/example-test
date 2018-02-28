@@ -1,0 +1,28 @@
+# simple file example
+
+CODE=$(cat <<EOF
+  (load-file "lib/testlib.el")
+  (process-file "scripts/example.v")
+  ;; TODO : find better way to know processing done
+  (sleep-for 1)
+  (let ((expected
+"Interactive Module Example started
+and_commutative is defined
+Module Example is defined
+"))
+    (verify-response expected))
+EOF
+)
+
+ADVICE=$(cat <<EOF
+Should see in response buffer:
+
+ Interactive Module Example started
+ and_commutative is defined
+ Module Example is defined
+
+check that buffer and header line are all blue
+should be one darker blue block in header line, for the Qed
+EOF
+)
+

@@ -8,16 +8,16 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors:   David Aspinall
-
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
 
 ;;; Code:
-(require 'cl)				; mapcan
+
+(require 'cl-lib)	
 
 (eval-when-compile
   (defvar proof-assistant-menu)	  ; defined by macro in proof-menu-define-specific
@@ -50,16 +50,12 @@ without adjusting window layout."
   (cond
    ((and (called-interactively-p 'any)
 	 (eq last-command 'proof-display-some-buffers))
-    (incf proof-display-some-buffers-count))
+    (cl-incf proof-display-some-buffers-count))
    (t
     (setq proof-display-some-buffers-count 0)))
-  (let* ((assocbufs   (remove-if-not 'buffer-live-p
+  (let* ((assocbufs   (cl-remove-if-not 'buffer-live-p
 				     (list proof-response-buffer
-					   proof-thms-buffer
-					   proof-trace-buffer
-					   proof-goals-buffer
-					   )))
-					;proof-shell-buffer
+					   proof-goals-buffer)))
 	 (numassoc    (length assocbufs)))
     ;; If there's no live other buffers, we don't do anything.
     (unless (zerop numassoc)
@@ -102,7 +98,7 @@ without adjusting window layout."
   (define-key map [(control meta a)] 'proof-goto-command-start)
   (define-key map [(control meta e)] 'proof-goto-command-end)
   (define-key map [(control c) (control b)] 'proof-process-buffer)
-  ;; C-c C-c is proof-interrupt-process in universal-keys
+  ;; C-c C-c is proof-server-interrupt-process in universal-keys
   (define-key map [(control c) (control d)] 'proof-tree-external-display-toggle)
   ;; C-c C-f is proof-find-theorems in universal-keys
   (define-key map [(control c) (control H)] 'proof-help)
@@ -111,6 +107,7 @@ without adjusting window layout."
   ;; C-c C-o is proof-display-some-buffers in universal-keys
   (define-key map [(control c) (control p)] 'proof-prf)
   (define-key map [(control c) (control r)] 'proof-retract-buffer)
+  (define-key map [(control c) (control c)] 'proof-check)
   (define-key map [(control c) (control s)] 'proof-toggle-active-scripting)
   (define-key map [(control c) (control t)] 'proof-ctxt)
   (define-key map [(control c) (control i)] 'proof-query-identifier)
@@ -184,12 +181,12 @@ without adjusting window layout."
 	     (list
 	      (vector
 	       (concat "Start " proof-assistant)
-	     'proof-shell-start
-	     ':active '(not (proof-shell-live-buffer)))
+	     'proof-server-start
+	     ':active '(not (proof-server-live-buffer)))
 	      (vector
 	       (concat "Exit " proof-assistant)
-	       'proof-shell-exit
-	       ':active '(proof-shell-live-buffer))
+	       'proof-server-exit
+	       ':active '(proof-server-live-buffer))
 	      ;; TODO: doc <PA>-set-command here
 	      (vector
 	       (concat "Set " proof-assistant " Command")
@@ -296,14 +293,7 @@ without adjusting window layout."
 	   :active (buffer-live-p proof-goals-buffer)]
 	  ["Response"
 	   (proof-switch-to-buffer proof-response-buffer t)
-	   :active (buffer-live-p proof-response-buffer)]
-	  ["Trace"
-	   (proof-switch-to-buffer proof-trace-buffer)
-	   :active (buffer-live-p proof-trace-buffer)
-	   :visible proof-shell-trace-output-regexp]
-	  ["Shell"
-	   (proof-switch-to-buffer proof-shell-buffer)
-	   :active (buffer-live-p proof-shell-buffer)]))
+	   :active (buffer-live-p proof-response-buffer)]))
   "Proof General 3 window mode policy.")
 
 
@@ -674,7 +664,7 @@ without adjusting window layout."
 	 '(["Complete Identifier" proof-script-complete
 	    :help "Complete the identifier at point"]
 	   ["Insert Last Output" pg-insert-last-output-as-comment
-	    :active proof-shell-last-output
+	    :active "foobar" ; proof-shell-last-output
 	    :help "Insert the last output into the proof script as a comment"]
 	   ["Make Movie" pg-movie-export
 	    :help "Export processed portion as Movie XML file (enable Full Annotations first!)"])
@@ -756,7 +746,7 @@ suitable for adding to the proof assistant menu."
     (while (and new (fboundp menu-fn))
       (setq menu-fn (intern (concat (symbol-name menuname-sym)
 				    "-" (int-to-string i))))
-      (incf i))
+      (cl-incf i))
     (if inscript
 	(eval `(proof-defshortcut ,menu-fn ,command ,key))
       (eval `(proof-definvisible ,menu-fn ,command ,key)))
@@ -790,8 +780,8 @@ suitable for adding to the proof assistant menu."
 		     nil t)))
   (let*
       ((favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+       (rmfavs	   (cl-remove-if
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs)))
     (unless (equal favs rmfavs)
       (easy-menu-remove-item proof-assistant-menu
@@ -832,8 +822,8 @@ KEY is the optional key binding."
   (let*
       ((menu-entry (proof-def-favourite command inscript menuname key t))
        (favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+       (rmfavs	   (cl-remove-if
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs))
        (newfavs    (append
 		    rmfavs
@@ -861,7 +851,7 @@ KEY is the optional key binding."
 	(mapc (lambda (stg) (add-to-list 'groups (get (car stg) 'pggroup)))
 	      proof-assistant-settings)
 	(dolist (grp (reverse groups))
-	  (let* ((gstgs (mapcan (lambda (stg)
+	  (let* ((gstgs (cl-mapcan (lambda (stg)
 				  (if (eq (get (car stg) 'pggroup) grp)
 				      (list stg)))
 				proof-assistant-settings))
@@ -943,36 +933,18 @@ KEY is the optional key binding."
   ;; session somehow.  (This might happen automatically if a queue of
   ;; deffered commands is set, since defcustom calls proof-set-value
   ;; even to set the default/initial value?)
-  (if (proof-shell-available-p)
-      (progn
-	(proof-shell-invisible-command cmd t)
-	;; refresh display,
-	;; FIXME: should only do if goals display is active,
-	;; messy otherwise.
-	;; (we need a new flag for "active goals display").
-	;; PG 3.5 (patch 22.04.04):
-	;; Let's approximate that by looking at proof-nesting-depth.
-	(if (and proof-showproof-command
-		 (> proof-nesting-depth 0))
-	    (proof-shell-invisible-command proof-showproof-command))
-	;;  Could also repeat last command if non-state destroying.
-	)))
-
-(defun proof-maybe-askprefs ()
-  "If `proof-use-pgip-askprefs' is non-nil, try to issue <askprefs>.
-This will configure dynamic settings used in the current prover session
-and extend `proof-assistant-settings'.
-We first clear the dynamic settings from `proof-assistant-settings'."
-  (when (and proof-use-pgip-askprefs proof-shell-issue-pgip-cmd)
-    (let (newsettings)
-      (dolist (setting proof-assistant-settings)
-	(let ((name (car setting)))
-	  (if (get name 'pgdynamic)
-	      (undefpgcustom name)
-	    (push setting newsettings))))
-      (setq proof-assistant-settings newsettings))
-    (pg-pgip-askprefs)))
-
+  (proof-server-invisible-command cmd t)
+  ;; refresh display,
+  ;; FIXME: should only do if goals display is active,
+  ;; messy otherwise.
+  ;; (we need a new flag for "active goals display").
+  ;; PG 3.5 (patch 22.04.04):
+  ;; Let's approximate that by looking at proof-nesting-depth.
+  (if (and proof-showproof-command
+	   (> proof-nesting-depth 0))
+      (proof-server-invisible-command proof-showproof-command))
+  ;;  Could also repeat last command if non-state destroying.
+  )
 
 (defun proof-assistant-settings-cmd (setting)
   "Return string for making SETTING in Proof General customization."
@@ -988,6 +960,7 @@ We first clear the dynamic settings from `proof-assistant-settings'."
     (dolist (setting proof-assistant-settings)
       (let ((sym       (car setting))
 	    (pacmd     (cadr setting))) 
+	(message (format "sym: %s" sym))
 	(if (and pacmd
 		 (or (not (get sym 'pgdynamic))
 		     (proof-ass-differs-from-default sym)))

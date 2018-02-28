@@ -8,11 +8,10 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -22,7 +21,6 @@
 
 ;;; Code:
 
-(require 'proof-shell)
 (require 'coq-system)
 (require 'compile)
 
@@ -46,7 +44,7 @@
 (defun coq-par-enable ()
   "Enable parallel compilation.
 Must be used together with `coq-seq-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-par-preprocess-require-commands)
   (add-hook 'proof-shell-signal-interrupt-hook
 	    'coq-par-user-interrupt)
@@ -56,7 +54,7 @@ Must be used together with `coq-seq-disable'."
 (defun coq-par-disable ()
   "Disable parallel compilation.
 Must be used together with `coq-seq-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-par-preprocess-require-commands)
   (remove-hook 'proof-shell-signal-interrupt-hook
 	       'coq-par-user-interrupt)
@@ -66,13 +64,13 @@ Must be used together with `coq-seq-enable'."
 (defun coq-seq-enable ()
   "Enable sequential synchronous compilation.
 Must be used together with `coq-par-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
+  (add-hook 'proof-extend-queue-hook
 	    'coq-seq-preprocess-require-commands))
 
 (defun coq-seq-disable ()
   "Disable sequential synchronous compilation.
 Must be used together with `coq-par-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
+  (remove-hook 'proof-extend-queue-hook
 	       'coq-seq-preprocess-require-commands))
 
 
@@ -443,7 +441,7 @@ expressions in here are always matched against the .vo file name,
 regardless whether ``-quick'' would be used to compile the file
 or not."
   :type '(repeat regexp)
-  :safe (lambda (v) (every 'stringp v))
+  :safe (lambda (v) (cl-every 'stringp v))
   :group 'coq-auto-compile)
 
 (defcustom coq-coqdep-error-regexp
@@ -532,7 +530,7 @@ for instance, not make sense to let ProofGeneral check if the coq
 standard library is up-to-date. This function is always invoked
 on the .vo file name, regardless whether the file would be
 compiled with ``-quick'' or not."
-  (if (some
+  (if (cl-some
        (lambda (dir-regexp) (string-match dir-regexp lib-obj-file))
        coq-compile-ignored-directories)
       (progn
@@ -709,15 +707,15 @@ current buffer (which contains the Require command) to
 
 ;;; kill coqtop on script buffer change
 
-(defun coq-switch-buffer-kill-proof-shell ()
-  "Kill the proof shell without asking the user.
+(defun coq-switch-buffer-kill-proof-server ()
+  "Kill the proof server without asking the user.
 This function is for `proof-deactivate-scripting-hook'. It kills
-the proof shell without asking the user for
+the proof server without asking the user for
 confirmation (assuming she agreed already on switching the active
 scripting buffer). This is needed to ensure the load path is
 correct in the new scripting buffer."
-  (unless proof-shell-exit-in-progress
-    (proof-shell-exit t)))
+  (unless proof-server-exit-in-progress
+    (proof-server-exit t)))
 
 ;; This is now always done (in coq.el)
 ;(add-hook 'proof-deactivate-scripting-hook

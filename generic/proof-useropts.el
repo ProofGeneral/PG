@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -229,6 +228,12 @@ Proof General."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-retract-point-limit nil
+  "If non-nil, mark buffer read-only for positions before this many characters 
+before the end of the sent region."
+  :type '(choice number (const nil))
+  :group 'proof-user-options)
+
 (defcustom proof-colour-locked t
   "*If non-nil, colour the locked region with `proof-locked-face'.
 If this is not set, buffers will have no special face set
@@ -312,6 +317,13 @@ This is only useful for PG developers."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-general-debug-messages nil
+  "*Non-nil to show certain debug messages in the mini-buffer and 
+*Messages* buffer. These messages are distinct from those gated by 
+`proof-general-debug'."
+  :type 'boolean
+  :group 'proof-user-options)
+  
 (defcustom proof-use-parser-cache t
   "*Non-nil to use a simple parsing cache.
 This can be helpful when editing and reprocessing large files.

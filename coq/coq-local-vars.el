@@ -8,6 +8,7 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Authors: Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
@@ -20,12 +21,11 @@
 (require 'local-vars-list)              ; in lib directory
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (eval-when-compile
   (defvar coq-prog-name)
   (defvar coq-load-path))
-
 
 (defconst coq-local-vars-doc nil
   "Documentation-only variable.
@@ -190,7 +190,6 @@ These variables describe the coqtop command to be launched on this file."
          (progname (coq-ask-prog-name oldname))
          (loadpath (coq-ask-load-path oldpath)))
     (coq-insert-coq-prog-name progname loadpath)))
-
 
 
 (provide 'coq-local-vars)

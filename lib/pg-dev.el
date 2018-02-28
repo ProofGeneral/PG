@@ -1,5 +1,3 @@
-;;; pg-dev.el --- Developer settings for Proof General
-
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
@@ -8,10 +6,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -24,7 +21,7 @@
 (require 'whitespace)
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (eval-when-compile
   (require 'proof-site))
@@ -98,6 +95,7 @@
 ;;; Unload utility (not wholly successful)
 ;;;
 
+;; TODO update the list of modules
 (defun unload-pg ()
   "Attempt to unload Proof General (for development use only)."
   (interactive)
@@ -106,16 +104,12 @@
 		    (unload-feature feat 'force)
 		    (error nil)))
    '(proof-splash pg-assoc pg-xml proof-depends proof-indent proof-site
-     proof-shell proof-menu pg-pbrpm pg-pgip proof-script
+     proof-shell proof-menu pg-pbrpm proof-script
      proof-autoloads pg-response pg-goals proof-toolbar
      proof-easy-config proof-config proof
      proof-utils proof-syntax pg-user pg-custom
      proof-maths-menu proof-unicode-tokens
      pg-thymodes pg-autotest
-     ;;
-     isar-syntax isar-find-theorems isar-unicode-tokens
-     isar-autotest interface-setup isabelle-system isar 
-     isar-keywords
      ;;
      coq-abbrev coq-db coq-unicode-tokens coq-local-vars coq coq-syntax
      coq-indent coq-autotest)))

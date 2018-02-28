@@ -8,6 +8,7 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author: David Aspinall <da@longitude>
 
@@ -173,11 +174,6 @@ Usage: (defpgdefault SYM VALUE)"
        ((eq (car args) :eval)
 	(setq evalform (cadr args))
 	(setq args (cdr args)))
-       ((eq (car args) :pgipcmd)
-	;; Construct a function which yields a PGIP string
-	(setq setting `(lambda (x)
-			  (pg-pgip-string-of-command (proof-assistant-format ,(cadr args) x))))
-	(setq args (cdr args)))
        ((eq (car args) :pggroup)
 	;; use the group as a prefix to the name, and set a pggroup property on it
 	(setq name (intern (concat (downcase (cadr args)) ":" (symbol-name name))))
@@ -257,13 +253,8 @@ Additional properties in the ARGS prop list may include:
 		     For example, \"Timing\", \"Tracing\", etc.  Used
 		     to generate sub-menus in the UI.
 
- pgipgcmd  string    Alternative to :setting.
-		     Send a PGIP formatted command based on given string.
-
  pgdynamic flag      If flag is non-nil, this setting is a dynamic one
 		     that is particular to the running instance of the prover.
-		     Automatically set by preferences configured from PGIP 
-		     askprefs message.
 
 This macro also extends the `proof-assistant-settings' list."
   `(proof-defpacustom-fn (quote ,name) (quote ,val) (quote ,args)))

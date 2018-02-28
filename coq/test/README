@@ -1,0 +1,33 @@
+These are tests for Proof General using the XML protocol for Coq.
+
+The bash script "run-tests.sh" runs tests in the tests/ directory. You can
+supply the name of individual tests from that directory on the command line:
+
+   run-tests.sh example-test example-tokens-test
+
+If you omit the tests on the command-line, all available tests are run.
+
+You will probably need to edit the variable PROOF_SITE in "run-tests.sh" to
+allow Emacs to file Proof General.
+
+When running a test, the script starts up Emacs with Proof General, and runs
+some Elisp code. On the console, the script prints what you should look for
+to know whether a test is successful. The script then asks whether you think
+the test has succeeded or not.
+
+When all tests have run, the script offers you the opportunity to see all the
+test results.
+
+To add a new test to this suite, create a file in the tests/
+directory. Any Coq code should go in the scripts/ directory. Each test
+requires defining two bash variables, CODE and ADVICE. The first of
+these is the Elisp code to run, and the second is the advice to the
+user to know whether a test has succeeded. See one of the existing
+files to know how to instantiate those variables. Also, add the name
+of the file to the variable ALL_TESTS in "run-tests.sh".
+
+The author is Paul Steckler, psteck@mit.edu.
+
+
+
+

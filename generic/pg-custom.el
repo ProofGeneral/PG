@@ -8,18 +8,13 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
 ;; Prover specific settings and user options.
-;;
-;; The settings defined here automatically use the current proof
-;; assistant symbol as a prefix, i.e.  isar-favourites, coq-favourites,
-;; or whatever will be defined on evaluation.
 ;;
 ;; This file is loaded only by mode stubs defined in `proof-site.el',
 ;; immediately after `proof-assistant' and similar settings have been
@@ -47,24 +42,24 @@
   :group 'proof-user-options)
 
 (defconst proof-toolbar-entries-default
-`((state "Display Proof State" "Display the current proof state" t
-	   proof-showproof-command)
-  (context "Display Context" "Display the current context" t
-	     proof-context-command)
-  (goal      "Start a New Proof" "Start a new proof" t nil)
-  (retract   "Retract Buffer"     "Retract (undo) whole buffer" t t)
-  (undo      "Undo Step"          "Undo the previous proof command" t t)
-  (delete    "Delete Step"        "Delete the last proof command" nil t)
-  (next      "Next Step"          "Process the next proof command" t t)
-  (use       "Use Buffer"         "Process whole buffer" t t)
-  (goto      "Goto Point"         "Process or undo to the cursor position" t t)
-  (qed       "Finish Proof"       "Close/save proved theorem" t nil)
-  (home      "Goto Locked End"    "Goto end of the last command processed" t t)
-  (find      "Find Theorems"	  "Find theorems" t proof-find-theorems-command)
-  (info      "Identifier Info"    "Information about identifier" t proof-query-identifier-command)
-  (command   "Issue Command"	  "Issue a non-scripting command" t t)
+`((context   "Display Context"     "Display the current context" t t)
+  (check     "Check"               "Check all proofs in the document" t t)
+  (goal      "Start a New Proof"   "Start a new proof" t nil)
+  (retract   "Retract Buffer"      "Retract (undo) whole buffer" t t)
+  (undo      "Undo Step"           "Undo the previous proof command" t t)
+  (delete    "Delete Step"         "Delete the last proof command" nil t)
+  (next      "Next Step"           "Process the next proof command" t t)
+  (use       "Use Buffer"          "Process whole buffer" t t)
+  (goto      "Goto Point"          "Process or undo to the cursor position" t t)
+  (qed       "Finish Proof"        "Close/save proved theorem" t nil)
+  (state     "Display Proof State" "Display the current proof state" t
+	 proof-showproof-command)
+  (home      "Goto Locked End"     "Goto end of the last command processed" t t)
+  (find      "Find Theorems"	   "Find theorems" t proof-find-theorems-command)
+  (info      "Identifier Info"     "Information about identifier" t proof-query-identifier-command)
+  (command   "Issue Command"	   "Issue a non-scripting command" t t)
   (prooftree "Start/Stop Prooftree" "Start/Stop external proof-tree display" t proof-tree-configured)
-  (interrupt "Interrupt Prover"   "Interrupt the proof assistant" t t)
+  (interrupt "Interrupt Prover"    "Interrupt the proof assistant" t t)
   (restart   "Restart Scripting"  "Restart scripting (clear all locked regions)" t t)
   (visibility "Toggle Visibility" "Show or hide hidden proofs" nil t)
   (help	nil   "Proof General manual" t t))
@@ -115,10 +110,7 @@ For example for coq on Windows you might need something like:
   :type '(repeat string)
   :group 'proof-shell)
 
-(defpgcustom quit-timeout 
-  (cond
-   ((eq proof-assistant-symbol 'isar)    45)
-   (t					 5))
+(defpgcustom quit-timeout 1
   "The number of seconds to wait after sending `proof-shell-quit-cmd'.
 After this timeout, the proof shell will be killed off more rudely.
 If your proof assistant takes a long time to clean up (for
@@ -171,21 +163,17 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
 ;; TODO: not used yet.  Want to move specific enabling of holes modes
 ;; to generic code (coq.el enables it in script and shell).
 ;; See http://proofgeneral.inf.ed.ac.uk/trac/ticket/211
-(defpgcustom use-holes (eq proof-assistant-symbol 'coq)
+(defpgcustom use-holes t
   "Whether or not to use the holes (editing template) mechanism.
 Enabled by default for Coq.
 Currently this setting is UNIMPLEMENTED, changes have no effect."
   :type 'boolean
   :group 'prover-config)
 
-(defpgcustom one-command-per-line
-  (cond
-   ((eq proof-assistant-symbol 'isar)  nil)
-   (t t))
+(defpgcustom one-command-per-line t
   "*If non-nil, format for newlines after each command in a script."
   :type 'boolean
   :group 'proof-user-options)
-
 
 ;; Contributed modes
 
@@ -195,7 +183,7 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
   :set 'proof-set-value
   :group 'proof-user-options)
 
-(defpgcustom unicode-tokens-enable (eq proof-assistant-symbol 'isar)
+(defpgcustom unicode-tokens-enable nil
   "*Non-nil for using Unicode token input mode in Proof General."
   :type 'boolean
   :set 'proof-set-value

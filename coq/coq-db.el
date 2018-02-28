@@ -8,10 +8,9 @@
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
+;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
 ;; Author: Pierre Courtieu <courtieu@lri.fr>
-
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 
 ;;; Commentary:
 ;;
@@ -22,9 +21,6 @@
 ;;
 
 ;;; Code:
-
-(eval-when-compile
-  (require 'cl))
 
 (require 'proof-config)			; for proof-face-specs, a macro
 (require 'proof-syntax)			; for proof-ids-to-regexp
@@ -212,7 +208,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  t)))
 	    (setq res (nconc res (list menu-entry)))));; append *in place*
 	(setq l (cdr l))
-	(decf size)))
+	(cl-decf size)))
     res))
 
 
