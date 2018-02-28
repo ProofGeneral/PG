@@ -29,11 +29,11 @@ git checkout async
 make
 ```
 
-Then add the following to your .emacs:
+Then add the following to your `.emacs`:
 
 ```
 ;; Open .v files with Proof General's Coq mode
-(load "<path-to>/PG/generic/proof-site")
+(load "<path-to>/PG/generic/proof-site.el")
 ```
 
 If Proof General complains about a version mismatch, make sure that
