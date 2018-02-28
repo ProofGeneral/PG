@@ -1012,8 +1012,8 @@ Typical values are 2 or 4."
 (defun coq-smie-rules (kind token)
   "Indentation rules for Coq.  See `smie-rules-function'.
 KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
-  (case kind
-     (:elem (case token
+  (cl-case kind
+     (:elem (cl-case token
 	      (basic proof-indent)))
      (:close-all t)
      (:list-intro
