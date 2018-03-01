@@ -10,11 +10,27 @@
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 ;; Portions © Copyright 2016-2018  Massachusetts Institute of Technology
 
-;;; Commentary
+;; Author: Paul Steckler
 
+;; Proof General is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; Proof General is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with Proof General. If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
 ;; XML represented in same way as Emacs does, using grammar shown at
 ;;
 ;;   https://www.emacswiki.org/emacs/XmlParserExamples
+
+;;; Code:
 
 (require 'xml)
 (require 'cl-lib)
