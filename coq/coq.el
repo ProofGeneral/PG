@@ -78,7 +78,7 @@
 ;;  :group 'coq)
 
 (defcustom coq-user-init-cmd nil
-  "user defined init commands for Coq.
+  "User defined init commands for Coq.
 These are appended at the end of `coq-shell-init-cmd'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
@@ -91,12 +91,12 @@ These are appended at the end of `coq-shell-init-cmd'."
 ;; Default coq is only Private_ and _subproof
 (defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
  "\"Private_\" \"_subproof\""
-  "String for blacklisting strings from requests to coq environment."
+  "String for blacklisting strings from requests to Coq environment."
   :type 'string
   :group 'coq)
 
 (defcustom coq-prefer-top-of-conclusion nil
-  "prefer start of the conclusion over its end when displaying goals
+  "Prefer start of the conclusion over its end when displaying goals
 that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
@@ -885,7 +885,7 @@ Support dot.notation.of.modules."
         (if notation (concat "\"" notation "\"") ""))))
 
 (defcustom coq-remap-mouse-1 nil
-  "Wether coq mode should remap mouse button 1 to coq queries.
+  "Whether Coq mode should remap mouse button 1 to Coq queries.
 
 This overrides the default global binding of (control mouse-1) and
 (shift mouse-1) (buffers and faces menus). Hence it is nil by
@@ -1841,7 +1841,7 @@ Near here means PT is either inside or just aside of a comment."
 
 
 (defpacustom search-blacklist coq-search-blacklist-string
-  "Strings to blacklist in requests to coq environment."
+  "Strings to blacklist in requests to Coq environment."
   :type 'string
   :get 'coq-get-search-blacklist
   :setting coq-set-search-blacklist)
