@@ -48,7 +48,7 @@
   (defvar coq-debug))
 
 (defcustom coq-prog-env nil
-  "List of environment settings d to pass to Coq process.
+  "List of environment settings to pass to Coq process.
 On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
@@ -457,8 +457,8 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
     (coq-coqtop-prog-args coq-load-path)))
 
 (defcustom coq-use-project-file t
-  "If t, when opening a coq file read the dominating _CoqProject.
-If t, when a coq file is opened, Proof General will look for a
+  "If t, when opening a Coq file read the dominating _CoqProject.
+If t, when a Coq file is opened, Proof General will look for a
 project file (see `coq-project-filename') somewhere in the
 current directory or its parent directories.  If there is one,
 its contents are read and used to determine the arguments that

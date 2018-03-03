@@ -114,7 +114,7 @@
   :group 'coq)
 
 (defcustom coq-user-init-cmds nil
-  "user defined init commands for Coq.
+  "User defined init commands for Coq.
 These are appended at the end of `coq-server-init-cmds'."
   :type '(repeat (cons (string :tag "command")))
   :group 'coq)
@@ -634,7 +634,7 @@ Based on idea mentioned in Coq reference manual."
       (proof-invisible-command (coq-queries-print-visibility-thunk))))))
 
 (defcustom coq-remap-mouse-1 nil
-  "Whether coq mode should remap mouse button 1 to coq queries.
+  "Whether Coq mode should remap mouse button 1 to Coq queries.
 
 This overrides the default global binding of (control mouse-1) and
 (shift mouse-1) (buffers and faces menus). Hence it is nil by
