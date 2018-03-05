@@ -1011,37 +1011,36 @@ after closing focus")
 (defun coq-server--xml-parse (response call span)
   ;; claimed invariant: response is well-formed XML
   (when response
-    (insert response)
-    (coq-xml-unescape-buffer)
-    (setq coq-server--current-call call)
-    (setq coq-server--current-span span)
-    (let ((xml (coq-xml-get-next-xml)))
-      (run-hook-with-args coq-server-response-hook xml)
-      (pcase (coq-xml-tag xml)
-	;; feedbacks are most common, so put first here
-	(`feedback (coq-server--handle-feedback xml))
-	(`value (coq-server--handle-value xml span))
-	(`message (coq-server--handle-message xml))
-	(t (proof-debug-message "Unknown coqtop response %s" xml))))
-    (when (> (buffer-size) 0)
-      ;; since current reponse invalid, don't send anything more
-      (coq-tq-flush coq-server-transaction-queue)
-      (message "*** Ill-formed XML:\n%s\n*** End of ill-formed XML" (buffer-string))
-      (erase-buffer)
-      (let ((warning "Warning: received ill-formed XML from Coq.")
-	    (advice "Goto an earlier good point in the script to resync.")
-	    (cmd "To help diagnose the issue, enable logging with \"M-x proof-server-enable-logging\"."))
-	(message-box "%s\n\n%s\n\n%s" warning advice cmd)))))
+    (with-temp-buffer
+      (insert response)
+      (coq-xml-unescape-buffer)
+      (setq coq-server--current-call call)
+      (setq coq-server--current-span span)
+      (let ((xml (coq-xml-get-next-xml)))
+	(run-hook-with-args coq-server-response-hook xml)
+	(pcase (coq-xml-tag xml)
+	  ;; feedbacks are most common, so put first here
+	  (`feedback (coq-server--handle-feedback xml))
+	  (`value (coq-server--handle-value xml span))
+	  (`message (coq-server--handle-message xml))
+	  (t (proof-debug-message "Unknown coqtop response %s" xml))))
+      (when (> (buffer-size) 0)
+	;; since current reponse invalid, don't send anything more
+	(coq-tq-flush coq-server-transaction-queue)
+	(message "*** Ill-formed XML:\n%s\n*** End of ill-formed XML" (buffer-string))
+	(erase-buffer)
+	(let ((warning "Warning: received ill-formed XML from Coq.")
+	      (advice "Goto an earlier good point in the script to resync.")
+	      (cmd "To help diagnose the issue, enable logging with \"M-x proof-server-enable-logging\"."))
+	  (message-box "%s\n\n%s\n\n%s" warning advice cmd))))))
 
 ;; process XML response from Coq
 (defun coq-server-process-response (response call span)
-  (with-current-buffer coq-xml-response-buffer
-    (coq-server--xml-parse response call span)))
+  (coq-server--xml-parse response call span))
 
 ;; process OOB response from Coq
 (defun coq-server-process-oob (_closure oob call span)
-  (with-current-buffer coq-xml-oob-buffer
-    (coq-server--xml-parse oob call span)))
+  (coq-server--xml-parse oob call span))
 
 (defun coq-server-handle-tq-response (special-processor response call span)
   ;; if there's a special processor, use that

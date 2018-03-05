@@ -399,17 +399,6 @@ to write out the traversal code by hand each time."
     (insert s)
     (libxml-parse-xml-region (point-min) (point-max))))
 
-;; buffer for gluing coqtop responses into XML
-;; leading space makes buffer invisible, for the most part
-(defvar coq-xml--response-buffer-name " *coq-responses*")
-(defvar coq-xml-response-buffer (get-buffer-create coq-xml--response-buffer-name))
-
-;; buffer for gluing coqtop out-of-band responses into XML
-;; this is separate from ordinary response buffer because these
-;;  OOB responses may occur while processing ordinary responses
-(defvar coq-xml--oob-buffer-name " *coq-oob-responses*")
-(defvar coq-xml-oob-buffer (get-buffer-create coq-xml--oob-buffer-name))
-
 ;;; functions for XML received from coqtop
 ;;; these assume that current-buffer is a response buffer
 ;;; though not the *response* buffer seen by user
