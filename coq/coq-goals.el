@@ -140,8 +140,7 @@
 	(insert (coq-goals--format-goal-with-hypotheses 
 		 (coq-goals--goal-goal goal1)
 		 (coq-goals--goal-hypotheses goal1)))
-	(when goals-rest
-	  (insert "\n")))
+	(insert "\n"))
       (dolist (goal goals-rest)
 	(cl-incf goal-counter)
 	(insert (format "\nsubgoal %s (ID %s):\n" goal-counter (coq-goals--goal-id goal)))
@@ -170,7 +169,7 @@
 	      (beginning-of-line)
 	      ;; find something backward else than a space: end of conclusion
 	      (ignore-errors (search-backward-regexp "\\S-"))
-	      (recenter (- 1)) ; put bottom of conclusion at bottom of window
+	      (recenter -1) ; put bottom of conclusion at bottom of window
 	      (beginning-of-line)
 	      ;; if the top of conclusion is hidden we may want to show it instead
 	      ;; of bottom of conclusion
