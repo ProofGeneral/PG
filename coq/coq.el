@@ -525,12 +525,12 @@ nearest preceding span with a state id."
                (lambda (sp) (span-property sp 'processing-in))
                spans)))
         (mapc 'span-delete processing-spans)))
-    ;; if auto-retracting on error, leave error in response buffer
-    (if (or coq-server-retraction-on-error
-            coq-server-retraction-on-interrupt)
-        (setq coq-server-retraction-on-error nil
-              coq-server-retraction-on-interrupt nil)
+    ;; if auto-retracting on error or interrupt, leave error in response buffer
+    (unless (or coq-server-retraction-on-error
+                coq-server-retraction-on-interrupt)
       (coq-response-clear-response-buffer))
+    (when coq-server-retraction-on-interrupt
+      (setq coq-server-retraction-on-interrupt nil))
     ;; use nearest state id before this span; if none, retract buffer
     (if (and (= (span-start span) 1) coq-retract-buffer-state-id)
         (coq-server--send-retraction coq-retract-buffer-state-id t)
@@ -1131,7 +1131,7 @@ Near here means PT is either inside or just aside of a comment."
                     (signal-process pid 'SIGINT))
                   coq-pids)
             (setq coq-server-retraction-on-interrupt t))))
-      (let* ((current-span (coq-server--get-span-with-state-id coq-current-state-id))
+      (let* ((current-span (coq-span-get-span-with-state-id coq-current-state-id))
              (end (if current-span (span-end current-span) 1)))
         (proof-set-queue-end end)
         (proof-set-locked-end end))

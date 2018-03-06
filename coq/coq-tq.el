@@ -75,12 +75,14 @@
 	      last-search-point
 	      response-complete
 	      call
-	      span)
+	      span
+	      edit-id)
 
 (defun coq-tq-set-last-search-point (tq pt) (setf (coq-tq-last-search-point tq) pt))
 (defun coq-tq-set-queue             (tq queue) (setf (coq-tq-queue tq) queue))
 (defun coq-tq-set-call              (tq call) (setf (coq-tq-call tq) call))
 (defun coq-tq-set-span              (tq span) (setf (coq-tq-span tq) span))
+(defun coq-tq-set-edit-id           (tq edit-id) (setf (coq-tq-edit-id tq) edit-id))
 (defun coq-tq-set-complete          (tq) (setf (coq-tq-response-complete tq) t))
 (defun coq-tq-set-incomplete        (tq) (setf (coq-tq-response-complete tq) nil))
 
@@ -135,13 +137,16 @@
     ;; span will be non-nil for an Add
     (when span
       (coq-tq-set-span tq span))
+    ;; set edit id to return upon response
+    (coq-tq-set-edit-id tq coq-edit-id-counter)
     ;; update sent region
     ;; associate edit id with this span
     (when span
       (with-current-buffer proof-script-buffer
 	(coq-span-color-sent-span span)
 	(proof-set-sent-end (span-end span)))
-      (puthash coq-current-state-id span coq-span-add-call-state-id-tbl)
+      (puthash span coq-current-state-id coq-span-add-state-id-tbl)
+      (puthash coq-current-state-id span coq-add-state-id-span-tbl)
       (puthash coq-edit-id-counter span coq-span-edit-id-tbl))
     (process-send-string (coq-tq-process tq) str)))
 
@@ -294,7 +299,8 @@ needs, and the answer to the question."
 				   (coq-tq-queue-head-closure tq)
 				   answer
 				   (coq-tq-call tq)
-				   (coq-tq-span tq)))
+				   (coq-tq-span tq)
+				   (coq-tq-edit-id tq)))
 		      (error (proof-debug-message
 			      (concat "Error when processing "
 				      (if complete "complete" "partial")

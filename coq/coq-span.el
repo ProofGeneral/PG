@@ -35,23 +35,23 @@
 (require 'coq-xml)
 (require 'coq-header-line)
 
-(defun coq-server--state-id-precedes (state-id-1 state-id-2)
+(defun coq-span-state-id-precedes (state-id-1 state-id-2)
   "Does STATE-ID-1 occur in a span before that for STATE-ID-2?"
-  (let ((span1 (coq-server--get-span-with-state-id state-id-1))
-	(span2 (coq-server--get-span-with-state-id state-id-2)))
+  (let ((span1 (coq-span-get-span-with-state-id state-id-1))
+	(span2 (coq-span-get-span-with-state-id state-id-2)))
     (< (span-start span1) (span-start span2))))
 
-(defun coq-server--get-span-with-predicate (pred &optional span-list)
+(defun coq-span-get-span-with-predicate (pred &optional span-list)
   (with-current-buffer proof-script-buffer
     (let* ((all-spans (or span-list (spans-all))))
       (cl-find-if pred all-spans))))
 
 ;; we could use the predicate mechanism, but this happens a lot
 ;; so use hash table
-(defun coq-server--get-span-with-state-id (state-id)
+(defun coq-span-get-span-with-state-id (state-id)
   (gethash state-id coq-span-state-id-tbl))
 
-(defun coq-server--get-span-with-edit-id (edit-id)
+(defun coq-span-get-span-with-edit-id (edit-id)
   (gethash edit-id coq-span-edit-id-tbl))
 
 (defun coq-span-color-span (span face)
@@ -63,7 +63,7 @@
 
 (defun coq-span-color-span-on-feedback (xml status face &optional force-processed)
   (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
-	 (span-with-state-id (coq-server--get-span-with-state-id state-id)))
+	 (span-with-state-id (coq-span-get-span-with-state-id state-id)))
     ;; can see feedbacks with state id not yet associated with a span
     ;; also can find a span with a state id that's been deleted from script buffer,
     ;;  but not yet garbage-collected from table

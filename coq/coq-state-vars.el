@@ -79,14 +79,18 @@ It's the state id returned after Init command sent.")
 ;; values are weak, because spans can be deleted, as on a retract
 (defvar coq-span-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
 
+;; table mapping spans to state id at time of an Add
+(defvar coq-span-add-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
+
+;; table mapping state id at time of an Add to spans
+(defvar coq-add-state-id-span-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
+
 ;; associate edit ids with spans
 ;; edit ids are numbers, so don't need to use 'equal as test like we did for state ids
 (defvar coq-span-edit-id-tbl (make-hash-table :weakness 'value))
 
-;; associate state ids with spans
-;; for a span, this is the state id in the corresponding Add call, NOT the state id later associated
-;;  with the span
-(defvar coq-span-add-call-state-id-tbl (make-hash-table :test 'equal :weakness 'key-and-value))
+;; associate edit ids with state-ids
+(defvar coq-edit-id-state-id-tbl (make-hash-table :weakness 'value))
 
 ;; table maps PG face to a rank governing precedence
 (defvar coq-face-rank-tbl (make-hash-table))
@@ -101,8 +105,10 @@ It's the state id returned after Init command sent.")
   (mapc 'clrhash
 	(list coq-error-fail-tbl
 	      coq-span-state-id-tbl
+	      coq-span-add-state-id-tbl
+	      coq-add-state-id-span-tbl
 	      coq-span-edit-id-tbl
-	      coq-span-add-call-state-id-tbl
+	      coq-edit-id-state-id-tbl
 	      coq-feedbacks-tbl)))
 
 (add-hook 'proof-server-restart-hook 'coq-reset-tables)
