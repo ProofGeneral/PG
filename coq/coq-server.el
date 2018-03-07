@@ -39,6 +39,7 @@
 (require 'proof-script)
 (require 'pg-goals)
 
+(require 'coq-system)
 (require 'coq-tq)
 (require 'coq-response)
 (require 'coq-goals)
@@ -72,6 +73,10 @@ after closing focus")
 
 (defvar coq-server--current-span nil
   "Span associated with last response")
+
+(defvar coq-server--current-edit-id nil
+  "Edit id associated with last response;
+   different from coq-edit-id-counter")
 
 (defvar coq-server-retraction-on-error nil
   "Was the last retraction due to an error")
@@ -319,7 +324,7 @@ after closing focus")
 (defun coq-server--set-init-state-id (xml)
   (let ((state-id (coq-server--value-init-state-id xml)))
     (setq coq-retract-buffer-state-id state-id)
-    (coq-server--update-state-id state-id)))
+    (coq-server--update-ids state-id coq-server--current-edit-id)))
 
 ;; value when updating state id from an Add
 (defvar coq-server--value-new-state-id-footprint
@@ -333,7 +338,7 @@ after closing focus")
   (let ((state-id (coq-xml-at-path
 		   xml
 		   '(value (pair (state_id val))))))
-    (coq-server--update-state-id-and-process state-id)))
+    (coq-server--update-state-id-and-process state-id coq-server--current-edit-id)))
 
 ;; Add'ing past end of focus
 (defvar coq-server--value-end-focus-footprint
@@ -359,21 +364,23 @@ after closing focus")
 (defun coq-server--set-span-state-id (span val)
   (span-set-property span 'state-id val))
 
-(defun coq-server--register-state-id (span state-id)
+(defun coq-server--register-ids (span state-id edit-id)
   (coq-server--set-span-state-id span state-id)
-  (puthash state-id span coq-span-state-id-tbl))
+  ;; coq-tq already associated edit-id with span, no need here
+  (puthash state-id span coq-span-state-id-tbl)
+  (puthash edit-id state-id coq-edit-id-state-id-tbl))
 
 (defun coq-server--end-focus (xml)
   (let ((qed-state-id (coq-server--end-focus-qed-state-id xml))
 	(new-tip-state-id (coq-server--end-focus-new-tip-state-id xml)))
-    (coq-server--register-state-id coq-server--current-span qed-state-id)
+    (coq-server--register-ids coq-server--current-span qed-state-id coq-server--current-edit-id)
     (coq-server--process-queued-feedbacks qed-state-id)
     (setq coq-server--start-of-focus-state-id nil)
     ;; prevents current span from getting new tip state id
     (setq coq-server--current-span nil)
     (when proof-locked-secondary-span
       (coq-server--merge-locked-spans))
-    (coq-server--update-state-id-and-process new-tip-state-id)
+    (coq-server--update-state-id-and-process new-tip-state-id coq-server--current-edit-id)
     ;; if user has edited within secondary locked region, retract to edit point
     (when coq-server--end-focus-retract-point
       (with-current-buffer proof-script-buffer
@@ -390,12 +397,12 @@ after closing focus")
   error-start
   error-end)
 
-(defvar coq-server--retract-error nil)
+(defvar coq-server--last-retract-error nil)
 
 ;; show error after a retract
 ;; span will be detached after the retract, so save its endpoints
 (defun coq-server--queue-retract-error (span error-start error-end msg)
-  (setq coq-server--retract-error
+  (setq coq-server--last-retract-error
 	(make-coq-server-error
 	 :msg msg
 	 :start (span-start span)
@@ -404,13 +411,13 @@ after closing focus")
 	 :error-end error-end)))
 
 (defun coq-server--show-retract-error ()
-  (when coq-server--retract-error
-    (let* ((msg (coq-server-error-msg coq-server--retract-error))
-	   (start (coq-server-error-start coq-server--retract-error))
-	   (end (coq-server-error-end coq-server--retract-error))
-	   (error-start (coq-server-error-error-start coq-server--retract-error))
-	   (error-end (coq-server-error-error-end coq-server--retract-error)))
-      (setq coq-server--retract-error nil)
+  (when coq-server--last-retract-error
+    (let* ((msg (coq-server-error-msg coq-server--last-retract-error))
+	   (start (coq-server-error-start coq-server--last-retract-error))
+	   (end (coq-server-error-end coq-server--last-retract-error))
+	   (error-start (coq-server-error-error-start coq-server--last-retract-error))
+	   (error-end (coq-server-error-error-end coq-server--last-retract-error)))
+      (setq coq-server--last-retract-error nil)
       ;; warp point if retraction on error, not on buffer edit
       (let ((warp coq-server-retraction-on-error))
 	(setq coq-server-retraction-on-error nil)
@@ -419,7 +426,7 @@ after closing focus")
 (defun coq-server--simple-backtrack ()
   ;; delete spans marked for deletion
   (with-current-buffer proof-script-buffer
-    (let* ((retract-span (coq-server--get-span-with-state-id coq-server--pending-edit-at-state-id))
+    (let* ((retract-span (coq-span-get-span-with-state-id coq-server--pending-edit-at-state-id))
 	   (start (or (and retract-span (1+ (span-end retract-span)))
 		      (point-min)))
 	   (sent-end (or (and retract-span (span-end retract-span))
@@ -501,9 +508,9 @@ after closing focus")
 
 (defun coq-server--create-secondary-locked-span (focus-start-state-id focus-end-state-id last-tip-state-id)
   (with-current-buffer proof-script-buffer
-    (let* ((focus-start-span (coq-server--get-span-with-state-id focus-start-state-id))
-	   (focus-end-span (coq-server--get-span-with-state-id focus-end-state-id))
-	   (last-tip-span (coq-server--get-span-with-state-id last-tip-state-id))
+    (let* ((focus-start-span (coq-span-get-span-with-state-id focus-start-state-id))
+	   (focus-end-span (coq-span-get-span-with-state-id focus-end-state-id))
+	   (last-tip-span (coq-span-get-span-with-state-id last-tip-state-id))
 	   (all-spans (spans-in (span-start focus-start-span) (span-end last-tip-span)))
 	   (marked-spans (cl-remove-if-not
 			  (lambda (span) (span-property span 'marked-for-deletion))
@@ -584,7 +591,7 @@ after closing focus")
   (and (coq-server--value-simple-backtrack-p xml) ; response otherwise looks like simple backtrack
        coq-server--start-of-focus-state-id
        (or (equal coq-server--pending-edit-at-state-id coq-retract-buffer-state-id)
-	   (coq-server--state-id-precedes
+	   (coq-span-state-id-precedes
 	    coq-server--pending-edit-at-state-id
 	    coq-server--start-of-focus-state-id))))
 
@@ -596,14 +603,18 @@ after closing focus")
   (coq-error-set-update)
   (coq-server--make-edit-at-state-id-current))
 
-(defun coq-server--update-state-id (state-id)
+;; lookup state id for given edit id
+(defun state-id-from-edit-id (edit-id)
+  (gethash edit-id coq-edit-id-state-id-tbl))
+
+(defun coq-server--update-ids (state-id edit-id)
   (setq coq-current-state-id state-id)
   (when coq-server--current-span
-    (coq-server--register-state-id coq-server--current-span state-id)
+    (coq-server--register-ids coq-server--current-span state-id edit-id)
     (coq-server--process-queued-feedbacks state-id)))
 
-(defun coq-server--update-state-id-and-process (state-id)
-  (coq-server--update-state-id state-id)
+(defun coq-server--update-state-id-and-process (state-id edit-id)
+  (coq-server--update-ids state-id edit-id)
   (when (> coq-server--pending-add-count 0)
     (setq coq-server--pending-add-count (1- coq-server--pending-add-count)))
   ;; gotten response from all Adds, ask for goals/status
@@ -633,15 +644,17 @@ after closing focus")
 (defun coq-server--valid-state-id (state-id)
   (not (equal state-id "0")))
 
-(defun coq-server--backtrack-to-valid-state (valid-state-id)
+(defun coq-server--backtrack-to-valid-state (valid-state-id &optional start-p)
   (when (and proof-script-buffer
 	     (coq-server--valid-state-id valid-state-id))
     (with-current-buffer proof-script-buffer
       (if (equal valid-state-id coq-retract-buffer-state-id)
 	  (goto-char (point-min))
-	(let ((valid-span (coq-server--get-span-with-state-id valid-state-id)))
+	(let ((valid-span (coq-span-get-span-with-state-id valid-state-id)))
 	  (if (and valid-span (span-buffer valid-span))
-	      (goto-char (span-end valid-span))
+	      (if start-p
+		  (goto-char (span-start valid-span))
+		(goto-char (span-end valid-span)))
 	    ;; can't find span to retract to, punt
 	    (goto-char (point-min)))))
       (proof-goto-point))))
@@ -660,10 +673,12 @@ after closing focus")
   (unless (coq-server--was-query-call)
     ;; in case it was an Edit_at that failed
     (setq coq-server--pending-edit-at-state-id nil)
-    ;; don't clear pending edit-at state id here
     ;; because we may get failures from Status/Goals before the edit-at value
     ;; we usually see the failure twice, once for Goal, again for Status
-    (let* ((last-valid-state-id (coq-xml-at-path xml '(value (state_id val))))
+    (let* ((state-id (coq-xml-at-path xml '(value (state_id val))))
+	   (last-valid-state-id
+	    (or (when (coq-server--valid-state-id state-id) state-id)
+		(gethash fail-span coq-span-add-state-id-tbl)))
 	   (loc-start (let ((pos (coq-xml-at-path xml '(value loc_s))))
 			(and pos (string-to-number pos))))
 	   (loc-end (let ((pos (coq-xml-at-path xml '(value loc_e))))
@@ -680,12 +695,15 @@ after closing focus")
 	      (_ (coq-xml-bad-protocol)))))
       ;; queue this error for retract finish
       ;; if we mark error now, it will just disappear
-      (when fail-span
-	(coq-server--queue-retract-error
-	 fail-span
-	 (or loc-start 0)
-	 (or loc-end (- (span-end fail-span) (span-start fail-span)))
-	 error-msg))
+      ;; the error that triggered the fail-value must be in the statement Added
+      ;;  with the last valid state id
+      (let ((err-span (gethash last-valid-state-id coq-add-state-id-span-tbl)))
+	(when err-span
+	  (coq-server--queue-retract-error
+	   err-span
+	   (or loc-start 0)
+	   (or loc-end (- (span-end err-span) (span-start err-span)))
+	   error-msg)))
       (coq-response-clear-response-buffer)
       (coq-display-response error-msg)
       (unless (gethash xml coq-error-fail-tbl)
@@ -745,13 +763,13 @@ after closing focus")
 ;; we distinguish value responses by their syntactic structure
 ;; and a little bit by some global state
 ;; can we do better?
-(defun coq-server--handle-value (xml span)
+(defun coq-server--handle-value (xml)
   (let ((status (coq-xml-val xml)))
     (pcase status
       ("good"
        (coq-server--handle-good-value xml))
       ("fail"
-       (coq-server--handle-failure-value xml span)))))
+       (coq-server--handle-failure-value xml coq-server--current-span)))))
 
 ;; delay creating the XML so it will have the right state-id
 ;; the returned lambda captures the passed item, which is why
@@ -773,7 +791,7 @@ after closing focus")
 ;; error coloring heuristic
 (defun coq-server--error-span-at-end-of-locked (error-span)
   ;; proof-locked-span may be detached, so lookup needed span
-  (let* ((locked-span (coq-server--get-span-with-predicate
+  (let* ((locked-span (coq-span-get-span-with-predicate
 		       (lambda (span)
 			 (equal (span-property span 'face) 'proof-locked-face))
 		       ;; locked region always begins at point-min
@@ -790,8 +808,8 @@ after closing focus")
       (progn
 	(coq-response-clear-response-buffer)
 	(coq-display-response msg))
-    (let ((span (or (coq-server--get-span-with-state-id state-id)
-		    (coq-server--get-span-with-edit-id edit-id)
+    (let ((span (or (coq-span-get-span-with-state-id state-id)
+		    (coq-span-get-span-with-edit-id edit-id)
 		    ;; no span associated with state id or edit id
 		    ;; assume current span
 		    coq-server--current-span)))
@@ -817,6 +835,40 @@ after closing focus")
 (defun coq-server--display-warning (state-id edit-id msg start stop)
   (coq-server--display-error-or-warning nil state-id edit-id msg start stop))
 
+;; retract to point based on errmsg feedback, as we would do for a fail-value
+;; this is optional behavior, ordinarily we just mark the error
+(defun coq-server--errormsg-retract (state-id edit-id msg start stop)
+  ;; flush queue of actions
+  (proof-server-clear-state)
+  ;; flush feedback queues
+  (clrhash coq-feedbacks-tbl)
+  ;; remove pending calls to Coq
+  ;; different than the fail-value case, because the statement that generated
+  ;;  the feedback may have received a good value, a long time ago
+  ;; so flush entire queue (for fail-value, leave 1 value in queue)
+  (coq-tq-flush coq-server-transaction-queue)
+  ;; no more pending Adds
+  (setq coq-server--pending-add-count 0)
+  (setq coq-server--pending-edit-at-state-id nil)
+  (coq-response-clear-response-buffer)
+  (coq-display-response msg)
+  (let ((retract-state-id
+	 (or (and (coq-server--valid-state-id state-id) state-id)
+	     (state-id-from-edit-id edit-id))))
+    ;; unlike fail-value case, we see the errormsg feedback just once
+    ;; so no need to memoize the XML 
+    (when (coq-server--valid-state-id retract-state-id)
+      (let ((fail-span (coq-span-get-span-with-state-id retract-state-id)))
+	(when fail-span
+	  (coq-server--queue-retract-error
+	   fail-span
+	   (or start 0)
+	   (or stop (- (span-end fail-span) (span-start fail-span)))
+	   msg)))
+      (setq coq-server--backtrack-on-failure t)
+      (setq coq-server-retraction-on-error t)
+      (coq-server--backtrack-to-valid-state state-id t))))
+
 ;; this is for 8.5
 (defun coq-server--handle-errormsg (xml)
   ;; memoize this errormsg response
@@ -838,7 +890,9 @@ after closing focus")
 			 '(feedback (edit_id val)))))
     ;; may get either state id or edit id
     ;; can get error message not associated with script text
-    (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop)))
+    (if coq-errormsg-as-failure
+	(coq-server--errormsg-retract error-state-id error-edit-id error-msg error-start error-stop)
+      (coq-server--display-error error-state-id error-edit-id error-msg error-start error-stop))))
 
 ;; this is for 8.6+
 (defun coq-server--handle-error-or-warning (error-p xml)
@@ -863,7 +917,9 @@ after closing focus")
     ;; may get either state id or edit id
     ;; may get error or warning message not associated with script text
     (if error-p
-	(coq-server--display-error state-id edit-id msg start stop)
+	(if coq-errormsg-as-failure
+	    (coq-server--errormsg-retract state-id edit-id msg start stop)
+	  (coq-server--display-error state-id edit-id msg start stop))
       (coq-server--display-warning state-id edit-id msg start stop))))
 
 (defun coq-server--handle-error (xml)
@@ -923,7 +979,7 @@ after closing focus")
 (defun coq-server--handle-feedback (xml)
   (let* ((state-id (coq-xml-at-path xml '(feedback (state_id val))))
 	 (span-with-state-id (and state-id ; might have edit_id
-				  (coq-server--get-span-with-state-id state-id)))
+				  (coq-span-get-span-with-state-id state-id)))
 	 (feedback-content (coq-xml-at-path xml '(feedback (_) (feedback_content val)))))
     ;; queue feedback if it's not a message and no span to associate it with
     (if (and (not (equal feedback-content "message"))
@@ -1008,19 +1064,17 @@ after closing focus")
       ;; otherwise, just display message
       (coq-display-response msg))))
 
-(defun coq-server--xml-parse (response call span)
+(defun coq-server--xml-parse (response)
   ;; claimed invariant: response is well-formed XML
   (when response
     (insert response)
     (coq-xml-unescape-buffer)
-    (setq coq-server--current-call call)
-    (setq coq-server--current-span span)
     (let ((xml (coq-xml-get-next-xml)))
       (run-hook-with-args coq-server-response-hook xml)
       (pcase (coq-xml-tag xml)
 	;; feedbacks are most common, so put first here
 	(`feedback (coq-server--handle-feedback xml))
-	(`value (coq-server--handle-value xml span))
+	(`value (coq-server--handle-value xml))
 	(`message (coq-server--handle-message xml))
 	(t (proof-debug-message "Unknown coqtop response %s" xml))))
     (when (> (buffer-size) 0)
@@ -1034,20 +1088,26 @@ after closing focus")
 	(message-box "%s\n\n%s\n\n%s" warning advice cmd)))))
 
 ;; process XML response from Coq
-(defun coq-server-process-response (response call span)
+(defun coq-server-process-response (response call span edit-id)
+  (setq coq-server--current-call call)
+  (setq coq-server--current-span span)
+  (setq coq-server--current-edit-id edit-id)
   (with-current-buffer coq-xml-response-buffer
-    (coq-server--xml-parse response call span)))
+    (coq-server--xml-parse response)))
 
 ;; process OOB response from Coq
-(defun coq-server-process-oob (_closure oob call span)
+(defun coq-server-process-oob (_closure oob call span edit-id)
+  (setq coq-server--current-call call)
+  (setq coq-server--current-span span)
+  (setq coq-server--current-edit-id edit-id)
   (with-current-buffer coq-xml-oob-buffer
-    (coq-server--xml-parse oob call span)))
+    (coq-server--xml-parse oob)))
 
-(defun coq-server-handle-tq-response (special-processor response call span)
+(defun coq-server-handle-tq-response (special-processor response call span edit-id)
   ;; if there's a special processor, use that
   (if special-processor
-      (funcall special-processor response call span)
-    (coq-server-process-response response call span))
+      (funcall special-processor response call span edit-id)
+    (coq-server-process-response response call span edit-id))
   ;; advance script queue
   (proof-server-manage-output response))
 

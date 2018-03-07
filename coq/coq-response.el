@@ -214,9 +214,10 @@ Only when three-buffer-mode is enabled."
 	      (span-set-property error-span 'help-echo msg)
 	      ;; must set priority using special call
 	      (span-set-priority error-span (gethash face coq-face-rank-tbl))
-	      (span-set-property error-span 'type 'pg-error)
-	      (when warp
-		(goto-char (+ start start-offs)))))))
+	      (span-set-property error-span 'type 'pg-error)))
+	  ;; warp even in the case of a duplicate
+	  (when warp
+	    (goto-char (+ start start-offs)))))
       ;; return start of error highlighting
       start)))
 

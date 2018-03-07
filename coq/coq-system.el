@@ -119,6 +119,11 @@ processes. By default, not enabled for Windows, for stability reasons."
   :type 'integer
   :group 'coq)
 
+(defcustom coq-errormsg-as-failure nil
+  "Error message feedbacks cause retraction"
+  :type 'boolean
+  :group 'coq)
+
 (defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
   "The default TAGS table for the Coq library."
   :type 'string
