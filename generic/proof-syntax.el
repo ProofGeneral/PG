@@ -236,7 +236,7 @@ this were even more bogus...."
 (eval-after-load "font-lock"
 '(progn
 (defadvice font-lock-fontify-keywords-region
-  (before font-lock-fontify-keywords-advice (beg end loudly))
+  (before font-lock-fontify-keywords-advice (beg end &optional loudly))
   "Call proof assistant specific syntactic region fontify.
 If it's bound, we call <PA>-font-lock-fontify-syntactically-region."
   (when (and proof-buffer-type
