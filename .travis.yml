@@ -7,6 +7,7 @@ env:
   - EMACS_TARGET=emacs-24.5
   - EMACS_TARGET=emacs-25.1
   - EMACS_TARGET=emacs-25.2
+  - EMACS_TARGET=emacs-25.3
 
 before_install:
   - make -f Makefile.travis before_install
