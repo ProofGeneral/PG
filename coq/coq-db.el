@@ -316,7 +316,7 @@ See `coq-syntax-db' for DB structure."
   :group 'proof-faces)
 
 (defface coq-symbol-face
-  '((t :inherit default-face :bold coq-bold-unicode-binders))
+  '((t :inherit font-lock-type-face :bold coq-bold-unicode-binders))
   "Face for unicode binders, by default a bold version of `font-lock-type-face'."
   :group 'proof-faces)
 
