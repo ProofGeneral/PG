@@ -1,5 +1,7 @@
 # Proof General — Organize your proofs!
 
+[![Build Status](https://travis-ci.org/ProofGeneral/PG.svg?branch=async)](https://travis-ci.org/ProofGeneral/PG/branches)
+
 ## Overview
 
 Proof General is an Emacs interface for the Coq proof assistant.
