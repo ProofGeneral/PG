@@ -2,11 +2,27 @@
 
 [![Build Status](https://travis-ci.org/ProofGeneral/PG.svg?branch=master)](https://travis-ci.org/ProofGeneral/PG)
 
+## Overview
+
 Proof General is a generic Emacs interface for proof assistants.
 The aim of the Proof General project is to provide a powerful, generic
 environment for using interactive proof assistants.
 
 This is version 4.4.1~pre of Proof General.
+
+## About Proof General branches
+
+Two editions of Proof General are currently available:
+
+* the (legacy) REPL-based, stable version of Proof General,
+  gathered in the
+  [master](https://github.com/ProofGeneral/PG/tree/master) branch, and
+  licensed under GPLv2;
+* the (newest) Coq-specific, experimental version of Proof General,
+  supporting asynchronous proof processing,
+  gathered in the
+  [async](https://github.com/ProofGeneral/PG/tree/async) branch, and
+  licensed under GPLv3+.
 
 ## Setup
 
@@ -57,3 +73,12 @@ Supported proof assistants:
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
 
 A few example proofs are included in each prover subdirectory.
+
+## Contributing
+
+Contributions to this repository are placed under the BSD-3 license.
+As BSD-3 is compatible with both GPLv2 and GPLv3+, this means that
+we can merge them in both `master` and `async` branches if need be,
+using the same license as the rest of the codebase, while you keep
+all the rights on your code.
+For more info, see <https://opensource.org/licenses/BSD-3-Clause>.
