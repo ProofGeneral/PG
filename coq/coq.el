@@ -1497,6 +1497,86 @@ See  `coq-hide-hyp'."
     (coq-highlight-id-in-goals re)
     (setq coq-highlight-id-last-regexp re)))
 
+
+;;;; Hiding variables
+(defvar coq-hidden-hyps nil)
+
+(defun coq-hide-hyp-aux (h)
+  "Hide hypothesis H's type from the context temporarily.
+(displays \".......\" instead). This function relies on variable
+coq-hyps-positions. The hiding is cancelled as soon as the goals
+buffer is changed, consider using `coq-hide-hyp' if you want the
+hiding to be maintain when scripting/undoing."
+  (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
+    (when hyp-overlay (overlay-put hyp-overlay 'display (concat h ": .......")))))
+
+(defun coq-hide-hyp (h)
+  "Hide hypothesis H's type from the context durably.
+(displays \".......\" instead). This function relies on variable
+coq-hyps-positions. The hiding maintained as the goals buffer is
+changed, thanks to a hook on
+`proof-shell-handle-delayed-output-hook', consider using
+`coq-hide-hyp' if you want the hiding to be maintain when
+scripting/undoing."
+  (interactive)
+  (unless (member h coq-hidden-hyps)
+    (setq coq-hidden-hyps (cons h coq-hidden-hyps))
+    (coq-hide-hyp-aux h)))
+
+(defun coq-unhide-hyp-aux (h)
+"Unhide hypothesis H temporarily.
+See `coq-hide-hyp-aux'."
+    (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
+      (when hyp-overlay (overlay-put hyp-overlay 'display nil))))
+
+(defun coq-unhide-hyp (h)
+"Unhide hypothesis H durably.
+See `coq-hide-hyp'."
+  (interactive)
+  (when (member h coq-hidden-hyps)
+    (setq coq-hidden-hyps (delete h coq-hidden-hyps))
+    (coq-unhide-hyp-aux h)))
+
+(defun coq-unhide-hyp-list (lh)
+    "Hide the type of hypothesis in LH temporarily.
+See `coq-unhide-hyp-aux'."
+  (mapcar 'coq-unhide-hyp-aux lh))
+
+(defun coq-hide-hyp-list (lh)
+    "Hide the type of hypothesis in LH temporarily.
+See `coq-hide-hyp-aux'."
+  (mapcar 'coq-hide-hyp-aux lh))
+
+(defun coq-hide-hyps ()
+    "Hide the type of hypothesis in LH durably.
+See `coq-hide-hyp'."
+  (interactive)
+  (coq-hide-hyp-list coq-hidden-hyps))
+
+
+(defun coq-unhide-hyps ()
+    "Unhide the type of hypothesis in LH durably.
+See `coq-unhide-hyp'."
+  (interactive)
+  (coq-unhide-hyp-list coq-hidden-hyps)
+  (setq coq-hidden-hyps nil))
+
+(defun coq-toggle-hide-hyp (h)
+  "Toggle the hiding status of hypothesis H.
+See  `coq-hide-hyp'."
+  (interactive "sHypothesis to hide: ")
+  (if (member h coq-hidden-hyps)
+      (coq-unhide-hyp h)
+    (coq-hide-hyp h)))
+
+(defun coq-toggle-hide-hyp-at-point ()
+  "Toggle the hiding status of hypothesis H whose name is at point.
+See  `coq-hide-hyp'."
+  (interactive)
+  (coq-toggle-hide-hyp
+   (substring-no-properties (coq-id-or-notation-at-point))))
+;;;;;;;
+
 (proof-definvisible coq-PrintHint "Print Hint. ")
 
 ;; Items on show menu
@@ -2802,7 +2882,8 @@ number of hypothesis displayed, without hiding the goal"
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda () (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
-            (coq-highlight-selected-hyps)))
+            (coq-highlight-selected-hyps))
+            (coq-hide-hyps))
 
 
 
