@@ -947,13 +947,14 @@ Otherwise propose identifier at point if any."
      nil 'proof-minibuffer-history guess)))
 
 
-(defun coq-ask-do (ask do &optional dontguess postformatcmd)
+(defun coq-ask-do (ask do &optional dontguess postformatcmd wait)
   "Ask for an ident and print the corresponding term."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
     (proof-shell-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
     (proof-shell-invisible-command
-     (format (concat do " %s . ") (funcall postform cmd)))))
+     (format (concat do " %s . ") (funcall postform cmd))
+     wait)))
 
 
 (defun coq-flag-is-on-p (testcmd)
@@ -1062,8 +1063,13 @@ This is specific to `coq-mode'."
    ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
    ;;  "_ind" "_rec" "R_" "_equation"
    "SearchAbout (ex: \"eq_\" eq -bool)"
-   "SearchAbout")
-  (message "use [Coq/Settings/Search Blacklist] to change blacklisting."))
+   "SearchAbout"
+   nil nil t)
+  ; uncomment to highlight hyps cites in "About"'s result.
+  ;(coq-highlight-hyps-cited-in-response)
+  ;(message "use M-x coq-unhighlight-selected-hyps to remove hypothesis highlighting")
+  (message "use [Coq/Settings/Search Blacklist] to change blacklisting.")
+  )
 
 
 
@@ -1371,12 +1377,83 @@ goal is redisplayed."
          (rd (read-number (format "Width (%S): " deflt) deflt)))
     (coq-adapt-printing-width t rd)))
 
+;;;;;;;;;;;;;; Highlighting hypothesis ;;;;;;;;
+(defvar coq-hyps-positions nil)
+(defvar coq-highlighted-hyps nil)
+
+(defun coq-highlight-hyp-aux (h)
+  (let* ((hyp-pos (assoc h coq-hyps-positions))
+         (hyp-beg (cadr hyp-pos))
+         (hyp-end (caddr hyp-pos))
+         (hyp-overlay-already
+          (and hyp-beg (car (with-current-buffer proof-goals-buffer (overlays-at hyp-beg 'hyp)))))
+         (hyp-overlay 
+          (and hyp-beg hyp-end (or hyp-overlay-already (make-overlay hyp-beg hyp-end proof-goals-buffer)))))
+    (when hyp-overlay
+      (overlay-put hyp-overlay 'face '(:background "lavender"))
+      (overlay-put hyp-overlay 'hyp t))))
+
+(defun coq-unhighlight-hyp-aux (h)
+  (let* ((hyp-pos (assoc h coq-hyps-positions))
+         (hyp-beg (cadr hyp-pos))
+         (hyp-end (caddr hyp-pos))
+         (hyp-overlay-already
+          (and hyp-beg (car (with-current-buffer proof-goals-buffer (overlays-at hyp-beg 'hyp))))))
+    (when hyp-overlay-already (delete-overlay hyp-overlay-already))))
+
+
+(defun coq-highlight-hyp (h)
+  (unless (member h coq-highlighted-hyps)
+    (setq coq-highlighted-hyps (cons h coq-highlighted-hyps)))
+  (coq-highlight-hyp-aux h))
+
+(defun coq-highlight-hyps (lh)
+  (mapcar 'coq-highlight-hyp lh))
+
+(defun coq-highlight-selected-hyps ()
+  (interactive)
+  (coq-highlight-hyps coq-highlighted-hyps))
+
+(defun coq-unhighlight-hyp (h)
+  (when (member h coq-highlighted-hyps)
+    (setq coq-highlighted-hyps (delete h coq-highlighted-hyps))
+    (coq-unhighlight-hyp-aux h)))
+
+(defun coq-unhighlight-hyps (lh)
+  (mapcar 'coq-unhighlight-hyp-aux lh))
+
+(defun coq-unhighlight-selected-hyps ()
+  (interactive)
+  (coq-unhighlight-hyps coq-highlighted-hyps)
+  (setq coq-highlighted-hyps nil))
+
+(defun coq-get-hyps-cited-in-response ()
+  (let ((hyps-cited (coq-detect-hyps proof-response-buffer)))
+    (remove-if-not
+     (lambda (e)
+       (seq-find
+        (lambda (f)
+          (string-equal (car e) (car f)))
+        hyps-cited))
+     coq-hyps-positions)))
+
+(defun coq-highlight-hyps-cited-in-response ()
+  (let  ((inters (coq-get-hyps-cited-in-response)))
+    (coq-unhighlight-selected-hyps)
+    (setq coq-highlighted-hyps (mapcar 'car inters))
+    (coq-highlight-selected-hyps)))
+
+;;;;;;;;;;;;;;;;;;
 
 (defvar coq-highlight-id-last-regexp nil)
 
 (defun coq-highlight-id-in-goals (re)
   (with-current-buffer proof-goals-buffer
     (highlight-regexp re 'lazy-highlight)))
+
+(defun coq-highlight-hyp-in-goals (re)
+  (with-current-buffer proof-goals-buffer
+    (highlight-regexp (concat "   [^[:blank:]].+" re ".+\n   [^[:blank:]]") 'lazy-highlight)))
 
 (defun coq-unhighlight-id-in-goals (re)
   (with-current-buffer proof-goals-buffer
@@ -2695,6 +2772,9 @@ number of hypothesis displayed, without hiding the goal"
                                     proof-shell-last-output)
                 (proof-clean-buffer proof-goals-buffer))))
 
+(add-hook 'proof-shell-handle-delayed-output-hook
+	  (lambda () (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
+            (coq-highlight-selected-hyps)))
 
 (defun is-not-split-vertic (selected-window)
   (<= (- (frame-height) (window-height)) 2))

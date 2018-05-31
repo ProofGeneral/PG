@@ -1358,8 +1358,30 @@ It is used:
 ;; 1 space this is a hypothesis displayed in the middle of a line (> v8.5)
 ;; "^    " is for goals in debug mode.
 (defvar coq-hyp-name-in-goal-or-response-regexp
-    "\\(^\\|^  \\|^    \\|[^^ ] ?  \\)\\(\\(?:[^\n :(),=]\\|, \\)+ *\\(?::[ \n]\\|,$\\)\\)"
+    "\\(^\\|^  \\|^    \\|[^^ ] ?  \\)\\(?:\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::[ \n]\\|,$\\)\\)"
   "regexp matching hypothesis names in goal or response buffer")
+
+(defvar coq-hyp-name-or-goalsep-in-goal-or-response-regexp
+  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\n\\s-+========")
+  )
+
+(defun coq-detect-hyps (buf)
+  (with-current-buffer buf
+    (save-excursion
+      (goto-char (point-min))
+      (let ((res '()))
+        (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
+          (let* ((str (match-string 2))
+                 (beg (match-beginning 2))
+                 (splitstr (split-string str ",\\|,$\\|:" t "\\s-"))
+                 (end (save-excursion
+                        (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
+                        (match-beginning 0))))
+            (mapcar
+             (lambda (s) (setq res (cons (cons (substring-no-properties s) (cons beg (cons end nil))) res)))
+             splitstr)))
+        ;; TODO: register thje last hyp.
+        res))))
 
 ;; We define a slightly different set of keywords for response buffer.
 
