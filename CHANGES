@@ -60,6 +60,24 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     
     The set of tokens can be seen in variable smie-grammar.
 
+*** Highlighting and hiding of hypothesis
+
+    A new mechanism to hide or highlight hypothesis (even if the goal
+    changes) in the goals buffer. This is meant to deal with large goals.
+
+    M-x coq-toggle-hide-hyp
+    M-x coq-toggle-hide-hyp-at-point
+
+    M-x coq-unhighlight-selected-hyps
+
+    M-x coq-toggle-highlight-hyp
+    M-x coq-toggle-highlight-hyp-at-point
+
+    Hypothesis cited in the response buffer after a "About" command
+    (C-c C-a C-a) will be highlighted.
+
+**** Hypothesis cited in the response buffer.
+
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
     - 123: Parallel background compliation fails to execute some
