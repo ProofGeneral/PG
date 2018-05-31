@@ -1066,9 +1066,8 @@ This is specific to `coq-mode'."
    "SearchAbout"
    nil nil t)
   ; uncomment to highlight hyps cites in "About"'s result.
-  ;(coq-highlight-hyps-cited-in-response)
-  ;(message "use M-x coq-unhighlight-selected-hyps to remove hypothesis highlighting")
-  (message "use [Coq/Settings/Search Blacklist] to change blacklisting.")
+  (coq-highlight-hyps-cited-in-response)
+  (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting.")
   )
 
 
@@ -1381,26 +1380,41 @@ goal is redisplayed."
 (defvar coq-hyps-positions nil)
 (defvar coq-highlighted-hyps nil)
 
-(defun coq-highlight-hyp-aux (h)
+(defun coq-find-hyp-overlay (h)
   (let* ((hyp-pos (assoc h coq-hyps-positions))
          (hyp-beg (cadr hyp-pos))
          (hyp-end (caddr hyp-pos))
          (hyp-overlay-already
-          (and hyp-beg (car (with-current-buffer proof-goals-buffer (overlays-at hyp-beg 'hyp)))))
-         (hyp-overlay 
-          (and hyp-beg hyp-end (or hyp-overlay-already (make-overlay hyp-beg hyp-end proof-goals-buffer)))))
+          (and hyp-beg
+               (car (with-current-buffer proof-goals-buffer
+                      (overlays-at hyp-beg 'hyp))))))
+    hyp-overlay-already))
+
+(defun coq-find-or-create-hyp-overlay (h)
+  (let* ((hyp-pos (assoc h coq-hyps-positions))
+         (hyp-beg (cadr hyp-pos))
+         (hyp-end (caddr hyp-pos))
+         (hyp-overlay-already
+          (and hyp-beg
+               (car (with-current-buffer proof-goals-buffer
+                      (overlays-at hyp-beg 'hyp)))))
+         (hyp-overlay (and hyp-beg hyp-end
+                           (or hyp-overlay-already
+                               (make-overlay hyp-beg hyp-end proof-goals-buffer)))))
+    ;; if it was just created
+    (and hyp-overlay (overlay-put hyp-overlay 'hyp t))
+    hyp-overlay))
+
+(defun coq-highlight-hyp-aux (h)
+  (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
     (when hyp-overlay
       (overlay-put hyp-overlay 'face '(:background "lavender"))
-      (overlay-put hyp-overlay 'hyp t))))
+      (overlay-put hyp-overlay 'invisible nil))))
 
 (defun coq-unhighlight-hyp-aux (h)
-  (let* ((hyp-pos (assoc h coq-hyps-positions))
-         (hyp-beg (cadr hyp-pos))
-         (hyp-end (caddr hyp-pos))
-         (hyp-overlay-already
-          (and hyp-beg (car (with-current-buffer proof-goals-buffer (overlays-at hyp-beg 'hyp))))))
-    (when hyp-overlay-already (delete-overlay hyp-overlay-already))))
-
+  (let* ((hyp-overlay-already (coq-find-hyp-overlay h)))
+    (when hyp-overlay-already
+      (overlay-put hyp-overlay-already 'face '(:background "unspecified-bg")))))
 
 (defun coq-highlight-hyp (h)
   (unless (member h coq-highlighted-hyps)
@@ -1443,6 +1457,21 @@ goal is redisplayed."
     (setq coq-highlighted-hyps (mapcar 'car inters))
     (coq-highlight-selected-hyps)))
 
+(defun coq-toggle-highlight-hyp (h)
+  "Toggle the highlighting status of hypothesis H.
+See  `coq-highlight-hyp'."
+  (interactive "sHypothesis name to highlight:")
+  (if (member h coq-highlighted-hyps)
+      (coq-unhighlight-hyp h)
+    (coq-highlight-hyp h)))
+
+(defun coq-toggle-highlight-hyp-at-point ()
+  "Toggle the hiding status of hypothesis H whose name is at point.
+See  `coq-hide-hyp'."
+  (interactive)
+  (coq-toggle-highlight-hyp
+   (substring-no-properties (coq-id-or-notation-at-point))))
+
 ;;;;;;;;;;;;;;;;;;
 
 (defvar coq-highlight-id-last-regexp nil)
@@ -1467,7 +1496,6 @@ goal is redisplayed."
       (coq-unhighlight-id-in-goals coq-highlight-id-last-regexp))
     (coq-highlight-id-in-goals re)
     (setq coq-highlight-id-last-regexp re)))
-
 
 (proof-definvisible coq-PrintHint "Print Hint. ")
 
@@ -2775,6 +2803,8 @@ number of hypothesis displayed, without hiding the goal"
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda () (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
             (coq-highlight-selected-hyps)))
+
+
 
 (defun is-not-split-vertic (selected-window)
   (<= (- (frame-height) (window-height)) 2))
