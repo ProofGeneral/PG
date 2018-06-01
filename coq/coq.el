@@ -53,7 +53,6 @@
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
 
-
 ;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
 (declare-function smie-bnf->prec2 "smie")
 (declare-function smie-rule-parent-p "smie")
@@ -1056,19 +1055,6 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-ask-do "SearchRewrite" "SearchRewrite" nil))
 
-;; TODO SearchAbout become Search in v8.5, change when V8.4 becomes old.
-(defun coq-SearchAbout ()
-  (interactive)
-  (coq-ask-do
-   ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
-   ;;  "_ind" "_rec" "R_" "_equation"
-   "SearchAbout (ex: \"eq_\" eq -bool)"
-   "SearchAbout"
-   nil nil t)
-  ; uncomment to highlight hyps cites in "About"'s result.
-  (coq-highlight-hyps-cited-in-response)
-  (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting.")
-  )
 
 
 
@@ -1376,28 +1362,48 @@ goal is redisplayed."
          (rd (read-number (format "Width (%S): " deflt) deflt)))
     (coq-adapt-printing-width t rd)))
 
-;;;;;;;;;;;;;; Highlighting hypothesis ;;;;;;;;
-(defvar coq-hyps-positions nil)
-(defvar coq-highlighted-hyps nil)
+;;;;; utils fo overlays
+(defun coq-overlays-at (pt prop)
+  (let ((overlays (overlays-at pt))
+        found)
+    (while overlays
+      (let ((overlay (car overlays)))
+        (if (overlay-get overlay prop)
+            (setq found (cons overlay found))))
+      (setq overlays (cdr overlays)))
+    found))
+
+;;;;;;;;;; Hypothesis tracking ;;;;;;;;;;
+;;; Facilities to build overlays for hyp names and hyp+type.
+;;; These are built on-demand: 
+;; - hyp names overlays are always (proof-shell-handle-delayed-output-hook)
+;; - hyp+type overlays are built when hiding a hypothesis, then it is not
+;; destroyed until the goals buffer is changed
+
+(defvar coq-hyps-positions nil
+  "The list of positions of hypothesis in the goals buffer.
+Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 
 (defun coq-find-hyp-overlay (h)
+  "Finds the hyp+type overlay for hyp H, or nil."
   (let* ((hyp-pos (assoc h coq-hyps-positions))
          (hyp-beg (cadr hyp-pos))
          (hyp-end (caddr hyp-pos))
          (hyp-overlay-already
           (and hyp-beg
                (car (with-current-buffer proof-goals-buffer
-                      (overlays-at hyp-beg 'hyp))))))
+                      (coq-overlays-at hyp-beg 'hyp))))))
     hyp-overlay-already))
 
 (defun coq-find-or-create-hyp-overlay (h)
+  "Finds the hyp+type overlay for hyp H, or create one."
   (let* ((hyp-pos (assoc h coq-hyps-positions))
          (hyp-beg (cadr hyp-pos))
          (hyp-end (caddr hyp-pos))
          (hyp-overlay-already
           (and hyp-beg
                (car (with-current-buffer proof-goals-buffer
-                      (overlays-at hyp-beg 'hyp)))))
+                      (coq-overlays-at hyp-beg 'hyp)))))
          (hyp-overlay (and hyp-beg hyp-end
                            (or hyp-overlay-already
                                (make-overlay hyp-beg hyp-end proof-goals-buffer)))))
@@ -1405,53 +1411,115 @@ goal is redisplayed."
     (and hyp-overlay (overlay-put hyp-overlay 'hyp t))
     hyp-overlay))
 
+(defun coq-find-hypname-overlay (h)
+  "Finds the hyp name overlay for hyp H."
+  (let* ((hyp-pos (assoc h coq-hyps-positions))
+         (hyp-beg (cadr hyp-pos))
+         (hyp-end (cadddr hyp-pos))
+         (hyp-overlay-already
+          (and hyp-beg
+               (car (with-current-buffer proof-goals-buffer
+                      (coq-overlays-at hyp-beg 'hypname))))))
+    hyp-overlay-already))
+
+(defun coq-find-or-create-hypname-overlay (h)
+  "Finds the hyp name overlay for hyp H, or create one."
+  (let* ((hyp-pos (assoc h coq-hyps-positions))
+         (hyp-beg (cadr hyp-pos))
+         (hyp-end (cadddr hyp-pos))
+         (hyp-overlay-already
+          (and hyp-beg
+               (car (with-current-buffer proof-goals-buffer
+                      (coq-overlays-at hyp-beg 'hypname)))))
+         (hyp-overlay (and hyp-beg hyp-end
+                           (or hyp-overlay-already
+                               (make-overlay hyp-beg hyp-end proof-goals-buffer)))))
+    ;; if it was just created
+    (and hyp-overlay (overlay-put hyp-overlay 'hypname t))
+    hyp-overlay))
+
+
+;;;;;;;;;;;;;; Highlighting hypothesis ;;;;;;;;
+;; Feature: highlighting of hyptohesis that remains when the cript is played
+;; (and goals buffer is updated).
+
+;; On by default. This only works with the SearchAbout function for now.
+(defvar coq-highlight-hyps-cited-in-response t
+  "If non-nil, try to highlight in goals buffers cited hyps response.")
+
+;; We maintain a list of hypothesis names that must be highlighted at each
+;; regeneration of goals buffer.
+(defvar coq-highlighted-hyps nil
+  "List of hypothesis names that must be highlighted.
+These are rehighlighted at each regeneration of goals buffer
+using a hook in `proof-shell-handle-delayed-output-hook'.")
+
 (defun coq-highlight-hyp-aux (h)
+  "Auxiliary function, use `coq-highlight-hyp' for sticky highlighting.
+Unless you want the highlighting to disappear after the goals
+buffer is updated."
   (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
     (when hyp-overlay
       (overlay-put hyp-overlay 'face '(:background "lavender"))
       (overlay-put hyp-overlay 'invisible nil))))
 
 (defun coq-unhighlight-hyp-aux (h)
+  "Auxiliary function, use `coq-unhighlight-hyp' for sticky highlighting.
+Unless you want the highlighting to disappear after the goals
+buffer is updated."
   (let* ((hyp-overlay-already (coq-find-hyp-overlay h)))
     (when hyp-overlay-already
       (overlay-put hyp-overlay-already 'face '(:background "unspecified-bg")))))
 
 (defun coq-highlight-hyp (h)
+  "Highlight hypothesis named H (sticky).
+use `coq-unhighlight-hyp' to unhilight."
   (unless (member h coq-highlighted-hyps)
     (setq coq-highlighted-hyps (cons h coq-highlighted-hyps)))
   (coq-highlight-hyp-aux h))
 
-(defun coq-highlight-hyps (lh)
-  (mapcar 'coq-highlight-hyp lh))
-
-(defun coq-highlight-selected-hyps ()
-  (interactive)
-  (coq-highlight-hyps coq-highlighted-hyps))
-
 (defun coq-unhighlight-hyp (h)
+  "Unhighlight hypothesis named H."
   (when (member h coq-highlighted-hyps)
     (setq coq-highlighted-hyps (delete h coq-highlighted-hyps))
     (coq-unhighlight-hyp-aux h)))
 
+(defun coq-highlight-hyps (lh)
+  (mapc 'coq-highlight-hyp lh))
+
 (defun coq-unhighlight-hyps (lh)
-  (mapcar 'coq-unhighlight-hyp-aux lh))
+  (mapc 'coq-unhighlight-hyp-aux lh))
+
+(defun coq-highlight-selected-hyps ()
+  "Highlight all hyps stored in `coq-highlighted-hyps'.
+This used in hook to rehilight hypothesis after goals buffer is
+updated."
+  (interactive)
+  (coq-highlight-hyps coq-highlighted-hyps))
 
 (defun coq-unhighlight-selected-hyps ()
+  "Unhighlight all hyps stored in `coq-highlighted-hyps'.
+This used before updating `coq-highlighted-hyps' with a new set
+of hypothesis to highlight."
   (interactive)
   (coq-unhighlight-hyps coq-highlighted-hyps)
   (setq coq-highlighted-hyps nil))
 
 (defun coq-get-hyps-cited-in-response ()
+  "Returns locations of hyps in goals buffer that are cited in response buffer.
+See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
   (let ((hyps-cited (coq-detect-hyps proof-response-buffer)))
     (remove-if-not
      (lambda (e)
-       (seq-find
+       (cl-some;seq-find
         (lambda (f)
           (string-equal (car e) (car f)))
         hyps-cited))
      coq-hyps-positions)))
 
 (defun coq-highlight-hyps-cited-in-response ()
+  "Highlight hypothesis cited in response buffer.
+Highlight always takes place in goals buffer."
   (let  ((inters (coq-get-hyps-cited-in-response)))
     (coq-unhighlight-selected-hyps)
     (setq coq-highlighted-hyps (mapcar 'car inters))
@@ -1465,50 +1533,105 @@ See  `coq-highlight-hyp'."
       (coq-unhighlight-hyp h)
     (coq-highlight-hyp h)))
 
-(defun coq-toggle-highlight-hyp-at-point ()
+(defun coq-highlight ()
   "Toggle the hiding status of hypothesis H whose name is at point.
 See  `coq-hide-hyp'."
   (interactive)
   (coq-toggle-highlight-hyp
    (substring-no-properties (coq-id-or-notation-at-point))))
 
-;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;; Hiding Hypothesis  ;;;;;;;;;;;
+(defvar coq-hypname-visible-hovering t
+  "Whether hyp name overlays should be visible.
+In goals buffer, each hypothesis name has an clickable overlay.
+Making it highlited when thover the mouse on them is nice to
+advertise the feature, but some people are allergic to this kind
+of distracting flickering.")
 
-(defvar coq-highlight-id-last-regexp nil)
+(defvar coq-hidden-hyps nil
+  "List of hypothesis that should be hidden in goals buffer.
+These are re-hidden at each regeneration of goals buffer
+using a hook in `proof-shell-handle-delayed-output-hook'.")
 
-(defun coq-highlight-id-in-goals (re)
-  (with-current-buffer proof-goals-buffer
-    (highlight-regexp re 'lazy-highlight)))
-
-(defun coq-highlight-hyp-in-goals (re)
-  (with-current-buffer proof-goals-buffer
-    (highlight-regexp (concat "   [^[:blank:]].+" re ".+\n   [^[:blank:]]") 'lazy-highlight)))
-
-(defun coq-unhighlight-id-in-goals (re)
-  (with-current-buffer proof-goals-buffer
-    (unhighlight-regexp re)))
-
-(defun coq-highlight-id-at-pt-in-goals ()
+(defun coq-toggle-hide-hyp-at (pt)
+  "Toggle hiding the hypothesis at point."
   (interactive)
-  (let* ((id (coq-id-or-notation-at-point))
-         (re (regexp-quote (or id ""))))
-    (when coq-highlight-id-last-regexp
-      (coq-unhighlight-id-in-goals coq-highlight-id-last-regexp))
-    (coq-highlight-id-in-goals re)
-    (setq coq-highlight-id-last-regexp re)))
+  (let ((hypname 
+         (or 
+          (overlay-get (car (coq-overlays-at pt 'is-hyp-name)) 'hyp-name)
+          (overlay-get (car (coq-overlays-at pt 'hyp)) 'hyp-name))))
+    (if (member hypname coq-hidden-hyps)
+        (coq-unhide-hyp hypname)
+      (coq-hide-hyp hypname))))
 
+(defun coq-toggle-hide-hyp-at-point ()
+  (coq-toggle-hide-hyp-at (point)))
 
-;;;; Hiding variables
-(defvar coq-hidden-hyps nil)
+(defun coq-toggle-hide-hyp-at-mouse (event)
+  "Toggle hiding the hypothesis at mouse click.
+Used on hyptohesis overlays in goals buffer mainly."
+  (interactive "e")
+  (message "pos: %s" (posn-point (event-start event)))
+  (save-excursion
+    (with-current-buffer proof-goals-buffer
+      (save-excursion (coq-toggle-hide-hyp-at (posn-point (event-start event)))))))
+
+(defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis")
+(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
+
+;; Ddefault binding: clicking on a hidden hyp with button 3 unhides it.
+(when coq-hidden-hyp-map 
+  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse))
+
+;; Ddefault binding: clicking on the name of an hyp hides it.
+(when coq-hypname-map 
+  (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse))
+
+(defun coq-build-hidden-hyp-string (h)
+  (propertize (concat h ": .......") 'keymap coq-hidden-hyp-map))
+
+(defun coq-configure-hyp-overlay-hidden (hyp-overlay h)
+  (when hyp-overlay
+    (overlay-put
+     hyp-overlay 'display 
+     (propertize (concat h ": .......") 'keymap coq-hidden-hyp-map))
+    (overlay-put hyp-overlay 'evaporate t)
+    (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
+    (overlay-put hyp-overlay 'help-echo "mouse-3: unhide")
+    (overlay-put hyp-overlay 'hyp-name h)
+    (overlay-put hyp-overlay 'keymap coq-hidden-hyp-map)))
+
+(defun coq-configure-hyp-overlay-visible (hyp-overlay h)
+  (when hyp-overlay
+    (overlay-put hyp-overlay 'display nil)
+    (overlay-put hyp-overlay 'evaporate t)
+    (overlay-put hyp-overlay 'mouse-face nil)
+    (overlay-put hyp-overlay 'help-echo nil)
+    (overlay-put hyp-overlay 'keymap nil)))
+
+(defun coq-configure-hypname-overlay (hyp-overlay h)
+  (when hyp-overlay
+    (overlay-put hyp-overlay 'evaporate t)
+    (overlay-put hyp-overlay 'is-hyp-name t)
+    (overlay-put hyp-overlay 'hyp-name h)
+    ;; only for non allergic
+    (when coq-hypname-visible-hovering
+      (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
+      (overlay-put hyp-overlay 'help-echo "mouse-3: hide"))
+    (overlay-put hyp-overlay 'keymap coq-hypname-map))
+  hyp-overlay)
+
+(defun coq-init-hypname-overlay (h)
+  (coq-configure-hypname-overlay (coq-find-or-create-hypname-overlay h) h))
 
 (defun coq-hide-hyp-aux (h)
   "Hide hypothesis H's type from the context temporarily.
-(displays \".......\" instead). This function relies on variable
+Displays \".......\" instead. This function relies on variable
 coq-hyps-positions. The hiding is cancelled as soon as the goals
 buffer is changed, consider using `coq-hide-hyp' if you want the
 hiding to be maintain when scripting/undoing."
   (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
-    (when hyp-overlay (overlay-put hyp-overlay 'display (concat h ": .......")))))
+    (when hyp-overlay (coq-configure-hyp-overlay-hidden hyp-overlay h))))
 
 (defun coq-hide-hyp (h)
   "Hide hypothesis H's type from the context durably.
@@ -1527,7 +1650,7 @@ scripting/undoing."
 "Unhide hypothesis H temporarily.
 See `coq-hide-hyp-aux'."
     (let ((hyp-overlay (coq-find-or-create-hyp-overlay h)))
-      (when hyp-overlay (overlay-put hyp-overlay 'display nil))))
+      (coq-configure-hyp-overlay-visible hyp-overlay h)))
 
 (defun coq-unhide-hyp (h)
 "Unhide hypothesis H durably.
@@ -1540,12 +1663,12 @@ See `coq-hide-hyp'."
 (defun coq-unhide-hyp-list (lh)
     "Hide the type of hypothesis in LH temporarily.
 See `coq-unhide-hyp-aux'."
-  (mapcar 'coq-unhide-hyp-aux lh))
+  (mapc 'coq-unhide-hyp-aux lh))
 
 (defun coq-hide-hyp-list (lh)
     "Hide the type of hypothesis in LH temporarily.
 See `coq-hide-hyp-aux'."
-  (mapcar 'coq-hide-hyp-aux lh))
+  (mapc 'coq-hide-hyp-aux lh))
 
 (defun coq-hide-hyps ()
     "Hide the type of hypothesis in LH durably.
@@ -1561,8 +1684,15 @@ See `coq-unhide-hyp'."
   (coq-unhide-hyp-list coq-hidden-hyps)
   (setq coq-hidden-hyps nil))
 
+(defun coq-init-hypname-overlays (lh)
+  "(re)generate the overlays on hyps names.
+These overlays are used to allow hiding hypothesis by clicking on
+its name (button 3 should be the default). This is called by a
+hook in `proof-shell-handle-delayed-output-hook'."
+  (mapc 'coq-init-hypname-overlay (mapcar 'car lh)))
+
 (defun coq-toggle-hide-hyp (h)
-  "Toggle the hiding status of hypothesis H.
+  "Toggle the hiding status of hypothesis H (asked interactively).
 See  `coq-hide-hyp'."
   (interactive "sHypothesis to hide: ")
   (if (member h coq-hidden-hyps)
@@ -2591,6 +2721,21 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
       (proof-shell-invisible-command q))))
 
 
+;; TODO SearchAbout become Search in v8.5, change when V8.4 becomes old.
+(defun coq-SearchAbout ()
+  (interactive)
+  (coq-ask-do
+   ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
+   ;;  "_ind" "_rec" "R_" "_equation"
+   "SearchAbout (ex: \"eq_\" eq -bool)"
+   "SearchAbout"
+   nil nil t)
+  (when coq-highlight-hyps-cited-in-response
+    (coq-highlight-hyps-cited-in-response)
+    (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting."))
+  (unless coq-highlight-hyps-cited-in-response
+    (message "[Coq/Settings/Search Blacklist] to change blacklisting.")))
+
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)
 (define-key coq-keymap [(control ?m)] 'coq-insert-match)
@@ -2882,6 +3027,7 @@ number of hypothesis displayed, without hiding the goal"
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda () (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
+            (coq-init-hypname-overlays coq-hyps-positions)
             (coq-highlight-selected-hyps)
             (coq-hide-hyps)))
 

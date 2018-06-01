@@ -60,21 +60,43 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     
     The set of tokens can be seen in variable smie-grammar.
 
-*** Highlighting and hiding of hypothesis
+*** Highlighting of hypothesis
 
-    A new mechanism to hide or highlight hypothesis (even if the goal
-    changes) in the goals buffer. This is meant to deal with large goals.
+    This is meant to deal with large goals. Highlighting is done on a
+    per hyp name fashion. Once a hypothesis is tagged as highlighted
+    it remains highlighted until you unihghlight it or another set of
+    hyps is highlighted (see below). 
 
-    M-x coq-toggle-hide-hyp
-    M-x coq-toggle-hide-hyp-at-point
+    M-x coq-toggle-hide-hyp 
+    M-x coq-toggle-hide-hyp-at-point (toggles hiding hyp at point)
+    M-x coq-unhide-hyps (unhides everything)
 
-    M-x coq-unhighlight-selected-hyps
+**** Automtic highlighting with (search)About.
+    Hypothesis cited in the response buffer after (C-c C-a C-a) (M-x
+    coq-SearchAbout) will be highlighted automatically. Any other
+    hypothesis highlighted is unhighlighted.
+    
+    To disable this, do:
 
-    M-x coq-toggle-highlight-hyp
-    M-x coq-toggle-highlight-hyp-at-point
+    (setq coq-highlight-hyps-cited-in-response nil)
 
-    Hypothesis cited in the response buffer after a "About" command
-    (C-c C-a C-a) will be highlighted.
+*** Hiding (folding) hypothesis
+
+    This is meant to deal with large goals. Hiding is done on a per
+    hyp name fashion. Once a hypothesis is tagged as hidden it remains
+    hidden until you.
+
+    M-x coq-unhighlight-selected-hyps (removes all highlightings)
+    M-x coq-highlight (toggles highlighting onhyp at point)
+
+**** Click on a hyp to hide/unhide it
+    Hyptohesis names are now clickable (button 3) to be (un)hidden.
+    If you don't like the highlighting of hyp names when hovering it,
+    you can use:
+
+    (setq coq-hypname-visible-hovering nil)
+
+    You will still be able to click them.
 
 **** Hypothesis cited in the response buffer.
 

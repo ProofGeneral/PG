@@ -1358,7 +1358,7 @@ It is used:
 ;; 1 space this is a hypothesis displayed in the middle of a line (> v8.5)
 ;; "^    " is for goals in debug mode.
 (defvar coq-hyp-name-in-goal-or-response-regexp
-    "\\(^\\|^  \\|^    \\|[^^ ] ?  \\)\\(?:\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::[ \n]\\|,$\\)\\)"
+    "\\(^\\|^  \\|^    \\|[^^ ] ?  \\)\\(?:\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)\\)"
   "regexp matching hypothesis names in goal or response buffer")
 
 (defvar coq-hyp-name-or-goalsep-in-goal-or-response-regexp
@@ -1366,6 +1366,9 @@ It is used:
   )
 
 (defun coq-detect-hyps (buf)
+  "Detect all hypothesis displayed in buffer BUF and returns a list of descriptors.
+Descriptors are of the form (hypname start end endofhypname)
+where end is the end of the hypothesis type."
   (with-current-buffer buf
     (save-excursion
       (goto-char (point-min))
@@ -1373,12 +1376,18 @@ It is used:
         (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
           (let* ((str (match-string 2))
                  (beg (match-beginning 2))
+                 (endhypname (match-end 2))
                  (splitstr (split-string str ",\\|,$\\|:" t "\\s-"))
                  (end (save-excursion
                         (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
                         (match-beginning 0))))
-            (mapcar
-             (lambda (s) (setq res (cons (cons (substring-no-properties s) (cons beg (cons end nil))) res)))
+            (mapc
+             (lambda (s)
+               (setq res
+                     (cons 
+                      (cons (substring-no-properties s)
+                            (cons beg (cons end (cons endhypname nil))))
+                      res)))
              splitstr)))
         ;; TODO: register thje last hyp.
         res))))
