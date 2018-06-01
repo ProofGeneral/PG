@@ -2882,8 +2882,8 @@ number of hypothesis displayed, without hiding the goal"
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda () (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
-            (coq-highlight-selected-hyps))
-            (coq-hide-hyps))
+            (coq-highlight-selected-hyps)
+            (coq-hide-hyps)))
 
 
 
