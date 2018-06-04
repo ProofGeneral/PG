@@ -1358,11 +1358,15 @@ It is used:
 ;; 1 space this is a hypothesis displayed in the middle of a line (> v8.5)
 ;; "^    " is for goals in debug mode.
 (defvar coq-hyp-name-in-goal-or-response-regexp
-    "\\(^\\|^  \\|^    \\|[^^ ] ?  \\)\\(?:\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)\\)"
-  "regexp matching hypothesis names in goal or response buffer")
+    "\\(?:\\(?1:\n\\)\\|\\(?1:\n  \\)\\|\\(?1:\n    \\)\\|\\(?:[^ ]\\)\\(?1:   \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)"
+  "regexp matching hypothesis names in goal or response buffer.
+Subexpr 2 contains the real name of the function.
+Subexpr 1 contains the prefix context (spaces mainly) that is not
+part of another hypothesis.")
 
+; Matches the end of the last hyp, before the ======... separator.
 (defvar coq-hyp-name-or-goalsep-in-goal-or-response-regexp
-  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\n\\s-+========")
+  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:\n\\s-+========\\)")
   )
 
 (defun coq-detect-hyps (buf)
@@ -1378,9 +1382,9 @@ where end is the end of the hypothesis type."
                  (beg (match-beginning 2))
                  (endhypname (match-end 2))
                  (splitstr (split-string str ",\\|,$\\|:" t "\\s-"))
-                 (end (save-excursion
+                 (end (save-excursion ; looking for next hyp and return its leftest part
                         (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
-                        (match-beginning 0))))
+                        (match-beginning 1))))
             (mapc
              (lambda (s)
                (setq res
@@ -1389,7 +1393,6 @@ where end is the end of the hypothesis type."
                             (cons beg (cons end (cons endhypname nil))))
                       res)))
              splitstr)))
-        ;; TODO: register thje last hyp.
         res))))
 
 ;; We define a slightly different set of keywords for response buffer.

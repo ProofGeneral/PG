@@ -1447,12 +1447,27 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 (defvar coq-highlight-hyps-cited-in-response t
   "If non-nil, try to highlight in goals buffers cited hyps response.")
 
+(defvar coq-hypname-visible-hovering t
+  "Whether hyp name overlays should be visible, and a help popup.
+In goals buffer, each hypothesis name has a clickable overlay.
+Making it highlited when hovering with mouse is nice to advertise
+the feature, but some people are allergic to this kind of
+distracting flickering. Possible values are: 'only-help,
+'only-highlight, nil, or t. Default is t, which means have both
+highlight and help echo.")
+
 ;; We maintain a list of hypothesis names that must be highlighted at each
 ;; regeneration of goals buffer.
 (defvar coq-highlighted-hyps nil
   "List of hypothesis names that must be highlighted.
 These are rehighlighted at each regeneration of goals buffer
 using a hook in `proof-shell-handle-delayed-output-hook'.")
+
+(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
+;; Ddefault binding: clicking on the name of an hyp hides it.
+(when coq-hypname-map 
+  (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse)
+  (define-key coq-hypname-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 (defun coq-highlight-hyp-aux (h)
   "Auxiliary function, use `coq-highlight-hyp' for sticky highlighting.
@@ -1540,14 +1555,37 @@ See  `coq-hide-hyp'."
   (coq-toggle-highlight-hyp
    (substring-no-properties (coq-id-or-notation-at-point))))
 
-;;;;;;;;;;; Hiding Hypothesis  ;;;;;;;;;;;
-(defvar coq-hypname-visible-hovering t
-  "Whether hyp name overlays should be visible.
-In goals buffer, each hypothesis name has an clickable overlay.
-Making it highlited when thover the mouse on them is nice to
-advertise the feature, but some people are allergic to this kind
-of distracting flickering.")
 
+(defun coq-configure-hypname-overlay (hyp-overlay h)
+  (when hyp-overlay
+    (overlay-put hyp-overlay 'evaporate t)
+    (overlay-put hyp-overlay 'is-hyp-name t)
+    (overlay-put hyp-overlay 'hyp-name h)
+    ;; only for non allergic
+    (cond 
+     ((eq coq-hypname-visible-hovering 'only-help)
+      (overlay-put hyp-overlay 'help-echo "mouse-3: unhide; mouse-2 copy name"))
+     ((eq coq-hypname-visible-hovering 'only-highlight)
+      (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face))
+     ((eq coq-hypname-visible-hovering t)
+      (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
+      (overlay-put hyp-overlay 'help-echo "mouse-3: unhide; mouse-2 copy name")))
+    (overlay-put hyp-overlay 'keymap coq-hypname-map))
+  hyp-overlay)
+
+(defun coq-init-hypname-overlay (h)
+  (coq-configure-hypname-overlay (coq-find-or-create-hypname-overlay h) h))
+
+(defun coq-insert-at-point-hyp-at-mouse (event)
+  (interactive "e")
+  (let ((hyp-name (save-excursion
+                    (with-current-buffer proof-goals-buffer
+                      (save-excursion
+                        (overlay-get (car (overlays-at (posn-point (event-start event))))
+                                     'hyp-name))))))
+    (insert hyp-name)))
+
+;;;;;;;;;;; Hiding Hypothesis  ;;;;;;;;;;;
 (defvar coq-hidden-hyps nil
   "List of hypothesis that should be hidden in goals buffer.
 These are re-hidden at each regeneration of goals buffer
@@ -1571,33 +1609,31 @@ using a hook in `proof-shell-handle-delayed-output-hook'.")
   "Toggle hiding the hypothesis at mouse click.
 Used on hyptohesis overlays in goals buffer mainly."
   (interactive "e")
-  (message "pos: %s" (posn-point (event-start event)))
   (save-excursion
     (with-current-buffer proof-goals-buffer
       (save-excursion (coq-toggle-hide-hyp-at (posn-point (event-start event)))))))
 
 (defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis")
-(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
 
-;; Ddefault binding: clicking on a hidden hyp with button 3 unhides it.
+;; Ddefault binding: clicking on a hidden hyp with button 3 unhides it, with
+;; button 2 it copies hyp name at current point.
 (when coq-hidden-hyp-map 
-  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse))
-
-;; Ddefault binding: clicking on the name of an hyp hides it.
-(when coq-hypname-map 
-  (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse))
-
-(defun coq-build-hidden-hyp-string (h)
-  (propertize (concat h ": .......") 'keymap coq-hidden-hyp-map))
+  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-hide-hyp-at-mouse)
+  (define-key coq-hidden-hyp-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 (defun coq-configure-hyp-overlay-hidden (hyp-overlay h)
   (when hyp-overlay
-    (overlay-put
-     hyp-overlay 'display 
-     (propertize (concat h ": .......") 'keymap coq-hidden-hyp-map))
+    (let ((prefx (save-excursion
+                   (with-current-buffer proof-goals-buffer
+                     (goto-char (overlay-start hyp-overlay))
+                     (search-forward-regexp ":")
+                     (if (looking-at "=") (concat h " := .......") (concat h " : ........"))))))
+      (overlay-put
+       hyp-overlay 'display 
+       (propertize prefx 'keymap coq-hidden-hyp-map)))
     (overlay-put hyp-overlay 'evaporate t)
     (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
-    (overlay-put hyp-overlay 'help-echo "mouse-3: unhide")
+    (overlay-put hyp-overlay 'help-echo "mouse-3: unhide; mouse-2 copy name")
     (overlay-put hyp-overlay 'hyp-name h)
     (overlay-put hyp-overlay 'keymap coq-hidden-hyp-map)))
 
@@ -1608,21 +1644,6 @@ Used on hyptohesis overlays in goals buffer mainly."
     (overlay-put hyp-overlay 'mouse-face nil)
     (overlay-put hyp-overlay 'help-echo nil)
     (overlay-put hyp-overlay 'keymap nil)))
-
-(defun coq-configure-hypname-overlay (hyp-overlay h)
-  (when hyp-overlay
-    (overlay-put hyp-overlay 'evaporate t)
-    (overlay-put hyp-overlay 'is-hyp-name t)
-    (overlay-put hyp-overlay 'hyp-name h)
-    ;; only for non allergic
-    (when coq-hypname-visible-hovering
-      (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
-      (overlay-put hyp-overlay 'help-echo "mouse-3: hide"))
-    (overlay-put hyp-overlay 'keymap coq-hypname-map))
-  hyp-overlay)
-
-(defun coq-init-hypname-overlay (h)
-  (coq-configure-hypname-overlay (coq-find-or-create-hypname-overlay h) h))
 
 (defun coq-hide-hyp-aux (h)
   "Hide hypothesis H's type from the context temporarily.
