@@ -1354,11 +1354,18 @@ It is used:
      (proof-zap-commas))))
 
 
-;; ", " is for multiple hypothesis displayed in v8.5. If more than
-;; 1 space this is a hypothesis displayed in the middle of a line (> v8.5)
-;; "^    " is for goals in debug mode.
+;; ", " is for multiple hypothesis displayed in v8.5.
+;; exactly no space after start of line = hyps names in
+;;   Search results (and when we get a more compact display of hyps)
+;; exactly 2 spaces at start of line = is for normal goal display at
+;;   start of line
+;; exactly 3 spaces at start of line = hyps on the same line (Set
+;;   Printing Compact Goals".
+;; If more than 3 spaces: not a hyp.
+;; we used to have: "^ " for goals in debug mode but it does not seem
+;; necessary anymore.
 (defvar coq-hyp-name-in-goal-or-response-regexp
-    "\\(?:\\(?1:\n\\)\\|\\(?1:\n  \\)\\|\\(?1:\n    \\)\\|\\(?:[^ ]\\)\\(?1:   \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)"
+    "\\(?:\\(?1:^\\)\\|\\(?1:^  \\)\\|\\(?:[^ ]\\)\\(?1:   \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)"
   "regexp matching hypothesis names in goal or response buffer.
 Subexpr 2 contains the real name of the function.
 Subexpr 1 contains the prefix context (spaces mainly) that is not
