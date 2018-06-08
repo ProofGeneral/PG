@@ -62,34 +62,26 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 *** Clickable Hypothesis in goals buffer
 
-    button 3 on a hyp name hides/unhides it (fold/unfold). 
-    button 2 on a hyp name copies its name at current cursor position.
+    Clicking on a hyp name in goals buffer with button 2 copies its
+    name at current point position (which should be in the scripting
+    buffer). This eases the insertion of hypothesis names in scripts.
 
-    hide/unhide status remains when goal changes.
+*** Folding/unfolding hypothesis
 
-    You can define keyboard shortcuts for these:
+   A cross "-" is displayed to the left of each hypothesis of the
+   goals buffer. Clicking ont it (button 1) hides/unhides the
+   hypothesis. You can also hit "f" while ont he hypothesis.
+   
+   Hide/ unhide status remains when goal changes.
 
-    M-x coq-toggle-hide-hyp (asks for a hyp name)
-    M-x coq-toggle-hide-hyp-at-point (toggles hiding hyp at point)
-    M-x coq-unhide-hyps (unhides everything)
-
-    By default hypothesis names are highlighted when hovered with the
-    mouse, and a small help also pops up. you can disable it with on
-    of these:
-    
-     (setq coq-hypname-visible-hovering 'only-help) 
-     (setq coq-hypname-visible-hovering 'only-highlight) 
-     (setq coq-hypname-visible-hovering nil) ;; nothing
-     (setq coq-hypname-visible-hovering t) ;; both, default
 
 *** Highlighting of hypothesis
 
-    you can highlight hypothesis on a per name fashion. 
+    You can highlight hypothesis on a per name fashion. Hit "h" while
+    on the hypothesis.
 
     Highlighting status remains when goal changes.
 
-    M-x coq-highlight (toggles highlighting on hyp at point)
-    M-x coq-unhighlight-selected-hyps (removes all highlightings)
 
 **** Automtic highlighting with (search)About.
     Hypothesis cited in the response buffer after C-c C-a C-a (i.e.

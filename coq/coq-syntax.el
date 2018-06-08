@@ -1365,7 +1365,7 @@ It is used:
 ;; we used to have: "^ " for goals in debug mode but it does not seem
 ;; necessary anymore.
 (defvar coq-hyp-name-in-goal-or-response-regexp
-    "\\(?:\\(?1:^\\)\\|\\(?1:^  \\)\\|\\(?:[^ ]\\)\\(?1:   \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\) *\\(?::=?[ \n]\\|,$\\)"
+  "\\(?:\\(?1:^\\)\\|\\(?1:^  \\)\\|\\(?:[^ ] \\)\\(?1:  \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\)\\(?: *:=?[ \n]\\|,$\\)"
   "regexp matching hypothesis names in goal or response buffer.
 Subexpr 2 contains the real name of the function.
 Subexpr 1 contains the prefix context (spaces mainly) that is not
@@ -1373,34 +1373,38 @@ part of another hypothesis.")
 
 ; Matches the end of the last hyp, before the ======... separator.
 (defvar coq-hyp-name-or-goalsep-in-goal-or-response-regexp
-  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:\n\\s-+========\\)")
+  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:^\\s-+========\\)")
   )
 
-(defun coq-detect-hyps (buf)
-  "Detect all hypothesis displayed in buffer BUF and returns a list of descriptors.
-Descriptors are of the form (hypname start end endofhypname)
-where end is the end of the hypothesis type."
+(defun coq-detect-hyps-positions (buf)
+  "Detect all hypothesis displayed in buffer BUF and returns positions.
+5 positions are created for each hyp: (begcross beghypname
+endhypname beg end)."
   (with-current-buffer buf
     (save-excursion
       (goto-char (point-min))
       (let ((res '()))
         (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
           (let* ((str (match-string 2))
-                 (beg (match-beginning 2))
+                 (beghypname (match-beginning 2))
+                 (beg (match-end 0))
+                 (begcross (match-beginning 1))
                  (endhypname (match-end 2))
                  (splitstr (split-string str ",\\|,$\\|:" t "\\s-"))
                  (end (save-excursion ; looking for next hyp and return its leftest part
                         (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
-                        (match-beginning 1))))
-            (mapc
-             (lambda (s)
-               (setq res
-                     (cons 
-                      (cons (substring-no-properties s)
-                            (cons beg (cons end (cons endhypname nil))))
-                      res)))
-             splitstr)))
+                        (goto-char (match-beginning 1))
+                        ;; if previous is a newline, don't include it i the overklay
+                        (when (looking-back "\\s-") (goto-char (- (point) 1)))
+                        (point))))
+            ; if several hyp names, we name the overlays with the first hyp name
+            (setq res
+                  (cons 
+                   (cons (mapcar (lambda (s) (substring-no-properties s)) splitstr)
+                         (list begcross beghypname endhypname beg end))
+                   res))))
         res))))
+
 
 ;; We define a slightly different set of keywords for response buffer.
 

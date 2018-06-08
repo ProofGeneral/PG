@@ -330,6 +330,28 @@ See `coq-syntax-db' for DB structure."
   "Face used for `ltac:', `constr:', and `uconstr:' headers."
   :group 'proof-faces)
 
+;; This messes columns, can't figure out why putting this face makes the overlay
+;; larger than a character
+;; (defface coq-button-face
+;;   '((t :inherit custom-button :background "dark gray"))
+;;   ""
+;;   :group 'proof-faces)
+
+;; (defface coq-button-face-pressed
+;;   '((t :inherit custom-button-pressed :background "light gray"))
+;;   ""
+;;   :group 'proof-faces)
+
+(defface coq-button-face
+  '((t . (:background "light gray")))
+  ""
+  :group 'proof-faces)
+
+(defface coq-button-face-pressed
+  '((t . (:background "dark gray")))
+  ""
+  :group 'proof-faces)
+
 (defconst coq-solve-tactics-face 'coq-solve-tactics-face
   "Expression that evaluates to a face.
 Required so that 'coq-solve-tactics-face is a proper facename")
