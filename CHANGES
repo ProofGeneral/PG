@@ -60,7 +60,7 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     
     The set of tokens can be seen in variable smie-grammar.
 
-*** Clickable Hypothesis in goals buffer
+*** Clickable Hypothesis in goals buffer to copy/paste hyp names
 
     Clicking on a hyp name in goals buffer with button 2 copies its
     name at current point position (which should be in the scripting
@@ -70,15 +70,17 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
    A cross "-" is displayed to the left of each hypothesis of the
    goals buffer. Clicking ont it (button 1) hides/unhides the
-   hypothesis. You can also hit "f" while ont he hypothesis.
+   hypothesis. You can also hit "f" while ont he hypothesis. "F"
+   unfolds all hypothesis.
    
    Hide/ unhide status remains when goal changes.
 
 
 *** Highlighting of hypothesis
 
-    You can highlight hypothesis on a per name fashion. Hit "h" while
-    on the hypothesis.
+    You can highlight hypothesis in goals buffer on a per name
+    fashion. Hit "h" while on the hypothesis. "H" removes all
+    highlighting in the buffer.
 
     Highlighting status remains when goal changes.
 

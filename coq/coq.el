@@ -1471,9 +1471,29 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 (defun coq-build-hyps-overlays (hyp-positions buf)
   (let ((res))
     (mapc (lambda (x) (let ((lassoc (coq-build-hyp-overlay x buf)))
-                      (setq res (append lassoc res))))
+                        (setq res (append lassoc res))))
           hyp-positions)
     res))
+
+; builds the list of names from one hyp position (which may contained several
+; hyp names)
+(defun coq-build-hyp-name (hyp-positions)
+  (let* ((names (car hyp-positions))
+         res)
+    (message "names = %S" names)
+    (mapc (lambda (s) (setq res (cons (substring-no-properties s) res))) names)
+    (message "res = %S" res)
+    res))
+
+;; Build the list of hyps names
+(defun coq-build-hyps-names (hyp-positions)
+  (let ((res))
+    (mapc (lambda (x) (let ((lassoc (coq-build-hyp-name x)))
+                        (message "lassoc = %S" lassoc)
+                        (setq res (append lassoc res))))
+          hyp-positions)
+    res))
+
 
 (defun coq-detect-hyps (buf)
   "Detect all hypothesis displayed in buffer BUF and returns a list overlays.
@@ -1517,6 +1537,7 @@ using a hook in `proof-shell-handle-delayed-output-hook'.")
 
 (when coq-hypname-map 
   (define-key coq-hypcross-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hypcross-map [return] 'coq-toggle-fold-hyp-at-point)
   (define-key coq-hypcross-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 (defun coq-highlight-hyp-aux (h)
@@ -1573,12 +1594,13 @@ of hypothesis to highlight."
 (defun coq-get-hyps-cited-in-response ()
   "Returns locations of hyps in goals buffer that are cited in response buffer.
 See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
-  (let ((hyps-cited (coq-detect-hyps proof-response-buffer)))
+  (let* ((hyps-cited-pos (coq-detect-hyps-positions proof-response-buffer))
+         (hyps-cited (coq-build-hyps-names hyps-cited-pos)))
     (remove-if-not
      (lambda (e)
        (cl-some;seq-find
         (lambda (f)
-          (string-equal (car e) (car f)))
+          (string-equal (car e) f))
         hyps-cited))
      coq-hyps-positions)))
 
@@ -2841,6 +2863,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?n)] 'coq-LocateNotation)
 ;; specific to goals buffer: (un)foldinng and (un)highlighting shortcuts
 (define-key coq-goals-mode-map [?f] 'coq-toggle-fold-hyp-at-point)
+(define-key coq-goals-mode-map [?F] 'coq-unfold-hyps)
 (define-key coq-goals-mode-map [?h] 'coq-toggle-highlight-hyp-at-point)
 (define-key coq-goals-mode-map [?H] 'coq-unhighlight-selected-hyps)
 
