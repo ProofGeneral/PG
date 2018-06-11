@@ -1376,6 +1376,11 @@ goal is redisplayed."
 ;;;;;;;;;; Hypothesis tracking ;;;;;;;;;;
 ;;; Facilities to build overlays for hyp names and hyp+type + hypcross
 ;;; ((un)folding buttons).
+(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
+(defvar coq-hypcross-map (make-sparse-keymap) "Keymap for visible hypothesis")
+
+(defvar coq-hypcross-hovering-help t
+  "Whether hyps fold cross pops up a help when hovered.")
 
 (defvar coq-hyps-positions nil
   "The list of positions of hypothesis in the goals buffer.
@@ -1511,10 +1516,7 @@ for the whole hyp, only its name and the overlay for fold/unfold cross.
 
 ;; On by default. This only works with the SearchAbout function for now.
 (defvar coq-highlight-hyps-cited-in-response t
-  "If non-nil, try to highlight in goals buffers cited hyps response.")
-
-(defvar coq-hypcross-hovering-help t
-  "Whether hyps fold cross pops up a help when hovered.")
+  "If non-nil, try to highlight in goals buffers hyps cited in response.")
 
 ;; We maintain a list of hypothesis names that must be highlighted at each
 ;; regeneration of goals buffer.
@@ -1523,39 +1525,21 @@ for the whole hyp, only its name and the overlay for fold/unfold cross.
 These are rehighlighted at each regeneration of goals buffer
 using a hook in `proof-shell-handle-delayed-output-hook'.")
 
-(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
-
-;; Default binding: clicking on the name of an hyp with button 3 folds it.
-;; Click on it with button 2 copies the names at current point.
-(when coq-hypname-map
-  (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
-  (define-key coq-hypname-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
-
-(defvar coq-hypcross-map (make-sparse-keymap) "Keymap for visible hypothesis")
-;; Default binding: clicking on the cross to folds/unfold hyp.
-;; Click on it with button 2 copies the names at current point.
-
-(when coq-hypname-map 
-  (define-key coq-hypcross-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
-  (define-key coq-hypcross-map [return] 'coq-toggle-fold-hyp-at-point)
-  (define-key coq-hypcross-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
-
 (defun coq-highlight-hyp-aux (h)
   "Auxiliary function, use `coq-highlight-hyp' for sticky highlighting.
 Unless you want the highlighting to disappear after the goals
 buffer is updated."
   (let ((hyp-overlay (coq-find-hyp-overlay h)))
     (when hyp-overlay
-      (overlay-put hyp-overlay 'face '(:background "lavender"))
-      (overlay-put hyp-overlay 'invisible nil))))
+      (overlay-put hyp-overlay 'face '(:background "lavender")))))
 
 (defun coq-unhighlight-hyp-aux (h)
   "Auxiliary function, use `coq-unhighlight-hyp' for sticky highlighting.
 Unless you want the highlighting to disappear after the goals
 buffer is updated."
-  (let* ((hyp-overlay-already (coq-find-hyp-overlay h)))
-    (when hyp-overlay-already
-      (overlay-put hyp-overlay-already 'face '(:background "unspecified-bg")))))
+  (let* ((hyp-overlay (coq-find-hyp-overlay h)))
+    (when hyp-overlay
+      (overlay-put hyp-overlay 'face nil))))
 
 (defun coq-highlight-hyp (h)
   "Highlight hypothesis named H (sticky).
@@ -1653,6 +1637,8 @@ See  `coq-highlight-hyp'."
     (insert hyp-name)))
 
 ;;;;;;;;;;; Hiding Hypothesis  ;;;;;;;;;;;
+(defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis")
+
 (defvar coq-hidden-hyps nil
   "List of hypothesis that should be hidden in goals buffer.
 These are re-hidden at each regeneration of goals buffer
@@ -1680,14 +1666,6 @@ Used on hyptohesis overlays in goals buffer mainly."
   (save-excursion
     (with-current-buffer proof-goals-buffer
       (save-excursion (coq-toggle-fold-hyp-at (posn-point (event-start event)))))))
-
-(defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis")
-
-;; Ddefault binding: clicking on a hidden hyp with button 3 unfolds it, with
-;; button 2 it copies hyp name at current point.
-(when coq-hidden-hyp-map 
-  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
-  (define-key coq-hidden-hyp-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 (defun coq-configure-hyp-overlay-hidden (hyp-overlay h)
   (when hyp-overlay
@@ -2903,6 +2881,27 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (define-key proof-goals-mode-map [(shift mouse-1)] '(lambda () (interactive)))
   (define-key proof-goals-mode-map [(control shift down-mouse-1)] 'coq-id-under-mouse-query)
   (define-key proof-goals-mode-map [(control shift mouse-1)] '(lambda () (interactive))))
+
+
+
+;; Default binding on hypothesis names: clicking on the name of an hyp with
+;; button 3 folds it. Click on it with button 2 copies the names at current
+;; point.
+(when coq-hypname-map
+  (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hypname-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
+
+;; Default binding: clicking on the cross to folds/unfold hyp.
+;; Click on it with button 2 copies the names at current point.
+(when coq-hypname-map 
+  (define-key coq-hypcross-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hypcross-map [return] 'coq-toggle-fold-hyp-at-point)
+  (define-key coq-hypcross-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
+;; Ddefault binding: clicking on a hidden hyp with button 3 unfolds it, with
+;; button 2 it copies hyp name at current point.
+(when coq-hidden-hyp-map 
+  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hidden-hyp-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; error handling
