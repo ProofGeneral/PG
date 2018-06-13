@@ -1485,27 +1485,30 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 (defun coq-build-hyp-name (hyp-positions)
   (let* ((names (car hyp-positions))
          res)
-    (message "names = %S" names)
-    (mapc (lambda (s) (setq res (cons (substring-no-properties s) res))) names)
-    (message "res = %S" res)
+   (mapc (lambda (s) (setq res (cons (substring-no-properties s) res))) names)
     res))
 
 ;; Build the list of hyps names
 (defun coq-build-hyps-names (hyp-positions)
   (let ((res))
     (mapc (lambda (x) (let ((lassoc (coq-build-hyp-name x)))
-                        (message "lassoc = %S" lassoc)
                         (setq res (append lassoc res))))
           hyp-positions)
     res))
 
 
 (defun coq-detect-hyps-in-goals ()
-  "Detect all hypothesis displayed in buffer BUF and returns a list overlays.
+  "Detect all hypothesis displayed in goals buffer and create overlays.
 Three overlays are created for each hyp: (hypov hypnameov hypcrossov), respectively
 for the whole hyp, only its name and the overlay for fold/unfold cross.
+Returnns the list of mappings hypname -> overlays.
 "
-  (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals) proof-goals-buffer))
+  (let*
+      ((fsthyp-pos (coq-find-first-hyp))
+       (fsthyp-ov (when fsthyp-pos (with-current-buffer proof-goals-buffer
+                                     (overlays-at fsthyp-pos)))))
+    (if fsthyp-ov coq-hyps-positions ;overlays are already there
+      (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals) proof-goals-buffer))))
 
 (defun coq-find-hyp-overlay (h)
   (cadr (assoc h coq-hyps-positions)))

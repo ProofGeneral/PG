@@ -1373,8 +1373,14 @@ part of another hypothesis.")
 
 ; Matches the end of the last hyp, before the ======... separator.
 (defvar coq-hyp-name-or-goalsep-in-goal-or-response-regexp
-  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:^\\s-+========\\)")
-  )
+  (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:^\\s-+========\\)"))
+
+(defun coq-find-first-hyp ()
+  (with-current-buffer proof-goals-buffer
+    (save-excursion
+      (goto-char (point-min))
+      (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
+      (match-beginning 2))))
 
 (defun coq-detect-hyps-positions (buf &optional limit)
   "Detect all hypothesis displayed in buffer BUF and returns positions.
