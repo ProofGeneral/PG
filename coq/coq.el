@@ -1506,8 +1506,12 @@ Returnns the list of mappings hypname -> overlays.
   (let*
       ((fsthyp-pos (coq-find-first-hyp))
        (fsthyp-ov (when fsthyp-pos (with-current-buffer proof-goals-buffer
-                                     (overlays-at fsthyp-pos)))))
-    (if fsthyp-ov coq-hyps-positions ;overlays are already there
+                                     (overlays-at fsthyp-pos))))
+       ; is there at least one hyp overlay there?
+       (fsthyp-hypov (when fsthyp-ov
+                       (cl-some (lambda(x) (overlay-get x 'hyp-name))
+                                fsthyp-ov))))
+    (if fsthyp-hypov coq-hyps-positions ;overlays are already there
       (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals) proof-goals-buffer))))
 
 (defun coq-find-hyp-overlay (h)
