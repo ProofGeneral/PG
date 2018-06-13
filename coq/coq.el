@@ -1500,12 +1500,12 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
     res))
 
 
-(defun coq-detect-hyps (buf)
+(defun coq-detect-hyps-in-goals ()
   "Detect all hypothesis displayed in buffer BUF and returns a list overlays.
 Three overlays are created for each hyp: (hypov hypnameov hypcrossov), respectively
 for the whole hyp, only its name and the overlay for fold/unfold cross.
 "
-  (coq-build-hyps-overlays (coq-detect-hyps-positions buf) buf))
+  (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals) proof-goals-buffer))
 
 (defun coq-find-hyp-overlay (h)
   (cadr (assoc h coq-hyps-positions)))
@@ -3048,7 +3048,7 @@ number of hypothesis displayed, without hiding the goal"
               (with-selected-window goal-win
                 ;; find snd goal or buffer end, if not found this goes to the
                 ;; end of buffer
-                (search-forward-regexp "subgoal 2\\|\\'")
+                (search-forward-regexp "subgoal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
                 (beginning-of-line)
                 ;; find something backward else than a space: bottom of concl
                 (ignore-errors (search-backward-regexp "\\S-"))
@@ -3107,7 +3107,7 @@ number of hypothesis displayed, without hiding the goal"
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda ()
-            (setq coq-hyps-positions (coq-detect-hyps proof-goals-buffer))
+            (setq coq-hyps-positions (coq-detect-hyps-in-goals))
             (coq-highlight-selected-hyps)
             (coq-fold-hyps)
             ))

@@ -1376,7 +1376,7 @@ part of another hypothesis.")
   (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:^\\s-+========\\)")
   )
 
-(defun coq-detect-hyps-positions (buf)
+(defun coq-detect-hyps-positions (buf &optional limit)
   "Detect all hypothesis displayed in buffer BUF and returns positions.
 5 positions are created for each hyp: (begcross beghypname
 endhypname beg end)."
@@ -1384,7 +1384,8 @@ endhypname beg end)."
     (save-excursion
       (goto-char (point-min))
       (let ((res '()))
-        (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
+        (goto-char (point-min))
+        (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp limit t)
           (let* ((str (match-string 2))
                  (beghypname (match-beginning 2))
                  (beg (match-end 0))
@@ -1404,6 +1405,14 @@ endhypname beg end)."
                          (list begcross beghypname endhypname beg end))
                    res))))
         res))))
+
+;; Don't look at the conclusion of the goal
+(defun coq-detect-hyps-positions-in-goals ()
+  (with-current-buffer proof-goals-buffer
+    (goto-char (point-min))
+    (coq-detect-hyps-positions
+     proof-goals-buffer
+     (if (search-forward-regexp "==========" nil t) (point) nil))))
 
 
 ;; We define a slightly different set of keywords for response buffer.
