@@ -23,6 +23,7 @@
 (require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
 (require 'span)
+(require 'subr-x)
 
 ;;; keyword databases
 
@@ -1392,12 +1393,12 @@ endhypname beg end)."
       (let ((res '()))
         (goto-char (point-min))
         (while (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp limit t)
-          (let* ((str (match-string 2))
+          (let* ((str (replace-regexp-in-string "\\`[ \r\n\t]+\\|[ \r\n\t]+\\'" "" (match-string 2) t t))
                  (beghypname (match-beginning 2))
                  (beg (match-end 0))
                  (begcross (match-beginning 1))
                  (endhypname (match-end 2))
-                 (splitstr (split-string str ",\\|,$\\|:" t "\\s-"))
+                 (splitstr (split-string str ",\\|,$\\|:" t)) ; 4th arg of split-string errors in emacs24
                  (end (save-excursion ; looking for next hyp and return its leftest part
                         (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
                         (goto-char (match-beginning 1))
