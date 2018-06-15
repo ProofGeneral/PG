@@ -23,7 +23,6 @@
 (require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
 (require 'span)
-(require 'subr-x)
 
 ;;; keyword databases
 
