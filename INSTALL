@@ -57,7 +57,7 @@ Detailed installation Notes for Proof General
 Supported Emacs Versions.
 -------------------------
 
-Please see COMPATIBILTY.
+Please see COMPATIBILITY.
 
 If you're not sure of your version of Emacs, inspect the variable
 `emacs-version' by doing:
