@@ -505,7 +505,7 @@ The point should be at the beginning of the command name."
 	    ":= with"
 	  (goto-char p)
 	  ":= module")))
-     ((member corresp '("Inductive" "CoInductive")) ":= inductive")
+     ((member corresp '("Inductive" "CoInductive" "Variant")) ":= inductive")
      ((equal corresp "let") ":= let")
      ((equal corresp "where") ":= inductive") ;; inductive or fixpoint, nevermind
      ((or (looking-back "{" nil)) ":= record")

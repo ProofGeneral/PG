@@ -503,6 +503,7 @@ so for the following reasons:
     ("Scheme Induction" "sci" "Scheme @{name} := Induction for # Sort #." t)
     ("Scheme Minimality" "scm" "Scheme @{name} := Minimality for # Sort #." t)
     ("Structure" "str" "Structure # : # := {\n# : #;\n# : # }" t "Structure")
+    ("Variant" "varv" "Variant # : # := # : #." t "Variant")
     )
   "Coq definition keywords information list. See `coq-syntax-db' for syntax. "
   )
