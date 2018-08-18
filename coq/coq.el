@@ -1066,6 +1066,11 @@ With flag Printing All if some prefix arg is given (C-u)."
       (coq-ask-do-show-all "Print" "Print")
     (coq-ask-do "Print" "Print")))
 
+(defun coq-Print-Ltac ()
+  "Ask for an ident and print the corresponding Ltac term."
+  (interactive)
+  (coq-ask-do "Print Ltac" "Print Ltac"))
+
 (defun coq-Print-with-implicits ()
   "Ask for an ident and print the corresponding term."
   (interactive)
