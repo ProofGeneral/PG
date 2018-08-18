@@ -500,7 +500,7 @@ Returns a mixed list of option-value pairs and strings."
              (arity (cdr (assoc switch coq--makefile-switch-arities))))
         (push (coq--read-one-option-from-project-file switch arity raw-args) options)
         (setq raw-args (nthcdr (or arity 0) raw-args))))
-    options))
+    (nreverse options))) ; Order of options is important sometimes (Cf. #7980)
 
 (defun coq--extract-prog-args (options)
   "Extract coqtop arguments from _CoqProject options OPTIONS.
