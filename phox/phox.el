@@ -1,231 +1,141 @@
-;; $State$ $Date$ $Revision$
+;; phox.el
 
-(require 'proof)			; load generic parts
+(require 'proof-site)
+(proof-ready-for-assistant 'phox)
 
+(require 'proof)
+(require 'proof-easy-config)		; easy configure mechanism
 
-;; Adjust toolbar entries.  (Must be done before proof-toolbar is
-;; loaded).
+(defconst phox-goal-regexp
+  "\\(prop\\(osition\\)?\\)\\|\\(lem\\(ma\\)?\\)\\|\\(fact\\)\\|\\(cor\\(ollary\\)?\\)\\(theo\\(rem\\)?\\)")
 
-(eval-when-compile
-  (defvar phox-toolbar-entries))
-
-(eval-after-load "pg-custom"
-  '(setq phox-toolbar-entries
-    (assq-delete-all 'context phox-toolbar-entries)))
-
-
-;; ======== User settings for PhoX ========
-;;
-;; Defining variables using customize is pretty easy.
-;; You should do it at least for your prover-specific user options.
-;;
-;; proof-site provides us with two customization groups
-;; automatically:  (based on the name of the assistant)
-;;
-;; 'phox        -  User options for PhoX Proof General
-;; 'phox-config -  Configuration of PhoX Proof General
-;;			   (constants, but may be nice to tweak)
-;;
-;; The first group appears in the menu
-;;   ProofGeneral -> Customize -> PhoX
-;; The second group appears in the menu:
-;;   ProofGeneral -> Internals -> PhoX config
-;;
-
-(defcustom phox-prog-name "phox -pg"
-  "*Name of program to run PhoX."
-  :type 'file
-  :group 'phox)
-
-(defcustom phox-web-page
-  "http://www.lama.univ-savoie.fr/~RAFFALLI/phox.html"
-  "URL of web page for PhoX."
-  :type 'string
-  :group 'phox-config)
-
-(defcustom phox-doc-dir
-  "/usr/local/doc/phox"
-  "The name of the root documentation directory for PhoX."
-  :type 'string
-  :group 'phox-config)
-
-(defcustom phox-lib-dir
-  "/usr/local/lib/phox"
-  "The name of the root directory for PhoX libraries."
-  :type 'string
-  :group 'phox-config)
-
-(defcustom phox-tags-program
-  (concat phox-doc-dir "/tools/phox_etags.sh")
-  "Program to run to generate TAGS table for proof assistant."
-  :type 'string
-  :group 'phox-config)
-
-(defcustom phox-tags-doc
-  t
-  "*If non nil, tags table for PhoX text documentation is loaded."
-  :type 'boolean
-  :group 'phox-config)
-
-(defcustom phox-etags
-  (concat phox-doc-dir "/tools/phox_etags.sh")
-  "Command to build tags table."
-  :type 'string
-  :group 'phox-config)
-
-(require 'phox-fun)
-(require 'phox-font)
-(require 'phox-extraction)
-(require 'phox-tags)
-(require 'phox-outline)
-(require 'phox-pbrpm)
-
-;; default for tags [da: moved here to fix compilation 15/02/03]
-
-(if phox-tags-doc
-    (add-hook 'phox-mode-hook 'phox-tags-add-doc-table))
-
-
-;; ----- PhoX specific menu
-
-(defpgdefault menu-entries
-  (cons
-   phox-state-menu
-   (cons
-    phox-tags-menu
-    (cons
-     phox-extraction-menu
-      nil)))
-)
-
-;;
-;; ======== Configuration of generic modes ========
-;;
-
-(defun phox-config ()
-  "Configure Proof General scripting for PhoX."
-  (if phox-sym-lock-enabled
-      (phox-sym-lock-start))
-  (setq
-   proof-prog-name phox-prog-name
-   proof-prog-name-guess t
-   proof-prog-name-ask nil
-   proof-terminal-string		"."	; ends every command
-   proof-script-command-end-regexp "[.]\\([ \t\n\r]\\)"
-   proof-script-comment-start             "(*"
-   proof-script-comment-end               "*)"
-   proof-goal-command-regexp
-    "\\`\\(Local[ \t\n\r]+\\)?\\(goal[ \t\n\r]\\|pro\\(p\\(osition\\)?\\|ve_claim\\)\\|lem\\(ma\\)?\\|fact\\|cor\\(ollary\\)?\\|theo\\(rem\\)?\\)"
-   proof-save-command-regexp       "\\`save"
-   proof-goal-with-hole-regexp
-   (concat
-    "\\`\\(Local[ \t\n\r]+\\)?\\(pro\\(p\\(osition\\)?\\|ve_claim\\)\\(osition\\)?\\|lem\\(ma\\)?\\|fact\\|cor\\(ollary\\)?\\|theo\\(rem\\)?\\)"
-    phox-strict-comments-regexp
-    phox-ident-regexp)
-   proof-goal-with-hole-result     16
-   proof-save-with-hole-regexp
-   (concat
-    "\\`save"
-    phox-strict-comments-regexp
-    phox-ident-regexp)
-   proof-save-with-hole-result     8
-   proof-ignore-for-undo-count     "\\`\\(constraints\\|flag\\|goals\\|pri\\(nt\\(_sort\\)?\\|ority\\)\\|eshow\\|search\\|depend\\|menu_\\|is_\\)"
-   proof-non-undoables-regexp      "\\`\\(undo\\|abort\\)"
-   proof-shell-error-regexp        "^\\([^ \n\t\r]* \\)?\\(\\(e\\|E\\)rror\\)\\|\\(\\(f\\|F\\)ailure\\)"
-   proof-goal-command              "goal %s."
-   proof-save-command              "save %s."
-   proof-kill-goal-command         "abort."
-   proof-showproof-command         "goals."
-   proof-undo-n-times-cmd          "undo %s."
-   proof-find-and-forget-fn        'phox-find-and-forget
-   proof-find-theorems-command      "search \"%s\"."
-   proof-auto-multiple-files       nil
-   font-lock-keywords              phox-font-lock-keywords
+(proof-easy-config
+ 'phox "PhoX"
+ proof-prog-name		"phox"
+ proof-terminal-string          "."
+ proof-script-command-end-regexp"[.][ \n\t\r]"
+ proof-script-comment-start	"(*"
+ proof-script-comment-end	"*)"
+ proof-script-syntax-table-entries
+   '(?( "()1"
+     ?) ")(4"
+     ?* ". 23"
+     ?$ "w"
+     ?_ "w"
+     ?. "w")
+ proof-shell-syntax-table-entries
+   '(?( "()1"
+     ?) ")(4"
+     ?* ". 23"
+     ?$ "w"
+     ?_ "w"
+     ?. "w")
+ proof-goal-command-regexp	(concat "^" phox-goal-regexp)
+ proof-save-command-regexp	"^save"
+ proof-goal-with-hole-regexp	(concat "^" phox-goal-regexp "\\(\\([a-zA-Z0-9_$]*\\)\\) ")
+ proof-save-with-hole-regexp	"save \\(\\([a-zA-Z0-9_$]*\\)\\).[ \n\t\r]"
+ proof-non-undoables-regexp	"\\(undo\\)\\|\\(abort\\)\\|\\(show\\)\\(.*\\)[ \n\t\r]"
+ proof-goal-command		"fact \"%s\"."
+ proof-save-command		"save \"%s\"."
+ proof-kill-goal-command	"abort."
+ proof-showproof-command	"show."
+ proof-undo-n-times-cmd		"undo %s."
+ proof-auto-multiple-files	 t
+ proof-shell-cd-cmd		 "cd \"%s\"."
+ proof-shell-interrupt-regexp	 "Interrupt."
+ proof-shell-start-goals-regexp	 "goal [0-9]+/[0-9]+"
+ proof-shell-end-goals-regexp	 "%PhoX%"
+ proof-shell-quit-cmd		 "quit."
+ proof-assistant-home-page	 "http://www.lama.univ-savoie.fr/~raffalli/phox.html"
+ proof-shell-annotated-prompt-regexp "^\\(>PhoX>\\)\\|\\(%PhoX%\\) "
+; proof-shell-error-regexp	 "\\*\\*\\*\\|^.*Error:\\|^uncaught exception \\|^Exception- "
+ proof-shell-init-cmd		 ""
+; proof-shell-proof-completed-regexp "^No subgoals!"
+ proof-script-font-lock-keywords
+   '("Cst" "Import" "Use" "Sort"
+     "new_intro" "new_elim" "new_rewrite"
+     "add_path" "author" "cd"
+     "claim" "close_def" "def" "del" "documents"
+     "depend" "elim_after_intro" "export"
+     "edel" "eshow" "flag" "goal" "include"
+     "institute" "path" "print_sort" "priority"
+     "quit" "save" "search" "tex" "tex_syntax" "title"
+     "proposition" "prop" "lemma" "lem" "fact" "corollary" "cor"
+     "theorem" "theo"
+                                        ; proof command, FIXME: another color
+     "abort" "absurd" "apply" "axiom" "constraints"
+     "elim" "from" "goals" "intros" "intro" "instance"
+     "local" "lefts" "left" "next" "rewrite" "rewrite_hyp"
+     "rename" "rmh" "trivial" "slh" "use" "undo" "unfold"
+     "unfold_hyp")
    )
-  (phox-init-syntax-table)
-  (setq pbp-goal-command "intro %s;")
-  (setq pbp-hyp-command "elim %s;"))
-
-(defun phox-shell-config ()
-  "Configure Proof General shell for PhoX."
-  (setq
-   ;proof-shell-cd-cmd              "cd \"%s\""
-   proof-shell-annotated-prompt-regexp  "\\(>phox> \\)\\|\\(%phox% \\)"
-   proof-shell-interrupt-regexp    "Interrupt"
-   proof-shell-start-goals-regexp  "^\\(Here \\(are\\|is\\) the goal\\)\\|\\([0-9]+ new goals?\\)\\|\\([0-9]+ goals? possibly instanced\\)"
-   proof-shell-end-goals-regexp  "^End of goals."
-   proof-shell-quit-cmd            "quit."
-   proof-shell-restart-cmd         "restart."
-   proof-shell-proof-completed-regexp   "^.*^proved"
-   ))
 
 
-;;
-;; ======== Defining the derived modes ========
-;;
+;; code for sisplaying unicode borrowed from
+;; Erik Parmann, Pål Drange latex-pretty-symbol
 
-;; The name of the script mode is always <proofsym>-script,
-;; but the others can be whatever you like.
-;;
-;; The derived modes set the variables, then call the
-;; <mode>-config-done function to complete configuration.
+(require 'cl-lib)
 
-(define-derived-mode phox-mode proof-mode
-    "PhoX script"
-     "Major mode for PhoX proofs.
+(defun substitute-pattern-with-unicode-symbol (pattern symbol)
+  "Add a font lock hook to replace the matched part of PATTERN with the Unicode
+symbol SYMBOL.
+Symbol can be the symbol directly, no lookup needed."
+  (interactive)
+  (font-lock-add-keywords
+   nil
+   `((,pattern
+      (0 (progn
+	   (compose-region (match-beginning 1) (match-end 1)
+	   		   ,symbol
+	   		   'decompose-region)
+	   nil))))))
 
-\\{phox-mode-map}"
-    (phox-config)
-    (proof-config-done)
-    (phox-setup-outline)
-    (define-key phox-mode-map [(control j)]
-      'phox-assert-next-command-interactive)
-    ;; with the previous binding,
-    ;; it is nice to do : xmodmap -e "keysym KP_Enter = Linefeed"
+(defun substitute-patterns-with-unicode-symbol (patterns)
+  "Mapping over PATTERNS, calling SUBSTITUTE-PATTERN-WITH-UNICODE for each of the patterns."
+  (mapcar #'(lambda (x)
+              (substitute-pattern-with-unicode-symbol (car x)
+						      (cl-second x)))
+          patterns))
 
-    (define-key phox-mode-map [(control c) (meta d)]
-      'phox-delete-symbol-on-cursor))
+(defun phox-symbol-regex (str)
+  "Gets a string, e.g. Alpha, returns the regexp matching the escaped
+version of it in Phox code, with no chars in [a-z0-9A-Z] after it."
+  (interactive "MString:")
+  (concat "[^!%&*+,-/:;≤=>@\\^`#|~]\\(" str "\\)[^!%&*+,-/:;≤=>@\\^`#|~]"))
 
-(define-derived-mode phox-shell-mode proof-shell-mode
-   "PhoX shell" nil
-   (phox-shell-config)
-   (proof-shell-config-done))
-
-(define-derived-mode phox-response-mode proof-response-mode
-  "PhoX response" nil
-  (setq proof-response-font-lock-keywords phox-font-lock-keywords)
-  (phox-sym-lock-start)
-  (if (and (featurep 'phox-sym-lock) phox-sym-lock-enabled)
-      (add-hook 'proof-shell-handle-delayed-output-hook
-		'phox-sym-lock-font-lock-hook)
-    )
-  (proof-response-config-done))
-
-(define-derived-mode phox-goals-mode proof-goals-mode
-  "PhoX goals" nil
-  (setq font-lock-keywords phox-font-lock-keywords)
-  (phox-sym-lock-start)
-  (if (and (featurep 'phox-sym-lock) phox-sym-lock-enabled)
-      (add-hook 'pg-before-fontify-output-hook
-		'phox-sym-lock-font-lock-hook)
-    )
-  (proof-goals-config-done))
+(defun phox-word-regex (str)
+  "Gets a string, e.g. Alpha, returns the regexp matching the escaped
+version of it in Phox code, with no chars in [a-z0-9A-Z] after it."
+  (interactive "MString:")
+  (concat "\\b\\(" str "\\)\\b"))
 
 
-;; A more sophisticated instantiation might set font-lock-keywords to
-;; add highlighting, or some of the proof by pointing markup
-;; configuration for the goals buffer.
+;;Goto http://www.fileformat.info/info/unicode/block/mathematical_operators/list.htm and copy the needed character
+(defun phox-unicode-simplified ()
+  "Adds a bunch of font-lock rules to display phox commands as
+their unicode counterpart"
+  (interactive)
+  (substitute-patterns-with-unicode-symbol
+   (list
+    ;;These need to be on top, before the versions which are not subscriptet
+    (list (phox-symbol-regex "<=")"≤")
+    (list (phox-symbol-regex ">=")"≥")
+    (list (phox-symbol-regex "!=")"≠")
+    (list (phox-symbol-regex ":<")"∈")
+    (list (phox-symbol-regex ":") "∈")
+    (list (phox-symbol-regex "/\\\\")"∀")
+    (list (phox-symbol-regex "\\\\/")"∃")
+    (list (phox-symbol-regex "<->")"↔")
+    (list (phox-symbol-regex "-->")"⟶")
+    (list (phox-symbol-regex "->")"→")
+    (list (phox-symbol-regex "~")"¬")
+    (list (phox-symbol-regex "&")"∧")
+    (list (phox-word-regex "or")"∨")
+    )))
 
-; completions
-; dans completions.el
-;(setq completion-min-length 6)
-;(setq completion-prefix-min-length 3) les mots de moins de 6 caract�res
-; ne sont pas pris en compte.  Les prefixes de moins de 3 caract�res ne
-; sont pas non plus pris en compte.
+(add-hook 'phox-mode-hook 'phox-unicode-simplified)
+(add-hook 'phox-goals-mode-hook 'phox-unicode-simplified)
+(add-hook 'phox-response-mode-hook 'phox-unicode-simplified)
 
-; (set-variable 'phox-completion-table
-(defpgdefault completion-table
-  (append phox-top-keywords phox-proof-keywords)
-)
 
 (provide 'phox)

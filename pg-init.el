@@ -55,7 +55,7 @@
 (eval-when-compile
   (let ((byte-compile-directories
          '("generic" "lib"
-           "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell")))
+           "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox")))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))
 

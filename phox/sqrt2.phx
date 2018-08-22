@@ -1,0 +1,253 @@
+tex
+  title = "Proof that square root of 2 is not rational"
+  author = "Christophe Raffalli, Paul Rozière"
+  institute = "LAMA, Universit\\'e de Savoie, PPS, Universit\\'e Paris VII"
+  documents = math
+.
+
+Import nat.
+
+flag auto_lvl 2.
+flag auto_type true.
+
+
+(*! math
+\section{The library.}
+
+
+There are two  proof rules  used \underline{explicitely} from the library :
+
+\begin{itemize}
+\item \verb#elim (N n) with [case].# case reasonning on integers,
+using \[ $$case.N \].
+\item \verb#elim (N n) with [wf]#: well founded induction for the natural order
+ on integers, using \[ $$well_founded.N \].
+\end{itemize}
+
+and the followings theorems.
+
+\begin{itemize}
+\item \verb#demorganl# a set of rewrite rules for Demorgan's law.
+\item \verb#calcul.N# a set of rewrite rules for natural numbers.
+\item \verb#odd_or_even.N#: \[ $$odd_or_even.N \].
+\item \verb#lesseq.case1.N#: \[ $$lesseq.case1.N \].
+\item \verb#lesseq.imply.not.greater.N#: \[ $$lesseq.imply.not.greater.N \].
+\end{itemize}
+
+
+
+Comments: As the default elimination rule on integers is structural
+induction, it is natural to use explicitly these two rules.  The first
+three theorems are also natural to use explicitly.  The last
+ could probably be removed by adding some \verb#new_intro# or
+\verb#new_elim# in the library.  \verb#lesseq.case1.N# is more
+problematic, It would require to extend the system with some kind of
+binary elimination rule (with two principal premices ?).
+
+\section{Some basic lemmas.}
+
+They should be included in the library ?
+*)
+
+lemma not_odd_and_even.N /\y,z:N( N2 * y != N1 + N2 * z).
+(*! math
+\begin{lemma}\label{not_odd_and_even.N}
+An integer can not be odd and even:
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+By induction over \[ y \] , then by case over \[ z \] .
+\end{proof}
+*)
+intro 2.
+(* induction over y *)
+elim H.
+(* y := 0 *)
+ trivial.
+(* y0 -> S y0 *)
+ intros.
+ (* case over z *)
+ elim H2 with [case].
+ (* z := 0 *)
+  trivial.
+ (* z := S y1 *)
+  intro.
+  prove N2 + N2 * y0 = N2 + N1 + N2 * y1.
+   from N2 * S y0 = N1 + N2 + N2 * y1.
+   from N2 * S y0 = N1 + (N2 + N2 * y1).
+   from H5.
+  lefts G.
+  elim H1 with H6.
+save.
+
+
+
+fact sum_square.N /\x,y:N (x + y)^N2 = x^N2 + N2*x*y + y^N2.
+(*! math
+\begin{lemma}\label{sum_square.N}
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+Easy.
+\end{proof}
+*)
+intros.
+rewrite calcul.N mul.left.distributive.N mul.right.distributive.N add.associative.N.
+intro.
+save.
+
+
+fact less.exp.N /\n,x,y:N( x <= y -> x^n <= y^n).
+(*! math
+\begin{lemma}\label{less.exp.N}
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+By induction over \[ n \].
+\end{proof}
+*)
+intros.
+elim H.
+trivial.
+rewrite calcul.N.
+trivial.
+save.
+
+fact less_r.exp.N  /\n,x,y:N( x^n < y^n -> x < y).
+(*! math
+\begin{lemma}\label{less_r.exp.N}
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+Follows from lemma \ref{less.exp.N}.
+\end{proof}
+*)
+intros.
+elim lesseq.case1.N with y and x.
+apply less.exp.N with n and H3.
+elim lesseq.imply.not.greater.N with y^n and x^n.
+save.
+
+fact less.ladd.N /\x,y:N (N0 < y -> x < x + y).
+(*! math
+\begin{lemma}\label{less.ladd.N}
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+Easy induction over \[ x \].
+\end{proof}
+*)
+intros.
+trivial.
+(*
+elim H.
+ trivial.
+ trivial.
+*)
+save.
+
+
+(*! math
+\section{The proof itself}
+*)
+
+(** The proof itself. *)
+
+theorem n.square.pair /\n:N /\p:N( n^N2=N2*p -> \/q:N n=N2*q).
+(*! math
+\begin{lemma}\label{n.square.pair}
+ If the square of \[ n \] is even then \[ n \] is even:
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+*)
+intros.
+apply odd_or_even.N with H.
+lefts G $\/ $& $or.
+(*! math
+We assume \[ $$H1 \] ( \[ H1 \] ).
+We distinguish two cases. If \[ n \] is even we get what we want.
+*)
+trivial.
+(*! math
+If  \[ n \] is odd we have \[ $$H3 \]
+*)
+prove  n^N2 = N1 + N2*(N2*y^N2+N2*y).
+(*! math
+which implies \[ $0 \]
+*)
+ rewrite  H3 sum_square.N.
+ from N1+(N2*(N2*y)+ N2*(y *(N2*y)))= N1+N2 * ?1.
+ intro.
+(*! math
+and this gives a contradiction by lemma \ref{not_odd_and_even.N} using ( \[ H1 \] ).
+\end{proof}
+*)
+rewrite_hyp G H1.
+elim not_odd_and_even.N with G.
+save.
+
+lem decrease /\m,n : N (m^ N2 = N2 * n^ N2 -> N0 < n -> n < m).
+(*! math
+\begin{lemma}\label{decrease}
+$$ \[ $0 \] $$
+\end{lemma}
+\begin{proof}
+Using lemma \ref{less_r.exp.N} and lemma \ref{less.ladd.N}.
+\end{proof}
+*)
+intros.
+elim less_r.exp.N with N2.
+prove m^N2 = n^N2 + n^N2. axiom H1.  (* fonctionne sans *)
+elim less.ladd.N.
+trivial  =H0 H2.
+save.
+
+theorem square2_irrat /\m,n : N (m^ N2 = N2 * n^ N2 -> m = N0 & n = N0).
+(*! math
+\begin{theorem} The square-root of 2 is irrational. For this we just need to prove the following:
+$$ \[ $0 \] $$
+\end{theorem}
+\begin{proof}
+*)
+intro 2.
+elim H with [wf].
+(*! math
+We prove \[ $0 \] by well founded induction over \[ m \]. Induction hypothesis is
+\[ H1 \] : \[ $$H1 \]. *)
+intros.
+elim H2 with [case].
+(* cas n=0 *)
+ intro.
+ rewrite_hyp H3 H4 calcul.N.
+ trivial.
+(*! math
+if \[ n = N0 \] the result is trivial. Suppose now that \[ n > N0 \].
+*)
+(* cas n > 0 *)
+ apply decrease with H3 and N0 < n.
+   trivial.
+(*! math
+Using lemma \ref{decrease} we get  \[ $$G \].
+*)
+ elim n.square.pair with H3.
+ left H6.
+(*! math
+Using lemma \ref{n.square.pair} we get \[ q \] such that \[  $$H7 \]
+*)
+(*! math
+The result follow by using induction hypothesis \[ H1 \] ,
+*)
+ elim H1 with G then q.
+ rewrite_hyp H3 H7.
+(*! math
+using \[ $0 \] which follows from \[$$H3 \].
+*)
+ prove N2 * (N2 * q ^N2) = N2 * n ^ N2.
+  from H3.
+ left G0.
+ trivial 0.
+(*! math
+\end{proof}
+*)
+save.
