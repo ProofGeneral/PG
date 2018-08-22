@@ -56,7 +56,7 @@
 ;;; Code:
 
 (defvar maths-menu-filter-predicate (lambda (char) t)
-  "Predicate function used to filter menu elements")
+  "Predicate function used to filter menu elements.")
 
 (defvar maths-menu-tokenise-insert #'insert
   "Function used to insert possibly formatted or escaped character.")

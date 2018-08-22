@@ -16,7 +16,7 @@
 
 ;;; Commentary:
 ;;
-;; This file implements compilation of required modules. The
+;; This file implements compilation of required modules.  The
 ;; compilation is done in parallel in the background (in contrast to
 ;; what you find in coq-seq-compile.el).
 ;;
@@ -202,7 +202,7 @@
 ;;                               modification time of some ancestor
 ;;                               value might be an Emacs time or
 ;;                               'just-compiled
-;;   'queue-dependant - next top-level job, only present in top-level jobs 
+;;   'queue-dependant - next top-level job, only present in top-level jobs
 ;;   'queue-dependant-waiting - t if this is a top-level job that has
 ;;                              to wait until previous top-level jobs
 ;;                              finish. In this waiting time, modules
@@ -211,7 +211,7 @@
 ;;                              this property becomes nil
 ;;   'src-file        - the .v file name
 ;;   'load-path       - value of coq-load-path, propagated to all
-;;                      dependencies 
+;;                      dependencies
 ;;   'ancestors       - list of ancestor jobs, for real compilation jobs
 ;;                      this list includes the job itself; may contain
 ;;                      duplicates
@@ -271,10 +271,10 @@
 ;;   'coq-process-continuation  - the continuation to be called when
 ;;                                the process finishes. Either
 ;;                                coq-par-process-coqdep-result or
-;;                                coq-par-coqc-continuation 
+;;                                coq-par-coqc-continuation
 ;;   'coq-process-output        - the output of the process
 ;;   'coq-process-command       - the command for error reporting
-;;                                (as string list) 
+;;                                (as string list)
 ;;   'coq-par-process-killed    - t if this process has been killed
 ;;   'coq-process-rm            - if not nil, a file to be deleted when
 ;;                                the process is killed
@@ -289,7 +289,7 @@
 ;; 		      (get v 'type)
 ;; 		      (get v 'src-file)
 ;; 		      (get v 'state)
-;; 		      (mapcar (lambda (p) (get p 'name)) 
+;; 		      (mapcar (lambda (p) (get p 'name))
 ;; 			      (get v 'coqc-dependants))
 ;; 		      (get v 'queue-dependant))
 ;; 	     (mapc (lambda (p) (when (eq (get p 'type) 'clone)
@@ -302,7 +302,7 @@
 ;; 		   (get v 'type)
 ;; 		   (get v 'src-file)
 ;; 		   (get v 'state)
-;; 		   (mapcar (lambda (p) (get p 'name)) 
+;; 		   (mapcar (lambda (p) (get p 'name))
 ;; 			   (get v 'coqc-dependants))
 ;; 		   (get v 'queue-dependant)))
 ;; 	clones))
@@ -314,10 +314,10 @@
 
 (defvar coq--compilation-object-hash nil
   "Hash for storing the compilation jobs.
-This hash only stores real compilation jobs and no clones. They
-are stored in order to avoid double compilation. The jobs stored
+This hash only stores real compilation jobs and no clones.  They
+are stored in order to avoid double compilation.  The jobs stored
 in here are uninterned symbols that carry all important
-information in their property list. See the documentation in the
+information in their property list.  See the documentation in the
 source file \"coq-par-compile.el\". The hash always maps .vo file
 names to compilation jobs, regardless of ``-quick''.")
 
@@ -399,7 +399,7 @@ latter greater then everything else."
   (cons nil nil))
 
 (defun coq-par-enqueue (queue x)
-  "Insert x in queue QUEUE."
+  "Insert X in queue QUEUE."
   (push x (car queue)))
 
 (defun coq-par-dequeue (queue)
@@ -420,7 +420,7 @@ Use `coq-par-job-enqueue' and `coq-par-job-dequeue' to access the
 queue.")
 
 (defun coq-par-job-enqueue (job)
-  "Insert job in the queue of waiting compilation jobs."
+  "Insert JOB in the queue of waiting compilation jobs."
   (coq-par-enqueue coq-par-compilation-queue job)
   (when coq--debug-auto-compilation
     (message "%s: enqueue job in waiting queue" (get job 'name))))
@@ -520,7 +520,7 @@ access the queue.")
 
 (defun coq-par-find-dependency-circle-for-job (job path)
   "Find a dependency cycle in the dependency subtree of JOB.
-Do a depth-first-search to find the cycle. JOB is the current
+Do a depth-first-search to find the cycle.  JOB is the current
 node and PATH the stack of visited nodes."
   (let (cycle (p path))
     ;; path is reversed. A potential cycle goes from the beginning of
@@ -766,7 +766,7 @@ Used for unlocking ancestors on compilation errors."
 (defun coq-par-kill-and-cleanup ()
   "Kill all background compilation, cleanup internal state and unlock ancestors.
 This is the common core of `coq-par-emergency-cleanup' and
-`coq-par-user-interrupt'. Returns t if there actually was a
+`coq-par-user-interrupt'.  Returns t if there actually was a
 background job that was killed."
   (let (proc-killed)
     (when coq--debug-auto-compilation
@@ -787,10 +787,10 @@ background job that was killed."
 (defun coq-par-emergency-cleanup ()
   "Emergency cleanup for errors in parallel background compilation.
 This is the function that cleans everything up when some
-background compilation process detected a severe error. When
-`coq-compile-keep-going' is nil, all errors are severe. When
+background compilation process detected a severe error.  When
+`coq-compile-keep-going' is nil, all errors are severe.  When
 `coq-compile-keep-going' is t, coqc and some coqdep errors are
-not severe. This function is also used for the user action to
+not severe.  This function is also used for the user action to
 kill all background compilation.
 
 On top of `coq-par-kill-and-cleanup', this function resets the
@@ -809,16 +809,16 @@ interrupt to the proof shell."
   "React to a generic user interrupt with cleaning up everything.
 This function cleans up background compilation when the proof
 assistant died (`proof-shell-handle-error-or-interrupt-hook') or
-when the user interrupted Proof General (with C-c C-c or
+when the user interrupted Proof General (with \\[proof-interrupt-process] or
 `proof-interrupt-process' leading to
 `proof-shell-signal-interrupt-hook').
 
 On top of `coq-par-kill-and-cleanup', this function only sets the
 dynamic variable `prover-was-busy' to tell the proof shell that
-the user actually had a reason to interrupt. However, in the
+the user actually had a reason to interrupt.  However, in the
 special case where `proof-action-list' is nil and
 `coq--last-compilation-job' not, this function also clears the
-queue region and releases the proof shell lock. This has the nice
+queue region and releases the proof shell lock.  This has the nice
 side effect, that `proof-interrupt-process' does not send an
 interrupt signal to the prover."
   (let (proc-killed
@@ -838,7 +838,7 @@ interrupt signal to the prover."
       (setq prover-was-busy t))))
 
 (defun coq-par-process-filter (process output)
-  "Store output from coq background compilation."
+  "Store OUTPUT from coq background compilation."
   (process-put process 'coq-process-output
 	       (concat (process-get process 'coq-process-output) output)))
 
@@ -846,7 +846,7 @@ interrupt signal to the prover."
   "Start asynchronous compilation job for COMMAND.
 This function starts COMMAND with arguments ARGUMENTS for
 compilation job JOB, making sure that CONTINUATION runs when the
-process finishes successfully. FILE-RM, if not nil, denotes a
+process finishes successfully. FILE-RM, if non-nil, denotes a
 file to be deleted when the process is killed."
   (let ((process-connection-type nil)	; use pipes
 	(process-name (format "pro-%s" coq--par-next-id))
@@ -881,9 +881,9 @@ file to be deleted when the process is killed."
 
 (defun coq-par-process-sentinel (process event)
   "Sentinel for all background processes.
-Runs when process PROCESS terminated because of EVENT. It
+Runs when process PROCESS terminated because of EVENT.  It
 determines the exit status and calls the continuation function
-that has been registered with that process. Normal compilation
+that has been registered with that process.  Normal compilation
 errors are reported with an error message."
   (condition-case err
       (if (process-get process 'coq-par-process-killed)
@@ -933,7 +933,7 @@ errors are reported with an error message."
 	      (if cycle
 		  (signal 'coq-compile-error-circular-dep
 			  (mapconcat 'identity cycle " -> "))
-		(error "deadlock in parallel compilation"))))))
+		(error "Deadlock in parallel compilation"))))))
     (coq-compile-error-command-start
      (coq-par-emergency-cleanup)
      (message "%s \"%s\" in \"%s\""
@@ -943,7 +943,7 @@ errors are reported with an error message."
      (coq-par-emergency-cleanup)
      (message "%s %s" (get (car err) 'error-message) (cdr err)))
     (error
-     (message "error in sentinel of process %s, error %s"
+     (message "Error in sentinel of process %s, error %s"
 	      (process-name process) err)
      (coq-par-emergency-cleanup)
      (signal (car err) (cdr err)))))
@@ -964,7 +964,7 @@ errors are reported with an error message."
   (coq-par-start-jobs-until-full))
 
 (defun coq-par-require-processed (race-counter)
-  "Callback for `proof-action-list' to signal completion of the last require.
+  "Callback for `proof-action-list' to signal completion of the last Require.
 This function ensures that vio2vo compilation starts after
 `coq-compile-vio2vo-delay' seconds after the last module has been
 loaded into Coq. When background compilation is successful, this
@@ -992,16 +992,16 @@ somewhere after the last require command."
 ;;; background job tasks
 
 (defun coq-par-job-coqc-finished (job)
-  "t if JOB has state 'waiting-queue or 'ready."
+  "Return t if JOB has state 'waiting-queue or 'ready."
   (or (eq (get job 'state) 'waiting-queue)
       (eq (get job 'state) 'ready)))
 
 (defun coq-par-job-is-ready (job)
-  "t if compilation job JOB is ready."
+  "Return t if compilation job JOB is ready."
   (eq (get job 'state) 'ready))
 
 (defun coq-par-dependencies-ready (job)
-  "t if all dependencies of compilation job JOB are ready."
+  "Return t if all dependencies of compilation job JOB are ready."
   (eq (get job 'coqc-dependency-count) 0))
 
 (defun coq-par-add-coqc-dependency (dependee dependant)
@@ -1025,20 +1025,20 @@ somewhere after the last require command."
 	     (get dependee 'name) (get dependant 'name))))
 
 (defun coq-par-job-needs-compilation (job)
-  "Determine whether job needs to get compiled and do some side effects.
+  "Determine whether JOB needs to get compiled and do some side effects.
 This function contains most of the logic nesseary to support
-quick compilation according to `coq-compile-quick'. Taking
+quick compilation according to `coq-compile-quick'.  Taking
 `coq-compile-quick' into account, it determines if a compilation
-is necessary. The property 'required-obj-file is set either to
+is necessary.  The property 'required-obj-file is set either to
 the file that we need to produce or to the up-to-date object
-file. If compilation is needed, property 'use-quick is set when
--quick will be used. If no compilation is needed, property
+file.  If compilation is needed, property 'use-quick is set when
+-quick will be used.  If no compilation is needed, property
 'obj-mod-time remembers the time stamp of 'required-obj-file.
 Indepent of whether compilation is required, .vo or .vio files
-that are in the way are deleted. Note that the coq documentation
+that are in the way are deleted.  Note that the coq documentation
 does not contain a statement, about what file is loaded, if both
-a .vo and a .vio file are present. To be on the safe side, I
-therefore delete a file if it might be in the way. Sets the
+a .vo and a .vio file are present.  To be on the safe side, I
+therefore delete a file if it might be in the way.  Sets the
 'vio2vo property on job if necessary."
   (let* ((vo-file (get job 'vo-file))
 	 (vio-file (coq-library-vio-of-vo-file vo-file))
@@ -1330,12 +1330,12 @@ case, the following actions are taken:
 
 (defun coq-par-compile-job-maybe (job)
   "Choose next action for JOB after dependencies are ready.
-First JOB is put into state 'enqueued-coqc. Then it is determined
+First JOB is put into state 'enqueued-coqc.  Then it is determined
 if JOB needs compilation, what file must be produced (depending
 on `coq-compile-quick') and if a .vio or .vo file must be
-deleted. If necessary, deletion happens immediately. If JOB needs
+deleted.  If necessary, deletion happens immediately.  If JOB needs
 compilation, compilation is started or the JOB is enqueued and
-JOB stays in 'enqueued-coqc for the time being. Otherwise, the
+JOB stays in 'enqueued-coqc for the time being.  Otherwise, the
 transition 'enqueued-coqc -> 'waiting-queue is done and, if
 possible, also 'waiting-queue -> 'ready."
   (put job 'state 'enqueued-coqc)
@@ -1357,11 +1357,11 @@ possible, also 'waiting-queue -> 'ready."
   "Clear Coq dependency and update dependee information in DEPENDANT.
 This function handles a Coq dependency from child dependee to
 parent dependant when the dependee has finished compilation (ie.
-is in state 'waiting-queue). DEPENDANT must be in state
-'waiting-dep. The time of the most recent ancestor is updated, if
-necessary using DEPENDEE-TIME. DEPENDEE-TIME must be an Emacs
-time or 'just-compiled. The ancestors of dependee are propagated
-to DEPENDANT. The dependency count of DEPENDANT is decreased and,
+is in state 'waiting-queue).  DEPENDANT must be in state
+'waiting-dep.  The time of the most recent ancestor is updated, if
+necessary using DEPENDEE-TIME.  DEPENDEE-TIME must be an Emacs
+time or 'just-compiled.  The ancestors of dependee are propagated
+to DEPENDANT.  The dependency count of DEPENDANT is decreased and,
 if it reaches 0, the next transition is triggered for DEPENDANT.
 For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
 'clone jobs this 'waiting-dep -> 'waiting-queue."
@@ -1393,14 +1393,14 @@ For 'file jobs this is 'waiting-dep -> 'enqueued-coqc and for
   "Handle transition to state 'waiting-queue for JOB.
 For 'file jobs, this function is called when compilation finished
 or was not necessary to make the transition 'enqueued-coqc ->
-'waiting-queue. For 'clone jobs, this function is called when its
+'waiting-queue.  For 'clone jobs, this function is called when its
 real 'file job has completed compilation and is in state
 'waiting-queue to make the transition 'waiting-dep ->
 waiting-queue for JOB.
 
 DEP-TIME is either 'just-compiled, when JOB has just finished
 compilation, or the most recent modification time of all
-dependencies of JOB. (If compilation for JOB failed, DEP-TIME is
+dependencies of JOB.  (If compilation for JOB failed, DEP-TIME is
 meaningless but should nevertheless be a non-nil valid argument.)
 
 This function makes the following actions.
@@ -1533,7 +1533,7 @@ coqdep or coqc are started for it."
 (defun coq-par-start-or-enqueue (new-job)
   "Start NEW-JOB or put it into the queue of waiting jobs.
 NEW-JOB goes already into the waiting queue, if the number of
-background jobs is one below the limit. This is in order to leave
+background jobs is one below the limit.  This is in order to leave
 room for Proof General."
   (if (< (1+ coq--current-background-jobs) coq--internal-max-jobs)
       (coq-par-start-task new-job)
@@ -1543,15 +1543,15 @@ room for Proof General."
 						   require-span dependant)
   "Create a new compilation job for MODULE-OBJ-FILE.
 If there is already a job for MODULE-OBJ-FILE a new clone job is
-created. This function initializes all necessary properties of
+created.  This function initializes all necessary properties of
 the new job.
 
 COQ-LOAD-PATH must be the load path from the source file that
-originally initiated the compilation. QUEUE-DEP must be a
-compilation job or nil. If non-nil, this function makes a queue
-dependency from QUEUE-DEP to the new compilation job. If nil, a
+originally initiated the compilation.  QUEUE-DEP must be a
+compilation job or nil.  If non-nil, this function makes a queue
+dependency from QUEUE-DEP to the new compilation job.  If nil, a
 newly created clone job will proceed to state ready if the
-original job is ready. Argument REQUIRE-SPAN should be present
+original job is ready.  Argument REQUIRE-SPAN should be present
 when the new job should update the ancestor list in some span.
 Argument DEPENDANT tells who required MODULE-OBJ-FILE, this is
 used only for the error message, in case MODULE-OBJ-FILE refers
@@ -1563,7 +1563,7 @@ If the new job is a clone job, its state is
   a queue dependency QUEUE-DEP (which cannot be ready yet)
 - 'ready otherwise
 
-If the new job is a 'file job its state is 'enqueued-coqdep. If
+If the new job is a 'file job its state is 'enqueued-coqdep.  If
 there is space, coqdep is started immediately, otherwise the new
 job is put into the compilation queue.
 
@@ -1666,7 +1666,7 @@ not yet failed."
 For a failing job JOB, an ancestor need to stay looked if there
 is still some compilation going on for which this ancestor is a
 dependee or if a top level job with JOB as ancestor has finished
-it's compilation successfully. In all other cases the ancestor
+it's compilation successfully.  In all other cases the ancestor
 must be unlocked."
   (dolist (anc-job (get job 'ancestors))
     (when (and (eq (get anc-job 'lock-state) 'locked)
@@ -1701,8 +1701,8 @@ appropriate."
 (defun coq-par-mark-job-failing (job)
   "Mark all dependants of JOB as failing and unlock ancestors as appropriate.
 Set the 'failed property on all direct and indirect dependants of
-JOB. Along the way, unlock ancestors as determined by
-`coq-par-ongoing-compilation'. Mark queue dependants with
+JOB.  Along the way, unlock ancestors as determined by
+`coq-par-ongoing-compilation'.  Mark queue dependants with
 'queue-failed."
   (unless (get job 'failed)
     (put job 'failed t)
@@ -1716,14 +1716,14 @@ JOB. Along the way, unlock ancestors as determined by
 
 (defun coq-par-process-coqdep-result (process exit-status)
   "Coqdep continuation function: Process coqdep output.
-This function analyses the coqdep output of PROCESS. In case of
+This function analyses the coqdep output of PROCESS.  In case of
 error, the job is marked as failed or compilation is aborted via
-a signal (depending on `coq-compile-keep-going'). If there was no
+a signal (depending on `coq-compile-keep-going').  If there was no
 coqdep error, the following actions are taken.
 - the job that started PROCESS is put into sate 'waiting-dep
-- a new job is created for every dependency. If this new job is
+- a new job is created for every dependency.  If this new job is
   not immediately ready, a Coq dependency is registered from the
-  new job to the current job. For dependencies that are 'ready
+  new job to the current job.  For dependencies that are 'ready
   already, the most recent ancestor modification time is
   propagated.
 - if there are no dependencies (especially if coqdep failed) or
@@ -1778,7 +1778,7 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 (defun coq-par-coqc-continuation (process exit-status)
   "Coqc continuation function.
 If coqc failed, signal an error or mark the job as 'failed, and
-unlock ancestors as appropriate. If coqc was successful, trigger
+unlock ancestors as appropriate.  If coqc was successful, trigger
 the transition 'enqueued-coqc -> 'waiting-queue for the job
 behind PROCESS."
   (let ((job (process-get process 'coq-compilation-job)))
@@ -1803,7 +1803,7 @@ behind PROCESS."
 		(get (process-get process 'coq-compilation-job) 'src-file))))))
 
 (defun coq-par-vio2vo-continuation (process exit-status)
-  "vio2vo continuation function."
+  "Vio2vo continuation function."
   (let ((job (process-get process 'coq-compilation-job)))
     (if (eq exit-status 0)
 	;; success - nothing to do
@@ -1827,7 +1827,7 @@ behind PROCESS."
 
 (defun coq-par-handle-module (module-id span &optional from)
   "Handle compilation of module MODULE-ID.
-This function translates MODULE-ID to a file name. If compilation
+This function translates MODULE-ID to a file name.  If compilation
 for this file is not ignored, a new top-level compilation job is
 created. If there is a new top-level compilation job, it is saved
 in `coq--last-compilation-job'.
@@ -1917,7 +1917,7 @@ there is no last compilation job."
 
 
 (defun coq-par-item-require-predicate (item)
-  "Return t if ITEM contains a require command.
+  "Return t if ITEM contains a Require command.
 Predicate for `split-list-at-predicate', used to split the new
 queue items at each Require command."
   (let ((string (mapconcat 'identity (nth 1 item) " ")))
@@ -1937,21 +1937,21 @@ ansynchronously in parallel in the background.
 
 If there is a last compilation job (`coq--last-compilation-job')
 then the queue region is extended, while some background
-compilation is still running. In this case I have to preserve the
-internal state. Otherwise the hash of the compilation jobs and
+compilation is still running.  In this case I have to preserve the
+internal state.  Otherwise the hash of the compilation jobs and
 the ancestor hash are initialized.
 
 As next action the new queue items are splitted at each Require
-command. The items before the first Require are appended to the
-last compilation job or put back into proof-action-list. The
+command.  The items before the first Require are appended to the
+last compilation job or put back into ‘proof-action-list’.  The
 remaining batches of items that each start with a Require are
 then processed by `coq-par-handle-require-list', which creates
-top-level compilation jobs as necessary. Before processing the
+top-level compilation jobs as necessary.  Before processing the
 first of these batches, buffers are saved with
 `coq-compile-save-some-buffers'.
 
 Finally, `proof-second-action-list-active' is set if I keep some
-queue items because they have to wait for a compilation job. Then
+queue items because they have to wait for a compilation job.  Then
 the maximal number of background compilation jobs is started."
   (when coq--debug-auto-compilation
     (message "%d items were added to the queue, scan for require"
@@ -2004,7 +2004,7 @@ the maximal number of background compilation jobs is started."
   "Coq function for `proof-shell-extend-queue-hook' doing parallel compilation.
 If `coq-compile-before-require' is non-nil, this function starts
 the compilation (if necessary) of the dependencies
-ansynchronously in parallel in the background. This function only
+ansynchronously in parallel in the background.  This function only
 does the error checking/reporting for
 `coq-par-preprocess-require-commands-internal', which does all the work."
   (when coq-compile-before-require
@@ -2025,7 +2025,7 @@ does the error checking/reporting for
        (coq-par-emergency-cleanup)
        (message "Error: %s" (mapconcat 'identity (cdr err) ": ")))
       (error
-       (message "unexpected error during parallel compilation: %s"
+       (message "Unexpected error during parallel compilation: %s"
 		err)
        (coq-par-emergency-cleanup)
        (signal (car err) (cdr err))))))

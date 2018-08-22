@@ -36,15 +36,15 @@
 (let ((assistants (mapcar (function car) proof-assistant-table)))
 					; assume not customized
   (while assistants
-    (let*  
+    (let*
 	((assistant (car assistants))	; compiler bogus warning here
-	 (nameregexp			
-	  (or 
-	   (cdr-safe 
+	 (nameregexp
+	  (or
+	   (cdr-safe
 	    (assoc assistant
 		   proof-assistant-table))
-	   (error "proof-site: symbol " (symbol-name assistant) 
-		  "is not in proof-assistant-table")))
+	   (error "Symbol %s is not in proof-assistant-table (in docstring-magic)"
+                  (symbol-name assistant))))
 	 (assistant-name (car nameregexp))
 	 (sname		 (symbol-name assistant))
 	 (elisp-file   sname))
@@ -85,3 +85,6 @@
 (setq func-menu 'markup-hack)
 
 (load "texi-docstring-magic.el")
+
+(provide 'docstring-magic)
+;;; docstring-magic.el ends here

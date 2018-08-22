@@ -68,3 +68,4 @@
  )
 
 (provide 'pgocaml)
+;;; pgocaml.el ends here

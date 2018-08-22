@@ -106,8 +106,8 @@ These are appended at the end of `coq-shell-init-cmd'."
   :group 'coq)
 
 (defcustom coq-prefer-top-of-conclusion nil
-  "Prefer start of the conclusion over its end when displaying goals
-that do not fit in the goals window."
+  "Prefer start of the conclusion over its end when displaying large goals.
+Namely, goals that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
 
@@ -156,7 +156,7 @@ that do not fit in the goals window."
 
 (defcustom coq-end-goals-regexp-show-subgoals "\n(dependent evars:"
   "Regexp for `proof-shell-end-goals-regexp' when showing all subgoals.
-A setting of nil means show all output from Coq. See also
+A setting of nil means show all output from Coq.  See also option
 `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
   :group 'coq)
@@ -164,7 +164,7 @@ A setting of nil means show all output from Coq. See also
 (defcustom coq-end-goals-regexp-hide-subgoals
   (concat "\\(\nsubgoal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
   "Regexp for `proof-shell-end-goals-regexp' when hiding additional subgoals.
-See also `coq-hide-additional-subgoals'."
+See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
   :group 'coq)
 
@@ -337,7 +337,7 @@ See also `coq-hide-additional-subgoals'."
 ;; Indentation and navigation support via SMIE.
 
 (defcustom coq-use-smie t
-  "OBSOLETE. smie code is always used now.
+  "OBSOLETE.  smie code is always used now.
 
 If non-nil, Coq mode will try to use SMIE for indentation.
 SMIE is a navigation and indentation framework available in Emacs >= 23.3."
@@ -376,8 +376,8 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
 ;; would not be shown in response buffer. If it is before, then we want it
 ;; urgent so that it is displayed.
 (defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching proof-shell-eager-annotation-start
-  that should maybe not be classified as urgent messages.")
+  "Regexp of commands matching ‘proof-shell-eager-annotation-start’
+that should maybe not be classified as urgent messages.")
 
 ;; return the end position if found, nil otherwise
 (defun coq-non-urgent-eager-annotation ()
@@ -775,7 +775,7 @@ If locked span already has a state number, then do nothing. Also updates
 
 
 (defun coq-hide-additional-subgoals-switch ()
-  "Function invoked when the user switches `coq-hide-additional-subgoals'."
+  "Function invoked when the user switches option `coq-hide-additional-subgoals'."
   (if coq-time-commands
       (progn
         (setq coq-hide-additional-subgoals nil)
@@ -786,8 +786,8 @@ If locked span already has a state number, then do nothing. Also updates
       (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))))
 
 (defun coq-time-commands-switch ()
-  "Function invoked when the user switches `coq-time-commands'.
-Resets `coq-hide-additional-subgoals' and puts nil into
+  "Function invoked when the user switches option `coq-time-commands'.
+Reset option `coq-hide-additional-subgoals' and puts nil into
 `proof-shell-end-goals-regexp' to ensure the timing is visible in
 the *goals* buffer."
   (if coq-time-commands
@@ -806,7 +806,7 @@ the *goals* buffer."
   "Enumerates the different kinds of notation information one can ask to coq.")
 
 (defun coq-PrintScope ()
-  "Show information on notations. Coq specific."
+  "Show information on notations.  Coq specific."
   (interactive)
   (let*
       ((mods
@@ -898,7 +898,7 @@ Support dot.notation.of.modules."
   "Whether Coq mode should remap mouse button 1 to Coq queries.
 
 This overrides the default global binding of (control mouse-1) and
-(shift mouse-1) (buffers and faces menus). Hence it is nil by
+\(shift mouse-1) (buffers and faces menus).  Hence it is nil by
 default."
   :type 'boolean
   :group 'coq)
@@ -963,9 +963,9 @@ Otherwise propose identifier at point if any."
     (string-match "is on\\>" resp)))
 
 (defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd testcmd)
-  "Play commands SETCMD then CMD and then silently UNSETCMD. The
-last UNSETCMD is performed with tag 'empty-action-list so that it
-does not trigger 'proof-shell-empty-action (which dos \"Shwo\" at
+  "Play commands SETCMD then CMD and then silently UNSETCMD.
+The last UNSETCMD is performed with tag 'empty-action-list so that it
+does not trigger ‘proof-shell-empty-action’ (which does \"Show\" at
 the time of writing this documentation)."
   (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
          (flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
@@ -984,8 +984,8 @@ the time of writing this documentation)."
 (defun coq-ask-do-set-unset (ask do setcmd unsetcmd
                                  &optional dontguess postformatcmd tescmd)
   "Ask for an ident id and execute command DO in SETCMD mode.
-More precisely it executes SETCMD, then DO id and finally
-silently UNSETCMD. See `coq-command-with-set-unset'."
+More precisely it executes SETCMD, then DO id and finally silently
+UNSETCMD.  See `coq-command-with-set-unset'."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd tescmd)))
     (proof-shell-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
@@ -1159,8 +1159,8 @@ With flag Printing All if some prefix arg is given (C-u)."
 (defun coq-get-response-string-at (&optional pt)
   "Go forward from PT until reaching a 'response property, and return it.
 Response span only starts at first non space character of a
-command, so we may have to go forward to find it. Starts
-from (point) if pt is nil. Precondition: pt (or point if nil)
+command, so we may have to go forward to find it.  Starts
+from (point) if pt is nil.  Precondition: pt (or point if nil)
 must be in locked region."
   (let ((pt (or pt (point))))
     (save-excursion
@@ -1171,10 +1171,10 @@ must be in locked region."
       (span-property (span-at (point) 'response) 'response))))
 
 (defun coq-Show (withprintingall)
-  "Ask for a number i and show the ith goal.
-Ask for a number i and show the ith current goal. With non-nil
-prefix argument and not on the locked span, show the goal with
-flag Printing All set."
+  "Ask for a number I and show the Ith goal.
+Ask for a number I and show the ith current goal. With non-nil prefix
+argument and not on the locked span, show the goal with flag
+Printing All set."
 ; Disabled:
 ;  "Ask for a number i and show the ith goal, or show ancient goal.
 ;If point is on a locked span, show the corresponding coq
@@ -1222,7 +1222,7 @@ flag Printing All set."
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
 (defun coq-set-auto-adapt-printing-width (&optional symb val); args are for :set compatibility
-  "Function called when setting `auto-adapt-printing-width'"
+  "Function called when setting `auto-adapt-printing-width'."
   (setq symb val) ;; FIXME this is wrong (it should be 'set', but it would set nil sometimes)
   (if coq-auto-adapt-printing-width
       (progn
@@ -1239,10 +1239,10 @@ flag Printing All set."
 ;; command and *not* have the goal redisplayed, the command must be tagged with
 ;; 'empty-action-list.
 (defun coq-empty-action-list-command (cmd)
-  "Return the list of commands to send to coq after CMD if it is
-the last command of the action list.
+  "Return the list of commands to send to Coq after CMD
+if it is the last command of the action list.
 If CMD is tagged with 'empty-action-list then this function won't
-be called and no command will be sent to coq. "
+be called and no command will be sent to Coq."
   (cond
    ((or
      ;; If closing a nested proof, Show the enclosing goal.
@@ -1344,9 +1344,9 @@ present, current pg display mode and current geometry otherwise."
      )))
 
 (defun coq-adapt-printing-width (&optional show width)
-  "Sends a Set Printing Width command to coq to fit the response window's width.
-A Show command is also issued if SHOW is non-nil, so that the
-goal is redisplayed."
+  "Sends a Set Printing Width command to Coq to fit the response window's WIDTH.
+A Show command is also issued if SHOW is non-nil, so that the goal is
+redisplayed."
   (interactive)
   (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
     ;; if no available width, or unchanged, do nothing
@@ -1381,8 +1381,8 @@ goal is redisplayed."
 ;;;;;;;;;; Hypothesis tracking ;;;;;;;;;;
 ;;; Facilities to build overlays for hyp names and hyp+type + hypcross
 ;;; ((un)folding buttons).
-(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis")
-(defvar coq-hypcross-map (make-sparse-keymap) "Keymap for visible hypothesis")
+(defvar coq-hypname-map (make-sparse-keymap) "Keymap for visible hypothesis.")
+(defvar coq-hypcross-map (make-sparse-keymap) "Keymap for visible hypothesis.")
 
 (defvar coq-hypcross-hovering-help t
   "Whether hyps fold cross pops up a help when hovered.")
@@ -1503,11 +1503,10 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 
 
 (defun coq-detect-hyps-in-goals ()
-  "Detect all hypothesis displayed in goals buffer and create overlays.
-Three overlays are created for each hyp: (hypov hypnameov hypcrossov), respectively
-for the whole hyp, only its name and the overlay for fold/unfold cross.
-Returnns the list of mappings hypname -> overlays.
-"
+  "Detect all hypotheses displayed in goals buffer and create overlays.
+Three overlays are created for each hyp: (hypov hypnameov hypcrossov),
+respectively for the whole hyp, only its name and the overlay for
+fold/unfold cross.  Return the list of mappings hypname -> overlays."
   (let*
       ((fsthyp-pos (coq-find-first-hyp))
        (fsthyp-ov (when fsthyp-pos (with-current-buffer proof-goals-buffer
@@ -1649,7 +1648,7 @@ See  `coq-highlight-hyp'."
     (insert hyp-name)))
 
 ;;;;;;;;;;; Hiding Hypothesis  ;;;;;;;;;;;
-(defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis")
+(defvar coq-hidden-hyp-map (make-sparse-keymap) "Keymap for hidden hypothesis.")
 
 (defvar coq-hidden-hyps nil
   "List of hypothesis that should be hidden in goals buffer.
@@ -1715,12 +1714,11 @@ hiding to be maintain when scripting/undoing."
 
 (defun coq-fold-hyp (h)
   "Fold hypothesis H's type from the context durably.
-(displays \".......\" instead). This function relies on variable
-coq-hyps-positions. The hiding maintained as the goals buffer is
-changed, thanks to a hook on
-`proof-shell-handle-delayed-output-hook', consider using
-`coq-fold-hyp' if you want the hiding to be maintain when
-scripting/undoing."
+\(displays \".......\" instead).  This function relies on variable
+‘coq-hyps-positions’.  The hiding maintained as the goals buffer is
+changed, thanks to a hook on `proof-shell-handle-delayed-output-hook',
+consider using `coq-fold-hyp' if you want the hiding to be maintain
+when scripting/undoing."
   (interactive)
   (unless (member h coq-hidden-hyps)
     (setq coq-hidden-hyps (cons h coq-hidden-hyps))
@@ -1858,15 +1856,17 @@ See  `coq-fold-hyp'."
 
 
 (defun coq-get-comment-region (pt)
-  "Return a list of the forme (beg end) where beg,end is the comment region arount position PT.
-Return nil if PT is not inside a comment"
+  "Return a list of the form (BEG END).
+BEG,END being the comment region arount position PT.
+Return nil if PT is not inside a comment."
   (save-excursion
     (goto-char pt)
     `(,(save-excursion (coq-find-comment-start))
       ,(save-excursion (coq-find-comment-end)))))
 
 (defun coq-near-comment-region ()
-  "Return a list of the forme (beg end) where beg,end is the comment region near position PT.
+  "Return a list of the forme (BEG END).
+BEG,END being is the comment region near position PT.
 Return nil if PT is not near a comment.
 Near here means PT is either inside or just aside of a comment."
   (save-excursion
@@ -2263,7 +2263,7 @@ Near here means PT is either inside or just aside of a comment."
 
 (defun coq-extract-instantiated-existentials (start end)
   "Coq specific function for `proof-tree-extract-instantiated-existentials'.
-Returns the list of currently instantiated existential variables."
+Return the list of currently instantiated existential variables."
   (proof-tree-extract-list
    start end
    coq-proof-tree-existentials-state-start-regexp
@@ -2276,11 +2276,11 @@ Returns the list of currently instantiated existential variables."
 
 (defun coq-proof-tree-get-new-subgoals ()
   "Check for new subgoals and issue appropriate Show commands.
-This is a hook function for `proof-tree-urgent-action-hook'. This
+This is a hook function for `proof-tree-urgent-action-hook'.  This
 function examines the current goal output and searches for new
-unknown subgoals. Those subgoals have been generated by the last
+unknown subgoals.  Those subgoals have been generated by the last
 proof command and we must send their complete sequent text
-eventually to prooftree. Because subgoals may change with
+eventually to prooftree.  Because subgoals may change with
 the next proof command, we must execute the additionally needed
 Show commands before the next real proof command.
 
@@ -2288,18 +2288,18 @@ The ID's of the open goals are checked with
 `proof-tree-sequent-hash' in order to find out if they are new.
 For any new goal an appropriate Show Goal command with a
 'proof-tree-show-subgoal flag is inserted into
-`proof-action-list'. Then, in the normal delayed output
+`proof-action-list'.  Then, in the normal delayed output
 processing, the sequent text is send to prooftree as a sequent
 update (see `proof-tree-update-sequent') and the ID of the
 sequent is registered as known in `proof-tree-sequent-hash'.
 
 Searching for new subgoals must only be done when the proof is
 not finished, because Coq 8.5 lists open existential variables
-as (new) open subgoals. For this test we assume that
+as (new) open subgoals.  For this test we assume that
 `proof-marker' has not yet been moved.
 
 The `proof-tree-urgent-action-hook' is also called for undo
-commands. For those, nothing is done.
+commands.  For those, nothing is done.
 
 The not yet delayed output is in the region
 \[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
@@ -2383,9 +2383,9 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 
 (defun coq-proof-tree-enable-evar-callback (span)
   "Callback for the evar printing status test.
-This is the callback for the command ``Test Printing Dependent
-Evars Line''. It checks whether evar printing was off and
-remembers that fact in `coq--proof-tree-must-disable-evars'."
+This is the callback for the command ``Test Printing Dependent Evars Line''.
+It checks whether evar printing was off and remembers that
+fact in `coq--proof-tree-must-disable-evars'."
   (with-current-buffer proof-shell-buffer
     (save-excursion
       ;; When the callback runs, the next item is sent to Coq already and
@@ -2426,11 +2426,11 @@ properly after the proof and enable the evar printing."
 (defun coq-proof-tree-disable-evars ()
   "Disable evar printing if necessary.
 This function switches off evar printing after the proof, if it
-was off before the proof. For undo commands, we rely on the fact
+was off before the proof.  For undo commands, we rely on the fact
 that Coq itself undos the effect of the evar printing change that
-we inserted after the goal statement. We also rely on the fact
+we inserted after the goal statement.  We also rely on the fact
 that Proof General never backtracks into the middle of a
-proof. (If this would happen, Coq would switch evar printing on
+proof.  (If this would happen, Coq would switch evar printing on
 and the code here would not switch it off after the proof.)
 
 Being called from `proof-tree-urgent-action-hook', this function
@@ -2444,10 +2444,10 @@ result of `coq-proof-tree-get-proof-info'."
 (defun coq-proof-tree-evar-display-toggle ()
   "Urgent action hook function for changing the evar printing status in Coq.
 This function is for `proof-tree-urgent-action-hook' (which is
-called only if external proof disaply is switched on). It checks
+called only if external proof disaply is switched on).  It checks
 whether a proof was started or stopped and inserts commands for
 enableing and disabling the evar status line for Coq 8.6 or
-later. Without the evar status line being enabled, prooftree
+later.  Without the evar status line being enabled, prooftree
 crashes.
 
 Must only be called via `proof-tree-urgent-action-hook' to ensure
@@ -2651,7 +2651,7 @@ tacitcs like destruct and induction reuse hypothesis names by
 default, which makes the detection of new hypothesis incorrect.
 the hack consists in adding the \"!\" modifier on the argument
 destructed, so that it is left in the goal and the name cannot be
-reused. We also had a \"clear\" at the end of the tactic so that
+reused.  We also had a \"clear\" at the end of the tactic so that
 the whole tactic behaves correctly.
 Warning: this makes the error messages (and location) wrong.")
 
@@ -2980,8 +2980,9 @@ buffer."
 
 
 (defun coq-highlight-error (&optional parseresp clean)
-  "Parses the last coq output looking at an error message. Highlight the text
-pointed by it. Coq error message must be like this:
+  "Parse the last Coq output looking at an error message.
+Highlight the text pointed by it.
+Coq error message must be like this:
 
 \"
 > command with an error here ...
@@ -3195,24 +3196,24 @@ Only when three-buffer-mode is enabled."
 
 (defcustom coq-double-hit-enable nil
   "* Experimental: Whether or not double hit should be enabled in coq mode.
-A double hit is performed by pressing twice a key quickly. If
+A double hit is performed by pressing twice a key quickly.  If
 this variable is not nil, then 1) it means that electric
 terminator is off and 2) a double hit on the terminator act as
-the usual electric terminator. See `proof-electric-terminator'.
-"
+the usual electric terminator.  See `proof-electric-terminator'."
   :type 'boolean
   :set 'proof-set-value
   :group 'proof-user-options)
 
 
 (defvar coq-double-hit-hot-key "."
-  "The key used for double hit electric terminator. By default this
-is the coq terminator \".\" key. For example one can do this:
+  "The key used for double hit electric terminator.
+By default this is the coq terminator \".\" key.
+For example one can do this:
 
-(setq coq-double-hit-hot-key (kbd \";\"))
+\(setq coq-double-hit-hot-key (kbd \";\"))
 
-to use semi-colon instead (on french keyboard, it is the same key
-as \".\" but without shift.")
+to use semi-colon instead (on French keyboard, it is the same key as
+\".\" but without shift.")
 
 (defvar coq-double-hit-hot-keybinding nil
   "The keybinding that was erased by double hit terminator enabling.
@@ -3253,7 +3254,7 @@ This is an advice to pg `proof-electric-terminator-enable' function."
   "The maximum delay between the two hit of a double hit in coq/proofgeneral.")
 
 (defvar coq-double-hit-timer nil
-  "the timer used to watch for double hits.")
+  "The timer used to watch for double hits.")
 
 (defvar coq-double-hit-hot nil
   "The variable telling that a double hit is still possible.")
@@ -3261,8 +3262,8 @@ This is an advice to pg `proof-electric-terminator-enable' function."
 
 
 (defun coq-unset-double-hit-hot ()
-  "Disable timer `coq-double-hit-timer' and set it to nil. Shut
-off the current double hit if any. This function is supposed to
+  "Disable timer `coq-double-hit-timer' and set it to nil.
+Shut off the current double hit if any.  This function is supposed to
 be called at double hit timeout."
   (when coq-double-hit-timer (cancel-timer coq-double-hit-timer))
   (setq coq-double-hit-hot nil)
@@ -3285,9 +3286,11 @@ Starts a timer for a double hit otherwise."
                           nil 'coq-unset-double-hit-hot))))
 
 (defun coq-terminator-insert (&optional count)
-  "A wrapper on `proof-electric-terminator' to accept double hits instead if enabled.
-If by accident `proof-electric-terminator-enable' and `coq-double-hit-enable'
-are non-nil at the same time, this gives priority to the former."
+  "A wrapper on `proof-electric-terminator'.
+Used to accept double hits instead if enabled.
+If by accident option `proof-electric-terminator-enable' and option
+`coq-double-hit-enable' are non-nil at the same time, this gives
+priority to the former."
   (interactive)
   (if (and (not proof-electric-terminator-enable)
            coq-double-hit-enable (null count))

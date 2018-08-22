@@ -69,7 +69,7 @@
 ;;; The abbrev table built from keywords tables
 ;#s and @{..} are replaced by holes by holes-abbrev-complete
 (defun coq-install-abbrevs ()
-  "install default abbrev table for coq if no other already is."
+  "Install default abbrev table for coq if no other already is."
   (if (boundp 'coq-mode-abbrev-table)
       ;; da: this test will always fail.  Assume bound-->non-empty
       ;; (not (equal coq-mode-abbrev-table (make-abbrev-table))))
@@ -353,9 +353,11 @@ It was constructed with `proof-defstringset-fn'.")
      ["Compile" coq-Compile t]))))
 
 (setq-default coq-help-menu-entries
-  '(["help on setting prog name persistently for a file" 
+  '(["help on setting prog name persistently for a file"
      coq-local-vars-list-show-doc t]))
 
 (setq-default coq-other-buffers-menu-entries coq-menu-common-entries)
 
 (provide 'coq-abbrev)
+
+;;; coq-abbrev.el ends here

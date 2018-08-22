@@ -115,7 +115,7 @@ For example for coq on Windows you might need something like:
   :type '(repeat string)
   :group 'proof-shell)
 
-(defpgcustom quit-timeout 
+(defpgcustom quit-timeout
   (cond
    ((eq proof-assistant-symbol 'isar)    45)
    (t					 5))

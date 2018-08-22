@@ -1,4 +1,3 @@
-$Id$
 This is the file .../info/dir, which contains the topmost node of the
 Info hierarchy.  The first time you invoke Info you start off
 looking at that node, which is (dir)Top.
@@ -16,5 +15,5 @@ File: dir	Node: Top	This is the top of the INFO tree
 * Menu: 
 
 Theorem proving
-* Proof General: (ProofGeneral).          Organize your proofs with Emacs!
-* Adapting Proof General: (PG-adapting).  Adapt Proof General to new provers
+* ProofGeneral: (ProofGeneral). Organize your proofs with Emacs!
+* Adapting PG: (PG-adapting). Adapt Proof General to new provers

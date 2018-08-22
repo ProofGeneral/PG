@@ -20,7 +20,7 @@
 ;; variable for documentation.
 ;;
 ;; For Coq, there is no dedicated token syntax, it's probably
-;; preferable to use UTF-8 notation directly (see utf8.v).  
+;; preferable to use UTF-8 notation directly (see utf8.v).
 ;; 
 ;; On the other hand, for easily portable files, one can fix
 ;; ordinary character sequences as tokens, like the old X-Symbol
@@ -31,7 +31,7 @@
 ;; Unicode characters, whereas ordinary character sequences are
 ;; displayed as those characters.
 ;;
-;; Recommended ways to work: 
+;; Recommended ways to work:
 ;;
 ;;   1) UTF-8 buffers:  ☑ Show Symbol Tokens  (ON)
 ;;			☑ Enable Shortcuts    (ON)
@@ -44,6 +44,8 @@
 ;; buffer contents.  Hovering on a token shows its underlying text.
 
 (require 'proof-unicode-tokens)
+
+;;; Code:
 
 (defconst coq-token-format "") ; Let generic code do the job
 (defconst coq-token-match nil)
@@ -103,7 +105,7 @@
     ("false" "false" bold sans)
     ("true" "true" bold sans)
 
-    ;; example tokens used in Benjamin C. Pierce et al's 
+    ;; example tokens used in Benjamin C. Pierce et al's
     ;; Software Foundations course
     ("WHILE" "WHILE" bold sans)
     ("DO" "DO" bold sans)
@@ -123,7 +125,7 @@
     (">=" "≥")
     ("=>" "⇒")
     ("->" "→")  ; or ⟶ or ⟹ if you prefer
-    ("<-" "←")  ; or ⟵ or ⟸ 
+    ("<-" "←")  ; or ⟵ or ⟸
     ("<->" "↔") ; or ⟷ ...
     ("++" "⧺")
     ("<<" "《")
@@ -151,8 +153,8 @@
     ("~"  "¬")
     
     ;; A dirty hack for the goals window, shouldn't be input syntax!
-    ("============================" 
-     "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯" 
+    ("============================"
+     "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
      bold tactical)
     )
   ;; an alist of token name, unicode char sequence

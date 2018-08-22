@@ -97,3 +97,7 @@
   (pg-autotest timetaken 'total)
 
   (pg-autotest exit))
+
+(provide 'coq-autotest)
+
+;;; coq-autotest.el ends here

@@ -1,3 +1,5 @@
+;;; easycrypt-abbrev.el --- Abbrev table and menus for EasyCrypt mode
+
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
 ;; Copyright (c) - 2012--2016 - Inria
@@ -5,8 +7,13 @@
 ;; Distributed under the terms of the GPL-v3 license
 ;; --------------------------------------------------------------------
 
+;;; Commentary:
+;; 
+
 (require 'proof)
 (require 'easycrypt-syntax)
+
+;;; Code:
 
 (defpgdefault menu-entries
   '(
@@ -23,3 +30,5 @@
 ))
 
 (provide 'easycrypt-abbrev)
+
+;;; easycrypt-abbrev.el ends here

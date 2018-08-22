@@ -66,7 +66,7 @@
 ;;
 
 (defmacro proof-with-current-buffer-if-exists (buf &rest body)
-  "As with-current-buffer if BUF exists and is live, otherwise nothing."
+  "Like ‘with-current-buffer’ if BUF exists and is live, otherwise nothing."
   `(if (buffer-live-p ,buf)
        (with-current-buffer ,buf
 	 ,@body)))
@@ -75,7 +75,7 @@
 ;; which work from different PG buffers (goals, response), typically
 ;; bound to toolbar commands.
 (defmacro proof-with-script-buffer (&rest body)
-  "Execute BODY in some script buffer: current buf or otherwise proof-script-buffer.
+  "Execute BODY in some script buffer: current buf, else ‘proof-script-buffer’.
 Return nil if not a script buffer or if no active scripting buffer."
   `(cond
     ((eq proof-buffer-type 'script)
@@ -86,7 +86,7 @@ Return nil if not a script buffer or if no active scripting buffer."
        ,@body))))
 
 (defmacro proof-map-buffers (buflist &rest body)
-  "Do BODY on each buffer in BUFLIST, if it exists."
+  "Eval BODY on each buffer in BUFLIST, if it exists."
   `(dolist (buf ,buflist)
      (proof-with-current-buffer-if-exists buf ,@body)))
 
@@ -187,9 +187,9 @@ user accidently killing an associated buffer."
 ;; Key functions
 
 (defun proof-define-keys (map kbl)
-  "Adds keybindings KBL in MAP.
-The argument KBL is a list of tuples (k . f) where `k' is a keybinding
-\(vector) and `f' the designated function."
+  "Add in MAP the keybindings KBL.
+The argument KBL is a list of tuples (K . F) where K is a keybinding
+\(vector) and F the designated function."
   (mapcar
    (lambda (kbl)
      (let ((k (car kbl)) (f (cdr kbl)))
@@ -230,21 +230,21 @@ Leave point at END."
 (defvar proof-advertise-layout-freq 30
   "Frequency for PG messages to be displayed from time to time.")
 (defvar proof-advertise-layout-count proof-advertise-layout-freq
-  "counter used to display PG messages from time to time.")
+  "Counter used to display PG messages from time to time.")
 
 (defun proof-get-window-for-buffer (buffer)
   "Find a window for BUFFER, display it there, return the window.
-NB: may change the selected window. This function is a wrapper on
-display-buffer. The idea is that if the user has opened and
+NB: may change the selected window.  This function is a wrapper on
+‘display-buffer’.  The idea is that if the user has opened and
 closed some windows we want to preserve the layout by only
-switching buffer in already pg-associate windows. So if the
+switching buffer in already pg-associate windows.  So if the
 buffer is not already displayed, we try to reuse an existing
-associated window, even if in 3-win mode. If no such window
-exists, we fall back to display-buffer while protecting script
+associated window, even if in 3-win mode.  If no such window
+exists, we fall back to ‘display-buffer’ while protecting script
 buffer to be hidden or split.
 
 Experimentally we display a message from time to time advertising
-C-c C-l."
+\\[proof-layout-windows]."
   ;; IF there *isn't* a visible window showing buffer...
   (unless (get-buffer-window buffer 0)
     (if proof-three-window-enable
@@ -323,7 +323,7 @@ Ensure that point is visible in window."
 		      (kill-local-variable 'mode-line-format))))))))))))
 
 (defun proof-clean-buffer (buffer)
-  "Erase buffer and hide from display if proof-delete-empty-windows set.
+  "Erase BUFFER and hide from display if ‘proof-delete-empty-windows’ set.
 Auto deletion only affects selected frame.  (We assume that the selected
 frame is the one showing the script buffer.)
 No effect if buffer is dead."
@@ -699,9 +699,10 @@ KEY is added onto proof assistant map."
 ;;
 
 (defun proof-locate-executable (progname &optional returnnopath extrapath)
-  "Search for PROGNAME on environment PATH.  Return the full path to PROGNAME, or nil.
+  "Search for PROGNAME on environment PATH.
+Return the full path to PROGNAME, or nil.
 If RETURNNOPATH is non-nil, return PROGNAME even if we can't find a full path.
-EXTRAPATH is a list of extra path components"
+EXTRAPATH is a list of extra path components."
   (or
    (let ((exec-path (append exec-path extrapath)))
      (executable-find progname))

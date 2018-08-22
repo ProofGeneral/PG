@@ -80,7 +80,7 @@
 
 (eval-and-compile
   ;; WARNING: do not edit next line (constant is edited in Makefile.devel)
-  (defconst proof-general-version "Proof General Version 4.4.1~pre."
+  (defconst proof-general-version "Proof General Version 4.5-git."
     "Version string identifying Proof General release."))
 
 (defconst proof-general-short-version
@@ -156,7 +156,7 @@ You can use customize to set this variable."
 ;;
 
 (defun proof-add-to-load-path (dir)
-  "Add DIR to `load-path' if not contained already"
+  "Add DIR to `load-path' if not contained already."
   (add-to-list 'load-path dir))
 
 (proof-add-to-load-path (concat proof-home-directory "generic/"))
@@ -206,10 +206,10 @@ Each entry is a list of the form
 The NAME is a string, naming the proof assistant.
 The SYMBOL is used to form the name of the mode for the
 assistant, `SYMBOL-mode', run when files with AUTOMODE-REGEXP
-\(or with extension FILE-EXTENSION) are visited. If present,
+\(or with extension FILE-EXTENSION) are visited.  If present,
 IGNORED-EXTENSIONS-LIST is a list of file-name extensions to be
 ignored when doing file-name completion (IGNORED-EXTENSIONS-LIST
-is added to completion-ignored-extensions).
+is added to ‘completion-ignored-extensions’).
 
 SYMBOL is also used to form the name of the directory and elisp
 file for the mode, which will be
@@ -309,7 +309,7 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
       (mapcar (lambda (astnt) (car astnt)) proof-assistant-table))
   "A list of the configured proof assistants.
 Set on startup to contents of environment variable PROOFGENERAL_ASSISTANTS,
-the lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
+the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
 
 ;; Add auto-loads and load-path elements to support the
 ;; proof assistants selected, and define stub major mode functions

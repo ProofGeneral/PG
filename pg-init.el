@@ -1,4 +1,4 @@
-;;; pg-init.el --- Init file used for compatibility with package.el and ELPA  -*- lexical-binding: t; -*-
+;;; pg-init.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -10,6 +10,9 @@
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
+;; URL: https://proofgeneral.github.io/
+;; Package-Requires: ((emacs "24.3"))
+;; Version: 4.5-git
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

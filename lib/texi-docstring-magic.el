@@ -96,7 +96,10 @@
   (require 'cl))
 
 (defun texi-docstring-magic-find-face (face)
-  ;; Compatibility between FSF Emacs and XEmacs
+  "Return non-nil if FACE is a face name; nil otherwise.
+A face name can be a string or a symbol.
+
+Compatibility between FSF Emacs and XEmacs."
   (or (facep face)
       (and (fboundp 'find-face) (find-face face))))
 
@@ -202,13 +205,14 @@ including any whitespace included to delimit matches.")
 
 (defun texi-docstring-magic-untabify (string)
   "Convert tabs in STRING into multiple spaces."
-  (with-temp-buffer 
+  (with-temp-buffer
     (insert string)
     (untabify (point-min) (point-max))
     (buffer-string)))
 
 (defun texi-docstring-magic-munge-docstring (docstring args)
   "Markup DOCSTRING for texi according to regexp matches."
+  ;; FIXME(EMD): seems buggy as ARGS is not used
   (let ((case-fold-search nil))
     (setq docstring (texi-docstring-magic-untabify docstring))
     (dolist (test texi-docstring-magic-munge-table)
@@ -261,7 +265,7 @@ including any whitespace included to delimit matches.")
 
 (defun texi-docstring-magic-format-default (default)
   "Make a default value string for the value DEFAULT.
-Markup as @code{stuff} or @lisp stuff @end lisp."
+Markup as @code{stuff} or @lisp stuff @end Lisp."
   ;; NB: might be nice to use a 'default-value-description
   ;; property here, in case the default value is computed.
   (let ((text       (format "%S" default)))
@@ -409,3 +413,7 @@ With prefix arg, no errors on unknown symbols.  (This results in
 
 
 (provide 'texi-docstring-magic)
+
+(provide 'texi-docstring-magic)
+
+;;; texi-docstring-magic.el ends here

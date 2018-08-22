@@ -52,15 +52,15 @@
   (let* ((tokens   (proof-ass unicode-tokens-enable))
 	 (cmd      (buffer-substring-no-properties
 		      (span-start span) (span-end span)))
-	 (tcmd     (if tokens 
+	 (tcmd     (if tokens
 		       ;; no subscripts of course
 		       (unicode-tokens-encode-str cmd)
 		     cmd))
 	 (helpspan (span-property span 'pg-helpspan))
-	 (resp     (when helpspan 
+	 (resp     (when helpspan
 		     (span-property helpspan 'response)))
 	 (tresp    (if resp
-		       (if tokens 
+		       (if tokens
 			   (unicode-tokens-encode-str resp)
 			 resp)
 		     ""))
@@ -99,7 +99,7 @@ If FORCE, overwrite existing file without asking."
 		(point-min)
 		(point-max)))
 	(movie-file-name
-	 (concat 
+	 (concat
 	  (file-name-sans-extension
 		  (buffer-file-name)) ".xml")))
 
@@ -114,7 +114,7 @@ If FORCE, overwrite existing file without asking."
 ;;;###autoload
 (defun pg-movie-export-from (script &optional force)
   "Export the movie file that results from processing SCRIPT."
-  (interactive "fFile: 
+  (interactive "fFile:
 P")
   (let ((proof-full-annotation t) ; dynamic
 	(proof-fast-process-buffer t))
@@ -126,10 +126,10 @@ P")
 (defun pg-movie-export-directory (dir extn)
   "Export movie files from directory DIR with extension EXTN.
 Existing XML files are overwritten."
-  (interactive "DDirectory: 
+  (interactive "DDirectory:
 sFile extension: ")
-  (let ((files (directory-files 
-		dir t 
+  (let ((files (directory-files
+		dir t
 		(concat "\\." extn "$"))))
     (dolist (f files)
       (pg-movie-export-from f 'force))

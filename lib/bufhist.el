@@ -186,7 +186,8 @@ This is as a pair (POINT . CONTENTS)."
   (bufhist-insert-buttons))
 
 (defun bufhist-checkpoint-and-erase ()
-  "Add buffer contents to history then erase. Only erase if not in bufhist mode"
+  "Add buffer contents to history then erase.
+Only erase if not in bufhist mode."
   (interactive)
   (bufhist-checkpoint)
   (bufhist-erase-buffer))
@@ -241,7 +242,8 @@ If optional NOSAVE is non-nil, do not try to save current contents."
   (bufhist-switch-to-index 0 nil 'browsing))
 
 (defun bufhist-prev (&optional n)
-  "Browse backward in the history of buffer contents."
+  "Browse backward in the history of buffer contents.
+If N is omitted or nil, move backward by one item."
   (interactive "p")
   (bufhist-switch-to-index
    (mod (+ bufhist-ring-pos (or n 1))
@@ -249,7 +251,8 @@ If optional NOSAVE is non-nil, do not try to save current contents."
    nil 'browsing))
 
 (defun bufhist-next (&optional n)
-  "Browse forward in the history of buffer contents."
+  "Browse forward in the history of buffer contents.
+If N is omitted or nil, move forward by one item."
   (interactive "p")
   (bufhist-prev (- (or n 1))))
 
@@ -284,7 +287,7 @@ If optional NOSAVE is non-nil, do not try to save current contents."
   "Initialise a ring history for the current buffer.
 The history will be read-only unless READWRITE is non-nil.
 For read-only histories, edits to the buffer switch to the latest version.
-The size defaults to `bufhist-ring-size'."
+If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."
   (interactive)
   (setq bufhist-ring (make-ring (or ringsize bufhist-ring-size)))
   (setq bufhist-normal-read-only buffer-read-only)
@@ -370,3 +373,4 @@ The size defaults to `bufhist-ring-size'."
 	(setq bufhist-top-point (point))))))
 
 (provide 'bufhist)
+;;; bufhist.el ends here

@@ -39,7 +39,7 @@
 (defalias 'span-buffer 'overlay-buffer)
 
 (defun span-p (ol)
-  "Check if an overlay belongs to PG."
+  "Check if an overlay OL belongs to PG."
   (overlay-get ol 'pg-span))
 
 (defun span-read-only-hook (overlay after start end &optional len)
@@ -119,7 +119,7 @@
 
 (defun span-mapcar-spans-inorder (fn start end prop)
   "Map function FN over spans between START and END with property PROP."
-  (mapcar fn 
+  (mapcar fn
 	  (sort (spans-at-region-prop start end prop)
 		'span-lt)))
 
@@ -165,7 +165,7 @@ A span is before PT if it begins before the character before PT."
 
 (defun span-string (span)
   (with-current-buffer (overlay-buffer span)
-    (buffer-substring-no-properties 
+    (buffer-substring-no-properties
      (overlay-start span) (overlay-end span))))
 
 (defun set-span-properties (span plist)
@@ -212,7 +212,8 @@ A span is before PT if it begins before the character before PT."
   (span-mapc-spans 'span-delete start end prop))
 
 (defun span-property-safe (span name)
-  "Like span-property, but return nil if SPAN is nil."
+  "Get the property of span SPAN with property name NAME.
+Like ‘span-property’, but return nil if SPAN is nil."
   (and span (span-property span name)))
 
 (defun span-set-start (span value)

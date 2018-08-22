@@ -92,8 +92,7 @@
 ;;
 
 (defvar pg-response-special-display-regexp nil
-  "Regexp for `special-display-regexps' (now display-buffer-alist)
-for multiple frame use.
+  "Regexp for ‘display-buffer-alist’ for multiple frame use.
 Internal variable, setting this will have no effect!")
 
 (defconst proof-multiframe-parameters
@@ -129,8 +128,10 @@ Internal variable, setting this will have no effect!")
 
 (defun proof-guess-3win-display-policy (&optional policy)
   "Return the 3 windows mode layout policy from user choice POLICY.
-If POLIY is smart then guess the good policy from the current
-frame geometry, otherwise follow POLICY."
+If POLICY is ’smart then guess the good policy from the current
+frame geometry, otherwise follow POLICY.
+
+See ‘proof-layout-windows’ for more details about POLICY."
   (if (eq policy 'smart)
       (cond
        ((>= (frame-width) (* 1.5 split-width-threshold)) 'horizontal)
@@ -139,9 +140,10 @@ frame geometry, otherwise follow POLICY."
     policy))
 
 (defun proof-select-three-b (b1 b2 b3 &optional policy)
-  "Put the given three buffers into three windows.
-Following POLICY, which can be one of 'smart, 'horizontal,
-'vertical or 'hybrid."
+  "Put the three buffers B1, B2, and B3 into three windows.
+Following POLICY, which can be 'smart, 'horizontal, 'vertical, or 'hybrid.
+
+See ‘proof-layout-windows’ for more details about POLICY."
   (interactive "bBuffer1:\nbBuffer2:\nbBuffer3:")
   (delete-other-windows)
   (switch-to-buffer b1)
@@ -181,7 +183,8 @@ Following POLICY, which can be one of 'smart, 'horizontal,
 
 
 (defun proof-display-three-b (&optional policy)
-  "Layout three buffers in a single frame.  Only do this if buffers exist."
+  "Layout three buffers in a single frame.  Only do this if buffers exist.
+In this case, call ‘proof-select-three-b’ with argument POLICY."
   (interactive)
   (when (and (buffer-live-p proof-goals-buffer)
 	     (buffer-live-p proof-response-buffer))
@@ -220,9 +223,9 @@ For multiple frame mode, this function obeys the setting of
 For single frame mode:
 
 - In two panes mode, this uses a canonical layout made by splitting
-Emacs windows in equal proportions. The splitting is vertical if
-emacs width is smaller than `split-width-threshold' and
-horizontal otherwise. You can then adjust the proportions by
+Emacs windows in equal proportions.  The splitting is vertical if
+Emacs width is smaller than `split-width-threshold' and
+horizontal otherwise.  You can then adjust the proportions by
 dragging the separating bars.
 
 - In three pane mode, there are three display modes, depending
@@ -238,7 +241,7 @@ dragging the separating bars.
     response).
 
   By default, the display mode is automatically chosen by
-  considering the current emacs frame width: if it is smaller
+  considering the current Emacs frame width: if it is smaller
   than `split-width-threshold' then vertical mode is chosen,
   otherwise if it is smaller than 1.5 * `split-width-threshold'
   then hybrid mode is chosen, finally if the frame is larger than
@@ -249,7 +252,7 @@ dragging the separating bars.
 
   If you want to force one of the layouts, you can set variable
   `proof-three-window-mode-policy' to 'vertical, 'horizontal or
-  'hybrid. The default value is 'smart which sets the automatic
+  'hybrid.  The default value is 'smart which sets the automatic
   behaviour described above."
   (interactive)
   (cond

@@ -27,16 +27,16 @@
 ;;;
 
 (defvar proof-assistant-cusgrp nil
-  "Symbol for the customization group of the user options for the proof assistant.
+  "Symbol for the customization group of user options for the proof assistant.
 Do not change this variable! It is set automatically by the mode
 stub defined in proof-site, from the name given in
-proof-assistant-table.")
+‘proof-assistant-table’.")
 
 (defvar proof-assistant-internals-cusgrp nil
-  "Symbol for the customization group of the PG internal settings proof assistant.
+  "Symbol for the customization group of PG internal settings.
 Do not change this variable! It is set automatically by the mode
 stub defined in proof-site, from the name given in
-proof-assistant-table.")
+‘proof-assistant-table’.")
 
 (defvar proof-assistant ""
   "Name of the proof assistant Proof General is using.
@@ -217,7 +217,7 @@ the form of the menu entry for the setting (this is an Emacs widget type)
 and the DESCR description string is used as a help tooltip in the settings menu.
 
 As TYPE's only the simple types boolean, integer, number and
-string are supported (see `proof-menu-entry-for-setting'). Other
+string are supported (see `proof-menu-entry-for-setting').  Other
 types will yield an error when constructing the proof assistant
 menu from this list.
 

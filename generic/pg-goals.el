@@ -89,7 +89,7 @@ function tries to do that by calling `pg-response-maybe-erase'.
 
 If KEEPRESPONSE is non-nil, we assume that a response message
 corresponding to this goals message has already been displayed
-before this goals message (see `proof-shell-handle-delayed-output'),  
+before this goals message (see `proof-shell-handle-delayed-output'),
 so the response buffer should not be cleared."
   (save-excursion
     ;; Response buffer may be out of date. It may contain (error)

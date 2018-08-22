@@ -114,7 +114,7 @@
      pg-thymodes pg-autotest
      ;;
      isar-syntax isar-find-theorems isar-unicode-tokens
-     isar-autotest interface-setup isabelle-system isar 
+     isar-autotest interface-setup isabelle-system isar
      isar-keywords
      ;;
      coq-abbrev coq-db coq-unicode-tokens coq-local-vars coq coq-syntax
@@ -130,7 +130,7 @@
 
 ;;;###autoload
 (defun profile-pg ()
-  "Configure Proof General for profiling.  Use M-x elp-results to see results."
+  "Configure Proof General for profiling.  Use \\[elp-results] to see results."
   (interactive)
   (elp-instrument-package "proof-")
   (elp-instrument-package "pg-")
@@ -142,10 +142,10 @@
   (elp-instrument-package "replace-") ; for replace-regexp etc
   (elp-instrument-package "re-search-") ; for re-search-forwad etc
   (elp-instrument-package "skip-chars-") ; for skip chars etc
-  (elp-instrument-list 
+  (elp-instrument-list
    '(string-match match-string re-search-forward re-search-backward
      skip-chars-forward skip-chars-backward
-     goto-char insert 
+     goto-char insert
      set-marker marker-position
      nreverse nconc mapc
      member
@@ -153,7 +153,7 @@
      sit-for
      overlay-put overlay-start overlay-end make-overlay
      buffer-live-p kill-buffer
-     process-status get-buffer-process 
+     process-status get-buffer-process
      delete-overlay move-overlay
      accept-process-output))
   (elp-instrument-package "font-lock"))

@@ -1,3 +1,5 @@
+;;; easycrypt.el --- Major mode for EasyCrypt
+
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
 ;; Copyright (c) - 2012--2016 - Inria
@@ -5,10 +7,15 @@
 ;; Distributed under the terms of the GPL-v3 license
 ;; --------------------------------------------------------------------
 
+;;; Commentary:
+;; 
+
 (require 'proof)
 (require 'easycrypt-syntax)
 (require 'easycrypt-hooks)
 (require 'easycrypt-abbrev)
+
+;;; Code:
 
 (add-to-list 'hs-special-modes-alist
   '(easycrypt-mode "{" "}" "/[*/]" nil nil))
@@ -27,7 +34,7 @@
 
 (defcustom easycrypt-load-path nil
   "Non-standard EasyCrypt library load path.
-This list specifies the include path for EasyCrypt. The elements of
+This list specifies the include path for EasyCrypt.  The elements of
 this list are strings."
   :type  '(repeat (string :tag "simple directory (-I)"))
   :safe  'easycrypt-load-path-safep
@@ -102,7 +109,7 @@ this list are strings."
          proof-three-window-mode-policy        (quote hybrid)
          proof-auto-multiple-files             t)
 
-  ; Setting indents 
+  ; Setting indents
   (set   (make-local-variable 'indent-tabs-mode) nil)
   (setq  proof-indent-enclose-offset   (- proof-indent)
          proof-indent-open-offset     0
@@ -158,20 +165,20 @@ this list are strings."
 (define-derived-mode easycrypt-response-mode proof-response-mode
   "EasyCrypt response" nil
   (easycrypt-init-output-syntax-table)
-  (setq  proof-response-font-lock-keywords 
+  (setq  proof-response-font-lock-keywords
          easycrypt-font-lock-keywords)
   (proof-response-config-done))
 
 (define-derived-mode easycrypt-goals-mode proof-goals-mode
   "EasyCrypt goals" nil
   (easycrypt-init-output-syntax-table)
-  (setq  proof-goals-font-lock-keywords 
+  (setq  proof-goals-font-lock-keywords
          easycrypt-font-lock-keywords)
   (proof-goals-config-done))
 
-(defun easycrypt-get-last-error-location () 
-  "Remove [error] in the error message and extract the position
-  and length of the error "
+(defun easycrypt-get-last-error-location ()
+  "Remove [error] in the error message and extract the position and
+length of the error."
   (proof-with-current-buffer-if-exists proof-response-buffer
 
      (goto-char (point-max))
@@ -188,8 +195,8 @@ this list are strings."
    (while (proof-looking-at "\\s-") (forward-char 1)))
 
 (defun easycrypt-highlight-error ()
-  "Use 'easycrypt-get-last-error-location' to know the position
-  of the error and then highlight in the script buffer"
+  "Use ‘easycrypt-get-last-error-location’ to know the position of the
+error and then highlight in the script buffer."
   (proof-with-current-buffer-if-exists proof-script-buffer
     (let ((mtch (easycrypt-get-last-error-location)))
         (when mtch
@@ -260,4 +267,7 @@ this list are strings."
   '(lambda () (when proof-three-window-enable (proof-layout-windows))))
 
 ;; --------------------------------------------------------------------
+
 (provide 'easycrypt)
+
+;;; easycrypt.el ends here

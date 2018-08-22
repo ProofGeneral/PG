@@ -42,7 +42,7 @@
 ;;; initialization
 ;;;
 
-(defvar holes-default-hole 
+(defvar holes-default-hole
   (let ((ol (make-overlay 0 0)))
     (delete-overlay ol) ol)
   "An empty detached hole used as the default hole.
@@ -78,7 +78,7 @@ which should be removed when making the text into a hole."
 
 
 ;(defcustom holes-search-limit 1000
-;  "Number of chars to look forward when looking for the next hole, unused for now.") 
+;  "Number of chars to look forward when looking for the next hole, unused for now.")
 ;unused for the moment
 
 ;; The following is customizable by a command of the form:
@@ -121,18 +121,18 @@ which should be removed when making the text into a hole."
     (define-key map [(mouse-2)] 'holes-mouse-forget-hole)
     map)
   "Keymap to use on the holes's overlays.
-This keymap is used only when point is on a hole.  
+This keymap is used only when point is on a hole.
 See `holes-mode-map' for the keymap of `holes-mode'.")
 
 (defvar holes-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [(control c) (h)] 'holes-set-make-active-hole)
     (define-key map [(control c) (control y)] 'holes-replace-update-active-hole)
-    (define-key map [(control meta down-mouse-1)] 
+    (define-key map [(control meta down-mouse-1)]
       'holes-mouse-set-make-active-hole)
-    (define-key map [(control meta shift down-mouse-1)] 
+    (define-key map [(control meta shift down-mouse-1)]
       'holes-mouse-replace-active-hole)
-    (define-key map [(control c) (control j)] 
+    (define-key map [(control c) (control j)]
       'holes-set-point-next-hole-destroy)
     map)
   "Keymap of `holes-mode'.
@@ -190,7 +190,7 @@ This is not the keymap used on holes's overlay (see `hole-map' instead).")
 
 (defun holes-hole-start-position (hole)
   "Return start position of HOLE."
-  (assert (holes-is-hole-p hole) t 
+  (assert (holes-is-hole-p hole) t
 	  "holes-hole-start-position: %s is not a hole")
   (span-start hole))
 
@@ -285,7 +285,7 @@ the active hole is already disable."
 Error if HOLE is not a hole."
   (assert (holes-is-hole-p hole) t
 	  "holes-set-active-hole: %s is not a hole")
-  (if (holes-active-hole-exist-p) 
+  (if (holes-active-hole-exist-p)
       (holes-highlight-hole holes-active-hole))
   (setq holes-active-hole hole)
   (holes-highlight-hole-as-active holes-active-hole))
@@ -330,7 +330,7 @@ the span."
   "Clear the HOLE."
   (assert (holes-is-hole-p hole) t
 	  "holes-clear-hole: %s is not a hole")
-  (if (and (holes-active-hole-exist-p) 
+  (if (and (holes-active-hole-exist-p)
 	   (eq holes-active-hole hole))
       (holes-disable-active-hole))
   (span-delete hole))
@@ -343,9 +343,10 @@ the span."
   (holes-clear-hole (holes-hole-at (or pos (point)))))
 
 
-(defun holes-map-holes (function &optional object from to)
-  "Map function FUNCTION across holes."
-  (fold-spans function object from to nil nil 'hole))
+(defun holes-map-holes (function &optional buffer from to)
+  "Map function FUNCTION across holes in buffer BUFFER.
+Operate between character positions FROM and TO."
+  (fold-spans function buffer from to nil nil 'hole))
 
 (defun holes-clear-all-buffer-holes (&optional start end)
   "Clear all holes leaving their contents.
@@ -353,7 +354,7 @@ Operate betwenn START and END if non nil."
   (interactive)
   (holes-disable-active-hole)
   (span-mapcar-spans
-   'holes-clear-hole (or start (point-min)) (or end (point-max)) 
+   'holes-clear-hole (or start (point-min)) (or end (point-max))
    'hole))
 
 ;; limit ?
@@ -361,7 +362,7 @@ Operate betwenn START and END if non nil."
   "Return the first hole after POS in BUFFER.
 Or after the hole at pos if there is one (default pos=point).  If no
 hole found, return nil."
-  (holes-map-holes 
+  (holes-map-holes
    (lambda (h x) (and (holes-is-hole-p h) h)) buffer pos))
 
 (defun holes-next-after-active-hole ()
@@ -391,7 +392,8 @@ Default pos = point and buffer = current."
 
 
 (defun holes-replace-segment (start end str &optional buffer)
-  "Erase chars between START and END, and replace them with STR."
+  "Erase chars between START and END, and replace them with STR.
+Operate in buffer BUFFER."
   (with-current-buffer (or buffer (current-buffer))
     (goto-char end)
     ;; Insert before deleting, so the markers at `start' and `end'
@@ -445,9 +447,9 @@ following hole if it exists."
       (let ((nxthole (holes-next-after-active-hole)))
 	(holes-replace-active-hole
 	 (or str
-	     (and mark-active 
+	     (and mark-active
 		  (holes-copy-active-region))
-	     (current-kill 0) 
+	     (current-kill 0)
 	     (error "Nothing to put in hole")))
 	(if nxthole (holes-set-active-hole nxthole)
 	  (setq holes-active-hole holes-default-hole)))))
@@ -477,7 +479,7 @@ Sets `holes-active-hole' to the next hole if it exists."
 
 (defalias 'holes-track-mouse-selection 'mouse-drag-track)
 (defsubst holes-track-mouse-clicks ()
-  "See `mouse-track-click-count'"
+  "See `mouse-track-click-count'."
   (+ mouse-selection-click-count 1))
 
 (defun holes-mouse-replace-active-hole (event)
@@ -497,7 +499,7 @@ Sets `holes-active-hole' to the next hole if it exists."
 (defun holes-destroy-hole (&optional span)
   "Destroy the hole SPAN."
   (interactive)
-  (let* ((sp (or span (holes-hole-at (point)) 
+  (let* ((sp (or span (holes-hole-at (point))
 		 (error "No hole to destroy"))))
     (save-excursion
       (if (and (holes-active-hole-exist-p)
@@ -555,7 +557,7 @@ Sets `holes-active-hole' to the next hole if it exists."
 
 
 (defun holes-set-point-next-hole-destroy ()
-  "Moves the point to current active hole (if any and if in current buffer).
+  "Move the point to current active hole (if any and if in current buffer).
 Destroy it and makes the next hole active if any."
   (interactive)
   (assert (holes-active-hole-exist-p) nil "no active hole")
@@ -583,7 +585,10 @@ Destroy it and makes the next hole active if any."
 (defun holes-replace-string-by-holes-backward (limit)
   "Change each occurrence of REGEXP into a hole.
 Sets the active hole to the last created hole and unsets it if no hole is
-created.  Return the number of holes created."
+created.  Return the number of holes created.
+The LIMIT argument bounds the search; it is a buffer position.
+  The match found must not begin before that position.  A value of nil
+  means search to the beginning of the accessible portion of the buffer."
   (holes-disable-active-hole)
   (let ((n 0))
     (save-excursion
@@ -615,9 +620,9 @@ created.  Return the number of holes created."
 
 (defun holes-replace-string-by-holes-backward-jump (pos &optional noindent alwaysjump)
   "Put holes between POS and point, backward, indenting.
-\"#\" and \"@{..}\" between this positions will become holes. If
-ALWAYSJUMP is non nil, jump to the first hole even if more than
-one."
+\"#\" and \"@{..}\" between this positions will become holes.
+If NOINDENT is non-nil, skip the indenting step.
+If ALWAYSJUMP is non-nil, jump to the first hole even if more than one."
   (unless noindent (save-excursion (indent-region pos (point) nil)))
   (let ((n (holes-replace-string-by-holes-backward pos)))
     (case n
@@ -634,7 +639,7 @@ one."
 
 
 ;;;###autoload
-(define-minor-mode holes-mode 
+(define-minor-mode holes-mode
   "Toggle Holes minor mode.
 With arg, turn Outline minor mode on if arg is positive, off otherwise.
 

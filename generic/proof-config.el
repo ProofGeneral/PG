@@ -259,7 +259,7 @@ or `proof-script-parse-function'."
   :group 'prover-config)
 
 (defcustom proof-script-sexp-commands nil
-  "Non-nil if script has LISP-like syntax: commands are top-level sexps.
+  "Non-nil if script has Lisp-like syntax: commands are top-level sexps.
 You should set this variable in script mode configuration.
 
 To configure command recognition properly, you must set at least one
@@ -411,11 +411,11 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-save-with-hole-result 2
-  "How to get theorem name after `proof-save-with-hole-regexp' match.
+  "How to get theorem name after ‘proof-save-with-hole-regexp’ match.
 String or Int.
-If an int N use match-string to recover the value of the Nth parenthesis matched.
-If it is a string use replace-match. In this case, `proof-save-with-hole-regexp'
-should match the entire command"
+If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
+If a string, use ‘replace-match’.  In this case, ‘proof-save-with-hole-regexp’
+should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
 
@@ -441,11 +441,11 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-goal-with-hole-result 2
-  "How to get theorem name after `proof-goal-with-hole-regexp' match.
+  "How to get theorem name after ‘proof-goal-with-hole-regexp’ match.
 String or Int.
-If an int N use match-string to recover the value of the Nth parenthesis matched.
-If it is a string use replace-match. In this case, proof-save-with-hole-regexp
-should match the entire command"
+If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
+If a string, use ‘replace-match’.  In this case, ‘proof-goal-with-hole-regexp’
+should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
 
@@ -683,10 +683,10 @@ assistant, for example, to compile a completed file."
 (defcustom proof-no-fully-processed-buffer nil
   "Set to t if buffers should always retract before scripting elsewhere.
 Leave at nil if fully processed buffers make sense for the current
-proof assistant. If nil the user can choose to fully assert a
-buffer when starting scripting in a different buffer. If t there
+proof assistant.  If nil the user can choose to fully assert a
+buffer when starting scripting in a different buffer.  If t there
 is only the choice to fully retract the active buffer before
-starting scripting in a different buffer. This last behavior is
+starting scripting in a different buffer.  This last behavior is
 needed for Coq."
   :type 'boolean
   :group 'proof-script)
@@ -760,12 +760,12 @@ Elisp errors will be trapped when evaluating; set
   :group 'proof-script)
 
 (defcustom proof-script-insert-newlines t
-  "if non-nil inserts a newline between each message in response buffer."
+  "If non-nil, insert a newline between each message in response buffer."
   :type 'boolean
   :group 'proof-script)
 
 (defcustom proof-script-color-error-messages t
-  "if non-nil error messages will be globally colored with corresponding face.
+  "If non-nil, error messages will be globally colored with corresponding face.
 If prover mode has a better coloring mechanism for errors, set this to nil."
   :type 'boolean
   :group 'proof-script)
@@ -1195,18 +1195,18 @@ If nil, use the whole of the output from the match on
   :group 'proof-shell)
 
 (defcustom proof-shell-empty-action-list-command nil
-  "A function returning a list of commands (strings) to be sent
-to the prover when the last command in the queue has been
-performed. Typically to ask for some informational
-display (goals, etc).
+  "A function returning a list of commands (strings).
+These commands are sent to the prover when the last command in the queue
+has been performed.
+Typically to ask for some informational display (goals, etc.)
 
 The function takes as argument the last command in the queue.
 
-NOTE 1: The commands will be tagged invisible, i.e. not related
+NOTE 1: The commands will be tagged invisible, i.e., not related
 to a place in the buffer.
 
 NOTE 2: The commands should NOT have any effect on the state of
-the prover. Otherwise running the script outside pg would be
+the prover.  Otherwise running the script outside pg would be
 inconsistent."
   :type 'function
   :group 'proof-shell)
@@ -1563,7 +1563,7 @@ This setting is used inside the function `proof-format-filename'."
   "The value of `process-connection-type' for the proof shell.
 Set non-nil for ptys, nil for pipes.
 
-NOTE: In emacs >= 24 (checked for 24 and 25.0.50.1), t is not a
+NOTE: In Emacs >= 24 (checked for 24 and 25.0.50.1), t is not a
 good choice: input is cut after 4095 chars, which hangs pg."
   :type 'boolean
   :group 'proof-shell)
@@ -1589,14 +1589,14 @@ if you don't need it (slight speed penalty)."
   :group 'proof-shell)
 
 (defcustom proof-shell-extend-queue-hook nil
-  "Hooks run by proof-extend-queue before extending `proof-action-list'.
+  "Hooks run by ‘proof-extend-queue’ before extending `proof-action-list'.
 Can be used to run additional actions before items are added to
 the queue \(such as compiling required modules for Coq) or to
 modify the items that are going to be added to
-`proof-action-list'. The items that are about to be added are
+`proof-action-list'.  The items that are about to be added are
 bound to `queueitems'."
   :type '(repeat function)
-  :group 'proof-shell)  
+  :group 'proof-shell)
 
 (defcustom proof-shell-insert-hook nil
   "Hooks run by `proof-shell-insert' before inserting a command.
@@ -1644,12 +1644,12 @@ it is added to the queue of commands."
 (defcustom proof-assert-command-hook nil
   "Hooks run before asserting a command (or a set of commands).
 Can be used to insert commands before any (set of) input sent
-by the user. It is run by `proof-assert-until-point'.
+by the user.  It is run by `proof-assert-until-point'.
 
 WARNING: don't call `proof-assert-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width. Note
+Example of use: Insert a command to adapt printing width.  Note
 that `proof-shell-insert-hook' may be use instead (see lego mode)
 if no more prompt will be displayed (see
 `proof-shell-insert-hook' for details)."
@@ -1658,13 +1658,13 @@ if no more prompt will be displayed (see
 
 (defcustom proof-retract-command-hook nil
   "Hooks run before retracting a command (or a set of commands).
-Can be used to insert commands. It is run by
+Can be used to insert commands.  It is run by
 `proof-retract-until-point'.
 
 WARNING: don't call `proof-retract-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width. Note
+Example of use: Insert a command to adapt printing width.  Note
 that `proof-shell-insert-hook' may be use instead (see lego mode)
 if no more prompt will be displayed (see
 `proof-shell-insert-hook' for details)."
@@ -1704,14 +1704,14 @@ something in scripting buffer, `save-excursion' and/or `set-buffer'."
 (defcustom proof-shell-signal-interrupt-hook nil
   "Run when the user tries to interrupt the prover.
 This hook is run inside `proof-interrupt-process' when the user
-tries to interrupt the proof process. It is therefore run earlier
+tries to interrupt the proof process.  It is therefore run earlier
 than `proof-shell-handle-error-or-interrupt-hook', which runs
 when the interrupt is acknowledged inside `proof-shell-exec-loop'.
 
 This hook also runs when the proof assistent is killed.
 
 Hook functions should set the dynamic variable `prover-was-busy'
-to t if there might have been a reason to interrupt. Otherwise
+to t if there might have been a reason to interrupt.  Otherwise
 the generic interrupt handler might issue a prover-not-busy
 error."
   :type '(repeat function)

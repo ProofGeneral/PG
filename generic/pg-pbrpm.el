@@ -125,22 +125,22 @@ Matches the region to be returned.")
   (set-buffer pg-pbrpm-buffer-menu))
 
 (defun pg-pbrpm-analyse-goal-buffer ()
-  "This function analyses the goal buffer and produces a table to find goals and hypothesis.
-If stores, in the variable pg-pbrpm-goal-description, a list with shape
+  "Analyse the goal buffer and produce a table to find goals and hypothesis.
 
-   (start-goal end-goal goal-name start-concl hyps ...) with 5 elements for each goal:
+It stores, in the variable ‘pg-pbrpm-goal-description’, a list with shape
 
-     start-goal: the position of the first char of the goal
-     end-goal: the position of the last char of the goal
-     goal-name: the goal name (or number)
-     start-concl: the position of first char of the conclusion of the goal
-     hyps: the list of hypothesis with the shape:
+(start-goal end-goal goal-name start-concl hyps ...) with 5 elements per goal:
+  start-goal: the position of the first char of the goal
+  end-goal: the position of the last char of the goal
+  goal-name: the goal name (or number)
+  start-concl: the position of first char of the conclusion of the goal
+  hyps: the list of hypothesis with the shape:
 
-  (start-hyp start-hyp-text end-hyp hyp-name ...) with 4 elemets per hypothesis:
-     start-hyp: the position of the first char of the hypothesis (including its name)
-     start-hyp-text: the position of the first char of the hypothesis formula (no name)
-     end-hyp: the position of the last char of the hypothesis
-     hyp-name: then name of the hypothesis."
+(start-hyp start-hyp-text end-hyp hyp-name ...) with 4 elements per hypothesis:
+  start-hyp: the position of the first char of the hyp (including its name)
+  start-hyp-text: the position of the first char of the hyp formula (no name)
+  end-hyp: the position of the last char of the hypothesis
+  hyp-name: then name of the hypothesis."
   (with-current-buffer proof-goals-buffer
   (save-excursion
     (goto-char 0)
@@ -204,7 +204,9 @@ If stores, in the variable pg-pbrpm-goal-description, a list with shape
       (pg-pbrpm-eliminate-id (cons (car l) acc) (cdr l)))))
 
 (defun pg-pbrpm-build-menu (event start end)
-"Build a Proof By Rules pop-up menu according to the state of the proof, the event and a selected region (between the start and end markers).
+  "Build a Proof By Rules pop-up menu.
+Depends on the state of the proof, the event and a selected region
+(between the start and end markers).
 The prover command is processed via pg-pbrpm-run-command."
 ;; first, run the prover specific (name, rule)'s list generator
    (let ((click-info (pg-pbrpm-process-click event start end))) ; retrieve click informations
@@ -327,8 +329,9 @@ The prover command is processed via pg-pbrpm-run-command."
 				     (span-property sp1 'goalnum))))))))
 
 (defun pg-pbrpm-run-command (args)
-"Insert COMMAND into the proof queue and then run it.
--- adapted from proof-insert-pbp-command --"
+"Insert command into the proof queue and then run it.
+
+\(adapted from ‘proof-insert-pbp-command’)"
    (let* ((command (pop args)) (act (pop args)) (spans (pop args)) (allspan (pop spans)))
      (if act (setq command (apply act command spans nil)))
      (if allspan (setq command (concat "(* " (span-string allspan) " *)\n" command ".")))
@@ -428,15 +431,15 @@ If no match found, return the empty string."
 	(return-from 'loop "")))))
 
 (defun pg-pbrpm-translate-position (buffer pos)
-  "return pos if buffer is goals-buffer otherwise, return the point position in
-the goal buffer"
+  "If BUFFER is goals-buffer, return POS, otherwise the point in the goal buffer."
   (if (eq proof-goals-buffer buffer)
       pos
     (with-current-buffer proof-goals-buffer
       (point))))
 
 (defun pg-pbrpm-process-click (event start end)
-"Returns the list of informations about the click needed to call generate-menu. EVENT is an event."
+  "Return the list of infos about the click needed to call ‘generate-menu’.
+EVENT is an event."
   (save-excursion
     (save-window-excursion
       (mouse-set-point event)
@@ -521,8 +524,8 @@ the goal buffer"
   t)
 
 (defun pg-pbrpm-remember-region (event &optional delete)
-  "Allow multiple selection as a list of spam stored in ???. The current (standard)
-   selection in the same buffer is also stored"
+  "Allow multiple selection as a list of span stored in ???.
+The current (standard) selection in the same buffer is also stored."
   (interactive "*e")
   (setq pg-pbrpm-remember-region-selected-region nil)
   (let ((mouse-track-drag-up-hook 'pg-pbrpm-remember-region-drag-up-hook)
@@ -535,7 +538,8 @@ the goal buffer"
 		     (pg-pbrpm-do-remember-region (car pair) (cdr pair))))))
 
 (defun pg-pbrpm-process-region (span)
-"Returns the list of informations about the the selected region needed to call generate-menu. span is a span covering the selected region"
+"Return the list of infos on the selected region needed to call ‘generate-menu’.
+SPAN is a span covering the selected region."
    (let ((start (span-start span))
 	 (end (span-end span))
 	 (buffer (span-buffer span))

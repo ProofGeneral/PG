@@ -287,8 +287,8 @@ next time an error is processed."
 (defun proof-restart-buffers (buffers)
   "Remove all extents in BUFFERS and maybe reset `proof-script-buffer'.
 The high-level effect is that all members of BUFFERS are
-completely unlocked, including all the necessary cleanup. No
-effect on a buffer which is nil or killed. If one of the buffers
+completely unlocked, including all the necessary cleanup.  No
+effect on a buffer which is nil or killed.  If one of the buffers
 is the current scripting buffer, then `proof-script-buffer' will
 deactivated."
   (mapcar
@@ -416,7 +416,7 @@ Works on any buffer."
   (eq (proof-unprocessed-begin) (point-min)))
 
 (defun proof-only-whitespace-to-locked-region-p ()
-  "Non-nil if only whitespace from char-after point and end of locked region.
+  "Non-nil if only whitespace from char after point to end of locked region.
 Point must be after the locked region or this will signal an error."
   (save-excursion
     (or (eq (point) (point-max))
@@ -510,7 +510,7 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
     (clrhash (cdr idtbl))))
 
 (defun pg-remove-element (idiom id)
-  "Remove the identifier ID from the script portion IDIOM."
+  "From the script portion IDIOM, remove the identifier ID."
   (let* ((elts (cdr-safe (assq idiom pg-script-portions)))
 	 (span (and elts (gethash idiom elts))))
     (when span
@@ -518,8 +518,8 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
       (remhash id elts))))
 
 (defun pg-get-element (idiomsym id)
-  "Return proof script element of type IDIOM identifier ID.
-IDIOM is a symbol, ID is a string."
+  "Return proof script element of type IDIOMSYM with identifier ID.
+IDIOMSYM is a symbol, ID is a string."
   (assert (symbolp idiomsym))
   (assert (stringp id))
   (let ((idsym  (intern id))
@@ -581,15 +581,15 @@ This is a value for the overlay 'invisible property."
   (intern (concat "pg-" (symbol-name (or idiom 'other)))))
 
 (defun pg-set-element-span-invisible (span invisiblep)
-  "Function to adjust visibility of span to INVISIBLEP.
+  "Function to adjust visibility of SPAN to INVISIBLEP.
 We use list values of the 'invisible property which contain
 private symbols, that should play well with other conforming modes
 and `buffer-invisibility-spec'."
   (let* ((invisible-prop  (pg-invisible-prop (span-property span 'idiom)))
 	 (invisible-rest  (remq invisible-prop
 				(span-property span 'invisible))))
-    (span-set-property span 'invisible 
-		       (if invisiblep 
+    (span-set-property span 'invisible
+		       (if invisiblep
 			   (cons invisible-prop invisible-rest)
 			 invisible-rest))))
 		       
@@ -604,12 +604,12 @@ and `buffer-invisibility-spec'."
   (pg-set-element-span-invisible span invisible))
 
 (defun pg-make-element-invisible (idiomsym id)
-  "Make element ID of type IDIOMSYM invisible, with ellipsis."
+  "Make element of type IDIOMSYM and identifier ID invisible, with ellipsis."
   (let ((span (pg-get-element idiomsym id)))
     (if span (pg-set-element-span-invisible span t))))
 
 (defun pg-make-element-visible (idiomsym id)
-  "Make element ID of type IDIOMSYM visible."
+  "Make element of type IDIOMSYM and identifier ID visible."
   (let ((span (pg-get-element idiomsym id)))
     (if span (pg-set-element-span-invisible span nil))))
 
@@ -625,8 +625,8 @@ IDIOMSYM is a symbol and ID is a strings."
    (list
     (intern
      (completing-read
-      (concat "Make " 
-	      (if current-prefix-arg "in" "") 
+      (concat "Make "
+	      (if current-prefix-arg "in" "")
 	      "visible all regions of: ")
       (apply 'vector pg-idioms) nil t))
     current-prefix-arg))
@@ -641,7 +641,7 @@ IDIOMSYM is a symbol and ID is a strings."
        (maphash alterfn elts)))))
 
 (defun pg-add-proof-element (name span controlspan)
-  "Add a span proof element to SPAN with name NAME and parent CONTROLSPAN."
+  "Add a span proof element (named NAME) to SPAN with parent CONTROLSPAN."
   (let ((proofid   (proof-next-element-id 'proof)))
     (pg-add-element 'proof proofid span name)
     ;; Set id in controlspan [NB: intern here means symbol-name elsewhere]
@@ -665,8 +665,7 @@ Each span has a 'type property, one of:
     'vanilla      Initialised in proof-semis-to-vanillas, for
     'comment      A comment outside a command.
     'proverproc   A region closed by the prover, processed outwith PG
-    'pbp	  A PBP command inserted automatically into the script
-"
+    'pbp	  A PBP command inserted automatically into the script."
   (let ((type    (span-property span 'type))
 	(idiom   (span-property span 'idiom))
 	(name    (span-property span 'name))
@@ -995,7 +994,7 @@ Gives a message in the minibuffer and busy-waits for the retraction
 or processing to complete.  If it fails for some reason,
 an error is signalled here."
   (unless (or (eq action 'process) (eq action 'retract))
-    (error "proof-protected-process-or-retract: invalid argument"))
+    (error "Invalid argument (in proof-protected-process-or-retract)"))
   (let ((buf (or buffer (current-buffer))))
     (with-current-buffer buf
       (unless (proof-action-completed action)
@@ -1093,7 +1092,7 @@ retract or assert, or automatically take the action indicated in the
 user option `proof-auto-action-when-deactivating-scripting'.
 
 If `proof-no-fully-processed-buffer' is t there is only the choice
-to fully retract the active scripting buffer. In this case the
+to fully retract the active scripting buffer.  In this case the
 active scripting buffer is retracted even if it was fully processed.
 Setting `proof-auto-action-when-deactivating-scripting' to 'process
 is ignored in this case.
@@ -1117,7 +1116,7 @@ questioning the user.  It is used to make a value for
 the `kill-buffer-hook' for scripting buffers, so that when
 a scripting buffer is killed it is always retracted."
   (interactive)
-  (proof-with-current-buffer-if-exists 
+  (proof-with-current-buffer-if-exists
    proof-script-buffer
    ;; Examine buffer.
 
@@ -1277,7 +1276,7 @@ activation is considered to have failed and an error is given."
 		      (eq 'interrupt proof-shell-last-output-kind))
 	      (proof-deactivate-scripting) ;; turn off again!
 	      ;; Give an error to prevent further actions.
-	      (error 
+	      (error
 	       "Scripting not activated because of error or interrupt")))))))
 
 
@@ -1405,7 +1404,7 @@ Argument SPAN has just been processed."
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
-    (let ((proof-shell-last-output "")) ; comments not sent, no last output 
+    (let ((proof-shell-last-output "")) ; comments not sent, no last output
       (pg-set-span-helphighlights bodyspan))
 
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
@@ -1512,8 +1511,9 @@ Argument SPAN has just been processed."
 
 (defun proof-make-goalsave
   (gspan goalend savestart saveend nam &optional nestedundos)
-  "Make new goal-save span, using GSPAN. Subroutine of `proof-done-advancing-save'.
-Argument GOALEND is the end of the goal;."
+  "Make new goal-save span, using GSPAN.
+Subroutine of `proof-done-advancing-save'.
+Argument GOALEND is the end of the goal."
   (unless proof-arbitrary-undo-positions
     (span-set-end gspan saveend)
     (span-set-property gspan 'type 'goalsave))
@@ -1646,7 +1646,7 @@ Subroutine of `proof-done-advancing-save'."
 This partitions the script buffer into contiguous regions, classifying
 them by type.  Return a list of lists of the form
   
-   (TYPE TEXT ENDPOS)
+  \(TYPE TEXT ENDPOS)
 
 where:
 
@@ -1860,8 +1860,8 @@ The optional QUEUEFLAGS are added to each queue item."
 		(span-set-property span 'cmd cmd)
 		(setq alist (cons qitem alist))))
 	  ;; ignored text
-	  (let ((qitem  
-		 (list span nil cb queueflags))) ; nil was `proof-no-command' 
+	  (let ((qitem
+		 (list span nil cb queueflags))) ; nil was `proof-no-command'
 	  (span-set-property span 'type 'comment)
 	    (setq alist (cons qitem alist))))
 	(setq start end)))
@@ -1923,7 +1923,7 @@ try to avoid duplicating them in the buffer.
 When used in the locked region (and so with strict read only off), it
 always defaults to inserting a semi (nicer might be to parse for a
 comment, and insert or skip to the next semi)."
-  (let ((mrk         (point)) 
+  (let ((mrk         (point))
 	(termregexp  (regexp-quote proof-terminal-string))
 	ins incomment nwsp)
     (if (< mrk (proof-unprocessed-begin))
@@ -2045,9 +2045,8 @@ We update display after proof process has reset its state.
 See also the documentation for `proof-retract-until-point'.
 Optionally delete the region corresponding to the proof sequence.
 After an undo, we clear the proof completed flag.  The rationale
-is that undoing never leaves prover in a \"proof just completed\"
-state, which is true for some proof assistants (but probably not
-others)."
+is that undoing never leaves prover in a \"proof just completed\" state,
+which is true for some proof assistants (but probably not others)."
   ;; TODO: need to fixup proof-nesting-depth
   (setq proof-shell-proof-completed nil)
   (if (span-live-p span)
@@ -2074,7 +2073,7 @@ others)."
   ;; State of scripting may have changed now
   (run-hooks 'proof-state-change-hook))
 
-(defun proof-setup-retract-action (start end proof-commands remove-action &optional 
+(defun proof-setup-retract-action (start end proof-commands remove-action &optional
 					 displayflags)
   "Make span from START to END which corresponds to retraction.
 Returns retraction action destined for proof shell queue, and make span.
@@ -2186,7 +2185,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 			      undo-action
 			      displayflags))))
 
-    (proof-start-queue (min start end) (proof-unprocessed-begin) 
+    (proof-start-queue (min start end) (proof-unprocessed-begin)
 		       actions 'retracting)))
 
 (defun proof-retract-until-point-interactive (&optional delete-region)
@@ -2195,7 +2194,7 @@ If invoked outside a locked region, undo the last successfully processed
 command.  If called with a prefix argument (DELETE-REGION non-nil), also
 delete the retracted region from the proof-script."
   (interactive "P")
-  (proof-retract-until-point 
+  (proof-retract-until-point
    (if delete-region 'kill-region)))
 
 (defun proof-retract-until-point (&optional undo-action displayflags)
@@ -2205,8 +2204,8 @@ the locked region.  If invoked outside the locked region, undo
 the last successfully processed command.  See `proof-retract-target'.
 
 After retraction has succeeded in the prover, the filter will call
-`proof-done-retracting'.  If UNDO-ACTION is non-nil, it will 
-then be invoked on the region in the proof script corresponding to 
+`proof-done-retracting'.  If UNDO-ACTION is non-nil, it will
+then be invoked on the region in the proof script corresponding to
 the proof command sequence.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'.
 
@@ -2218,7 +2217,7 @@ of effects:
 for scripting again which may involve retracting
 other (dependent) files.
 
-2. We may query the user whether to save some buffers.  
+2. We may query the user whether to save some buffers.
 
 Step 2 may seem odd -- we're undoing (in) the buffer, after all
 -- but what may happen is that when scripting starts going
@@ -2371,9 +2370,9 @@ mode features, but are only ever processed atomically by the proof
 assistant."
   (setq proof-script-buffer-file-name buffer-file-name)
 
-  (setq font-lock-defaults 
+  (setq font-lock-defaults
 	(list '(proof-script-font-lock-keywords)
-	      ;; see defadvice in proof-syntax 
+	      ;; see defadvice in proof-syntax
 	      (fboundp (proof-ass-sym font-lock-fontify-syntactically-region))))
 
   ;; Has buffer already been processed?
@@ -2593,7 +2592,7 @@ finish setup which depends on specific proof assistant configuration."
 
   ;; Invisibility management: show ellipsis
   (mapc (lambda (p)
-	    (add-to-invisibility-spec 
+	    (add-to-invisibility-spec
 	     (cons (pg-invisible-prop p) t)))
 	  pg-all-idioms)
 
@@ -2686,7 +2685,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
     (if (and
 	 proof-use-parser-cache      ;; safety off valve
 	 proof-segment-up-to-cache
-	 (>= (proof-queue-or-locked-end) 
+	 (>= (proof-queue-or-locked-end)
 	     proof-segment-up-to-cache-start)
 	 (setq res (proof-segment-cache-contents-for pos))
 	 ;; only use result if last edit point is >1 segment below
@@ -2710,7 +2709,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 
 (defun proof-segment-cache-contents-for (pos)
   ;; only return result if we have cache for complete region
-  (when (<= pos proof-segment-up-to-cache-end) 
+  (when (<= pos proof-segment-up-to-cache-end)
     (let ((semis   proof-segment-up-to-cache)
 	  (start  (proof-queue-or-locked-end))
 	  usedsemis semiend)
@@ -2719,7 +2718,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 	(if (> semiend start)
 	    (setq usedsemis (cons (car semis) usedsemis)))
 	(setq semis
-	      (if (or (< semiend pos) 
+	      (if (or (< semiend pos)
 		      ;; matches parsing-until-find-something behaviour
 		      (and (= semiend pos) (not usedsemis)))
 		  (cdr semis))))
