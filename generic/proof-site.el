@@ -401,6 +401,10 @@ the lisp variable `proof-assistants', or the contents of `proof-assistant-table'
 		     
 
 
+;;;###autoload
+(defun proof-site-load ()
+  nil)
+
 (provide 'proof-site)
 
 ;;; proof-site.el ends here

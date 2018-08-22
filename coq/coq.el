@@ -1931,6 +1931,7 @@ Near here means PT is either inside or just aside of a comment."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;;###autoload
 (defun coq-mode-config ()
   ;; SMIE needs this.
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
