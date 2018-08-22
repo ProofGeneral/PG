@@ -61,6 +61,7 @@
 
 (defun pg-xml-parse-buffer (&optional buffer nomsg start end)
   "Parse an XML documment in BUFFER (defaulting to current buffer).
+Display progress message unless NOMSG is non-nil.
 Parsing according to `xml-parse-file' of xml.el.
 Optional START and END bound the parse."
   (unless nomsg
@@ -83,7 +84,7 @@ Optional START and END bound the parse."
     (or val
 	(if optional
 	    defaultval
-	  (pg-xml-error "pg-xml-get-attr: Didn't find required %s attribute in %s element"
+	  (pg-xml-error "Function pg-xml-get-attr: Didn't find required %s attribute in %s element"
 		 attribute (xml-node-name node))))))
 
 (defun pg-xml-child-elts (node)
@@ -100,7 +101,7 @@ Optional START and END bound the parse."
 			    (xml-node-name node)))))
 
 (defun pg-xml-get-child (child node)
-  "Return single element CHILD of node, give error if more than one."
+  "Return single element CHILD of NODE, give error if more than one."
   (let ((children (xml-get-children node child)))
     (if (> (length children) 1)
 	 (progn
@@ -141,8 +142,9 @@ Optional START and END bound the parse."
 ;; based on xml-debug-print from xml.el
 
 (defun pg-xml-output-internal (xml indent-string outputfn)
-  "Outputs the XML tree using OUTPUTFN, which should accept a list of args.
-Output with indentation INDENT-STRING (or none if nil)."
+  "Output the XML tree.
+Use indentation INDENT-STRING (or none if nil).
+Cal OUTPUTFN, which should accept a list of args."
   (let ((tree xml)
 	attlist)
     (funcall outputfn (or indent-string "") "<" (symbol-name (xml-node-name tree)))
@@ -167,7 +169,7 @@ Output with indentation INDENT-STRING (or none if nil)."
 	      (pg-xml-output-internal node (if indent-string (concat indent-string "  ")) outputfn))
 	     ((stringp node) (funcall outputfn node))
 	     (t
-	      (error "pg-xml-output-internal: Invalid XML tree"))))
+	      (error "Function pg-xml-output-internal: Invalid XML tree"))))
 
 	  (funcall outputfn (if indent-string (concat "\n" indent-string) "")
 		   "</" (symbol-name (xml-node-name xml)) ">"))

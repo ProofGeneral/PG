@@ -16,8 +16,8 @@
 
 ;;; Commentary:
 ;;
-;; This file implements compilation of required modules. The
-;; compilation is done synchonously and sequentially. That is, Proof
+;; This file implements compilation of required modules.  The
+;; compilation is done synchonously and sequentially.  That is, Proof
 ;; General blocks before putting newly asserted items into
 ;; proof-action-list and compiles one module after the other.
 ;;
@@ -43,9 +43,9 @@
 
 (defun coq-seq-lock-ancestor (span ancestor-src)
   "Lock ancestor ANCESTOR-SRC and register it in SPAN.
-Lock only if `coq-lock-ancestor' is non-nil. Further, do nothing,
+Lock only if `coq-lock-ancestor' is non-nil.  Further, do nothing,
 if ANCESTOR-SRC is already a member of
-`proof-included-files-list'. Otherwise ANCESTOR-SRC is locked and
+`proof-included-files-list'.  Otherwise ANCESTOR-SRC is locked and
 registered in the 'coq-locked-ancestors property of the SPAN to
 properly unlock ANCESTOR-SRC on retract."
   (if coq-lock-ancestors
@@ -63,18 +63,18 @@ properly unlock ANCESTOR-SRC on retract."
   "Compute dependencies of LIB-SRC-FILE.
 Invoke \"coqdep\" on LIB-SRC-FILE and parse the output to
 compute the compiled coq library object files on which
-LIB-SRC-FILE depends. The return value is either a string or a
-list. If it is a string then an error occurred and the string is
-the core of the error message. If the return value is a list no
+LIB-SRC-FILE depends.  The return value is either a string or a
+list.  If it is a string then an error occurred and the string is
+the core of the error message.  If the return value is a list no
 error occurred and the returned list is the (possibly empty) list
 of file names LIB-SRC-FILE depends on.
 
 If an error occurs this funtion displays
 `coq--compile-response-buffer' with the complete command and its
-output. The optional argument COMMAND-INTRO is only used in the
-error case. It is prepended to the displayed command.
+output.  The optional argument COMMAND-INTRO is only used in the
+error case.  It is prepended to the displayed command.
 
-LIB-SRC-FILE should be an absolute file name. If it is, the
+LIB-SRC-FILE should be an absolute file name.  If it is, the
 dependencies are absolute too and the simplified treatment of
 `coq-load-path-include-current' in `coq-include-options' won't
 break."
@@ -152,7 +152,7 @@ if one of the following conditions is true:
 - OBJ is older than the the youngest object file of the dependencies.
 
 Argument MAX-DEP-OBJ-TIME provides the information about the
-dependencies. It is either
+dependencies.  It is either
 - 'just-compiled if one of the dependencies of SRC has just
   been compiled
 - the time value (see`time-less-or-equal') of the youngest (most
@@ -160,11 +160,11 @@ dependencies. It is either
 - nil if there are no dependencies, or if they are all ignored
 
 If this function decides to compile SRC to OBJ it returns
-'just-compiled. Otherwise it returns the modification time of
+'just-compiled.  Otherwise it returns the modification time of
 OBJ.
 
 Note that file modification times inside Emacs have only a
-precisision of 1 second. To avoid spurious recompilations we do
+precisision of 1 second.  To avoid spurious recompilations we do
 not recompile if the youngest object file of the dependencies and
 OBJ have identical modification times."
   (let (src-time obj-time)
@@ -191,9 +191,9 @@ OBJ have identical modification times."
 (defun coq-seq-make-lib-up-to-date (coq-obj-hash span lib-obj-file)
   "Make library object file LIB-OBJ-FILE up-to-date.
 Check if LIB-OBJ-FILE and all it dependencies are up-to-date
-compiled coq library objects. Recompile the necessary objects, if
-not. This function returns 'just-compiled if it compiled
-LIB-OBJ-FILE. Otherwise it returns the modification time of
+compiled coq library objects.  Recompile the necessary objects, if
+not.  This function returns 'just-compiled if it compiled
+LIB-OBJ-FILE.  Otherwise it returns the modification time of
 LIB-OBJ-FILE as time value (see `time-less-or-equal').
 
 Either LIB-OBJ-FILE or its source file (or both) must exist when
@@ -256,7 +256,7 @@ If `coq-confirm-external-compilation' is t then the user
 must confirm the external command in the minibuffer, otherwise
 the command is executed without confirmation.
 
-Argument SPAN is the span of the \"Require\" command. The
+Argument SPAN is the span of the \"Require\" command.  The
 ancestor ABSOLUTE-MODULE-OBJ-FILE is locked and registered in the
 span for for proper unlocking on retract.
 
@@ -292,11 +292,11 @@ therefore the customizations for `compile' do not apply."
 
 (defun coq-seq-map-module-id-to-obj-file (module-id span &optional from)
   "Map MODULE-ID to the appropriate coq object file.
-The mapping depends of course on `coq-load-path'. The current
+The mapping depends of course on `coq-load-path'.  The current
 implementation invokes coqdep with a one-line require command.
 This is probably slower but much simpler than modelling coq file
-loading inside ProofGeneral. Argument SPAN is only used for error
-handling. It provides the location information of MODULE-ID for a
+loading inside ProofGeneral.  Argument SPAN is only used for error
+handling.  It provides the location information of MODULE-ID for a
 decent error message.
 
 A peculiar consequence of the current implementation is that this
@@ -347,19 +347,18 @@ function returns () if MODULE-ID comes from the standard library."
   "Locate MODULE-ID and compile if necessary.
 If `coq-compile-command' is not nil the whole task of checking which
 modules need compilation and the compilation itself is done by an external
-process. If `coq-compile-command' is nil ProofGeneral computes the
-dependencies with \"coqdep\" and compiles modules as necessary. This internal
-checking does currently not handle ML modules.
+process.  If `coq-compile-command' is nil ProofGeneral computes the
+dependencies with \"coqdep\" and compiles modules as necessary.
+This internal checking does currently not handle ML modules.
 
-Argument SPAN is the span of the \"Require\" command. Locked
+Argument SPAN is the span of the \"Require\" command.  Locked
 ancestors are registered in its 'coq-locked-ancestors property
 for proper unlocking on retract.
 
 Argument COQ-OBJECT-LOCAL-HASH-SYMBOL provides a place to store
 the coq-obj-hash, which is used during internal
-compilation (see `coq-seq-make-lib-up-to-date'). This way one hash
-will be used for all \"Require\" commands added at once to the
-queue."
+compilation (see `coq-seq-make-lib-up-to-date').  This way one hash
+will be used for all \"Require\" commands added at once to the queue."
   (let ((module-obj-file (coq-seq-map-module-id-to-obj-file module-id span from)))
     ;; coq-seq-map-module-id-to-obj-file currently returns () for
     ;; standard library modules!

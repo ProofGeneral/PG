@@ -62,7 +62,8 @@
        `(define-derived-mode ,mode ,parent ,modename nil ,@fullbody)))))
 
 (defun proof-easy-config-check-setup (sym name)
-  "A number of simple checks."
+  "Perform a number of simple checks.
+The proof assistant is denoted by symbol SYM and string NAME."
   (let ((msg ""))
     ;; At the moment we just check that the symbol/name used
     ;; in the macro matches that in `proof-assistant-table'
@@ -84,7 +85,7 @@
 	    (not (eq proof-assistant-symbol sym))
 	    (setq msg (format "\nproof-assistant symbol: '%s doesn't match expected '%s"
 			      proof-assistant-symbol sym))))
-      (error "proof-easy-config: PG already in use or name/symbol mismatch %s"
+      (error "Macro proof-easy-config: PG already in use or name/symbol mismatch %s"
 	     msg))
      (t
       ;; Setting these here is nice for testing: no need to get
@@ -94,9 +95,10 @@
 
 ;;;###autoload
 (defmacro proof-easy-config (sym name &rest body)
-  "Configure Proof General for proof-assistant using BODY as a setq body.
+  "Configure Proof General for a given proof assistant.
 The symbol SYM and string name NAME must match those given in
-the `proof-assistant-table', which see."
+  the `proof-assistant-table', which see.
+Additional arguments are taken into account as a setq BODY."
   `(progn
      (proof-easy-config-check-setup ,sym ,name)
      (setq
@@ -105,3 +107,7 @@ the `proof-assistant-table', which see."
 
 ;;
 (provide 'proof-easy-config)
+
+(provide 'proof-easy-config)
+
+;;; proof-easy-config.el ends here

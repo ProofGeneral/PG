@@ -318,7 +318,7 @@ without adjusting window layout."
 (proof-deftoggle proof-delete-empty-windows)
 (proof-deftoggle proof-shrink-windows-tofit)
 (proof-deftoggle proof-multiple-frames-enable proof-multiple-frames-toggle)
-(proof-deftoggle proof-layout-windows-on-visit-file 
+(proof-deftoggle proof-layout-windows-on-visit-file
 		 proof-layout-windows-eagerly-toggle)
 (proof-deftoggle proof-three-window-enable proof-three-window-toggle)
 (proof-deftoggle proof-auto-raise-buffers proof-auto-raise-toggle)
@@ -342,7 +342,7 @@ without adjusting window layout."
    (proof-ass-sym maths-menu-enable) 'proof-maths-menu-toggle))
 
 (defun proof-keep-response-history ()
-  "Enable associated buffer histories following `proof-keep-response-history'."
+  "Enable associated buffer histories following option `proof-keep-response-history'."
   (if proof-keep-response-history
       (proof-map-buffers (proof-associated-buffers) (bufhist-init))
     (proof-map-buffers (proof-associated-buffers) (bufhist-exit))))
@@ -371,7 +371,7 @@ without adjusting window layout."
       ["Beep on Errors" proof-shell-quiet-errors-toggle
        :style toggle
        :selected (not proof-shell-quiet-errors)
-       :help "Beep on errors or interrupts"]      
+       :help "Beep on errors or interrupts"]
       ["Fly Past Comments" proof-script-fly-past-comments-toggle
        :style toggle
        :selected proof-script-fly-past-comments
@@ -613,7 +613,7 @@ without adjusting window layout."
 ;;
 
 (defun proof-set-document-centred ()
-  "Select options for document-centred working"
+  "Select options for document-centred working."
   (interactive)
   (proof-full-annotation-toggle 1)
   (proof-auto-raise-toggle 0)
@@ -626,9 +626,9 @@ without adjusting window layout."
 
 
 (defun proof-set-non-document-centred ()
-  "Set options for classic Proof General interaction"
+  "Set options for classic Proof General interaction."
   (interactive)
-  ;; default: (proof-full-annotation-toggle 1) 
+  ;; default: (proof-full-annotation-toggle 1)
   (proof-auto-raise-toggle 1)
   (proof-colour-locked-toggle 1)
   (proof-sticky-errors-toggle 0)
@@ -744,7 +744,7 @@ without adjusting window layout."
 ;;; Define stuff from favourites
 
 (defun proof-def-favourite (command inscript menuname &optional key new)
-  "Define and a \"favourite\" proof assisant function.
+  "Define and a \"favourite\" proof assistant function.
 See doc of `proof-add-favourite' for first four arguments.
 Extra NEW flag means that this should be a new favourite, so check
 that function defined is not already bound.
@@ -987,7 +987,7 @@ We first clear the dynamic settings from `proof-assistant-settings'."
   (let (cmds)
     (dolist (setting proof-assistant-settings)
       (let ((sym       (car setting))
-	    (pacmd     (cadr setting))) 
+	    (pacmd     (cadr setting)))
 	(if (and pacmd
 		 (or (not (get sym 'pgdynamic))
 		     (proof-ass-differs-from-default sym)))
@@ -1038,7 +1038,7 @@ value) and the second for false."
 	  ((consp string)     ;; true/false options
 	   (if curvalue (car string) (cdr string)))
 	  (t ;; no idea what to do
-	   (error "proof-assistant-format: called with invalid string arg %s" string)))))
+	   (error "Function proof-assistant-format: called with invalid string arg %s" string)))))
     (if proof-assistant-setting-format
 	(funcall proof-assistant-setting-format setting)
       setting)))

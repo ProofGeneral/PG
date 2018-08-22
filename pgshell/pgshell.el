@@ -47,3 +47,4 @@
  )
 
 (provide 'pgshell)
+;;; pgshell.el ends here

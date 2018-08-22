@@ -88,7 +88,7 @@ a TCP connection to be opened via `open-network-stream'.  If there is already
 a running process in that buffer, it is not restarted.  Optional fourth arg
 STARTFILE is the name of a file to send the contents of to the process.
 
-If PROGRAM is a string, any more args are arguments to PROGRAM."
+If PROGRAM is a string, the remaining SWITCHES are arguments to PROGRAM."
   (unless (or (fboundp 'start-process)
 	      (fboundp 'start-file-process))
       (error "Multi-processing is not supported for this system"))
@@ -112,13 +112,14 @@ a TCP connection to be opened via `open-network-stream'.  If there is already
 a running process in that buffer, it is not restarted.  Optional third arg
 STARTFILE is the name of a file to send the contents of the process to.
 
-If PROGRAM is a string, any more args are arguments to PROGRAM."
+If PROGRAM is a string, the remaining SWITCHES are arguments to PROGRAM."
   (apply #'scomint-make-in-buffer name nil program startfile switches))
 
 
 (defun scomint-exec (buffer name command startfile switches)
-  "Start up a process named NAME in buffer BUFFER for Comint modes.
-Runs the given COMMAND with SWITCHES with output to STARTFILE.
+  "In buffer BUFFER, start up a process named NAME for Comint modes.
+Runs the given COMMAND with output to STARTFILE.
+SWITCHES contains the arguments passed to the COMMAND.
 Blasts any old process running in the buffer.  Doesn't set the buffer mode.
 You can use this to cheaply run a series of processes in the same Comint
 buffer.  The hook `scomint-exec-hook' is run after each exec."

@@ -141,6 +141,5 @@ The value returned is the value of the last form in BODY."
   (if (and (symbolp this-command) (get this-command 'completion-function))
 	(funcall (get this-command 'completion-function)))))
 
-
-;; End of proof-compat.el
 (provide 'proof-compat)
+;;; proof-compat.el ends here

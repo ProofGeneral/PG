@@ -48,7 +48,7 @@ Some may be dead/nil."
 ;;;###autoload
 (defun proof-associated-windows (&optional all-frames)
   "Return a list of the associated buffers windows.
-Dead or nil buffers are not represented in the list. Optional
+Dead or nil buffers are not represented in the list.  Optional
 argument ALL-FRAMES has the same meaning than for
 `get-buffer-window'."
   (let ((bufs (proof-associated-buffers))

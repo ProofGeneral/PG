@@ -59,12 +59,12 @@ The value is a list of lists of the form
 
 which is the queue of things to do.
 
-SPAN is a region in the sources, where COMMANDS come from. Often,
+SPAN is a region in the sources, where COMMANDS come from.  Often,
 additional properties are recorded as properties of SPAN.
 
 COMMANDS is a list of strings, holding the text to be send to the
-prover. It might be the empty list if nothing needs to be sent to
-the prover, such as, for comments. Usually COMMANDS
+prover.  It might be the empty list if nothing needs to be sent to
+the prover, such as, for comments.  Usually COMMANDS
 contains just 1 string, but it might also contains more elements.
 The text should be obtained with
 `(mapconcat 'identity COMMANDS \" \")', where the last argument
@@ -105,14 +105,13 @@ See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
   "Signals that some items are waiting outside of `proof-action-list'.
 If this is t it means that some items from the queue region are
 waiting for being processed in a place different from
-`proof-action-list'. In this case Proof General must behave as if
-`proof-action-list' would be non-empty, when it is, in fact,
-empty.
+`proof-action-list'.  In this case Proof General must behave as if
+`proof-action-list' would be non-empty, when it is, in fact, empty.
 
 This is used, for instance, for parallel background compilation
 for Coq: The Require command and the following items are not put
 into `proof-action-list' and are stored somewhere else until the
-background compilation finishes. Then those items are put into
+background compilation finishes.  Then those items are put into
 `proof-action-list' for getting processed.")
 
 
@@ -158,8 +157,8 @@ from calling `proof-shell-exit'.")
 ;;
 
 (defcustom proof-shell-active-scripting-indicator
-  '(:eval (propertize 
-   " Scripting " 'face 
+  '(:eval (propertize
+   " Scripting " 'face
    (cond
     (proof-shell-busy			       'proof-queue-face)
     ((eq proof-shell-last-output-kind 'error)  'proof-script-sticky-error-face)
@@ -224,7 +223,7 @@ No change to current buffer or point."
 
 ;;;###autoload
 (defsubst proof-shell-live-buffer ()
-  "Return non-nil if proof-shell-buffer is live."
+  "Return non-nil if ‘proof-shell-buffer’ is live."
   (and proof-shell-buffer
        (buffer-live-p proof-shell-buffer)
        (scomint-check-proc proof-shell-buffer)))
@@ -262,10 +261,10 @@ If QUEUEMODE is supplied, set the lock to that value."
   :group 'proof-shell)
 
 (defvar proof-shell-filter-active nil
-  "t when `proof-shell-filter' is running.")
+  "Variable equal to t if `proof-shell-filter' is running.")
 
 (defvar proof-shell-filter-was-blocked nil
-  "t when a recursive call of `proof-shell-filter' was blocked.
+  "Variable equal to t if a recursive call of `proof-shell-filter' was blocked.
 In this case `proof-shell-filter' must be called again after it finished.")
 
 (defun proof-shell-set-text-representation ()
@@ -358,7 +357,7 @@ process command."
 	     
 	    
 	     ;; The next few settings control the proof assistant encoding.
-	     ;; See Elisp manual for recommendations for coding systems.  
+	     ;; See Elisp manual for recommendations for coding systems.
 	     
 	     ;; Modern versions of proof systems should be Unicode
 	     ;; clean, i.e., outputing only ASCII characters or using a
@@ -376,7 +375,7 @@ process command."
 			(cons
 			 (if (getenv "LANG")
 			     (format "LANG=%s"
-				     (replace-regexp-in-string 
+				     (replace-regexp-in-string
 				      "\\.UTF-8" ""
 				      (getenv "LANG")))
 			   "LANG=C")
@@ -487,7 +486,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
     (when (and alive proc)
       (catch 'exited
 	(setq proof-shell-exit-in-progress t)
-	(set-process-sentinel 
+	(set-process-sentinel
 	 proc
 	 (lambda (p m) (throw 'exited t)))
 	
@@ -520,7 +519,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
     (proof-shell-clear-state)
     (run-hooks 'proof-shell-kill-function-hooks)
 
-    ;; Remove auxiliary windows, trying to stop proliferation of 
+    ;; Remove auxiliary windows, trying to stop proliferation of
     ;; frames (NB: loses if user has switched buffer in special frame)
     (if (and proof-multiple-frames-enable
 	     proof-shell-fiddle-frames)
@@ -558,7 +557,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 
 This simply kills the `proof-shell-buffer' relying on the hook function
 
-`proof-shell-kill-function' to do the hard work. If optional
+`proof-shell-kill-function' to do the hard work.  If optional
 argument DONT-ASK is non-nil, the proof process is terminated
 without confirmation.
 
@@ -680,7 +679,7 @@ In both cases we then sound a beep, clear the queue and spans and
 finally we call `proof-shell-handle-error-or-interrupt-hook'.
 
 Commands which are not part of regular script management (with
-non-empty flags='no-error-display) will not cause any display action.
+FLAGS containing 'no-error-display) will not cause any display action.
 
 This is called in two places: (1) from the output processing
 functions, in case we find an error or interrupt message output,
@@ -697,7 +696,7 @@ didn't cause prover output."
        "Interrupt: script management may be in an inconsistent state
 	   (but it's probably okay)"))
      (t ; error
-      (if proof-shell-delayed-output-start 
+      (if proof-shell-delayed-output-start
 	  (save-excursion
 	    (proof-shell-handle-delayed-output)))
       (proof-shell-handle-error-output
@@ -724,11 +723,11 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
 
     (proof-with-current-buffer-if-exists proof-script-buffer
       (save-excursion
-	(proof-script-clear-queue-spans-on-error badspan 
+	(proof-script-clear-queue-spans-on-error badspan
 						 (eq err-or-int 'interrupt))))
     ;; Note: coq-par-emergency-cleanup, which might be called via
     ;; proof-shell-handle-error-or-interrupt-hook below, assumes that
-    ;; proof-action-list is empty on error. 
+    ;; proof-action-list is empty on error.
     (setq proof-action-list nil)
     (proof-release-lock)
     (unless flags
@@ -739,7 +738,7 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
       (run-hooks 'proof-shell-handle-error-or-interrupt-hook))))
 
 (defun proof-goals-pos (span maparg)
-  "Given a span, return the start of it if corresponds to a goal, nil otherwise."
+  "Given a SPAN, return the start of it if corresponds to a goal, nil otherwise."
   (and (eq 'goal (car (span-property span 'proof-top-element)))
        (span-start span)))
 
@@ -756,7 +755,7 @@ This is a hook function for proof-shell-handle-delayed-output-hook."
 
 
 (defsubst proof-shell-string-match-safe (regexp string)
-  "Like string-match except returns nil if REGEXP is nil."
+  "Like (string-match REGEXP STRING), but return nil if REGEXP is nil."
   (and regexp (string-match regexp string)))
 
 (defun proof-shell-handle-immediate-output (cmd start end flags)
@@ -787,7 +786,7 @@ after a completed proof."
   (cond
    ;; TODO: Isabelle has changed (since 2009) and is now amalgamating
    ;; output between prompts, and does e.g.,
-   ;;   GOALS 
+   ;;   GOALS
    ;;   ERROR
    ;; we need to override delayed output from the previous
    ;; command with delayed output from this command to handle that!
@@ -878,9 +877,9 @@ single string.
 The ACTION argument is a symbol which is typically the name of a
 callback for when each string has been processed.
 
-This calls `proof-shell-insert-hook'.  The arguments `action' and
-`scriptspan' may be examined by the hook to determine how to modify
-the `string' variable (exploiting dynamic scoping) which will be
+This calls `proof-shell-insert-hook'.  The arguments ACTION and
+SCRIPTSPAN may be examined by the hook to determine how to modify
+the string variable (exploiting dynamic scoping) which will be
 the command actually sent to the shell.
 
 Note that the hook is not called for the empty (null) string
@@ -959,7 +958,7 @@ track what happens in the proof queue."
   "Non-nil if we should switch to silent mode based on size of queue."
   (if (and proof-shell-start-silent-cmd ; configured
 	   (not proof-full-annotation)  ; always noisy
-	   (not proof-tree-external-display) ; no proof-tree display 
+	   (not proof-tree-external-display) ; no proof-tree display
 	   (not proof-shell-silent))	; already silent
 	  ;; NB: to be more accurate we should only count number
 	  ;; of scripting items in the list (not e.g. invisibles).
@@ -1044,7 +1043,7 @@ being processed."
 			      proof-action-list)
 		      (cons (car proof-action-list) ; after current
 			    (cons (proof-shell-stop-silent-item)
-				  (cdr proof-action-list))))))	  
+				  (cdr proof-action-list))))))
 	  (when nothingthere  ; start sending commands
 	    (proof-grab-lock queuemode)
 	    (setq proof-shell-last-output-kind nil)
@@ -1059,11 +1058,11 @@ being processed."
 
 ;;;###autoload
 (defun proof-start-queue (start end queueitems &optional queuemode)
-  "Begin processing a queue of commands in QUEUEITEMS.
+  "Begin processing a queue of commands.
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
-This function calls `proof-add-to-queue'."
+This function calls ‘proof-add-to-queue’ with args QUEUEITEMS and QUEUEMODE."
   (if start
       (proof-set-queue-endpoints start end))
   (proof-add-to-queue queueitems queuemode))
@@ -1173,7 +1172,7 @@ contains only invisible elements for Prooftree synchronization."
 	    (proof-shell-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
-	(mapc 'proof-shell-invoke-callback cbitems)	
+	(mapc 'proof-shell-invoke-callback cbitems)
 
 	(unless (or proof-action-list proof-second-action-list-active)
 					; release lock, cleanup
@@ -1218,8 +1217,8 @@ and indentation.  Assumes `proof-script-buffer' is active."
 (defun proof-shell-process-urgent-message (start end)
   "Analyse urgent message between START and END for various cases.
 
-Cases are: *trace* output, included/retracted files, cleared 
-goals/response buffer, variable setting, xml-encoded PGIP response, 
+Cases are: *trace* output, included/retracted files, cleared
+goals/response buffer, variable setting, xml-encoded PGIP response,
 theorem dependency message or interactive output indicator.
 
 If none of these apply, display the text between START and END.
@@ -1301,11 +1300,10 @@ A subroutine of `proof-shell-process-urgent-message'."
 
 (defun proof-shell-process-urgent-message-retract (start end)
   "A subroutine of `proof-shell-process-urgent-message'.
-Takes files off `proof-included-files-list' and calls
-`proof-restart-buffers' to do the necessary clean-up on those
-buffers visting a file that disappears from
-`proof-included-files-list'. So in some respect this function is
-inverse to `proof-register-possibly-new-processed-file'."
+Take files off `proof-included-files-list' and call `proof-restart-buffers'
+to do the necessary clean-up on those buffers visiting a file that disappears
+from `proof-included-files-list'.  So in some respect, this function is inverse
+to `proof-register-possibly-new-processed-file'."
   (let ((current-included proof-included-files-list))
     (setq proof-included-files-list
 	  (funcall proof-shell-compute-new-files-list))
@@ -1363,7 +1361,7 @@ inverse to `proof-register-possibly-new-processed-file'."
 ;;
 
 (defun proof-shell-strip-eager-annotations (start end)
-  "Strip `proof-shell-eager-annotation-{start,end}' from region."
+  "Strip `proof-shell-eager-annotation-{START,END}' from region."
   (goto-char start)
   (if (re-search-forward proof-shell-eager-annotation-start end nil)
       (setq start (point)))
@@ -1407,20 +1405,20 @@ calls."
 	   (setq proof-shell-filter-active nil
 		 proof-shell-filter-was-blocked nil)
 	   (signal (car err) (cdr err))))
-	(setq call-proof-shell-filter proof-shell-filter-was-blocked)))))  
+	(setq call-proof-shell-filter proof-shell-filter-was-blocked)))))
 
 
 (defun proof-shell-filter ()
   "Master filter for the proof assistant shell-process.
 A function for `scomint-output-filter-functions'.
 
-Deal with output and issue new input from the queue. This is an
-important internal function. The output must be collected from
-`proof-shell-buffer' for the following reason. This function
+Deal with output and issue new input from the queue.  This is an
+important internal function.  The output must be collected from
+`proof-shell-buffer' for the following reason.  This function
 might block inside `process-send-string' when sending input to
-the proof assistant or to prooftree. In this case Emacs might
+the proof assistant or to prooftree.  In this case Emacs might
 call the process filter again while the previous instance is
-still running. `proof-shell-filter-wrapper' detects and delays
+still running.  `proof-shell-filter-wrapper' detects and delays
 such calls but does not buffer the output.
 
 Handle urgent messages first.  As many as possible are processed,
@@ -1702,7 +1700,7 @@ i.e., 'goals or 'response."
        (setq both
 	     (> (- gmark rstart) 4))
        (if both
-	   (proof-shell-display-output-as-response 
+	   (proof-shell-display-output-as-response
 	    flags
 	    (buffer-substring-no-properties rstart gmark)))
        ;; display goals output second so it persists in 2-pane mode
@@ -1763,10 +1761,10 @@ Only works when system timer has microsecond count available."
 	    (> (- tm pg-last-tracing-output-time) pg-slow-mode-duration)
 	  (setq dontprint nil))
       (when ;; time since last tracing output less than threshold
-	  (and 
-	   (< (- tm pg-last-tracing-output-time) 
+	  (and
+	   (< (- tm pg-last-tracing-output-time)
 	      (/ pg-fast-tracing-mode-threshold 1000000.0))
-	   (>= (incf pg-last-trace-output-count) 
+	   (>= (incf pg-last-trace-output-count)
 	       pg-slow-mode-trigger-count))
 	;; quickly consecutive tracing outputs: go into slow mode
 	(setq dontprint t)
@@ -1779,7 +1777,7 @@ Only works when system timer has microsecond count available."
   "Handle the end of possibly voluminous tracing-style output.
 If the output update was slowed down, show it now."
   (proof-trace-buffer-finish)
-  (when pg-tracing-slow-mode 
+  (when pg-tracing-slow-mode
     (proof-display-and-keep-buffer proof-trace-buffer)
     (setq pg-tracing-slow-mode nil))
   (setq pg-last-trace-output-count 0))
@@ -1800,7 +1798,7 @@ If the output update was slowed down, show it now."
 
 Needed between sequences of commands to maintain synchronization,
 because Proof General does not allow for the action list to be extended
-in some cases.   Also is considerably faster than leaving the Emacs 
+in some cases.   Also is considerably faster than leaving the Emacs
 top-level command loop to read from the prover.
 
 Called by `proof-shell-invisible-command' and `proof-process-buffer'
@@ -1815,7 +1813,7 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 			  (/ timeoutsecs accepttime))))
     (when proverproc
       (while (and proof-shell-busy (not quit-flag)
-		  (if timecount 
+		  (if timecount
 		      (> (setq timecount (1- timecount)) 0)
 		    t)
 		  (not (and interrupt-on-input (input-pending-p))))
@@ -1826,8 +1824,8 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 	  (error "Proof General: quit in proof-shell-wait")))))
 
 (defun proof-done-invisible (span)
-  "Callback for proof-shell-invisible-command.
-Calls proof-state-change-hook."
+  "Callback for ‘proof-shell-invisible-command’.
+Call ‘proof-state-change-hook’."
   (run-hooks 'proof-state-change-hook))
 
 ;;;###autoload
@@ -2021,7 +2019,7 @@ processing."
 		    (if (listp proof-shell-init-cmd)
 			(mapc 'proof-shell-invisible-command-invisible-result
 				proof-shell-init-cmd)
-		      (proof-shell-invisible-command-invisible-result 
+		      (proof-shell-invisible-command-invisible-result
 		       proof-shell-init-cmd)))
 		  (proof-shell-wait)
 		  (if proof-assistant-settings

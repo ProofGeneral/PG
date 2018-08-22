@@ -20,7 +20,7 @@
 ;; Lexer.
 
 ;; Due to the verycomplex grammar of Coq, and to the architecture of
-;; smie, we deambiguate all kinds of tokens during lexing. This is a
+;; smie, we deambiguate all kinds of tokens during lexing.  This is a
 ;; complex piece of code but it allows for all smie goodies.
 ;; Some examples of deambigations:
 ;; - We distinguish ":=" from ":= inductive" to avoid the circular precedence
@@ -52,11 +52,11 @@
 
 (defcustom coq-smie-user-tokens nil
   "Alist of (syntax . token) pairs to extend the coq smie parser.
-These are user configurable additional syntax for smie tokens. It
-allows to define alternative syntax for smie token. Typical
+These are user configurable additional syntax for smie tokens.  It
+allows to define alternative syntax for smie token.  Typical
 example: if you define a infix operator \"xor\" you may want to
 define it as a new syntax for token \"or\" in order to have the
-indentation rules of or applied to xor. Other exemple: if you
+indentation rules of or applied to xor.  Other exemple: if you
 want to define a new notation \"ifb\" ... \"then\" \"else\" then
 you need to declare \"ifb\" as a new syntax for \"if\" to make
 indentation work well."
@@ -113,7 +113,7 @@ attention to case differences."
 
 (defun coq-smie-is-ltacdef ()
   (let ((case-fold-search nil))
-    (save-excursion       
+    (save-excursion
       (coq-find-real-start)
       (looking-at "\\(\\(Local\\|Global\\)\\s-+\\)?\\(Ltac\\|Tactic\\s-+Notation\\)\\s-"))))
 
@@ -237,11 +237,11 @@ the token of \".\" is simply \".\"."
 ;; tokens and ignore-bteween are not disjoint
 (defun coq-smie-search-token-forward (tokens &optional end ignore-between)
   "Search for one of TOKENS between point and END.
-If some enclosing parenthesis is reached, stop there and return
-nil. Token \".\" is considered only if followed by a space.
-optional IGNORE-BETWEEN defines opener/closer to ignore during
-search. Careful: the search for a opener stays inside the current
-command (and inside parenthesis)."
+If some enclosing parenthesis is reached, stop there and return nil.
+Token \".\" is considered only if followed by a space.  Optional
+IGNORE-BETWEEN defines opener/closer to ignore during search.
+Careful: the search for a opener stays inside the current command (and
+inside parenthesis)."
   (unless end (setq end (point-max)))
   (condition-case nil
       (catch 'found
@@ -282,11 +282,12 @@ command (and inside parenthesis)."
 ;; tokens and ignore-bteween are not disjoint
 (defun coq-smie-search-token-backward (tokens &optional end ignore-between)
   "Search for one of TOKENS between point and END.
-If some enclosing parenthesis is reached, stop there and return
-nil. Token \".\" is considered only if followed by a space.
+If some enclosing parenthesis is reached, stop there and return nil.
+Token \".\" is considered only if followed by a space.
 optional IGNORE-BETWEEN defines opener/closer to ignore during
-search. Careful: the search for a opener stays inside the current
-command (and inside parenthesis). "
+search.
+Careful: the search for a opener stays inside the current command (and
+inside parenthesis)."
   (unless end (setq end (point-min)))
     (condition-case nil
 	(catch 'found
@@ -343,9 +344,9 @@ proof-mode starter in Coq."
 ;; each goal anyway.
 (defun coq-smie-detect-goal-command ()
   "Return t if the next command is a goal starting to be indented.
-The point should be at the beginning of the command name. As
-false positive are more annoying than false negative, return t
-only if it is FOR SURE a goal opener. Put a \"Proof.\" when you want to
+The point should be at the beginning of the command name.
+As false positive are more annoying than false negative, return t only
+if it is FOR SURE a goal opener.  Put a \"Proof.\" when you want to
 force indentation."
   (save-excursion ; FIXME add other commands that potentialy open goals
     (when (proof-looking-at "\\(Local\\|Global\\)?\
@@ -362,7 +363,7 @@ force indentation."
 The point should be at the beginning of the command name."
   (save-excursion ; FIXME Is there other module starting commands?
     (cond
-     ((looking-back "with\\s-+" nil) "module") ; lowecase means Module that is not a declaration keyword (like in with Module) 
+     ((looking-back "with\\s-+" nil) "module") ; lowecase means Module that is not a declaration keyword (like in with Module)
      ((proof-looking-at "\\(Module\\|Section\\)\\>")
       (if (coq-lonely-:=-in-this-command) "Module start" "Module def")))))
 
@@ -557,7 +558,7 @@ The point should be at the beginning of the command name."
 		 (equal (coq-smie-backward-token) "; tactic")) ;; recursive
 	    "|| tactic")
 	   ;; this is wrong half of the time but should not harm indentation
-	   ((and (equal backtok nil) (looking-back "(" nil)) "||") 
+	   ((and (equal backtok nil) (looking-back "(" nil)) "||")
 	   ((equal backtok nil)
 	    (if (or (looking-back "\\[" nil)
 		    (and (looking-back "{" nil)
@@ -769,8 +770,7 @@ Lemma foo: forall n,
 instead of:
 
 Lemma foo: forall n,
-  n = n.
-"
+  n = n."
   :type 'boolean
   :group 'coq)
 
@@ -784,19 +784,18 @@ Lemma foo: forall n,
   :safe #'coq-indent-safep)
 
 (defcustom coq-indent-semicolon-tactical 2
-  "Number of spaces used to indent after the first tactical semi colon of a serie.
-  If set to 0, indetation is as follows:
-   tac1;
-   tac2;
-   tac3;
-   tac4.
+  "Number of spaces used to indent after the 1st tactical semicolon of a serie.
+If set to 0, indentation is as follows:
+tac1;
+tac2;
+tac3;
+tac4.
 
-   if set to 2 (default):
-
-   tac1;
-     tac2;
-     tac3;
-     tac4."
+If set to 2 (default):
+tac1;
+  tac2;
+  tac3;
+  tac4."
   :type 'integer
   :group 'coq
   :safe #'coq-indent-safep)
@@ -820,8 +819,7 @@ for example, if set to 0 the indentation is as follows:
 If it is set to 2 (default) it is as follows:
 
    Lemma foo: forall x:nat,
-       x <= 0 -> x = 0.
-"
+       x <= 0 -> x = 0."
   :type 'integer
   :group 'coq
   :safe #'coq-indent-safep)
@@ -1006,7 +1004,7 @@ Typical values are 2 or 4."
 
 ;; copied from elixir-smie.el
 (defun coq-smie--same-line-as-parent (parent-pos child-pos)
-  "Return non-nil if `child-pos' is on same line as `parent-pos'."
+  "Return non-nil if PARENT-POS is on same line as CHILD-POS."
   (= (line-number-at-pos parent-pos) (line-number-at-pos child-pos)))
 
 (defun coq-smie-rules (kind token)

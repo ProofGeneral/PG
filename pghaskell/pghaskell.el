@@ -71,3 +71,4 @@
  )
 
 (provide 'pghaskell)
+;;; pghaskell.el ends here

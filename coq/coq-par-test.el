@@ -22,7 +22,7 @@
 ;; of `coq-par-job-needs-compilation'.
 ;;
 ;; Run the tests with
-;; emacs -batch -L . -L ../generic -L ../lib -load coq-par-test.el
+;; Emacs -batch -L . -L ../generic -L ../lib -load coq-par-test.el
 ;;
 ;;; TODO:
 ;;
@@ -48,7 +48,7 @@
      (quick              nil            nil       vio)
      (ensure-vo          nil            nil       vo ))
 
-    ((src vo dep vio)    
+    ((src vo dep vio)
      (no-quick           nil            vo        vio)
      (quick              nil            vo        vio)
      (ensure-vo          t              nil       vo ))
@@ -705,15 +705,15 @@
     )
   "Test and result specification for `coq-par-job-needs-compilation'.
 
-List of tests. A test is a list of 4 elements. The first element,
-a list, specifies the existing files and their relative age. In
+List of tests.  A test is a list of 4 elements.  The first element,
+a list, specifies the existing files and their relative age.  In
 there, `src' stands for the source (x.v) file, `dep' for
 a (already compiled) dependency (dep.vo or dep.vio), `vo' for the
-.vo file (x.vo) and `vio' for the .vio file (x.vio). A label in
+.vo file (x.vo) and `vio' for the .vio file (x.vio).  A label in
 the list denotes an existing file, a missing label a missing
-file. The first element is the oldest file, the last element the
-newest file. A sublist specifies a set of files with identical
-time stamps. For example, ``(src (vo vio) dep)'' specifies source
+file.  The first element is the oldest file, the last element the
+newest file.  A sublist specifies a set of files with identical
+time stamps.  For example, ``(src (vo vio) dep)'' specifies source
 is older than .vo and .vio, .vo and .vio have identical last
 modification time stamps and .vo and .vio are older than the
 dependency.
@@ -722,17 +722,17 @@ Elements 2-4 of a test specify the results and side effects of
 `coq-par-job-needs-compilation' for all setting of
 `coq-compile-quick' on the file configuration described in
 element 1. The options `quick-no-vio2vo' and `quick-and-vio2vo'
-are specified together with label `quick'. Each result and side
+are specified together with label `quick'.  Each result and side
 effect specification (also called a variant in the source code
-below) is itself a list of 4 elements. Element 1 is the value for
+below) is itself a list of 4 elements.  Element 1 is the value for
 `coq-compile-quick', where `quick' denotes both `quick-no-vio2vo'
-and `quick-and-vio2vo'. Element 2 specifies the result of
+and `quick-and-vio2vo'.  Element 2 specifies the result of
 `coq-par-job-needs-compilation', nil for don't compile, t for do
-compile. Elements 3-5 specify side effects. Element 3 which file
-must be deleted, where nil means no file must be deleted. Element
+compile.  Elements 3-5 specify side effects.  Element 3 which file
+must be deleted, where nil means no file must be deleted.  Element
 4 specifies which file name must be stored in the
-`required-obj-file' property of the job. This file will be used
-as the compiled module library. In case compilation is
+`required-obj-file' property of the job.  This file will be used
+as the compiled module library.  In case compilation is
 needed (element 2 equals t), this is the target of the
 compilation.
 
@@ -740,7 +740,7 @@ This list contains 1 test for all possible file configuration and
 relative ages.")
 
 (defun coq-par-test-flatten-files (file-descr)
-  "Flatten a file description test case list into a list of files."
+  "Flatten a file description test case list FILE-DESCR into a list of files."
   (let (result)
     (dolist (f file-descr result)
       (if (listp f)

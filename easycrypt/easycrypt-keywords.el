@@ -1,3 +1,5 @@
+;;; easycrypt-keywords.el --- Definition of keywords for EasyCrypt mode
+
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
 ;; Copyright (c) - 2012--2016 - Inria
@@ -5,7 +7,12 @@
 ;; Distributed under the terms of the GPL-v3 license
 ;; --------------------------------------------------------------------
 
-; Generated on Tue Feb 21 23:37:34 2017
+;;; Commentary:
+;; 
+;; Generated on Tue Feb 21 23:37:34 2017
+;;
+
+;;; Code:
 
 (defvar easycrypt-bytac-keywords '(
   "exact"
@@ -175,3 +182,5 @@
 ))
 
 (provide 'easycrypt-keywords)
+
+;;; easycrypt-keywords.el ends here

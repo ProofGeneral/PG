@@ -64,56 +64,56 @@ nil if a region cannot be found."
 ;; applicable.
 
 (defsubst proof-search-forward (string &optional bound noerror count)
-  "Like search-forward, but set case-fold-search to proof-case-fold-search."
+  "Like ‘search-forward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let
       ((case-fold-search proof-case-fold-search))
     (search-forward string bound noerror count)))
 
 ;;;###autoload
 (defsubst proof-replace-regexp-in-string (regexp rep string)
-  "Like replace-regexp-in-string, but set case-fold-search to proof-case-fold-search."
+  "Like ‘replace-regexp-in-string’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (replace-regexp-in-string regexp rep string)))
 
 (defsubst proof-re-search-forward (regexp &optional bound noerror count)
-  "Like re-search-forward, but set case-fold-search to proof-case-fold-search."
+  "Like ‘re-search-forward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (re-search-forward regexp bound noerror count)))
 
 (defsubst proof-re-search-backward (regexp &optional bound noerror count)
-  "Like re-search-backward, but set case-fold-search to proof-case-fold-search."
+  "Like ‘re-search-backward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (re-search-backward regexp bound noerror count)))
 
 (defsubst proof-re-search-forward-safe (regexp &optional bound noerror count)
-  "Like re-search-forward, but set case-fold-search to proof-case-fold-search."
+  "Like ‘re-search-forward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (and regexp
        (let ((case-fold-search proof-case-fold-search))
 	 (re-search-forward regexp bound noerror count))))
 
 (defsubst proof-string-match (regexp string &optional start)
-  "Like string-match, but set case-fold-search to proof-case-fold-search."
+  "Like ‘string-match’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (string-match regexp string start)))
 
 (defsubst proof-string-match-safe (regexp string &optional start)
-  "Like `string-match', but return nil if REGEXP or STRING is nil."
+  "Like ‘string-match’, but return nil if REGEXP or STRING is nil."
   (if (and regexp string) (proof-string-match regexp string start)))
 
 (defsubst proof-stringfn-match (regexp-or-fn string)
-  "Like proof-string-match if first arg is regexp, otherwise call it."
+  "Like ‘proof-string-match’ if first arg is regexp, otherwise call it."
   (cond ((stringp regexp-or-fn)
 	 (proof-string-match regexp-or-fn string))
 	((functionp regexp-or-fn)
 	 (funcall regexp-or-fn string))))
 
 (defsubst proof-looking-at (regexp)
-  "Like looking-at, but set case-fold-search to proof-case-fold-search."
+  "Like ‘looking-at’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (looking-at regexp)))
 
 (defsubst proof-looking-at-safe (regexp)
-  "Like `proof-looking-at', but return nil if REGEXP is nil."
+  "Like ‘proof-looking-at’, but return nil if REGEXP is nil."
   (if regexp (proof-looking-at regexp)))
 
 ;;

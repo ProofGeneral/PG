@@ -1,3 +1,5 @@
+;;; easycrypt-hooks.el --- Auxiliary functions for EasyCrypt mode
+
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
 ;; Copyright (c) - 2012--2016 - Inria
@@ -5,8 +7,13 @@
 ;; Distributed under the terms of the GPL-v3 license
 ;; --------------------------------------------------------------------
 
+;;; Commentary:
+;; 
+
 (require 'span)
 (require 'proof)
+
+;;; Code:
 
 (defvar easycrypt-last-but-one-statenum 0)
 (defvar easycrypt-proof-weak-mode nil)
@@ -38,7 +45,7 @@
 
 (defun easycrypt-last-prompt-info (s)
   "Extract the information from prompt."
-  (let ((lastprompt (or s (error "no prompt"))))
+  (let ((lastprompt (or s (error "No prompt"))))
      (when (string-match "\\[\\([0-9]+\\)|\\(\\sw+\\)\\]" lastprompt)
            (list (string-to-number (match-string 1 lastprompt))
                  (if (equal (match-string 2 lastprompt) "weakcheck") t nil)))))
@@ -68,3 +75,5 @@
        (list (format "undo %s." (int-to-string span-staten)))))
 
 (provide 'easycrypt-hooks)
+
+;;; easycrypt-hooks.el ends here

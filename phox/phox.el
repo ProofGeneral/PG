@@ -1,6 +1,16 @@
-;; phox.el
+;;; phox.el --- Major mode for the PhoX proof assistant
+
+;; This file is part of Proof General.
+
+;; Copyright © 2017  Christophe Raffalli
+
+;;; Commentary:
+;; 
 
 (require 'proof-site)
+
+;;; Code:
+
 (proof-ready-for-assistant 'phox)
 
 (require 'proof)
@@ -70,7 +80,6 @@
      "unfold_hyp")
    )
 
-
 ;; code for sisplaying unicode borrowed from
 ;; Erik Parmann, Pål Drange latex-pretty-symbol
 
@@ -137,5 +146,6 @@ their unicode counterpart"
 (add-hook 'phox-goals-mode-hook 'phox-unicode-simplified)
 (add-hook 'phox-response-mode-hook 'phox-unicode-simplified)
 
-
 (provide 'phox)
+
+;;; phox.el ends here

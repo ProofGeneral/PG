@@ -17,7 +17,7 @@
 ;;; Commentary:
 ;;
 ;; This file holds constants, options and some general functions for
-;; setting coq command arguments. Some code is dedicated as a light
+;; setting coq command arguments.  Some code is dedicated as a light
 ;; support for older versions of coq.
 ;;
 
@@ -51,12 +51,12 @@ On Windows you might need something like:
 (defcustom coq-prog-name
   (if (executable-find "coqtop") "coqtop"
     (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")))
-  "*Name of program to run as Coq. See `proof-prog-name', set from this.
+  "*Name of program to run as Coq.  See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
 instead of just \"coqtop\".
-This must be a single program name with no arguments; see `coq-prog-args'
-to manually adjust the arguments to the Coq process.
+This must be a single program name with no arguments.  See option
+`coq-prog-args' to manually adjust the arguments to the Coq process.
 See also `coq-prog-env' to adjust the environment."
   :type 'string
   :group 'coq)
@@ -94,8 +94,8 @@ See also `coq-prog-env' to adjust the environment."
 (defcustom coq-pinned-version nil
   "Which version of Coq you are using.
 There should be no need to set this value unless you use the trunk from
-the Coq github repository. For Coq versions with decent version numbers
-Proof General detects the version automatically and adjusts itself. This
+the Coq github repository.  For Coq versions with decent version numbers
+Proof General detects the version automatically and adjusts itself.  This
 variable should contain nil or a version string."
   :type 'string
   :group 'coq)
@@ -245,12 +245,12 @@ Set to t if you want this feature, but note that it is deprecated."
 (defcustom coq-load-path nil
   "Non-standard coq library load path.
 This list specifies the LoadPath extension for coqdep, coqc and
-coqtop. Usually, the elements of this list are strings (for
+coqtop.  Usually, the elements of this list are strings (for
 \"-I\") or lists of two strings (for \"-R\" dir path and
 \"-Q\" dir path).
 
 The possible forms of elements of this list correspond to the 4
-forms of include options (`-I' `-Q' and `-R'). An element can be
+forms of include options (`-I' `-Q' and `-R').  An element can be
 
   - A list of the form `(\\='ocamlimport dir)', specifying (in 8.5) a
     directory to be added to ocaml path (`-I').
@@ -303,10 +303,10 @@ not the same (-I is for coq path)."
 (make-variable-buffer-local 'coq-load-path)
 
 (defcustom coq-load-path-include-current t
-  "If `t' let coqdep search the current directory too.
-Should be `t' for normal users. If `t' pass -Q dir \"\" to coqdep when
-processing files in directory \"dir\" in addition to any entries
-in `coq-load-path'.
+  "If t, let coqdep search the current directory too.
+Should be t for normal users.  If t, pass -Q dir \"\" to coqdep when
+processing files in directory \"dir\" in addition to any entries in
+`coq-load-path'.
 
 This setting is only relevant with Coq < 8.5."
   :type 'boolean
@@ -417,7 +417,7 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options. This is not true for coqdep.
   "Build a list of options for coqc.
-LOAD-PATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
+LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85)))
 
 (defun coq-prog-args ()
@@ -440,17 +440,16 @@ path (including the -R lib options) (see `coq-load-path')."
 
 (defcustom coq-project-filename "_CoqProject"
   "The name of coq project file.
-The coq project file of a coq developpement (Cf Coq documentation
-on \"makefile generation\") should contain the arguments given to
+The coq project file of a coq developpement (cf. Coq documentation on
+\"makefile generation\") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
-options (preferably one per line). If `coq-use-coqproject' is
-t (default) the content of this file will be used by proofgeneral
-to infer the `coq-load-path' and the `coq-prog-args' variables
-that set the coqtop invocation by proofgeneral. This is now the
-recommended way of configuring the coqtop invocation. Local file
-variables may still be used to override the coq project file's
-configuration. .dir-locals.el files also work and override
-project file settings."
+options (preferably one per line).  If `coq-use-coqproject' is
+t (default) the content of this file will be used by proofgeneral to
+infer the `coq-load-path' and the `coq-prog-args' variables that set
+the coqtop invocation by proofgeneral.  This is now the recommended
+way of configuring the coqtop invocation.  Local file variables may
+still be used to override the coq project file's configuration.
+.dir-locals.el files also work and override project file settings."
   :type 'string
   :safe 'stringp
   :group 'coq)
@@ -569,12 +568,10 @@ variable."
 
 (defun coq-load-project-file ()
   "Set `coq-prog-args' and `coq-load-path' according to _CoqProject file.
-Obeys `coq-use-project-file'.  Note that if a variable is already
-set by dir/file local variables, this function will not override
-its value.
-See `coq-project-filename' to change the name of the
-project file, and `coq-use-project-file' to disable this
-feature."
+Obeys `coq-use-project-file'.  Note that if a variable is already set
+by dir/file local variables, this function will not override its value.
+See `coq-project-filename' to change the name of the project file, and
+`coq-use-project-file' to disable this feature."
   (when coq-use-project-file
     ;; Let us reread dir/file local vars, in case the user mmodified them
     (let* ((oldargs (assoc 'coq-prog-args file-local-variables-alist))
@@ -641,11 +638,11 @@ Does nothing if `coq-use-project-file' is nil."
 ;; OBSOLETE, should take _CoqProject into account.
 (defun coq-guess-command-line (filename)
   "Guess the right command line options to compile FILENAME using `make -n'.
-This function is obsolete, the recommended way of setting the
-coqtop options is to use a _Coqproject file as described in coq
-documentation. ProofGeneral reads this file and sets compilation
-options according to its contents. See `coq-project-filename'. Per file configuration may
-then be set using local file variables."
+This function is obsolete, the recommended way of setting the coqtop
+options is to use a _Coqproject file as described in coq
+documentation.  ProofGeneral reads this file and sets compilation
+options according to its contents.  See `coq-project-filename'.  Per
+file configuration may then be set using local file variables."
   (if (local-variable-p 'coq-prog-name (current-buffer))
       coq-prog-name
     (let* ((dir (or (file-name-directory filename) "."))

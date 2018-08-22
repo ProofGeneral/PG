@@ -67,6 +67,7 @@
   :group 'unicode-tokens-options)
 
 (defun unicode-tokens-toggle-add-help-echo ()
+  "Toggle option ‘unicode-tokens-add-help-echo’."
   (interactive)
   (customize-set-variable 'unicode-tokens-add-help-echo
 			  (not unicode-tokens-add-help-echo))
@@ -264,7 +265,7 @@ This is used for an approximate reverse mapping, see `unicode-tokens-paste'.")
 ;;
 (defconst unicode-tokens-font-family-alternatives
   '(("STIXGeneral"
-     "DejaVu Sans Mono" "DejaVuLGC Sans Mono" 
+     "DejaVu Sans Mono" "DejaVuLGC Sans Mono"
      "Lucida Grande" "Lucida Sans Unicode" "Apple Symbols")
     ("Script"
      "Lucida Calligraphy" "URW Chancery L" "Zapf Chancery")
@@ -869,7 +870,7 @@ Starts from point."
 	 (regexp-opt (mapcar 'car unicode-tokens-shortcut-replacement-alist))))
     ;; override the display of the regexp because it's huge!
     ;; (doesn't help with C-h: need way to programmatically show string)
-    (cl-flet ((query-replace-descr (str) 
+    (cl-flet ((query-replace-descr (str)
 				(if (eq str shortcut-regexp) "shortcut" str)))
       (perform-replace shortcut-regexp
 		       (cons 'unicode-tokens-replace-shortcut-match nil)
@@ -883,7 +884,7 @@ Starts from point."
 	       (format unicode-tokens-token-format token)))))
 
 (defun unicode-tokens-replace-unicode ()
-  "Query-replace unicode sequences in the buffer with tokens having same appearance.
+  "Query-replace unicode seq. in the buffer with tokens having same appearance.
 Starts from point."
   (interactive)
   (let ((uchar-regexp unicode-tokens-uchar-regexp))
@@ -972,7 +973,7 @@ Starts from point."
 (defalias 'unicode-tokens-list-unicode-chars 'unicode-chars-list-chars)
 
 (defun unicode-tokens-encode-in-temp-buffer (str fn)
-  "Call FN on encoded version of STR."
+  "Compute an encoded version of STR and call FN onto."
   (with-temp-buffer
     (insert str)
     (goto-char (point-min))

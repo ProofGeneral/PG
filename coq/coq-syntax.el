@@ -27,9 +27,9 @@
 ;;; keyword databases
 
 (defcustom coq-user-tactics-db nil
-  "User defined tactic information.  See `coq-syntax-db' for
-syntax. It is not necessary to add your own tactics here (it is not
-needed by the synchronizing/backtracking system). You may however do
+  "User defined tactic information.  See `coq-syntax-db' for syntax.
+It is not necessary to add your own tactics here (it is not
+needed by the synchronizing/backtracking system).  You may however do
 so for the following reasons:
 
    1 your tactics will be colorized by font-lock
@@ -44,10 +44,10 @@ so for the following reasons:
 
 
 (defcustom coq-user-commands-db nil
-  "User defined command information.  See `coq-syntax-db' for
- syntax. It is not necessary to add your own commands here (it is not
- needed by the synchronizing/backtracking system). You may however do
- so for the following reasons:
+  "User defined command information.  See `coq-syntax-db' for syntax.
+It is not necessary to add your own commands here (it is not
+needed by the synchronizing/backtracking system).  You may however do
+so for the following reasons:
 
    1 your commands will be colorized by font-lock
 
@@ -60,10 +60,10 @@ so for the following reasons:
   :group 'coq)
 
 (defcustom coq-user-tacticals-db nil
-  "User defined tactical information.  See `coq-syntax-db' for
- syntax. It is not necessary to add your own commands here (it is not
- needed by the synchronizing/backtracking system). You may however do
- so for the following reasons:
+  "User defined tactical information.  See `coq-syntax-db' for syntax.
+It is not necessary to add your own commands here (it is not
+needed by the synchronizing/backtracking system).  You may however do
+so for the following reasons:
 
    1 your commands will be colorized by font-lock
 
@@ -76,10 +76,10 @@ so for the following reasons:
   :group 'coq)
 
 (defcustom coq-user-solve-tactics-db nil
-  "User defined closing tactics. See `coq-syntax-db' for
- syntax. It is not necessary to add your own commands here (it is not
- needed by the synchronizing/backtracking system). You may however do
- so for the following reasons:
+  "User defined closing tactics.  See `coq-syntax-db' for syntax.
+It is not necessary to add your own commands here (it is not
+needed by the synchronizing/backtracking system).  You may however do
+so for the following reasons:
 
    1 your commands will be colorized by font-lock
 
@@ -93,10 +93,10 @@ so for the following reasons:
 
 (defcustom coq-user-cheat-tactics-db nil
   "User defined closing tactics BY CHEATING (ex: admit).
- See `coq-syntax-db' for syntax. It is not necessary to add your
- own commands here (it is not needed by the
- synchronizing/backtracking system). You may however do so for
- the following reasons:
+See `coq-syntax-db' for syntax.  It is not necessary to add your
+own commands here (it is not needed by the
+synchronizing/backtracking system).  You may however do so for
+the following reasons:
 
    1 your commands will be colorized by font-lock
 
@@ -111,10 +111,10 @@ so for the following reasons:
 
 
 (defcustom coq-user-reserved-db nil
-  "User defined reserved keywords information.  See `coq-syntax-db' for
- syntax. It is not necessary to add your own commands here (it is not
- needed by the synchronizing/backtracking system). You may however do
- so for the following reasons:
+  "User defined reserved keywords information.  See `coq-syntax-db' for syntax.
+It is not necessary to add your own commands here (it is not
+needed by the synchronizing/backtracking system).  You may however do
+so for the following reasons:
 
    1 your commands will be colorized by font-lock
 
@@ -328,7 +328,7 @@ so for the following reasons:
      ("suff" "suff" "suff # : #" t "suff")
      )
    coq-user-tactics-db)
-  "Coq tactics information list. See `coq-syntax-db' for syntax. "
+  "Coq tactics information list.  See `coq-syntax-db' for syntax."
   )
 
 ;; user shortcuts are prioritized by being put at the end
@@ -445,7 +445,7 @@ so for the following reasons:
     ("Local Coercion" nil "Local Coercion @{id} : @{typ1} >-> @{typ2}." t "Local\\s-+Coercion")
     ("Coercion" "coerc" "Coercion @{id} : @{typ1} >-> @{typ2}." t "Coercion")
     )
-  "Coq declaration keywords information list. See `coq-syntax-db' for syntax."
+  "Coq declaration keywords information list.  See `coq-syntax-db' for syntax."
   )
 
 (defvar coq-defn-db
@@ -505,7 +505,7 @@ so for the following reasons:
     ("Structure" "str" "Structure # : # := {\n# : #;\n# : # }" t "Structure")
     ("Variant" "varv" "Variant # : # := # : #." t "Variant")
     )
-  "Coq definition keywords information list. See `coq-syntax-db' for syntax. "
+  "Coq definition keywords information list.  See `coq-syntax-db' for syntax."
   )
 
 ;; modules and section are indented like goal starters
@@ -543,7 +543,7 @@ so for the following reasons:
     ("Obligations" "obls" "Obligations #.\n#\nQed." nil "Obligations")
     ("Next Obligation" "nobl" "Next Obligation.\n#\nQed." t "Next Obligation")
     )
-  "Coq goal starters keywords information list. See `coq-syntax-db' for syntax. "
+  "Coq goal starters keywords information list.  See `coq-syntax-db' for syntax."
   )
 
 ;; TODO: dig other queries from the refman.
@@ -572,7 +572,7 @@ so for the following reasons:
      ("Test" nil "Test" nil "Test" nil t) ; let us not highlight all possible options for Test
      ("Timeout" nil "Timeout" nil "Timeout")
      )
-   "Coq queries command, that deserve a separate menu for sending them to coq without insertion. "
+   "Coq queries command, that deserve a separate menu for sending them to coq without insertion."
    )
 
 ;; command that are not declarations, definition or goal starters
@@ -920,7 +920,7 @@ so for the following reasons:
   (append coq-decl-db coq-defn-db coq-goal-starters-db
           coq-queries-commands-db
           coq-other-commands-db coq-ssreflect-commands-db coq-user-commands-db)
-  "Coq all commands keywords information list. See `coq-syntax-db' for syntax. "
+  "Coq all commands keywords information list.  See `coq-syntax-db' for syntax."
   )
 
 
@@ -943,7 +943,7 @@ so for the following reasons:
     ("match with 4" "m4" "match # with\n| # => #\n| # => #\n| # => #\n| # => #\nend")
     ("match with 5" "m5" "match # with\n| # => #\n| # => #\n| # => #\n| # => #\n| # => #\nend")
     )
-  "Coq terms keywords information list. See `coq-syntax-db' for syntax. "
+  "Coq terms keywords information list.  See `coq-syntax-db' for syntax."
   )
 
 
@@ -987,8 +987,8 @@ so for the following reasons:
 ;;    (la fonction vernac_declare_module dans toplevel/vernacentries)
 
 (defun coq-count-match (regexp strg)
-  "Count the number of (maximum, non overlapping) matching substring
- of STRG matching REGEXP. Empty match are counted once."
+  "Count the number of max. non-overlapping substring of STRG matching REGEXP.
+Empty matches are counted once."
   (let ((nbmatch 0) (str strg))
     (while (and (proof-string-match regexp str) (not (string-equal str "")))
       (incf nbmatch)
@@ -1017,8 +1017,8 @@ Used by `coq-goal-command-p'"
 
 ;; unused anymore (for good)
 (defun coq-goal-command-str-p (str)
-  "Decide syntactically whether STR is a goal start or not. Use
-`coq-goal-command-p' on a span instead if possible."
+  "Decide syntactically whether STR is a goal start or not.
+Use ‘coq-goal-command-p’ on a span instead if possible."
   (let* ((match (coq-count-match "\\_<match\\_>" str))
          (with (- (coq-count-match "\\_<with\\_>" str) (coq-count-match "\\_<with\\s-+signature\\_>" str)))
          (letwith (+ (coq-count-match "\\_<let\\_>" str) (- with match)))
@@ -1043,7 +1043,6 @@ Used by `coq-goal-command-p'"
 ;; to look at Modules and section (actually indentation will still
 ;; need it)
 (defun coq-goal-command-p (span)
-  "see `coq-goal-command-p'"
   (or (span-property span 'goalcmd)
       ;; module and section starts are detected here
       (let ((str (or (span-property span 'cmd) "")))
@@ -1065,7 +1064,7 @@ It is used:
 
 
 (defun coq-save-command-p (span str)
-  "Decide whether argument is a Save command or not"
+  "Decide whether argument is a Save command or not."
   (or (proof-string-match coq-save-command-regexp-strict str)
       (and (proof-string-match "\\`Proof\\_>" str)
            (not (proof-string-match "\\`Proof\\s-*\\(\\.\\|\\_<with\\_>\\|\\_<using\\_>\\)" str)))))
@@ -1238,12 +1237,12 @@ It is used:
   (concat paren "\\s-*\\(" coq-ids "\\)\\s-*" end))
 
 (defcustom coq-variable-highlight-enable t
-  "Activates partial bound variable highlighting"
+  "Activates partial bound variable highlighting."
   :type 'boolean
   :group 'coq)
 
 (defcustom coq-symbol-highlight-enable nil
-  "Activates partial bound variable highlighting"
+  "Activates symbol highlighting."
   :type 'boolean
   :group 'coq)
 
@@ -1367,7 +1366,7 @@ It is used:
 ;; necessary anymore.
 (defvar coq-hyp-name-in-goal-or-response-regexp
   "\\(?:\\(?1:^\\)\\|\\(?1:^  \\)\\|\\(?:[^ ] \\)\\(?1:  \\)\\)\\(?2:\\(?:[^\n :(),=]\\|, \\)+\\)\\(?: *:=?[ \n]\\|,$\\)"
-  "regexp matching hypothesis names in goal or response buffer.
+  "Regexp matching hypothesis names in goal or response buffer.
 Subexpr 2 contains the real name of the function.
 Subexpr 1 contains the prefix context (spaces mainly) that is not
 part of another hypothesis.")
@@ -1384,9 +1383,8 @@ part of another hypothesis.")
       (match-beginning 2))))
 
 (defun coq-detect-hyps-positions (buf &optional limit)
-  "Detect all hypothesis displayed in buffer BUF and returns positions.
-5 positions are created for each hyp: (begcross beghypname
-endhypname beg end)."
+  "Detect all hypotheses displayed in buffer BUF and returns positions.
+5 positions are created for each hyp: (begcross beghypname endhypname beg end)."
   (with-current-buffer buf
     (save-excursion
       (goto-char (point-min))
@@ -1407,7 +1405,7 @@ endhypname beg end)."
                         (point))))
             ; if several hyp names, we name the overlays with the first hyp name
             (setq res
-                  (cons 
+                  (cons
                    (cons (mapcar (lambda (s) (substring-no-properties s)) splitstr)
                          (list begcross beghypname endhypname beg end))
                    res))))

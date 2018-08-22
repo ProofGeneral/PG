@@ -38,7 +38,7 @@
 
 (declare-function pg-response-warning "pg-response")
 (declare-function pg-response-message "pg-response")
-(declare-function proof-segment-up-to "proof-script") 
+(declare-function proof-segment-up-to "proof-script")
 (declare-function proof-insert-pbp-command "proof-script")
 
 (defalias 'pg-pgip-debug   'proof-debug)
@@ -111,7 +111,7 @@ Return a symbol representing the PGIP command processed, or nil."
   (let ((ppfn  (cdr-safe (assoc cmdname pg-pgip-post-process-functions))))
     (if (fboundp ppfn)
 	(progn
-	  (pg-pgip-debug 
+	  (pg-pgip-debug
 	   "Post-processing for PGIP message type `%s' with function `%s'" cmdname ppfn)
 	  (funcall ppfn))
       (pg-pgip-debug "[No post-processing defined for PGIP message type `%s']" cmdname))))

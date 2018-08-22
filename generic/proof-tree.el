@@ -1,4 +1,4 @@
-;;; tree-tree.el --- Proof General prooftree communication.
+;;; proof-tree.el --- Proof General prooftree communication.
 
 ;; This file is part of Proof General.
 
@@ -15,7 +15,7 @@
 
 ;;; Commentary:
 ;;
-;; Generic code for the communication with prooftree. Prooftree
+;; Generic code for the communication with prooftree.  Prooftree
 ;; is an ocaml-gtk program that displays proof trees.
 ;;
 ;; The main problem with proof tree visualization is that Coq (and
@@ -26,20 +26,20 @@
 ;;
 ;; To solve this problem prooftree relies on unique identification
 ;; strings of goals, which are called goal or sequent ID's in the
-;; code. With these ID's it is easy to keep track which goals are new.
+;; code.  With these ID's it is easy to keep track which goals are new.
 ;;
 ;; A second problem is that, for an undo command, Coq (and probably
 ;; other proof assistants as well) does not tell which subgoals and
-;; which finished branches must be deleted. Therefore prooftree needs
+;; which finished branches must be deleted.  Therefore prooftree needs
 ;; a continuously increasing proof state number and keeps a complete
 ;; undo history for every proof.
 ;;
 ;; A third problem is that Coq (and probably other proof assistants as
 ;; well) is not able to generate the information for a proof tree in
-;; the middle of a proof. Therefore, if the user wants to start the
+;; the middle of a proof.  Therefore, if the user wants to start the
 ;; proof-tree display in the middle of the proof, it is necessary to
 ;; retract to the start of the proof and then to reassert to the
-;; previous end of the locked region. To achieve this, one has to call
+;; previous end of the locked region.  To achieve this, one has to call
 ;; `accept-process-output' at suitable points to let Proof General
 ;; process the `proof-action-list'.
 ;; 
@@ -56,36 +56,36 @@
 ;;
 ;;   * To avoid synchronization trouble the communication between
 ;;     Proof General and prooftree is almost one way only: Only Proof
-;;     General sends display or undo commands to Prooftree. Prooftree
+;;     General sends display or undo commands to Prooftree.  Prooftree
 ;;     never requests any proof-state information from Proof General.
 ;;     Prooftree only sends a quit message to Proof General when the
-;;     user closes the proof-tree display of the current proof. This
+;;     user closes the proof-tree display of the current proof.  This
 ;;     goal requires that some of the heuristics, which decide which
 ;;     subgoals are new and which have to be refreshed, have to be
 ;;     implemented here.
 ;;
-;; In general the glue code here works on the delayed output. That is,
+;; In general the glue code here works on the delayed output.  That is,
 ;; the glue code here runs when the next proof command has already
-;; been sent to the proof assistant. The glue code makes a light
+;; been sent to the proof assistant.  The glue code makes a light
 ;; analysis on the output of the proof assistant, extracts the
 ;; necessary parts with regular expressions and sends appropriate
-;; commands to prooftree. This is achieved by calling the main entry
+;; commands to prooftree.  This is achieved by calling the main entry
 ;; here, the function `proof-tree-handle-delayed-output' from the
 ;; proof shell filter function after `proof-shell-exec-loop' has
 ;; finished.
 ;;
-;; However, some aspects can not be delayed. Those are treated by
-;; `proof-tree-urgent-action'. Its primary use is for inserting
+;; However, some aspects can not be delayed.  Those are treated by
+;; `proof-tree-urgent-action'.  Its primary use is for inserting
 ;; special goal-displaying commands into `proof-action-list' before
-;; the next real proof command runs. For Coq this needs to be done for
+;; the next real proof command runs.  For Coq this needs to be done for
 ;; newly generated subgoals and for goals that contain an existential
 ;; variable that got instantiated in the last proof step.
 ;;
 ;; Actually, for every proof, Prooftree can display a set of disjunct
-;; proof trees, which are organized into layers. More than one proof
+;; proof trees, which are organized into layers.  More than one proof
 ;; tree in more than one layer is needed to support the Grap
-;; Existential Variables command in Coq. There is one proof tree in
-;; the first layer for the original goal. The second layer contains
+;; Existential Variables command in Coq.  There is one proof tree in
+;; the first layer for the original goal.  The second layer contains
 ;; all the goals that the first Grab Existential Variables command
 ;; created from uninstantiated existential variabes in the main proof.
 ;; The third layer contains the goals that the second Grap Existential
@@ -134,8 +134,8 @@
 (defcustom proof-tree-ignored-commands-regexp nil
   "Commands that should be ignored for the prooftree display.
 The output of commands matching this regular expression is not
-sent to prooftree. It should match commands that display
-additional information but do not make any proof progress. Leave
+sent to prooftree.  It should match commands that display
+additional information but do not make any proof progress.  Leave
 at nil to act on all commands.
 
 For Coq this regular expression should contain all commands such
@@ -146,7 +146,7 @@ as Lemma, that can start a proof."
 (defcustom proof-tree-navigation-command-regexp nil
   "Regexp to match a navigation command.
 A navigation command typically focusses on a different open goal
-without changing any of the open goals. Leave at nil if there are
+without changing any of the open goals.  Leave at nil if there are
 no navigation commands."
   :type '(choice regexp (const nil))
   :group 'proof-tree-internals)
@@ -155,15 +155,15 @@ no navigation commands."
   "Regexp to match cheating proofer commands.
 A cheating command finishes the current goal without proving it
 to permit the user to first focus on other parts of the
-development. Examples are \"sorry\" in Isabelle and \"admit\" in
-Coq. Leave at nil if there are no cheating commands."
+development.  Examples are \"sorry\" in Isabelle and \"admit\" in
+Coq.  Leave at nil if there are no cheating commands."
   :type '(choice regexp (const nil))
   :group 'proof-tree-internals)
 
 (defcustom proof-tree-new-layer-command-regexp nil
   "Regexp to match proof commands that add new goals to a proof.
 This regexp must match the command that turns the proof assistant
-into prover mode, which adds the initial goal to the proof. It
+into prover mode, which adds the initial goal to the proof.  It
 must further match commands that add additional goals after all
 previous goals have been proved."
   :type 'regexp
@@ -172,7 +172,7 @@ previous goals have been proved."
 (defcustom proof-tree-current-goal-regexp nil
   "Regexp to match the current goal and its ID.
 The regexp is matched against the output of the proof assistant
-to extract the current goal with its ID. The regexp must have 2
+to extract the current goal with its ID.  The regexp must have 2
 grouping constructs, the first one matches just the ID, the
 second one the complete sequent text that is to be sent to
 prooftree."
@@ -183,9 +183,9 @@ prooftree."
   "Regexp to match a goal and its ID.
 The regexp is matched against the output of additional show-goal
 commands inserted by Proof General with a command returned by
-`proof-tree-show-sequent-command'. Proof General inserts such
-commands to update the goal text in prooftree. This is necessary,
-for instance, when existential variables get instantiated. This
+`proof-tree-show-sequent-command'.  Proof General inserts such
+commands to update the goal text in prooftree.  This is necessary,
+for instance, when existential variables get instantiated.  This
 regexp must have 2 grouping constructs, the first matching the ID
 of the goal, the second the complete sequent text."
   :type 'regexp
@@ -194,7 +194,7 @@ of the goal, the second the complete sequent text."
 (defcustom proof-tree-additional-subgoal-ID-regexp nil
   "Regular expression to match ID's of additional subgoals.
 This regexp is used to extract the ID's of all additionally open
-goals. The regexp is used in a while loop and must match one
+goals.  The regexp is used in a while loop and must match one
 subgoal ID with subgroup 1."
   :type 'regexp
   :group 'proof-tree-internals)
@@ -202,8 +202,8 @@ subgoal ID with subgroup 1."
 (defcustom proof-tree-existential-regexp nil
   "Regexp to match existential variables.
 Existential variables exist for instance in Isabelle/Hol and in
-Coq. They are placeholders for terms that might (for Coq they
-must) get instantiated in a later stage of the proof. This regexp
+Coq.  They are placeholders for terms that might (for Coq they
+must) get instantiated in a later stage of the proof.  This regexp
 should match one existential variable in subgroup 1. It is used
 inside a while loop to extract all existential variables from the
 goal text or from a list of existential variables.
@@ -219,7 +219,7 @@ Together with `proof-tree-existentials-state-end-regexp', this
 regular expression is used to determine the state display of
 existential variables, which contains information about which
 existentials are still uninstantiated and about dependencies of
-instantiated existential variables. Leave this variable nil, if
+instantiated existential variables.  Leave this variable nil, if
 there is no such state display."
   :type '(choice regexp (const nil))
   :group 'proof-tree-internals)
@@ -230,7 +230,7 @@ Together with `proof-tree-existentials-state-start-regexp', this
 regular expression is used to determine the state display of
 existential variables, which contains information about which
 existentials are still uninstantiated and about dependencies of
-instantiated existential variables. If this variable is nil (and
+instantiated existential variables.  If this variable is nil (and
 if `proof-tree-existentials-state-start-regexp' is non-nil), then
 the state display expands to the end of the prover output."
   :type '(choice regexp (const nil))
@@ -242,29 +242,29 @@ This must match in precisely the following cases:
 - The current branch has been finished but there is no current
   open subgoal because the prover has not switched to the next
   subgoal.
-- The last open goal has been proved. "
+- The last open goal has been proved."
   :type 'regexp
   :group 'proof-tree-internals)
 
 (defcustom proof-tree-get-proof-info nil
   "Proof assistant specific function for information about the current proof.
-This function takes no arguments. It must return a list, which
+This function takes no arguments.  It must return a list, which
 contains, in the following order:
 
 * the current state number (as positive integer)
 * the name of the current proof (as string) or nil
 
-The state number is used to implement undo in prooftree. The
+The state number is used to implement undo in prooftree.  The
 proof name is used to distinguish different proofs inside
 prooftree.
 
 The state number is interpreted as the state that has been
-reached after the last command has been processed. It must be
-consistent in the following sense. Firstly, it must be strictly
+reached after the last command has been processed.  It must be
+consistent in the following sense.  Firstly, it must be strictly
 increasing for successive commands that can be individually
-retracted. Secondly, the state number reported after some command
+retracted.  Secondly, the state number reported after some command
 X has been processed must be strictly greater than the state
-reported when X is retracted. Finally, state numbers of commands
+reported when X is retracted.  Finally, state numbers of commands
 preceding X must be less than or equal the state reported when X
 is retracted (but no stuff before X)."
   :type 'function
@@ -277,7 +277,7 @@ variables, that is, if `proof-tree-existential-regexp' is
 non-nil.
 
 If defined, this function should return the list of currently
-instantiated existential variables as a list of strings. The
+instantiated existential variables as a list of strings.  The
 function is called with `proof-shell-buffer' as current
 buffer and with two arguments start and stop, which designate the
 region containing the last output from the proof assistant.
@@ -291,7 +291,7 @@ function."
   "Proof assistant specific function for a show-goal command.
 This function is applied to an ID of a goal and should return a
 command (as string) that will display the complete sequent with
-that ID. The regexp `proof-tree-update-goal-regexp' should match
+that ID.  The regexp `proof-tree-update-goal-regexp' should match
 the output of the proof assistant for the returned command, such
 that `proof-tree-update-sequent' will update the sequent ID
 inside prooftree.
@@ -304,11 +304,11 @@ function should return nil and prooftree will not get updated."
 (defcustom proof-tree-find-begin-of-unfinished-proof nil
   "Proof assistant specific function for the start of the current proof.
 This function is called with no argument when the user switches
-the external proof-tree display on. Then, this function must
+the external proof-tree display on.  Then, this function must
 determine if there is a currently unfinished proof for which the
-proof-tree display should be started. If yes this function must
+proof-tree display should be started.  If yes this function must
 return the starting position of the command that started this
-proof. If there is no such proof, this function must return nil."
+proof.  If there is no such proof, this function must return nil."
   :type 'function
   :group 'proof-tree-internals)
 
@@ -316,8 +316,8 @@ proof. If there is no such proof, this function must return nil."
   "Proof assistant specific function for finding the point to undo to.
 This function is used to convert the state number, which comes
 with an undo command from Prooftree, into a point position for
-`proof-retract-until-point'. This function is called in the
-current scripting buffer with the state number as argument. It
+`proof-retract-until-point'.  This function is called in the
+current scripting buffer with the state number as argument.  It
 must return a buffer position."
   :type 'function
   :group 'proof-tree-internals)
@@ -327,7 +327,7 @@ must return a buffer position."
 This hook is called (indirectly) from inside
 `proof-shell-exec-loop' after the preceeding command and any
 comments that follow have been choped off `proof-action-list' and
-before the next command is sent to the proof assistant. This hook
+before the next command is sent to the proof assistant.  This hook
 can therefore be used to insert additional commands into
 `proof-action-list' that must be executed before the next real
 proof command.
@@ -336,7 +336,7 @@ Functions in this hook can rely on `proof-info' being bound to
 the result of `proof-tree-get-proof-info'.
 
 This hook is used, for instance, for Coq to insert Show commands
-for newly generated subgoals. (The normal Coq output does not
+for newly generated subgoals.  (The normal Coq output does not
 contain the complete sequent text of newly generated subgoals.)"
   :type 'hook
   :group 'proof-tree-internals)
@@ -349,19 +349,19 @@ contain the complete sequent text of newly generated subgoals.)"
 (defvar proof-tree-external-display nil
   "Display proof trees in external prooftree windows if t.
 Actually, if this variable is t then the user requested an
-external proof-tree display. If there was no unfinished proof
+external proof-tree display.  If there was no unfinished proof
 when proof-tree display was requested and if no proof has been
 started since then, then there is obviously no proof-tree
-display. In this case, this variable stays t and the proof-tree
+display.  In this case, this variable stays t and the proof-tree
 display will be started for the next proof.
 
 Controlled by `proof-tree-external-display-toggle'.")
 
 (defvar proof-tree-process nil
-  "Emacs lisp process object of the prooftree process.")
+  "Emacs Lisp process object of the prooftree process.")
 
 (defconst proof-tree-process-name "proof-tree"
-  "Name of the prooftree process for Emacs lisp.")
+  "Name of the prooftree process for Emacs Lisp.")
 
 (defconst proof-tree-process-buffer-name
   (concat "*" proof-tree-process-name "*")
@@ -387,13 +387,13 @@ This variable is only maintained and meaningful if
   "Hash table to remember sequent ID's.
 Needed because some proof assistants do not distinguish between
 new subgoals, which have been created by the last proof command,
-and older, currently unfocussed subgoals. If Proof General meets
+and older, currently unfocussed subgoals.  If Proof General meets
 a goal, it is treated as new subgoal if it is not in this hash yet.
 
-The hash is mostly used as a set of sequent ID's. However, for
+The hash is mostly used as a set of sequent ID's.  However, for
 undo operations it is necessary to delete all those sequents from
 the hash that have been created in a state later than the undo
-state. For this purpose this hash maps sequent ID's to the state
+state.  For this purpose this hash maps sequent ID's to the state
 number in which the sequent has been created.
 
 The hash table is initialized in `proof-tree-start-process'.")
@@ -401,9 +401,9 @@ The hash table is initialized in `proof-tree-start-process'.")
 (defvar proof-tree-existentials-alist nil
   "Alist mapping existential variables to sequent ID's.
 Used to remember which goals need a refresh when an existential
-variable gets instantiated. To support undo commands the old
+variable gets instantiated.  To support undo commands the old
 contents of this list must be stored in
-`proof-tree-existentials-alist-history'. To ensure undo is
+`proof-tree-existentials-alist-history'.  To ensure undo is
 properly working, this variable should only be changed by using
 `proof-tree-delete-existential-assoc',
 `proof-tree-add-existential-assoc' or
@@ -425,7 +425,7 @@ This marker points to the next piece of output that needs to get processed.")
 (defvar proof-tree-filter-continuation nil
   "Continuation when `proof-tree-process-filter' stops early.
 A function that handles a command from Prooftee might fail
-because not all data from Prooftee has yet arrived. In this case
+because not all data from Prooftee has yet arrived.  In this case
 the continuation is stored in this variable and will be called
 from `proof-tree-process-filter' when more output arrives.")
 
@@ -450,7 +450,7 @@ from `proof-tree-process-filter' when more output arrives.")
 
 (defun proof-tree-insert-script (data)
   "Handle an insert-command command from Prooftree."
-  (let ((command-length (string-to-number data))) 
+  (let ((command-length (string-to-number data)))
     (if (and (integerp command-length) (> command-length 0))
 	(condition-case nil
 	    (progn
@@ -768,13 +768,13 @@ state PROOF-STATE."
 			     'proof-tree-existentials-alist-history))
 
 (defun proof-tree-delete-existential-assoc (state ex-assoc)
-  "Delete mapping EX-ASSOC from 'proof-tree-existentials-alist'."
+  "Delete mapping EX-ASSOC from ‘proof-tree-existentials-alist’."
   (proof-tree-record-existentials-state state)
   (setq proof-tree-existentials-alist
 	(delq ex-assoc proof-tree-existentials-alist)))
   
 (defun proof-tree-add-existential-assoc (state ex-var sequent-id)
-  "Add the mapping EX-VAR -> SEQUENT-ID to 'proof-tree-existentials-alist'.
+  "Add the mapping EX-VAR -> SEQUENT-ID to ‘proof-tree-existentials-alist’.
 Do nothing if this mapping does already exist."
   (let ((ex-var-assoc (assoc ex-var proof-tree-existentials-alist)))
     (if ex-var-assoc
@@ -830,7 +830,7 @@ the current output does not come from a command (with the
 
 Urgent actions are only needed if the external proof display is
 currently running. Therefore this function should not be called
-when `proof-tree-external-display' is nil. 
+when `proof-tree-external-display' is nil.
 
 This function assumes that the prover output is not suppressed.
 Therefore, `proof-tree-external-display' being t is actually a
@@ -1073,8 +1073,8 @@ Send the undo command to prooftree and undo changes to the
 internal state of this package. The latter involves currently two
 points:
 * delete those goals from `proof-tree-sequent-hash' that have
-  been generated after the state to which we undo now
-* change proof-tree-existentials-alist back to its previous content"
+  been generated after the state to which we undo now;
+* change proof-tree-existentials-alist back to its previous content."
   ;; (message "PTHU info %s" proof-info)
   (let ((proof-state (car proof-info)))
     ;; delete sequents from the hash
@@ -1103,11 +1103,11 @@ points:
   "Prepare an update-sequent command for prooftree.
 This function processes delayed output that the proof assistant
 generated in response to commands that Proof General inserted in
-order to keep prooftree up-to-date. Such commands are tagged with
+order to keep prooftree up-to-date.  Such commands are tagged with
 a 'proof-tree-show-subgoal flag.
 
 This function uses `proof-tree-update-goal-regexp' to find a
-sequent and its ID in the delayed output. If something is found
+sequent and its ID in the delayed output.  If something is found
 an appropriate update-sequent command is sent to prooftree.
 
 The update-sequent command is associated with state PROOF-STATE
@@ -1143,7 +1143,7 @@ The delayed output is in the region
 (defun proof-tree-handle-delayed-output (old-proof-marker cmd flags span)
   "Process delayed output for prooftree.
 This function is the main entry point of the Proof General
-prooftree support. It examines the delayed output in order to
+prooftree support.  It examines the delayed output in order to
 take appropriate actions and maintains the internal state.
 
 The delayed output to handle is in the region
@@ -1153,7 +1153,7 @@ which contains the position of `proof-marker', before the next
 command was sent to the proof assistant.
 
 All other arguments are (former) fields of the `proof-action-list'
-entry that is now finally retired. CMD is the command, FLAGS are
+entry that is now finally retired.  CMD is the command, FLAGS are
 the flags and SPAN is the span."
   ;; (message "PTHDO cmd %s flags %s span %s-%s" cmd flags
   ;; 	   (if span (span-start span)) (if span (span-end span)))
@@ -1215,10 +1215,10 @@ the flags and SPAN is the span."
 (defun proof-tree-display-current-proof (proof-start)
   "Start an external proof-tree display for the current proof.
 Coq (and probably other proof assistants as well) does not
-support outputing the current proof tree. Therefore this function
+support outputing the current proof tree.  Therefore this function
 retracts to the start of the current proof, switches the
 proof-tree display on, and reasserts then until the former end of
-the locked region. Argument PROOF-START must contain the start
+the locked region.  Argument PROOF-START must contain the start
 position of the current proof."
   ;;(message "PTDCP %s" proof-tree-external-display)
   (unless (and proof-script-buffer
@@ -1247,10 +1247,10 @@ position of the current proof."
 (defun proof-tree-external-display-toggle ()
   "Toggle the external proof-tree display.
 When called outside a proof the external proof-tree display will
-be enabled for the next proof. When called inside a proof the
-proof display will be created for the current proof. If the
+be enabled for the next proof.  When called inside a proof the
+proof display will be created for the current proof.  If the
 external proof-tree display is currently on, then this toggle
-will switch it off. At the end of the proof the proof-tree
+will switch it off.  At the end of the proof the proof-tree
 display is switched off."
   (interactive)
   (unless proof-tree-configured
@@ -1287,4 +1287,4 @@ display is switched off."
 
 (provide 'proof-tree)
 
-;;; tree-tree.el ends here
+;;; proof-tree.el ends here

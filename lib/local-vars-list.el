@@ -34,9 +34,9 @@
 (defconst local-vars-list-doc nil
 "From Emacs Info:
 
-A file can contain a \"local variables list\", which specifies the values to use for
-certain Emacs variables when that file is edited. See info node \"(emacs)File
-Variables\".
+A file can contain a \"local variables list\", which specifies the values to use
+for certain Emacs variables when that file is edited.
+See info node \"(emacs)File Variables\".
 
 local-vars-list provides two useful functions:
 
@@ -111,7 +111,7 @@ variable definition (or at the \"End:\" line)."
 	(read (buffer-substring boexp (point))))))) ; TODO: catch errors here?
 
 
-;; Only looks for file local vars. Not dir local vars. 
+;; Only looks for file local vars. Not dir local vars.
 (defun local-vars-list-get (symb)
   "Return the value written in the local variable list for variable symb.
 Raises an error if symb is not in the list.
@@ -122,14 +122,14 @@ alist. Proceed by looking in the file instead."
   (save-excursion
     (let*
 	((lrpat (local-vars-list-find))
-	 (dummy (if lrpat t (error "local variables zone not found. ")))
+	 (dummy (if lrpat t (error "Local variables zone not found")))
 	 (lpat (car lrpat))
 	 (rpat (car (cdr lrpat)))
 	 )
       (beginning-of-line)
       (if (local-vars-list-goto-var symb lpat rpat)
 	  t
-	(error "variable %s not found" symb))
+	(error "Variable %s not found" symb))
       (beginning-of-line)
       (local-vars-list-get-current lpat rpat))))
 
@@ -154,3 +154,6 @@ of the buffer first."
 ;;; fill-column: 85 ***
 ;;; indent-tabs-mode: nil ***
 ;;; End: ***
+
+(provide 'local-vars-list)
+;;; local-vars-list.el ends here

@@ -39,10 +39,10 @@
 (require 'proof-compat)			; pg-custom-undeclare-variable
 (require 'proof-autoloads)		; proof-debug
 
-(defmacro deflocal (var value &optional docstring)
-  "Define a buffer local variable VAR with default value VALUE."
+(defmacro deflocal (var value &optional doc)
+  "Define a buffer local variable VAR with default value VALUE and docstring DOC."
  `(progn
-    (defvar ,var nil ,docstring)
+    (defvar ,var nil ,doc)
     (make-variable-buffer-local (quote ,var))
     (setq-default ,var ,value)))
 
@@ -79,13 +79,13 @@ This macro should only be invoked once a specific prover is engaged."
 		(symbol-value pasym)))))
 
 (defun proof-defpgcustom-fn (sym args)
-  "Define a new customization variable <PA>-sym for current proof assistant.
+  "Define a new customization variable <PA>-SYM for current proof assistant.
 Helper for macro `defpgcustom'."
   (let ((specific-var (proof-ass-symv sym))
 	 (generic-var  (intern (concat "proof-assistant-" (symbol-name sym))))
-	 (newargs     (if (member :group args) 
-			  args 
-			(append (list :group 
+	 (newargs     (if (member :group args)
+			  args
+			(append (list :group
 				      proof-assistant-internals-cusgrp)
 				args))))
     (eval
@@ -116,7 +116,7 @@ but which the user may require different values of across provers.
 The function proof-assistant-<SYM> is also defined, which can be used in the
 generic portion of Proof General to access the value for the current prover.
 
-Arguments are as for `defcustom', which see.  If a :group argument is
+Arguments ARGS are as for `defcustom', which see.  If a :group argument is
 not supplied, the setting will be added to the internal settings for the
 current prover (named <PA>-config)."
   `(proof-defpgcustom-fn (quote ,sym) (quote ,args)))
@@ -183,7 +183,7 @@ Usage: (defpgdefault SYM VALUE)"
 	(setq name (intern (concat (downcase (cadr args)) ":" (symbol-name name))))
 	(put name 'pggroup (cadr args))
 	(setq args (cdr args)))
-       ((eq (car args) :pgdynamic) 
+       ((eq (car args) :pgdynamic)
 	(put name 'pgdynamic (cadr args))
 	(setq args (cdr args)))
        ((eq (car args) :type)
@@ -202,11 +202,11 @@ Usage: (defpgdefault SYM VALUE)"
 		      (eq (eval type) 'integer)
 		      (eq (eval type) 'number)
 		      (eq (eval type) 'string)))
-      (error "defpacustom: missing :type keyword or wrong :type value"))
+      (error "Macro defpacustom: missing :type keyword or wrong :type value"))
 
     ;; Error in case a defpacustom is repeated.
     (when (assq name proof-assistant-settings)
-      (error "defpacustom: Proof assistant setting %s re-defined!"
+      (error "Macro defpacustom: Proof assistant setting %s re-defined!"
 	     name))
 
     (eval
@@ -237,8 +237,8 @@ which can be changed by sending commands.
 In this case, NAME stands for the internal setting, flag, etc,
 for the proof assistant, and a :setting and :type value should be
 provided.  The :type of NAME should be one of 'integer, 'float,
-'boolean, 'string. Other types are not supported (see
-`proof-menu-entry-for-setting'). They will yield an error when
+'boolean, 'string.  Other types are not supported (see
+`proof-menu-entry-for-setting').  They will yield an error when
 constructing the proof assistant menu.
 
 The function `proof-assistant-format' is used to format VAL.
@@ -262,7 +262,7 @@ Additional properties in the ARGS prop list may include:
 
  pgdynamic flag      If flag is non-nil, this setting is a dynamic one
 		     that is particular to the running instance of the prover.
-		     Automatically set by preferences configured from PGIP 
+		     Automatically set by preferences configured from PGIP
 		     askprefs message.
 
 This macro also extends the `proof-assistant-settings' list."

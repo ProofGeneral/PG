@@ -192,7 +192,7 @@ and displayed lazily.  See `proof-layout-windows'."
   and goal and response buffers on the left (one above the
   other).
 - If 'smart or anything else: 'horizontal when the window
-  is wide enough and 'vertical otherwise. The width threshold
+  is wide enough and 'vertical otherwise.  The width threshold
   is given by `split-width-threshold'.
 
   See `proof-layout-windows'."
@@ -362,8 +362,8 @@ locked (coloured blue); a buffer is completely unprocessed when there
 is no locked region.
 
 For some proof assistants (such as Coq) fully processed buffers make
-no sense. Setting this option to 'process has then the same effect
-as leaving it unset (nil). (This behaviour is controlled by
+no sense.  Setting this option to 'process has then the same effect
+as leaving it unset (nil).  (This behaviour is controlled by
 `proof-no-fully-processed-buffer'.)"
   :type '(choice
 	  (const :tag "No automatic action; query user" nil)
@@ -408,7 +408,7 @@ Hovers will be added when this option is non-nil.  Prover outputs
 can be displayed when the mouse hovers over the region that
 produced it and output is available (see `proof-full-annotation').
 If output is not available, the type of the output region is displayed.
-Changes of this option will not be reflected in already-processed 
+Changes of this option will not be reflected in already-processed
 regions of the script."
   :type 'boolean
   :group 'proof-user-options)
@@ -438,7 +438,7 @@ are distracting or too frequent."
   :type 'boolean
   :group 'proof-user-options)
 
-(defcustom proof-fast-process-buffer 
+(defcustom proof-fast-process-buffer
   (or (featurep 'ns) ; Mac OS X
       ; or Windows (speed up TBC, see Trac #308)
       (memq system-type '(windows-nt ms-dos cygwin)))

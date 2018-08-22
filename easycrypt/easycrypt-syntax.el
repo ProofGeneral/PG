@@ -1,3 +1,5 @@
+;;; easycrypt-syntax.el --- Syntax definitions for EasyCrypt mode
+
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
 ;; Copyright (c) - 2012--2016 - Inria
@@ -5,9 +7,14 @@
 ;; Distributed under the terms of the GPL-v3 license
 ;; --------------------------------------------------------------------
 
+;;; Commentary:
+;; 
+
 (require 'proof-syntax)
 (require 'easycrypt-keywords)
 (require 'easycrypt-hooks)
+
+;;; Code:
 
 (defconst easycrypt-id "[A-Za-z_]+")
 
@@ -20,7 +27,7 @@
 (defconst easycrypt-non-undoables-regexp "^pragma\\b")
 
 (defconst easycrypt-keywords-code-open  '("{"))
-(defconst easycrypt-keywords-code-close '("}")) 
+(defconst easycrypt-keywords-code-close '("}"))
 (defconst easycrypt-keywords-code-end   '(";"))
 
 (defvar easycrypt-other-symbols "\\(\\.\\.\\|\\[\\]\\)")
@@ -45,7 +52,7 @@
           "\\s-+\\(?:nosmt\\s-+\\)?\\(\\sw+\\)"))
 
 (defun easycrypt-save-command-p (span str)
-  "Decide whether argument is a [save|qed] command or not"
+  "Decide whether argument is a [save|qed] command or not."
   (let ((txt (or (span-property span 'cmd) "")))
        (proof-string-match-safe easycrypt-proof-save-regexp txt)))
 
@@ -61,7 +68,7 @@
   (modify-syntax-entry ?_   "_")
 
   ;; For comments
-  (modify-syntax-entry ?\* ". 23") 
+  (modify-syntax-entry ?\* ". 23")
 
   ;; For blocks
   (modify-syntax-entry ?\( "()1")
@@ -84,7 +91,7 @@
   ;; FIXME: really needs change in generic function to take account of this,
   ;; since the end character of a command is not the start
   (concat "\\(\\s(\\|\\s)\\|\\sw\\|\\s \\|\\s_\\)*="  ;match assignments
-          "\\|;;\\|;\\|" 
+          "\\|;;\\|;\\|"
           (proof-ids-to-regexp easycrypt-global-keywords))
   "Regexp matching any EasyCrypt command start or the terminator character.")
 
@@ -176,3 +183,5 @@
   (modify-syntax-entry ?\) ")(4"))
 
 (provide 'easycrypt-syntax)
+
+;;; easycrypt-syntax.el ends here

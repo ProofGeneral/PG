@@ -18,6 +18,10 @@
 ;; This is experimental, the code is rather ugly for the moment.
 ;;
 
+
+;;; Commentary:
+;; 
+
 ;;; Code:
 
 (require 'coq-syntax)
@@ -85,10 +89,10 @@
 ;;;; End of regexps
 
 (defun coq-indent-goal-command-p (str)
-  "Syntactical detection of a coq goal opening.
-Only used in indentation code and in
-v8.0 compatibility mode.  Module, Definition and Function need a special parsing to
-detect if they start something or not."
+  "Syntactical detection of a Coq goal opening.
+Only used in indentation code and in v8.0 compatibility mode.
+Module, Definition and Function need a special parsing to detect
+if they start something or not."
   (let* ((match (coq-count-match "\\_<match\\_>" str))
          (with (coq-count-match "\\_<with\\_>" str))
          (letwith (+ (coq-count-match "\\_<let\\_>" str) (- with match)))
@@ -105,7 +109,7 @@ detect if they start something or not."
 
 
 (defconst coq-simple-cmd-ender-prefix-regexp "[^.]\\|\\=\\|\\.\\."
-  "Used internally. Matches the allowed prefixes of coq \".\" command ending.")
+  "Used internally.  Matches the allowed prefixes of coq \".\" command ending.")
 
 (defconst coq-bullet-regexp-nospace "\\(-\\)+\\|\\(+\\)+\\|\\(\\*\\)+"
   "Matches single bullet, WARNING: Lots of false positive.
@@ -133,25 +137,24 @@ No context checking.")
   (concat "\\(?:\\(?2:" coq-simple-cmd-ender-prefix-regexp "\\)\\(?1:\\.\\)\\(?3:\\s-\\|\\'\\)\\)")
   "Matches coq regular syntax for ending a command (except bullets and curlies).
 
-This should match EXACTLY command ending syntax. No false
-positive should be accepted. \"...\" is matched as \".\" with a
+This should match EXACTLY command ending syntax.  No false
+positive should be accepted.  \"...\" is matched as \".\" with a
 left context \"..\".
 
 There are 3 substrings (2 and 3 may be nil):
 * number 1 is the real bullet string,
 * number 2 is the left context matched that is not part of the bullet
-* number 3 is the right context matched that is not part of the bullet
-")
+* number 3 is the right context matched that is not part of the bullet")
 
 ;; captures a lot of false bullets, need to check that the commaand is
 ;; empty. When searching forward (typically when splitting the buffer
 ;; into commands commands) we can't do better than that.
 (defconst coq-bullet-end-command
   (concat "\\(?:\\(?2:\\s-\\|\\=\\)" "\\(?1:" coq-bullet-regexp-nospace "\\)\\)")
-  "Matches ltac bullets. WARNING: lots of false positive.
+  "Matches ltac bullets.  WARNING: lots of false positive.
 
 This matches more than real bullets as - + and * may match this
-when used in regular expressions. See
+when used in regular expressions.  See
 `coq-bullet-end-command-backward' for a more precise regexp (but
 only when searching backward).")
 
@@ -160,7 +163,7 @@ only when searching backward).")
   (concat "\\(?:\\(?2:" coq-bullet-prefix-regexp "\\)\\(?1:\\(-\\)+\\|\\(+\\)+\\|\\(\\*\\)+\\)\\)")
   "Matches ltac bullets when searching backward.
 
-This should match EXACTLY bullets. No false positive should be accepted.
+This should match EXACTLY bullets.  No false positive should be accepted.
 There are 2 substrings:
 * number 1 is the real bullet string,
 * number 2 is the left context matched that is not part of the bullet"  )
@@ -169,14 +172,14 @@ There are 2 substrings:
   (concat "\\(?:\\(?1:"
           "\\(?:" coq-bullet-prefix-regexp"\\)?"
           "{\\)\\(?3:[^|]\\)\\|\\(?2:[^|]\\|\\=\\)\\(?1:}\\)\\)")
-  "Matches ltac curlies when searching backward. Warning: False positive.
+  "Matches ltac curlies when searching backward.  Warning: False positive.
 
 There are 3 substrings (2 and 3 may be nil):
 * number 1 is the real bullet string,
 * number 2 is the left context matched that is not part of the bullet
 * number 3 is the right context matched that is not part of the bullet
 
-This matches more than real ltac curlies. See
+This matches more than real ltac curlies.  See
 `coq-bullet-end-command-backward' for a more precise regexp (but
 only when searching backward).")
 
@@ -187,7 +190,7 @@ only when searching backward).")
           "\\|\\(?1:}\\)\\)\\)")
   "Matches ltac curly brackets when searching backward.
 
-This should match EXACTLY script structuring curlies. No false
+This should match EXACTLY script structuring curlies.  No false
 positive should be accepted.
 There are 3 substrings (2 and 3 may be nil):
 * number 1 is the real bullet string,
@@ -198,7 +201,8 @@ There are 3 substrings (2 and 3 may be nil):
   (concat coq-period-end-command "\\|"
           coq-bullet-end-command "\\|"
           coq-curlybracket-end-command)
-  "Matches end of commands (and ltac bullets and curlies). WARNING: False positive.
+  "Matches end of commands (and ltac bullets and curlies).
+WARNING: False positive.
 
 There are 3 substrings:
 * number 1 is the real coq ending string,
@@ -206,10 +210,10 @@ There are 3 substrings:
 * number 3 is the right context matched that is not part of the ending string
 
 WARNING: this regexp accepts some curly brackets and bullets (+ -
-*) with no sufficient context verification. Lots of false
-positive are matched. Currently bullets and curlies are always
+*) with no sufficient context verification.  Lots of false
+positive are matched.  Currently bullets and curlies are always
 ending an empty command, so we just need to check that the
-command ended by the bullet-like regexp is empty. This is done in
+command ended by the bullet-like regexp is empty.  This is done in
 coq-smie.el, and see `coq-end-command-regexp-backward' for a more
 precise regexp (but only when searching backward).")
 
@@ -251,7 +255,7 @@ Return nil if not found."
 (defun coq-skip-until-one-comment-backward ()
   "Skips comments and normal text until finding an unclosed comment start.
 Return nil if not found.  Point is moved to the the unclosed comment start
-if found, to (point-max) otherwise. return true if found, nil otherwise."
+if found, to (point-max) otherwise.  Return t if found, nil otherwise."
   (if (= (point) (point-min)) nil
     (ignore-errors (backward-char 1))       ; if point is between '(' and '*'
     (if (looking-at coq-comment-start-regexp) t
@@ -281,9 +285,9 @@ if found, to (point-max) otherwise. return true if found, nil otherwise."
 
 (defun coq-find-comment-start ()
   "Go to the current comment start.
-If inside nested comments, go to the start of the
-outer most comment. Return the position of the comment start. If not inside a
-comment, return nil and does not move the point."
+If inside nested comments, go to the start of the outer most comment.
+Return the position of the comment start.  If not inside a comment,
+return nil and does not move the point."
   (when (coq-looking-at-comment)
     (let ((prevpos (point)) (init (point)))
       (while (coq-skip-until-one-comment-backward)
@@ -293,9 +297,9 @@ comment, return nil and does not move the point."
 
 (defun coq-find-comment-end ()
   "Go to the current comment end.
-If inside nested comments, go to the end of the
-outer most comment. Return the position of the end of comment end. If not inside a
-comment, return nil and does not move the point."
+If inside nested comments, go to the end of the outer most
+comment.  Return the position of the end of comment end.  If not inside
+a comment, return nil and does not move the point."
   (let ((prevpos (point)) (init (point)))
     (while (coq-skip-until-one-comment-forward)
       (setq prevpos (point)))
@@ -317,10 +321,10 @@ Use this one for coq instead of the generic one."
 
 (defun coq-find-not-in-comment-backward (reg &optional lim submatch)
   "Moves to the first not commented occurrence of REG found looking up.
-The point is
-put exactly before the occurrence if SUBMATCH is nil, otherwise the point is put
-before SUBMATCHnth matched sub-expression (see `match-string').  If no occurrence is
-found, go as far as possible and return nil."
+The point is put exactly before the occurrence if SUBMATCH is nil,
+otherwise the point is put before SUBMATCHnth matched
+sub-expression (see `match-string').  If no occurrence is found, go as
+far as possible and return nil."
   (coq-find-comment-start) ; first go out of comment if inside some
   (let ((found nil) (continue t)
         (regexp (concat coq-comment-end-regexp "\\|" reg)))
@@ -407,10 +411,10 @@ Comments are ignored, of course."
 (defun coq-script-parse-cmdend-forward (&optional limit)
   "Move to the first end of command found looking forward from point.
 Point is put exactly after the ending token (but before matching
-substring if present). If no end command is found, go as far as
+substring if present).  If no end command is found, go as far as
 possible and return nil. End of command appearing in comments are
-ignored. This function makes use of the substring 1 of the
-command end regexp."
+ignored. This function makes use of the substring 1 of the command end
+regexp."
   (if (looking-at proof-script-comment-start-regexp)
       ;; Handle comments
       (if (proof-script-generic-parse-find-comment-end) 'comment)
@@ -462,7 +466,7 @@ command end regexp."
 (defun coq-script-parse-cmdend-backward (&optional limit)
   "Move to the first end of command (not commented) found looking up.
 Point is put exactly before the last ending token (before the last
-\".\" if \"...\"). If no end command is found, go as far as possible
+\".\" if \"...\").  If no end command is found, go as far as possible
 and return nil."
   (if (looking-at proof-script-comment-start-regexp)
       ;; Handle comments
@@ -507,8 +511,8 @@ and return nil."
 
 (defun coq-find-current-start ()
   "Move to the start of command at point.
-The point is put exactly after the end of previous command, or at the (point-min if
-there is no previous command)."
+The point is put exactly after the end of previous command, or at
+the (point-min) if there is no previous command."
   (coq-script-parse-cmdend-backward)
   (when
       (proof-looking-at "\\.\\s-\\|{\\|}\\|\\++\\|\\*+\\|-+")
@@ -586,8 +590,8 @@ Point is moved at the end of the match if found, at LIM otherwise."
 
 (defun coq-find-no-syntactic-on-line ()
   "Return non-nil if there is a not commented non white character on the line.
-Moves point to this char or to the end of the line if not found (and return nil in
-this case)."
+Moves point to this char or to the end of the line if not found (and
+return nil in this case)."
   (let ((eol (save-excursion (end-of-line) (point))))
     (back-to-indentation)
     (while (and (coq-looking-at-syntactic-context)
@@ -644,7 +648,9 @@ not inside the {} of a record)."
 
 
 (defun coq-find-unclosed (&optional optlvl limit openreg closereg)
-  "Finds the first unclosed open item (backward), counter starts to optlvl (default 1) and stops when reaching limit (default point-min)."
+  "Finds the first unclosed open item (backward).
+Counter starts to OPTLVL (default 1) and stops when reaching
+LIMIT (default point-min)."
 
   (let* ((lvl (or optlvl 1))
          (open-re  (if openreg
@@ -703,7 +709,10 @@ Returns point if found."
 
 
 (defun coq-find-unopened (&optional optlvl limit)
-  "Finds the last unopened close item (looking forward from point), counter starts to OPTLVL (default 1) and stops when reaching limit (default point-max). This function only works inside an expression."
+  "Find the last unopened close item (looking forward from point).
+Counter starts to OPTLVL (default 1) and stops when reaching
+LIMIT (default ‘point-max’).  This function only works inside an
+expression."
 
   (let ((lvl (or optlvl 1)) after nextpt endpt)
     (save-excursion
@@ -746,7 +755,7 @@ Returns point if found."
 
 
 (defun coq-find-last-unopened (&optional optlvl limit)
-  "Backward moves to and returns the point of the last close item that is not opened after limit."
+  "Backward move to and return the point of the last close item, not opened after LIMIT."
   (let ((last nil))
 	 (while (coq-find-unopened optlvl limit)
 		(setq last (point))
@@ -757,7 +766,8 @@ Returns point if found."
 
 
 (defun coq-end-offset (&optional limit)
-  "Find the first unclosed open indent item, and returns its column. Stop when reaching limit (defaults tp point-min)."
+  "Find the first unclosed open indent item, and return its column.
+Stop when reaching LIMIT (default to ‘point-min’)."
   (save-excursion
     (let ((found nil)
           (anyreg (proof-regexp-alt "\\`" proof-indent-any-regexp)))
@@ -808,7 +818,7 @@ Returns point if found."
 
 
 (defun coq-indent-command-offset (kind prevcol prevpoint)
-  "Returns the indentation offset of the current line.
+  "Return the indentation offset of the current line.
 This function indents a *command* line (the first line of a command).
 Use `coq-indent-expr-offset' to indent a line belonging to an expression."
   (let ((diff-goal-save-current
@@ -874,10 +884,11 @@ Use `coq-indent-expr-offset' to indent a line belonging to an expression."
 ;; inside the accolades of a record.
 
 (defun coq-indent-expr-offset (kind prevcol prevpoint record)
-  "Returns the indentation column of the current line.
-This function indents a *expression* line (a line inside of a command).  Use
-`coq-indent-command-offset' to indent a line belonging to a command.  The fourth
-argument must be t if inside the {}s of a record, nil otherwise."
+  "Return the indentation column of the current line.
+This function indents a *expression* line (a line inside of a
+command).  Use `coq-indent-command-offset' to indent a line belonging
+to a command.  The fourth argument RECORD must be t if inside the {}s
+of a record, nil otherwise."
   ;(message "COQ-INDENT-EXPR-OFFSET")
   (let ((pt (point)) real-start)
     (save-excursion

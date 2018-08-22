@@ -104,7 +104,7 @@ If it is nil, a new line is inserted."
   "Name of the Proof General splash buffer.")
 
 (define-derived-mode proof-splash-mode fundamental-mode
-  "Splash" "Mode for splash.  
+  "Splash" "Mode for splash.
 \\{proof-splash-mode-map}"
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
@@ -138,12 +138,12 @@ Borrowed from startup-center-spaces."
 	 (glyph-pixwidth   (cond ((stringp glyph)
 				  (* avg-pixwidth (length glyph)))
 				 ((proof-emacs-imagep glyph)
-				  (car (with-no-warnings 
+				  (car (with-no-warnings
 					; image-size not available in tty emacs
 					 (image-size glyph 'inpixels))))
 				 (t
 				  (error
-				   "proof-splash-centre-spaces: bad arg")))))
+				   "Function proof-splash-centre-spaces: bad arg")))))
     (+ left-margin
        (round (/ (/ (- fill-area-width glyph-pixwidth) 2) avg-pixwidth)))))
 
@@ -151,7 +151,7 @@ Borrowed from startup-center-spaces."
 ;; underneath the splash screen.  This is just to be polite.
 ;; NB: not as polite as it could be: if minibuffer is active,
 ;; this may deactivate it.
-;; NB2: There is something worse here: pending input 
+;; NB2: There is something worse here: pending input
 ;; causes this function to spoil the mode startup, if the splash
 ;; buffer is killed before the input has been processed.
 ;; Symptom is ProofGeneral mode instead of the native script mode.
@@ -161,7 +161,7 @@ Borrowed from startup-center-spaces."
   "Remove splash screen and restore window config."
   (let ((splashbuf (get-buffer proof-splash-welcome)))
     (proof-splash-unset-frame-titles)
-    (if (and 
+    (if (and
 	 splashbuf
 	 proof-splash-timeout-conf)
 	(progn
@@ -178,10 +178,10 @@ Borrowed from startup-center-spaces."
   "Remove the splash buffer if it's still present."
   (let
       ((splashbuf (get-buffer proof-splash-welcome)))
-    (if splashbuf 
+    (if splashbuf
 	;; Kill should be right, but it can cause core dump
 	;; on XEmacs (kill-buffer splashbuf) (TODO: check Emacs now)
-	(if (eq (selected-window) (window-buffer 
+	(if (eq (selected-window) (window-buffer
 				   (selected-window)))
 	    (bury-buffer splashbuf)))))
 
@@ -208,7 +208,7 @@ Borrowed from startup-center-spaces."
        (let ((spec (car splash-contents)))
 	 (if (functionp spec)
 	     (setq spec (funcall spec)))
-	 (indent-to (proof-splash-centre-spaces 
+	 (indent-to (proof-splash-centre-spaces
 		     (concat (car spec) (cadr spec))))
 	 (insert (car spec))
 	 (insert-button (cadr spec)

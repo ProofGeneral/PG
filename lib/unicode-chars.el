@@ -5063,7 +5063,7 @@
 (defun unicode-chars-list-chars ()
   "Insert each Unicode character into a buffer.
 Lets you see which characters are available for literal display
-in your emacs font."
+in your Emacs font."
   (interactive)
   (pop-to-buffer "*unicode-chars*")
   (let ((chars unicode-chars-alist)
@@ -5081,3 +5081,4 @@ in your emacs font."
 	    (insert (format " %s\n" name)))))))
 
 (provide 'unicode-chars)
+;;; unicode-chars.el ends here

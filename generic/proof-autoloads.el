@@ -292,7 +292,7 @@ Additional properties in the ARGS prop list may include:
 
  pgdynamic flag      If flag is non-nil, this setting is a dynamic one
 		     that is particular to the running instance of the prover.
-		     Automatically set by preferences configured from PGIP 
+		     Automatically set by preferences configured from PGIP
 		     askprefs message.
 
 This macro also extends the `proof-assistant-settings' list.
@@ -654,7 +654,7 @@ also as the 'response property on the span.
 
 Optional argument MOUSEFACE means use the given face as a mouse highlight
 face, if it is a face, otherwise, if it is non-nil but not a face,
-do not add a mouse highlight.  
+do not add a mouse highlight.
 
 In any case, a mouse highlight and tooltip are only set if
 `proof-output-tooltips' is non-nil.
@@ -783,7 +783,7 @@ Busy wait for `proof-shell-busy' to become nil, reading from prover.
 
 Needed between sequences of commands to maintain synchronization,
 because Proof General does not allow for the action list to be extended
-in some cases.   Also is considerably faster than leaving the Emacs 
+in some cases.   Also is considerably faster than leaving the Emacs
 top-level command loop to read from the prover.
 
 Called by `proof-shell-invisible-command' and `proof-process-buffer'

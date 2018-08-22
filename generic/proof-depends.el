@@ -181,7 +181,7 @@ Called from `proof-done-advancing' when a save is processed and
       (vector menuname nil nil))))
 
 (defun proof-dep-split-deps (deps)
-  "Split dependencies into named nested lists according to dotted prefixes."
+  "Split dependencies DEPS into named nested lists according to dotted prefixes."
   ;; NB: could handle deeper nesting here, but just do one level for now.
   (let (nested toplevel)
     ;; Add each name into a nested list or toplevel list
@@ -223,6 +223,7 @@ NAMEFN is applied to each element of LIST to make the names."
 
 (defun proof-goto-dependency (name span)
   "Go to the start of SPAN."
+  ;; FIXME(EMD): seems buggy as NAME is not used
   ;; FIXME: check buffer is right one.  Later we'll allow switching buffer
   ;; here and jumping to different files.
   (goto-char (span-start span))

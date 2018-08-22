@@ -33,11 +33,11 @@
 PROJECT FILE
 
 The recommended way of setting coqtop options (-I, -R and others)
-is to use a project file. See the coq documentation (\"generating
-makefile\") for details. The default name of the project file is
+is to use a project file.  See the coq documentation (\"generating
+makefile\") for details.  The default name of the project file is
 \"_CoqProject\" (can be configured via `coq-project-filename')
 and its content should be a list of options to be given to
-coq_makefile (one option per line). Here is an example:
+coq_makefile (one option per line).  Here is an example:
 
 -R foo bar
 -I foo2
@@ -45,34 +45,34 @@ coq_makefile (one option per line). Here is an example:
 ...(optionally followed by all .v files to be compiled)
 
 If `coq-use-project-file' is t (default) ProofGeneral reads the
-project file and sets coqtop options accordingly (via variables
-`coq-load-path' and `coq-prog-args'). In this example the coqtop
-invocation will be:
+project file and sets coqtop options accordingly (via variable
+`coq-load-path' and variable `coq-prog-args').  In this example the
+coqtop invocation will be:
 
 coqtop -foo3 -R foo bar -I foo2
 
 FILE VARIABLES
 
 If for some reason you want to avoid or override the project file
-method, you can use the file variables (info:(Emacs)File
-Variables). This feature of Emacs allows to set Emacs variables
-on a per-file basis. File Variables are (usually) written as a
-list at the end of the file.
+method, you can use the file variables.  See Info node ‘(emacs)File
+Variables’.  This feature of Emacs allows to set Emacs variables on a
+per-file basis.  File Variables are (usually) written as a list at the
+end of the file.
 
 We provide the following feature to help you:
 
 \\[coq-ask-insert-coq-prog-name] builds a standard file variable
-list for a coq file by asking you some questions. It is
+list for a coq file by asking you some questions.  It is
 accessible in the menu
 `Coq' -> `COQ PROG (ARGS)' -> `Set coq prog *persistently*'.
 
 You should be able to use this feature without reading the rest
-of this documentation, which explains how it is used for coq. For
+of this documentation, which explains how it is used for coq.  For
 more precision, refer to the Emacs info manual at ((Emacs)File
 Variables).
 
 In Coq projects involving multiple directories, it is usually
-necessary to set the variable `coq-load-path' for each file. For
+necessary to set the variable `coq-load-path' for each file.  For
 example, if the file .../dir/bar/foo.v builds on material in
 .../dir/theories/, then one would put the following local
 variable section at the end of foo.v:
@@ -84,17 +84,17 @@ variable section at the end of foo.v:
 *)
 
 This way the necessary \"-I\" options are added to all
-invocations of `coqtop', `coqdep' and `coqc'. Note that the
-option \"-I\" \"../theories\" is specific to file foo.v. Setting
+invocations of `coqtop', `coqdep' and `coqc'.  Note that the
+option \"-I\" \"../theories\" is specific to file foo.v.  Setting
 `coq-load-path' globally via Emacs Customization is therefore
-usually inappropriate. With this local variables list, Emacs will
+usually inappropriate.  With this local variables list, Emacs will
 set `coq-load-path' only when inside a buffer that visits foo.v.
 Other buffers can have their own value of
 `coq-load-path' (probably coming from their own local variable
 lists).
 
 If you use `make' for the compilation of coq modules you can set
-`coq-compile-command' as local variable. For instance, if the
+`coq-compile-command' as local variable.  For instance, if the
 makefile is located in \".../dir\", you could set
 
 \(*
@@ -117,8 +117,8 @@ necessary.)")
 
 (defun coq-insert-coq-prog-name (progname coqloadpath)
   "Insert or modify the local variables `coq-prog-name' and `coq-load-path'.
-Set them to PROGNAME and PROGARGS respectively.  These variables describe the
-coqtop command to be launched on this file."
+Set them to PROGNAME and COQLOADPATH respectively.  These variables
+describe the coqtop command to be launched on this file."
   (add-file-local-variable 'coq-prog-name progname)
   (add-file-local-variable 'coq-load-path coqloadpath)
   ;; coq-guess-command-line uses coq-prog-name, so set it
@@ -147,7 +147,7 @@ Do not insert the default directory."
 
 (defun coq-ask-load-path (&optional olddirs)
   "Ask for and return the information to put into `coq-load-path'.
-Optional argument OLDVALUE specifies the previous value of `coq-load-path', it
+Optional argument OLDDIRS specifies the previous value of `coq-load-path', it
 will be used to suggest values to the user."
   (let (loadpath option)
     ;; first suggest previous directories

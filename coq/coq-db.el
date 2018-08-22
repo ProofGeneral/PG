@@ -78,10 +78,10 @@ new keyword to colorize.")
 
 (defun coq-insert-from-db (db prompt &optional alwaysjump)
   "Ask for a keyword, with completion on keyword database DB and insert.
-Insert corresponding string with holes at point. If an insertion
-function is present for the keyword, call it instead. see
-`coq-syntax-db' for DB structure. If ALWAYSJUMP is non nil, jump
-to the first hole even if more than one."
+Insert corresponding string with holes at point.  If an insertion
+function is present for the keyword, call it instead. See
+`coq-syntax-db' for DB structure.  If ALWAYSJUMP is non nil, jump to
+the first hole even if more than one."
   (let* ((tac (completing-read (concat prompt " (TAB for completion): ")
 			       db nil nil))
 	 (infos (cddr (assoc tac db)))
@@ -96,7 +96,7 @@ to the first hole even if more than one."
 
 
 (defun coq-build-command-from-db (db prompt &optional preformatquery)
-  "Ask for a keyword, with completion on keyword database DB and send to coq.
+  "Ask for a keyword, with completion on keyword database DB and send to Coq.
 See `coq-syntax-db' for DB structure."
   ;; Next invocation of minibuffer (read-string below) will first recursively
   ;; ask for a command in db and expand it with holes. This way the cursor will
@@ -142,7 +142,7 @@ regexp.  See `coq-syntax-db' for DB structure."
 ;	     (color (concat "\\_<" (nth 4 hd) "\\_>")))       ; colorization string
 	;; TODO delete doublons
 	(when (and color (or (not filter) (funcall filter hd)))
-	  (setq res 
+	  (setq res
 		(nconc res (list
 			    (concat "\\_<" color "\\_>")))))
 	(setq l tl)))
@@ -204,8 +204,8 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 	  (let ((menu-entry
 		 (vector
 		  ;; menu entry label
-		  (concat menu 
-			  (if (not abbrev) "" 
+		  (concat menu
+			  (if (not abbrev) ""
 			    (concat spaces "(" abbrev keybind-abbrev ")")))
 		  ;;insertion function if present otherwise insert completion
 		  (if insertfn insertfn `(holes-insert-and-expand ,complt))
@@ -254,8 +254,7 @@ structure."
     res))
 
 (defcustom coq-holes-minor-mode t
-  "*Whether to apply holes minor mode (see `holes-show-doc') in
-  coq mode."
+  "*Whether to apply holes minor mode (see `holes-show-doc') in coq mode."
   :type 'boolean
   :group 'coq)
 
@@ -298,7 +297,7 @@ See `coq-syntax-db' for DB structure."
   "Face for names of closing tactics in proof scripts."
   :group 'proof-faces)
 
-;;A face for cheating tactics 
+;;A face for cheating tactics
 ;; We use :box in addition to :background because box remains visible in
 ;; locked-region. :reverse-video is another solution.
 (defface coq-cheat-face

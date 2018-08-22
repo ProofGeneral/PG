@@ -104,7 +104,7 @@
 				 (format-time-string "%D %H:%M")))))
 
 (defun pg-autotest-message (msg &rest args)
-  "Give message MSG in log file output and on display."
+  "Give message MSG (formatted using ARGS) in log file output and on display."
   (let ((fmsg   (if args (apply 'format msg args) msg)))
     (proof-with-current-buffer-if-exists
      pg-autotest-log
@@ -217,7 +217,7 @@ completely processing the buffer as the last step."
 	(proof-shell-wait)
 	(decf jumps))
 
-	((and (eq random-thing 1) 
+	((and (eq random-thing 1)
 	      (not (proof-locked-region-empty-p)))
 	 (pg-autotest-message
 	  " random jump: retracting whole buffer")
@@ -280,7 +280,7 @@ completely processing the buffer as the last step."
 (defun pg-autotest-test-quit-prover ()
   "Exit prover process."
   (if (buffer-live-p proof-shell-buffer)
-      (let ((kill-buffer-query-functions nil)) 
+      (let ((kill-buffer-query-functions nil))
 	(kill-buffer proof-shell-buffer))
     (error "No proof shell buffer to kill")))
 
