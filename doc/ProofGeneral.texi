@@ -64,7 +64,7 @@
 
 @dircategory Theorem proving
 @direntry
-* Proof General: (ProofGeneral).          Organize your proofs with Emacs!
+* ProofGeneral: (ProofGeneral). Organize your proofs with Emacs!
 @end direntry
 
 @c

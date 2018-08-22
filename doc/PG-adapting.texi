@@ -58,7 +58,7 @@
 
 @dircategory Theorem proving
 @direntry
-* Adapting Proof General: (PG-adapting).  Adapt Proof General to new provers
+* Adapting PG: (PG-adapting). Adapt Proof General to new provers
 END-INFO-DIR-ENTRY
 @end direntry
 
