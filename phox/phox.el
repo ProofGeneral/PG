@@ -80,9 +80,9 @@
      "unfold_hyp")
    )
 
-;; code for sisplaying unicode borrowed from
+;; code for displaying unicode borrowed from
 ;; Erik Parmann, Pål Drange latex-pretty-symbol
-
+;; cf. https://bitbucket.org/mortiferus/latex-pretty-symbols.el
 (require 'cl-lib)
 
 (defun substitute-pattern-with-unicode-symbol (pattern symbol)
