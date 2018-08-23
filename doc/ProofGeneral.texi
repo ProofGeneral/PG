@@ -145,8 +145,7 @@ generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion} on Linux.  It is supplied ready to use for the proof
-assistants LEGO, Coq, Isabelle, and PhoX.  Experimental support is
-provided for several other provers.
+assistants Coq, EasyCrypt, and PhoX.
 
 @menu
 * Preface::                     
