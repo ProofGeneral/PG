@@ -1,6 +1,7 @@
 # Proof General — Organize your proofs! 
 
 [![Build Status](https://travis-ci.org/ProofGeneral/PG.svg?branch=master)](https://travis-ci.org/ProofGeneral/PG)
+[![MELPA](http://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
 
 ## Overview
 
