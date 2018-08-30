@@ -115,12 +115,17 @@ Links:
 
 Supported proof assistants:
 
-* Full support for latest versions of: [Coq](https://coq.inria.fr/)
-* Support for previous versions of:
-  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/),
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego),
-  [PhoX](http://www.lama.univ-savoie.fr/~RAFFALLI/phox.html)
-* Experimental (less useful): CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
+* [Coq](https://coq.inria.fr/)
+* [EasyCrypt](http://www.easycrypt.info/)
+* [PhoX](http://www.lama.univ-savoie.fr/pagesmembres/raffalli/phox.html)
+
+Proof General used to support other proof assistants, but those
+instances are no longer maintained nor available in the MELPA package:
+
+* Legacy support of
+  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
+  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
+* Experimental support of: CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
 
 A few example proofs are included in each prover subdirectory.
