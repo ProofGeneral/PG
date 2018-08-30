@@ -1,6 +1,7 @@
 # Proof General — Organize your proofs! 
 
 [![Build Status](https://travis-ci.org/ProofGeneral/PG.svg?branch=master)](https://travis-ci.org/ProofGeneral/PG)
+[![MELPA](http://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
 
 ## Overview
 
@@ -24,9 +25,41 @@ Two editions of Proof General are currently available:
   [async](https://github.com/ProofGeneral/PG/tree/async) branch, and
   licensed under GPLv3+.
 
-## Setup
+## Installing Proof General
 
-Remove old versions of Proof General, then download and install the new release from GitHub:
+### Using MELPA (recommended procedure)
+
+[MELPA](https://melpa.org/) is a repository of Emacs packages. Skip
+this step if you already use MELPA. Otherwise, add the following to
+your `.emacs` and restart Emacs:
+
+```elisp
+(require 'package)
+(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                    (not (gnutls-available-p))))
+       (proto (if no-ssl "http" "https")))
+  (add-to-list 'package-archives
+               (cons "melpa" (concat proto "://melpa.org/packages/")) t))
+(package-initialize)
+```
+
+**Note:** If you switch to MELPA from a previously manually-installed
+Proof General, make sure you removed the old versions of Proof General
+from your Emacs context (by removing from your `.emacs` the line
+loading `PG/generic/proof-site`, or by uninstalling the proofgeneral
+package provided by your OS package manager).
+
+Then, run <kbd>M-x package-refresh-contents RET</kbd> followed by
+<kbd>M-x package-install RET proof-general RET</kbd> to install and
+byte-compile `proof-general`.
+
+You can now open a Coq file (`.v`), an EasyCrypt file (`.ec`), or a
+PhoX file (`.phx`) to automatically load the corresponding major mode.
+
+### Using Git (manual compilation procedure)
+
+Remove old versions of Proof General, clone the PG repo from GitHub
+and byte-compile the sources:
 
 ```sh
 git clone https://github.com/ProofGeneral/PG ~/.emacs.d/lisp/PG
@@ -47,6 +80,25 @@ If Proof General complains about a version mismatch, make sure that the shell's 
 make clean; make EMACS=/Applications/Emacs.app/Contents/MacOS/Emacs
 ```
 
+## Keeping Proof General up-to-date
+
+### Using MELPA
+
+As explained in the [MELPA documentation](https://melpa.org/#/getting-started), updating all MELPA packages in one go is as easy as typing
+<kbd>M-x package-list-packages RET</kbd> then <kbd>r</kbd> (**r**efresh the package list), <kbd>U</kbd> (mark **U**pgradable packages), and <kbd>x</kbd> (e**x**ecute the installs and deletions).
+
+### Using Git
+
+Assuming you have cloned the repo in `~/.emacs.d/lisp/PG`, you would
+have to run:
+
+```sh
+cd ~/.emacs.d/lisp/PG
+make clean
+git pull
+make
+```
+
 ## More info
 
 See:
@@ -64,12 +116,17 @@ Links:
 
 Supported proof assistants:
 
-* Full support for latest versions of: [Coq](https://coq.inria.fr/)
-* Support for previous versions of:
-  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/),
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego),
-  [PhoX](http://www.lama.univ-savoie.fr/~RAFFALLI/phox.html)
-* Experimental (less useful): CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
+* [Coq](https://coq.inria.fr/)
+* [EasyCrypt](http://www.easycrypt.info/)
+* [PhoX](http://www.lama.univ-savoie.fr/pagesmembres/raffalli/phox.html)
+
+Proof General used to support other proof assistants, but those
+instances are no longer maintained nor available in the MELPA package:
+
+* Legacy support of
+  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
+  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
+* Experimental support of: CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
 
 A few example proofs are included in each prover subdirectory.
