@@ -14,8 +14,6 @@
 
 ;;; Code:
 
-(if (featurep 'proof-autoloads) (error "Already loaded"))
-  
 (eval-when-compile
   (require 'cl))
 
@@ -23,7 +21,6 @@
   (require 'pg-vars)
   (require 'proof-config)
   (require 'scomint))
-
 
 (provide 'proof-autoloads)
 
