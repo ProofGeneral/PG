@@ -570,9 +570,9 @@ last use time, to discourage saving these into the users database."
 ;; NB: completion table is expected to be set when proof-script
 ;; is loaded!  Call `proof-script-add-completions' to update.
 
-(unless (bound-and-true-p byte-compile-current-file)
-  (eval-after-load "completion"
-    '(proof-add-completions)))
+;; (unless (bound-and-true-p byte-compile-current-file)
+;;   (eval-after-load "completion"
+;;     '(proof-add-completions)))
 
 (defun proof-script-complete (&optional arg)
   "Like `complete' but case-fold-search set to proof-case-fold-search."

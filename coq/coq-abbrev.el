@@ -84,8 +84,8 @@
     ;; DA: how about above, just temporarily disable saving?
     (message "Coq default abbrevs loaded")))
 
-(unless (or noninteractive (bound-and-true-p byte-compile-current-file))
-  (coq-install-abbrevs))
+;; (unless (or noninteractive (bound-and-true-p byte-compile-current-file))
+;;   (coq-install-abbrevs))
 ;;;;;
 
 ; Redefining this macro to change the way a string option is asked to
