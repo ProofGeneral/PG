@@ -547,9 +547,11 @@ variable."
       (let* ((contents (with-current-buffer proj-file-buf (buffer-string)))
              (options (coq--read-options-from-project-file contents))
              (proj-file-name (buffer-file-name proj-file-buf))
-             (proj-file-dir (file-name-directory proj-file-name)))
+             (proj-file-dir (file-name-directory proj-file-name))
+             (proj-file-local-dir (or (file-remote-p proj-file-dir 'localname)
+                                      proj-file-dir)))
         (unless avoidargs (setq coq-prog-args (coq--extract-prog-args options)))
-        (unless avoidpath (setq coq-load-path (coq--extract-load-path options proj-file-dir)))
+        (unless avoidpath (setq coq-load-path (coq--extract-load-path options proj-file-local-dir)))
         (let ((msg
                (cond
                 ((and avoidpath avoidargs) "Coqtop args and load path")
