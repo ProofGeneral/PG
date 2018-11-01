@@ -678,9 +678,12 @@ from `coq-compile-save-some-buffers' to
 See also `save-some-buffers'.  Return t for buffers with major
 mode 'coq-mode' different from
 `coq-compile-buffer-with-current-require' and nil for all other
-buffers.  The buffer to test must be current."
+buffers. We will also return nil if the buffer is ephemeral, or
+not backed by a file. The buffer to test must be current."
   (and
    (eq major-mode 'coq-mode)
+   (not (string-prefix-p " " (buffer-name)))
+   buffer-file-name
    (not (eq coq-compile-buffer-with-current-require
             (current-buffer)))))
   
