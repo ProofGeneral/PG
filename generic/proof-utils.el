@@ -311,16 +311,7 @@ Ensure that point is visible in window."
 	      ;; inside shrink to fit, for some reason
 	      (when (window-live-p window)
 		(unless (pos-visible-in-window-p (point) window)
-		  (recenter -1))
-		(with-current-buffer buffer
-		  (if (window-bottom-p window)
-		      (unless (local-variable-p 'mode-line-format)
-			;; Don't show any mode line.
-			(set (make-local-variable 'mode-line-format) nil))
-		    (unless mode-line-format
-		      ;; If the buffer gets displayed elsewhere, re-add
-		      ;; the modeline.
-		      (kill-local-variable 'mode-line-format))))))))))))
+		  (recenter -1))))))))))
 
 (defun proof-clean-buffer (buffer)
   "Erase BUFFER and hide from display if ‘proof-delete-empty-windows’ set.
