@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -863,10 +863,9 @@ The function `substitute-command-keys' is called on the argument."
   (interactive "e")
   (if proof-query-identifier-command
       (save-selected-window
-	(save-selected-frame
-	 (save-excursion
-	   (mouse-set-point event)
-	   (pg-identifier-near-point-query))))))
+	(save-excursion
+	  (mouse-set-point event)
+	  (pg-identifier-near-point-query)))))
 
 ;;;###autoload
 (defun pg-identifier-near-point-query ()

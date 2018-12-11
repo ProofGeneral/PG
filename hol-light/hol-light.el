@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -22,12 +22,10 @@
 (require 'proof-easy-config)            ; easy configure mechanism
 (require 'proof-syntax)			; functions for making regexps
 
-(or (proof-try-require 'caml-font)	  ; use OCaml Emacs mode syntax 
-    (defvar caml-font-lock-keywords nil)) ;
+(proof-try-require 'caml-font)            ; use OCaml Emacs mode syntax 
 
 (eval-when-compile
-  (require 'proof-tree)
-  (defvar caml-font-lock-keywords nil))
+  (require 'proof-tree))
 
 (defcustom hol-light-home 
   (or (getenv "HOLLIGHT_HOME")
@@ -317,7 +315,7 @@ You need to restart Emacs if you change this setting."
 
  proof-script-font-lock-keywords
  (append
-  caml-font-lock-keywords
+  (bound-and-true-p caml-font-lock-keywords)
   (list
    (cons (proof-ids-to-regexp hol-light-keywords) 'font-lock-keyword-face)
    (cons (proof-ids-to-regexp hol-light-tactics) 'proof-tactics-name-face)

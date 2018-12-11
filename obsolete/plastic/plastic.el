@@ -1,5 +1,7 @@
 ;; plastic.el  - Major mode for Plastic proof assistant
 ;;
+;; Portions © Copyright 2018  Free Software Foundation, Inc.
+;;
 ;; Author: Paul Callaghan <P.C.Callaghan@durham.ac.uk>
 ;;
 ;; $Id$
@@ -15,8 +17,8 @@
   (require 'cl)
   (require 'span)
   (require 'proof-syntax)
-  (require 'outline)
-  (defvar plastic-keymap nil))
+  (require 'outline))
+(defvar plastic-keymap)                 ;FIXME: Not defined anywhere!
 
 (require 'plastic-syntax)
 

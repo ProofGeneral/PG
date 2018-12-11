@@ -2,5 +2,6 @@
 nohup.out
 TAGS
 ChangeLog
+proof-general-autoloads.el
 *.elc
 *~

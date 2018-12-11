@@ -1,6 +1,7 @@
 ;; isabelle-system.el --- Interface with Isabelle system
 ;;
 ;; Copyright (C) 2000 LFCS Edinburgh, David Aspinall.
+;; Copyright (C) 2018  Free Software Foundation, Inc.
 ;;
 ;; Author:      David Aspinall <da@dcs.ed.ac.uk>
 ;; Maintainer:  Proof General maintainer <proofgen@dcs.ed.ac.uk>
@@ -20,8 +21,8 @@
   (require 'scomint)
   (require 'proof-site)
   (require 'proof-menu)
-  (require 'proof-syntax)
-  (defvar proof-assistant-menu))
+  (require 'proof-syntax))
+(defvar proof-assistant-menu)
 
 (declare-function mapcan "cl-extra")	; spurious bytecomp warning
 

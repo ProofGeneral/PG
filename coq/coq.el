@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -28,21 +28,20 @@
   (require 'span)
   (require 'outline)
   (require 'newcomment)
-  (require 'etags)
-  (unless (proof-try-require 'smie)
-    (defvar smie-indent-basic)
-    (defvar smie-rules-function))
-  (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
-  (defvar action)       ; dynamic scope in coq-insert-as stuff
-  (defvar string)       ; dynamic scope in coq-insert-as stuff
-  (defvar old-proof-marker)
-  (defvar coq-keymap)
-  (defvar coq-one-command-per-line)
-  (defvar coq-auto-insert-as)    ; defpacustom
-  (defvar coq-time-commands)        ; defpacustom
-  (defvar coq-use-project-file)        ; defpacustom
-  (defvar coq-use-editing-holes)    ; defpacustom
-  (defvar coq-hide-additional-subgoals))
+  (require 'etags))
+(defvar smie-indent-basic)
+(defvar smie-rules-function)
+(defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
+(defvar action)       ; dynamic scope in coq-insert-as stuff
+(defvar string)       ; dynamic scope in coq-insert-as stuff
+(defvar old-proof-marker)
+(defvar coq-keymap)
+(defvar coq-one-command-per-line)
+(defvar coq-auto-insert-as)    ; defpacustom
+(defvar coq-time-commands)        ; defpacustom
+(defvar coq-use-project-file)        ; defpacustom
+(defvar coq-use-editing-holes)    ; defpacustom
+(defvar coq-hide-additional-subgoals)
 
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
@@ -66,11 +65,8 @@
 
 ;; prettify is in emacs > 24.4
 ;; FIXME: this should probably be done like for smie above.
-(defvar coq-may-use-prettify nil) ; may become t below
-(eval-when-compile
-  (if (fboundp 'prettify-symbols-mode)
-      (defvar coq-may-use-prettify t)
-    (defvar prettify-symbols-alist nil)))
+(defvar coq-may-use-prettify (fboundp 'prettify-symbols-mode))
+(defvar prettify-symbols-alist)
 
 
 ;; ----- coq-shell configuration options
@@ -911,22 +907,21 @@ This is mapped to control/shift mouse-1, unless coq-remap-mouse-1
 is nil (t by default)."
   (interactive "e")
   (save-selected-window
-    (save-selected-frame
-     (save-excursion
-       (mouse-set-point event)
-       (let* ((id (coq-id-at-point))
-              (notat (coq-notation-at-position (point)))
-              (modifs (event-modifiers event))
-              (shft (member 'shift modifs))
-              (ctrl (member 'control modifs))
-              (cmd (when (or id notat)
-                     (if (and ctrl shft) (if id "Check" "Locate")
-                       (if shft (if id "About" "Locate")
-                         (if ctrl (if id "Print" "Locate")))))))
-         (proof-shell-invisible-command
-          (format (concat  cmd " %s . ")
-                  ;; Notation need to be surrounded by ""
-                  (if id id (concat "\"" notat "\"")))))))))
+    (save-excursion
+      (mouse-set-point event)
+      (let* ((id (coq-id-at-point))
+             (notat (coq-notation-at-position (point)))
+             (modifs (event-modifiers event))
+             (shft (member 'shift modifs))
+             (ctrl (member 'control modifs))
+             (cmd (when (or id notat)
+                    (if (and ctrl shft) (if id "Check" "Locate")
+                      (if shft (if id "About" "Locate")
+                        (if ctrl (if id "Print" "Locate")))))))
+        (proof-shell-invisible-command
+         (format (concat  cmd " %s . ")
+                 ;; Notation need to be surrounded by ""
+                 (if id id (concat "\"" notat "\""))))))))
 
 (defun coq-guess-or-ask-for-string (s &optional dontguess)
   "Asks for a coq identifier with message S.
@@ -1211,8 +1206,7 @@ Printing All set."
   (coq-ask-do-show-all "Show goal number" "Show" t))
 
 ;; Check
-(eval-when-compile
-  (defvar coq-auto-adapt-printing-width)); defpacustom
+(defvar coq-auto-adapt-printing-width); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
