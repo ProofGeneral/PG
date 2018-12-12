@@ -12,7 +12,7 @@
 ;;
 
 
-(require 'cl)				; for-loop
+(eval-when-compile (require 'cl-lib))   ; cl-loop
 
 (eval-when-compile
   (require 'unicode-tokens)	    ; it's loaded dynamically at runtime
@@ -481,10 +481,10 @@ tokens."
   :set 'isar-set-and-restart-tokens)
 
 (defun isar-map-letters (f1 f2 &rest symbs)
-  (loop for x below 26
-	for c = (+ 65 x)
-	collect
-	(cons (funcall f1 c) (cons (funcall f2 c) symbs))))
+  (cl-loop for x below 26
+	   for c = (+ 65 x)
+	   collect
+	   (cons (funcall f1 c) (cons (funcall f2 c) symbs))))
 
 (defconst isar-script-letters-tokens ; \<A> \<B> ...
   (isar-map-letters (lambda (x) (format "%c" x))

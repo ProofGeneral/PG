@@ -5,9 +5,6 @@
 ;; $Id$
 ;;
 
-(eval-when-compile
-  (require 'cl))
-
 (require 'proof-site)
 (proof-ready-for-assistant 'isar)
 

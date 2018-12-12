@@ -19,10 +19,9 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl)
-  (require 'proof-compat))
+(require 'cl-lib)
 
+(require 'span)
 (eval-when-compile
   (require 'proof-utils)
   (require 'span)
@@ -37,10 +36,10 @@
 (defvar old-proof-marker)
 (defvar coq-keymap)
 (defvar coq-one-command-per-line)
-(defvar coq-auto-insert-as)    ; defpacustom
-(defvar coq-time-commands)        ; defpacustom
-(defvar coq-use-project-file)        ; defpacustom
-(defvar coq-use-editing-holes)    ; defpacustom
+(defvar coq-auto-insert-as)             ; defpacustom
+(defvar coq-time-commands)              ; defpacustom
+(defvar coq-use-project-file)           ; defpacustom
+(defvar coq-use-editing-holes)          ; defpacustom
 (defvar coq-hide-additional-subgoals)
 
 (require 'proof)
@@ -1585,7 +1584,7 @@ of hypothesis to highlight."
 See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
   (let* ((hyps-cited-pos (coq-detect-hyps-positions proof-response-buffer))
          (hyps-cited (coq-build-hyps-names hyps-cited-pos)))
-    (remove-if-not
+    (cl-remove-if-not
      (lambda (e)
        (cl-some;seq-find
         (lambda (f)
@@ -2536,7 +2535,7 @@ mouse activation."
 (defun coq-directories-files (l)
   (let* ((file-list-list (mapcar 'directory-files l))
          (file-list (apply 'append file-list-list))
-         (filtered-list (remove-if-not 'coq-postfix-.v-p file-list)))
+         (filtered-list (cl-remove-if-not #'coq-postfix-.v-p file-list)))
   filtered-list))
 
 (defun coq-remove-dot-v-extension (s)
@@ -2547,8 +2546,8 @@ mouse activation."
 
 (defun coq-build-accessible-modules-list ()
   (let* ((pth (or coq-load-path '(".")))
-         (cleanpth (mapcar 'coq-load-path-to-paths pth))
-         (existingpth (remove-if-not 'file-exists-p cleanpth))
+         (cleanpth (mapcar #'coq-load-path-to-paths pth))
+         (existingpth (cl-remove-if-not #'file-exists-p cleanpth))
          (file-list (coq-directories-files existingpth)))
     (mapcar 'coq-remove-dot-v-extension file-list)))
 
@@ -2586,11 +2585,11 @@ mouse activation."
           (completing-read
            "Command (TAB to see list, default Require Import) : "
            reqkinds-kinds-table nil nil nil nil "Require Import")))
-    (loop do
-          (setq s (completing-read "Name (empty to stop) : "
-                                   (coq-build-accessible-modules-list)))
-          (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
-          while (not (string-equal s "")))))
+    (cl-loop do
+             (setq s (completing-read "Name (empty to stop) : "
+                                      (coq-build-accessible-modules-list)))
+             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
+             while (not (string-equal s "")))))
 
 ;; TODO add module closing
 (defun coq-end-Section ()
@@ -2731,16 +2730,16 @@ Also insert holes at insertion positions."
           (insert match)
           (indent-region start (point) nil)
           (let ((n (holes-replace-string-by-holes-backward start)))
-            (case n
-	(0 nil)				; no hole, stay here.
-	(1
-	 (goto-char start)
-	 (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	(t
-	 (goto-char start)
-	 (message
-          (substitute-command-keys
-           "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+            (pcase n
+	      (0 nil)                   ; no hole, stay here.
+	      (1
+	       (goto-char start)
+	       (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+	      (_
+	       (goto-char start)
+	       (message
+                (substitute-command-keys
+                 "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -3317,8 +3316,6 @@ priority to the former."
 (defun proof-delete-other-frames () (proof-delete-all-associated-windows))
 
 (provide 'coq)
-
-
 
 ;;   Local Variables: ***
 ;;   fill-column: 79 ***

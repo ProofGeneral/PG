@@ -13,9 +13,8 @@
 ;;
 
 ;;; Code:
-(eval-when-compile
-  (require 'cl))			;  mapcan, eval-when
 
+(require 'cl-lib)                       ;cl-mapcan
 (eval-when-compile
   (require 'span)
   (require 'scomint)
@@ -234,7 +233,7 @@ passed to isa-tool-doc-command, DOCNAME will be viewed."
       (let ((docs (isa-shell-command-to-string
 		   (concat "\"" isa-isabelle-command "\" doc"))))
 	(unless (string-equal docs "")
-	  (mapcan
+	  (cl-mapcan
 	   (function (lambda (docdes)
 		       (if (proof-string-match "^[ \t]+\\(\\S-+\\)[ \t]+" docdes)
 			   (list (list

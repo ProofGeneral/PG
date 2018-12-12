@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -33,7 +33,7 @@
 ;;
 
 ;;; Code:
-(require 'cl)				; incf
+(require 'cl-lib)                       ; incf
 (require 'pg-xml)			;
 
 (declare-function pg-response-warning "pg-response")
@@ -55,8 +55,8 @@ The list PGIPS may contain one or more PGIP packets, whose contents are processe
   ;; PGIP processing is split into two steps:
   ;; (1) process each command, altering internal data structures
   ;; (2) post-process for each command type, affecting external interface (menus, etc).
-  (mapc 'pg-pgip-post-process
-	(reduce 'union (mapcar 'pg-pgip-process-pgip pgips))))
+  (mapc #'pg-pgip-post-process
+	(cl-reduce #'cl-union (mapcar #'pg-pgip-process-pgip pgips))))
 
 ;; TODO: use id's and sequence numbers to reconstruct streams of messages.
 (defvar pg-pgip-last-seen-id nil)
@@ -78,7 +78,7 @@ The list PGIPS may contain one or more PGIP packets, whose contents are processe
     (setq pg-pgip-last-seen-seq seq)
     (if (eq name 'pgip)
 	;; NB: schema currently allows only one message here
-	(mapcar 'pg-pgip-process-msg (xml-node-children pgip))
+	(mapcar #'pg-pgip-process-msg (xml-node-children pgip))
       (pg-internal-warning "pg-pgip-process-pgip: expected PGIP element, got %s" name))))
 
 (defun pg-pgip-process-msg (pgipmsg)
@@ -246,7 +246,7 @@ Return a symbol representing the PGIP command processed, or nil."
     (dolist (idtable idtables)
       (let* ((context  (pg-xml-get-attr 'context idtable 'optional))
 	     (objtype  (intern (pg-pgip-get-objtype idtable)))
-	     (idents   (mapcar 'pg-xml-get-text-content
+	     (idents   (mapcar #'pg-xml-get-text-content
 			       (xml-get-children idtable 'identifier)))
 	     (obarray  (or (and (not (eq opn 'setids))
 				(get objtype 'pgsymbols))
@@ -255,7 +255,7 @@ Return a symbol representing the PGIP command processed, or nil."
 	(setq proof-assistant-idtables
 	      (if (and (null idents) (eq opn 'setids))
 		  (delete objtype proof-assistant-idtables)
-		(adjoin objtype proof-assistant-idtables)))
+		(cl-adjoin objtype proof-assistant-idtables)))
 	(cond
 	 ((or (eq opn 'setids) (eq opn 'addids))
 	  (mapc (lambda (i) (intern i obarray)) idents))
@@ -400,7 +400,7 @@ Also sets local proverid and srcid variables for buffer."
       (with-current-buffer buffer
 	(make-local-variable 'proverid)
 	(setq proverid proverid))
-      (set pg-pgip-srcids (acons srcid (list buffer file) pg-pgip-srcids)))))
+      (set pg-pgip-srcids (cl-acons srcid (list buffer file) pg-pgip-srcids)))))
 
 
 ;; FIXME: right action?
@@ -483,7 +483,7 @@ Also sets local proverid and srcid variables for buffer."
 	  (list 'const val))))
      ((eq tyname 'pgipchoice)
       (let* ((choicesnodes  (pg-xml-child-elts node))
-	     (choices       (mapcar 'pg-pgip-get-pgiptype choicesnodes)))
+	     (choices       (mapcar #'pg-pgip-get-pgiptype choicesnodes)))
 	(list 'choice choices)))
      (t
       (pg-pgip-warning "pg-pgip-get-pgiptype: unrecognized/missing typename \"%s\"" tyname)))))
@@ -605,7 +605,7 @@ OTHERCLASS overrides this."
 					     "/" proof-assistant)))
 	 (id		(pg-xml-attr id pg-pgip-id))
 	 (class		(pg-xml-attr class (or otherclass "pa")))
-	 (seq		(pg-xml-attr seq (int-to-string (incf pg-pgip-seq))))
+	 (seq		(pg-xml-attr seq (int-to-string (cl-incf pg-pgip-seq))))
 	 (refseq        (if refseq (list (pg-xml-attr refseq refseq))))
 	 (refid         (if refid (list (pg-xml-attr refid refid))))
 	 (pgip_attrs	(append (list tag id class seq)

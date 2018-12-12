@@ -1,4 +1,4 @@
-;;; coq-local-vars.el --- local variable list tools for coq
+;;; coq-local-vars.el --- local variable list tools for coq  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -18,9 +18,6 @@
 ;;; Code:
 
 (require 'local-vars-list)              ; in lib directory
-
-(eval-when-compile
-  (require 'cl))
 
 (defvar coq-prog-name)
 (defvar coq-load-path)
@@ -136,7 +133,7 @@ Do not insert the default directory."
       ;; does not seem to exist in fsf emacs?? temporarily disable graphical
       ;; dialog, as read-file-name does not allow to select a directory
       ((current-use-dialog-box use-dialog-box)
-       (dummy (setq use-dialog-box nil))
+       (_dummy (setq use-dialog-box nil))
        (fname (file-name-nondirectory default))
        (dir (file-name-directory default))
        (path

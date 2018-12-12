@@ -1,4 +1,4 @@
-;;; pg-user.el --- User level commands for Proof General
+;;; pg-user.el --- User level commands for Proof General  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -26,9 +26,7 @@
 
 (require 'proof-script)	        ; we build on proof-script
 
-(require 'cl)
-(eval-when-compile
-  (require 'completion))                ; Loaded dynamically at runtime.
+(eval-when-compile (require 'cl-lib))   ;cl-decf
 (defvar which-func-modes)               ; Defined by which-func.
 
 (declare-function proof-segment-up-to "proof-script")
@@ -557,26 +555,29 @@ Uses `add-completion' with a negative number of uses and ancient
 last use time, to discourage saving these into the users database."
   (interactive)
   (require 'completion)
+  (defvar completion-min-length)
+  (declare-function add-completion "completion"
+                    (string &optional num-uses last-use-time))
   (mapcar (lambda (cmpl)
 	    ;; completion gives error; trapping is tricky so test again
 	    (if (>= (length cmpl) completion-min-length)
 		(add-completion cmpl -1000 0)))
 	  (proof-ass completion-table)))
 
-;; completion not autoloaded in GNU Emacs
-(or (fboundp 'complete)
-    (autoload 'complete "completion"))
-
 ;; NB: completion table is expected to be set when proof-script
 ;; is loaded!  Call `proof-script-add-completions' to update.
 
-(unless (bound-and-true-p byte-compile-current-file)
+(unless (bound-and-true-p byte-compile-current-file) ;FIXME: Yuck!
   (eval-after-load "completion"
     '(proof-add-completions)))
 
 (defun proof-script-complete (&optional arg)
-  "Like `complete' but case-fold-search set to proof-case-fold-search."
+  "Like `complete' but case-fold-search set to `proof-case-fold-search'."
   (interactive "*p")
+  ;; completion not autoloaded in GNU Emacs
+  ;; FIXME: It's probably because we shouldn't use it ;-)
+  (require 'completion)
+  (declare-function complete "completion" (&optional arg))
   (let ((case-fold-search proof-case-fold-search))
     (complete arg)))
 
@@ -889,13 +890,12 @@ a popup with the information in it."
 	(pg-identifier-query
 	 identifier ctxt
 	 ;; the callback
-	 (lexical-let ((s start) (e end))
-	   (lambda (x)
-	     (save-excursion
-	       (let ((idspan (span-make s e)))
-                 ;; (span-set-property idspan 'priority 90) ; highest
-                 (span-set-property idspan 'help-echo
-                                    (pg-last-output-displayform))))))))))
+	 (lambda (_)
+	   (save-excursion
+	     (let ((idspan (span-make start end)))
+               ;; (span-set-property idspan 'priority 90) ; highest
+               (span-set-property idspan 'help-echo
+                                  (pg-last-output-displayform)))))))))
 
 (defvar proof-query-identifier-history nil
   "History for `proof-query-identifier'.")
@@ -1253,7 +1253,7 @@ the locked region."
       (while (> repeat 0)
 	(pg-protected-undo-1 newarg) ; do some safe undos step by step
 	(setq last-command 'undo) ; need for this assignment meanwhile
-	(decf repeat)))))
+	(cl-decf repeat)))))
 
 (defun pg-protected-undo-1 (arg)
   "This function is intended to be called by `pg-protected-undo'.

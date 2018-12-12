@@ -13,8 +13,8 @@
 
 (require 'proof)
 
+(require 'cl-lib)                       ;cl-member-if
 (eval-when-compile
-  (require 'cl)
   (require 'span)
   (require 'proof-syntax)
   (require 'outline))
@@ -229,7 +229,7 @@ Given is the first SPAN which needs to be undone."
 	     (setq i 0)
 	     (while (< i (length string))
 	       (if (string-equal (substring string i (+ i tl)) proof-terminal-string)
-		   (incf ct))
+		   (cl-incf ct))
 	       (setq i (+ 1 i)))))
       (setq span (next-span span 'type)))
     (list (concat plastic-lit-string 
@@ -264,9 +264,9 @@ Given is the first SPAN which needs to be undone."
 	;	(list (concat "Can't Undo imports yet\n"
 	;			   "You have to exit Plastic for this\n")
 	;	      ["ok, I'll do this" (lambda () t) t]))
-	    (return)
+	    (cl-return)  ;FIXME: No enclosing block?!
 	   )    ;; warn the user that undo of imports not yet working.
-	 (t (incf spans))
+	 (t (cl-incf spans))
       )
       (setq span (next-span span 'type))
 
@@ -453,7 +453,7 @@ Value for `proof-shell-compute-new-files-list', which see.
 
 For Plastic, we assume that module identifiers coincide with file names."
   (let ((module (match-string 1)))
-    (cdr (member-if
+    (cdr (cl-member-if
 	  (lambda (filename) (plastic-equal-module-filename module filename))
 	  proof-included-files-list))))
 
@@ -541,33 +541,33 @@ For Plastic, we assume that module identifiers coincide with file names."
 	(l (length string))
 	(eat-rest (lambda ()
 		    (aset string i ?\ )  ;; kill the \n or "-" at least
-		    (incf i)
+		    (cl-incf i)
 		    (while (and (< i l) (/= (aref string i) ?\n))
 		      (aset string i ?\ )
-		      (incf i) )))
+		      (cl-incf i) )))
 	(keep-rest (lambda ()
 		     (loop for x in (string-to-list plastic-lit-string)
-		       do (aset string i ?\ ) (incf i))
+		       do (aset string i ?\ ) (cl-incf i))
 		     (while (and (< i l)
 				 (/= (aref string i) ?\n)
 				 (/= (aref string i) ?-))
-		       (incf i) ))))
+		       (cl-incf i) ))))
      (while (< i l)
        (cond
 	((eq 0 (string-match "--" (substring string i)))
 	 (funcall eat-rest))		; comment.
 	((eq 0 (string-match "\n\n" (substring string i)))
 	 (aset string i ?\ )
-	 (incf i))			; kill repeat \n
+	 (cl-incf i))			; kill repeat \n
 	((= (aref string i) ?\n)	; start of new line
-	 (aset string i ?\ ) (incf i)	; remove \n
+	 (aset string i ?\ ) (cl-incf i)	; remove \n
 	 (if (eq 0 (string-match plastic-lit-string
 				 (substring string i)))
 	     (funcall keep-rest)	; code line.
 	   (funcall eat-rest)		; non-code line
 	   ))
 	(t
-	 (incf i))))			; else include.
+	 (cl-incf i))))			; else include.
      (setq string (replace-regexp-in-string "  +" " " string))
      (setq string (replace-regexp-in-string "^ +" "" string))
    (if (string-match "^\\s-*$" string)

@@ -1,4 +1,4 @@
-;;; coq-system.el --- common part of compilation feature
+;;; coq-system.el --- common part of compilation feature  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -24,10 +24,6 @@
 ;;; Code:
 
 (require 'proof)
-
-(eval-when-compile
-  (require 'cl)
-  (require 'proof-compat))
 
 (defvar coq-prog-args)
 (defvar coq-debug)
@@ -514,7 +510,7 @@ coqtop."
         (`("-arg" ,concatenated-args)
          (setq args
                (append args
-                       (split-string-and-unquote (cadr opt) coq--project-file-separator))))))
+                       (split-string-and-unquote concatenated-args coq--project-file-separator))))))
     (cons "-emacs" args)))
 
 (defun coq--extract-load-path-1 (option base-directory)

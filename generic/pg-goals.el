@@ -19,7 +19,6 @@
 ;;; Code:
 (eval-when-compile
   (require 'easymenu)			; easy-menu-add, etc
-  (require 'cl)				; incf
   (require 'span))			; span-*
 (defvar proof-goals-mode-menu)          ; defined by macro below
 (defvar proof-assistant-menu)           ; defined by macro in proof-menu

@@ -51,7 +51,6 @@
 
 
 (require 'proof-site)			; basic vars
-(require 'proof-compat)		        ; compatibility
 (require 'pg-pamacs)			; macros for pa config
 (require 'proof-config)			; config vars
 (require 'bufhist)			; bufhist

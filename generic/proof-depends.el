@@ -1,9 +1,9 @@
-;;; proof-depends.el --- Theorem-theorem and theorem-definition dependencies
+;;; proof-depends.el --- Theorem-theorem and theorem-definition dependencies  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -23,7 +23,7 @@
 ;;
 
 ;;; Code:
-(require 'cl)
+(require 'cl-lib)
 (require 'span)
 (require 'pg-vars)
 (require 'proof-config)
@@ -191,12 +191,11 @@ Called from `proof-done-advancing' when a save is processed and
 	     (subitems (and ns (assoc ns nested))))
 	(cond
 	 ((and ns subitems)
-	  (setcdr subitems (adjoin name (cdr subitems))))
+	  (setcdr subitems (cl-adjoin name (cdr subitems))))
 	 (ns
-	  (setq nested
-		(cons (cons ns (list name)) nested)))
+	  (push (cons ns (list name)) nested))
 	 (t
-	  (setq toplevel (adjoin name  toplevel))))))
+	  (setq toplevel (cl-adjoin name  toplevel))))))
     (cons nested toplevel)))
 
 (defun proof-dep-make-submenu (name namefn appfn list)
@@ -221,7 +220,7 @@ NAMEFN is applied to each element of LIST to make the names."
 ;; Functions triggered by menus
 ;;
 
-(defun proof-goto-dependency (name span)
+(defun proof-goto-dependency (_name span)
   "Go to the start of SPAN."
   ;; FIXME(EMD): seems buggy as NAME is not used
   ;; FIXME: check buffer is right one.  Later we'll allow switching buffer

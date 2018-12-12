@@ -1,4 +1,4 @@
-;;; proof-shell.el --- Proof General shell mode.
+;;; proof-shell.el --- Proof General shell mode
 
 ;; This file is part of Proof General.
 
@@ -22,7 +22,7 @@
 
 ;;; Code:
 
-(require 'cl)				; set-difference, every
+(require 'cl-lib)                       ; cl-set-difference, cl-every
 
 (eval-when-compile
   (require 'span)
@@ -41,7 +41,7 @@
 (require 'pg-response)
 (require 'pg-goals)
 (require 'pg-user)			; proof-script, new-command-advance
-
+(require 'span)
 
 ;;
 ;; Internal variables used by proof shell
@@ -504,7 +504,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	  (while (and (> timecount 0)
 		      (scomint-check-proc proof-shell-buffer))
 	    (accept-process-output proc 1 nil 1)
-	    (decf timecount)))
+	    (cl-decf timecount)))
 	
 	;; Still there, kill it rudely.
 	(when (memq (process-status proc) '(open run stop))
@@ -890,7 +890,7 @@ inserted text.
 Do not use this function directly, or output will be lost.  It is only
 used in `proof-add-to-queue' when we start processing a queue, and in
 `proof-shell-exec-loop', to process the next item."
-  (assert (or (stringp strings)
+  (cl-assert (or (stringp strings)
 	      (listp strings))
 	  nil "proof-shell-insert: expected string list argument")
 
@@ -1008,7 +1008,7 @@ being processed."
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
-	   (assert (eq proof-shell-busy queuemode)))))
+	   (cl-assert (eq proof-shell-busy queuemode)))))
 
 
   (let ((nothingthere (null proof-action-list)))
@@ -1182,7 +1182,7 @@ contains only invisible elements for Prooftree synchronization."
 
 	(and (not proof-second-action-list-active)
 	     (or (null proof-action-list)
-		 (every
+		 (cl-every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
 
@@ -1310,8 +1310,8 @@ to `proof-register-possibly-new-processed-file'."
       ;; the proof-shell-compute-new-files-list
       (proof-restart-buffers
        (proof-files-to-buffers
-	(set-difference current-included
-			proof-included-files-list)))
+	(cl-set-difference current-included
+			   proof-included-files-list)))
       (cond
        ;; Do nothing if there was no active scripting buffer
        ((not scrbuf))
@@ -1762,7 +1762,7 @@ Only works when system timer has microsecond count available."
 	  (and
 	   (< (- tm pg-last-tracing-output-time)
 	      (/ pg-fast-tracing-mode-threshold 1000000.0))
-	   (>= (incf pg-last-trace-output-count)
+	   (>= (cl-incf pg-last-trace-output-count)
 	       pg-slow-mode-trigger-count))
 	;; quickly consecutive tracing outputs: go into slow mode
 	(setq dontprint t)
@@ -1856,16 +1856,14 @@ The flag 'invisible is always added to FLAGS."
 		    (not proof-shell-auto-terminate-commands)
 		    (string-match (concat
 				   (regexp-quote proof-terminal-string)
-				   "[ \t]*$") cmd))
+				   "[ \t]*$")
+                                  cmd))
 	  (setq cmd (concat cmd proof-terminal-string)))
 	(if wait (proof-shell-wait))
 	(proof-shell-ready-prover)  ; start proof assistant; set vars.
 	(let* ((callback
-		(if invisiblecallback
-		    (lexical-let ((icb invisiblecallback))
-		      (lambda (span)
-			(funcall icb span)))
-		  'proof-done-invisible)))
+		(or invisiblecallback
+		    #'proof-done-invisible)))
 	  (proof-start-queue nil nil
 			     (list (proof-shell-action-list-item
 				    cmd

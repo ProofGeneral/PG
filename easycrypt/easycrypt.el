@@ -10,6 +10,7 @@
 ;;; Commentary:
 ;; 
 
+(require 'cl-lib)                       ;cl-every
 (require 'proof)
 (require 'easycrypt-syntax)
 (require 'easycrypt-hooks)
@@ -24,7 +25,7 @@
 (defun easycrypt-load-path-safep (path)
   (and
    (listp path)
-   (every (lambda (entry) (stringp entry)) path)))
+   (cl-every #'stringp path)))
 
 ;; --------------------------------------------------------------------
 (defcustom easycrypt-prog-name "easycrypt"

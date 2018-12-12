@@ -34,9 +34,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'proof-compat))
-
 (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
