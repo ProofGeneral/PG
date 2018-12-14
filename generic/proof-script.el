@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -24,15 +24,15 @@
 
 ;;; Code:
 
-(require 'cl)				; various
+(require 'cl-lib)                       ; various
 (require 'span)				; abstraction of overlays/extents
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
 
 (eval-when-compile
-  (require 'easymenu)
-  (defvar proof-mode-menu nil)
-  (defvar proof-assistant-menu nil))
+  (require 'easymenu))
+(defvar proof-mode-menu)
+(defvar proof-assistant-menu)
 
 (declare-function proof-shell-strip-output-markup "proof-shell"
 		  (string &optional push))
@@ -520,8 +520,8 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-get-element (idiomsym id)
   "Return proof script element of type IDIOMSYM with identifier ID.
 IDIOMSYM is a symbol, ID is a string."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
   (let ((idsym  (intern id))
 	(elts   (cdr-safe (assq idiomsym pg-script-portions))))
     (if elts
@@ -539,9 +539,9 @@ NAME does not need to be unique.
 
 NAME is a name that comes from the proof script or prover output.
 It is recorded in the span with the 'rawname property."
-  (assert (symbolp idiomsym))
-  (assert (stringp id))
-  (if name (assert (stringp name)))
+  (cl-assert (symbolp idiomsym))
+  (cl-assert (stringp id))
+  (if name (cl-assert (stringp name)))
   (let* ((idsym    (intern id))
 	 (rawname  name)
 	 (name	   (or name id))
@@ -880,8 +880,8 @@ proof assistant and Emacs has a modified buffer visiting the file."
       (funcall proof-shell-inform-file-retracted-cmd rfile)
       (proof-restart-buffers
        (proof-files-to-buffers
-	(set-difference current-included
-			proof-included-files-list)))))))
+	(cl-set-difference current-included
+			   proof-included-files-list)))))))
 
 (defun proof-auto-retract-dependencies (cfile &optional informprover)
   "Perhaps automatically retract the (linear) dependencies of CFILE.
@@ -1234,8 +1234,8 @@ activation is considered to have failed and an error is given."
       ;; proof-unregister-buffer-file-name.
       (if proof-script-buffer
 	  (proof-deactivate-scripting))
-      (assert (null proof-script-buffer)
-	      "Bug in proof-activate-scripting: deactivate failed.")
+      (cl-assert (null proof-script-buffer)
+	         "Bug in proof-activate-scripting: deactivate failed.")
 
       ;; Set the active scripting buffer
       (setq proof-script-buffer (current-buffer))
@@ -1340,7 +1340,7 @@ Argument SPAN has just been processed."
      ;; CASE 2: Save command seen, now we may amalgamate spans.
      ((and (proof-string-match-safe proof-save-command-regexp cmd)
 	   (funcall proof-really-save-command-p span cmd)
-	   (decf proof-nesting-depth) ;; [always non-nil/true]
+	   (cl-decf proof-nesting-depth) ;; [always non-nil/true]
 	   (if proof-nested-goals-history-p
 	       ;; For now, we only support this nesting behaviour:
 	       ;; don't amalgamate unless the nesting depth is 0,
@@ -1479,15 +1479,15 @@ Argument SPAN has just been processed."
 	     ((and proof-nested-goals-history-p
 		   proof-save-command-regexp
 		   (proof-string-match proof-save-command-regexp cmd))
-	      (incf lev))
+	      (cl-incf lev))
 	     ;; Decrement depth when a goal is hit
 	     ((funcall proof-goal-command-p gspan)
-	      (decf lev))
+	      (cl-decf lev))
 	     ;; Remainder cases: see if command matches something we
 	     ;; should count for a global undo
 	     ((and proof-nested-undo-regexp
 		   (proof-string-match proof-nested-undo-regexp cmd))
-	      (incf nestedundos))
+	      (cl-incf nestedundos))
 	     ))))
 
     (if (not gspan)
@@ -1556,7 +1556,7 @@ Subroutine of `proof-done-advancing-save'."
   ;; In the extend case, the context of proof grows until hit a save
   ;; or new goal.
   (if (eq proof-completed-proof-behaviour 'extend)
-      (incf proof-shell-proof-completed)
+      (cl-incf proof-shell-proof-completed)
     (setq proof-shell-proof-completed nil))
 
   (let* ((swallow  (eq proof-completed-proof-behaviour 'extend))
@@ -1623,12 +1623,12 @@ Subroutine of `proof-done-advancing-save'."
   (cond
    ((funcall proof-goal-command-p span)
     (pg-add-element 'statement id bodyspan)
-    (incf proof-nesting-depth))
+    (cl-incf proof-nesting-depth))
    (t
     (pg-add-element 'command id bodyspan)))
 
   (if proof-shell-proof-completed
-      (incf proof-shell-proof-completed))
+      (cl-incf proof-shell-proof-completed))
 
   (pg-set-span-helphighlights span proof-command-mouse-highlight-face)))
 
@@ -1969,7 +1969,7 @@ We assume that the list is contiguous and begins at (proof-queue-or-locked-end).
 We also delete help spans which appear in the same region (in the expectation
 that these may be overwritten).
 This function expects the buffer to be activated for advancing."
-  (assert semis nil "proof-assert-semis: argument must be a list")
+  (cl-assert semis nil "proof-assert-semis: argument must be a list")
   (let ((startpos  (proof-queue-or-locked-end))
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
@@ -2458,13 +2458,13 @@ For this function to work properly, you must configure
       (setq str (span-property span 'cmd))
       (cond ((eq (span-property span 'type) 'vanilla)
 	     (unless (proof-stringfn-match proof-ignore-for-undo-count str)
-	       (incf ct)))
+	       (cl-incf ct)))
 	    ((eq (span-property span 'type) 'pbp)
 	     (setq i 0)
 	     (while (< i (length str))
 	       (if (string-equal (substring str i (+ i tl)) proof-terminal-string)
-		   (incf ct))
-	       (incf i))))
+		   (cl-incf ct))
+	       (cl-incf i))))
       (setq span (next-span span 'type)))
     (if (= ct 0)
 	nil ; was proof-no-command

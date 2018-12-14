@@ -1,6 +1,7 @@
 ;; isar.el --- Major mode for Isabelle/Isar proof assistant
 ;;
 ;; Copyright (C) 1994-2010 LFCS Edinburgh.
+;; Copyright (C) 2018  Free Software Foundation, Inc.
 ;;
 ;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -16,18 +17,15 @@
 
 ;;; Code:
 
-(eval-when-compile 
-  (require 'cl))
-
 (eval-when-compile
   (require 'span)
   (require 'proof-syntax)
   (require 'pg-goals)
   (require 'pg-vars)
-  (require 'outline)
-  (defvar comment-quote-nested)
-  (defvar isar-use-find-theorems-form)
-  (defvar isar-use-linear-undo))
+  (require 'outline))
+(defvar comment-quote-nested)
+(defvar isar-use-find-theorems-form)
+(defvar isar-use-linear-undo)
 
 (require 'proof)
 (require 'isabelle-system)		; system code

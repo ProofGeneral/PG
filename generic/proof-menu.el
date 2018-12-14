@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -17,11 +17,10 @@
 ;;
 
 ;;; Code:
-(require 'cl)				; mapcan
+(require 'cl-lib)                       ; cl-mapcan, ...
 
-(eval-when-compile
-  (defvar proof-assistant-menu)	  ; defined by macro in proof-menu-define-specific
-  (defvar proof-mode-map))
+(defvar proof-assistant-menu)  ; defined by macro in proof-menu-define-specific
+(defvar proof-mode-map)
 
 (require 'proof-utils)    ; proof-deftoggle, proof-eval-when-ready-for-assistant
 (require 'proof-useropts)
@@ -50,24 +49,26 @@ without adjusting window layout."
   (cond
    ((and (called-interactively-p 'any)
 	 (eq last-command 'proof-display-some-buffers))
-    (incf proof-display-some-buffers-count))
+    (cl-incf proof-display-some-buffers-count))
    (t
     (setq proof-display-some-buffers-count 0)))
-  (let* ((assocbufs   (remove-if-not 'buffer-live-p
-				     (list proof-response-buffer
-					   proof-thms-buffer
-					   proof-trace-buffer
-					   proof-goals-buffer
-					   )))
+  (let* ((assocbufs   (cl-remove-if-not #'buffer-live-p
+				        (list proof-response-buffer
+					      proof-thms-buffer
+					      proof-trace-buffer
+					      proof-goals-buffer
+					      )))
 					;proof-shell-buffer
 	 (numassoc    (length assocbufs)))
     ;; If there's no live other buffers, we don't do anything.
     (unless (zerop numassoc)
       (let
 	 ((selectedbuf (nth (mod proof-display-some-buffers-count
-				 numassoc) assocbufs))
+				 numassoc)
+                            assocbufs))
 	  (nextbuf     (nth (mod (1+ proof-display-some-buffers-count)
-				 numassoc) assocbufs)))
+				 numassoc)
+                            assocbufs)))
 	(cond
 	 ((or proof-three-window-enable proof-multiple-frames-enable)
 	  ;; Display two buffers: next in rotation and goals/response
@@ -75,7 +76,8 @@ without adjusting window layout."
 	  (proof-switch-to-buffer selectedbuf 'noselect)
 	  (proof-switch-to-buffer (if (eq selectedbuf proof-goals-buffer)
 				      proof-response-buffer
-				    proof-goals-buffer) 'noselect))
+				    proof-goals-buffer)
+                                  'noselect))
 	 (selectedbuf
 	  (proof-switch-to-buffer selectedbuf 'noselect)))
 	(if (eq selectedbuf proof-response-buffer)
@@ -756,7 +758,7 @@ suitable for adding to the proof assistant menu."
     (while (and new (fboundp menu-fn))
       (setq menu-fn (intern (concat (symbol-name menuname-sym)
 				    "-" (int-to-string i))))
-      (incf i))
+      (cl-incf i))
     (if inscript
 	(eval `(proof-defshortcut ,menu-fn ,command ,key))
       (eval `(proof-definvisible ,menu-fn ,command ,key)))
@@ -790,7 +792,7 @@ suitable for adding to the proof assistant menu."
 		     nil t)))
   (let*
       ((favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
+       (rmfavs	   (cl-remove-if
 		    (lambda (f) (string-equal menuname (caddr f)))
 		    favs)))
     (unless (equal favs rmfavs)
@@ -832,7 +834,7 @@ KEY is the optional key binding."
   (let*
       ((menu-entry (proof-def-favourite command inscript menuname key t))
        (favs       (proof-ass favourites))
-       (rmfavs	   (remove-if
+       (rmfavs	   (cl-remove-if
 		    (lambda (f) (string-equal menuname (caddr f)))
 		    favs))
        (newfavs    (append
@@ -861,7 +863,7 @@ KEY is the optional key binding."
 	(mapc (lambda (stg) (add-to-list 'groups (get (car stg) 'pggroup)))
 	      proof-assistant-settings)
 	(dolist (grp (reverse groups))
-	  (let* ((gstgs (mapcan (lambda (stg)
+	  (let* ((gstgs (cl-mapcan (lambda (stg)
 				  (if (eq (get (car stg) 'pggroup) grp)
 				      (list stg)))
 				proof-assistant-settings))

@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -40,7 +40,7 @@
 
 (if (or (not (boundp 'emacs-major-version))
 	(< emacs-major-version 23)
-	(string-match "XEmacs" emacs-version))
+	(featurep 'xemacs))
     (error "Proof General is not compatible with Emacs %s" emacs-version))
 
 (unless (equal pg-compiled-for (pg-emacs-version-cookie))
@@ -51,7 +51,6 @@
 
 
 (require 'proof-site)			; basic vars
-(require 'proof-compat)		        ; compatibility
 (require 'pg-pamacs)			; macros for pa config
 (require 'proof-config)			; config vars
 (require 'bufhist)			; bufhist
@@ -399,8 +398,9 @@ or if the window is the only window of its frame."
 		(select-window window))))
        ;; the window is the full width, right?
        ;; [if not, we may be in horiz-split scheme, problematic]
-       (not (window-leftmost-p window))
-       (not (window-rightmost-p window)))
+       (not (zerop (car (window-edges window)))) ;not leftmost
+       (not (>= (nth 2 (window-edges window))    ;not rightmost
+	        (frame-width (window-frame window)))))
       ;; OK, we're not going to adjust the height here.  Moreover,
       ;; we'll make sure the height can be changed elsewhere.
       (setq window-size-fixed nil)

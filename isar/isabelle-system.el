@@ -1,6 +1,7 @@
 ;; isabelle-system.el --- Interface with Isabelle system
 ;;
 ;; Copyright (C) 2000 LFCS Edinburgh, David Aspinall.
+;; Copyright (C) 2018  Free Software Foundation, Inc.
 ;;
 ;; Author:      David Aspinall <da@dcs.ed.ac.uk>
 ;; Maintainer:  Proof General maintainer <proofgen@dcs.ed.ac.uk>
@@ -12,16 +13,15 @@
 ;;
 
 ;;; Code:
-(eval-when-compile
-  (require 'cl))			;  mapcan, eval-when
 
+(require 'cl-lib)                       ;cl-mapcan
 (eval-when-compile
   (require 'span)
   (require 'scomint)
   (require 'proof-site)
   (require 'proof-menu)
-  (require 'proof-syntax)
-  (defvar proof-assistant-menu))
+  (require 'proof-syntax))
+(defvar proof-assistant-menu)
 
 (declare-function mapcan "cl-extra")	; spurious bytecomp warning
 
@@ -233,7 +233,7 @@ passed to isa-tool-doc-command, DOCNAME will be viewed."
       (let ((docs (isa-shell-command-to-string
 		   (concat "\"" isa-isabelle-command "\" doc"))))
 	(unless (string-equal docs "")
-	  (mapcan
+	  (cl-mapcan
 	   (function (lambda (docdes)
 		       (if (proof-string-match "^[ \t]+\\(\\S-+\\)[ \t]+" docdes)
 			   (list (list

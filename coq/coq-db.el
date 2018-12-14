@@ -1,9 +1,9 @@
-;;; coq-db.el --- coq keywords database utility functions -*- coding: utf-8; -*-
+;;; coq-db.el --- coq keywords database utility functions -*- coding: utf-8; lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -23,8 +23,7 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
+(eval-when-compile (require 'cl-lib))   ;decf
 
 (require 'proof-config)			; for proof-face-specs, a macro
 (require 'proof-syntax)			; for proof-ids-to-regexp
@@ -95,7 +94,7 @@ the first hole even if more than one."
 
 
 
-(defun coq-build-command-from-db (db prompt &optional preformatquery)
+(defun coq-build-command-from-db (db prompt &optional _preformatquery)
   "Ask for a keyword, with completion on keyword database DB and send to Coq.
 See `coq-syntax-db' for DB structure."
   ;; Next invocation of minibuffer (read-string below) will first recursively
@@ -192,8 +191,8 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 	     (menu     	 (nth 0 hd)) ; e1 = menu entry
 	     (abbrev   	 (nth 1 hd)) ; e2 = abbreviation
 	     (complt   	 (nth 2 hd)) ; e3 = completion
-	     (state    	 (nth 3 hd)) ; e4 = state changing
-	     (color    	 (nth 4 hd)) ; e5 = colorization string
+	     ;; (state   (nth 3 hd)) ; e4 = state changing
+	     ;; (color   (nth 4 hd)) ; e5 = colorization string
 	     (insertfn 	 (nth 5 hd)) ; e6 = function for smart insertion
 	     (menuhide 	 (nth 6 hd)) ; e7 = if non-nil : hide in menu
 	     (entry-with (max (- menuwidth (length menu)) 0))
@@ -212,7 +211,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  t)))
 	    (setq res (nconc res (list menu-entry)))));; append *in place*
 	(setq l (cdr l))
-	(decf size)))
+	(cl-decf size)))
     res))
 
 
@@ -264,9 +263,9 @@ See `coq-syntax-db' for DB structure."
   (let ((l db) (res ()))
     (while l
       (let* ((hd (car l))(tl (cdr l))	; hd is a list of length 3 or 4
-	     (e1 (car hd)) (tl1 (cdr hd)) ; e1 = menu entry
+	     (_e1 (car hd)) (tl1 (cdr hd)) ; e1 = menu entry
 	     (e2 (car tl1)) (tl2 (cdr tl1)) ; e2 = abbreviation
-	     (e3 (car tl2)) (tl3 (cdr tl2)) ; e3 = completion
+	     (e3 (car tl2)) (_tl3 (cdr tl2)) ; e3 = completion
 	     )
 	;; careful: nconc destructive!
 	(when e2

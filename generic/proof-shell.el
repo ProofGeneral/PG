@@ -1,9 +1,9 @@
-;;; proof-shell.el --- Proof General shell mode.
+;;; proof-shell.el --- Proof General shell mode
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -22,7 +22,7 @@
 
 ;;; Code:
 
-(require 'cl)				; set-difference, every
+(require 'cl-lib)                       ; cl-set-difference, cl-every
 
 (eval-when-compile
   (require 'span)
@@ -34,15 +34,14 @@
 (declare-function proof-tree-urgent-action "proof-tree" (flags))
 (declare-function proof-tree-handle-delayed-output "proof-tree"
 		  (old-proof-marker cmd flags span))
-(eval-when-compile
-  ;; without the nil initialization the compiler still warns about this variable
-  (defvar proof-tree-external-display nil))
+;; without the nil initialization the compiler still warns about this variable
+(defvar proof-tree-external-display)
 
 (require 'scomint)
 (require 'pg-response)
 (require 'pg-goals)
 (require 'pg-user)			; proof-script, new-command-advance
-
+(require 'span)
 
 ;;
 ;; Internal variables used by proof shell
@@ -454,8 +453,7 @@ process command."
 	    ;; Call multiple-frames-enable in case we need to fire up
 	    ;; new frames (NB: sets specifiers to remove modeline)
 	    (save-selected-window
-	      (save-selected-frame
-	       (proof-multiple-frames-enable)))))
+	      (proof-multiple-frames-enable))))
 
       (message "Starting %s process... done." proc))))
 
@@ -506,7 +504,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	  (while (and (> timecount 0)
 		      (scomint-check-proc proof-shell-buffer))
 	    (accept-process-output proc 1 nil 1)
-	    (decf timecount)))
+	    (cl-decf timecount)))
 	
 	;; Still there, kill it rudely.
 	(when (memq (process-status proc) '(open run stop))
@@ -892,7 +890,7 @@ inserted text.
 Do not use this function directly, or output will be lost.  It is only
 used in `proof-add-to-queue' when we start processing a queue, and in
 `proof-shell-exec-loop', to process the next item."
-  (assert (or (stringp strings)
+  (cl-assert (or (stringp strings)
 	      (listp strings))
 	  nil "proof-shell-insert: expected string list argument")
 
@@ -1010,7 +1008,7 @@ being processed."
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
-	   (assert (eq proof-shell-busy queuemode)))))
+	   (cl-assert (eq proof-shell-busy queuemode)))))
 
 
   (let ((nothingthere (null proof-action-list)))
@@ -1184,7 +1182,7 @@ contains only invisible elements for Prooftree synchronization."
 
 	(and (not proof-second-action-list-active)
 	     (or (null proof-action-list)
-		 (every
+		 (cl-every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)))))))
 
@@ -1312,8 +1310,8 @@ to `proof-register-possibly-new-processed-file'."
       ;; the proof-shell-compute-new-files-list
       (proof-restart-buffers
        (proof-files-to-buffers
-	(set-difference current-included
-			proof-included-files-list)))
+	(cl-set-difference current-included
+			   proof-included-files-list)))
       (cond
        ;; Do nothing if there was no active scripting buffer
        ((not scrbuf))
@@ -1764,7 +1762,7 @@ Only works when system timer has microsecond count available."
 	  (and
 	   (< (- tm pg-last-tracing-output-time)
 	      (/ pg-fast-tracing-mode-threshold 1000000.0))
-	   (>= (incf pg-last-trace-output-count)
+	   (>= (cl-incf pg-last-trace-output-count)
 	       pg-slow-mode-trigger-count))
 	;; quickly consecutive tracing outputs: go into slow mode
 	(setq dontprint t)
@@ -1858,16 +1856,14 @@ The flag 'invisible is always added to FLAGS."
 		    (not proof-shell-auto-terminate-commands)
 		    (string-match (concat
 				   (regexp-quote proof-terminal-string)
-				   "[ \t]*$") cmd))
+				   "[ \t]*$")
+                                  cmd))
 	  (setq cmd (concat cmd proof-terminal-string)))
 	(if wait (proof-shell-wait))
 	(proof-shell-ready-prover)  ; start proof assistant; set vars.
 	(let* ((callback
-		(if invisiblecallback
-		    (lexical-let ((icb invisiblecallback))
-		      (lambda (span)
-			(funcall icb span)))
-		  'proof-done-invisible)))
+		(or invisiblecallback
+		    #'proof-done-invisible)))
 	  (proof-start-queue nil nil
 			     (list (proof-shell-action-list-item
 				    cmd

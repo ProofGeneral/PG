@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -93,8 +93,7 @@
 
 ;;; Code:
 
-(require 'cl)
-
+(eval-when-compile (require 'cl-lib))   ;cl-assert
 (eval-when-compile
   (require 'proof-shell))
 
@@ -622,7 +621,7 @@ primitives is changed.")
 Send a message with command line SECOND-LINE and all strings in
 DATA as data sections to Prooftree."
   (let ((second-line-len (string-bytes second-line)))
-    (assert (< second-line-len 999))
+    (cl-assert (< second-line-len 999))
     (process-send-string
      proof-tree-process
      (format "second line %03d\n%s\n%s%s"
@@ -1157,7 +1156,7 @@ entry that is now finally retired.  CMD is the command, FLAGS are
 the flags and SPAN is the span."
   ;; (message "PTHDO cmd %s flags %s span %s-%s" cmd flags
   ;; 	   (if span (span-start span)) (if span (span-end span)))
-  (assert proof-tree-external-display)
+  (cl-assert proof-tree-external-display)
   (unless (or (memq 'invisible flags) (memq 'proof-tree-show-subgoal flags))
     (let* ((proof-info (funcall proof-tree-get-proof-info))
 	   (current-proof-name (cadr proof-info)))
@@ -1226,7 +1225,7 @@ position of the current proof."
     (error
      "Enabling prooftree inside a proof outside the current scripting buffer"))
   (proof-shell-ready-prover)
-  (assert proof-locked-span)
+  (cl-assert proof-locked-span)
   (message "Start proof-tree display for current proof")
   (save-excursion
     (save-window-excursion

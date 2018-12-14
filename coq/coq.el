@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -19,30 +19,28 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl)
-  (require 'proof-compat))
+(require 'cl-lib)
 
+(require 'span)
 (eval-when-compile
   (require 'proof-utils)
   (require 'span)
   (require 'outline)
   (require 'newcomment)
-  (require 'etags)
-  (unless (proof-try-require 'smie)
-    (defvar smie-indent-basic)
-    (defvar smie-rules-function))
-  (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
-  (defvar action)       ; dynamic scope in coq-insert-as stuff
-  (defvar string)       ; dynamic scope in coq-insert-as stuff
-  (defvar old-proof-marker)
-  (defvar coq-keymap)
-  (defvar coq-one-command-per-line)
-  (defvar coq-auto-insert-as)    ; defpacustom
-  (defvar coq-time-commands)        ; defpacustom
-  (defvar coq-use-project-file)        ; defpacustom
-  (defvar coq-use-editing-holes)    ; defpacustom
-  (defvar coq-hide-additional-subgoals))
+  (require 'etags))
+(defvar smie-indent-basic)
+(defvar smie-rules-function)
+(defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
+(defvar action)       ; dynamic scope in coq-insert-as stuff
+(defvar string)       ; dynamic scope in coq-insert-as stuff
+(defvar old-proof-marker)
+(defvar coq-keymap)
+(defvar coq-one-command-per-line)
+(defvar coq-auto-insert-as)             ; defpacustom
+(defvar coq-time-commands)              ; defpacustom
+(defvar coq-use-project-file)           ; defpacustom
+(defvar coq-use-editing-holes)          ; defpacustom
+(defvar coq-hide-additional-subgoals)
 
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
@@ -66,11 +64,8 @@
 
 ;; prettify is in emacs > 24.4
 ;; FIXME: this should probably be done like for smie above.
-(defvar coq-may-use-prettify nil) ; may become t below
-(eval-when-compile
-  (if (fboundp 'prettify-symbols-mode)
-      (defvar coq-may-use-prettify t)
-    (defvar prettify-symbols-alist nil)))
+(defvar coq-may-use-prettify (fboundp 'prettify-symbols-mode))
+(defvar prettify-symbols-alist)
 
 
 ;; ----- coq-shell configuration options
@@ -911,22 +906,21 @@ This is mapped to control/shift mouse-1, unless coq-remap-mouse-1
 is nil (t by default)."
   (interactive "e")
   (save-selected-window
-    (save-selected-frame
-     (save-excursion
-       (mouse-set-point event)
-       (let* ((id (coq-id-at-point))
-              (notat (coq-notation-at-position (point)))
-              (modifs (event-modifiers event))
-              (shft (member 'shift modifs))
-              (ctrl (member 'control modifs))
-              (cmd (when (or id notat)
-                     (if (and ctrl shft) (if id "Check" "Locate")
-                       (if shft (if id "About" "Locate")
-                         (if ctrl (if id "Print" "Locate")))))))
-         (proof-shell-invisible-command
-          (format (concat  cmd " %s . ")
-                  ;; Notation need to be surrounded by ""
-                  (if id id (concat "\"" notat "\"")))))))))
+    (save-excursion
+      (mouse-set-point event)
+      (let* ((id (coq-id-at-point))
+             (notat (coq-notation-at-position (point)))
+             (modifs (event-modifiers event))
+             (shft (member 'shift modifs))
+             (ctrl (member 'control modifs))
+             (cmd (when (or id notat)
+                    (if (and ctrl shft) (if id "Check" "Locate")
+                      (if shft (if id "About" "Locate")
+                        (if ctrl (if id "Print" "Locate")))))))
+        (proof-shell-invisible-command
+         (format (concat  cmd " %s . ")
+                 ;; Notation need to be surrounded by ""
+                 (if id id (concat "\"" notat "\""))))))))
 
 (defun coq-guess-or-ask-for-string (s &optional dontguess)
   "Asks for a coq identifier with message S.
@@ -1211,8 +1205,7 @@ Printing All set."
   (coq-ask-do-show-all "Show goal number" "Show" t))
 
 ;; Check
-(eval-when-compile
-  (defvar coq-auto-adapt-printing-width)); defpacustom
+(defvar coq-auto-adapt-printing-width); defpacustom
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
@@ -1591,7 +1584,7 @@ of hypothesis to highlight."
 See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
   (let* ((hyps-cited-pos (coq-detect-hyps-positions proof-response-buffer))
          (hyps-cited (coq-build-hyps-names hyps-cited-pos)))
-    (remove-if-not
+    (cl-remove-if-not
      (lambda (e)
        (cl-some;seq-find
         (lambda (f)
@@ -2542,7 +2535,7 @@ mouse activation."
 (defun coq-directories-files (l)
   (let* ((file-list-list (mapcar 'directory-files l))
          (file-list (apply 'append file-list-list))
-         (filtered-list (remove-if-not 'coq-postfix-.v-p file-list)))
+         (filtered-list (cl-remove-if-not #'coq-postfix-.v-p file-list)))
   filtered-list))
 
 (defun coq-remove-dot-v-extension (s)
@@ -2553,8 +2546,8 @@ mouse activation."
 
 (defun coq-build-accessible-modules-list ()
   (let* ((pth (or coq-load-path '(".")))
-         (cleanpth (mapcar 'coq-load-path-to-paths pth))
-         (existingpth (remove-if-not 'file-exists-p cleanpth))
+         (cleanpth (mapcar #'coq-load-path-to-paths pth))
+         (existingpth (cl-remove-if-not #'file-exists-p cleanpth))
          (file-list (coq-directories-files existingpth)))
     (mapcar 'coq-remove-dot-v-extension file-list)))
 
@@ -2592,11 +2585,11 @@ mouse activation."
           (completing-read
            "Command (TAB to see list, default Require Import) : "
            reqkinds-kinds-table nil nil nil nil "Require Import")))
-    (loop do
-          (setq s (completing-read "Name (empty to stop) : "
-                                   (coq-build-accessible-modules-list)))
-          (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
-          while (not (string-equal s "")))))
+    (cl-loop do
+             (setq s (completing-read "Name (empty to stop) : "
+                                      (coq-build-accessible-modules-list)))
+             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
+             while (not (string-equal s "")))))
 
 ;; TODO add module closing
 (defun coq-end-Section ()
@@ -2737,16 +2730,16 @@ Also insert holes at insertion positions."
           (insert match)
           (indent-region start (point) nil)
           (let ((n (holes-replace-string-by-holes-backward start)))
-            (case n
-	(0 nil)				; no hole, stay here.
-	(1
-	 (goto-char start)
-	 (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	(t
-	 (goto-char start)
-	 (message
-          (substitute-command-keys
-           "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+            (pcase n
+	      (0 nil)                   ; no hole, stay here.
+	      (1
+	       (goto-char start)
+	       (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
+	      (_
+	       (goto-char start)
+	       (message
+                (substitute-command-keys
+                 "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -3323,8 +3316,6 @@ priority to the former."
 (defun proof-delete-other-frames () (proof-delete-all-associated-windows))
 
 (provide 'coq)
-
-
 
 ;;   Local Variables: ***
 ;;   fill-column: 79 ***

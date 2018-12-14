@@ -8,7 +8,7 @@
 ;; $Id$
 ;;
 
-(require 'cl)				; remove-if, remove-if-not
+(eval-when-compile (require 'cl-lib))
 
 (require 'proof-syntax)
 (require 'isar-keywords)		; NB: we want to load isar-keywords at runtime
@@ -271,18 +271,18 @@ matches contents of quotes for quoted identifiers.")
       (while (proof-re-search-forward isar-nesting-regexp limit t)
 	(cond
 	 ((proof-buffer-syntactic-context))
-	 ((equal (match-string 0) isar-keyword-begin) (incf nesting))
-	 ((equal (match-string 0) isar-keyword-end) (decf nesting)))))
+	 ((equal (match-string 0) isar-keyword-begin) (cl-incf nesting))
+	 ((equal (match-string 0) isar-keyword-end) (cl-decf nesting)))))
     nesting))
 
 (defun isar-match-nesting (limit)
-  (block nil
+  (cl-block nil
     (while (proof-re-search-forward isar-nesting-regexp limit t)
       (and (not (proof-buffer-syntactic-context))
 	   (if (equal (match-string 0) isar-keyword-begin)
 	       (> (isar-nesting) 1)
 	     (> (isar-nesting) 0))
-	   (return t)))))
+	   (cl-return t)))))
 
 
 ;; ----- Isabelle inner syntax highlight

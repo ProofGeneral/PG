@@ -1,9 +1,9 @@
-;;; coq-system.el --- common part of compilation feature
+;;; coq-system.el --- common part of compilation feature  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -25,13 +25,8 @@
 
 (require 'proof)
 
-(eval-when-compile
-  (require 'cl)
-  (require 'proof-compat))
-
-(eval-when-compile
-  (defvar coq-prog-args)
-  (defvar coq-debug))
+(defvar coq-prog-args)
+(defvar coq-debug)
 
 ;; Arbitrary arguments can already be passed through _CoqProject.
 ;; However this is not true for all assistants, so we don't modify the
@@ -529,7 +524,7 @@ coqtop."
         (`("-arg" ,concatenated-args)
          (setq args
                (append args
-                       (split-string-and-unquote (cadr opt) coq--project-file-separator))))))
+                       (split-string-and-unquote concatenated-args coq--project-file-separator))))))
     (cons "-emacs" args)))
 
 (defun coq--extract-load-path-1 (option base-directory)

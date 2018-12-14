@@ -1,9 +1,9 @@
-;;; pg-xml.el --- XML functions for Proof General
+;;; pg-xml.el --- XML functions for Proof General  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -20,8 +20,7 @@
 
 ;;; Code:
 
-(require 'cl)
-
+(require 'cl-lib)                       ;cl-mapcan
 (require 'xml)
 
 (require 'proof-utils) ;; for pg-internal-warning
@@ -90,7 +89,7 @@ Optional START and END bound the parse."
 (defun pg-xml-child-elts (node)
   "Return list of *element* children of NODE (ignoring strings)."
   (let ((children (xml-node-children node)))
-    (mapcan (lambda (x) (if (listp x) (list x))) children)))
+    (cl-mapcan (lambda (x) (if (listp x) (list x))) children)))
 
 (defun pg-xml-child-elt (node)
   "Return unique element child of NODE."
@@ -134,10 +133,10 @@ Optional START and END bound the parse."
   "Convert the XML trees in XMLS into a string (without additional indentation)."
   (let* (strs
 	 (insertfn    (lambda (&rest args)
-			(setq strs (cons (reduce 'concat args) strs)))))
+			(push (mapconcat #'identity args "") strs))))
     (dolist (xml xmls)
       (pg-xml-output-internal xml nil insertfn))
-    (reduce 'concat (reverse strs))))
+    (mapconcat #'identity (reverse strs) "")))
 
 ;; based on xml-debug-print from xml.el
 
@@ -187,7 +186,7 @@ Cal OUTPUTFN, which should accept a list of args."
 (defsubst pg-pgip-get-area (node &optional optional defaultval)
   (pg-xml-get-attr 'area node optional defaultval))
 
-(defun pg-pgip-get-icon (node &optional optional defaultval)
+(defun pg-pgip-get-icon (node &optional _optional _defaultval)
   "Return the <icon> child of NODE, or nil if none."
   (pg-xml-get-child 'icon node))
 

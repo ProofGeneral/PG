@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -21,6 +21,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)                       ;cl-remove-if-not
 (require 'proof-utils)
 
 (define-derived-mode proof-universal-keys-only-mode fundamental-mode
@@ -66,13 +67,13 @@ argument ALL-FRAMES has the same meaning than for
 
 (defun proof-filter-associated-windows (lw)
   "Remove windows of LW not displaying at least one associated buffer."
-  (remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
+  (cl-remove-if-not (lambda (w) (proof-associated-buffer-p (window-buffer w))) lw))
 
 
 ;;;###autoload
 (defun proof-associated-frames ()
   "Return the list of frames displaying at least one associated buffer."
-  (remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
+  (cl-remove-if-not (lambda (f) (proof-filter-associated-windows (window-list f)))
 		 (frame-list)))
 
 (provide 'pg-assoc)
