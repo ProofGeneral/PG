@@ -618,6 +618,16 @@ Does nothing if `coq-use-project-file' is nil."
                        'coq-load-project-file
                        nil t)))
 
+; detecting coqtop args should happen at the last moment before
+; calling the process. In particular it should ahppen after that
+; proof-prog-name-ask is performed, this hook is at the right place.
+(add-hook 'proof-shell-before-process-hook
+          '(lambda ()
+             ;; It seems coq-prog-name and proof-prog-name are not correctly linked
+             ;; so let us make sure they are the same before computing options
+             (setq coq-prog-name proof-prog-name)
+             (setq coq-prog-args (coq-prog-args))))
+
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook
           '(lambda ()

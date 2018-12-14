@@ -295,6 +295,10 @@ In this case `proof-shell-filter' must be called again after it finished.")
     (setq string (replace-match "" t t string)))
   string)
 
+(defvar proof-shell-before-process-hook nil
+  "Functions run from `proof-shell-start' just before
+   starting the prover process. Last chance to modify
+   xxx-prog-args and xxx-prog-name")
 
 (defun proof-shell-start ()
   "Initialise a shell-like buffer for a proof assistant.
@@ -321,6 +325,10 @@ process command."
           (setq proof-prog-name (proof-strip-whitespace-at-end
                                  (read-shell-command "Run process: "
                                                      prog-name)))))
+    ;; Once proof-prog-name is set (possibly asked to the user by the
+    ;; code above), some final option setting may need to be done.
+    (run-hooks 'proof-shell-before-process-hook)
+
     (let
 	((proc (downcase proof-assistant)))
 
