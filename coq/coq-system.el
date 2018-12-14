@@ -201,6 +201,18 @@ Return nil if the version cannot be detected."
 	 (signal 'coq-unclassifiable-version  coq-version-to-use))
 	(t (signal (car err) (cdr err))))))))
 
+(defun coq--post-v810 ()
+  "Return t if the auto-detected version of Coq is >= 8.10.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.9")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "8.10alpha"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
 (defcustom coq-use-makefile nil
   "Whether to look for a Makefile to attempt to guess the command line.
 Set to t if you want this feature, but note that it is deprecated."
@@ -418,7 +430,9 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; include it in the -Q options. This is not true for coqdep.
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85)))
+  (append
+   (if (coq--post-v810) (cons "-topfile" (cons buffer-file-name nil)) "")
+   (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85))))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."
