@@ -25,7 +25,7 @@
 
 (eval-when-compile (require 'cl-lib))   ;decf
 
-(require 'proof-config)			; for proof-face-specs, a macro
+(require 'proof-config)
 (require 'proof-syntax)			; for proof-ids-to-regexp
 (require 'holes)
 
@@ -187,7 +187,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
   (let ((l db) (res ()) (size lgth)
 	(keybind-abbrev (substitute-command-keys " \\[expand-abbrev]")))
     (while (and l (> size 0))
-      (let* ((hd (car l))
+      (let* ((hd (pop l))
 	     (menu     	 (nth 0 hd)) ; e1 = menu entry
 	     (abbrev   	 (nth 1 hd)) ; e2 = abbreviation
 	     (complt   	 (nth 2 hd)) ; e3 = completion
@@ -209,10 +209,9 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  ;;insertion function if present otherwise insert completion
 		  (if insertfn insertfn `(holes-insert-and-expand ,complt))
 		  t)))
-	    (setq res (nconc res (list menu-entry)))));; append *in place*
-	(setq l (cdr l))
+	    (push menu-entry res)))
 	(cl-decf size)))
-    res))
+    (nreverse res)))
 
 
 (defun coq-build-title-menu (db size)
@@ -289,10 +288,9 @@ See `coq-syntax-db' for DB structure."
 
 ;;A new face for tactics which fail when they don't kill the current goal
 (defface coq-solve-tactics-face
-  (proof-face-specs
-   (:foreground "red") ; pour les fonds clairs
-   (:foreground "red1") ; pour les fonds foncés
-   ()) ; pour le noir et blanc
+  `((((background light)) :foreground "red")
+    (((background dark)) :foreground "red1")
+    ()) ; pour le noir et blanc
   "Face for names of closing tactics in proof scripts."
   :group 'proof-faces)
 

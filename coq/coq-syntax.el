@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -19,6 +19,7 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl-lib))
 (require 'proof-syntax)
 (require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
@@ -509,12 +510,12 @@ so for the following reasons:
   )
 
 ;; modules and section are indented like goal starters
-;;; PC TODO: this category is used only for indentation, because
-;;; scripting uses information from coq to decide if a goal is
-;;; started. Since it is impossible for some commands to know
-;;; syntactically if they start something (ex: Instance), the
-;;; right thing to do would be to indent only on "Proof." and forget
-;;; about this category for indentation.
+;; PC TODO: this category is used only for indentation, because
+;; scripting uses information from coq to decide if a goal is
+;; started. Since it is impossible for some commands to know
+;; syntactically if they start something (ex: Instance), the
+;; right thing to do would be to indent only on "Proof." and forget
+;; about this category for indentation.
 
 (defvar coq-goal-starters-db
   '(
@@ -991,7 +992,7 @@ so for the following reasons:
 Empty matches are counted once."
   (let ((nbmatch 0) (str strg))
     (while (and (proof-string-match regexp str) (not (string-equal str "")))
-      (incf nbmatch)
+      (cl-incf nbmatch)
       (if (= (match-end 0) 0) (setq str (substring str 1))
         (setq str (substring str (match-end 0)))))
     nbmatch))

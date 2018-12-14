@@ -1,4 +1,4 @@
-;;; coq-autotest.el --- tests of Coq Proof General (in progress).
+;;; coq-autotest.el --- tests of Coq Proof General (in progress)  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -21,7 +21,9 @@
 (require 'proof-site)
 (defvar coq-compile-before-require)
 
-(unless (bound-and-true-p byte-compile-current-file)
+;;;###autoload
+(defun coq-autotest ()
+  (interactive)
 
   (pg-autotest start 'debug)
 

@@ -558,18 +558,18 @@ last use time, to discourage saving these into the users database."
   (defvar completion-min-length)
   (declare-function add-completion "completion"
                     (string &optional num-uses last-use-time))
-  (mapcar (lambda (cmpl)
-	    ;; completion gives error; trapping is tricky so test again
-	    (if (>= (length cmpl) completion-min-length)
-		(add-completion cmpl -1000 0)))
-	  (proof-ass completion-table)))
+  (when proof-assistant
+    (mapcar (lambda (cmpl)
+	      ;; completion gives error; trapping is tricky so test again
+	      (if (>= (length cmpl) completion-min-length)
+		  (add-completion cmpl -1000 0)))
+	    (proof-ass completion-table))))
 
 ;; NB: completion table is expected to be set when proof-script
 ;; is loaded!  Call `proof-script-add-completions' to update.
 
-(unless (bound-and-true-p byte-compile-current-file) ;FIXME: Yuck!
-  (eval-after-load "completion"
-    '(proof-add-completions)))
+(eval-after-load "completion"
+  '(proof-add-completions))
 
 (defun proof-script-complete (&optional arg)
   "Like `complete' but case-fold-search set to `proof-case-fold-search'."

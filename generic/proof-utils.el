@@ -23,6 +23,7 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl-lib))
 ;;
 ;; Give Emacs version mismatch error here.
 ;;
@@ -57,8 +58,6 @@
 (require 'proof-syntax)			; syntax utils
 (require 'proof-autoloads)		; interface fns
 (require 'scomint)			; for proof-shell-live-buffer
-
-;;; Code:
 
 ;;
 ;; Handy macros
@@ -247,7 +246,8 @@ Experimentally we display a message from time to time advertising
   ;; IF there *isn't* a visible window showing buffer...
   (unless (get-buffer-window buffer 0)
     (if proof-three-window-enable
-        (if (< proof-advertise-layout-count 30) (incf proof-advertise-layout-count)
+        (if (< proof-advertise-layout-count 30)
+            (cl-incf proof-advertise-layout-count)
           (message (substitute-command-keys "Hit \\[proof-layout-windows] to reset layout"))
           (setq proof-advertise-layout-count 0)))
     ;; THEN either we are in 2 wins mode and we must switch the assoc

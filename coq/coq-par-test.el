@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'coq-par-compile)
+(eval-when-compile (require 'cl-lib))
 
 (defconst coq--par-job-needs-compilation-tests
   ;; for documentation see the doc string following the init value
@@ -753,7 +754,7 @@ relative ages.")
    (lambda (test)
      (let ((test-id (format "%s" (car test))))
        ;; a test is a list of 4 elements and the first element is a list itself
-       (assert
+       (cl-assert
 	(and
 	 (eq (length test) 4)
 	 (listp (car test)))
@@ -761,22 +762,22 @@ relative ages.")
        (mapc
 	(lambda (variant)
 	  ;; a variant is a list of 4 elements
-	  (assert (eq (length variant) 4) nil (concat test-id " 2"))
+	  (cl-assert (eq (length variant) 4) nil (concat test-id " 2"))
 	  (let ((files (coq-par-test-flatten-files (car test)))
 		(quick-mode (car variant))
 		(compilation-result (nth 1 variant))
 		(delete-result (nth 2 variant))
 		(req-obj-result (nth 3 variant)))
 	    ;; the delete field, when set, must be a member of the files list
-	    (assert (or (not delete-result)
+	    (cl-assert (or (not delete-result)
 			(member delete-result files))
 		    nil (concat test-id " 3"))
 	    ;; 8.4 compatibility check
 	    (when (and (or (eq quick-mode 'no-quick) (eq quick-mode 'ensure-vo))
 		       (not (member 'vio files)))
-	      (assert (not delete-result)
+	      (cl-assert (not delete-result)
 		      nil (concat test-id " 4"))
-	      (assert (eq compilation-result
+	      (cl-assert (eq compilation-result
 			  (not (eq (car (last (car test))) 'vo)))
 		      nil (concat test-id " 5")))))
 	  (cdr test))))
@@ -789,7 +790,7 @@ relative ages.")
 	       ((eq sym 'dep) "dep.vo")
 	       ((eq sym 'vo) "a.vo")
 	       ((eq sym 'vio) "a.vio")
-	       (t (assert nil)))))
+	       (t (cl-assert nil)))))
     (concat dir "/" file)))
 
 (defun test-coq-par-one-test (counter dir file-descr variant dep-just-compiled)
@@ -832,7 +833,7 @@ test the result and side effects wth `assert'."
       ;; 	       different-counter (current-time))
       (setq different-not-ok nil)
       (setq different-counter (1- different-counter))
-      (assert (> different-counter 0)
+      (cl-assert (> different-counter 0)
 	      nil "create files with different time stamps failed")
       (dolist (same-descr file-descr)
 	(when (symbolp same-descr)
@@ -845,7 +846,7 @@ test the result and side effects wth `assert'."
 	(setq same-not-ok t)
 	(while same-not-ok
 	  (setq same-counter (1- same-counter))
-	  (assert (> same-counter 0)
+	  (cl-assert (> same-counter 0)
 		  nil "create files with same time stamp filed")
 	  (dolist (file file-list)
 	    (with-temp-file file t))
@@ -875,40 +876,40 @@ test the result and side effects wth `assert'."
       (put job 'youngest-coqc-dependency 'just-compiled))
     (setq result (coq-par-job-needs-compilation job))
     ;; check result
-    (assert (eq result compilation-result)
+    (cl-assert (eq result compilation-result)
 	    nil (concat id " result"))
     ;; check file deletion
-    (assert (or (not delete-result)
+    (cl-assert (or (not delete-result)
 		(not (file-attributes
 		      (test-coq-par-sym-to-file dir delete-result))))
 	    nil (concat id " delete file"))
     ;; check no other file is deleted
     (dolist (f file-descr-flattened)
       (unless (eq f delete-result)
-	(assert (file-attributes (test-coq-par-sym-to-file dir f))
+	(cl-assert (file-attributes (test-coq-par-sym-to-file dir f))
 		nil (format "%s non del file %s: %s"
 			    id f
 			    (test-coq-par-sym-to-file dir f)))))
     ;; check value of 'required-obj-file property
-    (assert (equal (get job 'required-obj-file)
+    (cl-assert (equal (get job 'required-obj-file)
 		   (test-coq-par-sym-to-file dir req-obj-result))
 	    nil (concat id " required-obj-file"))
     ;; check 'obj-mod-time property
     (if obj-mod-result
-	(assert
+	(cl-assert
 	 (equal
 	  (get job 'obj-mod-time)
 	  (nth 5 (file-attributes
 		  (test-coq-par-sym-to-file dir obj-mod-result))))
 	 nil (concat id " obj-mod-time non nil"))
-      (assert (not (get job 'obj-mod-time))
+      (cl-assert (not (get job 'obj-mod-time))
 	      nil (concat id " obj-mod-time nil")))
     ;; check 'use-quick property
-    (assert (eq (not (not (and compilation-result (eq req-obj-result 'vio))))
+    (cl-assert (eq (not (not (and compilation-result (eq req-obj-result 'vio))))
 		(get job 'use-quick))
 	    nil (concat id " use-quick"))
     ;; check vio2vo-needed property
-    (assert (eq
+    (cl-assert (eq
 	     (and (eq quick-mode 'quick-and-vio2vo)
 		  (eq req-obj-result 'vio)
 		  (or (eq delete-result 'vo)
