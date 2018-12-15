@@ -378,9 +378,9 @@ Returns (n . s) where
       (setq start-goal (car l))
       (setq end-goal (cadr l))
       (setq goal-name (cl-caddr l))
-      (setq start-concl (cadddr l))
-      (setq hyps (car (cddddr l)))
-      (setq l (cdr (cddddr l)))
+      (setq start-concl (cl-cadddr l))
+      (setq hyps (car (cl-cddddr l)))
+      (setq l (cdr (cl-cddddr l)))
       (if (and (<= start-goal pos) (<= pos end-goal))
 	  (progn
 	    (setq found t)
@@ -394,8 +394,8 @@ Returns (n . s) where
 	      (setq start-hyp (car hyps))
 	      (setq start-hyp-text (cadr hyps))
 	      (setq end-hyp (cl-caddr hyps))
-	      (setq hyp-name (cadddr hyps))
-	      (setq hyps (cddddr hyps))
+	      (setq hyp-name (cl-cadddr hyps))
+	      (setq hyps (cl-cddddr hyps))
 	      (if (and (<= start-hyp pos) (<= pos end-hyp))
 		  (progn
 		    (setq found t)
