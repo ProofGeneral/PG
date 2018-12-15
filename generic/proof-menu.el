@@ -793,7 +793,7 @@ suitable for adding to the proof assistant menu."
   (let*
       ((favs       (proof-ass favourites))
        (rmfavs	   (cl-remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs)))
     (unless (equal favs rmfavs)
       (easy-menu-remove-item proof-assistant-menu
@@ -835,7 +835,7 @@ KEY is the optional key binding."
       ((menu-entry (proof-def-favourite command inscript menuname key t))
        (favs       (proof-ass favourites))
        (rmfavs	   (cl-remove-if
-		    (lambda (f) (string-equal menuname (caddr f)))
+		    (lambda (f) (string-equal menuname (cl-caddr f)))
 		    favs))
        (newfavs    (append
 		    rmfavs

@@ -1347,7 +1347,7 @@ redisplayed."
       (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
       (setq coq-shell-current-line-width wdth)
       ;; Show iff show non nil and some proof is under way
-      (when (and show (not (null (caddr (coq-last-prompt-info-safe)))))
+      (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
         (proof-shell-invisible-command (format "Show.") t nil 'no-error-display)))))
 
 (defun coq-adapt-printing-width-and-show(&optional show width)
@@ -1453,7 +1453,7 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
          (positions (cdr hyp-positions))
          (begcross (car positions))
          (beghypname (cadr positions))
-         (endhypname (caddr positions))
+         (endhypname (cl-caddr positions))
          (beg (cadddr positions))
          (end (cadddr (cdr positions))))
     (let ((hypnameov (coq-make-hypname-overlay beghypname endhypname fstname buf))
