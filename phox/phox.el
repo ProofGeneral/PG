@@ -27,15 +27,15 @@
  proof-script-comment-start	"(*"
  proof-script-comment-end	"*)"
  proof-script-syntax-table-entries
-   '(?( "()1"
-     ?) ")(4"
+   '(?\( "()1"
+     ?\) ")(4"
      ?* ". 23"
      ?$ "w"
      ?_ "w"
      ?. "w")
  proof-shell-syntax-table-entries
-   '(?( "()1"
-     ?) ")(4"
+   '(?\( "()1"
+     ?\) ")(4"
      ?* ". 23"
      ?$ "w"
      ?_ "w"

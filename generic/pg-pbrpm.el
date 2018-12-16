@@ -34,6 +34,7 @@
 
 ;;; Code:
 (require 'span)
+(eval-when-compile (require 'cl-lib))
 (eval-when-compile
   (require 'proof-utils))
 
@@ -421,14 +422,14 @@ If no match found, return the empty string."
   (save-excursion
     (let ((pos (point)))
       (beginning-of-line)
-      (block 'loop
+      (cl-block 'loop
 	(while (< (point) pos)
 	  (unless (search-forward-regexp pg-pbrpm-auto-select-regexp nil t)
 	    (return-from 'loop ""))
 	  (if (and (<= (match-beginning 0) pos)
 		   (<= pos (match-end 0)))
-	      (return-from 'loop (match-string 0))))
-	(return-from 'loop "")))))
+	      (cl-return-from 'loop (match-string 0))))
+	(cl-return-from 'loop "")))))
 
 (defun pg-pbrpm-translate-position (buffer pos)
   "If BUFFER is goals-buffer, return POS, otherwise the point in the goal buffer."

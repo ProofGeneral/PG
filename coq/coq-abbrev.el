@@ -1,9 +1,9 @@
-;;; coq-abbrev.el --- coq abbrev table and menus for ProofGeneral mode
+;;; coq-abbrev.el --- coq abbrev table and menus for ProofGeneral mode  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -68,46 +68,10 @@
 
 ;;; The abbrev table built from keywords tables
 ;#s and @{..} are replaced by holes by holes-abbrev-complete
-(defun coq-install-abbrevs ()
-  "Install default abbrev table for coq if no other already is."
-  (if (boundp 'coq-mode-abbrev-table)
-      ;; da: this test will always fail.  Assume bound-->non-empty
-      ;; (not (equal coq-mode-abbrev-table (make-abbrev-table))))
-      (message "Coq abbrevs already exists, default not loaded")
-    (define-abbrev-table 'coq-mode-abbrev-table
-      (append coq-tactics-abbrev-table coq-tacticals-abbrev-table
-              coq-commands-abbrev-table coq-terms-abbrev-table))
-    ;; if we use default coq abbrev, never ask to save it
-    ;; PC: fix trac #382 I comment this. But how to disable abbrev
-    ;; saving for coq mode only?
-    ;;(setq save-abbrevs nil) ; 
-    ;; DA: how about above, just temporarily disable saving?
-    (message "Coq default abbrevs loaded")))
-
-(unless (or noninteractive (bound-and-true-p byte-compile-current-file))
-  (coq-install-abbrevs))
-;;;;;
-
-; Redefining this macro to change the way a string option is asked to
-; the user: we pre fill the answer with current value of the option;
-(defun proof-defstringset-fn (var &optional othername)
-  "Define a function <VAR>-toggle for setting an integer customize setting VAR.
-Args as for the macro `proof-defstringset', except will be evaluated."
-  (eval
-   `(defun ,(if othername othername
-	      (intern (concat (symbol-name var) "-stringset"))) (arg)
-	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
-It was constructed with `proof-defstringset-fn'.")
-;	      (interactive ,(format "sValue for %s (a string, currenly %s): "
-;				    (symbol-name var) (symbol-value var)))
-	      (interactive (list
-			    (read-string
-			     (format "Value for %s (float): "
-				     (symbol-name (quote ,var))
-				     (symbol-value (quote ,var)))
-			     (symbol-value (quote ,var)))))
-	      (customize-set-variable (quote ,var) arg))))
+(define-abbrev-table 'coq-mode-abbrev-table
+  (append coq-tactics-abbrev-table coq-tacticals-abbrev-table
+          coq-commands-abbrev-table coq-terms-abbrev-table)
+  "Abbrev table for Coq.")
 
 ;; The coq menu partly built from tables
 

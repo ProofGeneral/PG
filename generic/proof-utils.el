@@ -589,25 +589,23 @@ The name of the defined function is returned."
   `(proof-deffloatset-fn (quote ,var) (quote ,othername)))
 
 (defun proof-defstringset-fn (var &optional othername)
-  "Define a function <VAR>-toggle for setting an integer customize setting VAR.
-Args as for the macro `proof-defstringset', except will be evaluated."
+  "Define a function OTHERNAME for setting an string customize setting VAR.
+OTHERNAME defaults to `VAR-stringset'."
   (eval
-   `(defun ,(if othername othername
-	      (intern (concat (symbol-name var) "-stringset"))) (arg)
-	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
+   `(defun ,(or othername
+	        (intern (concat (symbol-name var) "-stringset")))
+        (arg)
+      ,(concat "Set `" (symbol-name var) "' to ARG.
+This function simply uses `customize-set-variable' to set the variable.
 It was constructed with `proof-defstringset-fn'.")
-	      (interactive ,(format "sValue for %s (a string): "
-				    (symbol-name var)))
-	      (customize-set-variable (quote ,var) arg))))
-
-(defmacro proof-defstringset (var &optional othername)
-  "The setting function uses customize-set-variable to change the variable.
-OTHERNAME gives an alternative name than the default <VAR>-stringset.
-The name of the defined function is returned."
-  `(proof-defstringset-fn (quote ,var) (quote ,othername)))
-
-
+      (interactive (list
+		    (read-string
+		     (format "Value for %s (default %s): "
+			     (symbol-name (quote ,var))
+			     (symbol-value (quote ,var)))
+                     nil nil
+		     (symbol-value (quote ,var)))))
+      (customize-set-variable (quote ,var) arg))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
