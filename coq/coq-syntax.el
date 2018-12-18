@@ -1454,34 +1454,6 @@ part of another hypothesis.")
 
 
 
-(defun coq-init-syntax-table ()
-  "Set appropriate values for syntax table in current buffer."
-
-  (modify-syntax-entry ?\$ ".")
-  (modify-syntax-entry ?\/ ".")
-  (modify-syntax-entry ?\\ ".")
-  (modify-syntax-entry ?+  ".")
-  (modify-syntax-entry ?-  ".")
-  (modify-syntax-entry ?=  ".")
-  (modify-syntax-entry ?%  ".")
-  (modify-syntax-entry ?<  ".")
-  (modify-syntax-entry ?>  ".")
-  (modify-syntax-entry ?\& ".")
-  (modify-syntax-entry ?_  "_") ; beware: word consituent EXCEPT in head position
-  (modify-syntax-entry ?\' "_") ; always word constituent
-  (modify-syntax-entry ?∀ ".")
-  (modify-syntax-entry ?∃ ".")
-  (modify-syntax-entry ?λ ".") ;; maybe a bad idea... lambda is a letter
-  (modify-syntax-entry ?\| ".")
-
-  ;; should maybe be "_" but it makes coq-find-and-forget (in coq.el) bug
-  ;; Hence the coq-with-altered-syntax-table below to put "." into "_" class temporarily
-  (modify-syntax-entry ?\. ".")
-
-  (modify-syntax-entry ?\* ". 23n")
-  (modify-syntax-entry ?\( "()1")
-  (modify-syntax-entry ?\) ")(4"))
-
 ;; use this to evaluate code with "." being consisdered a symbol
 ;; constituent (better behavior for thing-at and maybe font-lock too,
 ;; for indentation we use ad hoc smie lexers).

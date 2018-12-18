@@ -1,4 +1,4 @@
-;;; proof-site.el --- Loading stubs for Proof General.
+;;; proof-site.el --- Loading stubs for Proof General  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -361,10 +361,10 @@ the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'
 	       (load-library ,elisp-file)
 	       (,proofgen-mode))))))
 
-	(setq auto-mode-alist
-	      (cons (cons regexp proofgen-mode) auto-mode-alist))
+	(add-to-list 'auto-mode-alist (cons regexp proofgen-mode))
 
-	(fset proofgen-mode mode-stub)
+        (unless (fboundp proofgen-mode)
+	  (fset proofgen-mode mode-stub))
 
 	(dolist (ext (nth 4 tableentry))
 	  (add-to-list 'completion-ignored-extensions ext))

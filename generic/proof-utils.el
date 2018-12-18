@@ -75,6 +75,7 @@
 (defmacro proof-with-script-buffer (&rest body)
   "Execute BODY in some script buffer: current buf, else ‘proof-script-buffer’.
 Return nil if not a script buffer or if no active scripting buffer."
+  (declare (debug t))
   `(cond
     ((eq proof-buffer-type 'script)
      (progn

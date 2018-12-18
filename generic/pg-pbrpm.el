@@ -121,7 +121,7 @@ Matches the region to be returned.")
 ;	    (funcall 'proof-mode-for-shell) (funcall 'proof-mode))
 ; da: it's the name of a function, not fn itself. See pg-vars
 	(funcall proof-mode-for-script)
-	(add-hook 'after-change-functions 'pg-pbrpm-menu-change-hook nil t)
+	(add-hook 'after-change-functions #'pg-pbrpm-menu-change-hook nil t)
     (pg-pbrpm-erase-buffer-menu)))
   (set-buffer pg-pbrpm-buffer-menu))
 
@@ -425,7 +425,7 @@ If no match found, return the empty string."
       (cl-block 'loop
 	(while (< (point) pos)
 	  (unless (search-forward-regexp pg-pbrpm-auto-select-regexp nil t)
-	    (return-from 'loop ""))
+	    (cl-return-from 'loop ""))
 	  (if (and (<= (match-beginning 0) pos)
 		   (<= pos (match-end 0)))
 	      (cl-return-from 'loop (match-string 0))))

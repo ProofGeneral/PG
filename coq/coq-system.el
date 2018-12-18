@@ -24,6 +24,7 @@
 ;;; Code:
 
 (require 'proof)
+(require 'coq-mode)                     ;for coq-prog-name
 
 (defvar coq-prog-args)
 (defvar coq-debug)
@@ -43,19 +44,6 @@ On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
-(defcustom coq-prog-name
-  (if (executable-find "coqtop") "coqtop"
-    (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")))
-  "*Name of program to run as Coq.  See `proof-prog-name', set from this.
-On Windows with latest Coq package you might need something like:
-   C:/Program Files/Coq/bin/coqtop.opt.exe
-instead of just \"coqtop\".
-This must be a single program name with no arguments.  See option
-`coq-prog-args' to manually adjust the arguments to the Coq process.
-See also `coq-prog-env' to adjust the environment."
-  :type 'string
-  :group 'coq)
-
 (defcustom coq-dependency-analyzer
   (if (executable-find "coqdep") "coqdep"
     (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin")))
@@ -67,22 +55,6 @@ See also `coq-prog-env' to adjust the environment."
   (if (executable-find "coqc") "coqc"
     (proof-locate-executable "coqc" t '("C:/Program Files/Coq/bin")))
   "Command to invoke the coq compiler."
-  :type 'string
-  :group 'coq)
-
-(defun get-coq-library-directory ()
-  (let ((default-directory
-	  (if (file-accessible-directory-p default-directory)
-	      default-directory
-	    "/")))
-    (or (ignore-errors (car (process-lines coq-prog-name "-where")))
-	"/usr/local/lib/coq")))
-
-(defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
-  "The coq library directory, as reported by \"coqtop -where\".")
-
-(defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
-  "The default TAGS table for the Coq library."
   :type 'string
   :group 'coq)
 

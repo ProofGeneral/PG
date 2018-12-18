@@ -2255,17 +2255,13 @@ query saves here."
 ;; Proof General scripting mode definition, part 1.
 ;;
 
-(defvar proof--splash-done nil)
-
 ;;;###autoload
 (define-derived-mode proof-mode fundamental-mode
   proof-general-name
   "Proof General major mode class for proof scripts.
 \\{proof-mode-map}"
 
-  (unless (or proof--splash-done noninteractive)
-    (setq proof--splash-done t)
-    (proof-splash-message))
+  (proof-splash-message)
 
   (setq proof-buffer-type 'script)
 
@@ -2374,10 +2370,11 @@ mode features, but are only ever processed atomically by the proof
 assistant."
   (setq proof-script-buffer-file-name buffer-file-name)
 
-  (setq font-lock-defaults
-	(list '(proof-script-font-lock-keywords)
-	      ;; see defadvice in proof-syntax
-	      (fboundp (proof-ass-sym font-lock-fontify-syntactically-region))))
+  (when proof-script-font-lock-keywords
+    (setq font-lock-defaults
+	  (list '(proof-script-font-lock-keywords)
+	        ;; see defadvice in proof-syntax
+	        (fboundp (proof-ass-sym font-lock-fontify-syntactically-region)))))
 
   ;; Has buffer already been processed?
   ;; NB: call to file-truename is needed for GNU Emacs which

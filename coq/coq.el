@@ -19,6 +19,16 @@
 
 ;;; Code:
 
+;; PG doesn't support using several backends at the same time.
+;; FIXME: We really should set proof-assistant just because this file is
+;; loaded (e.g. we should set it within coq-pg-setup instead), but
+;; defpacustom and various others fail if executed before proof-assistant
+;; is set.
+(if (and (boundp 'proof-assistant)
+         (member proof-assistant '(nil "" "Coq" "coq")))
+    (proof-ready-for-assistant 'coq)
+  (message "Coq-PG error: Proof General already in use for %s" proof-assistant))
+
 (require 'cl-lib)
 
 (require 'span)
@@ -43,15 +53,11 @@
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
-(require 'coq-local-vars)               ; setting coq args via file variables 
+(require 'coq-local-vars)               ; setting coq args via file variables
                                         ;   (prefer _CoqProject file instead)
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-
-;; prettify is in emacs > 24.4
-;; FIXME: this should probably be done like for smie above.
-(defvar coq-may-use-prettify (fboundp 'prettify-symbols-mode))
 (defvar prettify-symbols-alist)
 
 
@@ -81,7 +87,7 @@ These are appended at the end of `coq-shell-init-cmd'."
   :group 'coq)
 
 ;; Default coq is only Private_ and _subproof
-(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\" 
+(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
  "\"Private_\" \"_subproof\""
   "String for blacklisting strings from requests to Coq environment."
   :type 'string
@@ -161,7 +167,7 @@ See also option `coq-hide-additional-subgoals'."
 
 ;; Ignore all commands that start a proof. Otherwise "Proof" will appear
 ;; as superfluous node in the proof tree. Note that we cannot ignore Proof,
-;; because, Fixpoint does not display the proof goal, see Coq bug #2776. 
+;; because, Fixpoint does not display the proof goal, see Coq bug #2776.
 (defcustom coq-proof-tree-ignored-commands-regexp
   (concat "^\\(\\(Show\\)\\|\\(Locate\\)\\|"
           "\\(Theorem\\)\\|\\(Lemma\\)\\|\\(Remark\\)\\|\\(Fact\\)\\|"
@@ -264,18 +270,6 @@ See also option `coq-hide-additional-subgoals'."
 ;; Outline mode
 ;;
 
-;; FIXME, deal with interacive "Definition"
-(defvar coq-outline-regexp
-;;  (concat "(\\*\\|"
-  (concat "[ ]*" (regexp-opt
-                  '(
-                    "Ltac" "Corr" "Modu" "Sect" "Chap" "Goal"
-                    "Definition" "Lemm" "Theo" "Fact" "Rema"
-                    "Mutu" "Fixp" "Func") t)))
-;;)
-
-(defvar coq-outline-heading-end-regexp "\\.[ \t\n]")
-
 (defvar coq-shell-outline-regexp coq-goal-regexp)
 (defvar coq-shell-outline-heading-end-regexp coq-goal-regexp)
 
@@ -298,6 +292,10 @@ See also option `coq-hide-additional-subgoals'."
 ;; Derived modes
 ;;
 
+(defvar coq-shell-mode-syntax-table coq-mode-syntax-table)
+(defvar coq-response-mode-syntax-table coq-mode-syntax-table)
+(defvar coq-goals-mode-syntax-table coq-mode-syntax-table)
+
 (define-derived-mode coq-shell-mode proof-shell-mode
   "Coq Shell" nil
   (coq-shell-mode-config))
@@ -305,20 +303,9 @@ See also option `coq-hide-additional-subgoals'."
 (define-derived-mode coq-response-mode proof-response-mode
   "Coq Response" nil
   (coq-response-config))
-
-(define-derived-mode coq-mode proof-mode "Coq"
-  "Major mode for Coq scripts.
-
-\\{coq-mode-map}"
-  (coq-mode-config))
-
 (define-derived-mode coq-goals-mode proof-goals-mode
   "Coq Goals" nil
   (coq-goals-mode-config))
-
-;; Indentation and navigation support via SMIE.
-
-(require 'coq-smie)
 
 ;;
 ;; Auxiliary code for Coq modes
@@ -385,7 +372,7 @@ annotation-start) if found."
 ;; This is a modified version of the same function in generic/proof-shell.el.
 ;; Using function coq-search-urgent-message instead of regex
 ;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages. 
+;; such. i.e. "Time" messages.
 (defun proof-shell-process-urgent-messages ()
   "Scan the shell buffer for urgent messages.
 Scanning starts from `proof-shell-urgent-message-scanner' or
@@ -424,7 +411,7 @@ This is a subroutine of `proof-shell-filter'."
     ;; Set position of last urgent message found
     (if lastend
 	(set-marker proof-shell-urgent-message-marker lastend))
-	
+
     (goto-char pt)))
 
 ;; Due to the architecture of proofgeneral, informative message put *before*
@@ -456,13 +443,13 @@ This is a subroutine of `proof-shell-filter'."
     (pg-response-display-with-face strnotrailingspace))) ; face
 
 
-;;;;;;;;;;; Trying to accept { and } as terminator for empty commands. Actually
-;;;;;;;;;;; I am experimenting two new commands "{" and "}" (without no
-;;;;;;;;;;; trailing ".") which behave like BeginSubProof and EndSubproof. The
-;;;;;;;;;;; absence of a trailing "." makes it difficult to distinguish between
-;;;;;;;;;;; "{" of normal coq code (implicits, records) and this the new
-;;;;;;;;;;; commands. We therefore define a coq-script-parse-function to this
-;;;;;;;;;;; purpose.
+;; Trying to accept { and } as terminator for empty commands. Actually
+;; I am experimenting two new commands "{" and "}" (without no
+;; trailing ".") which behave like BeginSubProof and EndSubproof. The
+;; absence of a trailing "." makes it difficult to distinguish between
+;; "{" of normal coq code (implicits, records) and this the new
+;; commands. We therefore define a coq-script-parse-function to this
+;; purpose.
 
 ;; coq-end-command-regexp is ni coq-indent.el
 (defconst coq-script-command-end-regexp coq-end-command-regexp)
@@ -981,7 +968,7 @@ UNSETCMD.  See `coq-command-with-set-unset'."
 
 
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    
+
 
   ;;   (proof-shell-ready-prover)
   ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
@@ -1218,7 +1205,7 @@ be called and no command will be sent to Coq."
      ;; If closing a nested proof, Show the enclosing goal.
      (and (string-match coq-save-command-regexp-strict cmd)
           (> (length coq-last-but-one-proofstack) 1))
-     ;; If user issued a printing option then t printing. 
+     ;; If user issued a printing option then t printing.
      (and (string-match "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
     (list "Show."))
@@ -1285,7 +1272,7 @@ necessary.")
   (coq-buffer-window-width proof-goals-buffer))
 (defun coq-response-window-width ()
   (coq-buffer-window-width proof-response-buffer))
- 
+
 (defun coq-guess-goal-buffer-at-next-command ()
   "Return the probable width of goals buffer if it pops up now.
 This is a guess based on the current width of goals buffer if
@@ -1400,7 +1387,7 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 ;; coq-hyp...faces
 (defun coq-make-hypcross-overlay (beg end h buf)
   (let ((ov (make-overlay beg end buf)))
-    (when ov 
+    (when ov
       (overlay-put ov 'evaporate t)
       (overlay-put ov 'is-hypcross t)
       (overlay-put ov 'hyp-name h)
@@ -1441,7 +1428,7 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
       (mapc
        (lambda (s)
          (setq res
-               (cons 
+               (cons
                 (cons (substring-no-properties s)
                       (cons hypov (cons hypnameov (cons crosshypov nil)) ))
                 res)))
@@ -1601,7 +1588,7 @@ See  `coq-highlight-hyp'."
           (or (car (coq-overlays-at pt 'hyp-name))
               ;; we may be between hypname and hyp, so skip backward to
               ;; something meaningful
-              (save-excursion                
+              (save-excursion
                 (goto-char pt)
                 (search-backward-regexp "[^ :=]\\|\n")
                 (car (coq-overlays-at (point) 'hyp-name)))))
@@ -1663,7 +1650,7 @@ Used on hyptohesis overlays in goals buffer mainly."
            (prefx (make-string (min 8 lgthhyp) ?.))
            (hypcross-ov (overlay-get hyp-overlay 'hypcross-ov)))
       (overlay-put
-       hyp-overlay 'display 
+       hyp-overlay 'display
        prefx ;(propertize prefx 'keymap coq-hidden-hyp-map)
        )
       (overlay-put hyp-overlay 'evaporate t)
@@ -1814,70 +1801,6 @@ See  `coq-fold-hyp'."
 ;; *default* value to nil.
 (custom-set-default 'proof-output-tooltips nil)
 
-(defconst coq-prettify-symbols-alist
-  '(("not"	. ?¬)
-    ;; ("/\\"	. ?∧)
-    ("/\\"	. ?⋀)
-    ;; ("\\/"	. ?∨)
-    ("\\/"	. ?⋁)
-    ;;("forall"	. ?∀)
-    ("forall"	. ?Π)
-    ("fun"	. ?λ)
-    ("->"	. ?→)
-    ("<-"	. ?←)
-    ("=>"	. ?⇒)
-    ;; ("~>"	. ?↝) ;; less desirable
-    ;; ("-<"	. ?↢) ;; Paterson's arrow syntax
-    ;; ("-<"	. ?⤙) ;; nicer but uncommon
-    ("::"	. ?∷)
-    ))
-
-
-(defun coq-get-comment-region (pt)
-  "Return a list of the form (BEG END).
-BEG,END being the comment region arount position PT.
-Return nil if PT is not inside a comment."
-  (save-excursion
-    (goto-char pt)
-    `(,(save-excursion (coq-find-comment-start))
-      ,(save-excursion (coq-find-comment-end)))))
-
-(defun coq-near-comment-region ()
-  "Return a list of the forme (BEG END).
-BEG,END being is the comment region near position PT.
-Return nil if PT is not near a comment.
-Near here means PT is either inside or just aside of a comment."
-  (save-excursion
-    (cond
-     ((coq-looking-at-comment)
-      (coq-get-comment-region (point)))
-     ((and (looking-back proof-script-comment-end nil)
-           (save-excursion (forward-char -1) (coq-looking-at-comment)))
-      (coq-get-comment-region (- (point) 1)))
-     ((and (looking-at proof-script-comment-start)
-           (save-excursion (forward-char) (coq-looking-at-comment)))
-      (coq-get-comment-region (+ (point) 1))))))
-
-(defun coq-fill-paragraph-function (n)
-  "Coq mode specific fill-paragraph function. Fills only comment at point."
-  (let ((reg (coq-near-comment-region)))
-    (when reg
-      (fill-region (car reg) (cadr reg))))
-  t);; true to not fallback to standard fill function
-
-;; TODO (but only for paragraphs in comments)
-;; Should recognize coqdoc bullets, stars etc... Unplugged for now.
-(defun coq-adaptive-fill-function ()
-  (let ((reg (coq-near-comment-region)))
-    (save-excursion
-      (goto-char (car reg))
-      (re-search-forward "\\((\\*+ ?\\)\\( *\\)")
-      (let* ((cm-start (match-string 1))
-             (cm-prefix (match-string 2)))
-        (concat (make-string (length cm-start) ? ) cm-prefix)))))
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;attempt to deal with debug mode ;;;;;;;;;;;;;;;;
 
 ;; tries to extract the last debug goal and display it in goals buffer
@@ -1908,25 +1831,26 @@ Near here means PT is either inside or just aside of a comment."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar coq-pg-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map proof-mode-map)
 
-(defun coq-mode-config ()
-  ;; SMIE needs this.
-  (set (make-local-variable 'parse-sexp-ignore-comments) t)
-  ;; Coq error messages are thrown off by TAB chars.
-  (set (make-local-variable 'indent-tabs-mode) nil)
-  ;; Coq defninition never start by a parenthesis
-  (set (make-local-variable 'open-paren-in-column-0-is-defun-start) nil)
-  ;; do not break lines in code when filling
-  (set (make-local-variable 'fill-nobreak-predicate)
-       (lambda () (not (nth 4 (syntax-ppss)))))
-  ;; coq mode specific indentation function
-  (set (make-local-variable 'fill-paragraph-function) 'coq-fill-paragraph-function)
+    ;;(define-key coq-mode-map coq-double-hit-hot-key 'coq-terminator-insert)
 
-  ;; TODO (but only for paragraphs in comments)
-  ;; (set (make-local-variable 'paragraph-start)  "[ 	]*\\((\\**\\|$\\)")
-  ;; (set (make-local-variable 'paragraph-separate) "\\**) *$\\|$")
-  ;; (set (make-local-variable 'adaptive-fill-function) 'coq-adaptive-fill-function)
+    ;; Setting the new mapping for terminator, overrides the following in
+    ;; proof-script:
+    ;; (define-key proof-mode-map (vector (aref proof-terminal-string 0))
+    ;;             #'proof-electric-terminator)
+    ;;(define-key proof-mode-map (kbd coq-double-hit-hot-key)
+    ;;            #'coq-terminator-insert)
+    (define-key map (kbd ".") #'coq-terminator-insert)
+    ;;(define-key map (kbd ";") #'coq-terminator-insert) ; for french keyboards
+    map))
 
+;;;###autoload
+(defun coq-pg-setup ()
+  (set-keymap-parent (current-local-map) coq-pg-mode-map)
+  
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
   (setq proof-terminal-string ".")
@@ -1935,8 +1859,6 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-script-comment-start "(*")
   (setq proof-script-comment-end "*)")
   (setq proof-script-insert-newlines nil)
-  (set (make-local-variable 'comment-start-skip)  "(\\*+ *")
-  (set (make-local-variable 'comment-end-skip) " *\\*+)")
   (setq proof-unnamed-theorem-name "Unnamed_thm") ; Coq's default name
 
   (setq proof-assistant-home-page coq-www-home-page)
@@ -1948,7 +1870,7 @@ Near here means PT is either inside or just aside of a comment."
   ;; We manage file saveing via coq-compile-auto-save and for coq
   ;; it is not necessary to save files when starting a new buffer.
   (setq proof-query-file-save-when-activating-scripting nil)
-  
+
   ;; Commands sent to proof engine
   (setq proof-showproof-command "Show. "
         proof-context-command "Print All. "
@@ -1983,39 +1905,11 @@ Near here means PT is either inside or just aside of a comment."
 	proof-nested-undo-regexp coq-state-changing-commands-regexp
         proof-script-imenu-generic-expression coq-generic-expression)
 
-  (smie-setup coq-smie-grammar #'coq-smie-rules
-              :forward-token #'coq-smie-forward-token
-              :backward-token #'coq-smie-backward-token)
-
-  ;; old indentation code.
-  ;; (require 'coq-indent)
-  ;; (setq
-  ;;  ;; indentation is implemented in coq-indent.el
-  ;;  indent-line-function 'coq-indent-line
-  ;;  proof-indent-any-regexp      coq-indent-any-regexp
-  ;;  proof-indent-open-regexp     coq-indent-open-regexp
-  ;;  proof-indent-close-regexp    coq-indent-close-regexp)
-  ;; (make-local-variable 'indent-region-function)
-  ;; (setq indent-region-function 'coq-indent-region)
-  
-  
-
   ;; span menu
-  (setq proof-script-span-context-menu-extensions 'coq-create-span-menu)
+  (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
   (setq proof-shell-start-silent-cmd "Set Silent. "
         proof-shell-stop-silent-cmd "Unset Silent. ")
-
-  (coq-init-syntax-table)
-  ;; we can cope with nested comments
-  (set (make-local-variable 'comment-quote-nested) nil)
-
-  ;; font-lock
-  (setq proof-script-font-lock-keywords coq-font-lock-keywords-1)
-
-  ;; FIXME: have abbreviation without holes
-  ;(if coq-use-editing-holes (holes-mode 1))
-  (holes-mode 1)
 
   ;; prooftree config
   (setq
@@ -2024,27 +1918,10 @@ Near here means PT is either inside or just aside of a comment."
    proof-tree-find-begin-of-unfinished-proof
      'coq-find-begin-of-unfinished-proof)
 
-  (proof-config-done)
-
-  ;; outline
-  (set (make-local-variable 'outline-regexp) coq-outline-regexp)
-  (set (make-local-variable 'outline-heading-end-regexp)
-       coq-outline-heading-end-regexp)
-
-  ;; tags
-  (if (file-exists-p coq-tags)
-      (set (make-local-variable 'tags-table-list)
-           (cons coq-tags tags-table-list)))
-  
-  (set (make-local-variable 'blink-matching-paren-dont-ignore-comments) t)
-
-  (when coq-may-use-prettify
-    (set (make-local-variable 'prettify-symbols-alist)
-         coq-prettify-symbols-alist))
-
   (setq proof-cannot-reopen-processed-files nil)
 
-  (add-hook 'proof-activate-scripting-hook #'proof-cd-sync nil t))
+  (proof-config-done)
+  )
 
 (defun coq-shell-mode-config ()
   (setq
@@ -2095,7 +1972,6 @@ Near here means PT is either inside or just aside of a comment."
    proof-shell-restart-cmd coq-shell-restart-cmd
    pg-subterm-anns-use-stack t)
 
-  (coq-init-syntax-table)
   ;; (holes-mode 1)  da: does the shell really need holes mode on?
   (setq proof-shell-font-lock-keywords 'coq-font-lock-keywords-1)
 
@@ -2120,7 +1996,7 @@ Near here means PT is either inside or just aside of a comment."
    proof-tree-show-sequent-command 'coq-show-sequent-command
    proof-tree-find-undo-position 'coq-proof-tree-find-undo-position
    )
-        
+
   (proof-shell-config-done))
 
 
@@ -2140,12 +2016,10 @@ Near here means PT is either inside or just aside of a comment."
 (defun coq-goals-mode-config ()
   (setq pg-goals-change-goal "Show %s . ")
   (setq pg-goals-error-regexp coq-error-regexp)
-  (coq-init-syntax-table)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
   (proof-goals-config-done))
 
 (defun coq-response-config ()
-  (coq-init-syntax-table)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2192,7 +2066,7 @@ Near here means PT is either inside or just aside of a comment."
   :type 'integer
   :setting "Set Printing Depth %i . ")
 
-;;; Obsolete:
+;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit
 ;;  "Depth of undo history.  Undo behaviour will break beyond this size."
 ;;  :type 'integer
@@ -2309,7 +2183,7 @@ The not yet delayed output is in the region
                              no-response-display
                              proof-tree-show-subgoal))
                           proof-action-list))))))))))
-  
+
 (add-hook 'proof-tree-urgent-action-hook #'coq-proof-tree-get-new-subgoals)
 
 
@@ -2330,7 +2204,7 @@ The not yet delayed output is in the region
              (span-property span 'goalcmd))
         (span-start span)
       nil)))
-    
+
 (defun coq-proof-tree-find-undo-position (state)
   "Return the position for undo state STATE.
 This is the Coq incarnation of `proof-tree-find-undo-position'."
@@ -2621,7 +2495,7 @@ Based on idea mentioned in Coq reference manual."
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
 ;; destruct foo., where foo is a name.
-(defvar coq-auto-as-hack-hyp-name-regex 
+(defvar coq-auto-as-hack-hyp-name-regex
   (concat "\\(" "induction\\|destruct" "\\)\\s-+\\(" coq-id-shy "\\)\\s-*\\.")
   "Regexp of commands needing a hack to generate correct \"as\" close.
 tacitcs like destruct and induction reuse hypothesis names by
@@ -2635,7 +2509,7 @@ Warning: this makes the error messages (and location) wrong.")
 (defun coq-hack-cmd-for-infoH (s)
   "return the tactic S hacked with infoH tactical."
   (cond
-   ((string-match ";" s) s) ;; composed tactic cannot be treated 
+   ((string-match ";" s) s) ;; composed tactic cannot be treated
    ((string-match coq-auto-as-hack-hyp-name-regex s)
     (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
    ((string-match coq-keywords-accepting-as-regex s)
@@ -2792,7 +2666,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?q)] 'coq-query)
 (define-key coq-keymap [(control ?r)] 'coq-insert-requires)
 ; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
-; anyway company-coq should provide an "as!<TAB>". 
+; anyway company-coq should provide an "as!<TAB>".
 (define-key coq-keymap [(?\[)] 'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
@@ -2882,13 +2756,13 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 ;; Default binding: clicking on the cross to folds/unfold hyp.
 ;; Click on it with button 2 copies the names at current point.
-(when coq-hypname-map 
+(when coq-hypname-map
   (define-key coq-hypcross-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
   (define-key coq-hypcross-map [return] 'coq-toggle-fold-hyp-at-point)
   (define-key coq-hypcross-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 ;; Ddefault binding: clicking on a hidden hyp with button 3 unfolds it, with
 ;; button 2 it copies hyp name at current point.
-(when coq-hidden-hyp-map 
+(when coq-hidden-hyp-map
   (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
   (define-key coq-hidden-hyp-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
@@ -2979,7 +2853,7 @@ buffer."
               (lgth (cadr mtch)))
           (goto-char (+ (proof-unprocessed-begin) 1))
           (coq-find-real-start)
-          
+
           ;; utf8 adaptation is made in coq-get-last-error-location above
           (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
             (goto-char (+ (point) pos))
@@ -3126,7 +3000,7 @@ Only when three-buffer-mode is enabled."
   ;; https://github.com/cpitclaudel/company-coq/issues/8.
   (unless (memq 'no-response-display proof-shell-delayed-output-flags)
     ;; If there is no frame with goql+response then do nothing
-    (when proof-three-window-enable 
+    (when proof-three-window-enable
       (let ((threeb-frames (coq-find-threeb-frames)))
         (when threeb-frames
           (let ((pg-frame (car threeb-frames))) ; selecting one adequate frame
@@ -3149,7 +3023,7 @@ Only when three-buffer-mode is enabled."
                         (goto-char (point-min))
                         (recenter)))))))))))))
 
-;; TODO: remove/add hook instead? 
+;; TODO: remove/add hook instead?
 (defun coq-optimise-resp-windows-if-option ()
   (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
 
@@ -3200,7 +3074,7 @@ It will be restored if double hit terminator is toggle off.")
 
 ;; We redefine the keybinding when we go in and out of double hit mode, even if
 ;; in principle coq-terminator-insert is compatible with
-;; proof-electric-terminator. This may be overprudent but I suspect that  
+;; proof-electric-terminator. This may be overprudent but I suspect that
 (defun coq-double-hit-enable ()
   "Disables electric terminator since double hit is a replacement.
 This function is called by `proof-set-value' on `coq-double-hit-enable'."
@@ -3215,8 +3089,6 @@ This function is called by `proof-set-value' on `coq-double-hit-enable'."
   )
 
 
-
-;;(define-key coq-mode-map coq-double-hit-hot-key 'coq-terminator-insert)
 
 (proof-deftoggle coq-double-hit-enable coq-double-hit-toggle)
 
@@ -3279,18 +3151,11 @@ priority to the former."
 
 (put 'coq-terminator-insert 'delete-selection t)
 
-;; Setting the new mapping for terminator, overrides the following in proof-script:
-;; (define-key proof-mode-map (vector (aref proof-terminal-string 0)) 'proof-electric-terminator)
-
-;(define-key proof-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert)
-(define-key coq-mode-map (kbd ".") 'coq-terminator-insert)
-;(define-key coq-mode-map (kbd ";") 'coq-terminator-insert) ; for french keyboards
-
 ;;;;;;;;;;;;;;
 
 ;; This was done in coq-compile-common, but it is actually a good idea even
 ;; when "compile when require" is off. When switching scripting buffer, let us
-;; restart the coq shell process, so that it applies local coqtop options. 
+;; restart the coq shell process, so that it applies local coqtop options.
 (add-hook 'proof-deactivate-scripting-hook
           #'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
           t)

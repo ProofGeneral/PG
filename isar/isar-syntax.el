@@ -1,4 +1,4 @@
-;; isar-syntax.el Syntax expressions for Isabelle/Isar
+;; isar-syntax.el Syntax expressions for Isabelle/Isar  -*- lexical-binding:t -*-
 ;; Copyright (C) 1994-2004, 2009, 2010 LFCS Edinburgh.
 ;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -364,18 +364,18 @@ matches contents of quotes for quoted identifiers.")
 ;; font-lock syntactic fontification
 
 ;; adapted from font-lock.el in GNU Emacs 23.1.1
-(defun isar-font-lock-fontify-syntactically-region 
-  (start end &optional loudly ppss)
-  "Put proper face on each string and comment between START and END.
-START should be at the beginning of a line."
-  (let ((comment-end-regexp
-	 (replace-regexp-in-string "^ *" "" comment-end))
-        state beg)
-    (if loudly (message "Fontifying %s... (syntactically...)" (buffer-name)))
-    (goto-char start)
-    ;;
-    ;; Find the `start' state.
-    (setq state (or ppss (syntax-ppss start)))
+;; FIXME: Why not use the built-in syntactic fontification?
+(defun isar-font-lock-fontify-syntactically-region
+  (end) ;; (start end &optional loudly ppss)
+  "Put proper face on each string and comment between point and END."
+  (let (;; (comment-end-regexp
+	;;  (replace-regexp-in-string "^ *" "" comment-end))
+        (start (point))
+        ;; Find the start state.
+        (state (syntax-ppss))
+        beg)
+    (if font-lock-verbose ;; loudly
+        (message "Fontifying %s... (syntactically...)" (buffer-name)))
     ;;
     ;; Find each interesting place between here and `end'.
     (while
@@ -395,13 +395,16 @@ START should be at the beginning of a line."
 	      (put-text-property beg (point) 'face font-lock-comment-face))))
 	  (< (point) end))
       (setq state (parse-partial-sexp (point) end nil nil state
-				      'syntax-table)))))
+				      'syntax-table))))
+  ;; Job is done, return to font-lock-keywords that there's no match.
+  nil)
 
 ;; font-lock keywords fontification
 
 (defvar isar-font-lock-keywords-1
   (list
-   (cons 'isar-match-nesting                               'font-lock-preprocessor-face)
+   (list #'isar-font-lock-fontify-syntactically-region)
+   (cons #'isar-match-nesting                               'font-lock-preprocessor-face)
    (cons (isar-ids-to-regexp isar-keywords-minor)          'font-lock-type-face)
    (cons (isar-ids-to-regexp isar-keywords-control)        'proof-error-face)
    (cons (isar-ids-to-regexp isar-keywords-diag)           'proof-tacticals-name-face)

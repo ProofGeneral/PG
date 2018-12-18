@@ -242,7 +242,7 @@ binding to remove this buffer."
 	(winconf   (current-window-configuration))
 	(curwin	   (get-buffer-window (current-buffer)))
 	(curfrm    (and curwin (window-frame curwin)))
-	(after-change-functions nil)	; no font-lock, thank-you.
+	(inhibit-modification-hooks t)	; no font-lock, thank-you.
 	 ;; NB: maybe leave next one in for frame-crazy folk
 	 ;;(pop-up-frames nil)		; display in the same frame.
 	(splashbuf (get-buffer-create proof-splash-welcome)))
@@ -275,7 +275,13 @@ binding to remove this buffer."
 	(progn
 	  ;; disable ordinary emacs splash
 	  (setq inhibit-startup-message t)
-	  (proof-splash-display-screen (not (called-interactively-p 'any))))
+          ;; Display the splash screen only after we're done setting things up,
+          ;; otherwise it can have undesired interference.
+          (run-with-timer
+           0 nil
+           `(lambda ()
+	      (proof-splash-display-screen
+               ,(not (called-interactively-p 'any))))))
       ;; Otherwise, a message
       (message "Welcome to %s Proof General!" proof-assistant))
     (setq proof-splash-seen t)))

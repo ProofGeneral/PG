@@ -197,13 +197,6 @@ it calls `proof-looking-at-syntactic-context'."
 ;; For font-lock, we treat ,-separated identifiers as one identifier
 ;; and refontify commata using \{proof-zap-commas}.
 
-(defsubst proof-ids (proof-id &optional sepregexp)
-  "Generate a regular expression for separated lists of identifiers.
-Default is comma separated, or SEPREGEXP if set."
-  (concat proof-id "\\(\\s-*"   (or sepregexp ",") "\\s-*"
-	  proof-id "\\)*"))
-
-
 (defun proof-zap-commas (limit)
   "Remove the face of all `,' from point to LIMIT.
 Meant to be used from `font-lock-keywords' as a way
@@ -228,17 +221,15 @@ this were even more bogus...."
 ;; fontification function.
 ;;
 
-(eval-after-load "font-lock"
-'(progn
-(defadvice font-lock-fontify-keywords-region
-  (before font-lock-fontify-keywords-advice (beg end &optional loudly))
-  "Call proof assistant specific syntactic region fontify.
-If it's bound, we call <PA>-font-lock-fontify-syntactically-region."
-  (when (and proof-buffer-type
-	     (fboundp (proof-ass-sym font-lock-fontify-syntactically-region)))
-    (funcall (proof-ass-sym font-lock-fontify-syntactically-region)
-	     beg end loudly)))
-(ad-activate 'font-lock-fontify-keywords-region)))
+;; (defadvice font-lock-fontify-keywords-region
+;;   (before font-lock-fontify-keywords-advice (beg end &optional loudly))
+;;   "Call proof assistant specific syntactic region fontify.
+;; If it's bound, we call <PA>-font-lock-fontify-syntactically-region."
+;;   (when (and proof-buffer-type
+;; 	     (fboundp (proof-ass-sym font-lock-fontify-syntactically-region)))
+;;     (funcall (proof-ass-sym font-lock-fontify-syntactically-region)
+;; 	     beg end loudly)))
+;; (ad-activate 'font-lock-fontify-keywords-region)
 
 ;;
 ;; Functions for doing something like "format" but with customizable
