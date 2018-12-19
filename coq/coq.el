@@ -2773,8 +2773,8 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)
 (define-key coq-keymap [(control ?m)] 'coq-insert-match)
-(define-key coq-keymap [(control ?()] 'coq-insert-section-or-module)
-(define-key coq-keymap [(control ?))] 'coq-end-Section)
+(define-key coq-keymap [(control ?\()] 'coq-insert-section-or-module)
+(define-key coq-keymap [(control ?\))] 'coq-end-Section)
 (define-key coq-keymap [(control ?t)] 'coq-insert-tactic)
 (define-key coq-keymap [?t] 'coq-insert-tactical)
 (define-key coq-keymap [?!] 'coq-insert-solve-tactic) ; will work in tty
