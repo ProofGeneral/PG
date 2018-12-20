@@ -65,7 +65,7 @@ nil if a region cannot be found."
     (search-forward string bound noerror count)))
 
 ;;;###autoload
-(defsubst proof-replace-regexp-in-string (regexp rep string)
+(defun proof-replace-regexp-in-string (regexp rep string)
   "Like ‘replace-regexp-in-string’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (replace-regexp-in-string regexp rep string)))

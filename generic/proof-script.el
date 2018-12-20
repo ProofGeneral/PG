@@ -26,6 +26,7 @@
 
 (require 'cl-lib)                       ; various
 (require 'span)				; abstraction of overlays/extents
+(require 'pg-vars)
 (require 'proof-utils)			; proof-utils macros
 (require 'proof-syntax)			; utils for manipulating syntax
 
@@ -65,6 +66,58 @@ kill buffer hook.  This variable is used when buffer-file-name is nil.")
 
 (deflocal pg-script-portions nil
   "Alist of hash tables for symbols naming processed script portions.")
+
+;;;###autoload
+(defun proof-ready-for-assistant (assistantsym &optional assistant-name)
+  "Configure PG for symbol ASSISTANTSYM, name ASSISTANT-NAME.
+If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
+  (unless proof-assistant-symbol
+    (let*
+      ((sname		 (symbol-name assistantsym))
+       (assistant-name   (or assistant-name
+			     (car-safe
+			      (cdr-safe (assoc assistantsym
+					       proof-assistant-table)))
+			     sname))
+       (cusgrp-rt
+	;; Normalized a bit to remove spaces and funny characters
+	(replace-regexp-in-string "/\\|[ \t]+" "-" (downcase assistant-name)))
+       (cusgrp	      (intern cusgrp-rt))
+       (cus-internals (intern (concat cusgrp-rt "-config")))
+       (elisp-dir     sname)		; NB: dirname same as symbol name!
+       (loadpath-elt  (concat proof-home-directory elisp-dir "/")))
+    (eval `(progn
+       ;; Make a customization group for this assistant
+       (defgroup ,cusgrp nil
+	 ,(concat "Customization of user options for " assistant-name
+		  " Proof General.")
+	 :group 'proof-general)
+       ;; And another one for internals
+       (defgroup ,cus-internals nil
+	 ,(concat "Customization of internal settings for "
+		  assistant-name " configuration.")
+	 :group 'proof-general-internals
+	 :prefix ,(concat sname "-"))
+
+       ;; Set the proof-assistant configuration variables
+       ;; NB: tempting to use customize-set-variable: wrong!
+       ;; Here we treat customize as extended docs for these
+       ;; variables.
+       (setq proof-assistant-cusgrp (quote ,cusgrp))
+       (setq proof-assistant-internals-cusgrp (quote ,cus-internals))
+       (setq proof-assistant ,assistant-name)
+       (setq proof-assistant-symbol (quote ,assistantsym))
+       ;; define the per-prover settings which depend on above
+       (require 'pg-custom)
+       (setq proof-mode-for-shell (proof-ass-sym shell-mode))
+       (setq proof-mode-for-response (proof-ass-sym response-mode))
+       (setq proof-mode-for-goals (proof-ass-sym goals-mode))
+       (setq proof-mode-for-script (proof-ass-sym mode))
+       ;; Extend the load path if necessary
+       (proof-add-to-load-path ,loadpath-elt)
+       ;; Run hooks for late initialisation
+       (run-hooks 'proof-ready-for-assistant-hook))))))
+
 
 (defalias 'proof-active-buffer-fake-minor-mode
   'proof-toggle-active-scripting)

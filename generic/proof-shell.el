@@ -221,10 +221,11 @@ No change to current buffer or point."
     (error "Proof process busy!")))
 
 ;;;###autoload
-(defsubst proof-shell-live-buffer ()
+(defun proof-shell-live-buffer ()
   "Return non-nil if ‘proof-shell-buffer’ is live."
   (and proof-shell-buffer
        (buffer-live-p proof-shell-buffer)
+       ;; FIXME: Use process-live-p?
        (scomint-check-proc proof-shell-buffer)))
 
 ;;;###autoload

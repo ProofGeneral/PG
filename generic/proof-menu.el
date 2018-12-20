@@ -1006,7 +1006,7 @@ We first clear the dynamic settings from `proof-assistant-settings'."
    (cons "%f" '(proof-assistant-format-float curvalue))
    (cons "%s" '(proof-assistant-format-string curvalue)))
   "Table to use with `proof-format' for formatting CURVALUE for assistant.
-NB: variable curvalue is dynamically scoped (used in `proof-assistant-format').")
+NB: variable `curvalue' is dynamically scoped (used in `proof-assistant-format').")
 
 (defun proof-assistant-format-bool (value)
   (if value proof-assistant-true-value proof-assistant-false-value))
@@ -1034,7 +1034,10 @@ value) and the second for false."
   (let ((setting
 	 (cond
 	  ((stringp string)   ;; use % format characters
-	   (proof-format proof-assistant-format-table string))
+           ;; Dynbind for use in proof-assistant-format-table!
+           (with-no-warnings (defvar curvalue))
+           (let ((curvalue curvalue))
+	     (proof-format proof-assistant-format-table string)))
 	  ((functionp string) ;; call the function
 	   (funcall string curvalue))
 	  ((consp string)     ;; true/false options
