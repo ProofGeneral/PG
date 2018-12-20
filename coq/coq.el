@@ -1522,6 +1522,11 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
 (defvar coq-highlight-hyps-cited-in-response t
   "If non-nil, try to highlight in goals buffers hyps cited in response.")
 
+(defvar coq-highlight-hyps-sticky nil
+  "If non-nil, try to make hypothesis highlighting sticky.
+The is try to re-highlight the hypothesis with same names
+after a refeshing of the response buffer.")
+
 ;; We maintain a list of hypothesis names that must be highlighted at each
 ;; regeneration of goals buffer.
 (defvar coq-highlighted-hyps nil
@@ -1529,13 +1534,17 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
 These are rehighlighted at each regeneration of goals buffer
 using a hook in `proof-shell-handle-delayed-output-hook'.")
 
+(defvar coq-highlighted-hyps-bg "gray"
+  "background color for highlighted hyps.")
+
+
 (defun coq-highlight-hyp-aux (h)
   "Auxiliary function, use `coq-highlight-hyp' for sticky highlighting.
 Unless you want the highlighting to disappear after the goals
 buffer is updated."
   (let ((hyp-overlay (coq-find-hyp-overlay h)))
     (when hyp-overlay
-      (overlay-put hyp-overlay 'face '(:background "lavender")))))
+      (overlay-put hyp-overlay 'face `(:background ,coq-highlighted-hyps-bg)))))
 
 (defun coq-unhighlight-hyp-aux (h)
   "Auxiliary function, use `coq-unhighlight-hyp' for sticky highlighting.
@@ -3114,7 +3123,7 @@ number of hypothesis displayed, without hiding the goal"
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda ()
             (setq coq-hyps-positions (coq-detect-hyps-in-goals))
-            (coq-highlight-selected-hyps)
+            (when coq-highlight-hyps-sticky (coq-highlight-selected-hyps))
             (coq-fold-hyps)
             ))
 
