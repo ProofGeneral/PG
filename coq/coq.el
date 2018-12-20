@@ -28,8 +28,6 @@
   (require 'outline)
   (require 'newcomment)
   (require 'etags))
-(defvar smie-indent-basic)
-(defvar smie-rules-function)
 (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
 (defvar action)       ; dynamic scope in coq-insert-as stuff
 (defvar string)       ; dynamic scope in coq-insert-as stuff
@@ -50,17 +48,6 @@
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-
-;; for compilation in Emacs < 23.3 (NB: declare function only works at top level)
-(declare-function smie-bnf->prec2 "smie")
-(declare-function smie-rule-parent-p "smie")
-(declare-function smie-default-forward-token "smie")
-(declare-function smie-default-backward-token "smie")
-(declare-function smie-rule-prev-p "smie")
-(declare-function smie-rule-separator "smie")
-(declare-function smie-rule-parent "smie")
-
-(declare-function some "cl-extra")      ; spurious bytecomp warning
 
 ;; prettify is in emacs > 24.4
 ;; FIXME: this should probably be done like for smie above.
@@ -331,17 +318,7 @@ See also option `coq-hide-additional-subgoals'."
 
 ;; Indentation and navigation support via SMIE.
 
-(defcustom coq-use-smie t
-  "OBSOLETE.  smie code is always used now.
-
-If non-nil, Coq mode will try to use SMIE for indentation.
-SMIE is a navigation and indentation framework available in Emacs >= 23.3."
-  :type 'boolean
-  :group 'coq)
-
-(require 'smie nil 'noerror)
-(require 'coq-smie nil 'noerror)
-
+(require 'coq-smie)
 
 ;;
 ;; Auxiliary code for Coq modes
@@ -352,8 +329,8 @@ SMIE is a navigation and indentation framework available in Emacs >= 23.3."
   "Return a list of frames displaying both response and goals buffers."
   (let* ((wins-resp (get-buffer-window-list proof-response-buffer nil t))
          (wins-gls (get-buffer-window-list proof-goals-buffer nil t))
-         (frame-resp (cl-mapcar 'window-frame wins-resp))
-         (frame-gls (cl-mapcar 'window-frame wins-gls)))
+         (frame-resp (mapcar #'window-frame wins-resp))
+         (frame-gls (mapcar #'window-frame wins-gls)))
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
 
@@ -683,7 +660,7 @@ If locked span already has a state number, then do nothing. Also updates
 ;; This hook seems the one we want.
 ;; WARNING! It is applied once after each command PLUS once before a group of
 ;; commands is started
-(add-hook 'proof-state-change-hook 'coq-set-state-infos)
+(add-hook 'proof-state-change-hook #'coq-set-state-infos)
 
 
 (defun count-not-intersection (l notin)
@@ -1028,7 +1005,7 @@ UNSETCMD.  See `coq-command-with-set-unset'."
   (concat " -\"" s "\""))
 
 (defun coq-build-removed-patterns (l)
-  (mapcar 'coq-build-removed-pattern l))
+  (mapcar #'coq-build-removed-pattern l))
 
 (defsubst coq-put-into-quotes (s)
   (concat "\"" s "\""))
@@ -1219,10 +1196,10 @@ Printing All set."
   (setq symb val) ;; FIXME this is wrong (it should be 'set', but it would set nil sometimes)
   (if coq-auto-adapt-printing-width
       (progn
-        (add-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
-        (add-hook 'proof-retract-command-hook 'coq-reset-printing-width))
-    (remove-hook 'proof-assert-command-hook 'coq-adapt-printing-width)
-    (remove-hook 'proof-retract-command-hook 'coq-reset-printing-width)))
+        (add-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
+        (add-hook 'proof-retract-command-hook #'coq-reset-printing-width))
+    (remove-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
+    (remove-hook 'proof-retract-command-hook #'coq-reset-printing-width)))
 
 ;; In case of nested proofs (which are announced as obsolete in future versions
 ;; of coq) Coq does not show the goals of enclosing proof when closing a nested
@@ -1258,13 +1235,13 @@ be called and no command will be sent to Coq."
      ;; silent (there is no goal to show).
      (string-match "Backtrack" cmd))
     (list "Unset Silent."))))
-  
+
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
 Each timme the user sends abunch of commands to Coq, check if the
 width of the goals window changed, and adapt coq printing width.
 WARNING: If several windows are displaying the goals buffer, one
-is chosen randomly. WARNING 2: when backtracking the printing
+is chosen arbitrarily.  WARNING 2: when backtracking the printing
 width is synchronized by coq (?!)."
   :type 'boolean
   :safe 'booleanp
@@ -1278,7 +1255,7 @@ width is synchronized by coq (?!)."
 ;; this initiates auto adapt printing width at start, by reading the config
 ;; var. Let us put this at the end of hooks to have a chance to read local
 ;; variables first.
-(add-hook 'coq-mode-hook 'coq-auto-adapt-printing-width t)
+(add-hook 'coq-mode-hook #'coq-auto-adapt-printing-width t)
 
 (defvar coq-shell-current-line-width nil
   "Current line width of the Coq printing width.
@@ -1347,7 +1324,7 @@ redisplayed."
       (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
       (setq coq-shell-current-line-width wdth)
       ;; Show iff show non nil and some proof is under way
-      (when (and show (not (null (caddr (coq-last-prompt-info-safe)))))
+      (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
         (proof-shell-invisible-command (format "Show.") t nil 'no-error-display)))))
 
 (defun coq-adapt-printing-width-and-show(&optional show width)
@@ -1453,9 +1430,9 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
          (positions (cdr hyp-positions))
          (begcross (car positions))
          (beghypname (cadr positions))
-         (endhypname (caddr positions))
-         (beg (cadddr positions))
-         (end (cadddr (cdr positions))))
+         (endhypname (cl-caddr positions))
+         (beg (cl-cadddr positions))
+         (end (cl-cadddr (cdr positions))))
     (let ((hypnameov (coq-make-hypname-overlay beghypname endhypname fstname buf))
           (hypov (coq-make-hyp-overlay beg end fstname buf))
           (crosshypov (coq-make-hypcross-overlay begcross (+ 1 begcross) fstname buf))
@@ -1568,10 +1545,10 @@ use `coq-unhighlight-hyp' to unhilight."
     (coq-unhighlight-hyp-aux h)))
 
 (defun coq-highlight-hyps (lh)
-  (mapc 'coq-highlight-hyp lh))
+  (mapc #'coq-highlight-hyp lh))
 
 (defun coq-unhighlight-hyps (lh)
-  (mapc 'coq-unhighlight-hyp-aux lh))
+  (mapc #'coq-unhighlight-hyp-aux lh))
 
 (defun coq-highlight-selected-hyps ()
   "Highlight all hyps stored in `coq-highlighted-hyps'.
@@ -1606,7 +1583,7 @@ See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
 Highlight always takes place in goals buffer."
   (let  ((inters (coq-get-hyps-cited-in-response)))
     (coq-unhighlight-selected-hyps)
-    (setq coq-highlighted-hyps (mapcar 'car inters))
+    (setq coq-highlighted-hyps (mapcar #'car inters))
     (coq-highlight-selected-hyps)))
 
 (defun coq-toggle-highlight-hyp (h)
@@ -1743,12 +1720,12 @@ See `coq-fold-hyp'."
 (defun coq-unfold-hyp-list (lh)
     "Fold the type of hypothesis in LH temporarily.
 See `coq-unfold-hyp-aux'."
-  (mapc 'coq-unfold-hyp-aux lh))
+  (mapc #'coq-unfold-hyp-aux lh))
 
 (defun coq-fold-hyp-list (lh)
     "Fold the type of hypothesis in LH temporarily.
 See `coq-fold-hyp-aux'."
-  (mapc 'coq-fold-hyp-aux lh))
+  (mapc #'coq-fold-hyp-aux lh))
 
 (defun coq-fold-hyps ()
     "Fold the type of hypothesis in LH durably.
@@ -1837,7 +1814,6 @@ See  `coq-fold-hyp'."
 ;; *default* value to nil.
 (custom-set-default 'proof-output-tooltips nil)
 
-;; This seems xemacs only code, remove?
 (defconst coq-prettify-symbols-alist
   '(("not"	. ?¬)
     ;; ("/\\"	. ?∧)
@@ -1966,7 +1942,7 @@ Near here means PT is either inside or just aside of a comment."
   (setq proof-assistant-home-page coq-www-home-page)
 
   (setq proof-prog-name coq-prog-name)
-  (setq proof-guess-command-line 'coq-guess-command-line)
+  (setq proof-guess-command-line #'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
   ;; We manage file saveing via coq-compile-auto-save and for coq
@@ -1991,26 +1967,25 @@ Near here means PT is either inside or just aside of a comment."
         '(coq-compile-quick coq-compile-keep-going
           coq-compile-auto-save coq-lock-ancestors))
 
-  (setq proof-goal-command-p 'coq-goal-command-p
-        proof-find-and-forget-fn 'coq-find-and-forget
-        pg-topterm-goalhyplit-fn 'coq-goal-hyp
-        proof-state-preserving-p 'coq-state-preserving-p)
+  (setq proof-goal-command-p #'coq-goal-command-p
+        proof-find-and-forget-fn #'coq-find-and-forget
+        pg-topterm-goalhyplit-fn #'coq-goal-hyp
+        proof-state-preserving-p #'coq-state-preserving-p)
 
   (setq proof-query-identifier-command "Check %s.")
   ;;TODO: from v8.5 this wold be better:
   ;;(setq proof-query-identifier-command "About %s.")
 
   (setq proof-save-command-regexp coq-save-command-regexp
-        proof-really-save-command-p 'coq-save-command-p ;pierre:deals with Proof <term>.
+        proof-really-save-command-p #'coq-save-command-p ;pierre:deals with Proof <term>.
 	proof-save-with-hole-regexp coq-save-with-hole-regexp
 	proof-goal-with-hole-regexp coq-goal-with-hole-regexp
 	proof-nested-undo-regexp coq-state-changing-commands-regexp
         proof-script-imenu-generic-expression coq-generic-expression)
 
-  (when (fboundp 'smie-setup) ; always use smie, old indentation code removed
-    (smie-setup coq-smie-grammar #'coq-smie-rules
-                  :forward-token #'coq-smie-forward-token
-                  :backward-token #'coq-smie-backward-token))
+  (smie-setup coq-smie-grammar #'coq-smie-rules
+              :forward-token #'coq-smie-forward-token
+              :backward-token #'coq-smie-backward-token)
 
   ;; old indentation code.
   ;; (require 'coq-indent)
@@ -2069,7 +2044,7 @@ Near here means PT is either inside or just aside of a comment."
 
   (setq proof-cannot-reopen-processed-files nil)
 
-  (add-hook 'proof-activate-scripting-hook 'proof-cd-sync nil t))
+  (add-hook 'proof-activate-scripting-hook #'proof-cd-sync nil t))
 
 (defun coq-shell-mode-config ()
   (setq
@@ -2199,13 +2174,13 @@ Near here means PT is either inside or just aside of a comment."
 
 
 ;
-;;; FIXME: to handle "printing all" properly, we should change the state
-;;; of the variables that also depend on it.
-;;; da:
+;; FIXME: to handle "printing all" properly, we should change the state
+;; of the variables that also depend on it.
+;; da:
 
-;;; pc: removed it and others of the same kind. Put an "option" menu instead,
-;;; with no state variable. To have the state we should use coq command that
-;;; output the value of the variables.
+;; pc: removed it and others of the same kind. Put an "option" menu instead,
+;; with no state variable. To have the state we should use coq command that
+;; output the value of the variables.
 ;(defpacustom print-fully-explicit nil
 ;  "Print fully explicit terms."
 ;  :type 'boolean
@@ -2335,7 +2310,7 @@ The not yet delayed output is in the region
                              proof-tree-show-subgoal))
                           proof-action-list))))))))))
   
-(add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-get-new-subgoals)
+(add-hook 'proof-tree-urgent-action-hook #'coq-proof-tree-get-new-subgoals)
 
 
 (defun coq-find-begin-of-unfinished-proof ()
@@ -2464,7 +2439,7 @@ result of `coq-proof-tree-get-proof-info'."
       ;; finished the current proof
       (coq-proof-tree-disable-evars)))))
 
-(add-hook 'proof-tree-urgent-action-hook 'coq-proof-tree-evar-display-toggle)
+(add-hook 'proof-tree-urgent-action-hook #'coq-proof-tree-evar-display-toggle)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2488,7 +2463,7 @@ result of `coq-proof-tree-get-proof-info'."
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
         (setq string (concat coq--time-prefix string))))))
 
-(add-hook 'proof-shell-insert-hook 'coq-preprocessing)
+(add-hook 'proof-shell-insert-hook #'coq-preprocessing)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2542,8 +2517,8 @@ mouse activation."
   (string-match-p "\\.v\\'" s))
 
 (defun coq-directories-files (l)
-  (let* ((file-list-list (mapcar 'directory-files l))
-         (file-list (apply 'append file-list-list))
+  (let* ((file-list-list (mapcar #'directory-files l))
+         (file-list (apply #'append file-list-list))
          (filtered-list (cl-remove-if-not #'coq-postfix-.v-p file-list)))
   filtered-list))
 
@@ -2558,7 +2533,7 @@ mouse activation."
          (cleanpth (mapcar #'coq-load-path-to-paths pth))
          (existingpth (cl-remove-if-not #'file-exists-p cleanpth))
          (file-list (coq-directories-files existingpth)))
-    (mapcar 'coq-remove-dot-v-extension file-list)))
+    (mapcar #'coq-remove-dot-v-extension file-list)))
 
 (defun coq-insert-section-or-module ()
   "Insert a module or a section after asking right questions."
@@ -2807,8 +2782,8 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)
 (define-key coq-keymap [(control ?m)] 'coq-insert-match)
-(define-key coq-keymap [(control ?()] 'coq-insert-section-or-module)
-(define-key coq-keymap [(control ?))] 'coq-end-Section)
+(define-key coq-keymap [(control ?\()] 'coq-insert-section-or-module)
+(define-key coq-keymap [(control ?\))] 'coq-end-Section)
 (define-key coq-keymap [(control ?t)] 'coq-insert-tactic)
 (define-key coq-keymap [?t] 'coq-insert-tactical)
 (define-key coq-keymap [?!] 'coq-insert-solve-tactic) ; will work in tty
@@ -3014,7 +2989,7 @@ buffer."
 (defun coq-highlight-error-hook ()
   (coq-highlight-error t t))
 
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-highlight-error-hook t)
+(add-hook 'proof-shell-handle-error-or-interrupt-hook #'coq-highlight-error-hook t)
 
 
 ;;
@@ -3111,9 +3086,9 @@ number of hypothesis displayed, without hiding the goal"
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
 ;; *after* windows resizing.
 (add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-show-first-goal)
+	  #'coq-show-first-goal)
 (add-hook 'proof-shell-handle-delayed-output-hook
-	  'coq-update-minor-mode-alist)
+	  #'coq-update-minor-mode-alist)
 (add-hook 'proof-shell-handle-delayed-output-hook
           (lambda ()
             (if (proof-string-match coq-shell-proof-completed-regexp
@@ -3133,7 +3108,7 @@ number of hypothesis displayed, without hiding the goal"
   (<= (- (frame-height) (window-height)) 2))
 
 ;; bug fixed in generic ocde, useless now:
-;(add-hook 'proof-activate-scripting-hook '(lambda () (when proof-three-window-enable (proof-layout-windows))))
+;(add-hook 'proof-activate-scripting-hook (lambda () (when proof-three-window-enable (proof-layout-windows))))
 
 ;; *Experimental* auto shrink response buffer in three windows mode. Things get
 ;; a bit messed up if the response buffer is not at the right place (below
@@ -3183,9 +3158,11 @@ Only when three-buffer-mode is enabled."
 ;; i.e. added in hook AFTER it.
 
 ;; Adapt when displaying a normal message
-(add-hook 'proof-shell-handle-delayed-output-hook 'coq-optimise-resp-windows-if-option)
+(add-hook 'proof-shell-handle-delayed-output-hook
+          #'coq-optimise-resp-windows-if-option)
 ;; Adapt when displaying an error or interrupt
-(add-hook 'proof-shell-handle-error-or-interrupt-hook 'coq-optimise-resp-windows-if-option)
+(add-hook 'proof-shell-handle-error-or-interrupt-hook
+          #'coq-optimise-resp-windows-if-option)
 
 ;;; DOUBLE HIT ELECTRIC TERMINATOR
 ;; Trying to have double hit on colon behave like electric terminator. The "."
@@ -3315,7 +3292,7 @@ priority to the former."
 ;; when "compile when require" is off. When switching scripting buffer, let us
 ;; restart the coq shell process, so that it applies local coqtop options. 
 (add-hook 'proof-deactivate-scripting-hook
-          'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
+          #'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
           t)
 
 

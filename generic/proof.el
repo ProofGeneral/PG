@@ -1,4 +1,4 @@
-;;; proof.el --- Proof General theorem prover interface
+;;; proof.el --- Proof General theorem prover interface  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -32,9 +32,6 @@
 ;;; Code:
 
 (require 'proof-site)			; site/prover config, global vars, autoloads
-
-(unless (or noninteractive (bound-and-true-p byte-compile-current-file))
-  (proof-splash-message))		; welcome the user now.
 
 (require 'proof-utils)			; utilities
 (require 'proof-config)			; configuration variables

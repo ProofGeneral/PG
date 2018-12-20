@@ -34,6 +34,7 @@
 
 ;;; Code:
 (require 'span)
+(eval-when-compile (require 'cl-lib))
 (eval-when-compile
   (require 'proof-utils))
 
@@ -377,10 +378,10 @@ Returns (n . s) where
     (while (and pos l (not found))
       (setq start-goal (car l))
       (setq end-goal (cadr l))
-      (setq goal-name (caddr l))
-      (setq start-concl (cadddr l))
-      (setq hyps (car (cddddr l)))
-      (setq l (cdr (cddddr l)))
+      (setq goal-name (cl-caddr l))
+      (setq start-concl (cl-cadddr l))
+      (setq hyps (car (cl-cddddr l)))
+      (setq l (cdr (cl-cddddr l)))
       (if (and (<= start-goal pos) (<= pos end-goal))
 	  (progn
 	    (setq found t)
@@ -393,9 +394,9 @@ Returns (n . s) where
 	    (while (and hyps (not found))
 	      (setq start-hyp (car hyps))
 	      (setq start-hyp-text (cadr hyps))
-	      (setq end-hyp (caddr hyps))
-	      (setq hyp-name (cadddr hyps))
-	      (setq hyps (cddddr hyps))
+	      (setq end-hyp (cl-caddr hyps))
+	      (setq hyp-name (cl-cadddr hyps))
+	      (setq hyps (cl-cddddr hyps))
 	      (if (and (<= start-hyp pos) (<= pos end-hyp))
 		  (progn
 		    (setq found t)
@@ -421,14 +422,14 @@ If no match found, return the empty string."
   (save-excursion
     (let ((pos (point)))
       (beginning-of-line)
-      (block 'loop
+      (cl-block 'loop
 	(while (< (point) pos)
 	  (unless (search-forward-regexp pg-pbrpm-auto-select-regexp nil t)
 	    (return-from 'loop ""))
 	  (if (and (<= (match-beginning 0) pos)
 		   (<= pos (match-end 0)))
-	      (return-from 'loop (match-string 0))))
-	(return-from 'loop "")))))
+	      (cl-return-from 'loop (match-string 0))))
+	(cl-return-from 'loop "")))))
 
 (defun pg-pbrpm-translate-position (buffer pos)
   "If BUFFER is goals-buffer, return POS, otherwise the point in the goal buffer."

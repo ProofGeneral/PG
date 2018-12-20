@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -25,6 +25,7 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl-lib))
 (require 'proof-splash)
 (setq proof-splash-enable nil)		; prevent splash when testing
 
@@ -215,7 +216,7 @@ completely processing the buffer as the last step."
 	 " random jump: processing whole buffer")
 	(proof-process-buffer)
 	(proof-shell-wait)
-	(decf jumps))
+	(cl-decf jumps))
 
 	((and (eq random-thing 1)
 	      (not (proof-locked-region-empty-p)))
@@ -223,7 +224,7 @@ completely processing the buffer as the last step."
 	  " random jump: retracting whole buffer")
 	 (proof-retract-buffer)
 	 (proof-shell-wait)
-	 (decf jumps))
+	 (cl-decf jumps))
 
 	(t
 	 (pg-autotest-message
@@ -241,7 +242,7 @@ completely processing the buffer as the last step."
 		    " random jump: interrupting prover")
 		   (proof-interrupt-process)))
 	     (proof-shell-wait))
-	   (decf jumps)))))
+	   (cl-decf jumps)))))
   (unless (proof-locked-region-full-p)
     (proof-process-buffer)
     (proof-shell-wait))

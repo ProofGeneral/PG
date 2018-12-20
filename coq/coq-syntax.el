@@ -1,9 +1,9 @@
-;;; coq-syntax.el --- Font lock expressions for Coq
+;;; coq-syntax.el --- Font lock expressions for Coq  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -19,6 +19,7 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl-lib))
 (require 'proof-syntax)
 (require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
@@ -509,12 +510,12 @@ so for the following reasons:
   )
 
 ;; modules and section are indented like goal starters
-;;; PC TODO: this category is used only for indentation, because
-;;; scripting uses information from coq to decide if a goal is
-;;; started. Since it is impossible for some commands to know
-;;; syntactically if they start something (ex: Instance), the
-;;; right thing to do would be to indent only on "Proof." and forget
-;;; about this category for indentation.
+;; PC TODO: this category is used only for indentation, because
+;; scripting uses information from coq to decide if a goal is
+;; started. Since it is impossible for some commands to know
+;; syntactically if they start something (ex: Instance), the
+;; right thing to do would be to indent only on "Proof." and forget
+;; about this category for indentation.
 
 (defvar coq-goal-starters-db
   '(
@@ -986,14 +987,15 @@ so for the following reasons:
 ;;      elle declare un module.
 ;;    (la fonction vernac_declare_module dans toplevel/vernacentries)
 
-(defun coq-count-match (regexp strg)
-  "Count the number of max. non-overlapping substring of STRG matching REGEXP.
+(defun coq-count-match (regexp str)
+  "Count the number of max. non-overlapping substring of STR matching REGEXP.
 Empty matches are counted once."
-  (let ((nbmatch 0) (str strg))
-    (while (and (proof-string-match regexp str) (not (string-equal str "")))
-      (incf nbmatch)
-      (if (= (match-end 0) 0) (setq str (substring str 1))
-        (setq str (substring str (match-end 0)))))
+  (let ((nbmatch 0) (pos 0) (end (length str))
+        (case-fold-search nil))
+    (while (and (< pos end)
+                (string-match regexp str pos))
+      (cl-incf nbmatch)
+      (setq pos (max (match-end 0) (1+ pos))))
     nbmatch))
 
 ;; Module and or section openings are detected syntactically. Module
@@ -1008,12 +1010,16 @@ Used by `coq-goal-command-p'"
   (let* ((match (coq-count-match "\\_<match\\_>" str))
          (with (coq-count-match "\\_<with\\_>" str))
          (letwith (+ (coq-count-match "\\_<let\\_>" str) (- with match)))
-         (affect (coq-count-match ":=" str)))
-    (and (proof-string-match "\\`\\(Module\\)\\_>" str)
+         (affect (coq-count-match ":=" str))
+         (case-fold-search nil))
+    (and (string-match "\\`\\(Module\\)\\_>" str)
          (= letwith affect))))
 
 (defun coq-section-command-p (str)
-  (proof-string-match "\\`\\(Section\\|Chapter\\)\\_>" str))
+  (let ((case-fold-search nil))
+    (string-match "\\`\\(Section\\|Chapter\\)\\_>" str)))
+
+(defvar coq-goal-command-regexp)
 
 ;; unused anymore (for good)
 (defun coq-goal-command-str-p (str)
@@ -1022,16 +1028,17 @@ Use ‘coq-goal-command-p’ on a span instead if possible."
   (let* ((match (coq-count-match "\\_<match\\_>" str))
          (with (- (coq-count-match "\\_<with\\_>" str) (coq-count-match "\\_<with\\s-+signature\\_>" str)))
          (letwith (+ (coq-count-match "\\_<let\\_>" str) (- with match)))
-         (affect (coq-count-match ":=" str)))
-    (and (proof-string-match coq-goal-command-regexp str)
+         (affect (coq-count-match ":=" str))
+         (case-fold-search nil))
+    (and (string-match coq-goal-command-regexp str)
          (not
           (and
-           (proof-string-match
+           (string-match
             (concat "\\`\\(Local\\|Definition\\|Lemma\\|Theorem\\|Fact\\|Add\\|Let\\|Program\\|Module\\|Class\\|Instance\\)\\_>")
             str)
            (not (= letwith affect))))
-         (not (proof-string-match "\\`Declare\\s-+Module\\(\\w\\|\\s-\\|<\\)*:"
-                                  str)))))
+         (not (string-match "\\`Declare\\s-+Module\\(\\w\\|\\s-\\|<\\)*:"
+                            str)))))
 
 ;; This is the function that tests if a SPAN is a goal start. All it
 ;; has to do is look at the 'goalcmd attribute of the span.
@@ -1062,8 +1069,15 @@ It is used:
   (append coq-keywords-save-strict '("Proof"))
   )
 
+;; According to Coq, "Definition" is both a declaration and a goal.
+;; It is understood here as being a goal.  This is important for
+;; recognizing global identifiers, see coq-global-p.
+(defconst coq-save-command-regexp-strict
+  (proof-anchor-regexp
+   (concat "\\(?:Time\\s-+\\)?\\(" (proof-ids-to-regexp coq-keywords-save-strict)
+           "\\)")))
 
-(defun coq-save-command-p (span str)
+(defun coq-save-command-p (_span str)
   "Decide whether argument is a Save command or not."
   (or (proof-string-match coq-save-command-regexp-strict str)
       (and (proof-string-match "\\`Proof\\_>" str)
@@ -1150,8 +1164,10 @@ It is used:
 ;; FIXME: actually these are not exactly reserved keywords, find
 ;; another classification of keywords.
 (defvar coq-reserved-regexp
-  (concat "\\_<with\\s-+signature\\_>\\|"
-   (proof-ids-to-regexp coq-reserved)))
+  (concat "\\_<"
+          "\\(?:with\\s-+signature\\|"
+          (regexp-opt coq-reserved) "\\)"
+          "\\_>"))
 
 (defvar coq-state-changing-tactics
   (coq-build-regexp-list-from-db coq-tactics-db 'filter-state-changing))
@@ -1275,16 +1291,6 @@ It is used:
   "*Font-lock table for Coq terms.")
 
 
-
-;; According to Coq, "Definition" is both a declaration and a goal.
-;; It is understood here as being a goal.  This is important for
-;; recognizing global identifiers, see coq-global-p.
-(defconst coq-save-command-regexp-strict
-  (proof-anchor-regexp
-   (concat "\\(?:Time\\s-+\\)?\\(" (proof-ids-to-regexp coq-keywords-save-strict)
-           "\\)")))
-
-
 (defconst coq-save-command-regexp
   (proof-anchor-regexp
    (concat "\\(?:Time\\s-+\\)?\\(" (proof-ids-to-regexp coq-keywords-save)
@@ -1401,7 +1407,8 @@ part of another hypothesis.")
                         (search-forward-regexp coq-hyp-name-or-goalsep-in-goal-or-response-regexp nil t)
                         (goto-char (match-beginning 1))
                         ;; if previous is a newline, don't include it i the overklay
-                        (when (looking-back "\\s-") (goto-char (- (point) 1)))
+                        (when (looking-back "\\s-" (1- (point)))
+                          (goto-char (- (point) 1)))
                         (point))))
             ; if several hyp names, we name the overlays with the first hyp name
             (setq res

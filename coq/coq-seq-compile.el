@@ -24,6 +24,7 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl-lib))
 (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
@@ -335,8 +336,8 @@ function returns () if MODULE-ID comes from the standard library."
           ;;            error-message)))
           ;; (coq-display-compile-response-buffer)
           (error error-message)))
-    (assert (<= (length result) 1)
-            "Internal error in coq-seq-map-module-id-to-obj-file")
+    (cl-assert (<= (length result) 1)
+               "Internal error in coq-seq-map-module-id-to-obj-file")
     (car-safe result)))
 
 (defun coq-seq-check-module (coq-object-local-hash-symbol span module-id &optional from)

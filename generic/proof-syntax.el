@@ -36,18 +36,14 @@ Uses a regexp of the form \\_<...\\_>."
 (defconst proof-no-regexp "\\<\\>"
   "A regular expression that never matches anything.")
 
+(defsubst proof-regexp-alt-list (args)
+  "Return the regexp which matches any of the regexps ARGS."
+  (mapconcat #'identity args "\\|"))
+
 (defsubst proof-regexp-alt (&rest args)
   "Return the regexp which matches any of the regexps ARGS."
   ;; see regexp-opt (NB: but that is for strings, not regexps)
-  (let ((res ""))
-    (dolist (regexp args)
-      (setq res (concat res (if (string-equal res "") "\\(?:" "\\|\\(?:")
-			regexp "\\)")))
-    res))
-
-(defsubst proof-regexp-alt-list (args)
-  "Return the regexp which matches any of the regexps ARGS."
-  (apply 'proof-regexp-alt args))
+  (proof-regexp-alt-list args))
 
 (defsubst proof-re-search-forward-region (startre endre)
   "Search for a region delimited by regexps STARTRE and ENDRE.

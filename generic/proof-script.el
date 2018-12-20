@@ -1,4 +1,4 @@
-;;; proof-script.el --- Major mode for proof assistant script files.
+;;; proof-script.el --- Major mode for proof assistant script files.  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -42,6 +42,7 @@
 (declare-function proof-segment-up-to "proof-script")
 (declare-function proof-autosend-enable "pg-user")
 (declare-function proof-interrupt-process "pg-shell")
+(declare-function proof-cd-sync "pg-user" ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -142,7 +143,7 @@ scripting buffer may have an active queue span.")
 
 ;; ** Getters and setters
 
-(defun proof-span-give-warning (&rest args)
+(defun proof-span-give-warning (&rest _args)
   "Give a warning message.
 Optional argument ARGS is ignored."
   (unless inhibit-read-only
@@ -506,7 +507,7 @@ Intended as a hook function for `proof-shell-handle-error-or-interrupt-hook'."
 (defun pg-clear-script-portions ()
   "Clear record of script portion names and types from internal list."
   (dolist (idtbl pg-script-portions)
-    (maphash (lambda (k span) (span-delete span)) (cdr idtbl))
+    (maphash (lambda (_k span) (span-delete span)) (cdr idtbl))
     (clrhash (cdr idtbl))))
 
 (defun pg-remove-element (idiom id)
@@ -628,14 +629,11 @@ IDIOMSYM is a symbol and ID is a strings."
       (concat "Make "
 	      (if current-prefix-arg "in" "")
 	      "visible all regions of: ")
-      (apply 'vector pg-idioms) nil t))
+      (apply #'vector pg-idioms) nil t))
     current-prefix-arg))
   (let ((elts    (cdr-safe (assq idiom pg-script-portions)))
-	(alterfn (if hide
-		     (lambda (k span)
-		       (pg-set-element-span-invisible span t))
-		   (lambda (k span)
-		     (pg-set-element-span-invisible span nil)))))
+	(alterfn (lambda (_k span)
+		   (pg-set-element-span-invisible span hide))))
     (when elts
       (proof-with-script-buffer ; may be called from menu
        (maphash alterfn elts)))))
@@ -668,7 +666,6 @@ Each span has a 'type property, one of:
     'pbp	  A PBP command inserted automatically into the script."
   (let ((type    (span-property span 'type))
 	(idiom   (span-property span 'idiom))
-	(name    (span-property span 'name))
 	(rawname (span-property span 'rawname)))
     (cond
      (idiom
@@ -1213,10 +1210,10 @@ activation is considered to have failed and an error is given."
       ;; If there's another buffer currently active, we need to
       ;; deactivate it (also fixing up the included files list).
       (when proof-script-buffer
-	    (proof-deactivate-scripting)
-	    ;; Test whether deactivation worked
-	    (if proof-script-buffer
-		(error
+	(proof-deactivate-scripting)
+	;; Test whether deactivation worked
+	(if proof-script-buffer
+	    (error
 	     "You cannot have more than one active scripting buffer!")))
 
       ;; Ensure this buffer is off the included files list.  If we
@@ -1265,21 +1262,21 @@ activation is considered to have failed and an error is given."
       ;; block.  NB: The hook function may send commands to the
       ;; process which will re-enter this function, but should exit
       ;; immediately because scripting has been turned on now.
-      (if proof-activate-scripting-hook
-	  (let
-	      ((activated-interactively	(called-interactively-p 'any)))
-	    (setq proof-shell-last-output-kind nil)
-	    (run-hooks 'proof-activate-scripting-hook)
-	    ;; If activate scripting functions caused an error,
-	    ;; prevent switching to another buffer.  Might be better
-	    ;; to leave to specific instances, or simply run the hooks
-	    ;; as the last step before turning on scripting properly.
-	    (when (or (eq 'error proof-shell-last-output-kind)
-		      (eq 'interrupt proof-shell-last-output-kind))
-	      (proof-deactivate-scripting) ;; turn off again!
-	      ;; Give an error to prevent further actions.
-	      (error
-	       "Scripting not activated because of error or interrupt")))))))
+      (when proof-activate-scripting-hook
+        (defvar activated-interactively)
+	(let ((activated-interactively (called-interactively-p 'any)))
+	  (setq proof-shell-last-output-kind nil)
+	  (run-hooks 'proof-activate-scripting-hook)
+	  ;; If activate scripting functions caused an error,
+	  ;; prevent switching to another buffer.  Might be better
+	  ;; to leave to specific instances, or simply run the hooks
+	  ;; as the last step before turning on scripting properly.
+	  (when (or (eq 'error proof-shell-last-output-kind)
+		    (eq 'interrupt proof-shell-last-output-kind))
+	    (proof-deactivate-scripting) ;; turn off again!
+	    ;; Give an error to prevent further actions.
+	    (error
+	     "Scripting not activated because of error or interrupt")))))))
 
 
 (defun proof-toggle-active-scripting (&optional arg)
@@ -1415,7 +1412,8 @@ Argument SPAN has just been processed."
 						(span-end span)))
       (if (proof-string-match-safe proof-script-evaluate-elisp-comment-regexp str)
 	  (condition-case nil
-	      (eval (car (read-from-string (match-string-no-properties 1 str))))
+	      (eval (car (read-from-string (match-string-no-properties 1 str)))
+                    t)
 	    (t (proof-debug
 		(concat
 		 "lisp error when obeying proof-shell-evaluate-elisp-comment-regexp: \n"
@@ -1599,7 +1597,7 @@ Subroutine of `proof-done-advancing-save'."
       ;; start of the buffer, we make a fake goal-save region.
 
       ;; Delete spans between the previous goal and new command
-      (mapc 'span-delete dels)
+      (mapc #'span-delete dels)
 
       ;; Try to set the name from the goal... [as above]
       (setq nam (or (proof-get-name-from-goal gspan)
@@ -1643,7 +1641,7 @@ Subroutine of `proof-done-advancing-save'."
 ;; command syntax (terminated, not terminated, or lisp-style), whether
 ;; or not PG silently ignores comments, etc.
 
-(defun proof-segment-up-to-parser (pos &optional next-command-end)
+(defun proof-segment-up-to-parser (pos &optional _next-command-end)
   "Parse the script buffer from end of queue/locked region to POS.
 This partitions the script buffer into contiguous regions, classifying
 them by type.  Return a list of lists of the form
@@ -1838,7 +1836,7 @@ The optional QUEUEFLAGS are added to each queue item."
   (let ((start (proof-queue-or-locked-end))
 	(file  (or (buffer-file-name) (buffer-name)))
 	(cb    'proof-done-advancing)
-	span alist semi item end)
+	span alist end)
     (setq semis (nreverse semis))
     (save-match-data
       (dolist (semi semis)
@@ -1927,7 +1925,7 @@ always defaults to inserting a semi (nicer might be to parse for a
 comment, and insert or skip to the next semi)."
   (let ((mrk         (point))
 	(termregexp  (regexp-quote proof-terminal-string))
-	ins incomment nwsp)
+	ins nwsp)
     (if (< mrk (proof-unprocessed-begin))
 	(insert proof-terminal-string) ; insert immediately in locked region
       (if (proof-only-whitespace-to-locked-region-p)
@@ -1953,7 +1951,6 @@ comment, and insert or skip to the next semi)."
 	(unless semis
 	  (error "Can't find a parseable command!"))
 	(when (eq 'unclosed-comment (caar semis))
-	  (setq incomment t)
 	  ;; delete spurious char in comment
 	  (if ins (backward-delete-char 1))
 	  (goto-char mrk)
@@ -2258,17 +2255,22 @@ query saves here."
 ;; Proof General scripting mode definition, part 1.
 ;;
 
+(defvar proof--splash-done nil)
+
 ;;;###autoload
 (define-derived-mode proof-mode fundamental-mode
   proof-general-name
   "Proof General major mode class for proof scripts.
 \\{proof-mode-map}"
 
+  (unless (or proof--splash-done noninteractive)
+    (setq proof--splash-done t)
+    (proof-splash-message))
+
   (setq proof-buffer-type 'script)
 
   ;; Set default indent function (can be overriden in derived modes)
-  (make-local-variable 'indent-line-function)
-  (setq indent-line-function 'proof-indent-line)
+  (setq-local indent-line-function #'proof-indent-line)
 
   ;; During write-file it can happen that we re-set the mode for the
   ;; currently active scripting buffer.  The user might also do this
@@ -2286,9 +2288,9 @@ query saves here."
   (proof-script-set-after-change-functions)
 
   (add-hook 'after-set-visited-file-name-hooks
-	    'proof-script-set-visited-file-name nil t)
+	    #'proof-script-set-visited-file-name nil t)
 
-  (add-hook 'proof-activate-scripting-hook 'proof-cd-sync nil t))
+  (add-hook 'proof-activate-scripting-hook #'proof-cd-sync nil t))
 
 ;; NB: proof-mode-map declared above
 (proof-menu-define-keys proof-mode-map)
@@ -2321,9 +2323,9 @@ This hook also gives a warning in case this is the active scripting buffer."
   "Set the hooks for a proof script buffer.
 The hooks set here are cleared by `write-file', so we use this function
 to restore them using `after-set-visited-file-name-hooks'."
-  (add-hook 'kill-buffer-hook 'proof-script-kill-buffer-fn t t)
+  (add-hook 'kill-buffer-hook #'proof-script-kill-buffer-fn t t)
   ;; Reverting buffer is same as killing it as far as PG is concerned
-  (add-hook 'before-revert-hook 'proof-script-kill-buffer-fn t t))
+  (add-hook 'before-revert-hook #'proof-script-kill-buffer-fn t t))
 
 (defun proof-script-kill-buffer-fn ()
   "Value of `kill-buffer-hook' for proof script buffers.
@@ -2616,17 +2618,17 @@ finish setup which depends on specific proof assistant configuration."
   "Choose parsing mechanism according to different kinds of script syntax.
 Choice of function depends on configuration setting."
   (unless (fboundp 'proof-segment-up-to)
-    (defalias 'proof-segment-up-to 'proof-segment-up-to-parser)
+    (defalias 'proof-segment-up-to #'proof-segment-up-to-parser)
     (cond
      (proof-script-parse-function
       ;; already set, nothing to do
       )
      (proof-script-sexp-commands
-      (setq proof-script-parse-function 'proof-script-generic-parse-sexp))
+      (setq proof-script-parse-function #'proof-script-generic-parse-sexp))
      (proof-script-command-start-regexp
-      (setq proof-script-parse-function 'proof-script-generic-parse-cmdstart))
+      (setq proof-script-parse-function #'proof-script-generic-parse-cmdstart))
      ((or proof-script-command-end-regexp proof-terminal-string)
-      (setq  proof-script-parse-function 'proof-script-generic-parse-cmdend)
+      (setq  proof-script-parse-function #'proof-script-generic-parse-cmdend)
       (unless proof-script-command-end-regexp
 	(proof-warn-if-unset "probof-config-done" 'proof-terminal-string)
 	(setq proof-script-command-end-regexp
@@ -2726,7 +2728,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 		  (cdr semis))))
       usedsemis)))
 
-(defun proof-script-after-change-function (start end prelength)
+(defun proof-script-after-change-function (start _end _prelength)
   "Value for `after-change-functions' in proof script buffers."
   (setq proof-last-edited-low-watermark
 	(min (or proof-last-edited-low-watermark (point-max))
@@ -2741,7 +2743,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 (defun proof-script-set-after-change-functions ()
   "Set `after-change-functions' for script buffers."
   (add-hook 'after-change-functions
-	    'proof-script-after-change-function nil t))
+	    #'proof-script-after-change-function nil t))
 
 
 
