@@ -20,6 +20,7 @@
 (eval-when-compile
   (require 'easymenu)			; easy-menu-add, etc
   (require 'span))			; span-*
+(require 'proof-script)                 ;For proof-insert-sendback-command
 (defvar proof-goals-mode-menu)          ; defined by macro below
 (defvar proof-assistant-menu)           ; defined by macro in proof-menu
 

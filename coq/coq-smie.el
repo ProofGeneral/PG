@@ -41,6 +41,7 @@
 ;;; Code:
 
 (require 'coq-indent)
+(require 'coq-syntax)                   ;For coq-keywords-save-strict!
 (require 'smie)
 
 ; debugging
@@ -351,24 +352,26 @@ The point should be at the beginning of the command name.
 As false positive are more annoying than false negative, return t only
 if it is FOR SURE a goal opener.  Put a \"Proof.\" when you want to
 force indentation."
-  (save-excursion ; FIXME add other commands that potentialy open goals
-    (when (proof-looking-at "\\(Local\\|Global\\)?\
+  (save-excursion         ; FIXME add other commands that potentialy open goals
+    (let ((case-fold-search nil))
+      (when (looking-at "\\(Local\\|Global\\)?\
 \\(Definition\\|Lemma\\|Theorem\\|Fact\\|Let\\|Class\
 \\|Proposition\\|Remark\\|Corollary\\|Goal\
 \\|Add\\(\\s-+Parametric\\)?\\s-+Morphism\
 \\|Fixpoint\\)\\>") ;; Yes Fixpoint can start a proof like Definition
-	(coq-lonely-:=-in-this-command))))
+	(coq-lonely-:=-in-this-command)))))
 
 
 ;; Heuristic to detect a goal opening command: there must be a lonely ":="
 (defun coq-smie-module-deambiguate ()
   "Return t if the next command is a goal starting command.
 The point should be at the beginning of the command name."
-  (save-excursion ; FIXME Is there other module starting commands?
-    (cond
-     ((looking-back "with\\s-+" nil) "module") ; lowecase means Module that is not a declaration keyword (like in with Module)
-     ((proof-looking-at "\\(Module\\|Section\\)\\>")
-      (if (coq-lonely-:=-in-this-command) "Module start" "Module def")))))
+  (save-excursion              ; FIXME Is there other module starting commands?
+    (let ((case-fold-search nil))
+      (cond
+       ((looking-back "with\\s-+" nil) "module") ; lowecase means Module that is not a declaration keyword (like in with Module)
+       ((looking-at "\\(Module\\|Section\\)\\>")
+        (if (coq-lonely-:=-in-this-command) "Module start" "Module def"))))))
 
 
 ;(defun coq-smie-detect-module-or-section-start-command ()
@@ -1010,12 +1013,21 @@ Typical values are 2 or 4."
   "Return non-nil if PARENT-POS is on same line as CHILD-POS."
   (= (line-number-at-pos parent-pos) (line-number-at-pos child-pos)))
 
+(defcustom coq-indent-basic nil
+  "Basic indentation step.
+If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
+  :group 'coq-mode
+  :type '(choice (const :tag "Fallback on global settings" nil)
+          integer))
+
 (defun coq-smie-rules (kind token)
   "Indentation rules for Coq.  See `smie-rules-function'.
 KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
   (pcase kind
      (`:elem (pcase token
-	       (`basic proof-indent)))
+	       (`basic (or coq-indent-basic
+                           (bound-and-true-p proof-indent)
+                           smie-indent-basic))))
      (`:close-all t)
      (`:list-intro
       (or (member token '("fun" "forall" "quantif exists" "with"))

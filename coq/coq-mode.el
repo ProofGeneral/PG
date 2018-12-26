@@ -205,6 +205,8 @@ Near here means PT is either inside or just aside of a comment."
   ;; (set (make-local-variable 'adaptive-fill-function)
   ;;      #'coq-adaptive-fill-function)
 
+  (setq-local comment-start "(*")
+  (setq-local comment-end   "*)")
   (set (make-local-variable 'comment-start-skip)  "(\\*+ *")
   (set (make-local-variable 'comment-end-skip) " *\\*+)")
 

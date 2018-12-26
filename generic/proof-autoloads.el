@@ -17,8 +17,8 @@
 (provide 'proof-autoloads)
 
 
-;;;### (autoloads nil "../coq/coq" "../coq/coq.el" (23586 34852 377773
-;;;;;;  600000))
+;;;### (autoloads nil "../coq/coq" "../coq/coq.el" (23587 63448 184007
+;;;;;;  512000))
 ;;; Generated autoloads from ../coq/coq.el
 
 (autoload 'coq-pg-setup "../coq/coq" "\
@@ -39,8 +39,8 @@
 
 ;;;***
 
-;;;### (autoloads nil "../coq/coq-mode" "../coq/coq-mode.el" (23586
-;;;;;;  34852 373773 560000))
+;;;### (autoloads nil "../coq/coq-mode" "../coq/coq-mode.el" (23588
+;;;;;;  277 353962 216000))
 ;;; Generated autoloads from ../coq/coq-mode.el
 
 (add-to-list 'auto-mode-alist '("\\.v\\'" . coq-mode))
@@ -54,8 +54,8 @@ Major mode for Coq scripts.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/bufhist" "../lib/bufhist.el" (23586
-;;;;;;  34852 385773 680000))
+;;;### (autoloads nil "../lib/bufhist" "../lib/bufhist.el" (23587
+;;;;;;  60072 965937 641000))
 ;;; Generated autoloads from ../lib/bufhist.el
 
 (autoload 'bufhist-mode "../lib/bufhist" "\
@@ -86,8 +86,8 @@ Stop keeping ring history for current buffer.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (23571 60372
-;;;;;;  968579 788000))
+;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (23587 60990
+;;;;;;  445008 855000))
 ;;; Generated autoloads from ../lib/holes.el
 
 (autoload 'holes-set-make-active-hole "../lib/holes" "\
@@ -201,7 +201,7 @@ Insert S, expand it and replace #s and @{]s by holes.
 ;;;***
 
 ;;;### (autoloads nil "../lib/maths-menu" "../lib/maths-menu.el"
-;;;;;;  (23577 10400 919305 444000))
+;;;;;;  (23587 60072 965937 641000))
 ;;; Generated autoloads from ../lib/maths-menu.el
 
 (autoload 'maths-menu-mode "../lib/maths-menu" "\
@@ -239,8 +239,8 @@ Return the list of frames displaying at least one associated buffer.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (23577 10400
-;;;;;;  919305 444000))
+;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (23587 60072
+;;;;;;  965937 641000))
 ;;; Generated autoloads from ../lib/pg-dev.el
 
 (autoload 'profile-pg "../lib/pg-dev" "\
@@ -250,8 +250,8 @@ Configure Proof General for profiling.  Use \\[elp-results] to see results.
 
 ;;;***
 
-;;;### (autoloads nil "pg-goals" "pg-goals.el" (23577 10400 911305
-;;;;;;  269000))
+;;;### (autoloads nil "pg-goals" "pg-goals.el" (23587 64293 950005
+;;;;;;  517000))
 ;;; Generated autoloads from pg-goals.el
 
 (autoload 'proof-goals-config-done "pg-goals" "\
@@ -261,8 +261,8 @@ Initialise the goals buffer after the child has been configured.
 
 ;;;***
 
-;;;### (autoloads nil "pg-movie" "pg-movie.el" (23572 12305 412526
-;;;;;;  903000))
+;;;### (autoloads nil "pg-movie" "pg-movie.el" (23575 9223 344856
+;;;;;;  367000))
 ;;; Generated autoloads from pg-movie.el
 
 (autoload 'pg-movie-export "pg-movie" "\
@@ -284,8 +284,8 @@ Existing XML files are overwritten.
 
 ;;;***
 
-;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (23577 10400 915305
-;;;;;;  356000))
+;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (23587 60072 961937
+;;;;;;  714000))
 ;;; Generated autoloads from pg-pamacs.el
 
 (autoload 'proof-defpacustom-fn "pg-pamacs" "\
@@ -335,8 +335,8 @@ This macro also extends the `proof-assistant-settings' list.
 
 ;;;***
 
-;;;### (autoloads nil "pg-pgip" "pg-pgip.el" (23577 10400 915305
-;;;;;;  356000))
+;;;### (autoloads nil "pg-pgip" "pg-pgip.el" (23587 64365 208880
+;;;;;;  260000))
 ;;; Generated autoloads from pg-pgip.el
 
 (autoload 'pg-pgip-process-packet "pg-pgip" "\
@@ -565,8 +565,8 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-depends" "proof-depends.el" (23577 10400
-;;;;;;  915305 356000))
+;;;### (autoloads nil "proof-depends" "proof-depends.el" (23587 64458
+;;;;;;  963411 650000))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -608,8 +608,8 @@ Indent current line of proof script, if indentation enabled.
 
 ;;;***
 
-;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (23577
-;;;;;;  10400 915305 356000))
+;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (23587
+;;;;;;  60072 961937 714000))
 ;;; Generated autoloads from proof-maths-menu.el
 
 (autoload 'proof-maths-menu-set-global "proof-maths-menu" "\
@@ -629,8 +629,8 @@ in future if we have just activated it for this buffer.
 
 ;;;***
 
-;;;### (autoloads nil "proof-menu" "proof-menu.el" (23586 34852 449774
-;;;;;;  323000))
+;;;### (autoloads nil "proof-menu" "proof-menu.el" (23587 60072 961937
+;;;;;;  714000))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -655,8 +655,8 @@ Construct and return PG auxiliary menu used in non-scripting buffers.
 
 ;;;***
 
-;;;### (autoloads nil "proof-script" "proof-script.el" (23586 34852
-;;;;;;  461774 443000))
+;;;### (autoloads nil "proof-script" "proof-script.el" (23587 64464
+;;;;;;  199330 36000))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-ready-for-assistant "proof-script" "\
@@ -687,24 +687,6 @@ Non-nil if the locked region is empty.  Works on any buffer.
 
 \(fn)" nil nil)
 
-(autoload 'pg-set-span-helphighlights "proof-script" "\
-Add a daughter help span for SPAN with help message, highlight, actions.
-The daughter span covers the non whitespace content of the main span.
-
-We add the last output (when non-empty) to the hover display, and
-also as the 'response property on the span.
-
-Optional argument MOUSEFACE means use the given face as a mouse highlight
-face, if it is a face, otherwise, if it is non-nil but not a face,
-do not add a mouse highlight.
-
-In any case, a mouse highlight and tooltip are only set if
-`proof-output-tooltips' is non-nil.
-
-Argument FACE means add 'face property FACE to the span.
-
-\(fn SPAN &optional MOUSEFACE FACE)" nil nil)
-
 (autoload 'proof-register-possibly-new-processed-file "proof-script" "\
 Register a possibly new FILE as having been processed by the prover.
 
@@ -721,21 +703,6 @@ proof assistant and Emacs has a modified buffer visiting the file.
 
 \(fn FILE &optional INFORMPROVER NOQUESTIONS)" nil nil)
 
-(autoload 'proof-script-generic-parse-find-comment-end "proof-script" "\
-Find the end of the comment point is at the start of.  Nil if not found.
-
-\(fn)" nil nil)
-
-(autoload 'proof-insert-pbp-command "proof-script" "\
-Insert CMD into the proof queue.
-
-\(fn CMD)" nil nil)
-
-(autoload 'proof-insert-sendback-command "proof-script" "\
-Insert CMD into the proof script, execute assert-until-point.
-
-\(fn CMD)" nil nil)
-
 (autoload 'proof-mode "proof-script" "\
 Proof General major mode class for proof scripts.
 \\{proof-mode-map}
@@ -751,8 +718,8 @@ finish setup which depends on specific proof assistant configuration.
 
 ;;;***
 
-;;;### (autoloads nil "proof-shell" "proof-shell.el" (23586 34852
-;;;;;;  449774 323000))
+;;;### (autoloads nil "proof-shell" "proof-shell.el" (23587 60072
+;;;;;;  961937 714000))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -887,8 +854,8 @@ processing.
 
 ;;;***
 
-;;;### (autoloads nil "proof-splash" "proof-splash.el" (23586 34852
-;;;;;;  381773 640000))
+;;;### (autoloads nil "proof-splash" "proof-splash.el" (23587 59572
+;;;;;;  767190 499000))
 ;;; Generated autoloads from proof-splash.el
 
 (autoload 'proof-splash-display-screen "proof-splash" "\
@@ -906,8 +873,8 @@ Make sure the user gets welcomed one way or another.
 
 ;;;***
 
-;;;### (autoloads nil "proof-syntax" "proof-syntax.el" (23586 34852
-;;;;;;  453774 363000))
+;;;### (autoloads nil "proof-syntax" "proof-syntax.el" (23587 61484
+;;;;;;  723836 209000))
 ;;; Generated autoloads from proof-syntax.el
 
 (autoload 'proof-replace-regexp-in-string "proof-syntax" "\
@@ -944,7 +911,7 @@ Menu made from the Proof General toolbar commands.
 ;;;***
 
 ;;;### (autoloads nil "proof-unicode-tokens" "proof-unicode-tokens.el"
-;;;;;;  (23577 10400 919305 444000))
+;;;;;;  (23587 60072 961937 714000))
 ;;; Generated autoloads from proof-unicode-tokens.el
 
 (autoload 'proof-unicode-tokens-mode-if-enabled "proof-unicode-tokens" "\
@@ -971,8 +938,8 @@ is changed.
 
 ;;;***
 
-;;;### (autoloads nil "proof-utils" "proof-utils.el" (23586 34852
-;;;;;;  381773 640000))
+;;;### (autoloads nil "proof-utils" "proof-utils.el" (23587 60072
+;;;;;;  961937 714000))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-debug "proof-utils" "\
@@ -983,8 +950,8 @@ If flag `proof-general-debug' is nil, do nothing.
 
 ;;;***
 
-;;;### (autoloads nil "../lib/scomint" "../lib/scomint.el" (23577
-;;;;;;  10400 919305 444000))
+;;;### (autoloads nil "../lib/scomint" "../lib/scomint.el" (23587
+;;;;;;  60072 965937 641000))
 ;;; Generated autoloads from ../lib/scomint.el
 
 (autoload 'scomint-make-in-buffer "../lib/scomint" "\
@@ -1016,7 +983,7 @@ If PROGRAM is a string, the remaining SWITCHES are arguments to PROGRAM.
 ;;;***
 
 ;;;### (autoloads nil "../lib/texi-docstring-magic" "../lib/texi-docstring-magic.el"
-;;;;;;  (23577 10400 919305 444000))
+;;;;;;  (23587 60072 965937 641000))
 ;;; Generated autoloads from ../lib/texi-docstring-magic.el
 
 (autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
@@ -1042,7 +1009,7 @@ in your Emacs font.
 ;;;***
 
 ;;;### (autoloads nil "../lib/unicode-tokens" "../lib/unicode-tokens.el"
-;;;;;;  (23577 10400 923305 531000))
+;;;;;;  (23587 60072 965937 641000))
 ;;; Generated autoloads from ../lib/unicode-tokens.el
 
 (autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
@@ -1060,8 +1027,8 @@ Return a unicode encoded version presentation of STR.
 ;;;;;;  "../lib/pg-fontsets.el" "../lib/proof-compat.el" "../lib/span.el"
 ;;;;;;  "pg-autotest.el" "pg-custom.el" "pg-pbrpm.el" "pg-vars.el"
 ;;;;;;  "proof-auxmodes.el" "proof-config.el" "proof-faces.el" "proof-site.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (23586 34852
-;;;;;;  457774 403000))
+;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (23588 1830
+;;;;;;  459568 860000))
 
 ;;;***
 

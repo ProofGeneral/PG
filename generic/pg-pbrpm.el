@@ -38,6 +38,7 @@
 (eval-when-compile
   (require 'proof-utils))
 
+(require 'proof-script)                 ;For proof-insert-pbp-command
 (require 'proof)
 
 ;;;

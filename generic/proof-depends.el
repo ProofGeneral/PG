@@ -26,6 +26,7 @@
 (require 'cl-lib)
 (require 'span)
 (require 'pg-vars)
+(require 'proof-script)                 ;For pg-set-span-helphighlights
 (require 'proof-config)
 (require 'proof-autoloads)
 

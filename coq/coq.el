@@ -1464,8 +1464,10 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
 Three overlays are created for each hyp: (hypov hypnameov hypcrossov),
 respectively for the whole hyp, only its name and the overlay for
 fold/unfold cross.  Return the list of mappings hypname -> overlays."
+  ;; FIXME: Consolidate the `with-current-buffer proof-goals-buffer's.
   (let*
-      ((fsthyp-pos (coq-find-first-hyp))
+      ((fsthyp-pos (with-current-buffer proof-goals-buffer
+                     (coq-find-first-hyp)))
        (fsthyp-ov (when fsthyp-pos (with-current-buffer proof-goals-buffer
                                      (overlays-at fsthyp-pos))))
        ; is there at least one hyp overlay there?
@@ -1473,7 +1475,9 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
                        (cl-some (lambda(x) (overlay-get x 'hyp-name))
                                 fsthyp-ov))))
     (if fsthyp-hypov coq-hyps-positions ;overlays are already there
-      (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals) proof-goals-buffer))))
+      (with-current-buffer proof-goals-buffer
+        (coq-build-hyps-overlays (coq-detect-hyps-positions-in-goals)
+                                 proof-goals-buffer)))))
 
 (defun coq-find-hyp-overlay (h)
   (cadr (assoc h coq-hyps-positions)))
@@ -1856,8 +1860,8 @@ See  `coq-fold-hyp'."
   (setq proof-terminal-string ".")
   (setq proof-script-command-end-regexp coq-script-command-end-regexp)
   (setq proof-script-parse-function 'coq-script-parse-function)
-  (setq proof-script-comment-start "(*")
-  (setq proof-script-comment-end "*)")
+  (setq proof-script-comment-start comment-start)
+  (setq proof-script-comment-end comment-end)
   (setq proof-script-insert-newlines nil)
   (setq proof-unnamed-theorem-name "Unnamed_thm") ; Coq's default name
 

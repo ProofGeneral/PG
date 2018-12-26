@@ -25,8 +25,6 @@
 
 (eval-when-compile (require 'cl-lib))   ;decf
 
-(require 'proof-config)
-(require 'proof-syntax)			; for proof-ids-to-regexp
 (require 'holes)
 
 (defconst coq-syntax-db nil
@@ -162,7 +160,7 @@ regexp.  See `coq-syntax-db' for DB structure."
 	(setq l tl)))
 ; da: next call is wrong?
 ;    (proof-ids-to-regexp res)))
-    (concat "\\_<\\(?:" (proof-regexp-alt-list res) "\\)\\_>")))
+    (concat "\\_<\\(?:" (mapconcat #'identity res "\\|") "\\)\\_>")))
 
 
 ;; Computes the max length of strings in a list

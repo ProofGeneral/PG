@@ -24,17 +24,17 @@
 
 ;;; Code:
 
-(defalias 'span-start 'overlay-start)
-(defalias 'span-end 'overlay-end)
-(defalias 'span-set-property 'overlay-put)
-(defalias 'span-property 'overlay-get)
+(defalias 'span-start #'overlay-start)
+(defalias 'span-end #'overlay-end)
+(defalias 'span-set-property #'overlay-put)
+(defalias 'span-property #'overlay-get)
 (defun span-make (&rest args)
   (let ((span (apply #'make-overlay args)))
     (span-set-property span 'pg-span t)
     span))
-(defalias 'span-detach 'delete-overlay)
-(defalias 'span-set-endpoints 'move-overlay)
-(defalias 'span-buffer 'overlay-buffer)
+(defalias 'span-detach #'delete-overlay)
+(defalias 'span-set-endpoints #'move-overlay)
+(defalias 'span-buffer #'overlay-buffer)
 
 (defun span-p (ol)
   "Check if an overlay OL belongs to PG."
@@ -95,8 +95,7 @@
 
 (defun span-delete (span)
   "Run the 'span-delete-actions and delete SPAN."
-  (mapc (lambda (predelfn) (funcall predelfn))
-	(span-property span 'span-delete-actions))
+  (mapc #'funcall (span-property span 'span-delete-actions))
   (delete-overlay span))
 
 (defun span-add-delete-action (span action)

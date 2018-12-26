@@ -20,10 +20,7 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
-(require 'proof-syntax)
-(require 'proof-utils)                  ; proof-locate-executable
 (require 'coq-db)
-(require 'span)
 
 ;;; keyword databases
 
@@ -1050,9 +1047,9 @@ Use ‘coq-goal-command-p’ on a span instead if possible."
 ;; to look at Modules and section (actually indentation will still
 ;; need it)
 (defun coq-goal-command-p (span)
-  (or (span-property span 'goalcmd)
+  (or (overlay-get span 'goalcmd)
       ;; module and section starts are detected here
-      (let ((str (or (span-property span 'cmd) "")))
+      (let ((str (or (overlay-get span 'cmd) "")))
         (or (coq-section-command-p str)
             (coq-module-opening-p str)))))
 
@@ -1073,15 +1070,18 @@ It is used:
 ;; It is understood here as being a goal.  This is important for
 ;; recognizing global identifiers, see coq-global-p.
 (defconst coq-save-command-regexp-strict
-  (proof-anchor-regexp
-   (concat "\\(?:Time\\s-+\\)?\\(" (proof-ids-to-regexp coq-keywords-save-strict)
-           "\\)")))
+  (concat "\\`\\(?:Time\\s-+\\)?\\("
+          "\\_<"
+	  (regexp-opt coq-keywords-save-strict)
+	  "\\_>"
+          "\\)"))
 
 (defun coq-save-command-p (_span str)
   "Decide whether argument is a Save command or not."
-  (or (proof-string-match coq-save-command-regexp-strict str)
-      (and (proof-string-match "\\`Proof\\_>" str)
-           (not (proof-string-match "\\`Proof\\s-*\\(\\.\\|\\_<with\\_>\\|\\_<using\\_>\\)" str)))))
+  (let ((case-fold-search nil))
+    (or (string-match coq-save-command-regexp-strict str)
+        (and (string-match "\\`Proof\\_>" str)
+             (not (string-match "\\`Proof\\s-*\\(\\.\\|\\_<with\\_>\\|\\_<using\\_>\\)" str))))))
 
 
 ;; ----- keywords for font-lock.
@@ -1195,10 +1195,10 @@ It is used:
   "All keywords in a Coq script.")
 
 ;; coq-build-opt-regexp-from-db already adds "\\_<" "\\_>"
-(defun proof-regexp-alt-list-symb (args)
-  (concat "\\_<\\(?:" (proof-regexp-alt-list args) "\\)\\_>"))
+(defun coq--regexp-alt-list-symb (args)
+  (concat "\\_<\\(?:" (mapconcat #'identity args "\\|") "\\)\\_>"))
 
-(defvar coq-keywords-regexp (proof-regexp-alt-list-symb coq-keywords))
+(defvar coq-keywords-regexp (coq--regexp-alt-list-symb coq-keywords))
 
 
 (defvar coq-symbols
@@ -1292,30 +1292,31 @@ It is used:
 
 
 (defconst coq-save-command-regexp
-  (proof-anchor-regexp
-   (concat "\\(?:Time\\s-+\\)?\\(" (proof-ids-to-regexp coq-keywords-save)
-           "\\)")))
+  ;; FIXME: The surrounding grouping parens are probably not needed.
+  (concat "\\`\\(\\(?:Time\\s-+\\)?\\_<"
+           (regexp-opt coq-keywords-save t)
+           "\\_>\\)"))
 
 (defconst coq-save-with-hole-regexp
-  (concat "\\(?:Time\\s-+\\)?\\(" (proof-regexp-alt-list coq-keywords-save-strict)
+  (concat "\\(?:Time\\s-+\\)?\\(" (regexp-opt coq-keywords-save-strict)
 	  "\\)\\s-+\\(" coq-id "\\)\\s-*\\."))
 
 (defconst coq-goal-command-regexp
-  (proof-anchor-regexp (proof-regexp-alt-list coq-keywords-goal)))
+  (concat "\\`\\(?:" (mapconcat #'identity coq-keywords-goal "\\|") "\\)"))
 
 (defconst coq-goal-with-hole-regexp
-  (concat "\\(" (proof-regexp-alt-list coq-keywords-goal)
+  (concat "\\(" (mapconcat #'identity coq-keywords-goal "\\|")
 	  "\\)\\s-+\\(" coq-id "\\)\\s-*:?"))
 
 (defconst coq-decl-with-hole-regexp
-  (concat "\\(" (proof-regexp-alt-list coq-keywords-decl)
+  (concat "\\(" (mapconcat #'identity coq-keywords-decl "\\|")
 	  "\\)\\s-+\\(" coq-ids "\\)\\s-*:"))
 
 ;;  (defconst coq-decl-with-hole-regexp
 ;;    (if coq-variable-highlight-enable coq-decl-with-hole-regexp-1 'nil))
 
 (defconst coq-defn-with-hole-regexp
-  (concat "\\(" (proof-regexp-alt-list coq-keywords-defn)
+  (concat "\\(" (mapconcat #'identity coq-keywords-defn "\\|")
           "\\)\\s-+\\(" coq-id "\\)"))
 
 ;; must match:
@@ -1346,8 +1347,8 @@ It is used:
      (,coq-keywords-regexp . 'font-lock-keyword-face)
      (,coq-reserved-regexp . 'font-lock-type-face)
      (,coq-tactics-regexp . 'proof-tactics-name-face)
-     (,(proof-regexp-alt-list coq-tacticals) . 'proof-tacticals-name-face)
-     (,(proof-regexp-alt-list-symb (list "Set" "Type" "Prop")) . 'font-lock-type-face)
+     (,(mapconcat #'identity coq-tacticals "\\|") . 'proof-tacticals-name-face)
+     (,(coq--regexp-alt-list-symb (list "Set" "Type" "Prop")) . 'font-lock-type-face)
      ("============================" . 'font-lock-keyword-face)
      (,coq-goal-with-hole-regexp 2 'font-lock-function-name-face)
      (,coq-context-marker-regexp 1 'coq-context-qualifier-face))
@@ -1382,11 +1383,10 @@ part of another hypothesis.")
   (concat coq-hyp-name-in-goal-or-response-regexp "\\|\\(?1:^\\s-+========\\)"))
 
 (defun coq-find-first-hyp ()
-  (with-current-buffer proof-goals-buffer
-    (save-excursion
-      (goto-char (point-min))
-      (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
-      (match-beginning 2))))
+  (save-excursion
+    (goto-char (point-min))
+    (search-forward-regexp coq-hyp-name-in-goal-or-response-regexp nil t)
+    (match-beginning 2)))
 
 (defun coq-detect-hyps-positions (buf &optional limit)
   "Detect all hypotheses displayed in buffer BUF and returns positions.
@@ -1420,11 +1420,10 @@ part of another hypothesis.")
 
 ;; Don't look at the conclusion of the goal
 (defun coq-detect-hyps-positions-in-goals ()
-  (with-current-buffer proof-goals-buffer
-    (goto-char (point-min))
-    (coq-detect-hyps-positions
-     proof-goals-buffer
-     (if (search-forward-regexp "==========" nil t) (point) nil))))
+  (goto-char (point-min))
+  (coq-detect-hyps-positions
+   (current-buffer)
+   (if (search-forward-regexp "==========" nil t) (point) nil)))
 
 
 ;; We define a slightly different set of keywords for response buffer.
@@ -1437,8 +1436,8 @@ part of another hypothesis.")
     (cons coq-keywords-regexp 'font-lock-keyword-face)
     (cons coq-shell-eager-annotation-start 'proof-warning-face)
     (cons coq-error-regexp 'proof-error-face)
-    (cons (proof-regexp-alt-list-symb (list "In environment" "The term" "has type")) 'proof-error-face)
-    (cons (proof-regexp-alt-list-symb (list "Set" "Type" "Prop")) 'font-lock-type-face)
+    (cons (coq--regexp-alt-list-symb (list "In environment" "The term" "has type")) 'proof-error-face)
+    (cons (coq--regexp-alt-list-symb (list "Set" "Type" "Prop")) 'font-lock-type-face)
     (list (concat "[?]" coq-id) 0 'coq-question-mark-face) ;; highlight evars and Ltac variables
     (list coq-hyp-name-in-goal-or-response-regexp 2 'proof-declaration-name-face)
     (list "^\\([^ \n]+\\) \\(is defined\\)" (list 1 'font-lock-function-name-face t)))))
@@ -1450,21 +1449,19 @@ part of another hypothesis.")
     (cons coq-reserved-regexp 'font-lock-type-face)
     (list (concat "[?]" coq-id) 0 'coq-question-mark-face) ;; highlight evars and Ltac variables
     (list coq-hyp-name-in-goal-or-response-regexp 2 'proof-declaration-name-face)
-    (cons (proof-regexp-alt-list-symb (list "Set" "Type" "Prop")) 'font-lock-type-face))))
+    (cons (coq--regexp-alt-list-symb (list "Set" "Type" "Prop")) 'font-lock-type-face))))
 
 
 
-;; use this to evaluate code with "." being consisdered a symbol
+;; Use this to evaluate code with "." being consisdered a symbol
 ;; constituent (better behavior for thing-at and maybe font-lock too,
 ;; for indentation we use ad hoc smie lexers).
 (defmacro coq-with-altered-syntax-table (&rest code)
   (declare (debug t))
-  (let ((res (make-symbol "res")))
-    `(unwind-protect
-	 (progn (modify-syntax-entry ?\. "_")
-                (let ((,res (progn ,@code)))
-                  (modify-syntax-entry ?\. ".")
-                  ,res)))))
+  `(unwind-protect
+       (progn (modify-syntax-entry ?\. "_")
+              ,@code)
+     (modify-syntax-entry ?\. ".")))
 
 (defconst coq-generic-expression
   (mapcar (lambda (kw)

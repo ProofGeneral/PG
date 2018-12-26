@@ -766,7 +766,6 @@ This is used to annotate the buffer with the result of proof steps."
 	
       text)))
 
-;;;###autoload
 (defun pg-set-span-helphighlights (span &optional mouseface face)
   "Add a daughter help span for SPAN with help message, highlight, actions.
 The daughter span covers the non whitespace content of the main span.
@@ -1763,7 +1762,6 @@ to the function which parses the script segment by segment."
       ;; Return segment list
       segs)))
 
-;;;###autoload
 (defun proof-script-generic-parse-find-comment-end ()
   "Find the end of the comment point is at the start of.  Nil if not found."
   (let ((notout t))
@@ -2049,7 +2047,6 @@ No effect if prover is busy."
 ;;
 ;; PBP call-backs
 ;;
-;;;###autoload
 (defun proof-insert-pbp-command (cmd)
   "Insert CMD into the proof queue."
   (proof-activate-scripting)
@@ -2064,7 +2061,6 @@ No effect if prover is busy."
 		       (list (list span (list cmd)
 				   'proof-done-advancing)))))
 
-;;;###autoload
 (defun proof-insert-sendback-command (cmd)
   "Insert CMD into the proof script, execute assert-until-point."
   (proof-with-script-buffer
