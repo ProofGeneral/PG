@@ -1,4 +1,4 @@
-;;; pg-init.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding:t; -*-
+;;; proof-general.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -65,5 +65,5 @@
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir root)))))
 
-(provide 'pg-init)
-;;; pg-init.el ends here
+(provide 'proof-general)
+;;; proof-general.el ends here
