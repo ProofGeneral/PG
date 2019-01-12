@@ -9,7 +9,7 @@
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
-;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
+;; Authors: (see the AUTHORS file distributed along the sources)
 ;; URL: https://proofgeneral.github.io/
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 4.5-git
@@ -28,6 +28,21 @@
 
 ;;; Commentary:
 ;;
+;; Proof General is a generic Emacs interface for proof assistants
+;; (also known as interactive theorem provers).
+;;
+;; It is supplied ready to use for the proof assistants Coq,
+;; EasyCrypt, and PhoX.
+;;
+;; See https://proofgeneral.github.io/ for installation instructions
+;; and online documentation.  Or browse the accompanying info manual:
+;; (info-display-manual "ProofGeneral")
+;;
+;; Regarding the Coq proof assistant, you may be interested in the
+;; company-coq extension of ProofGeneral (also available in MELPA).
+
+;;; Code:
+
 ;; Proof General's initialization code (in generic/proof-site) is relatively
 ;; complex, in part because it was written before package.el existed, and in
 ;; part because package.el still doesn't look for autoloads in subdirectories.
@@ -37,8 +52,6 @@
 ;; * Setting up the load path when byte-compiling PG.
 ;; * Loading a minimal PG setup on startup (not all of Proof General, of course;
 ;;   mostly mode hooks and autoloads).
-
-;;; Code:
 
 ;;;###autoload
 (if t (require 'proof-site
