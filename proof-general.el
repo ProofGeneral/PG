@@ -73,7 +73,9 @@
            ;; them for the compilation to succeed for me.  --Stef
            "isar" "lego" "twelf" "obsolete/plastic"))
         (root (file-name-directory
-               (or load-file-name byte-compile-current-file buffer-file-name))))
+               (or load-file-name
+		   (bound-and-true-p byte-compile-current-file)
+		   buffer-file-name))))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir root)))))
 
