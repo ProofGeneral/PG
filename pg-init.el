@@ -1,9 +1,9 @@
-;;; pg-init.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding: t; -*-
+;;; pg-init.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding:t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -46,6 +46,24 @@
                (expand-file-name "generic/proof-site"
                                  (file-name-directory
                                   (or load-file-name buffer-file-name)))))
+
+(eval-when-compile
+  ;; FIXME: This is used during installation of the ELPA package:
+  ;; we presume that this file will be compiled before any of the files in
+  ;; sub-directories and we presume that all files are compiled within the same
+  ;; session, so we here add to load-path all the subdirectories so
+  ;; that files in (say) coq/ can (require 'coq-foo) and the compiler will find
+  ;; the corresponding file.
+  (let ((byte-compile-directories
+         '("generic" "lib"
+           "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox"
+           ;; FIXME: These dirs used to not be listed, but I needed to add
+           ;; them for the compilation to succeed for me.  --Stef
+           "isar" "lego" "twelf" "obsolete/plastic"))
+        (root (file-name-directory
+               (or load-file-name byte-compile-current-file buffer-file-name))))
+    (dolist (dir byte-compile-directories)
+      (add-to-list 'load-path (expand-file-name dir root)))))
 
 (provide 'pg-init)
 ;;; pg-init.el ends here

@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -558,7 +558,7 @@ last use time, to discourage saving these into the users database."
   (defvar completion-min-length)
   (declare-function add-completion "completion"
                     (string &optional num-uses last-use-time))
-  (when proof-assistant
+  (when (> (length proof-assistant) 0)
     (mapcar (lambda (cmpl)
 	      ;; completion gives error; trapping is tricky so test again
 	      (if (>= (length cmpl) completion-min-length)
