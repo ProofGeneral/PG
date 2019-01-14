@@ -54,10 +54,18 @@
 ;;   mostly mode hooks and autoloads).
 
 ;;;###autoload
-(if t (require 'proof-site
-               (expand-file-name "generic/proof-site"
-                                 (file-name-directory
-                                  (or load-file-name buffer-file-name)))))
+(eval-and-compile
+  (defvar pg-init--script-full-path
+    (or (and load-in-progress load-file-name)
+        (bound-and-true-p byte-compile-current-file)
+        (buffer-file-name)))
+  (defvar pg-init--pg-root
+    (file-name-directory pg-init--script-full-path)))
+
+;;;###autoload
+(unless (bound-and-true-p byte-compile-current-file)
+  ;; This require breaks compilation, so it must only run when loading the package.
+  (require 'proof-site (expand-file-name "generic/proof-site" pg-init--pg-root)))
 
 (eval-when-compile
   ;; FIXME: This is used during installation of the ELPA package:
@@ -71,13 +79,11 @@
            "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox"
            ;; FIXME: These dirs used to not be listed, but I needed to add
            ;; them for the compilation to succeed for me.  --Stef
-           "isar" "lego" "twelf" "obsolete/plastic"))
-        (root (file-name-directory
-               (or load-file-name
-		   (bound-and-true-p byte-compile-current-file)
-		   buffer-file-name))))
+           ;; These dirs are now obsolete and not published on MELPA.  --Erik
+           ;; "isar" "lego" "twelf" "obsolete/plastic"
+       )))
     (dolist (dir byte-compile-directories)
-      (add-to-list 'load-path (expand-file-name dir root)))))
+      (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))
 
 (provide 'proof-general)
 ;;; proof-general.el ends here
