@@ -106,8 +106,10 @@ Namely, goals that do not fit in the goals window."
 
 ;TODO: remove Set Undo xx. It is obsolete since coq-8.5 at least.
 ;;`(,(format "Set Undo %s . " coq-default-undo-limit) "Set Printing Width 75.")
+;; We make coq silent from the start and ask for information ("Show") every
+;; time we need to display things.
 (defconst coq-shell-init-cmd
-  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) coq-user-init-cmd)
+  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) `("Set Silent. ") coq-user-init-cmd)
  "Command to initialize the Coq Proof Assistant.")
 
 
@@ -594,8 +596,9 @@ Initially 1 because Coq initial state has number 1.")
   (span-set-property span 'proofstack val))
 
 (defsubst proof-last-locked-span ()
-  (with-current-buffer proof-script-buffer
-    (span-at (- (proof-unprocessed-begin) 1) 'type)))
+  (and proof-script-buffer ; not even a script started
+       (with-current-buffer proof-script-buffer
+         (span-at (- (proof-unprocessed-begin) 1) 'type))))
 
 ;; Each time the state changes (hook below), (try to) put the state number in
 ;; the last locked span (will fail if there is already a number which should
@@ -1188,13 +1191,10 @@ Printing All set."
     (remove-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
     (remove-hook 'proof-retract-command-hook #'coq-reset-printing-width)))
 
-;; In case of nested proofs (which are announced as obsolete in future versions
-;; of coq) Coq does not show the goals of enclosing proof when closing a nested
-;; proof. This is coq's proof-shell-empty-action-list-command function which
-;; inserts a "Show" if the last command of an action list is a save command and
-;; there is more than one open proof before that save. If you want to issue a
-;; command and *not* have the goal redisplayed, the command must be tagged with
-;; 'empty-action-list.
+;; All the case where pg must ask coq for the current goal: basically everytime
+;; we know there is a current goal. In recent coq versions Set/Unset Silent are
+;; expensive (due to STM global_update) so the policy is now: be always silent
+;; and insert "Show." when we want to see the goal.
 (defun coq-empty-action-list-command (cmd)
   "Return the list of commands to send to Coq after CMD
 if it is the last command of the action list.
@@ -1216,12 +1216,18 @@ be called and no command will be sent to Coq."
           (> (length (coq-get-span-proofstack (proof-last-locked-span)))
              ;; the number of aborts is the third arg of Backtrack.
              (string-to-number (match-string 1 cmd)))))
-    (list "Unset Silent." "Show."))
+    (list "Show."))
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
      ;; silent (there is no goal to show).
      (string-match "Backtrack" cmd))
-    (list "Unset Silent."))))
+    (list))
+   ;; there is at least open proof and this is not a save command
+   ((and (not (string-match coq-save-command-regexp-strict cmd))
+         (> (length coq-last-but-one-proofstack) 0))
+    (list  "Show."))
+   ;; we are not inside a proof
+   (t nil)))
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
@@ -1911,9 +1917,10 @@ See  `coq-fold-hyp'."
 
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
-
-  (setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+  ;; pg now relies on coq being silent, we thus dont use this anymore
+  (setq proof-shell-start-silent-cmd nil
+        proof-shell-stop-silent-cmd nil
+        )
 
   ;; prooftree config
   (setq
