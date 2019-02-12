@@ -522,9 +522,8 @@ the (point-min) if there is no previous command."
   "Move to the start of command at point.
 The point is put exactly before first non comment letter of the command."
   (coq-find-current-start)
-  (when (or (forward-comment (point-max))
-            (looking-at "\\S-"))
-    (point)))
+  (forward-comment (point-max))
+  (point))
 
 ;; (defun same-line (pt pt2)
 ;;  (or (= (line-number-at-pos pt) (line-number-at-pos pt2))))
