@@ -2305,7 +2305,7 @@ query saves here."
 ;;
 
 ;;;###autoload
-(define-derived-mode proof-mode fundamental-mode
+(define-derived-mode proof-mode prog-mode
   proof-general-name
   "Proof General major mode class for proof scripts.
 \\{proof-mode-map}"
