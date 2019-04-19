@@ -378,12 +378,24 @@ options of a few coq-project files does the right thing."
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   (coq-include-options loadpath current-directory pre-v85))
 
+(defun coq--clean-prog-args (args)
+  "Return ARGS without the entries added by `coq-coqtop-prog-args'.
+
+Such entries are currently -emacs and -topfile."
+  (pcase args
+    ((or `("-emacs" . ,rest)
+         `("-topfile" . (,(pred (apply-partially #'equal buffer-file-name)) . ,rest)))
+     (coq--clean-prog-args rest))
+    (`(,car . ,cdr)
+     (cons car (coq--clean-prog-args cdr)))
+    (_ args)))
+
 (defun coq-coqc-prog-args (loadpath &optional current-directory pre-v85)
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
-  (append (remove "-emacs" coq-prog-args)
+  (append (coq--clean-prog-args coq-prog-args)
           (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
             (coq-coqdep-prog-args loadpath current-directory pre-v85))))
 
