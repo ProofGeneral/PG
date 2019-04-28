@@ -26,6 +26,7 @@
 (eval-when-compile (require 'cl-lib))   ;decf
 
 (require 'holes)
+(require 'diff-mode)
 
 (defconst coq-syntax-db nil
   "Documentation-only variable, for coq keyword databases.
@@ -364,6 +365,32 @@ Required so that 'coq-symbol-binder-face is a proper facename")
 
 (defconst coq-question-mark-face 'coq-question-mark-face)
 
+
+(defface coq-diffs-added-face
+  '((t . (:inherit diff-refine-added)))
+  "Face used to highlight added text in diffs"
+  :group 'proof-faces)
+
+(defface coq-diffs-removed-face
+  '((t . (:inherit diff-refine-removed)))
+  "Face used to highlight removed text in diffs"
+  :group 'proof-faces)
+
+(defface coq-diffs-added-bg-face
+  '((t . (:inherit diff-added)))
+  "Face used to highlight unchanged text in lines showing added text in diffs"
+  :group 'proof-faces)
+
+(defface coq-diffs-removed-bg-face
+  '((t . (:inherit diff-removed)))
+  "Face used to highlight unchanged text in lines showing removed text in diffs"
+  :group 'proof-faces)
+
+(defvar coq-tag-map
+  '(("diff.added" . coq-diffs-added-face)
+   ("diff.removed" . coq-diffs-removed-face)
+   ("diff.added.bg" . coq-diffs-added-bg-face)
+   ("diff.removed.bg" . coq-diffs-removed-bg-face)))
 
 (provide 'coq-db)
 

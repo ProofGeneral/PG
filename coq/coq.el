@@ -1891,7 +1891,7 @@ See  `coq-fold-hyp'."
   ;; type.
   (setq proof-assistant-additional-settings
         '(coq-compile-quick coq-compile-keep-going
-          coq-compile-auto-save coq-lock-ancestors))
+          coq-compile-auto-save coq-lock-ancestors coq-diffs))
 
   (setq proof-goal-command-p #'coq-goal-command-p
         proof-find-and-forget-fn #'coq-find-and-forget
@@ -2069,6 +2069,34 @@ See  `coq-fold-hyp'."
   "Depth of pretty printer formatting, beyond which dots are displayed."
   :type 'integer
   :setting "Set Printing Depth %i . ")
+
+(defun coq-diffs ()
+  "Return string for setting Coq Diffs.
+Return the empty string if the version of Coq < 8.10."
+  (if (coq--post-v810)
+      (format "Set Diffs \"%s\". " (symbol-name coq-diffs))
+    ""))
+
+(defun coq-diffs--setter (symbol new-value)
+  ":set function fo `coq-diffs'.
+Set Diffs setting if Coq is running and has a version >= 8.10."
+  (set symbol new-value)
+  (if (proof-shell-available-p)
+      (let ((cmd (coq-diffs)))
+        (if (equal cmd "")
+            (message "Ignore coq-diffs setting %s for Coq before 8.10"
+                 (symbol-name coq-diffs))
+          (proof-shell-invisible-command cmd)))))
+
+(defcustom coq-diffs 'off
+  "Controls Coq Diffs option"
+  :type '(radio
+    (const :tag "Don't show diffs" off)
+    (const :tag "Show diffs: only added" on)
+    (const :tag "Show diffs: added and removed" removed))
+  :safe (lambda (v) (member v '(off on removed)))
+  :set 'coq-diffs--setter
+  :group 'coq)
 
 ;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit

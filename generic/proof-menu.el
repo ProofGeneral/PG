@@ -860,6 +860,7 @@ KEY is the optional key binding."
 			 ["Save Settings" (proof-settings-save)
 			  (proof-settings-changed-from-saved-p)]))
 	    groups ents)
+	; todo: AFAICT the following statement does nothing and can be removed
 	(mapc (lambda (stg) (add-to-list 'groups (get (car stg) 'pggroup)))
 	      proof-assistant-settings)
 	(dolist (grp (reverse groups))

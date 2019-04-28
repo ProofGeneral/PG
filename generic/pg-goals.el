@@ -25,6 +25,7 @@
 (defvar proof-assistant-menu)           ; defined by macro in proof-menu
 
 (require 'pg-assoc)
+(require 'coq-diffs)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -109,7 +110,7 @@ so the response buffer should not be cleared."
 
     ;; Only display if string is non-empty.
     (unless (string-equal string "")
-      (insert string))
+      (coq-insert-tagged-text string))
 
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)

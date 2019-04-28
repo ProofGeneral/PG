@@ -30,6 +30,7 @@
 
 (require 'pg-assoc)
 (require 'span)
+(require 'coq-diffs)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -409,7 +410,9 @@ Returns non-nil if response buffer was cleared."
                     (eq (point-min) (point-max)))
           (newline))
         (setq start (point))
-        (insert str)
+        (if face
+          (insert str)
+          (coq-insert-tagged-text str))
         (unless (bolp) (newline))
         (when face
           (overlay-put

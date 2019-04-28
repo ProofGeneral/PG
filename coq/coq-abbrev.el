@@ -220,6 +220,22 @@
       :active (and coq-compile-before-require
 		   coq-compile-parallel-in-background)
       :help "Abort background compilation and kill all compilation processes."])
+    ("Diffs"
+      ["off"
+       (customize-set-variable 'coq-diffs 'off)
+       :style radio
+       :selected (eq coq-diffs 'off)
+       :help "Don't show diffs"]
+      ["on"
+       (customize-set-variable 'coq-diffs 'on)
+       :style radio
+       :selected (eq coq-diffs 'on)
+       :help "Show diffs: only added"]
+      ["removed"
+       (customize-set-variable 'coq-diffs 'removed)
+       :style radio
+       :selected (eq coq-diffs 'removed)
+       :help "Show diffs: added and removed"])
     ""
     ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
     ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]

@@ -75,7 +75,6 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
    
    Hide/ unhide status remains when goal changes.
 
-
 *** Highlighting of hypothesis
 
     You can highlight hypothesis in goals buffer on a per name
@@ -84,8 +83,7 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
     Highlighting status remains when goal changes.
 
-
-**** Automtic highlighting with (search)About.
+**** Automatic highlighting with (search)About.
     Hypothesis cited in the response buffer after C-c C-a C-a (i.e.
     M-x coq-SearchAbout) will be highlighted automatically. Any other
     hypothesis highlighted is unhighlighted.
@@ -93,6 +91,10 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     To disable this, do:
 
     (setq coq-highlight-hyps-cited-in-response nil)
+
+*** Support Coq's feature for highlighting the differences
+    between successive proof steps.  See section 11.8 ("Showing
+    Proof Diffs") in the documentation.
 
 *** bug fixes
     - avoid leaving partial files behind when compilation fails

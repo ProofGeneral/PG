@@ -4302,6 +4302,7 @@ assistant.  It supports most of the generic features of Proof General.
 * User-loaded tactics::
 * Holes feature::
 * Proof-Tree Visualization::
+* Showing Proof Diffs::
 @end menu
 
 
@@ -5190,6 +5191,45 @@ To support @code{Grab Existential Variables} Prooftree can
 actually display several graphically independent proof trees in
 several layers.
 
+@node Showing Proof Diffs
+@section Showing Proof Diffs
+
+Coq 8.10 supports automatically highlighting the differences
+between successive proof steps in Proof General.  The feature is described in the
+@uref{https://coq.inria.fr/distrib/current/refman/proof-engine/proof-handling.html#showing-differences-between-proof-steps,
+Coq Documentation}.
+
+The Coq proof diff does more than a basic "diff" operation.  For example:
+
+@itemize @bullet
+@item diffs are computed on a per-token basis (as determined by the Coq lexer) rather
+  than on a per-character basis, probably a better match for how people understand
+  the output.  (For example, a token-based diff between "abc" and "axc" will
+  highlight all of "abc" and "axc" as a difference, while a character-based diff
+  would indicate that "a" and "c" are in common and that only the "b"/"x" is a
+  difference.)
+@item diffs ignore the order of hypotheses
+@item tactics that only change the proof view are handled specially, for
+  example "swap" after a "split" will show the diffs between before "split"
+  and after "swap", which is more useful
+@item some error messages have been instrumented to show diffs where it is helpful
+@end itemize
+
+To enable or disable diffs, set @code{coq-diffs} (select menu @code{Coq -> Diffs})
+to "on", "off" or "removed".  "on" highlights added tokens with the background
+color from @code{diff-refine-added}.  "removed" highlights removed tokens
+with the background color from @code{diff-refine-removed}.  With the "removed" setting,
+lines that have both added and removed text may be shown twice, as "before" and
+"after" lines.
+To preserve the settings for the next time you start Proof General,
+select @code{Coq -> Settings -> Save Settings}.
+
+The colors used to highlight diffs are configurable in the
+@code{Proof-General -> Advanced -> Customize -> Proof Faces} menu.
+The 4 @code{Coq Diffs ...} faces control the highlights.  Any line that
+has added or removed tokens are shown with the entire line highlighted with
+a @code{Bg} face.  The added or removed tokens themselves are highlighted
+with non-@code{Bg} faces.
 
 @c =================================================================
 @c
