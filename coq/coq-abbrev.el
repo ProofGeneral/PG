@@ -124,7 +124,7 @@
     ["Double Hit Electric Terminator" coq-double-hit-toggle
      :style toggle
      :selected coq-double-hit-enable
-     :help "Automatically send commands when terminator typed twiced quickly."]
+     :help "Automatically send commands when terminator is typed twice quickly."]
     ("Auto Compilation"
      ["Compile Before Require"
       coq-compile-before-require-toggle
@@ -153,7 +153,7 @@
        :selected (eq coq-compile-quick 'no-quick)
        :active (and coq-compile-before-require
 		    coq-compile-parallel-in-background)
-       :help "Compile without -quick but accept existion .vio's"]
+       :help "Compile without -quick but accept existing .vio's"]
       ["quick no vio2vo"
        (customize-set-variable 'coq-compile-quick 'quick-no-vio2vo)
        :style radio
@@ -202,7 +202,7 @@
        :active coq-compile-before-require
        :help "Save all buffers without confirmation"]
       )
-     ["Lock Ancesotors"
+     ["Lock Ancestors"
       coq-lock-ancestors-toggle
       :style toggle
       :selected coq-lock-ancestors

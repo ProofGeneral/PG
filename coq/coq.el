@@ -1225,7 +1225,7 @@ be called and no command will be sent to Coq."
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
-Each timme the user sends abunch of commands to Coq, check if the
+Each time the user sends a bunch of commands to Coq, check if the
 width of the goals window changed, and adapt coq printing width.
 WARNING: If several windows are displaying the goals buffer, one
 is chosen arbitrarily.  WARNING 2: when backtracking the printing
@@ -1483,7 +1483,7 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
   (cadr (assoc h coq-hyps-positions)))
 
 ;;;;;;;;;;;;;; Highlighting hypothesis ;;;;;;;;
-;; Feature: highlighting of hyptohesis that remains when the cript is played
+;; Feature: highlighting of hypothesis that remains when the script is played
 ;; (and goals buffer is updated).
 
 ;; On by default. This only works with the SearchAbout function for now.
@@ -1493,7 +1493,7 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
 (defvar coq-highlight-hyps-sticky nil
   "If non-nil, try to make hypothesis highlighting sticky.
 The is try to re-highlight the hypothesis with same names
-after a refeshing of the response buffer.")
+after a refreshing of the response buffer.")
 
 ;; We maintain a list of hypothesis names that must be highlighted at each
 ;; regeneration of goals buffer.
@@ -1524,7 +1524,7 @@ buffer is updated."
 
 (defun coq-highlight-hyp (h)
   "Highlight hypothesis named H (sticky).
-use `coq-unhighlight-hyp' to unhilight."
+use `coq-unhighlight-hyp' to unhighlight."
   (unless (member h coq-highlighted-hyps)
     (setq coq-highlighted-hyps (cons h coq-highlighted-hyps)))
   (coq-highlight-hyp-aux h))
@@ -1801,7 +1801,7 @@ See  `coq-fold-hyp'."
 ;; Set to t to bring it back%%
 ;;
 ;; FIXME: this always sets proof-output-tooltips to nil, even if the user puts
-;; explicitely the reverse in it sconfig file. I just want to change the
+;; explicitly the reverse in it sconfig file. I just want to change the
 ;; *default* value to nil.
 (custom-set-default 'proof-output-tooltips nil)
 
@@ -2230,7 +2230,7 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 ;; after the proof, the evar line must be set back to what it was before the
 ;; proof. I therefore look in the urgent action hook if proof display is
 ;; switched on or off. When switched on, I test the current evar printing
-;; status with the undodumented command "Test Printing Dependent Evars Line" to
+;; status with the undocumented command "Test Printing Dependent Evars Line" to
 ;; remember if I have to switch evar printing off eventually.
 
 (defvar coq--proof-tree-must-disable-evars nil
@@ -2282,7 +2282,7 @@ properly after the proof and enable the evar printing."
   "Disable evar printing if necessary.
 This function switches off evar printing after the proof, if it
 was off before the proof.  For undo commands, we rely on the fact
-that Coq itself undos the effect of the evar printing change that
+that Coq itself undoes the effect of the evar printing change that
 we inserted after the goal statement.  We also rely on the fact
 that Proof General never backtracks into the middle of a
 proof.  (If this would happen, Coq would switch evar printing on
@@ -2299,7 +2299,7 @@ result of `coq-proof-tree-get-proof-info'."
 (defun coq-proof-tree-evar-display-toggle ()
   "Urgent action hook function for changing the evar printing status in Coq.
 This function is for `proof-tree-urgent-action-hook' (which is
-called only if external proof disaply is switched on).  It checks
+called only if external proof display is switched on).  It checks
 whether a proof was started or stopped and inserts commands for
 enableing and disabling the evar status line for Coq 8.6 or
 later.  Without the evar status line being enabled, prooftree
@@ -2779,7 +2779,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
 
 
-;; I don't use proof-shell-last-ouput here since it is not always set to the
+;; I don't use proof-shell-last-output here since it is not always set to the
 ;; really last output (specially when a *tactic* gives an error) instead I go
 ;; directly to the response buffer. This allows also to clean the response
 ;; buffer (better to only scroll it?)
