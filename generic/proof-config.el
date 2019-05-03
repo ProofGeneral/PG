@@ -213,9 +213,9 @@ Default is the identity function."
 (defcustom proof-assistant-setting-format nil
   "Function for formatting setting strings for proof assistant.
 Setting strings are calculated by replacing a format character
-%b, %i, or %s in the :setting string in for each variable defined with
-`defpacustom', using the current value of that variable.  This
-function  is applied as a final step to do any extra markup, or
+%b, %i, %f, %s, or %l in the :setting string in for each variable
+defined with `defpacustom', using the current value of that variable.
+This function is applied as a final step to do any extra markup, or
 conversion, etc.  (No changes are done if nil)."
   :type '(choice string (const nil))
   :group 'prover-config)

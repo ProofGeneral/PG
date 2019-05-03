@@ -1768,7 +1768,14 @@ See  `coq-fold-hyp'."
 ;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
 ;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
 
-
+;; Persistent setting, non-boolean, non cross-version compatible (Coq >= 8.10)
+(defconst coq-diffs--function #'coq-diffs
+  "Symbol corresponding to the function `coq-diffs'.
+Required to benefit from delayed evaluation when
+`proof-assistant-format-lambda' calls (funcall coq-diffs--function)
+at `proof-assistant-settings-cmds' evaluation time.")
+(add-to-list 'proof-assistant-settings
+             '(diffs--function "%l" string "Show Diffs in Coq") t)
 
 (defun coq-Compile ()
   "Compiles current buffer."
