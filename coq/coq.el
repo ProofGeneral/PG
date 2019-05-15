@@ -1216,7 +1216,8 @@ be called and no command will be sent to Coq."
           (> (length (coq-get-span-proofstack (proof-last-locked-span)))
              ;; the number of aborts is the third arg of Backtrack.
              (string-to-number (match-string 1 cmd)))))
-    (list "Unset Silent." "Show."))
+    ; "Set Diffs" always re-prints the proof context with (if enabled) diffs
+    (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")))
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
      ;; silent (there is no goal to show).

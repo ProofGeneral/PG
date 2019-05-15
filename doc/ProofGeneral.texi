@@ -5226,9 +5226,9 @@ select @code{Coq -> Settings -> Save Settings}.
 
 The colors used to highlight diffs are configurable in the
 @code{Proof-General -> Advanced -> Customize -> Proof Faces} menu.
-The 4 @code{Coq Diffs ...} faces control the highlights.  Any line that
-has added or removed tokens are shown with the entire line highlighted with
-a @code{Bg} face.  The added or removed tokens themselves are highlighted
+The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
+have added or removed tokens are shown with the entire line highlighted with
+a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
 with non-@code{Bg} faces.
 
 @c =================================================================
