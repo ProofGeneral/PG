@@ -860,6 +860,7 @@ KEY is the optional key binding."
 			 ["Save Settings" (proof-settings-save)
 			  (proof-settings-changed-from-saved-p)]))
 	    groups ents)
+	; todo: AFAICT the following statement does nothing and can be removed
 	(mapc (lambda (stg) (add-to-list 'groups (get (car stg) 'pggroup)))
 	      proof-assistant-settings)
 	(dolist (grp (reverse groups))
@@ -1004,7 +1005,8 @@ We first clear the dynamic settings from `proof-assistant-settings'."
    (cons "%b" '(proof-assistant-format-bool curvalue))
    (cons "%i" '(proof-assistant-format-int curvalue))
    (cons "%f" '(proof-assistant-format-float curvalue))
-   (cons "%s" '(proof-assistant-format-string curvalue)))
+   (cons "%s" '(proof-assistant-format-string curvalue))
+   (cons "%l" '(proof-assistant-format-lambda curvalue)))
   "Table to use with `proof-format' for formatting CURVALUE for assistant.
 NB: variable `curvalue' is dynamically scoped (used in `proof-assistant-format').")
 
@@ -1020,9 +1022,12 @@ NB: variable `curvalue' is dynamically scoped (used in `proof-assistant-format')
 (defun proof-assistant-format-string (value)
   (funcall proof-assistant-format-string-fn value))
 
+(defun proof-assistant-format-lambda (value)
+  (funcall value))
+
 (defun proof-assistant-format (string curvalue)
   "Replace a format characters in STRING by formatted CURVALUE.
-Format character is one of %b, %i, %f, or %s.
+Format character is one of %b, %i, %f, %s, or %l.
 Formatting suitable for current proof assistant, controlled by
 `proof-assistant-format-table' which see.
 Finally, apply `proof-assistant-setting-format' if non-nil.

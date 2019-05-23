@@ -455,7 +455,7 @@ proof script@footnote{A @dfn{proof script} is a sequence of commands
  which constructs a proof, usually stored in a file.}
  in-place rather than line-by-line and later reassembling the pieces.
 Proof General keeps track of which proof steps have been processed by
-the prover, and prevents you editing them accidently.  You can undo
+the prover, and prevents you editing them accidentally.  You can undo
 steps as usual.
 
 The aim of Proof General is to provide a powerful and configurable
@@ -465,7 +465,7 @@ should be useful for large proof developments.
 
 Please help us!
 
-Send us comments, suggestsions, or (the best) patches to improve support
+Send us comments, suggestions, or (the best) patches to improve support
 for your chosen proof assistant.  Contact us at
 @uref{https://github.com/ProofGeneral/PG/issues}.
 
@@ -931,7 +931,7 @@ is, you can find the option anyway on the menu:
 which also shows the key binding.
 
 If you want to use electric terminator, you can customize Proof
-General to enable it everytime if you want, @xref{Customizing Proof
+General to enable it every time if you want, @xref{Customizing Proof
 General}.  For the common options, customization is easy: just
 use the menu item @code{Proof General -> Quick Options} to make your choices,
 and @code{Proof-General -> Quick Options -> Save Options} to
@@ -1614,7 +1614,7 @@ key-bindings and functions.
 
 @c TEXI DOCSTRING MAGIC: proof-display-some-buffers
 @deffn Command proof-display-some-buffers 
-Display the reponse, trace, goals, or shell buffer, rotating.@*
+Display the response, trace, goals, or shell buffer, rotating.@*
 A fixed number of repetitions of this command switches back to
 the same buffer.
 Also move point to the end of the response buffer if it's selected.
@@ -1914,7 +1914,7 @@ an error, you might want to see that.  You can select
 @lisp
 Proof-General -> Quick Options -> Display -> Sticky Errors
 @end lisp
-to add a higlight for regions which did not successfully process
+to add a highlight for regions which did not successfully process
 on the last attempt.  Whenever the region is edited, the
 highlight is removed. 
 
@@ -2005,7 +2005,7 @@ interactive command processed some text (i.e., wasn't an undo step
 backwards into the buffer) and processing didn't stop with an error.  To
 start automatic processing again after an error, simply hit @kbd{C-c
 C-n} after editing the buffer.  To turn the automatic processing on or
-off from the keyboard, you can use the keybinding:
+off from the keyboard, you can use the key binding:
 
 @table @kbd
 @item C-c >
@@ -3452,7 +3452,7 @@ buffers or refresh the window layout.  These are on the menu:
 
 @c TEXI DOCSTRING MAGIC: proof-display-some-buffers
 @deffn Command proof-display-some-buffers 
-Display the reponse, trace, goals, or shell buffer, rotating.@*
+Display the response, trace, goals, or shell buffer, rotating.@*
 A fixed number of repetitions of this command switches back to
 the same buffer.
 Also move point to the end of the response buffer if it's selected.
@@ -4302,6 +4302,7 @@ assistant.  It supports most of the generic features of Proof General.
 * User-loaded tactics::
 * Holes feature::
 * Proof-Tree Visualization::
+* Showing Proof Diffs::
 @end menu
 
 
@@ -4427,13 +4428,13 @@ Documentation of the user option @code{coq-project-filename}:
 @c TEXI DOCSTRING MAGIC: coq-project-filename
 @defvar coq-project-filename 
 The name of coq project file.@*
-The coq project file of a coq developpement (Cf Coq documentation
+The coq project file of a coq development (Cf Coq documentation
 on "makefile generation") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
 options (preferably one per line). If @samp{coq-use-coqproject} is
-t (default) the content of this file will be used by proofgeneral
+t (default) the content of this file will be used by Proof General
 to infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables
-that set the coqtop invocation by proofgeneral. This is now the
+that set the coqtop invocation by Proof General. This is now the
 recommended way of configuring the coqtop invocation. Local file
 variables may still be used to override the coq project file's
 configuration. .dir-locals.el files also work and override
@@ -5077,7 +5078,7 @@ one.  This is supported to any nesting depth that Coq allows.
 
 Warning! Using Coq commands for navigating inside the different proofs
 (@code{Resume} and especially @code{Suspend}) are not supported,
-backtracking will break syncronization.
+backtracking will break synchronization.
 
 @b{Special note:} The old feature that moved nested proofs outside the
 current proof is disabled.
@@ -5190,6 +5191,45 @@ To support @code{Grab Existential Variables} Prooftree can
 actually display several graphically independent proof trees in
 several layers.
 
+@node Showing Proof Diffs
+@section Showing Proof Diffs
+
+Coq 8.10 supports automatically highlighting the differences
+between successive proof steps in Proof General.  The feature is described in the
+@uref{https://coq.inria.fr/distrib/current/refman/proof-engine/proof-handling.html#showing-differences-between-proof-steps,
+Coq Documentation}.
+
+The Coq proof diff does more than a basic "diff" operation.  For example:
+
+@itemize @bullet
+@item diffs are computed on a per-token basis (as determined by the Coq lexer) rather
+  than on a per-character basis, probably a better match for how people understand
+  the output.  (For example, a token-based diff between "abc" and "axc" will
+  highlight all of "abc" and "axc" as a difference, while a character-based diff
+  would indicate that "a" and "c" are in common and that only the "b"/"x" is a
+  difference.)
+@item diffs ignore the order of hypotheses
+@item tactics that only change the proof view are handled specially, for
+  example "swap" after a "split" will show the diffs between before "split"
+  and after "swap", which is more useful
+@item some error messages have been instrumented to show diffs where it is helpful
+@end itemize
+
+To enable or disable diffs, set @code{coq-diffs} (select menu @code{Coq -> Diffs})
+to "on", "off" or "removed".  "on" highlights added tokens with the background
+color from @code{diff-refine-added}.  "removed" highlights removed tokens
+with the background color from @code{diff-refine-removed}.  With the "removed" setting,
+lines that have both added and removed text may be shown twice, as "before" and
+"after" lines.
+To preserve the settings for the next time you start Proof General,
+select @code{Coq -> Settings -> Save Settings}.
+
+The colors used to highlight diffs are configurable in the
+@code{Proof-General -> Advanced -> Customize -> Proof Faces} menu.
+The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
+have added or removed tokens are shown with the entire line highlighted with
+a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
+with non-@code{Bg} faces.
 
 @c =================================================================
 @c
@@ -5244,7 +5284,7 @@ keyboard command @code{isabelle-chose-logic} to choose from the list.
 
 The logics list is refreshed dynamically so you can select any newly
 built heap images in the same Emacs session.  However, notice that the
-choices are greyed out while Isabelle is actually runnning --- you can
+choices are greyed out while Isabelle is actually running --- you can
 only switch to a new logic if you first exit Isabelle (similarly to
 Proof General, Isabelle operates with only one logic at a time).
 
@@ -6139,7 +6179,7 @@ There was no 3.6 release of Proof General.
 Proof General version 3.7.1 is an updated and enhanced version
 of Proof General 3.7.  See  @file{CHANGES} for more details.
 
-Proof General version 3.7 collects together a cummulative set of
+Proof General version 3.7 collects together a cumulative set of
 improvements to Proof General 3.5.  There are compatibility fixes for
 newer Emacs versions, and particularly for GNU Emacs: credit is due to
 Stefan Monnier for an intense period of debugging and patching.  The
