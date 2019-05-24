@@ -369,7 +369,7 @@ The point should be at the beginning of the command name."
   (save-excursion              ; FIXME Is there other module starting commands?
     (let ((case-fold-search nil))
       (cond
-       ((looking-back "with\\s-+" nil) "module") ; lowecase means Module that is not a declaration keyword (like in with Module)
+       ((looking-back "with\\s-+" nil) "module nodecl") ; Module that is not a declaration keyword (like in with Module)
        ((looking-at "\\(Module\\|Section\\)\\>")
         (if (coq-lonely-:=-in-this-command) "Module start" "Module def"))))))
 
@@ -492,7 +492,9 @@ The point should be at the beginning of the command name."
 
 
 
-
+;; ":= with module" is really to declare some sub-information ":=
+;; with" is for mutual definitions where both sides are of the same
+;; level
 (defun coq-smie-:=-deambiguate ()
   (let ((corresp (coq-smie-search-token-backward
 		  '("let" "Inductive" "CoInductive" "{|" "." "with" "Module" "where")
@@ -503,13 +505,14 @@ The point should be at the beginning of the command name."
 	(cond ;; recursive call if the with found is actually et with match
 	 ((equal corresptok "with match") (coq-smie-:=-deambiguate))
 	 ((equal corresptok "with inductive") ":= inductive")
+	 ((equal corresptok "with module") ":= with module")
 	 (t ":=")
 	 )))
      ((equal corresp ".") ":= def") ; := outside of any parenthesis
      ((equal corresp "Module")
       (let ((p (point)))
 	(if (equal (smie-default-backward-token) "with")
-	    ":= with"
+	    ":= with module"
 	  (goto-char p)
 	  ":= module")))
      ((member corresp '("Inductive" "CoInductive" "Variant")) ":= inductive")
@@ -894,8 +897,8 @@ Typical values are 2 or 4."
       (moduledecl (exp) (exp ":" moduleconstraint)
 		  (exp "<:" moduleconstraint))
       (moduleconstraint
-       (exp) (exp ":= with" exp)
-       (moduleconstraint "with module" "module" moduleconstraint))
+       (exp) (exp ":= with module" exp)
+       (moduleconstraint "with module" "module nodecl" moduleconstraint))
 
       ;; To deal with indentation inside module declaration and inside
       ;; proofs, we rely on the lexer. The lexer detects "." terminator of
@@ -958,8 +961,8 @@ Typical values are 2 or 4."
       (assoc ": ltacconstr") (assoc ". selector"))
     '((assoc ":" ":<")  (assoc "<"))
     '((assoc ". modulestart" "." ". proofstart") (assoc "Module def")
-      (assoc "with module" "module") (assoc ":= module")
-      (assoc ":= with")  (assoc ":" ":<"))
+      (assoc "with module" "module nodecl") (assoc ":= module")
+      (assoc ":= with module")  (assoc ":" ":<"))
     '((assoc ":= def") (assoc "; record") (assoc ":= record"))))
   "Parsing table for Coq.  See `smie-grammar'.")
 ;; FIXME:
@@ -1052,6 +1055,17 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	2)
 
        ((equal token "with match") coq-match-indent)
+
+       ;; Inductive foo ...
+       ;; ...
+       ;; with
+       ;;   bar  <-- indent this by 2
+       ;; TODO: have this optional?
+       ((equal token "with inductive")
+	(if (smie-rule-parent-p "with inductive")
+	    0
+	  2)) 
+
        ((equal token "with") 2)  ; add 2 to the column of "with" in the children
 
 
@@ -1126,7 +1140,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
        ((equal token "with module")
 	(if (smie-rule-parent-p "with module")
 	    (smie-rule-parent)
-	  (smie-rule-parent 4)))
+	  (smie-rule-parent 2)))
 
        ((member token '("in tactic" "as" "by"))
 	(cond
@@ -1197,14 +1211,24 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	(save-excursion (coq-find-real-start)
 			`(column . ,(current-column))))
 
-       ((or (member token '(":= module" ":= inductive" ":= def"))
+       ((or (member token '(":= inductive" ":= def"))
             (and (equal token ":") (smie-rule-parent-p ".")))
         (let ((pcol
                (save-excursion
                  ;; Indent relative to the beginning of the current command
                  ;; rather than relative to the previous command.
                  (smie-backward-sexp token)
-                 (current-column))))
+                 ;; special case: if this ":=" corresponds to a "with
+                 ;; foo", then the previous smie-backward-sexp stopped
+                 ;; between "with" and "foo" (because "with inductive"
+                 ;; and co are considered as ".", maybe this is the
+                 ;; problem), but we want to indent from the column of
+                 ;; "with" instead
+                 (let ((col1 (current-column)))
+                   (if (equal (coq-smie-backward-token) "with inductive")
+                       (current-column)
+                     col1)
+                   ))))
           `(column . ,(if (smie-rule-hanging-p) pcol (+ 2 pcol)))))
 
        ((equal token "|")

@@ -11,25 +11,41 @@ Record a : Type := make_a {
 
 Module foo.
   Inductive test : nat -> Prop :=
-  | C1 : forall n, test n
+    C1 : forall n, test n
   | C2 : forall n, test n
   | C3 : forall n, test n
   | C4 : forall n, test n.
+
+  Inductive testbar' : nat -> Prop :=
+  | Cbar1 : forall n, test n
+  | Cbar2 : forall n, test n
+  | Cbar3 : forall n, test n
+  | Cbar4 : forall n, test n.
   
   Inductive test2 : nat -> Prop
-    := C21 : forall n, test2 n
-     | C22 : forall n, test2 n
-     | C23 : forall n, test2 n
-     | C24 : forall n, test2 n.
-
+    := | C21 : forall n, test2 n
+    | C22 : forall n, test2 n
+    | C23 : forall n, test2 n
+    | C24 : forall n, test2 n.
+  
   Inductive test' : nat -> Prop :=
-  | C1' : forall n, test' n
+    C1' : forall n, test' n
   | C2' : forall n, test' n
   | C3' : forall n, test' n
   | C4' : forall n, test' n
   with
-  test2' : nat -> Prop :=
+    test2' : nat -> Prop :=
     C21' : forall n, test2' n
+  | C22' : forall n, test2' n
+  | C23' : forall n, test2' n
+  | C24' : forall n, test2' n
+  with test3' : nat -> Prop :=
+    C21' : forall n, test2' n
+  | C22' : forall n, test2' n
+  | C23' : forall n, test2' n
+  | C24' : forall n, test2' n
+  with test4' : nat -> Prop :=
+  | C21' : forall n, test2' n
   | C22' : forall n, test2' n
   | C23' : forall n, test2' n
   | C24' : forall n, test2' n.
