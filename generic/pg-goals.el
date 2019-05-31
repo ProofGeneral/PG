@@ -30,7 +30,7 @@
 ;; use Coq-specific code from a generic/*.el file.  Actually, this `require'
 ;; should fail if we're using PG with something else than Coq because the
 ;; coq/ subdir won't be in `load-path'!
-(require 'coq-diffs)h
+(require 'coq-diffs)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
