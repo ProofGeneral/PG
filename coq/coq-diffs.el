@@ -29,6 +29,14 @@ For example '<diff.added>foo</diff.added>' inserts 'foo' in the buffer
 and applies the appropriate face.
 
 `coq-tag-map' defines the mapping from tag name to face."
+;; Coq inserts tags before splitting into lines.  Avoid highlighting
+;; white space at the beginning or end of lines in a conclusion or
+;; hypothesis that's split across multiple lines.
+
+;; Doesn't handle the unlikely case of escaping regular text
+;; that looks like a tag.  Unknown tags such as "<foo>" are
+;; shown as-is.  The user can turn off diffs in this very unlikely case.
+
   (let* ((len (length str))
          (off 0)
 	 (fstack)
@@ -38,17 +46,13 @@ and applies the appropriate face.
     (while (< off len)
       (string-match "^\\([ \t]*\\)\\(.*\n?\\)" str off)
       (setq off (match-end 0))
-      ;; FIXME: Why handle whitespace specially?
       (insert (match-string 1 str)) ;; begin-line white space
       (setq rhs (match-string 2 str))
-      ;; FIXME: Why handle whitespace specially?
       (string-match "[ \t\n]*\\'" rhs)
       (let* ((end-white (match-string 0 rhs)) ;; end-line white space
              (line (substring rhs 0 (- (length rhs) (length end-white))))
              (llen (length line))
              (loff 0))
-        ;; FIXME: I don't see any mechanism here to escape text, in case
-        ;; we need to include text that happen to look just like a tag!
         (while (and (< loff llen)
                     (string-match "<\\(/\\)?\\([a-zA-Z\\.]+\\)>" line loff))
           (let* ((end-mark (match-beginning 1))

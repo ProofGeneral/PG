@@ -31,11 +31,8 @@
 (require 'pg-assoc)
 (require 'span)
 
-;; FIXME: This is required for `coq-insert-tagged-text', but we should never
-;; use Coq-specific code from a generic/*.el file.  Actually, this `require'
-;; should fail if we're using PG with something else than Coq because the
-;; coq/ subdir won't be in `load-path'!
-(require 'coq-diffs)
+;; hook for coq diffs highlighting routine
+(defvar pg-insert-text-function 'insert)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -415,7 +412,7 @@ Returns non-nil if response buffer was cleared."
       (let ((start (point)))
         (if face
             (insert str)
-          (coq-insert-tagged-text str))
+          (funcall pg-insert-text-function str))
         (unless (bolp) (newline))
         (when face
           ;; FIXME: Why not (put-text-property start (point) 'face face)?
