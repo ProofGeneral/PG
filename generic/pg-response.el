@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -30,6 +30,11 @@
 
 (require 'pg-assoc)
 (require 'span)
+
+;; FIXME: This is required for `coq-insert-tagged-text', but we should never
+;; use Coq-specific code from a generic/*.el file.  Actually, this `require'
+;; should fail if we're using PG with something else than Coq because the
+;; coq/ subdir won't be in `load-path'!
 (require 'coq-diffs)
 
 
@@ -348,8 +353,7 @@ will never be cleared unless FORCE is set.
 No effect if there is no response buffer currently.
 Returns non-nil if response buffer was cleared."
   (when (buffer-live-p proof-response-buffer)
-    (let ((inhibit-read-only t)
-	  (doit (or (and
+    (let ((doit (or (and
 		     proof-tidy-response
 		     (not keep)
 		     (not (eq pg-response-erase-flag 'invisible))
@@ -359,10 +363,11 @@ Returns non-nil if response buffer was cleared."
 	  (if clean-windows
 	      (proof-clean-buffer proof-response-buffer)
 	    (with-current-buffer proof-response-buffer
-	      (setq pg-response-next-error nil)	; all error msgs lost!
-	      (if (> (buffer-size) 0)
-		  (bufhist-checkpoint-and-erase))
-	      (set-buffer-modified-p nil))))
+              (let ((inhibit-read-only t))
+	        (setq pg-response-next-error nil) ; all error msgs lost!
+	        (if (> (buffer-size) 0)
+		    (bufhist-checkpoint-and-erase))
+	        (set-buffer-modified-p nil)))))
       (setq pg-response-erase-flag erase-next-time)
       doit)))
 
@@ -394,29 +399,28 @@ Returns non-nil if response buffer was cleared."
 (defun pg-response-display-with-face (str &optional face)
   "Display STR with FACE in response buffer."
   (cond
-   ((string-equal str ""))
-   ((string-equal str "\n"))		; quick exit, no display.
+   ((member str '("" "\n")))		; Quick exit, no display.
    (t
-    (let (start end)
-      (with-current-buffer proof-response-buffer
-        (setq buffer-read-only nil)
-        ;; da: I've moved newline before the string itself, to match
-        ;; the other cases when messages are inserted and to cope
-        ;; with warnings after delayed output (non newline terminated).
-        (goto-char (point-max))
-        ;; insert a newline before the new message unless the
-        ;; buffer is empty or proof-script-insert-newlines is nil
-        (unless (or (not proof-script-insert-newlines)
-                    (eq (point-min) (point-max)))
-          (newline))
-        (setq start (point))
+    (with-current-buffer proof-response-buffer
+      (setq buffer-read-only nil)
+      ;; da: I've moved newline before the string itself, to match
+      ;; the other cases when messages are inserted and to cope
+      ;; with warnings after delayed output (non newline terminated).
+      (goto-char (point-max))
+      ;; insert a newline before the new message unless the
+      ;; buffer is empty or proof-script-insert-newlines is nil
+      (unless (or (not proof-script-insert-newlines)
+                  (bobp))               ;FIXME: Why not `bolp'?
+        (newline))
+      (let ((start (point)))
         (if face
-          (insert str)
+            (insert str)
           (coq-insert-tagged-text str))
         (unless (bolp) (newline))
         (when face
+          ;; FIXME: Why not (put-text-property start (point) 'face face)?
           (overlay-put
-           (span-make start (point-max))
+           (span-make start (point))
            'face face))
 
 	(setq buffer-read-only t)
@@ -566,17 +570,15 @@ A value of 0 stands for unbounded."
 ;; An analogue of pg-response-display-with-face
 (defun proof-trace-buffer-display (start end)
   "Copy region START END from current buffer to end of the trace buffer."
-  (let ((cbuf   (current-buffer))
-	(nbuf   proof-trace-buffer))
-    (set-buffer nbuf)
-    (save-excursion
-      (goto-char (point-max))
-      (let ((inhibit-read-only t))
-	(insert ?\n)
-	(insert-buffer-substring cbuf start end)
-	(unless (bolp)
-	  (insert ?\n))))
-    (set-buffer cbuf)))
+  (let ((cbuf   (current-buffer)))
+    (with-current-buffer proof-trace-buffer
+      (save-excursion
+        (goto-char (point-max))
+        (let ((inhibit-read-only t))
+	  (insert ?\n)
+	  (insert-buffer-substring cbuf start end)
+	  (unless (bolp)
+	    (insert ?\n)))))))
 
 (defun proof-trace-buffer-finish ()
   "Call to complete a batch of tracing output.
@@ -608,8 +610,8 @@ The buffer is truncated if its size is greater than `proof-trace-buffer-max-line
     (let (start str)
       (goto-char (point-max))
       (newline)
-      (setq start (point))
-      (insert str)
+      (setq start (point))              ;FIXME: Unused!
+      (insert str)                      ;FIXME: `str' is nil!!!
       (unless (bolp) (newline))
       (set-buffer-modified-p nil))))
 
