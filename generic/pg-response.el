@@ -31,8 +31,8 @@
 (require 'pg-assoc)
 (require 'span)
 
-;; hook for coq diffs highlighting routine
-(defvar pg-insert-text-function 'insert)
+(defvar pg-insert-text-function #'insert
+  "hook for coq diffs highlighting routine")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

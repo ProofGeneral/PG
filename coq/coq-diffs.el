@@ -15,12 +15,15 @@
 
 ;;; Code:
 
-(defun coq-insert-with-face (str face)
-  (let ((start (point)))
-    (insert str)
-    (if face
-        ;; FIXME: Why not (put-text-property start (point) 'face face)?
-        (overlay-put (span-make start (point)) 'face face))))
+(defun coq-highlight-with-face (end face)
+  (if face
+    ;; (put-text-property (point) end 'face face) doesn't work
+    (overlay-put (span-make (point) end) 'face face))
+  (goto-char end))
+
+(defun coq-search (regex limit)
+  (save-excursion
+     (re-search-forward regex limit t)))
 
 (defun coq-insert-tagged-text (str)
   "Insert text into the current buffer applying faces specified by tags.
@@ -37,37 +40,42 @@ and applies the appropriate face.
 ;; that looks like a tag.  Unknown tags such as "<foo>" are
 ;; shown as-is.  The user can turn off diffs in this very unlikely case.
 
-  (let* ((len (length str))
-         (off 0)
-	 (fstack)
-	 (rhs))
-    ;; FIXME: It would likely be better to insert `str' into the buffer
-    ;; and then work in the buffer instead of manipulating strings.
-    (while (< off len)
-      (string-match "^\\([ \t]*\\)\\(.*\n?\\)" str off)
-      (setq off (match-end 0))
-      (insert (match-string 1 str)) ;; begin-line white space
-      (setq rhs (match-string 2 str))
-      (string-match "[ \t\n]*\\'" rhs)
-      (let* ((end-white (match-string 0 rhs)) ;; end-line white space
-             (line (substring rhs 0 (- (length rhs) (length end-white))))
-             (llen (length line))
-             (loff 0))
-        (while (and (< loff llen)
-                    (string-match "<\\(/\\)?\\([a-zA-Z\\.]+\\)>" line loff))
-          (let* ((end-mark (match-beginning 1))
-                 (tag (match-string 2 line))
-                 (face (cdr (assoc tag coq-tag-map)))
-                 (start (match-beginning 0))
-                 (end (match-end 0)))
-            (coq-insert-with-face (substring line loff start) (car fstack))
-            (setq loff end)
+  (let* ((fstack)
+      (start (point))
+      (strend)
+      (lend)
+      (end-white-begin))
+    (insert str)
+    (setq strend (copy-marker (point)))
+    (goto-char start)
+    (while (< (point) strend)
+      (coq-search "^\\([ \t]*\\).*\\(\n\\)?" strend)
+      (setq lend (copy-marker (match-end 0)))
+      (if (match-end 1)
+        (goto-char (match-end 1)))  ;; begin-line white space
+      (let* ((nl (if (match-string 2) 1 0))
+              (end-white-len    ;; length of end-line white space
+                (if (coq-search "[ \t\n]*\\'" lend)
+                  (- (match-end 0) (match-beginning 0))
+                  0)))
+        (setq end-white-begin (copy-marker (- (- lend end-white-len) nl)))
+
+        (while (and (< (point) lend)
+                    (coq-search "<\\(/\\)?\\([a-zA-Z\\.]+\\)>" lend))
+          (let* ((close-tag (match-beginning 1))
+               (tag (match-string 2))
+               (face (cdr (assoc tag coq-tag-map)))
+               (start (match-beginning 0))
+               (end (match-end 0)))
+            (coq-highlight-with-face start (car fstack))  ;; text before tag
             (if face
-                (setq fstack (if end-mark (cdr fstack) (cons face fstack)))
+              (progn
+                (replace-match "")
+                (setq fstack (if close-tag (cdr fstack) (cons face fstack))))
               ;; Unknown tag, show as-is!
-              (coq-insert-with-face (substring line start end) (car fstack)))))
-        (coq-insert-with-face (substring line loff) (car fstack))
-        (insert end-white)))))    ; end-line white space
+              (coq-highlight-with-face end (car fstack)))))
+        (coq-highlight-with-face end-white-begin (car fstack))  ;; text after last tag
+        (goto-char lend)))))    ;; end-line white space
 
 (provide 'coq-diffs)
 
