@@ -26,12 +26,6 @@
 
 (require 'pg-assoc)
 
-;; FIXME: This is required for `coq-insert-tagged-text', but we should never
-;; use Coq-specific code from a generic/*.el file.  Actually, this `require'
-;; should fail if we're using PG with something else than Coq because the
-;; coq/ subdir won't be in `load-path'!
-(require 'coq-diffs)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Goals buffer mode
@@ -114,7 +108,7 @@ so the response buffer should not be cleared."
 
     ;; Only display if string is non-empty.
     (unless (string-equal string "")
-      (coq-insert-tagged-text string))
+      (funcall pg-insert-text-function string))
 
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)

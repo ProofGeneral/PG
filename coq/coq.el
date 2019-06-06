@@ -58,6 +58,8 @@
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
+(require 'coq-diffs)                    ; highlight proof diffs
+
 (defvar prettify-symbols-alist)
 
 
@@ -2081,6 +2083,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 (defun coq-diffs ()
   "Return string for setting Coq Diffs.
 Return the empty string if the version of Coq < 8.10."
+  (setq pg-insert-text-function #'coq-insert-tagged-text)
   (if (coq--post-v810)
       (format "Set Diffs \"%s\". " (symbol-name coq-diffs))
     ""))
