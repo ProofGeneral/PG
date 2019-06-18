@@ -353,7 +353,6 @@ deactivated."
 	     (if proof-active-buffer-fake-minor-mode
 		 (setq proof-active-buffer-fake-minor-mode nil))
 	     (proof-script-delete-spans (point-min) (point-max))
-	     (proof-script-delete-secondary-spans (point-min) (point-max))
 	     (setq pg-script-portions nil)
 	     (proof-detach-queue)
 	     (proof-detach-locked)
@@ -405,7 +404,9 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
 (defun proof-script-delete-spans (beg end)
   "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
   (span-delete-spans beg end 'type)
-  (span-delete-spans beg end 'idiom))
+  (span-delete-spans beg end 'idiom)
+  (span-delete-spans beg end 'pg-span)
+  )
 
 (defun proof-script-delete-secondary-spans (beg end)
   "Delete secondary spans between BEG and END (currently, 'pghelp spans)."
