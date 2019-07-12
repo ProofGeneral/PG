@@ -1610,6 +1610,33 @@ by the filter is to send the next command from the queue."
     ;; sets proof-shell-last-output-kind
     (proof-shell-handle-immediate-output cmd start end flags)
 
+    ;; EXPERIMENTS:
+    ;; There was an error, and probably no goal printed before (becaus
+    ;; eof set silent. So we insert a new Show command, and process it
+    ;; immediately by waiting a few milisec and calling
+    ;; proof-shell-handle-delayed-output.
+    ;; 
+    (when (eq proof-shell-last-output-kind 'error)
+      (proof-add-to-queue
+       (list ;(proof-shell-stop-silent-item)
+        (proof-shell-action-list-item "Show."  'proof-shell-clear-silent)))
+      (setq proof-shell-delayed-output-start (point-max))
+      (setq proof-shell-delayed-output-flags flags)
+      (when t; (proof-shell-exec-loop)
+        (sleep-for 0 100)
+        (goto-char proof-shell-delayed-output-start)
+        (when (re-search-forward proof-shell-annotated-prompt-regexp nil t)
+          (setq proof-shell-delayed-output-end (match-beginning 0))
+          (setq proof-shell-last-prompt
+             	(buffer-substring-no-properties (match-beginning 0) (match-end 0)))
+          )
+	(setq proof-shell-last-output-kind
+	      ;; only display result for last output
+	      (proof-shell-handle-delayed-output))
+        ;(pg-goals-display proof-shell-last-goals-output t)
+        )
+      )
+
     (unless proof-shell-last-output-kind ; dealt with already
       (setq proof-shell-delayed-output-start start)
       (setq proof-shell-delayed-output-end end)
