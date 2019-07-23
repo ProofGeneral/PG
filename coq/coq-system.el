@@ -64,8 +64,8 @@ On Windows you might need something like:
 (require 'coq-error)
 
 (defcustom coq-prog-name
-  (if (executable-find "coqtop") "coqtop"
-    (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")))
+  (if (executable-find "coqidetop") "coqidetop"
+    (proof-locate-executable "coqidetop" t '("C:/Program Files/Coq/bin")))
 
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
@@ -421,7 +421,7 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
 					; TODO allow ports for main-channel
 					; TODO add control-channel ports
-  '("-ideslave" "-main-channel" "stdfds"))
+  '("-main-channel" "stdfds"))
 
 (defvar coq-coqtop-async-flags
   (let ((proof-workers-flags
