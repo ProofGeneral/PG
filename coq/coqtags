@@ -53,7 +53,7 @@ while(<>)
 
 #  print "----- (",$lp,",",$cp,")\n", $stmt, "\n";
 
-    if($stmt=~/^([ \t]*((Fact)|(Goal)|(Lemma)|(Remark)|(Theorem)|(Proposition)|(Corollary))\s+([\w\']+))\s*:/)
+    if($stmt=~/^([ \t]*((Fact)|(Goal)|(Lemma)|(Remark)|(Theorem)|(Proposition)|(Corollary))\s+([\w\']+)).*:/)
        { $tagstring.=$1."\177".$10."\001".$lp.",".$cp."\n"; }
 
     elsif($stmt=~/^([ \t]*((Axiom)|(Hypothesis)|(Parameter)|(Variable))\s+[\w\']+)/)
@@ -61,7 +61,7 @@ while(<>)
 
     elsif($stmt=~/^([ \t]*((Definition)|(Fixpoint)|(Inductive)|(CoInductive)|(Record)|(Variant))\s+([\w\']+))/)
     {
-	$tagstring.=$1."\177".$8."\001".$lp.",".$cp."\n";
+	$tagstring.=$1."\177".$9."\001".$lp.",".$cp."\n";
 	if($2 eq "Inductive" || $2 eq "CoInductive" || $2 eq "Variant"){
 	    add_constructors($stmt);
 	}
