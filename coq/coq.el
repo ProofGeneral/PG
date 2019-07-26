@@ -1213,8 +1213,7 @@ be called and no command will be sent to Coq."
      ;; If we go back in the buffer and the number of abort is less than
      ;; the number of nested goals, then Unset Silent and Show the goal
      (and (string-match-p "BackTo\\s-" cmd)
-          (> (length (coq-get-span-proofstack (proof-last-locked-span)))
-             coq--retract-naborts)))
+          (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     ; "Set Diffs" always re-prints the proof context with (if enabled) diffs
     (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")))
    ((or
