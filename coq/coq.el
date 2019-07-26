@@ -1214,13 +1214,15 @@ be called and no command will be sent to Coq."
      ;; the number of nested goals, then Unset Silent and Show the goal
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
-    ; "Set Diffs" always re-prints the proof context with (if enabled) diffs
+    ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
     (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")))
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
-     ;; silent (there is no goal to show).
+     ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
      (string-match-p "BackTo\\s-" cmd))
-    (list "Unset Silent."))))
+    (if (coq--post-v810)
+        (list "Unset Silent." (coq-diffs))
+      (list "Unset Silent.")))))
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
