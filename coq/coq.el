@@ -563,6 +563,11 @@ Initially 1 because Coq initial state has number 1.")
 (defvar coq-last-but-one-proofstack '()
   "As for `coq-last-but-one-statenum' but for proof stack symbols.")
 
+(defvar coq--retract-naborts 0
+  "The number of (possibly nested) goals to abort on retract.
+This temporary variable is written by function `coq-find-and-forget'
+and read by function `coq-empty-action-list-command'.")
+
 (defsubst coq-get-span-statenum (span)
   "Return the state number of the SPAN."
   (span-property span 'statenum))
@@ -662,9 +667,9 @@ If locked span already has a state number, then do nothing. Also updates
     res
     ))
 
-;; Simplified version of backtracking which uses state numbers, proof stack depth and
-;; pending proofs put inside the coq (> v8.1) prompt. It uses the new coq command
-;; "Backtrack". The prompt is like this:
+;; Simplified version of backtracking which uses state numbers (Coq >= 8.4).
+;; It uses the new coq command
+;; "BackTo". The prompt is like this:
 ;;      state                        proof stack
 ;;      num                           depth
 ;;       __                              _
@@ -675,39 +680,32 @@ If locked span already has a state number, then do nothing. Also updates
 ;; exemple:
 ;; to go (back) from 12 |lema1|lema2...|leman| xx
 ;; to                8  |lemb1|lemb2...|lembm| 5
-;; we must do "Backtrack 8 5 naborts"
-;; where naborts is the number of lemais that are not lembis
+;; we must do "BackTo 8" and set `coq--retract-naborts' to
+;; naborts, i.e., the number of lemais that are not lembis
 
 ;; Rem: We could deal with suspend and resume with more work. We would need a new coq
 ;; command, because it is better to backtrack with *one* command (because
 ;; proof-change-hook used above is not exactly called at right times).
 
 (defun coq-find-and-forget (span)
-  "Backtrack to SPAN.  Using the \"Backtrack n m p\" coq command."
+  "Backtrack to SPAN.  Using the \"BackTo n\" coq command."
   (if (eq (span-property span 'type) 'proverproc)
       ;; processed externally (i.e. Require, etc), nothing to do
       ;; (should really be unlocked when we undo the Require).
       nil
-  (let* (ans (naborts 0) (nundos 0)
-             (proofdepth (coq-get-span-proofnum span))
-             (proofstack (coq-get-span-proofstack span))
-             (span-staten (coq-get-span-statenum span))
-             (naborts (count-not-intersection
-                       coq-last-but-one-proofstack proofstack)))
-    ;; if we move outside of any proof, coq does not print anything, so clean
-    ;; the goals buffer otherwise the old one will still be displayed
-    (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
-    (unless (and
-             ;; return nil (was proof-no-command) in this case:
-             ;; this is more efficient as backtrack x y z may be slow
-             (equal coq-last-but-one-proofstack proofstack)
-             (= coq-last-but-one-proofnum proofdepth)
-             (= coq-last-but-one-statenum span-staten))
+    (let* ((naborts 0)
+           (proofdepth (coq-get-span-proofnum span))
+           (proofstack (coq-get-span-proofstack span))
+           (span-staten (coq-get-span-statenum span))
+           (naborts (count-not-intersection
+                     coq-last-but-one-proofstack proofstack)))
+      ;; if we move outside of any proof, coq does not print anything, so clean
+      ;; the goals buffer otherwise the old one will still be displayed
+      (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
+      (setq coq--retract-naborts naborts)
       (list
-       (format "Backtrack %s %s %s . "
-               (int-to-string span-staten)
-               (int-to-string proofdepth)
-               naborts))))))
+       (format "BackTo %s . "
+               (int-to-string span-staten))))))
 
 (defvar coq-current-goal 1
   "Last goal that Emacs looked at.")
@@ -1205,26 +1203,26 @@ be called and no command will be sent to Coq."
   (cond
    ((or
      ;; If closing a nested proof, Show the enclosing goal.
-     (and (string-match coq-save-command-regexp-strict cmd)
+     (and (string-match-p coq-save-command-regexp-strict cmd)
           (> (length coq-last-but-one-proofstack) 1))
      ;; If user issued a printing option then t printing.
-     (and (string-match "\\(S\\|Uns\\)et\\s-+Printing" cmd)
+     (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
     (list "Show."))
    ((or
-     ;; if we go back in the buffer and that the number of abort is less than
+     ;; If we go back in the buffer and the number of abort is less than
      ;; the number of nested goals, then Unset Silent and Show the goal
-     (and (string-match "Backtrack\\s-+[[:digit:]]+\\s-+[[:digit:]]+\\(\\s-+[[:digit:]]*\\)" cmd)
-          (> (length (coq-get-span-proofstack (proof-last-locked-span)))
-             ;; the number of aborts is the third arg of Backtrack.
-             (string-to-number (match-string 1 cmd)))))
-    ; "Set Diffs" always re-prints the proof context with (if enabled) diffs
+     (and (string-match-p "BackTo\\s-" cmd)
+          (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
+    ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
     (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")))
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
-     ;; silent (there is no goal to show).
-     (string-match "Backtrack" cmd))
-    (list "Unset Silent."))))
+     ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
+     (string-match-p "BackTo\\s-" cmd))
+    (if (coq--post-v810)
+        (list "Unset Silent." (coq-diffs))
+      (list "Unset Silent.")))))
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
