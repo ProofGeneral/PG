@@ -64,9 +64,11 @@ On Windows you might need something like:
 (require 'coq-error)
 
 (defcustom coq-prog-name
-  (if (executable-find "coqidetop") "coqidetop"
-    (proof-locate-executable "coqidetop" t '("C:/Program Files/Coq/bin")))
-
+  (let ((exe-name (if (coq--post-v89)
+                      "coqidetop"
+                    "coqide")))
+    (if (executable-find exe-name) exe-name
+      (proof-locate-executable exe-name t '("C:/Program Files/Coq/bin"))))
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
@@ -195,7 +197,12 @@ Interactively (with INTERACTIVE-P), show that number."
 	     (if (file-accessible-directory-p default-directory)
 		 default-directory
 	       "/"))
-	   (coq-command (shell-quote-argument (or coq-prog-name "coqtop")))
+	   (coq-command (shell-quote-argument
+                         ;; use coq-prog-name if it's been customized by user,
+                         ;; coqc otherwise
+                         (or (and (get 'coq-prog-name 'customized-value)
+                                  coq-prog-name)
+                             "coqc")))
            (shell-command-str (format "%s -v" coq-command))
            (fh (find-file-name-handler default-directory 'shell-command))
            (retv (if fh (funcall fh 'shell-command shell-command-str (current-buffer))
@@ -247,6 +254,18 @@ Return nil if the version cannot be detected."
   (let ((coq-version-to-use (or (coq-version t) "8.5")))
     (condition-case err
 	(not (coq--version< coq-version-to-use "8.6"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
+(defun coq--post-v89 ()
+  "Return t if the auto-detected version of Coq is >= 8.9.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.5")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "8.9"))
       (error
        (cond
 	((equal (substring (cadr err) 0 15) "Invalid version")
@@ -421,7 +440,8 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
 					; TODO allow ports for main-channel
 					; TODO add control-channel ports
-  '("-main-channel" "stdfds"))
+  (append (or (coq--post-v89) "-ideslave")
+          '("-main-channel" "stdfds")))
 
 (defvar coq-coqtop-async-flags
   (let ((proof-workers-flags
