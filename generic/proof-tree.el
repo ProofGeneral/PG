@@ -584,7 +584,7 @@ variables."
 ;; Low-level communication primitives
 ;;
 
-(defconst proof-tree-protocol-version 3
+(defconst proof-tree-protocol-version 4
   "Version of the communication protocol between Proof General and Prooftree.
 Must be increased if one of the low-level communication
 primitives is changed.")
@@ -640,19 +640,21 @@ DATA as data sections to Prooftree."
      (list proof-name command-string current-sequent-text
 	   add-id-string existential-info))))
 
-(defun proof-tree-send-update-sequent (state proof-name sequent-id sequent-text)
+(defun proof-tree-send-update-sequent (state proof-name sequent-id sequent-text
+                                       existential-info)
   "Send the updated sequent text to prooftree."
   ;; (message "ptsus state %d proof %s sequent %s" state proof-name sequent-id)
   (let ((second-line
 	 (format
 	  (concat "update-sequent state %d sequent %s proof-name-bytes %d "
-		  "sequent-text-bytes %d")
+		  "sequent-text-bytes %d existential-bytes %d")
 	  state sequent-id
 	  (1+ (string-bytes proof-name))
-	  (1+ (string-bytes sequent-text)))))
+	  (1+ (string-bytes sequent-text))
+          (1+ (string-bytes existential-info)))))
     (proof-tree-send-message
      second-line
-     (list proof-name sequent-text))))
+     (list proof-name sequent-text existential-info))))
 
 (defun proof-tree-send-switch-goal (proof-state proof-name current-id)
   "Send switch-to command to prooftree."
@@ -902,8 +904,8 @@ The delayed output is in the region
                      (string-to-number (match-string-no-properties 2)))
 		    (sequent-text (match-string-no-properties 3)))
 		(proof-tree-send-update-sequent
-;; XXX existentials info??
-		 proof-state proof-name sequent-id sequent-text)))))))
+		 proof-state proof-name sequent-id sequent-text
+                 (proof-tree-extract-existential-info start end))))))))
 
 
 (defun proof-tree-handle-delayed-output (old-proof-marker cmd flags _span)
@@ -1003,6 +1005,7 @@ position of the current proof."
 	(proof-retract-until-point)
 	(while (consp proof-action-list)
 	  (accept-process-output))
+        (run-hooks 'proof-tree-start-display-hook)
 	;; undo switched external display off; switch on again
 	(setq proof-tree-external-display t)
 	(goto-char locked-end)
