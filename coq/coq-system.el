@@ -56,89 +56,6 @@
 
 (put 'coq-prog-args 'safe-local-variable #'coq--string-list-p)
 
-(defcustom coq-prog-env nil
-  "List of environment settings to pass to Coq process.
-On Windows you might need something like:
-  (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
-  :group 'coq)
-(require 'coq-error)
-
-(defcustom coq-prog-name
-  (let ((exe-name (if (coq--post-v89)
-                      "coqidetop"
-                    "coqide")))
-    (if (executable-find exe-name) exe-name
-      (proof-locate-executable exe-name t '("C:/Program Files/Coq/bin"))))
-  "*Name of program to run as Coq. See `proof-prog-name', set from this.
-On Windows with latest Coq package you might need something like:
-   C:/Program Files/Coq/bin/coqtop.opt.exe
-instead of just \"coqtop\".
-This must be a single program name with no arguments; see `coq-prog-args'
-to manually adjust the arguments to the Coq process.
-See also `coq-prog-env' to adjust the environment."
-  :type 'string
-  :group 'coq)
-
-(defcustom coq-dependency-analyzer
-  (if (executable-find "coqdep") "coqdep"
-    (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin")))
-  "Command to invoke coqdep."
-  :type 'string
-  :group 'coq)
-
-(defcustom coq-compiler
-  (if (executable-find "coqc") "coqc"
-    (proof-locate-executable "coqc" t '("C:/Program Files/Coq/bin")))
-  "Command to invoke the coq compiler."
-  :type 'string
-  :group 'coq)
-
-(defun get-coq-library-directory ()
-  (let ((default-directory
-	  (if (file-accessible-directory-p default-directory)
-	      default-directory
-	    "/")))
-    (or (ignore-errors (car (process-lines coq-prog-name "-where")))
-	"/usr/local/lib/coq")))
-
-(defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
-  "The coq library directory, as reported by \"coqtop -where\".")
-
-(defcustom coq-allow-async-proofs (not (member system-type '(windows-nt cygwin)))
-  "Whether to allow coqtop to run asynchronous proofs using worker 
-processes. By default, not enabled for Windows, for stability reasons."
-  :type 'boolean
-  :group 'coq)
-
-(defcustom coq-use-header-line t
-  "Use mouse-clickable header line"
-  :type 'boolean
-  :group 'coq)
-
-(defcustom coq-async-lazy nil
-  "Use lazy mode for Coq asynchronous processing"
-  :type 'boolean
-  :group 'coq)
-
-(defcustom coq-num-async-workers nil
-  "Number of worker processes in async mode, nil for default"
-  :type 'integer
-  :group 'coq)
-
-(defcustom coq-num-async-par-workers nil
-  "Number of worker processes when using Ltac :par, nil for default"
-  :type 'integer
-  :group 'coq)
-
-(defcustom coq-errormsg-as-failure nil
-  "Error message feedbacks cause retraction"
-  :type 'boolean
-  :group 'coq)
-
-(defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
-  "The default TAGS table for the Coq library."
-  :type 'string
-  :group 'coq)
 
 (defcustom coq-pinned-version nil 
   "Which version of Coq you are using.
@@ -151,18 +68,6 @@ variable should contain nil or a version string."
 
 (defvar coq-autodetected-version nil
   "Version of Coq, as autodetected by `coq-autodetect-version'.")
-
-;;; error symbols
-
-;; coq-unclassifiable-version
-;;
-;; This error is signaled with one data item -- the bad version string
-
-(put 'coq-unclassifiable-version 'error-conditions
-     '(error coq-unclassifiable-version))
-
-(put 'coq-unclassifiable-version 'error-message
-     "Proof General cannot classify your Coq version")
 
 
 ;;; version detection code
@@ -271,6 +176,104 @@ Return nil if the version cannot be detected."
 	((equal (substring (cadr err) 0 15) "Invalid version")
 	 (signal 'coq-unclassifiable-version  coq-version-to-use))
 	(t (signal (car err) (cdr err))))))))
+
+
+(defcustom coq-prog-env nil
+  "List of environment settings to pass to Coq process.
+On Windows you might need something like:
+  (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
+  :group 'coq)
+(require 'coq-error)
+
+(defcustom coq-prog-name
+  (let ((exe-name (if (coq--post-v89)
+                      "coqidetop"
+                    "coqide")))
+    (if (executable-find exe-name) exe-name
+      (proof-locate-executable exe-name t '("C:/Program Files/Coq/bin"))))
+  "*Name of program to run as Coq. See `proof-prog-name', set from this.
+On Windows with latest Coq package you might need something like:
+   C:/Program Files/Coq/bin/coqtop.opt.exe
+instead of just \"coqtop\".
+This must be a single program name with no arguments; see `coq-prog-args'
+to manually adjust the arguments to the Coq process.
+See also `coq-prog-env' to adjust the environment."
+  :type 'string
+  :group 'coq)
+
+(defcustom coq-dependency-analyzer
+  (if (executable-find "coqdep") "coqdep"
+    (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin")))
+  "Command to invoke coqdep."
+  :type 'string
+  :group 'coq)
+
+(defcustom coq-compiler
+  (if (executable-find "coqc") "coqc"
+    (proof-locate-executable "coqc" t '("C:/Program Files/Coq/bin")))
+  "Command to invoke the coq compiler."
+  :type 'string
+  :group 'coq)
+
+(defun get-coq-library-directory ()
+  (let ((default-directory
+	  (if (file-accessible-directory-p default-directory)
+	      default-directory
+	    "/")))
+    (or (ignore-errors (car (process-lines coq-prog-name "-where")))
+	"/usr/local/lib/coq")))
+
+(defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
+  "The coq library directory, as reported by \"coqtop -where\".")
+
+(defcustom coq-allow-async-proofs (not (member system-type '(windows-nt cygwin)))
+  "Whether to allow coqtop to run asynchronous proofs using worker 
+processes. By default, not enabled for Windows, for stability reasons."
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-use-header-line t
+  "Use mouse-clickable header line"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-async-lazy nil
+  "Use lazy mode for Coq asynchronous processing"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-num-async-workers nil
+  "Number of worker processes in async mode, nil for default"
+  :type 'integer
+  :group 'coq)
+
+(defcustom coq-num-async-par-workers nil
+  "Number of worker processes when using Ltac :par, nil for default"
+  :type 'integer
+  :group 'coq)
+
+(defcustom coq-errormsg-as-failure nil
+  "Error message feedbacks cause retraction"
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-tags (concat coq-library-directory "/theories/TAGS")
+  "The default TAGS table for the Coq library."
+  :type 'string
+  :group 'coq)
+
+;;; error symbols
+
+;; coq-unclassifiable-version
+;;
+;; This error is signaled with one data item -- the bad version string
+
+(put 'coq-unclassifiable-version 'error-conditions
+     '(error coq-unclassifiable-version))
+
+(put 'coq-unclassifiable-version 'error-message
+     "Proof General cannot classify your Coq version")
+
 
 (defcustom coq-use-makefile nil
   "Whether to look for a Makefile to attempt to guess the command line.
