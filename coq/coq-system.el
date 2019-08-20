@@ -198,10 +198,10 @@ Interactively (with INTERACTIVE-P), show that number."
 		 default-directory
 	       "/"))
 	   (coq-command (shell-quote-argument
-                         ;; use coq-prog-name if it's been customized by user,
+                         ;; use coq-prog-name if was been customized by user,
                          ;; coqc otherwise
-                         (or (and (get 'coq-prog-name 'customized-value)
-                                  coq-prog-name)
+                         (or (car (get 'coq-prog-name 'customized-value)) ; customized for current session
+                             (car (get 'coq-prog-name 'saved-value))      ; customized & saved
                              "coqc")))
            (shell-command-str (format "%s -v" coq-command))
            (fh (find-file-name-handler default-directory 'shell-command))
@@ -440,7 +440,7 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
 					; TODO allow ports for main-channel
 					; TODO add control-channel ports
-  (append (or (coq--post-v89) "-ideslave")
+  (append (and (not (coq--post-v89)) '("-ideslave"))
           '("-main-channel" "stdfds")))
 
 (defvar coq-coqtop-async-flags
