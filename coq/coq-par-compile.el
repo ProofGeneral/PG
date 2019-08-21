@@ -1482,7 +1482,9 @@ Lock the source file and start the coqdep background process"
 	       (get job 'src-file)))
     (message "vio2vo %s" (get job 'src-file))
     (coq-par-start-process
-     coq-prog-name
+     ;; in 8.9.1 and before only coqtop accepts -schedule-vio2vo
+     ;; after change 103f59e only coqc accepts -schedule-vio2vo
+     (if (coq--post-v810) coq-compiler coq-prog-name)
      (nconc arguments (list "-schedule-vio2vo" "1" module))
      'coq-par-vio2vo-continuation
      job
