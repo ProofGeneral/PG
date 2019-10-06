@@ -432,7 +432,8 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (append
-   (if (coq--supports-topfile) (cons "-topfile" (cons buffer-file-name nil)) "")
+   (if (and (coq--supports-topfile) buffer-file-name)
+       (cons "-topfile" (cons buffer-file-name nil)) "")
    (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85))))
 
 (defun coq-prog-args ()
