@@ -47,10 +47,10 @@
 ;;       "using" "after"))))
 ; "ALL" "True" "False" "EX" "end" "in" "of" "with"
 
-;; (defconst coq-comment-start-regexp "(\\*")
-;; (defconst coq-comment-end-regexp "\\*)")
-;; (defconst coq-comment-start-or-end-regexp
-;;   (concat coq-comment-start-regexp "\\|" coq-comment-end-regexp))
+(defconst coq-comment-start-regexp "(\\*")
+(defconst coq-comment-end-regexp "\\*)")
+(defconst coq-comment-start-or-end-regexp
+  (concat coq-comment-start-regexp "\\|" coq-comment-end-regexp))
 ;; (defconst coq-indent-open-regexp
 ;;   (proof-regexp-alt ;(proof-regexp-alt-list coq-keywords-goal) goal-command-p instead
 ;;    (proof-ids-to-regexp '("Cases" "match" "BeginSubproof"))
@@ -234,75 +234,73 @@ Remqrk: This regexp is much more precise than `coq-end-command-regexp' but only
 works when searching backward.")
 
 
-;; (defun coq-search-comment-delimiter-forward ()
-;;   "Search forward for a comment start (return 1) or end (return -1).
-;; Return nil if not found."
-;;   (when (re-search-forward coq-comment-start-or-end-regexp nil 'dummy)
-;;     (save-excursion
-;;       (goto-char (match-beginning 0))
-;;       (if (looking-at coq-comment-start-regexp) 1 -1))))
+(defun coq-search-comment-delimiter-forward ()
+  "Search forward for a comment start (return 1) or end (return -1).
+Return nil if not found."
+  (when (re-search-forward coq-comment-start-or-end-regexp nil 'dummy)
+    (save-excursion
+      (goto-char (match-beginning 0))
+      (if (looking-at coq-comment-start-regexp) 1 -1))))
 
+(defun coq-search-comment-delimiter-backward ()
+  "Search backward for a comment start (return 1) or end (return -1).
+ Return nil if not found."
+  (when (re-search-backward coq-comment-start-or-end-regexp nil 'dummy)
+      (if (looking-at coq-comment-start-regexp) 1 -1)))
 
-;; (defun coq-search-comment-delimiter-backward ()
-;;   "Search backward for a comment start (return 1) or end (return -1).
-;; Return nil if not found."
-;;   (when (re-search-backward coq-comment-start-or-end-regexp nil 'dummy)
-;;       (if (looking-at coq-comment-start-regexp) 1 -1)))
+(defun coq-skip-until-one-comment-backward ()
+  "Skips comments and normal text until finding an unclosed comment start.
+ Return nil if not found.  Point is moved to the the unclosed comment start
+if found, to (point-max) otherwise.  Return t if found, nil otherwise."
+  (if (= (point) (point-min)) nil
+    (ignore-errors (backward-char 1))       ; if point is between '(' and '*'
+    (if (looking-at coq-comment-start-regexp) t
+      (forward-char 1)
+      (let ((nbopen 1) (kind nil))
+        (while (and (> nbopen 0) (setq kind (coq-search-comment-delimiter-backward)))
+          (if (< kind 0)
+              (setq nbopen (+ 1 nbopen))
+            (setq nbopen (- nbopen 1))))
+        (= nbopen 0)))))
 
+(defun coq-skip-until-one-comment-forward ()
+  "Skips comments and normal text until finding an unopened comment end."
+  (ignore-errors (backward-char 1))            ; if point is between '*' and ')'
+  (if (looking-at coq-comment-end-regexp) (progn (forward-char 2) t)
+    (forward-char 1)
+    (let ((nbopen 1) (kind nil))
+      (while (and (> nbopen 0) (setq kind (coq-search-comment-delimiter-forward)))
+        (if (> kind 0) (setq nbopen (+ 1 nbopen))
+          (setq nbopen (- nbopen 1))))
+      (= nbopen 0))))
 
-;; (defun coq-skip-until-one-comment-backward ()
-;;   "Skips comments and normal text until finding an unclosed comment start.
-;; Return nil if not found.  Point is moved to the the unclosed comment start
-;; if found, to (point-max) otherwise.  Return t if found, nil otherwise."
-;;   (if (= (point) (point-min)) nil
-;;     (ignore-errors (backward-char 1))       ; if point is between '(' and '*'
-;;     (if (looking-at coq-comment-start-regexp) t
-;;       (forward-char 1)
-;;       (let ((nbopen 1) (kind nil))
-;;         (while (and (> nbopen 0) (setq kind (coq-search-comment-delimiter-backward)))
-;;           (if (< kind 0)
-;;               (setq nbopen (+ 1 nbopen))
-;;             (setq nbopen (- nbopen 1))))
-;;         (= nbopen 0)))))
+(defun coq-looking-at-comment ()
+  "Return non-nil if point is inside a comment."
+  (or (proof-inside-comment (point))
+      (proof-inside-comment (+ 1 (point)))))
 
-;; (defun coq-skip-until-one-comment-forward ()
-;;   "Skips comments and normal text until finding an unopened comment end."
-;;   (ignore-errors (backward-char 1))            ; if point is between '*' and ')'
-;;   (if (looking-at coq-comment-end-regexp) (progn (forward-char 2) t)
-;;     (forward-char 1)
-;;     (let ((nbopen 1) (kind nil))
-;;       (while (and (> nbopen 0) (setq kind (coq-search-comment-delimiter-forward)))
-;;         (if (> kind 0) (setq nbopen (+ 1 nbopen))
-;;           (setq nbopen (- nbopen 1))))
-;;       (= nbopen 0))))
+(defun coq-find-comment-start ()
+  "Go to the current comment start.
+If inside nested comments, go to the start of the outer most comment.
+Return the position of the comment start.  If not inside a comment,
+return nil and does not move the point."
+  (when (coq-looking-at-comment)
+    (let ((prevpos (point)) (init (point)))
+      (while (coq-skip-until-one-comment-backward)
+        (setq prevpos (point)))
+      (goto-char prevpos)
+      (if (= prevpos init) nil prevpos))))
 
-;; (defun coq-looking-at-comment ()
-;;   "Return non-nil if point is inside a comment."
-;;   (or (proof-inside-comment (point))
-;;       (proof-inside-comment (+ 1 (point)))))
-
-;; (defun coq-find-comment-start ()
-;;   "Go to the current comment start.
-;; If inside nested comments, go to the start of the outer most comment.
-;; Return the position of the comment start.  If not inside a comment,
-;; return nil and does not move the point."
-;;   (when (coq-looking-at-comment)
-;;     (let ((prevpos (point)) (init (point)))
-;;       (while (coq-skip-until-one-comment-backward)
-;;         (setq prevpos (point)))
-;;       (goto-char prevpos)
-;;       (if (= prevpos init) nil prevpos))))
-
-;; (defun coq-find-comment-end ()
-;;   "Go to the current comment end.
-;; If inside nested comments, go to the end of the outer most
-;; comment.  Return the position of the end of comment end.  If not inside
-;; a comment, return nil and does not move the point."
-;;   (let ((prevpos (point)) (init (point)))
-;;     (while (coq-skip-until-one-comment-forward)
-;;       (setq prevpos (point)))
-;;     (goto-char prevpos)
-;;     (if (= prevpos init) nil prevpos)))
+(defun coq-find-comment-end ()
+  "Go to the current comment end.
+If inside nested comments, go to the end of the outer most
+comment.  Return the position of the end of comment end.  If not inside
+a comment, return nil and does not move the point."
+  (let ((prevpos (point)) (init (point)))
+    (while (coq-skip-until-one-comment-forward)
+      (setq prevpos (point)))
+    (goto-char prevpos)
+    (if (= prevpos init) nil prevpos)))
 
 ; generic function is wrong when the point in between ( and *
 ;; (defun coq-looking-at-syntactic-context ()
