@@ -1070,7 +1070,7 @@ It is used:
 ;; It is understood here as being a goal.  This is important for
 ;; recognizing global identifiers, see coq-global-p.
 (defconst coq-save-command-regexp-strict
-  (concat "\\`\\(?:Time\\s-+\\)?\\("
+  (concat "\\`\\(?:Time\\s-+\\|Timeout\\s-+[[:digit:]]+\\s-+\\)*\\("
           "\\_<"
 	  (regexp-opt coq-keywords-save-strict)
 	  "\\_>"
@@ -1293,12 +1293,13 @@ It is used:
 
 (defconst coq-save-command-regexp
   ;; FIXME: The surrounding grouping parens are probably not needed.
-  (concat "\\`\\(\\(?:Time\\s-+\\)?\\_<"
+  (concat "\\`\\(\\(?:Time\\s-+\\|Timeout\\s-+[[:digit:]]+\\s-+\\)*\\_<"
            (regexp-opt coq-keywords-save t)
            "\\_>\\)"))
 
 (defconst coq-save-with-hole-regexp
-  (concat "\\(?:Time\\s-+\\)?\\(" (regexp-opt coq-keywords-save-strict)
+  (concat "\\(?:Time\\s-+\\|Timeout\\s-+[[:digit:]]+\\s-+\\)*\\("
+          (regexp-opt coq-keywords-save-strict)
 	  "\\)\\s-+\\(" coq-id "\\)\\s-*\\."))
 
 (defconst coq-goal-command-regexp
