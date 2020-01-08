@@ -51,19 +51,19 @@
 ;     ,@body
 ;     (message "%.06f" (float-time (time-since time)))))
 
-(defcustom coq-smie-user-tokens nil
+(defcustom coq-smie-user-tokens '(("<-" . "monadic bind") (";;" . "monadic sequence"))
   "Alist of (syntax . token) pairs to extend the coq smie parser.
-These are user configurable additional syntax for smie tokens.  It
-allows to define alternative syntax for smie token.  Typical
+These are user configurable additional syntax for smie tokens.
+It allows to define alternative syntax for smie token.  Typical
 example: if you define a infix operator \"xor\" you may want to
 define it as a new syntax for token \"or\" in order to have the
 indentation rules of or applied to xor.  Other exemple: if you
 want to define a new notation \"ifb\" ... \"then\" \"else\" then
 you need to declare \"ifb\" as a new syntax for \"if\" to make
-indentation work well."
+indentation work well. The default list includes extlib style
+monad notations."
   :type '(alist :key-type string :value-type string)
   :group 'coq)
-
 
 (defalias 'coq--string-suffix-p
   ;; Replacement for emacs < 24.4, borrowed from sindikat at
@@ -874,9 +874,11 @@ Typical values are 2 or 4."
 ;;;
        ("(" exp ")") ("{|" exps "|}") ("{" exps "}")
        (exp "; tactic" exp) (exp "in tactic" exp) (exp "as" exp)
+       (exp "monadic sequence" exp)  ;; Stand in for monadic sequencing notation.
        (exp "by" exp) (exp "with" exp) (exp "|-" exp)
        (exp ":" exp) (exp ":<" exp) (exp "," exp)
        (exp "->" exp) (exp "<->" exp) (exp "&" exp)
+       (exp "monadic bind" exp)  ;; Stand in for monadic binding notation.
        (exp "/\\" exp) (exp "\\/" exp)
        (exp "==" exp) (exp "=" exp) (exp "<>" exp) (exp "<=" exp)
        (exp "<" exp) (exp ">=" exp) (exp ">" exp)
@@ -952,7 +954,9 @@ Typical values are 2 or 4."
       (assoc "; tactic") (assoc "in tactic") (assoc "as" "by") (assoc "with")
       (assoc "|-") (assoc ":" ":<") (assoc ",")
       (assoc "else")
+      (assoc "monadic sequence")
       (assoc "->") (assoc "<->")
+      (assoc "monadic bind")
       (assoc "&") (assoc "/\\") (assoc "\\/")
       (assoc "==") (assoc "=") (assoc "<" ">" "<=" ">=" "<>")
       (assoc "=?") (assoc "<=?") (assoc "<?") (assoc "^")
