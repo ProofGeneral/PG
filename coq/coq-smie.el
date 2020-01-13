@@ -953,7 +953,7 @@ Typical values are 2 or 4."
       (assoc "|-") (assoc ":" ":<") (assoc ",")
       (assoc "else")
       (assoc "->") (assoc "<->")
-      (assoc "&") (assoc "/\\") (assoc "\\/")
+      (assoc "\\/") (assoc "&") (assoc "/\\")
       (assoc "==") (assoc "=") (assoc "<" ">" "<=" ">=" "<>")
       (assoc "=?") (assoc "<=?") (assoc "<?") (assoc "^")
       (assoc "||") ;; FIXME: detecting "+ tactic" and "|| tactic" seems impossible
