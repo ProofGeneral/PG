@@ -5,6 +5,30 @@ Notation "[ a ; .. ; b ]" := (a :: .. (b :: []) ..) : list_scope.
 
 Require Import Arith.
 
+Definition arith1:
+  1 + 3 *
+      4.
+
+Definition arith2 :=
+  1 * 3 +
+  4.
+
+Definition logic1 :=
+  True \/ False /\
+          False.
+
+Definition logic2 :=
+  True /\ False \/
+  False.
+
+Definition logic3 :=
+  let x := True /\ False in True \/
+                            False .
+Definition logic4 :=
+  (let x := True /\ False in True) \/
+  False .
+
+
 Record a : Type := make_a {
                        aa : nat
                      }.

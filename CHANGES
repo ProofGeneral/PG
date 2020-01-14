@@ -60,6 +60,22 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     
     The set of tokens can be seen in variable smie-grammar.
 
+*** Indentation of monadic notations.
+    Using the extensibility for indentation described above we provide
+    a way to define your own monadic operators using the
+    coq-smie-monadic-tokens in the same spirit as coq-smie-user-tokens
+    above.
+
+    By default two well established syntax are supported:
+
+       x <- e ;;
+       e
+
+     and 
+
+       do x <- e ;
+       e
+
 *** Clickable Hypothesis in goals buffer to copy/paste hyp names
 
     Clicking on a hyp name in goals buffer with button 2 copies its

@@ -51,6 +51,29 @@
 ;     ,@body
 ;     (message "%.06f" (float-time (time-since time)))))
 
+(defcustom coq-smie-monadic-tokens '((";;" . ";; monadic")("do" . "let monadic")("<-" . "<- monadic")(";" . "in monadic"));
+  "This contains specific indentation token pairs, similar to
+`coq-smie-user-tokens' but dedicated to monadic operators. These
+tokens have no builtin syntax except the one defined by this
+variable so that users can change the syntax at will.
+
+The default value supports ext-lib (x <- e ;; e) and
+CompCert (do x <- e ; e) styles.
+
+There are two types of monadic syntax with specific tokens: one
+with a starting token (like do):
+
+  \"let monadic\" E \"<- monadic\" E \"in monadic\" E
+
+and the other without:
+
+  E \"<- monadic\" E \";; monadic\" E
+
+Th goal of this variable is to give concrete syntax to these
+\"xxx monadic\" tokens."
+ :type '(alist :key-type string :value-type string)
+  :group 'coq)
+
 (defcustom coq-smie-user-tokens nil
   "Alist of (syntax . token) pairs to extend the coq smie parser.
 These are user configurable additional syntax for smie tokens.  It
@@ -60,7 +83,16 @@ define it as a new syntax for token \"or\" in order to have the
 indentation rules of or applied to xor.  Other exemple: if you
 want to define a new notation \"ifb\" ... \"then\" \"else\" then
 you need to declare \"ifb\" as a new syntax for \"if\" to make
-indentation work well."
+indentation work well.
+
+An example of cofiguration is:
+
+(setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
+
+to have token \"xor\" and \"ifb\" be considered as having
+repectively same priority and associativity as \"or\" and \"if\".
+
+For monadic notations, see `coq-smie-monadic-tokens' instead."
   :type '(alist :key-type string :value-type string)
   :group 'coq)
 
@@ -105,13 +137,36 @@ attention to case differences."
     (message "time: %S"(- (float-time) deb))))
 
 
-
-;; Fragile: users can define tactics with uppercases...
-(defun coq-smie-is-tactic ()
+(defun coq-is-inside-enclosing (bound)
   (save-excursion
-    (coq-find-real-start)
-    (let ((case-fold-search nil))
-      (not (looking-at "[[:upper:]]")))))
+    ;; This may fail but we need to see where we stopped
+    (coq-smie-search-token-backward '("#dummy#" "{") bound)
+    (if (= (point) bound) nil ; we did not cross som paren-like
+      (let ((backtok (coq-smie-backward-token)))
+        (cond
+         ((and (string-equal "" backtok) (eq ?| (char-after))(eq ?{ (char-before))) "{|")
+         ((not (string-equal backtok "")) backtok)
+         (t (char-to-string (char-before))))))))
+
+;; Fragile: users can define tactics with uppercases... Returns t if
+;; we are inside a tactic and not inside a record notation. Ideally we
+;; would like to know if the interpretation scope is term or tactic
+;; (i.e. detect if we are inside a term inside a tactic) but this is
+;; almost impossible sytntactically: how to tell the difference
+;; between tactics and tacticals? In "repeat (f x)" and "apply (f x)"
+;; f x is a tactic (resp. a terms). Only Coq knows, we could analyse
+;; coq grammar tacticals. This is not too problematic here since only
+;; in records the indentation changes (maily for ";").
+(defun coq-smie-is-tactic ()
+  (let* ((pos (point))
+         (cmdstrt (save-excursion (coq-find-real-start)))
+         (enclosing (coq-is-inside-enclosing cmdstrt)))
+    (cond
+     ((string-equal enclosing "{|") nil)
+     (t (save-excursion
+          (goto-char cmdstrt)
+          (let ((case-fold-search nil))
+            (not (looking-at "[[:upper:]]"))))))))
 
 (defun coq-smie-is-ltacdef ()
   (let ((case-fold-search nil))
@@ -399,13 +454,20 @@ The point should be at the beginning of the command name."
 (defun coq-is-cmdend-token (tok)
   (or (coq-is-bullet-token tok) (coq-is-subproof-token tok) (coq-is-dot-token tok)))
 
-
 (defun coq-smie-forward-token ()
-  (let ((tok (smie-default-forward-token)))
+  (let ((tok (coq-smie-forward-token-aux)))
     (cond
      ((assoc tok coq-smie-user-tokens)
       (let ((res (assoc tok coq-smie-user-tokens)))
         (cdr res)))
+     ((assoc tok coq-smie-monadic-tokens)
+      (let ((res (assoc tok coq-smie-monadic-tokens)))
+        (cdr res)))
+     (tok))))
+
+(defun coq-smie-forward-token-aux ()
+  (let ((tok (smie-default-forward-token)))
+    (cond
      ;; @ may be  ahead of an id, it is part of the id.
      ((and (equal tok "@") (looking-at "[[:alpha:]_]"))
       (let ((newtok (coq-smie-forward-token))) ;; recursive call
@@ -522,13 +584,35 @@ The point should be at the beginning of the command name."
      (t ":=")))) ; a parenthesis stopped the search
 
 
+(defun coq-smie-semicolon-deambiguate ()
+  (let* ((pos (point))
+         (cmdstrt (save-excursion (coq-find-real-start)))
+         (istac (or (coq-smie-is-tactic)
+                    (coq-smie-is-ltacdef)
+                    (coq-smie-is-inside-parenthesized-tactic)))
+         (enclosing (coq-is-inside-enclosing cmdstrt)))
+    (cond
+     (istac "; tactic")
+     ;; looking for a dummy token to see if we fail before reaching
+     ;; strt, which means that we were in a prenthesized expression.
+     ((string-equal enclosing "{ subproof")  "; tactic")
+     ((member enclosing '("{" "{|"))  "; record")
+     (t ";"))))
 
 (defun coq-smie-backward-token ()
-  (let* ((tok (smie-default-backward-token)))
+  (let ((tok (coq-smie-backward-token-aux)))
     (cond
      ((assoc tok coq-smie-user-tokens)
       (let ((res (assoc tok coq-smie-user-tokens)))
         (cdr res)))
+     ((assoc tok coq-smie-monadic-tokens)
+      (let ((res (assoc tok coq-smie-monadic-tokens)))
+        (cdr res)))
+     (tok))))
+
+(defun coq-smie-backward-token-aux ()
+  (let* ((tok (smie-default-backward-token)))
+    (cond
      ;; Distinguish between "," from quantification and other uses of
      ;; "," (tuples, tactic arguments)
      ((equal tok ",")
@@ -545,16 +629,7 @@ The point should be at the beginning of the command name."
 
      ; Same for ";" : record field separator, tactic combinator, etc
      ((equal tok ";")
-      (save-excursion
-	(let ((backtok (coq-smie-search-token-backward '("." "[" "{" "Ltac"))))
-	  (cond
-	   ((member backtok '("." "Ltac")) "; tactic")
-	   ((equal backtok nil)
-	    (if (or (memq (char-before) '(?\( ?\[))
-		    (and (eq (char-before) ?\{)
-			 (equal (coq-smie-backward-token) "{ subproof"))) ;; recursive call
-		"; tactic"
-	      "; record"))))))
+      (save-excursion (coq-smie-semicolon-deambiguate)))
 
      ;; trying to discriminate between bollean operator || and tactical ||.
      ((equal tok "||")
@@ -586,6 +661,16 @@ The point should be at the beginning of the command name."
 	   ((equal backtok nil) "->")
 	   (t "-> tactic")))))
 
+     ;; "<-" is a commonly used token for monadic notations, we should
+     ;; discrimnate between "rewrite ... <-" and other uses of "<-".
+     ((equal tok "<-")
+      (save-excursion
+	(let ((backtok (coq-smie-search-token-backward '("intro" "intros" "rewrite" "."))))
+	  (cond
+	   ((equal backtok ".") "<-")
+	   ((equal backtok nil) "<-")
+	   (t "<- tactic")))))
+
 
      ((equal tok "Module")
       (save-excursion
@@ -600,6 +685,7 @@ The point should be at the beginning of the command name."
      ((equal tok "End")
       (if (coq-is-at-command-real-start) "end module" tok))
 
+     ;; FIXME: this is a parenthesis
      ((and (equal tok "|") (eq (char-before) ?\{))
       (goto-char (1- (point))) "{|")
 
@@ -766,7 +852,6 @@ The point should be at the beginning of the command name."
 	(concat newtok "." tok)))
 
      ((coq-dot-friend-p tok) ".")
-
      (tok))))
 
 
@@ -867,11 +952,14 @@ Typical values are 2 or 4."
        (exp "xxx provedby" exp) (exp "as morphism" exp)
        (exp "with signature" exp)
        ("match" matchexp "with match" exp "end") ;expssss
-       ("let" assigns "in let" exp) ;("eval in" assigns "in eval" exp) disabled
+       ("let" assigns "in let" exp)
+       ("let monadic" assigns "in monadic" exp)
+       ;;("eval in" assigns "in eval" exp) disabled
        ("fun" exp "=> fun" exp) ("if" exp "then" exp "else" exp)
        ("quantif exists" exp ", quantif" exp)
        ("forall" exp ", quantif" exp)
 ;;;
+       (exp "<- monadic" exp) (exp ";; monadic" exp)
        ("(" exp ")") ("{|" exps "|}") ("{" exps "}")
        (exp "; tactic" exp) (exp "in tactic" exp) (exp "as" exp)
        (exp "by" exp) (exp "with" exp) (exp "|-" exp)
@@ -881,9 +969,9 @@ Typical values are 2 or 4."
        (exp "==" exp) (exp "=" exp) (exp "<>" exp) (exp "<=" exp)
        (exp "<" exp) (exp ">=" exp) (exp ">" exp)
        (exp "=?" exp) (exp "<=?" exp) (exp "<?" exp)
-       (exp "^" exp)
        (exp "+" exp) (exp "-" exp)
-       (exp "*" exp)
+       (exp "*" exp) (exp "&&" exp)
+       (exp "^" exp)
        (exp ": ltacconstr" exp)(exp ". selector" exp))
       ;; Having "return" here rather than as a separate rule in `exp' causes
       ;; it to be indented at a different level than "with".
@@ -891,7 +979,8 @@ Typical values are 2 or 4."
 		(exp "return" exp) )
       (exps (affectrec) (exps "; record" exps))
       (affectrec (exp ":= record" exp))
-      (assigns  (exp ":= let" exp))     ;(assigns "; record" assigns)
+      (assigns  (exp ":= let" exp) (exp "<- monadic" exp))
+      ;;(assigns "; record" assigns)
 
       (moduledef (moduledecl ":= module" exp))
       (moduledecl (exp) (exp ":" moduleconstraint)
@@ -944,10 +1033,10 @@ Typical values are 2 or 4."
       (assoc "with inductive" "with fixpoint" "where"))
     '((assoc ":= def" ":= inductive")
       (assoc "|") (assoc "=>")
-      (assoc ":=")	(assoc "xxx provedby")
+      (assoc ":=") (assoc "xxx provedby")
       (assoc "as morphism") (assoc "with signature") (assoc "with match")
-      (assoc "in let")
-      (assoc "in eval") (assoc "=> fun") (assoc "then") (assoc ", quantif")
+      (assoc "in let" "in monadic")
+      (assoc "in eval") (assoc "=> fun") (assoc ", quantif") (assoc "then")
       (assoc "|| tactic") ;; FIXME: detecting "+ tactic" and "|| tactic" seems impossible
       (assoc "; tactic") (assoc "in tactic") (assoc "as" "by") (assoc "with")
       (assoc "|-") (assoc ":" ":<") (assoc ",")
@@ -955,9 +1044,11 @@ Typical values are 2 or 4."
       (assoc "->") (assoc "<->")
       (assoc "\\/") (assoc "&") (assoc "/\\")
       (assoc "==") (assoc "=") (assoc "<" ">" "<=" ">=" "<>")
-      (assoc "=?") (assoc "<=?") (assoc "<?") (assoc "^")
+      (assoc "=?") (assoc "<=?") (assoc "<?")
+      (assoc ";; monadic") (assoc "<- monadic")
+      (assoc "^")
       (assoc "||") ;; FIXME: detecting "+ tactic" and "|| tactic" seems impossible
-      (assoc "+") (assoc "-") (assoc "*")
+      (assoc "+") (assoc "-") (assoc "*")(assoc "&&")
       (assoc ": ltacconstr") (assoc ". selector"))
     '((assoc ":" ":<")  (assoc "<"))
     '((assoc ". modulestart" "." ". proofstart") (assoc "Module def")
@@ -1101,8 +1192,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	    coq-indent-semicolon-tactical
 	  nil))
 
-       ; "as" tactical is not idented correctly
-       ((equal token "in let") (smie-rule-parent))
+       ((member token '("in let" "in monadic")) (smie-rule-parent))
 
        ((equal token "} subproof") (smie-rule-parent))
 
