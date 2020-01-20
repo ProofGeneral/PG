@@ -4300,6 +4300,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Multiple File Support::
 * Editing multiple proofs::
 * User-loaded tactics::
+* Indentation tweaking::
 * Holes feature::
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
@@ -5146,6 +5147,71 @@ move the locked region to the proper position,
 (@code{proof-frob-locked-end}, @pxref{Escaping script management}) or
 @kbd{C-c C-v} to re-issue an erroneously back-tracked tactic without
 recording it in the script.
+
+@node Indentation tweaking
+@section Indentation tweaking
+
+Indentation of Coq script is provided by Proof General, but it may
+behave badly especially if you use syntax extensions. You can sometimes
+fix this problem by telling PG that some token should be considered as
+identical to other ones by the indentation mechanism. Use the two
+variables @code{coq-smie-user-tokens} and
+@code{coq-smie-monadic-tokens}. This variables contains associations
+between user tokens and the existing pg tokens they should be equated
+too.
+
+@itemize @bullet
+@item @code{coq-smie-user-tokens}
+
+this is where users should put ther own tokens. For instance:
+
+@lisp
+(setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
+@end lisp
+to have token \"xor\" and \"ifb\" be considered as having
+@item @code{coq-smie-monadic-tokens}
+
+is specific to monadic operators: it contains usual monadic notations
+by default (but you can redefine it if needed).
+
+Specific tokens are defined for the two usual monadic forms: 
+
+@verbatim
+"let monadic" E "<- monadic" E "in monadic" E
+E "<- monadic" E ";; monadic" E
+@end verbatim
+
+The default value of @code{coq-smie-monadic-tokens} gives the following
+concrete syntax to these tokens:
+@lisp
+((";;" . ";; monadic")
+ ("do" . "let monadic")
+ ("<-" . "<- monadic")
+ (";" . "in monadic"))
+@end lisp
+
+thus allowing for the following:
+
+@verbatim
+  do x <- foo;
+  do y <- bar;
+  ...
+@end verbatim
+and
+@verbatim
+  x <- foo;;
+  y <- bar;;
+  ...
+@end verbatim
+@end itemize
+
+NOTE: This feature is experimental.
+
+NOTE: the ``pg tokens'' are actually the ones PG generates internally by
+exploring the file around the indentation point. Consequently this
+refers to internals of PoofGeneral. Contact the Proof General team if you
+need help.
+
 
 @node Holes feature
 @section Holes feature
