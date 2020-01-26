@@ -309,6 +309,7 @@ inside parenthesis)."
 	  ;; The default lexer is faster and is good enough for our needs.
 	  (let* ((next (coq-forward-token-fast-nogluing-dot-friends))
 		 (parop (assoc next ignore-between)))
+            (when (> (point) end) (goto-char end) (throw 'found nil))
 	    ; if we find something to ignore, we directly jump to the
 	    ; corresponding closer
 	    (if parop
@@ -320,8 +321,8 @@ inside parenthesis)."
 			  (append parops (cons "." nil))
 			  end ignore-between)
 			 (cons "." nil))
-		  (goto-char (point))
-		  next))
+		    (goto-char (point))
+		    next))
 	      ;; Do not consider "." when not followed by a space
 	      (when (or (not (equal next ".")) ; see backward version
 			(looking-at "[[:space:]]"))
@@ -790,16 +791,6 @@ The point should be at the beginning of the command name."
 	   ((member prev-interesting '("match" "lazymatch" "multimatch")) "as match")
 	   ((member prev-interesting '("Morphism" "Relation")) "as morphism")
 	   (t tok)))))
-
-     ((equal tok "by")
-      (let ((p (point)))
-	(if (and (equal (smie-default-backward-token) "proved")
-		 (member (smie-default-backward-token)
-			 '("transitivity" "symmetry" "reflexivity")))
-	    "xxx provedby"
-	  (goto-char p)
-	  tok))) ; by tactical
-
 
      ((equal tok "eval")
       (if (member (save-excursion
