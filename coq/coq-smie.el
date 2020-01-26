@@ -1114,6 +1114,24 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
   :type '(choice (const :tag "Fallback on global settings" nil)
           integer))
 
+;; Debugging smie parent token, needs the highlight library
+;;and something like this in .emacs:
+;; (require 'highlight)
+;; (custom-set-faces '(highlight ((((type x) (class color) (background light)) (:background "Wheat")))))
+(defun coq-show-smie--parent (parent token parent-token &optional num)
+  (ignore-errors
+   (message "token: %S ; parent: %S ; parent-token: %S" token parent parent-token)
+   (hlt-unhighlight-region)
+   (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
+          (end (cadr parent))
+          (regi (list (list beg end)))
+          (tok (caddr parent))
+          (face (cond
+                 ((equal num 1) 'hlt-regexp-level-1)
+                 ((equal num 2) 'hlt-regexp-level-2)
+                 (t 'hlt-regexp-level-1))))
+     (and parent (hlt-highlight-regions regi face)))))
+
 (defun coq-smie-rules (kind token)
   "Indentation rules for Coq.  See `smie-rules-function'.
 KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
@@ -1136,6 +1154,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 ;	    (equal (coq-smie-forward-token) "{ subproof"))
 	  ))
      (`:after
+      (coq-show-smie--parent smie--parent smie--token (smie-indent--parent) 1)
       (cond
        ;; Override the default indent step added because of their presence
        ;; in smie-closer-alist.
@@ -1211,6 +1230,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 			`(column . ,(+ coq-indent-modulestart (current-column)))))))
 
      (`:before
+      (coq-show-smie--parent smie--parent smie--token (smie-indent--parent) 1)
       (cond
 
 ;       ((and (member token '("{ subproof"))
