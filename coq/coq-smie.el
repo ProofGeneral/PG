@@ -361,13 +361,11 @@ inside parenthesis)."
 		  (let ((parops ; corresponding matcher may be a list
 			 (if (listp (car parop)) (car parop) (cons (car parop) nil))))
 		    ; go to corresponding closer or meet "."
-		    ;(message "newpatterns = %S" (append parops (cons "." nil)))
 		    (when (member
 			   (coq-smie-search-token-backward
 			    (append parops (cons "." nil))
 			    end ignore-between)
 			   (cons "." nil))
-		      (goto-char (point))
 		      next))
 		;; Do not consider "." when not followed by a space
 		;(message "SPACE?: %S , %S , %S" next next (looking-at ".[[:space:]]"))
@@ -561,10 +559,14 @@ The point should be at the beginning of the command name."
 ;; with" is for mutual definitions where both sides are of the same
 ;; level
 (defun coq-smie-:=-deambiguate ()
-  (let ((corresp (coq-smie-search-token-backward
-		  '("let" "Inductive" "CoInductive" "{|" "." "with" "Module" "where")
-		  nil '((("let" "with") . ":=")))))
+  (let* ((orig (point))
+         (cmdstrt (save-excursion (coq-find-real-start)))
+         (corresp (coq-smie-search-token-backward
+		   '("let" "Inductive" "CoInductive" "{|" "." "with" "Module" "where"
+                     "Equations")
+		   cmdstrt '((("let" "with") . ":=")))))
     (cond
+     ((member corresp '("Equations")) ":= equations")
      ((equal corresp "with")
       (let ((corresptok (coq-smie-with-deambiguate)))
 	(cond ;; recursive call if the with found is actually et with match
@@ -573,7 +575,6 @@ The point should be at the beginning of the command name."
 	 ((equal corresptok "with module") ":= with module")
 	 (t ":=")
 	 )))
-     ((equal corresp ".") ":= def") ; := outside of any parenthesis
      ((equal corresp "Module")
       (let ((p (point)))
 	(if (equal (smie-default-backward-token) "with")
@@ -584,7 +585,11 @@ The point should be at the beginning of the command name."
      ((equal corresp "let") ":= let")
      ((equal corresp "where") ":= inductive") ;; inductive or fixpoint, nevermind
      ((or (eq ?\{ (char-before))) ":= record")
-     (t ":=")))) ; a parenthesis stopped the search
+     ((equal (point) cmdstrt)
+      (if (looking-at "Equations") ":="
+        ":= def")) ; := outside of any parenthesis
+     (t ":=")
+     ))) ; a parenthesis stopped the search
 
 
 (defun coq-smie-semicolon-deambiguate ()
@@ -600,7 +605,10 @@ The point should be at the beginning of the command name."
      ;; strt, which means that we were in a prenthesized expression.
      ((string-equal enclosing "{ subproof")  "; tactic")
      ((member enclosing '("{" "{|"))  "; record")
-     (t ";"))))
+     (t
+      (if (save-excursion (goto-char cmdstrt) (looking-at "Equations"))
+          "; equations"
+        ";")))))
 
 (defun coq-smie-backward-token ()
   (let ((tok (coq-smie-backward-token-aux)))
@@ -958,9 +966,9 @@ Typical values are 2 or 4."
   (smie-prec2->grammar
    (smie-bnf->prec2
     '((exp
-       (exp ":= def" exp)
+       (exp ":= equations" exp) (exp ":= def" exp)
        (exp ":=" exp) (exp ":= inductive" exp)
-       (exp "||" exp) (exp "|" exp) (exp "=>" exp)
+       (exp "||" exp) (exp "|" exp) (exp "=>" exp) (exp "; equations" exp)
        (exp "xxx provedby" exp) (exp "as morphism" exp)
        (exp "with signature" exp)
        ("match" matchexp "with match" exp "end") ;expssss
@@ -1043,9 +1051,9 @@ Typical values are 2 or 4."
       (assoc "---- bullet") (assoc "++++ bullet") (assoc "**** bullet")
       (assoc ".")
       (assoc "with inductive" "with fixpoint" "where"))
-    '((assoc ":= def" ":= inductive")
-      (assoc "|") (assoc "=>")
-      (assoc ":=") (assoc "xxx provedby")
+    '((assoc ":= equations") (assoc ":= def" ":= inductive")
+      (assoc "|") (assoc "; equations") (assoc "=>") (assoc ":=")
+      (assoc "xxx provedby")
       (assoc "as morphism") (assoc "with signature") (assoc "with match")
       (assoc "in let" "in monadic")
       (assoc "in eval") (assoc "=> fun") (assoc ", quantif") (assoc "then")
@@ -1126,6 +1134,27 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
   :type '(choice (const :tag "Fallback on global settings" nil)
           integer))
 
+
+;; Debugging smie parent token, needs the highlight library
+;;and something like this in .emacs:
+;; (require 'highlight)
+;; (custom-set-faces '(highlight ((((type x) (class color) (background light)) (:background "Wheat")))))
+(defun coq-show-smie--parent (parent token parent-token &optional num msg)
+  (ignore-errors
+   (message "%s token: %S ; parent: %S ; parent-token: %S" msg token parent parent-token)
+   (hlt-unhighlight-region)
+   (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
+          (end (cadr parent))
+          (regi (list (list beg end)))
+          (tok (caddr parent))
+          (face (cond
+                 ((equal num 1) 'hlt-regexp-level-1)
+                 ((equal num 2) 'hlt-regexp-level-2)
+                 (t 'hlt-regexp-level-1))))
+     (and parent (hlt-highlight-regions regi face)))))
+
+
+
 (defun coq-smie-rules (kind token)
   "Indentation rules for Coq.  See `smie-rules-function'.
 KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
@@ -1148,11 +1177,12 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 ;	    (equal (coq-smie-forward-token) "{ subproof"))
 	  ))
      (`:after
+      ;;(coq-show-smie--parent smie--parent smie--token (smie-indent--parent) 1 "AFTER")
       (cond
        ;; Override the default indent step added because of their presence
        ;; in smie-closer-alist.
        ((or (coq-is-bullet-token token)
-	    (member token '(":" ":=" ":= with" ":= def"
+	    (member token '(":" ":=" ":= with" ":= def" ":= equations"
 			    "by" "in tactic" "<:" "<+" ":= record"
 			    "with module" "as" ":= inductive" ":= module" )))
 	2)
@@ -1170,6 +1200,14 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	  2)) 
 
        ((equal token "with") 2)  ; add 2 to the column of "with" in the children
+
+       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;XXXXXXXXXXXXXXXXXXXXXXXx
+       ((and (member token '("{" "{|"))
+             (smie-rule-prev-p ":=" ":= def")
+             (not coq-indent-box-style))
+        (save-excursion
+          (smie-backward-sexp t)
+          (cons 'column (+ 2 (smie-indent-virtual)))))
 
 
        ;;; the ";" tactical ;;;
@@ -1223,14 +1261,24 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 			`(column . ,(+ coq-indent-modulestart (current-column)))))))
 
      (`:before
+      ;(coq-show-smie--parent smie--parent smie--token (smie-indent--parent) 2 "BEFORE")
       (cond
 
-;       ((and (member token '("{ subproof"))
-;	     (not coq-indent-box-style)
-;	     (not (smie-rule-bolp)))
-;	(if (smie-rule-parent-p "Proof")
-;	    (smie-rule-parent 2)
-;	  (smie-rule-parent)))
+
+       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;XXXXXXXXXXXXXXXXXXXXXXXx;;;;;;;;;;;;;;
+       ;; trying to indent "{" at the end of line for records, but the
+       ;; parent is not what I think.
+       ;; ((and (member token '("{" "{|"))
+       ;;       (not coq-indent-box-style))
+       ;;  (if (smie-rule-bolp) 2 0))
+       ;(and (zerop (length tok)) (member (char-before) '(?\{ ?\})))
+       ((and (zerop (length token))
+             (looking-back "}") ;; "|}" useless when looking backward
+             (not coq-indent-box-style))
+        (smie-backward-sexp)
+        (smie-backward-sexp t)
+        (smie-indent-virtual)
+        )
 
        ;; "with" is also in the :list-intro rules and in :after.
        ((equal token "with")
@@ -1286,12 +1334,6 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	     (not (smie-rule-bolp)))
 	(smie-rule-parent coq-smie-after-bolp-indentation))
 
-       ;; trying to indent "{" at the end of line for records, but the
-       ;; parent is not what I think.
-;       ((and (member token '("{" "{|"))
-;	     (not coq-indent-box-style)
-;	     (not (smie-rule-bolp)))
-;	(smie-rule-parent))
 
 
        ((and (member token '("forall" "quantif exists"))
@@ -1313,7 +1355,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 	(save-excursion (coq-find-real-start)
 			`(column . ,(current-column))))
 
-       ((or (member token '(":= inductive" ":= def"))
+       ((or (member token '(":= inductive" ":= def" ":= equations" ":="))
             (and (equal token ":") (smie-rule-parent-p ".")))
         (let ((pcol
                (save-excursion
@@ -1334,12 +1376,18 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
           `(column . ,(if (smie-rule-hanging-p) pcol (+ 2 pcol)))))
 
        ((equal token "|")
-	(cond ((smie-rule-parent-p "with match")
-	       (- (funcall smie-rules-function :after "with match") 2))
-	      ((smie-rule-prev-p ":= inductive")
-	       (- (funcall smie-rules-function :after ":= inductive") 2))
-	       
-	      (t (smie-rule-separator kind))))))
+	(cond
+         ;; ":= equations" and "; record" are for Equations plugin
+         ((smie-rule-parent-p "with match" ":= equations" "; record")
+	  (- (funcall smie-rules-function :after "with match") 2))
+         ;; This is also for Equations plugijns, but happens at first
+         ;; line if a pattern matching and it is ugly to have the "|"
+         ;; at the saem column than "{"
+         ((smie-rule-parent-p "{")
+	  (funcall smie-rules-function :after "with match"))
+	 ((smie-rule-prev-p ":= inductive")
+	  (- (funcall smie-rules-function :after ":= inductive") 2))
+	 (t (smie-rule-separator kind))))))
      ))
 
 ;; No need of this hack anymore?

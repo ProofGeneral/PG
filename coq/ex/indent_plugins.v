@@ -55,14 +55,6 @@ Module Equations.
     neg true := false ;
     neg false := true.
 
-  Equations neg' (b : bool) : bool :=
-    neg true => false ;
-    neg false => true.
-  
-  Check neg_graph.
-  Check neg_graph_equation_1.
-  Check neg_graph_equation_2.
-
   Lemma neg_inv : forall b, neg (neg b) = b.
   Proof.
     intros b.
@@ -76,17 +68,18 @@ Module Equations.
   Notation "x :: l" := (cons x l). 
 
   Equations tail {A} (l : list A) : list A :=
-    tail nil :=
+  | nil :=
       nil ;
-    tail (cons a v)
-    := v.
+  | (cons a v)
+      := v.
 
   (* The cases inside { } are recognized as record fields, which from
      an indentation perspective is OK *)
   Equations filter {A} (l : list A) (p : A -> bool) : list A :=
     filter (cons a l) p with p a =>
-    { filter (cons a l) p true := a :: filter l p ;
-      filter (cons a l) p false := filter l p
+    { 
+                | true := a :: filter l p ;
+    | false := filter l p
     };
     filter nil p := nil 
   .
