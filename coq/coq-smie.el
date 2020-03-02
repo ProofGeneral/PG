@@ -523,6 +523,9 @@ The point should be at the beginning of the command name."
      ((member tok '("End"))
       (save-excursion (coq-smie-backward-token)))
 
+     ((member tok '("do"))
+      (save-excursion (coq-smie-backward-token-aux)))
+
      ; empty token if a prenthesis is met.
      ((and (zerop (length tok)) (looking-at "{|")) (goto-char (match-end 0)) "{|")
 
@@ -649,6 +652,15 @@ The point should be at the beginning of the command name."
 			 (equal (coq-smie-backward-token) "{ subproof"))) ;; recursive call
 		"|| tactic"
 	      "||"))))))
+
+     ;; This may be part of monadic notation, so detect other uses of "do".
+     ((equal tok "do")
+      (save-excursion
+        (forward-char 2)
+        (smie-default-forward-token)
+        (smie-default-backward-token)
+        (if (looking-at "[0-9]") "do ltac"
+          "do")))
 
 
      ; Same for "->" : rewrite or intro arg or term's implication
