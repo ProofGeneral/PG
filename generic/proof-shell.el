@@ -92,6 +92,22 @@ printing hints).
 
 See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
 
+(defvar proof-priority-action-list nil
+  "Holds action items to be inserted at the head of `proof-action-list' ASAP.
+When the proof assistant is busy, one cannot push to the head of
+`proof-action-list`, because the head usually (but not always)
+contains the item that the proof assistant is currently
+executing. This list therefore holds the items to be executed
+before any other items in `proof-action-list'. Inside
+`proof-shell-exec-loop', when `proof-action-list' is in the right
+state, the content of this list is prepended to
+`proof-action-list'. Use `proof-add-to-priority-queue' to add
+items to this priority list, to ensure the proof assistant starts
+running, in case `proof-action-list' is currently empty.
+
+The items in this list are reversed, that is, the one added last
+and to be executed last is at the head.")
+
 (defsubst proof-shell-invoke-callback (listitem)
   "From `proof-action-list' LISTITEM, invoke the callback on the span."
   (condition-case err
@@ -1063,6 +1079,33 @@ being processed."
       ;; nothing to do: maybe we completed a list of comments without sending them
 	(proof-detach-queue)))))
 
+(defun proof-start-prover-with-priority-items-maybe ()
+  "Start processing priority items if necessary.
+If there are priority items and the proof shell is not busy with
+other items, then this function starts the prover with the
+priority items. This function relies on the invariants of
+`proof-shell-filter-active' and on `proof-action-list'. The
+latter is non-empty, if there is some item, which has not been
+fully processed yet.
+
+Note that inside `proof-shell-exec-loop' the priority items are
+processed without calling this function."
+  (when (and proof-priority-action-list
+             (null proof-action-list) (not proof-shell-filter-active))
+    ;; not sure how fast we end up in proof-shell-exec-loop, better to clear
+    ;; proof-priority-action-list here before calling proof-add-to-queue
+    (let ((copy proof-priority-action-list))
+      (setq proof-priority-action-list nil)
+      ;; add to queue with the right mode - simply use the current mode
+      (proof-add-to-queue (nreverse copy) proof-shell-busy))))
+
+(defun proof-add-to-priority-queue (queueitem)
+  "Add item to `proof-priority-action-list' and start the queue if necessary.
+Argument QUEUEITEM must be an action item as documented for
+`proof-action-list'."
+  (push queueitem proof-priority-action-list)
+  (proof-start-prover-with-priority-items-maybe))
+
 
 ;;;###autoload
 (defun proof-start-queue (start end queueitems &optional queuemode)
@@ -1158,6 +1201,13 @@ contains only invisible elements for Prooftree synchronization."
 	;; Show actions at the front of proof-action-list.
 	(if proof-tree-external-display
 	    (proof-tree-urgent-action flags))
+
+        ;; add priority actions to the front of proof-action-list
+        (when proof-priority-action-list
+          (setq proof-action-list
+                (nconc (nreverse proof-priority-action-list)
+                       proof-action-list))
+          (setq proof-priority-action-list nil))
 
 	;; if action list is (nearly) empty, ensure prover is noisy.
 	(if (and proof-shell-silent
@@ -1390,7 +1440,7 @@ to `proof-register-possibly-new-processed-file'."
   "Wrapper for `proof-shell-filter', protecting against parallel calls.
 In Emacs a process filter function can be called while the same
 filter is currently running for the same process, for instance,
-when the filter bocks on I/O. This wrapper protects the main
+when the filter blocks on I/O. This wrapper protects the main
 entry point, `proof-shell-filter' against such parallel,
 overlapping calls.
 
@@ -1415,7 +1465,10 @@ calls."
 	   (setq proof-shell-filter-active nil
 		 proof-shell-filter-was-blocked nil)
 	   (signal (car err) (cdr err))))
-	(setq call-proof-shell-filter proof-shell-filter-was-blocked)))))
+	(setq call-proof-shell-filter proof-shell-filter-was-blocked)))
+    ;; finally leaving proof-shell-filter - maybe somebody has added
+    ;; priority items inside proof-shell-filter?
+    (proof-start-prover-with-priority-items-maybe)))
 
 
 (defun proof-shell-filter ()
