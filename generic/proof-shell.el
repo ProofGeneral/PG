@@ -1026,6 +1026,7 @@ being processed."
 	  (nconc proof-action-list queueitems))
     
     (when nothingthere ; process comments immediately
+      (message "START PG QUEUE %s" (format-time-string "%H:%M:%S.%1N"))
       (let ((cbitems  (proof-shell-slurp-comments)))
 	(mapc 'proof-shell-invoke-callback cbitems)))
   
@@ -1184,6 +1185,8 @@ contains only invisible elements for Prooftree synchronization."
 	(unless (or proof-action-list proof-second-action-list-active)
 					; release lock, cleanup
 	  (proof-release-lock)
+          (message "END PG QUEUE %s"
+                   (format-time-string "%H:%M:%S.%1N")(current-time))
 	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint))
