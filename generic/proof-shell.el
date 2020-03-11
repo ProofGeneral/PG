@@ -1663,6 +1663,13 @@ by the filter is to send the next command from the queue."
     ;; sets proof-shell-last-output-kind
     (proof-shell-handle-immediate-output cmd start end flags)
 
+    ;; insert a show proof command to have an up-to-date goals buffer
+    ;; in case of error
+    (when (eq proof-shell-last-output-kind 'error)
+      (proof-add-to-priority-queue
+       (proof-shell-action-list-item
+        proof-showproof-command 'proof-done-invisible (list 'invisible))))
+
     (unless proof-shell-last-output-kind ; dealt with already
       (setq proof-shell-delayed-output-start start)
       (setq proof-shell-delayed-output-end end)
