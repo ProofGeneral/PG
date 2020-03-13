@@ -114,34 +114,29 @@
 ;; Load path must be extended manually during compilation.
 ;;
 
-(defun proof-home-directory-fn ()
-  "Used to set `proof-home-directory'."
-  (let ((s (getenv  "PROOFGENERAL_HOME")))
-    (if s
-	(if (string-match "/$" s) s (concat s "/"))
-      (let ((curdir
-	     (or
-	      (and load-in-progress (file-name-directory load-file-name))
-	      (file-name-directory (buffer-file-name)))))
-	(file-name-directory (substring curdir 0 -1))))))
-
-(defcustom proof-home-directory
-  (proof-home-directory-fn)
-  "Directory where Proof General is installed.  Ends with slash.
-Default value taken from environment variable `PROOFGENERAL_HOME' if set,
-otherwise based on where the file `proof-site.el' was loaded from.
-You can use customize to set this variable."
-  :type 'directory
-  :group 'proof-general-internals)
+(defconst proof-home-directory
+  (let ((curfile
+	 (or
+	  (and load-in-progress load-file-name)
+	  buffer-file-name)))
+    (if curfile
+        (file-name-directory (directory-file-name
+                              (file-name-directory curfile)))
+      (let ((s (getenv "PROOFGENERAL_HOME")))
+	(if s (file-name-as-directory s)))))
+  "Directory where Proof General is installed.
+based on where the file `proof-site.el' was loaded from.
+Falls back to consulting the environment variable `PROOFGENERAL_HOME' if
+proof-site.el couldn't know where it was executed from.")
 
 (defcustom proof-images-directory
-  (concat proof-home-directory "images/")
+  (expand-file-name "images/" proof-home-directory)
     "Where Proof General image files are installed.  Ends with slash."
   :type 'directory
   :group 'proof-general-internals)
 
 (defcustom proof-info-directory
-  (concat proof-home-directory "doc/")
+  (expand-file-name "doc/" proof-home-directory)
   "Where Proof General Info files are installed.  Ends with slash."
   :type 'directory
   :group 'proof-general-internals)
@@ -159,8 +154,8 @@ You can use customize to set this variable."
   "Add DIR to `load-path' if not contained already."
   (add-to-list 'load-path dir))
 
-(proof-add-to-load-path (concat proof-home-directory "generic/"))
-(proof-add-to-load-path (concat proof-home-directory "lib/"))
+(proof-add-to-load-path (expand-file-name "generic/" proof-home-directory))
+(proof-add-to-load-path (expand-file-name "lib/" proof-home-directory))
 
 
 ;; Declare some global variables and autoloads
@@ -184,12 +179,12 @@ You can use customize to set this variable."
 
 (defcustom proof-assistant-table
   (apply
-   'append
+   #'append
    (mapcar
     ;; Discard entries whose directories have been removed.
     (lambda (dne)
-      (let ((atts (file-attributes (concat proof-home-directory
-					   (symbol-name (car dne))))))
+      (let ((atts (file-attributes (expand-file-name (symbol-name (car dne))
+					             proof-home-directory))))
 	(if (and atts (eq 't (car atts)))
 	    (list dne)
 	  nil)))
@@ -342,9 +337,11 @@ the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'
   "Visit a standardly named example file for prover PROVER."
   (interactive
    (list (proof-chose-prover "Visit example file for prover: ")))
-  (find-file (concat proof-home-directory
-		     prover "/example."
-		     (nth 2 (assoc (intern prover) proof-assistant-table-default)))))
+  (find-file (expand-file-name
+	      (concat prover "/example."
+		      (nth 2 (assoc (intern prover)
+		                    proof-assistant-table-default)))
+	      proof-home-directory)))
 
 
 

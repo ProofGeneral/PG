@@ -45,7 +45,7 @@
 
 (defun pg-autotest-find-file (file)
   "Find FILE (relative to `proof-home-directory')."
-  (let* ((name   (concat proof-home-directory file)))
+  (let* ((name   (expand-file-name file proof-home-directory)))
     (if (file-exists-p name)
 	(find-file name)
       (error (format "autotest: requested file %s does not exist" name)))))
