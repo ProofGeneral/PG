@@ -43,7 +43,7 @@
   "<?xml-stylesheet type=\"text/xsl\" href=\"proviola-spp.xsl\"?>")
 
 (defun pg-movie-stylesheet-location ()
-  (concat proof-home-directory "etc/proviola/proviola-spp.xsl"))
+  (expand-file-name "etc/proviola/proviola-spp.xsl" proof-home-directory))
   
 
 (defvar pg-movie-frame 0 "Frame counter for movie.")
