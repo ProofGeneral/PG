@@ -432,28 +432,28 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 ;; characters.
 (defun coq-regular-filename-p (s)
   (let ((noext (file-name-base s)))
-    (string-match "[[:alpha:]_][[:alnum:]_]*" noext)
-    (and (= (length (match-string 0 noext)) (length noext)))))
+    (string-match-p "\\`[[:alpha:]_][[:alnum:]_]*\\'" noext)))
 
 (defun coq-coqtop-prog-args (loadpath &optional current-directory pre-v85)
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options. This is not true for coqdep.
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (append
-   ;; it is better to inform coqtop of the name of the current module
-   ;; using the -topfile option, so that coqtop understands references
-   ;; to it. But don't insist if this would fail (because of wrong
-   ;; file name): Some people want to script .v files without ever
-   ;; compiling them.
-   (if (and (coq--supports-topfile) buffer-file-name
-            (coq-regular-filename-p buffer-file-name))
-       (cons "-topfile" (cons buffer-file-name nil))
-     (if (and (coq--supports-topfile) buffer-file-name)
-         (message "Warning: this Coq buffer is probably not compilable \
+  (let ((topfile-supported (coq--supports-topfile)))
+    (append
+     ;; it is better to inform coqtop of the name of the current module
+     ;; using the -topfile option, so that coqtop understands references
+     ;; to it. But don't insist if this would fail (because of wrong
+     ;; file name): Some people want to script .v files without ever
+     ;; compiling them.
+     (if (and topfile-supported buffer-file-name
+              (coq-regular-filename-p buffer-file-name))
+         (cons "-topfile" (cons buffer-file-name nil))
+       (if (and topfile-supported buffer-file-name)
+           (message "Warning: this Coq buffer is probably not compilable \
 because of its name, no -topfile option set."))
-     "")
-   (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85))))
+       "")
+     (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85)))))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."
