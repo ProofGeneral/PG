@@ -426,14 +426,33 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 ;; Coq process, see 'defpacustom prog-args' in pg-custom.el for
 ;; documentation.
 
+;; Regular files should be of the form "valid_modulename.v" coq
+;; accepts lots of things as letter, this is probably much stricter.
+;; In practice it should be OK though, except maybe for non latin
+;; characters.
+(defun coq-regular-filename-p (s)
+  (let ((noext (file-name-base s)))
+    (string-match "[[:alpha:]_][[:alnum:]_]*" noext)
+    (and (= (length (match-string 0 noext)) (length noext)))))
+
 (defun coq-coqtop-prog-args (loadpath &optional current-directory pre-v85)
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options. This is not true for coqdep.
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (append
-   (if (and (coq--supports-topfile) buffer-file-name)
-       (cons "-topfile" (cons buffer-file-name nil)) "")
+   ;; it is better to inform coqtop of the name of the current module
+   ;; using the -topfile option, so that coqtop understands references
+   ;; to it. But don't insist if this would fail (because of wrong
+   ;; file name): Some people want to script .v files without ever
+   ;; compiling them.
+   (if (and (coq--supports-topfile) buffer-file-name
+            (coq-regular-filename-p buffer-file-name))
+       (cons "-topfile" (cons buffer-file-name nil))
+     (if (and (coq--supports-topfile) buffer-file-name)
+         (message "Warning: this Coq buffer is probably not compilable \
+because of its name, no -topfile option set."))
+     "")
    (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85))))
 
 (defun coq-prog-args ()
