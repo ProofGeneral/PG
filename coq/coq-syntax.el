@@ -488,8 +488,12 @@ so for the following reasons:
     ("Instance" nil "Instance #:#.\nProof.\n#Defined." t "Instance")
     ("Program Instance" "pinstance" "Program Instance [ # ] => # where \n# := #;\n# := #." t "Program\\s-+Instance")
     ("Let" "Let" "Let # : # := #." t "Let")
-    ("Local Ltac" nil "Local Ltac # := #" t "Local\\s-+Ltac")
-    ("Ltac" "ltac" "Ltac # := #" t "Ltac")
+    ("Local Ltac2" nil "Local Ltac2 # := #." t "Local\\s-+Ltac2")
+    ("Ltac2 Type" "lt2ty" "Ltac2 Type # := #." t "Ltac2 Type")
+    ("Ltac2 Type" "lt2oty" "Ltac2 Type # ::= #." t "Ltac2 Type")
+    ("Ltac2" "lt2" "Ltac2 # := #." t "Ltac2")
+    ("Local Ltac" nil "Local Ltac # := #." t "Local\\s-+Ltac")
+    ("Ltac" "ltac" "Ltac # := #." t "Ltac")
     ("Module :=" "mo" "Module # : # := #." t ) ; careful
     ("Module <: :=" "mo2" "Module # <: # := #." t ) ; careful
     ("Module Import :=" "moi" "Module Import # : # := #." t ) ; careful
@@ -560,6 +564,7 @@ so for the following reasons:
      ("Locate" nil "Locate" nil "Locate")
      ("Print Coercions" nil "Print Coercions." nil "Print\\s-+Coercions")
      ("Print Hint" nil "Print Hint." nil "Print\\s-+Hint" coq-PrintHint)
+     ("Print Ltac2" "lt2p" "Print Ltac2 #." nil "Print Ltac2")
      ("Print" "p" "Print #." nil "Print")
      ("Pwd" nil "Pwd." nil "Pwd")
      ("Search" nil "Search #" nil "Search")
@@ -626,6 +631,8 @@ so for the following reasons:
     ("Import" nil "Import #." t "Import")
     ("Include" nil "Include #." t "Include")
     ("Infix" "inf" "Infix \"#\" := # (at level #) : @{scope}." t "Infix")
+    ("Ltac2 Notation" "lt2n" "Ltac2 Notation # := #." t "Ltac2 Notation")
+    ("Ltac2 Eval" "lt2e" "Ltac2 Eval #." nil "Ltac2 Eval")
     ("Notation (assoc)" "notas" "Notation \"#\" := # (at level #, # associativity)." t)
     ("Notation (at assoc)" "notassc" "Notation \"#\" := # (at level #, # associativity) : @{scope}." t)
     ("Notation (at at scope)" "notasc" "Notation \"#\" := # (at level #, # at level #) : @{scope}." t)
@@ -1335,7 +1342,7 @@ It is used:
 
 
 (defconst coq-context-marker-regexp
-  (concat (regexp-opt '("ltac" "constr" "uconstr") 'symbols) ":"))
+  (concat (regexp-opt '("ltac" "constr" "uconstr" "ltac1" "ltac2") 'symbols) ":"))
 
 ;;
 ;; font-lock
