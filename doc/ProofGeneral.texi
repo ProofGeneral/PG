@@ -4342,7 +4342,7 @@ The same for a ``Print '' query.
 @item C-c C-a C-b
 The same for a ``About '' query.
 @item C-c C-a C-a
-The same for a ``SearchAbout '' query (no C-u prefix).
+The same for a ``Search '' query (no C-u prefix).
 @item C-c C-a C-o
 The same for a Search ``SearchIsos'' (no C-u prefix).
 
