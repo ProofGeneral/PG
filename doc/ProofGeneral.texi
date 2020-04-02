@@ -924,8 +924,7 @@ example in Isabelle with semi-colons, but these will not appear in the
 final text.
 
 Coq, on the other hand, requires a full-stop terminator at the end of
-each line, so @kbd{C-c .} is the key binding used to turn on
-electric terminator.  If you don't know what the terminator character
+each line. If you don't know what the terminator character
 is, you can find the option anyway on the menu:
 @code{Proof-General -> Quick Options -> Processing -> Electric Terminator}
 which also shows the key binding.
