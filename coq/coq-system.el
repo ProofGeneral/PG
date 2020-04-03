@@ -59,8 +59,8 @@ On Windows you might need something like:
   :group 'coq)
 
 (defcustom coq-pinned-version nil
-  "Which version of Coq you are using.
-There should be no need to set this value unless you use the trunk from
+  "Manual coq version override (rarely needed).
+There should be no need to set this value unless you use old trunk versions from
 the Coq github repository.  For Coq versions with decent version numbers
 Proof General detects the version automatically and adjusts itself.  This
 variable should contain nil or a version string."
@@ -191,6 +191,18 @@ Return nil if the version cannot be detected."
   (let ((coq-version-to-use (or (coq-version t) "8.9")))
     (condition-case err
 	(not (coq--version< coq-version-to-use "8.10alpha"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
+(defun coq--post-v811 ()
+  "Return t if the auto-detected version of Coq is >= 8.11.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.10")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "8.11"))
       (error
        (cond
 	((equal (substring (cadr err) 0 15) "Invalid version")
