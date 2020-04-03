@@ -24,8 +24,6 @@
 ;;; TODO
 ;;
 ;; - fix -I current-dir argument for coqc invocations
-;; - add option coq-par-keep-compilation-going
-;; - check what happens if coq-par-coq-arguments gets a bad load path
 ;; - on error, try to put location info into the error message
 ;;
 ;; Note that all argument computations inherit `coq-autodetected-version': when
@@ -45,7 +43,7 @@
 
 ;; This file implements parallel background compilation. It makes sure
 ;; that only a certain number (`coq-max-background-compilation-jobs')
-;; of coqdep anc coqc processes are running in the background.
+;; of coqdep and coqc processes are running in the background.
 ;;
 ;; In this file, compilation jobs are uninterned lisp symbols that
 ;; store all important information in their property list. New
@@ -66,7 +64,8 @@
 ;; 1- where to put the Require command and the items that follow it
 ;; 2- make sure ancestors are properly locked
 ;; 3- error reporting
-;; 4- using -quick and the handling of .vo/.vio prerequisites
+;; 4- using -quick and the handling of .vo/.vio prerequisites for Coq < 8.11
+;; 5- using -vos for Coq >= 8.11
 ;;
 ;; For 1- where to put the Require command and the items that follow it:
 ;;
@@ -146,8 +145,15 @@
 ;; the last top-level job is delayed until proof-action-list is empty.
 ;; Then the whole queue is deleted.
 ;;
-;; For 4- using -quick and the handling of .vo/.vio prerequisites
+;; For 4- using -quick and the handling of .vo/.vio prerequisites for Coq < 8.11
 ;;
+;; There are now two ways available to speed up compilation,
+;; -quick/-vio and -vos. For Coq >= 8.5 and < 8.11 -quick/-vio is
+;; available and coq-compile-quick is consulted in order to determine
+;; whether to use it. For Coq >= 8.11 -vos is available and
+;; coq-compile-vos is consulted. The following paragraph descripes the
+;; complications with -quick/-vio.
+
 ;; Coq accepts both .vo and .vio files for importing modules
 ;; regardless of it is running with -quick or not. However, it is
 ;; unclear which file is loaded when both, .vo and .vio, of a
@@ -163,6 +169,26 @@
 ;; `coq-par-job-needs-compilation' I decide whether to build a .vio or
 ;; .vo file and if already present .vo or .vio files must be deleted.
 ;; Only at that point the relevant property 'required-obj-file is set.
+;;
+;; For 5- using -vos for Coq >= 8.11
+;;
+;; When Coq >= 8.11 is detected, -vos is used and coq-compile-vos is
+;; consulted in order to find out whether to compile to .vos or to .vo
+;; files. For people switching PG or switching to Coq 8.11, there is a
+;; backward compatibility path: When coq-compile-vos is nil, the
+;; decision is derived from coq-compile-quick.
+;;
+;; The logic here to decide whether compilation is needed or not,
+;; assumes coq is used consistently without randomly deleting files.
+;; Because coqc always produces an empty .vos file when compiling to
+;; .vo, it can never happen, that a .vo file is present without .vos
+;; file or that a .vo file is more recent then the corresponding .vos
+;; file. This simplifies the logic for deciding about recompilation
+;; quite a bit.
+;;
+;; For Coq >= 8.11, vio to vo compilation is disabled for obvious
+;; reasons and in this version of Proof General, there is no similar
+;; feature.
 ;;
 ;; 
 ;; Properties of compilation jobs
@@ -180,8 +206,10 @@
 ;;   'obj-mod-time    - modification time of 'required-obj-file, stored
 ;;                      here, to avoid double stat calls;
 ;;                      contains 'obj-does-not-exist in case that file is absent
-;;   'use-quick       - t if `coq-par-job-needs-compilation' decided to use
-;;                      -quick
+;;   'use-quick       - 'vio if `coq-par-job-needs-compilation' decided to use
+;;                      -quick for Coq older than 8.11; 'vos if it decided to
+;;                      to use -vos for Coq 8.11 or newer, nil if it decided
+;;                      to use .vo compilation or no compilation is necessary.
 ;;   'type            - the type of the job, either 'clone or 'file
 ;;                      for real compilation jobs
 ;;   'state           - the state of the job, see below
@@ -276,6 +304,29 @@
 ;;                                the process is killed
 ;;
 ;;
+;; Over its live time, a compilation job might get passed through the
+;; following functions. Some of them might be skipped or executed more
+;; then once.
+;;
+;; | function                         | state            | comment                              |
+;; |----------------------------------+------------------+--------------------------------------|
+;; | coq-par-create-library-job       | 'enqueued-coqdep | job creation                         |
+;; | coq-par-start-coqdep             |                  |                                      |
+;; | coq-par-process-coqdep-result    | 'waiting-dep     | create dependee/child jobs           |
+;; | coq-par-decrease-coqc-dependency |                  | dependee/child finished coqc         |
+;; | coq-par-compile-job-maybe        | 'enqueued-coqc   |                                      |
+;; | -- start coqc                    |                  |                                      |
+;; | coq-par-coqc-continuation        |                  |                                      |
+;; | coq-par-kickoff-coqc-dependants  | 'waiting-queue   |                                      |
+;; | coq-par-kickoff-queue-maybe      | ready            |                                      |
+;; | coq-par-retire-top-level-job     |                  |                                      |
+;; | coq-par-require-processed        |                  | in dummy action in proof-action-list |
+;; | coq-par-run-vio2vo-queue         |                  | called via timer                     |
+;; | coq-par-start-vio2vo             |                  |                                      |
+;; | coq-par-vio2vo-continuation      |                  |                                      |
+;;
+;;
+;; The following is maybe outdated.
 ;; To print the states of the compilation jobs for debugging, eval
 ;; 
 ;; (let ((clones))
@@ -302,6 +353,7 @@
 ;; 			   (get v 'coqc-dependants))
 ;; 		   (get v 'queue-dependant)))
 ;; 	clones))
+
 
 ;;; Variables
 
@@ -844,6 +896,7 @@ This function starts COMMAND with arguments ARGUMENTS for
 compilation job JOB, making sure that CONTINUATION runs when the
 process finishes successfully. FILE-RM, if non-nil, denotes a
 file to be deleted when the process is killed."
+  ;; (message "CPSP %s %s %s %s %s" command arguments continuation job file-rm)
   (let ((process-connection-type nil)	; use pipes
 	(process-name (format "pro-%s" coq--par-next-id))
 	process)
@@ -1020,15 +1073,15 @@ somewhere after the last require command."
     (message "%s -> %s: add queue dependency"
 	     (get dependee 'name) (get dependant 'name))))
 
-(defun coq-par-job-needs-compilation (job)
+(defun coq-par-job-needs-compilation-quick (job)
   "Determine whether JOB needs to get compiled and do some side effects.
 This function contains most of the logic nesseary to support
-quick compilation according to `coq-compile-quick'.  Taking
+quick compilation according to `coq-compile-quick' for coq < 8.11.  Taking
 `coq-compile-quick' into account, it determines if a compilation
 is necessary.  The property 'required-obj-file is set either to
 the file that we need to produce or to the up-to-date object
-file.  If compilation is needed, property 'use-quick is set when
--quick will be used.  If no compilation is needed, property
+file.  If compilation is needed, property 'use-quick is set to `vio' when
+-quick/-vio will be used.  If no compilation is needed, property
 'obj-mod-time remembers the time stamp of 'required-obj-file.
 Indepent of whether compilation is required, .vo or .vio files
 that are in the way are deleted.  Note that the coq documentation
@@ -1087,7 +1140,7 @@ therefore delete a file if it might be in the way.  Sets the
 	  (if (coq-compile-prefer-quick)
 	      (progn
 		(put job 'required-obj-file vio-file)
-		(put job 'use-quick t)
+		(put job 'use-quick 'vio)
 		(when vo-obj-time
 		  (setq file-to-delete vo-file))
 		(when (eq coq-compile-quick 'quick-and-vio2vo)
@@ -1188,6 +1241,79 @@ therefore delete a file if it might be in the way.  Sets the
 	 (signal 'coq-compile-error-rm err))))
     result))
 
+(defun coq-par-job-needs-compilation-vos (job)
+  "Determine whether JOB needs to get compiled.
+This function decides whether JOB needs to get compiled for coq
+>= 8.11 and whether a .vo or a .vos should be produced. For the
+latter, `coq-compile-vos' is consulted and, if that is `nil',
+coq-compile-quick, see `coq-compile-prefer-vos'. This function
+assumes that coq is used consistently and that a .vo file cannot
+be present without a .vos file that has the same time stamp of
+has been created more recently. As result, this function sets the
+property 'use-quick to `vos' if JOB should be compiled with -vos.
+If no compilation is needed, 'obj-mod-time to the time stamp of
+the .vos or .vo file, depending on `coq-compile-prefer-vos'."
+  (let* ((vo-file (get job 'vo-file))
+         (vos-file (coq-library-vos-of-vo-file vo-file))
+         (dep-time (get job 'youngest-coqc-dependency))
+	 (src-time (nth 5 (file-attributes (get job 'src-file))))
+         (vos-obj-time (nth 5 (file-attributes vos-file)))
+         result)
+    (when coq--debug-auto-compilation
+      (message "%s: compare mod times: vos mod %s, src mod %s, youngest dep %s"
+               (get job 'name)
+               (if vos-obj-time (current-time-string vos-obj-time) "-")
+               (if src-time (current-time-string src-time) "-")
+               (if (eq dep-time 'just-compiled) "just compiled"
+	         (current-time-string dep-time))))
+    (if (or (eq dep-time 'just-compiled) ; a dep has been just compiled
+            (not vos-obj-time)           ; neither vos nor vo present
+	    ;; src younger than vos?
+	    (time-less-or-equal vos-obj-time src-time)
+	    ;; dep younger than vos?
+	    (time-less-or-equal vos-obj-time dep-time))
+	;; compilation needed
+        (if (coq-compile-prefer-vos)
+            (progn
+    	      (put job 'required-obj-file vos-file)
+	      (put job 'use-quick 'vos)
+              (setq result t))
+          (put job 'required-obj-file vo-file)
+          (setq result t))
+      ;; maybe need to compile if vo is required
+      (if (coq-compile-prefer-vos)
+          ;; vo not required and vos is fine - no compilation
+          (put job 'obj-mod-time vos-obj-time)
+        ;; vo required, may need to compile
+        (let ((vo-obj-time (nth 5 (file-attributes vo-file))))
+          (when coq--debug-auto-compilation
+            (message "%s: ensure-vo: vo mod %s"
+                     (get job 'name)
+                     (if vo-obj-time (current-time-string vo-obj-time) "-")))
+          (if (or (not vo-obj-time)     ; vo not present
+	          ;; src younger than vo?
+	          (time-less-or-equal vo-obj-time src-time)
+	          ;; dep younger than vo?
+	          (time-less-or-equal vo-obj-time dep-time))
+	      ;; compilation needed
+              (progn
+                (put job 'required-obj-file vo-file)
+                (setq result t))
+            ;; vo is fine - no compilation
+            (put job 'obj-mod-time vo-obj-time)))))
+    result))
+
+(defun coq-par-job-needs-compilation (job)
+  "Determine if JOB nees to get compiled and possibly do some side effects.
+This function calls `coq-par-job-needs-compilation-vos for coq >=
+8.11 and `coq-par-job-needs-compilation-quick' otherwise. Returns
+t if a compilation is required and sets the 'use-quick property
+depending on wheter -quick/-vio or -vos should be used. Property
+'obj-mod-time is set when no compilation is needed."
+  (if (coq--post-v811)
+      (coq-par-job-needs-compilation-vos job)
+    (coq-par-job-needs-compilation-quick job)))
+
 (defun coq-par-retire-top-level-job (job)
   "Register ancestors and start queue items.
 This function performs the essential tasks for top-level jobs
@@ -1215,7 +1341,8 @@ function must not be called for failed jobs."
 	  (push (get anc-job 'src-file)
 		(span-property span 'coq-locked-ancestors)))))
     (when items
-      (when (and (eq coq-compile-quick 'quick-and-vio2vo)
+      (when (and (not (coq--post-v811))
+                 (eq coq-compile-quick 'quick-and-vio2vo)
 		 (eq coq--last-compilation-job job))
 	(let ((vio2vo-counter
 	       (setq coq--compile-vio2vo-start-id
@@ -1308,7 +1435,8 @@ case, the following actions are taken:
 	      (with-current-buffer (or proof-script-buffer (current-buffer))
 		(proof-script-clear-queue-spans-on-error nil))
 	      (proof-release-lock)
-	      (when (eq coq-compile-quick 'quick-and-vio2vo)
+	      (when (and (coq--post-v811)
+                         (eq coq-compile-quick 'quick-and-vio2vo))
 		(cl-assert (not coq--compile-vio2vo-delay-timer)
 			nil "vio2vo timer set before last compilation job")
 		(setq coq--compile-vio2vo-delay-timer
@@ -1500,12 +1628,17 @@ coqdep or coqc are started for it."
       (coq-par-start-coqdep job))
      ((eq job-state 'enqueued-coqc)
       (message "Recompile %s%s"
-	       (if (get job 'use-quick) "-quick " "")
+	       (cond
+                ((eq (get job 'use-quick) 'vos) "-vos ")
+                ((eq (get job 'use-quick) 'vio) "-quick ")
+                (t ""))
 	       (get job 'src-file))
       (let ((arguments
 	     (coq-par-coqc-arguments (get job 'src-file) (get job 'load-path))))
-	(when (get job 'use-quick)
-	  (push "-quick" arguments))
+        (cond
+         ((eq (get job 'use-quick) 'vos) (push "-vos" arguments))
+         ((eq (get job 'use-quick) 'vio) (push "-quick" arguments))
+         (t t))
 	(coq-par-start-process
 	 coq-compiler
 	 arguments

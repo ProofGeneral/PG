@@ -178,7 +178,7 @@ This option can be set/reset via menu
 
 (proof-deftoggle coq-compile-before-require)
 
-(defcustom coq-compile-parallel-in-background nil
+(defcustom coq-compile-parallel-in-background t
   "Choose the internal compilation method.
 When Proof General compiles itself, you have the choice between
 two implementations.  If this setting is nil, then Proof General
@@ -203,20 +203,23 @@ This option can be set/reset via menu
 ;; defpacustom fails to call :eval during inititialization, see trac #456
 (coq-switch-compilation-method)
 
-(defcustom coq-compile-quick 'no-quick
+(defcustom coq-compile-quick 'quick-and-vio2vo
   "Control quick compilation, vio2vo and vio/vo files auto compilation.
-This option controls whether ``-quick'' is used for parallel
+When using coq < 8.11,
+this option controls whether ``-quick'' is used for parallel
 background compilation and whether up-date .vo or .vio files are
 used or deleted.  Please use the customization system to change
 this option to ensure that any ``-quick'' setting is ignored for
 Coq before 8.5.
+
+Please customize `coq-compile-vos' for coq >= 8.11.
 
 Note that ``-quick'' can be noticebly slower when your sources do
 not declare section variables with ``Proof using''.  Note that
 even if you do declare section variables, ``-quick'' is typically
 slower on small files.
 
-Use the default `no-quick', if you have not yet switched to
+Use `no-quick', if you have not yet switched to
 ``Proof using''.  Use `quick-no-vio2vo', if you want quick
 recompilation without producing .vo files.  Value
 `quick-and-vio2vo' updates missing prerequisites with ``-quick''
@@ -279,6 +282,41 @@ This option can be set via menu
   (or
    (eq coq-compile-quick 'quick-no-vio2vo)
    (eq coq-compile-quick 'quick-and-vio2vo)))
+
+(defcustom coq-compile-vos nil
+  "Control fast compilation, skipping opaque proofs with ``-vos''.
+When using coq >= 8.11, this option controls whether parallel
+background compilation is done with ``-vos'', skipping opaque
+proofs, thus being considerably faster and inconsistent.
+
+Set this option to `vos' if you want fast background compilation
+and don't care if all proofs are correct. Set this option to
+`ensure-vo' if you want all proof and universe constraints
+checked carefully.
+
+For upgrading, if this option is `nil' (i.e., not configured),
+then the value of `coq-compile-quick' is considered and vos
+compilation is used when `coq-compile-quick' equals
+`'quick-no-vio2vo'.
+
+For coq < 8.11 this option is ignored."
+  :type
+  '(radio
+    (const :tag "unset, derive behavior from `coq-compile-quick'" nil)
+    (const :tag "use -vos" vos)
+    (const :tag "ensure vo compilation" ensure-vo))
+  :safe (lambda (v) (member v '(nil vos ensure-vo)))
+  :group 'coq-auto-compile)
+
+(defun coq-compile-prefer-vos ()
+  "Decide whether ``-vos'' should be used.
+This function implements the upgrade path for fast compilation,
+by checking the value of `coq-compile-quick' if `coq-compile-vos'
+is nil."
+  (or
+   (eq coq-compile-vos 'vos)
+   (and (not coq-compile-vos)
+        (eq coq-compile-quick 'quick-no-vio2vo))))
 
 (defcustom coq-compile-keep-going t
   "Continue compilation after the first error as far as possible.
@@ -556,8 +594,13 @@ Chops off the last character of LIB-OBJ-FILE to convert \"x.vo\" to \"x.v\"."
 
 (defun coq-library-vio-of-vo-file (vo-obj-file)
   "Return .vio file name for VO-OBJ-FILE.
-Changes the suffix from .vio to .vo.  VO-OBJ-FILE must have a .vo suffix."
+Changes the suffix from .vo to .vio.  VO-OBJ-FILE must have a .vo suffix."
   (concat (coq-library-src-of-vo-file vo-obj-file) "io"))
+
+(defun coq-library-vos-of-vo-file (vo-obj-file)
+  "Return .vok file name for VO-OBJ-FILE.
+Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
+  (concat vo-obj-file "s"))
 
 
 ;;; ancestor unlocking
