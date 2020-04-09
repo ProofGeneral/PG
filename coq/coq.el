@@ -2614,8 +2614,8 @@ recieving suggestions from coq at Qed time."
         (coq-insert-proof-using-suggestion suggestion)))))
 
 
-(add-hook 'proof-shell-handle-delayed-output-hook
-	  #'coq-proof-using-suggest-hook t)
+;(add-hook 'proof-shell-handle-delayed-output-hook
+	  ;#'coq-proof-using-suggest-hook t)
 
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
