@@ -1005,16 +1005,9 @@ This is specific to `coq-mode'."
    "SearchPattern (parenthesis mandatory), ex: (?X1 + _ = _ + ?X1)"
    "SearchPattern" nil))
 
-(defun coq-SearchConstant ()
-  (interactive)
-  (coq-ask-do "Search constant" "Search"))
-
 (defun coq-SearchRewrite ()
   (interactive)
   (coq-ask-do "SearchRewrite" "SearchRewrite" nil))
-
-
-
 
 (defun coq-Print (withprintingall)
   "Ask for an ident and print the corresponding term.
@@ -1487,7 +1480,7 @@ fold/unfold cross.  Return the list of mappings hypname -> overlays."
 ;; Feature: highlighting of hypothesis that remains when the script is played
 ;; (and goals buffer is updated).
 
-;; On by default. This only works with the SearchAbout function for now.
+;; On by default. This only works with the Search function for now.
 (defvar coq-highlight-hyps-cited-in-response t
   "If non-nil, try to highlight in goals buffers hyps cited in response.")
 
@@ -1559,7 +1552,7 @@ of hypothesis to highlight."
 
 (defun coq-get-hyps-cited-in-response ()
   "Returns locations of hyps in goals buffer that are cited in response buffer.
-See `coq-highlight-hyps-cited-in-response' and `SearchAbout'."
+See `coq-highlight-hyps-cited-in-response' and `Search'."
   (let* ((hyps-cited-pos (coq-detect-hyps-positions proof-response-buffer))
          (hyps-cited (coq-build-hyps-names hyps-cited-pos)))
     (cl-remove-if-not
@@ -2742,21 +2735,20 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
          "Set Printing All" q "Unset Printing All" nil "Test Printing All")
       (proof-shell-invisible-command q))))
 
-
-;; TODO SearchAbout become Search in v8.5, change when V8.4 becomes old.
-(defun coq-SearchAbout ()
+(defun coq-Search ()
   (interactive)
   (coq-ask-do
    ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
    ;;  "_ind" "_rec" "R_" "_equation"
-   "SearchAbout (ex: \"eq_\" eq -bool)"
-   "SearchAbout"
+   "Search (ex: \"eq_\" eq -bool)"
+   "Search"
    nil nil t)
   (when coq-highlight-hyps-cited-in-response
     (coq-highlight-hyps-cited-in-response)
     (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting."))
   (unless coq-highlight-hyps-cited-in-response
     (message "[Coq/Settings/Search Blacklist] to change blacklisting.")))
+
 
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)] 'coq-insert-intros)
@@ -2781,7 +2773,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?o)] 'coq-SearchIsos)
 (define-key coq-keymap [(control ?p)] 'coq-Print)
 (define-key coq-keymap [(control ?b)] 'coq-About)
-(define-key coq-keymap [(control ?a)] 'coq-SearchAbout)
+(define-key coq-keymap [(control ?a)] 'coq-Search)
 (define-key coq-keymap [(control ?c)] 'coq-Check)
 (define-key coq-keymap [?h] 'coq-PrintHint)
 (define-key coq-keymap [(control ?l)] 'coq-LocateConstant)
@@ -2798,7 +2790,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?r] 'proof-store-response-win)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?g] 'proof-store-goals-win)
@@ -2818,7 +2810,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] 'coq-Print)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] 'coq-SearchIsos)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] 'coq-About)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-SearchAbout)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] 'coq-Search)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] 'coq-Show)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] 'proof-store-response-win)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] 'proof-store-goals-win)

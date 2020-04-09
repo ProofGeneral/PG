@@ -452,7 +452,7 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
        (if (and topfile-supported buffer-file-name)
            (message "Warning: this Coq buffer is probably not compilable \
 because of its name, no -topfile option set."))
-       "")
+       nil)
      (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85)))))
 
 (defun coq-prog-args ()
