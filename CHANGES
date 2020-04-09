@@ -45,6 +45,29 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     compilation does not stop at the first error but rather
     continues as far as possible.
 
+*** Automatic insertion of "Proof using" annotations.
+
+    When "Suggest Proof Using" is set in coq, coq suggests "Proof
+    using" annotations when it detects there is no such annotation (or
+    a wrong one) in you proof and there should be one (i.r. you are
+    inside a section). By default PG will ask the user before
+    inserting the suggested annotation. You can customize this
+    behaviour:
+
+    (setq coq-accept-proof-using-suggestion 'always)
+    or
+    (setq coq-accept-proof-using-suggestion 'never)
+    or (default)
+    (setq coq-accept-proof-using-suggestion 'ask)
+
+    This is also settable from Coq menu.
+
+    Limitations:
+    - do not support nested proofs.
+    - always use the first suggestion (coq can provide several solutions).
+    - the proof is not replayed, which is consistent with the fact
+      that pg do not deal with async proofs.
+
 *** Limited extensibility for indentation 
 
     Coq indentation mechanism is based on a fixed set of tokens and

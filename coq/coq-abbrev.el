@@ -113,6 +113,22 @@
       :selected (eq proof-three-window-mode-policy 'vertical)
       :help "One column mode"])
     ["Refresh Windows Layout" proof-layout-windows t]
+    ("Automatic Proof using annotations..."
+     ["ask"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'ask)
+      :help "ask user when a new proof using annotation is suggested"]
+     ["always"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'always)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'always)
+      :help "Always update the proof using annotation when suggested"]
+     ["never"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'never)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'never)
+      :help "never update the proof using"])
     ["Toggle tooltips" proof-output-tooltips-toggle
      :style toggle
      :selected proof-output-tooltips

@@ -2563,6 +2563,70 @@ Warning: this makes the error messages (and location) wrong.")
   "Return t if the last tactic of locked region contains an \"as\" close."
   (save-excursion (string-match "\\<as\\>" s)))
 
+;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
+
+(defcustom accept-proof-using-suggestion 'ask
+  "Wether proofgeneral should automatically update proof using when
+recieving suggestions from coq at Qed time."
+  :type '(choice
+	  (const :tag "Ask user" ask)
+	  (const :tag "always accept" always)
+	  (const :tag "never accept" never)) 
+  :group 'coq)
+
+(defun coq-extract-proof-using-from-suggestion ()
+  (proof-with-current-buffer-if-exists proof-response-buffer
+     (when (string-match
+            "following commands:\n.*Proof using\\([^.]*\\)\\."
+            (buffer-string))
+         (let* ((s (match-string 1 (buffer-string)))
+                (prefix (if (equal (aref s 0) ? ) " using" " using ")))
+           (concat prefix s)))))
+
+(defun coq-proof-using-equal (s1 s2)
+  (let* ((l1 (split-string s1)) (l2 (split-string s2))
+         (diff (cl-set-exclusive-or l1 l2 :test 'string-equal)))
+    (not diff))) ;; nil if empty xor
+
+
+(defun coq-insert-proof-using-suggestion (suggested)
+  ;; Not compatible with nested lemmas.
+  (with-current-buffer proof-script-buffer
+    (save-excursion
+      (goto-char (proof-unprocessed-begin))
+      (let* ((pos-unproc (point))
+             (proof-pos (save-excursion
+                          (search-backward-regexp "\\<Proof\\>\\([^.]*\\)\\.")))
+             (previous-content (match-string 1))
+             (same (coq-proof-using-equal previous-content suggested)))
+        (when (and (not same) (or (equal coq-accept-proof-using-suggestion 'always)
+                                  (y-or-n-p (concat "Update proof using annotation ("
+                                                    suggested ")"))))
+          (goto-char (+ 5 proof-pos)) ; "Proof" has length 6
+                                        ;(if (stored proof-strict-read-only) )
+          (let ((spl proof-locked-span))
+            ;; temporarily make the locked span writable
+	    (span-read-write spl)
+            (delete-char (length previous-content))
+            (insert suggested)
+            ;; go back to `proof-strict-read-only' says
+            (proof-span-read-only spl)))))))
+
+;; This should be called after a Save or Qed command is called (but not a
+;; "Define").
+(defun coq-proof-using-suggest-hook ()
+  (unless (equal coq-accept-proof-using-suggestion 'never)
+    (let ((suggestion (coq-extract-proof-using-from-suggestion)))
+      (when suggestion
+        (coq-insert-proof-using-suggestion suggestion)))))
+
+
+(add-hook 'proof-shell-handle-delayed-output-hook
+	  #'coq-proof-using-suggest-hook t)
+
+
+;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
+
 
 (defun coq-insert-as-in-next-command ()
   (interactive)
