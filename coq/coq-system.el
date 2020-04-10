@@ -56,6 +56,124 @@
 
 (put 'coq-prog-args 'safe-local-variable #'coq--string-list-p)
 
+
+(defcustom coq-pinned-version nil 
+  "Which version of Coq you are using.
+There should be no need to set this value unless you use the trunk from
+the Coq github repository. For Coq versions with decent version numbers
+Proof General detects the version automatically and adjusts itself. This
+variable should contain nil or a version string."
+  :type 'string
+  :group 'coq)
+
+(defvar coq-autodetected-version nil
+  "Version of Coq, as autodetected by `coq-autodetect-version'.")
+
+
+;;; version detection code
+
+(defun coq-version (&optional may-recompute)
+  "Return the precomputed version of the current Coq toolchain.
+With MAY-RECOMPUTE, try auto-detecting it if it isn't available."
+  (or coq-pinned-version
+      coq-autodetected-version
+      (when may-recompute
+        (coq-autodetect-version))))
+
+(defun coq-show-version ()
+  "Show the version of Coq currently in use.
+If it doesn't look right, try `coq-autodetect-version'."
+  (interactive)
+  (let ((version (coq-version nil)))
+    (if version
+        (message "Using Coq v%s" coq-autodetected-version)
+      (message "Coq version unknown at this time. Use `coq-autodetect-version' to autodetect."))))
+
+(defun coq-autodetect-version (&optional interactive-p)
+  "Detect and record the version of Coq currently in use.
+Interactively (with INTERACTIVE-P), show that number."
+  (interactive '(t))
+  (setq coq-autodetected-version nil)
+  (with-temp-buffer
+    ;; Use `shell-command' via `find-file-name-handler' instead of
+    ;; `process-line': when the buffer is running TRAMP, PG uses
+    ;; `start-file-process', loading the binary from the remote server.
+    (let* ((default-directory
+	     (if (file-accessible-directory-p default-directory)
+		 default-directory
+	       "/"))
+	   (coq-command (shell-quote-argument
+                         (or (and (boundp 'coq-prog-name) coq-prog-name) "coqtop")))
+           (shell-command-str (format "%s -v" coq-command))
+           (fh (find-file-name-handler default-directory 'shell-command))
+           (retv (if fh (funcall fh 'shell-command shell-command-str (current-buffer))
+                   (shell-command shell-command-str (current-buffer)))))
+      (when (equal 0 retv)
+        ;; Fail silently (in that case we'll just assume Coq 8.5)
+        (goto-char (point-min))
+        (when (re-search-forward "version \\([^ ]+\\)" nil t)
+          (setq coq-autodetected-version (match-string 1))))))
+  (when interactive-p
+    (coq-show-version))
+  coq-autodetected-version)
+
+(defun coq--version< (v1 v2)
+  "Compare Coq versions V1 and V2."
+  ;; -snapshot is only supported by Emacs 24.5, not 24.3
+  (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
+                                ("^pl$" . 0)
+				("^~alpha$" . -3)
+                                ,@version-regexp-alist)))
+    (version< v1 v2)))
+
+(defcustom coq-pre-v85 nil
+  "Deprecated.
+Use `coq-pinned-version' if you want to bypass the
+version detection that Proof General does automatically."
+  :type 'boolean
+  :group 'coq)
+
+(defun coq--pre-v85 ()
+  "Return non-nil if the auto-detected version of Coq is < 8.5.
+Returns nil if the version can't be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.5")))
+    (pcase coq-version-to-use
+      ;; assume trunk is at least 8.5
+      ("trunk" nil) 
+      (t 
+       (condition-case err
+	   (coq--version< coq-version-to-use "8.5snapshot")
+	 (error
+	  (cond
+	   ((equal (substring (cadr err) 0 15) "Invalid version")
+	    (signal 'coq-unclassifiable-version  coq-version-to-use))
+	   (t (signal (car err) (cdr err))))))))))
+
+(defun coq--post-v86 ()
+  "Return t if the auto-detected version of Coq is >= 8.6.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.5")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "8.6"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
+(defun coq--post-v89 ()
+  "Return t if the auto-detected version of Coq is >= 8.9.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "8.5")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "8.9"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
+
 (defcustom coq-prog-env nil
   "List of environment settings to pass to Coq process.
 On Windows you might need something like:
@@ -63,10 +181,13 @@ On Windows you might need something like:
   :group 'coq)
 (require 'coq-error)
 
+;; EMD: if it's a full path with "/"s, should we rewrite the basename?
+;; Maybe it's unneeded.
+;; TO-TEST: "C-u C-c C-x", change coq-prog-name, and "C-c C-n".
 (defcustom coq-prog-name
-  (if (executable-find "coqtop") "coqtop"
-    (proof-locate-executable "coqtop" t '("C:/Program Files/Coq/bin")))
-
+  (let ((exe-name (if (coq--post-v89) "coqidetop" "coqtop")))
+    (if (executable-find exe-name) exe-name
+      (proof-locate-executable exe-name t '("C:/Program Files/Coq/bin"))))
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
@@ -138,18 +259,6 @@ processes. By default, not enabled for Windows, for stability reasons."
   :type 'string
   :group 'coq)
 
-(defcustom coq-pinned-version nil 
-  "Which version of Coq you are using.
-There should be no need to set this value unless you use the trunk from
-the Coq github repository. For Coq versions with decent version numbers
-Proof General detects the version automatically and adjusts itself. This
-variable should contain nil or a version string."
-  :type 'string
-  :group 'coq)
-
-(defvar coq-autodetected-version nil
-  "Version of Coq, as autodetected by `coq-autodetect-version'.")
-
 ;;; error symbols
 
 ;; coq-unclassifiable-version
@@ -162,96 +271,6 @@ variable should contain nil or a version string."
 (put 'coq-unclassifiable-version 'error-message
      "Proof General cannot classify your Coq version")
 
-
-;;; version detection code
-
-(defun coq-version (&optional may-recompute)
-  "Return the precomputed version of the current Coq toolchain.
-With MAY-RECOMPUTE, try auto-detecting it if it isn't available."
-  (or coq-pinned-version
-      coq-autodetected-version
-      (when may-recompute
-        (coq-autodetect-version))))
-
-(defun coq-show-version ()
-  "Show the version of Coq currently in use.
-If it doesn't look right, try `coq-autodetect-version'."
-  (interactive)
-  (let ((version (coq-version nil)))
-    (if version
-        (message "Using Coq v%s" coq-autodetected-version)
-      (message "Coq version unknown at this time. Use `coq-autodetect-version' to autodetect."))))
-
-(defun coq-autodetect-version (&optional interactive-p)
-  "Detect and record the version of Coq currently in use.
-Interactively (with INTERACTIVE-P), show that number."
-  (interactive '(t))
-  (setq coq-autodetected-version nil)
-  (with-temp-buffer
-    ;; Use `shell-command' via `find-file-name-handler' instead of
-    ;; `process-line': when the buffer is running TRAMP, PG uses
-    ;; `start-file-process', loading the binary from the remote server.
-    (let* ((default-directory
-	     (if (file-accessible-directory-p default-directory)
-		 default-directory
-	       "/"))
-	   (coq-command (shell-quote-argument (or coq-prog-name "coqtop")))
-           (shell-command-str (format "%s -v" coq-command))
-           (fh (find-file-name-handler default-directory 'shell-command))
-           (retv (if fh (funcall fh 'shell-command shell-command-str (current-buffer))
-                   (shell-command shell-command-str (current-buffer)))))
-      (when (equal 0 retv)
-        ;; Fail silently (in that case we'll just assume Coq 8.5)
-        (goto-char (point-min))
-        (when (re-search-forward "version \\([^ ]+\\)" nil t)
-          (setq coq-autodetected-version (match-string 1))))))
-  (when interactive-p
-    (coq-show-version))
-  coq-autodetected-version)
-
-(defun coq--version< (v1 v2)
-  "Compare Coq versions V1 and V2."
-  ;; -snapshot is only supported by Emacs 24.5, not 24.3
-  (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
-                                ("^pl$" . 0)
-				("^~alpha$" . -3)
-                                ,@version-regexp-alist)))
-    (version< v1 v2)))
-
-(defcustom coq-pre-v85 nil
-  "Deprecated.
-Use `coq-pinned-version' if you want to bypass the
-version detection that Proof General does automatically."
-  :type 'boolean
-  :group 'coq)
-
-(defun coq--pre-v85 ()
-  "Return non-nil if the auto-detected version of Coq is < 8.5.
-Returns nil if the version can't be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (pcase coq-version-to-use
-      ;; assume trunk is at least 8.5
-      ("trunk" nil) 
-      (t 
-       (condition-case err
-	   (coq--version< coq-version-to-use "8.5snapshot")
-	 (error
-	  (cond
-	   ((equal (substring (cadr err) 0 15) "Invalid version")
-	    (signal 'coq-unclassifiable-version  coq-version-to-use))
-	   (t (signal (car err) (cdr err))))))))))
-
-(defun coq--post-v86 ()
-  "Return t if the auto-detected version of Coq is >= 8.6.
-Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.6"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
 
 (defcustom coq-use-makefile nil
   "Whether to look for a Makefile to attempt to guess the command line.
@@ -421,7 +440,8 @@ LOAD-PATH, CURRENT-DIRECTORY: see `coq-include-options'."
 (defvar coq-coqtop-server-flags
 					; TODO allow ports for main-channel
 					; TODO add control-channel ports
-  '("-ideslave" "-main-channel" "stdfds"))
+  (append (and (not (coq--post-v89)) '("-ideslave"))
+          '("-main-channel" "stdfds")))
 
 (defvar coq-coqtop-async-flags
   (let ((proof-workers-flags

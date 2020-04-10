@@ -5,13 +5,13 @@ How to try out Proof General with the coqtop XML protocol
 
 The repo is at:
 
- https://github.com/psteckler/ProofGeneral
+ https://github.com/ProofGeneral/PG
 
 You should clone the repo via ssh or https.
 
 2) Switch to the branch that supports the XML protocol
 
- $ git checkout server-protocol
+ $ git checkout async
 
 3) In the ProofGeneral directory that was created via cloning:
 
@@ -45,7 +45,7 @@ To run the current Proof General distribution, you can setup another
 .emacs load function and bash alias:
 
   (defun pg ()
-    (load-file "<path-to>/ProofGeneral/generic/proof-site.el"))
+    (load-file "<path-to>/PG/generic/proof-site.el"))
 
   alias emacs-pg="<path-to>/emacs -eval \"(pg)\""
 
