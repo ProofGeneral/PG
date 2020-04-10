@@ -182,7 +182,7 @@ will be used to suggest values to the user."
 These variable describes the coqtop command to be launched on this file.
 Optional argument OLDVALUE specifies the previous value of `coq-prog-name', it
 will be used to suggest a value to the user."
-  (let* ((deflt (or oldvalue (if (coq--post-v89) "coqidetop" "coqide")))
+  (let* ((deflt (or oldvalue (if (coq--post-v89) "coqidetop" "coqtop")))
          (cmd (coq-read-directory
                (concat "coq program name (default \"" oldvalue "\"): ")
                deflt t))

@@ -186,9 +186,7 @@ On Windows you might need something like:
 (require 'coq-error)
 
 (defcustom coq-prog-name
-  (let ((exe-name (if (coq--post-v89)
-                      "coqidetop"
-                    "coqide")))
+  (let ((exe-name (if (coq--post-v89) "coqidetop" "coqtop")))
     (if (executable-find exe-name) exe-name
       (proof-locate-executable exe-name t '("C:/Program Files/Coq/bin"))))
   "*Name of program to run as Coq. See `proof-prog-name', set from this.
