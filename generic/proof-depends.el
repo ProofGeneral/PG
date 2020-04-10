@@ -121,7 +121,7 @@ Called from `proof-done-advancing' when a save is processed and
 
     (span-set-property gspan 'dependencies-within-file depspans)
     (setq proof-last-theorem-dependencies nil)
-    (funcall 'proof-dependencies-system-specific name gspan)))
+    (funcall proof-dependencies-system-specific gspan)))
 
 
 
@@ -136,27 +136,35 @@ Called from `proof-done-advancing' when a save is processed and
 
 ;;;###autoload
 (defun proof-dependency-in-span-context-menu (span)
-  "Make some menu entries showing proof dependencies of SPAN."
+  "Make some menu entries showing proof dependencies of SPAN.
+Use `proof-dependency-menu-system-specific' to build system
+specific entries."
   ;; FIXME: might only activate this for dependency-relevant spans.
-  (list
-   "-------------"
-   (proof-dep-make-submenu "Local Dependency..."
-			   (lambda (namespan) (car namespan))
-			   'proof-goto-dependency
-			   (span-property span 'dependencies-within-file))
-   (proof-make-highlight-depts-menu "Highlight Dependencies"
-				    'proof-highlight-depcs
-				    span 'dependencies-within-file)
-   (proof-dep-make-submenu "Local Dependents..."
-			   (lambda (namepos) (car namepos))
-			   'proof-goto-dependency
-			   (span-property span 'dependents))
-   (proof-make-highlight-depts-menu "Highlight Dependents"
-				    'proof-highlight-depts
-				    span 'dependents)
-   ["Unhighlight all" proof-dep-unhighlight t]
-   "-------------"
-   (proof-dep-alldeps-menu span)))
+  (let ((defmenu
+          (list
+           "-------------"
+           (proof-dep-make-submenu "Local Dependency..."
+			           (lambda (namespan) (car namespan))
+			           'proof-goto-dependency
+			           (span-property span 'dependencies-within-file))
+           (proof-make-highlight-depts-menu "Highlight Dependencies"
+				            'proof-highlight-depcs
+				            span 'dependencies-within-file)
+           (proof-dep-make-submenu "Local Dependents..."
+			           (lambda (namepos) (car namepos))
+			           'proof-goto-dependency
+			           (span-property span 'dependents))
+           (proof-make-highlight-depts-menu "Highlight Dependents"
+				            'proof-highlight-depts
+				            span 'dependents)
+           ["Unhighlight all" proof-dep-unhighlight t]
+           "-------------"
+           (proof-dep-alldeps-menu span))))
+    (if (not proof-dependency-menu-system-specific)
+        defmenu
+      (append
+       (funcall proof-dependency-menu-system-specific span)
+       defmenu))))
 
 (defun proof-dep-alldeps-menu (span)
   (or (span-property span 'dependencies-menu) ;; cached value

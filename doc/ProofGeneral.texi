@@ -4462,6 +4462,39 @@ path (including the -R lib options) (see @samp{@code{coq-load-path}}).
 You can also use the .dir-locals.el as above to configure this setting
 on a per project basis.
 
+@node Proof using annotations
+@section Proof using annotations
+
+In order to process files asynchronously and pre-compile files (.vos and
+.vok files), it is advised (inside sections) to list the section
+variables (and hypothesis) on which each lemma depends on. This must be
+done at the beginning of a proof with this syntax:
+
+@verbatim
+Lemma foo: ... .
+Proof using x y H1 H2.
+@end verbatim
+
+If the annotation is missing, then at Qed time (i.e. later in the
+script) coq complains with a warning and a suggestion of a correct
+annotation that should be added. ProofGeneral intercepts this suggestion
+and stores relevant information. Then depending on user preference it
+can either
+@itemize @bullet
+@item insert immediately the ``using...'' annotation after ``Proof'',
+without replaying the proof.
+@item highlight the place where the annotation should be inserted and
+allow the user to perform the insertion later either via right click
+menu on the proof or by @code{M-x coq-insert-suggested-dependency} (it
+won't replay the proof)
+@item ask the user each time which of the two solutions above he wants
+@item ignore completely the suggestion. 
+@end itemize
+
+This can be configured either via Coq menu or by setting variable
+@code{coq-accept-proof-using-suggestion} to one of the following values:
+@code{'always}, @code{'highlight}, @code{'ask} or @code{'never}.
+
 @node Multiple File Support
 @section Multiple File Support
 

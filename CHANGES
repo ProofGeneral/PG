@@ -47,26 +47,16 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 *** Automatic insertion of "Proof using" annotations.
 
-    When "Suggest Proof Using" is set in coq, coq suggests "Proof
-    using" annotations when it detects there is no such annotation (or
-    a wrong one) in you proof and there should be one (i.r. you are
-    inside a section). By default PG will ask the user before
-    inserting the suggested annotation. You can customize this
-    behaviour:
-
-    (setq coq-accept-proof-using-suggestion 'always)
-    or
-    (setq coq-accept-proof-using-suggestion 'never)
-    or (default)
-    (setq coq-accept-proof-using-suggestion 'ask)
-
-    This is also settable from Coq menu.
-
-    Limitations:
-    - do not support nested proofs.
-    - always use the first suggestion (coq can provide several solutions).
-    - the proof is not replayed, which is consistent with the fact
-      that pg do not deal with async proofs.
+    PG now supports the "Suggest Proof Using" by inserting
+    (automatically or by contextual menu or by a command) the "Proof
+    using" annotation suggested by Coq. This suggestion happens at
+    "Qed" command. By default PG will only highlight the corresponding
+    "Proof" keyword and let the user actively ask for insertion. You
+    can customize this behaviour by setting the
+    coq-accept-proof-using-suggestion to one of these values: 'always,
+    'highlight, 'ask, 'never. This is also settable from Coq menu. See
+    documentation of this variable for an explanation of the different
+    possible values and some more information.
 
 *** Limited extensibility for indentation 
 

@@ -1760,7 +1760,17 @@ This hook is used within Proof General to refresh the toolbar."
 
 ;;;;;;
 (defcustom proof-dependencies-system-specific nil
-  "doc TODO"
+  "Set this variable to handle system specific dependency output.
+This must be a function with 1 parameter: the goalsave span of
+the theorem being saved."
+  :type '(repeat function)
+  :group 'proof-shell)
+
+(defcustom proof-dependency-menu-system-specific nil
+  "Hook for system specific menu items for dependency menu.
+This must be a function taking one argument: the span one which
+the secific menu must be added. It must return a lit with the
+same type as `proof-dependency-in-span-context-menu' returns."
   :type '(repeat function)
   :group 'proof-shell)
 ;;;;;

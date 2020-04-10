@@ -109,7 +109,9 @@ Namely, goals that do not fit in the goals window."
 ;TODO: remove Set Undo xx. It is obsolete since coq-8.5 at least.
 ;;`(,(format "Set Undo %s . " coq-default-undo-limit) "Set Printing Width 75.")
 (defconst coq-shell-init-cmd
-  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string)) coq-user-init-cmd)
+  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string))
+          '("Set Suggest Proof Using. ")
+          coq-user-init-cmd)
  "Command to initialize the Coq Proof Assistant.")
 
 
@@ -1972,6 +1974,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
    proof-no-fully-processed-buffer t
 
+   proof-dependency-menu-system-specific coq-dependency-menu-system-specific
+   proof-dependencies-system-specific coq-dependencies-system-specific
    ;; Coq has no global settings?
    ;; (proof-assistant-settings-cmd)
 
@@ -2564,52 +2568,120 @@ Warning: this makes the error messages (and location) wrong.")
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 
 (setq coq-shell-theorem-dependency-list-regexp
-  "<infomsg>\\(?: \\|\n\\)The proof of \\([^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\([^.]*\\)\\.")
+  "<infomsg>\n?The proof of \\([^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\([^.]*\\)\\.")
 
-(defcustom accept-proof-using-suggestion 'ask
-  "Wether proofgeneral should automatically update proof using when
-recieving suggestions from coq at Qed time."
+(defcustom coq-accept-proof-using-suggestion 'highlight
+  "Wether and how proofgeneral should insert \"Proof using\" suggestions.
+Suggestions are emitted by Coq at Qed time. The possible values
+of this variable are:
+
+- 'always: always insert the suggested annotation
+
+- 'highlight (default value): highlight the Proof command and
+  have a contextual menu for insertion (or M-x
+  coq-insert-suggested-dependency when point is on the proof
+  considered)
+
+- 'ask: asks the user each time. If yes then do as 'always, else
+  do as 'highlight
+
+- 'never: ignore completely the suggestions.
+
+Remarks and limitations:
+- do not support nested proofs.
+- always use the *first* annotation suggested by coq.
+- the proof is not replayed, which is consistent with the fact
+  that pg currently do not deal with async proofs.
+- if there is already a \"Proof using\" annotation, then either it
+  is correct and nothing happens, or it is incorrect and coq
+  generates an error. PG won't try to replace the erroneous
+  annotation in this case, but you can always go back, remove it
+  by hand, and let pg insert the good one.
+- instead of the menu you can do M-x coq-insert-suggested-dependency
+  when point is on the proof considered.
+"
   :type '(choice
 	  (const :tag "Ask user" ask)
-	  (const :tag "always accept" always)
-	  (const :tag "never accept" never)) 
+	  (const :tag "Always accept" always)
+	  (const :tag "Higihlight" never)
+	  (const :tag "Ignore completely" ignore)) 
   :group 'coq)
 
-(defun coq-extract-proof-using-from-suggestion (span)
-  (let ((sp (span-property-safe span 'dependencies)))
-    sp))
+;; the additional menu for "proof using". highlights the "Proof." command, and
+;; have a entry to insert the annotation and remove the highlight.
+(defvar coq-dependency-menu-system-specific
+  (lambda (span)
+    (let* ((deps (span-property-safe span 'dependencies))
+           (specialspans (spans-at-region-prop (span-start span) (span-end span) 'proofusing))
+           (specialspan (and specialspans (not (cdr specialspans)) (car specialspans)))
+           (name (concat " insert \"proof using " (mapconcat 'identity deps " ") "\""))
+           (fn `(lambda (sp)
+                 (coq-insert-proof-using-suggestion sp t)
+                 (span-delete ,specialspan))))
+      (list "-------------" (vector name `(,fn ,span) (not (not deps))))))
+  "Coq specific additional menu entry for \"Proof using\".
+annotation. See `proof-dependency-menu-system-specific'." )
 
-(defun coq-insert-proof-using-suggestion (span suggested)
+(defun coq-mark-span-dependencies (span suggested)
+  (goto-char (span-start span))
+  (let* ((endpos (re-search-forward "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\."))
+         (proof-pos (match-beginning 0))
+         (newspan (span-make proof-pos endpos)))
+    (span-set-property newspan 'face 'proof-warning-face)
+    (span-set-property newspan 'help-echo "Right click to insert \"proof using\"")
+    (span-set-property newspan 'proofusing t)))
+
+(defun coq-insert-proof-using (proof-pos previous-content string-suggested)
+  (goto-char (+ 5 proof-pos)) ; "Proof" has length 6
+  (let ((spl proof-locked-span))
+    (span-read-write spl) ; temporarily make the locked span writable
+    (when previous-content (delete-char (length previous-content)))
+    (insert (concat " using " string-suggested))
+    (proof-span-read-only spl)))
+
+(defun coq-insert-suggested-dependency ()
+  (interactive)
+  (let* ((span (span-at (point) 'type))
+         (deps (span-property-safe span 'dependencies))
+         (specialspans (spans-at-region-prop (span-start span) (span-end span) 'proofusing))
+         (specialspan (and specialspans (not (cdr specialspans)) (car specialspans))))
+    (coq-insert-proof-using-suggestion span t)
+    (span-delete specialspan)))
+
+;; TODO: have 'ignoe option to completely ignore (not highlight)
+;; and have 'never renamed into 'highlight
+(defun coq-insert-proof-using-suggestion (span &optional force)
   "Add the proof using annotation, respecting `coq-accept-proof-using-suggestion'.
 Insert \" using xxx\" After the \"Proof\" of SPAN, where xxx is
 built from the list of strings in SUGGESTED."
   (with-current-buffer proof-script-buffer
     (save-excursion
       (goto-char (span-start span))
-      (let* ((pos-unproc (point))
-             (endpos (save-excursion
-                          (search-forward-regexp "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\.")))
-             (proof-pos (and endpos (match-beginning 0)))
-             (previous-content (and endpos (split-string (match-string 1))))
-             (string-suggested (mapconcat 'identity suggested " "))
-             (same (and endpos (not (cl-set-exclusive-or previous-content suggested :test 'string-equal)))))
-        (when (and endpos (not same)
-                   (or (equal coq-accept-proof-using-suggestion 'always)
+      (let* ((endpos (re-search-forward "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\.")))
+        (when endpos
+          (let* ((suggested (span-property span 'dependencies))
+                 (proof-pos (match-beginning 0))
+                 (previous-content (split-string (match-string 1)))
+                 (string-suggested (mapconcat 'identity suggested " "))
+                 (same (and previous-content
+                            (not (cl-set-exclusive-or previous-content suggested
+                                                      :test 'string-equal))))
+                 (usersayyes
+                  (and (not same) (not force)
+                       (equal coq-accept-proof-using-suggestion 'ask)
                        (y-or-n-p (concat "Update proof using annotation ("
-                                         string-suggested ")"))))
-          (goto-char (+ 5 proof-pos)) ; "Proof" has length 6
-                                        ;(if (stored proof-strict-read-only) )
-          (let ((spl proof-locked-span))
-            ;; temporarily make the locked span writable
-	    (span-read-write spl)
-            (delete-char (length previous-content))
-            (insert (concat " using " string-suggested))
-            ;; go back to `proof-strict-read-only' says
-            (proof-span-read-only spl)))))))
+                                         string-suggested ")")))))
+            (unless same
+              (if (or force (equal coq-accept-proof-using-suggestion 'always) usersayyes)
+                  (coq-insert-proof-using proof-pos previous-content string-suggested)
+                (when (member coq-accept-proof-using-suggestion '(highlight ask))
+                  (coq-mark-span-dependencies span suggested)
+                  (message "\"Proof using\" not set. M-x coq-insert-suggested-dependency or right click to add it. See also `coq-accept-proof-using-suggestion'."))))))))))
 
-(defun proof-dependencies-system-specific (name span)
-  (let ((suggested (coq-extract-proof-using-from-suggestion span)))
-    (coq-insert-proof-using-suggestion span suggested)))
+(defvar coq-dependencies-system-specific
+  (lambda (span) (coq-insert-proof-using-suggestion span))
+  "Coq specific dependency mechanism.
+Used for automatic insertion of \"Proof using\" annotations.")
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 

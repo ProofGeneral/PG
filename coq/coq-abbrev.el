@@ -113,22 +113,6 @@
       :selected (eq proof-three-window-mode-policy 'vertical)
       :help "One column mode"])
     ["Refresh Windows Layout" proof-layout-windows t]
-    ("Automatic Proof using annotations..."
-     ["ask"
-      (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)
-      :style radio
-      :selected (eq coq-accept-proof-using-suggestion 'ask)
-      :help "ask user when a new proof using annotation is suggested"]
-     ["always"
-      (customize-set-variable 'coq-accept-proof-using-suggestion 'always)
-      :style radio
-      :selected (eq coq-accept-proof-using-suggestion 'always)
-      :help "Always update the proof using annotation when suggested"]
-     ["never"
-      (customize-set-variable 'coq-accept-proof-using-suggestion 'never)
-      :style radio
-      :selected (eq coq-accept-proof-using-suggestion 'never)
-      :help "never update the proof using"])
     ["Toggle tooltips" proof-output-tooltips-toggle
      :style toggle
      :selected proof-output-tooltips
@@ -252,6 +236,27 @@
        :style radio
        :selected (eq coq-diffs 'removed)
        :help "Show diffs: added and removed"])
+    ("\"Proof using\" mode..."
+     ["ask"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'ask)
+      :help "Ask user when a new proof using annotation is suggested"]
+     ["always"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'always)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'always)
+      :help "Always update the proof using annotation when suggested"]
+     ["highlight"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'highlight)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'highlight)
+      :help "Highight the proof when an auto insert is suggested (right click to insert))"]
+     ["Ignore"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'ignore)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'ignore)
+      :help "no highlight (right click insertion still possible)"])
     ""
     ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
     ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]
