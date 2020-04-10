@@ -103,11 +103,7 @@ Interactively (with INTERACTIVE-P), show that number."
 		 default-directory
 	       "/"))
 	   (coq-command (shell-quote-argument
-                         ;; use coq-prog-name if was been customized by user,
-                         ;; coqc otherwise
-                         (or (car (get 'coq-prog-name 'customized-value)) ; customized for current session
-                             (car (get 'coq-prog-name 'saved-value))      ; customized & saved
-                             "coqc")))
+                         (or (and (boundp 'coq-prog-name) coq-prog-name) "coqtop")))
            (shell-command-str (format "%s -v" coq-command))
            (fh (find-file-name-handler default-directory 'shell-command))
            (retv (if fh (funcall fh 'shell-command shell-command-str (current-buffer))
