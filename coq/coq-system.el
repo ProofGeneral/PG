@@ -181,6 +181,9 @@ On Windows you might need something like:
   :group 'coq)
 (require 'coq-error)
 
+;; EMD: if it's a full path with "/"s, should we rewrite the basename?
+;; Maybe it's unneeded.
+;; TO-TEST: "C-u C-c C-x", change coq-prog-name, and "C-c C-n".
 (defcustom coq-prog-name
   (let ((exe-name (if (coq--post-v89) "coqidetop" "coqtop")))
     (if (executable-find exe-name) exe-name
