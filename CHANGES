@@ -135,6 +135,11 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     between successive proof steps.  See section 11.8 ("Showing
     Proof Diffs") in the documentation.
 
+*** Support Ssreflect's proof style for inserting an intros tactic
+    when doing "C-c C-a TAB": PG inserts "move=> ..." if the current
+    file contains "Require ... ssreflect" on the same line; otherwise
+    PG inserts "intros ..." as before.
+
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
     - 123: Parallel background compliation fails to execute some
