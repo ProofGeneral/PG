@@ -2502,17 +2502,21 @@ mouse activation."
           (progn (end-of-line) (point)))))))
       (insert (concat "End" section)))))
 
+
 (defun coq--format-intros (output)
-  "Create an “intros” form from the OUTPUT of “Show Intros”."
+  "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
   (let* ((shints1 (replace-regexp-in-string "^[0-9] subgoal\\(.\\|\n\\|\r\\)*"  "" output))
          (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
     (if (or (string= "" shints)
             (string-match coq-error-regexp shints))
         (error "Don't know what to intro")
-      (format "intros %s" shints))))
+      (save-excursion
+        (if (re-search-backward "Require.*ssreflect" nil t)
+            (format "move=> %s" shints)
+          (format "intros %s" shints))))))
 
 (defun coq-insert-intros ()
-  "Insert an intros command with names given by Show Intros.
+  "Insert an intros or move command with names given by Show Intros.
 Based on idea mentioned in Coq reference manual."
   (interactive)
   (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
