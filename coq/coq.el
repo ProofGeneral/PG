@@ -1937,6 +1937,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-error-regexp coq-error-regexp
    proof-shell-interrupt-regexp coq-interrupt-regexp
    proof-shell-assumption-regexp coq-id
+   proof-shell-theorem-dependency-list-regexp coq-shell-theorem-dependency-list-regexp
    pg-subterm-first-special-char ?\360
    ;; The next three represent path annotation information
    pg-subterm-start-char ?\372          ; not done
@@ -2558,6 +2559,9 @@ Warning: this makes the error messages (and location) wrong.")
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 
+(setq coq-shell-theorem-dependency-list-regexp
+  "<infomsg>\\(?: \\|\n\\)The proof of \\([^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\([^.]*\\)\\.")
+
 (defcustom accept-proof-using-suggestion 'ask
   "Wether proofgeneral should automatically update proof using when
 recieving suggestions from coq at Qed time."
@@ -2567,56 +2571,41 @@ recieving suggestions from coq at Qed time."
 	  (const :tag "never accept" never)) 
   :group 'coq)
 
-(defun coq-extract-proof-using-from-suggestion ()
-  (proof-with-current-buffer-if-exists proof-response-buffer
-     (when (string-match
-            "following commands:\n.*Proof using\\([^.]*\\)\\."
-            (buffer-string))
-         (let* ((s (match-string 1 (buffer-string)))
-                (prefix (if (equal (aref s 0) ? ) " using" " using ")))
-           (concat prefix s)))))
+(defun coq-extract-proof-using-from-suggestion (span)
+  (let ((sp (span-property-safe span 'dependencies)))
+    sp))
 
-(defun coq-proof-using-equal (s1 s2)
-  (let* ((l1 (split-string s1)) (l2 (split-string s2))
-         (diff (cl-set-exclusive-or l1 l2 :test 'string-equal)))
-    (not diff))) ;; nil if empty xor
-
-
-(defun coq-insert-proof-using-suggestion (suggested)
-  ;; Not compatible with nested lemmas.
+(defun coq-insert-proof-using-suggestion (span suggested)
+  "Add the proof using annotation, respecting `coq-accept-proof-using-suggestion'.
+Insert \" using xxx\" After the \"Proof\" of SPAN, where xxx is
+built from the list of strings in SUGGESTED."
   (with-current-buffer proof-script-buffer
     (save-excursion
-      (goto-char (proof-unprocessed-begin))
+      (goto-char (span-start span))
       (let* ((pos-unproc (point))
-             (proof-pos (save-excursion
-                          (search-backward-regexp "\\<Proof\\>\\([^.]*\\)\\.")))
-             (previous-content (match-string 1))
-             (same (coq-proof-using-equal previous-content suggested)))
-        (when (and (not same) (or (equal coq-accept-proof-using-suggestion 'always)
-                                  (y-or-n-p (concat "Update proof using annotation ("
-                                                    suggested ")"))))
+             (endpos (save-excursion
+                          (search-forward-regexp "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\.")))
+             (proof-pos (and endpos (match-beginning 0)))
+             (previous-content (and endpos (split-string (match-string 1))))
+             (string-suggested (mapconcat 'identity suggested " "))
+             (same (and endpos (not (cl-set-exclusive-or previous-content suggested :test 'string-equal)))))
+        (when (and endpos (not same)
+                   (or (equal coq-accept-proof-using-suggestion 'always)
+                       (y-or-n-p (concat "Update proof using annotation ("
+                                         string-suggested ")"))))
           (goto-char (+ 5 proof-pos)) ; "Proof" has length 6
                                         ;(if (stored proof-strict-read-only) )
           (let ((spl proof-locked-span))
             ;; temporarily make the locked span writable
 	    (span-read-write spl)
             (delete-char (length previous-content))
-            (insert suggested)
+            (insert (concat " using " string-suggested))
             ;; go back to `proof-strict-read-only' says
             (proof-span-read-only spl)))))))
 
-;; This should be called after a Save or Qed command is called (but not a
-;; "Define").
-(defun coq-proof-using-suggest-hook ()
-  (unless (equal coq-accept-proof-using-suggestion 'never)
-    (let ((suggestion (coq-extract-proof-using-from-suggestion)))
-      (when suggestion
-        (coq-insert-proof-using-suggestion suggestion)))))
-
-
-;(add-hook 'proof-shell-handle-delayed-output-hook
-	  ;#'coq-proof-using-suggest-hook t)
-
+(defun proof-dependencies-system-specific (name span)
+  (let ((suggested (coq-extract-proof-using-from-suggestion span)))
+    (coq-insert-proof-using-suggestion span suggested)))
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 

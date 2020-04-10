@@ -1758,6 +1758,13 @@ This hook is used within Proof General to refresh the toolbar."
   :type '(repeat function)
   :group 'proof-shell)
 
+;;;;;;
+(defcustom proof-dependencies-system-specific nil
+  "doc TODO"
+  :type '(repeat function)
+  :group 'proof-shell)
+;;;;;
+
 (defcustom proof-shell-syntax-table-entries nil
   "List of syntax table entries for proof script mode.
 A flat list of the form

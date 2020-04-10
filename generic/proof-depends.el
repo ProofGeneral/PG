@@ -120,7 +120,8 @@ Called from `proof-done-advancing' when a save is processed and
 		  'type))))
 
     (span-set-property gspan 'dependencies-within-file depspans)
-    (setq proof-last-theorem-dependencies nil)))
+    (setq proof-last-theorem-dependencies nil)
+    (funcall 'proof-dependencies-system-specific name gspan)))
 
 
 
