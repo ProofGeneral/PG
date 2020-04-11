@@ -4482,10 +4482,10 @@ buffer depends. This is controlled by the user option
 @ref{Locking Ancestors}.
 @item (Re-)Compilation 
 Before a @code{Require} command is processed it may be necessary
-to save and compile some buffers. Because this feature
-conflicts with existing customization habits, it is switched off
-by default. When it is properly configured, one can freely switch
-between different buffers. Proof General will compile the
+to save some buffers and compile some files. When automatic
+(re-)compilation is enabled (it's off by default), one can freely
+work in different buffers within one Proof General session.
+Proof General will compile the
 necessary files whenever a @code{Require} command is processed. 
 
 The compilation feature does currently not support ML modules.
@@ -4499,12 +4499,14 @@ feature.
 With parallel compilation, coqdep and coqc are launched in the
 background and Proof General stays responsive during compilation.
 Up to `coq-max-background-compilation-jobs' coqdep and coqc
-processes may run in parallel. Coq 8.5 quick compilation is
-supported with various modes, @ref{Quick compilation and .vio Files}.
+processes may run in parallel. Compiled interfaces (@code{-vos}
+for Coq 8.11 or newer) and quick compilation
+(@code{-quick}/@code{-vio} for Coq 8.5 or newer) is
+supported with various modes, @ref{Quick and inconsistent compilation}.
 @item Synchronous single threaded compilation (obsolete)
 With synchronous compilation, coqdep and coqc are called
 synchronously for each Require command. Proof General is locked
-until the compilation finishes. Coq 8.5 quick compilation is not
+until the compilation finishes. Neither quick nor vos compilation is
 supported with synchronously compilation.
 @end table
 
@@ -4515,10 +4517,8 @@ these points:
 @item
 Set the option @code{coq-compile-before-require} (menu @code{Coq
 -> Auto Compilation -> Compile Before Require}) to enable
-compilation before processing @code{Require} commands and set
-@code{coq-compile-parallel-in-background} (menu @code{Coq
--> Auto Compilation -> Parallel background compilation}) for
-parallel asynchronous compilation (recommended).
+compilation before processing @code{Require} commands. By
+default, this enables parallel asynchronous compilation.
 @item 
 Nonstandard load path elements @emph{must} be configured via a
 Coq project file (this is the recommended option),
@@ -4545,7 +4545,7 @@ single threaded compilation, simply hit @code{C-g}.
 @menu
 * Automatic Compilation in Detail::
 * Locking Ancestors::
-* Quick compilation and .vio Files::
+* Quick and inconsistent compilation::
 * Customizing Coq Multiple File Support::
 * Current Limitations::
 @end menu
@@ -4561,9 +4561,11 @@ the queue region, @ref{Locked queue and editing regions}). If
 Proof General finds a @code{Require} command, it checks the
 dependencies and (re-)compiles files as necessary. The Require
 command and the following text is only sent to Coq after the
-compilation finished.
+compilation has finished.
 
-@code{Declare ML Module} commands are currently not recognized.
+@code{Declare ML Module} commands are currently not recognized
+and dependencies on ML Modules reported by @code{coqdep} are
+ignored.
 
 Proof General uses @code{coqdep} in order to translate the
 qualified identifiers in @code{Require} commands to coq library
@@ -4581,10 +4583,14 @@ Sometimes the compilation commands do not produce error messages
 with location information, then @code{C-x `} does only work in a
 limited way.
 
-For Coq version 8.5 or newer, the option @code{coq-compile-quick}
-controls how @code{-quick} and @code{.vio} files are used,
-@ref{Quick compilation and .vio Files}. This can also be
-configured in the menu @code{Coq -> Auto Compilation}.
+Proof General supports both vos and quick/vio
+compilation to speed up compilation of required modules at the
+price of consistency. Because quick/vio compilation does not seem
+to have a benefit with vos compilation present, the former is
+only supported for Coq before 8.11. Both can be configured via
+the settings @code{coq-compile-vos} and @code{coq-compile-quick}
+and via menu entries in @code{Coq -> Auto Compilation},
+@ref{Quick and inconsistent compilation}. 
 
 Similar to @code{make -k}, background compilation can be
 configured to continue as far as possible after the first error,
@@ -4615,11 +4621,12 @@ locked until compilation finishes. Use @code{C-g} to interrupt
 compilation. This method supports compilation via an external
 command (such as @code{make}), see option
 @code{coq-compile-command} in @ref{Customizing Coq Multiple File
-Support} below. Synchronous compilation does not support the
-quick compilation of Coq 8.5.
+Support} below. Synchronous compilation does neither support
+quick/vio nor vos compilation.
 
 @item Parallel asynchronous compilation
-This is the newer and default version added in Proof General version 4.3. It
+This is the newer, recommended
+and default version added in Proof General version 4.3. It
 runs up to @code{coq-max-background-compilation-jobs} coqdep and
 coqc jobs in parallel in asynchronous subprocesses (or uses all
 your CPU cores if @code{coq-max-background-compilation-jobs}
@@ -4639,15 +4646,11 @@ before the first Require, then you may see Proof General and Coq
 running in addition to `coq-max-background-compilation-jobs'
 compilation jobs.
 
-Depending on the setting of @code{coq-compile-quick} (which can
-also be set via menu @code{Coq -> Auto Compilation}) Proof
-General produces @code{.vio} or @code{.vo} files and deletes
-outdated @code{.vio} or @code{.vo} files to ensure Coq does not
-load outdated files. When @code{quick-and-vio2vo} is selected a
-vio2vo compilation starts when the @code{Require} command had
-been processed, @ref{Quick compilation and .vio Files}.
+Parallel asynchronous compilation supports both vos and quick/vio
+compilation, but exclusively, depending on the Coq version,
+@ref{Quick and inconsistent compilation}. 
 
-Actually, even with this method, not everything runs
+Actually, even with parallel asynchronous compilation, not everything runs
 asynchronously. To translate module identifiers from the Coq
 sources into file names, Proof General runs coqdep on an
 automatically generated, one-line file. These coqdep jobs run
@@ -4673,7 +4676,7 @@ forced to completely retract the current scripting buffer.
 You can simplify this by setting @code{proof-strict-read-only} to
 @code{'retract} (menu @code{Proof-General -> Quick Options ->
 Read Only -> Undo On Edit}). Then typing in some ancestor will
-immediately retract you current scripting buffer and unlock that
+immediately retract your current scripting buffer and unlock that
 ancestor.
 
 You have two choices, if you don't like ancestor locking in its
@@ -4696,19 +4699,54 @@ benefit, as Require commands are usually on the top of each
 file.]
 
 
-@node Quick compilation and .vio Files
-@subsection Quick compilation and .vio Files
+@node Quick and inconsistent compilation
+@subsection Quick and inconsistent compilation
 
-Proof General supports quick compilation only with the parallel
-asynchronous compilation. There are 4 modes that can be
+Coq now supports two different modes for speeding up compilation
+at the price of consistency. Since Coq 8.11, @code{-vos} compiles
+interfaces into @code{.vos} files and since Coq 8.5
+@code{-quick}/@code{-vio} produces @code{.vio} files. Proof
+General supports both modes with parallel asynchronous
+compilation, but exclusively, depending on the detected Coq
+version. For Coq 8.11 or newer only @code{-vos} can be used.
+There are a number of different compilation options supported,
+see below.
+
+For Coq 8.11 or newer (decided by the automatic Coq version
+detection of Proof General or by the setting
+@code{coq-pinned-version}) required modules are either compiled
+to @code{.vo} or @code{.vos} files, depending on the setting
+@code{coq-compile-vos}, which can also be set on menu @code{Coq
+-> Auto Compilation -> vos compilation}. There are three choices:
+
+@table @asis
+@item @code{use-vos}
+Compile with @code{-vos}. Noticeably faster, but proofs are
+skipped during compilation and some universe constraints might be
+missing.
+@item @code{ensure-vo}
+Compile without @code{-vos} to @code{.vo} files, checking all
+proofs and universe constraints.
+@item unset (@code{nil})
+Compile with @code{-vos} if @code{coq-compile-quick} (see below)
+equals @code{quick-no-vio2vo}. Otherwise compile without
+@code{-vos} to @code{.vo}. This value provides an upgrade path
+for users that configured @code{coq-compile-quick} in the past.
+@end table
+
+For Coq version 8.5 until before 8.11, Proof General supports
+quick or vio compilation with parallel asynchronous compilation.
+There are 4 modes that can be
 configured with @code{coq-compile-quick} or by selecting one of
 the radio buttons in the @code{Coq -> Auto Compilation -> Quick
-compilation} menu.
+compilation} menu. For Coq before 8.11 @code{coq-compile-vos} is
+ignored.
 
-Use the default @code{no-quick}, if you have not yet switched to
+Value @code{no-quick} was provided for the transition, for those
+that have not switched there development to
 @code{Proof using}. Use @code{quick-no-vio2vo}, if you want quick
 recompilation without producing .vo files. Option
-@code{quick-and-vio2vo} recompiles with @code{-quick} as
+@code{quick-and-vio2vo} recompiles with @code{-quick}/@code{-vio} as
 @code{quick-no-vio2vo} does, but schedules a vio2vo compilation
 for missing @code{.vo} files after a certain delay. Finally, use
 @code{ensure-vo} for only importing @code{.vo} files with
@@ -4716,10 +4754,11 @@ complete universe checks.
 
 Note that with all of @code{no-quick}, @code{quick-no-vio2vo} and
 @code{quick-and-vio2vo} your development might be unsound because
+proofs might have been skipped and
 universe constraints are not fully present in @code{.vio} files.
 
 There are a few peculiarities of quick compilation in Coq 8.5
-that one should be aware of.
+and possibly also in other versions.
 
 @itemize
 @item
@@ -4732,7 +4771,7 @@ comparatively big size of the @code{.vio} files. You can speed up
 quick compilation noticeably by running on a RAM disk.
 @item
 If both, the @code{.vo} and the @code{.vio} files are present,
-Coq load the more recent one, regardless of whether
+Coq loads the more recent one, regardless of whether
 @code{-quick}, and emits a warning when the @code{.vio} is more
 recent than the @code{.vo}.
 @item
@@ -4753,7 +4792,8 @@ To ensure soundness, all library dependencies must be compiled as
 @code{.vo} files and loaded into one Coq instance.
 @end itemize
 
-Detailed description of the 4 modes:
+Detailed description of the 4 possible settings of
+@code{coq-compile-quick}:
 
 @table @code
 @item no-quick
@@ -4863,8 +4903,9 @@ This option can be set/reset via menu
 @end defvar
 
 
-The option @code{coq-compile-quick} is described in detail above,
-@ref{Quick compilation and .vio Files}
+The options @code{coq-compile-vos} and @code{coq-compile-quick}
+are described in detail above, @ref{Quick and inconsistent
+compilation}.
 
 
 @c TEXI DOCSTRING MAGIC: coq-compile-keep-going
@@ -5047,7 +5088,12 @@ or not.
 
 @itemize
 @item
-No support @code{Declare ML Module} commands.
+No support for @code{Declare ML Module} commands and files
+depending on an ML module.
+@item
+Comments inside require commands should be avoided, see Proof
+General issue #352. The regular expression to extract module
+names does not skip over comments.
 @item
 When a compiled library has the same time stamp as the source
 file, it is considered outdated. Some old file systems (for
