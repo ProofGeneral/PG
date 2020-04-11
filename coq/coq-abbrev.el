@@ -146,7 +146,30 @@
 		   coq-compile-parallel-in-background)
       :help ,(concat "Continue background compilation after "
 		     "the first error as far as possible")]
-     ("Quick compilation"
+     ("vos compilation (coq >= 8.11)"
+      ["unset"
+       (customize-set-variable 'coq-compile-vos nil)
+       :style radio
+       :selected (eq coq-compile-vos nil)
+       :active (and coq-compile-before-require
+		    coq-compile-parallel-in-background)
+       :help "Derive behavior from Quick compilation setting above"]
+      ["use -vos"
+       (customize-set-variable 'coq-compile-vos 'vos)
+       :style radio
+       :selected (eq coq-compile-vos 'vos)
+       :active (and coq-compile-before-require
+		    coq-compile-parallel-in-background)
+       :help "Speedup with -vos, possibly inconsistent"]
+      ["ensure vo"
+       (customize-set-variable 'coq-compile-vos 'ensure-vo)
+       :style radio
+       :selected (eq coq-compile-vos 'ensure-vo)
+       :active (and coq-compile-before-require
+		    coq-compile-parallel-in-background)
+       :help "Ensure only vo's are used for consistency"]
+      )
+     ("Quick compilation (coq < 8.11)"
       ["no quick"
        (customize-set-variable 'coq-compile-quick 'no-quick)
        :style radio
