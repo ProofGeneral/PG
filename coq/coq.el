@@ -2618,7 +2618,7 @@ Remarks and limitations:
            (fn `(lambda (sp)
                  (coq-insert-proof-using-suggestion sp t)
                  (span-delete ,specialspan))))
-      (list "-------------" (vector name `(,fn ,span) (not (not deps))))))
+      (list "-------------" (vector name `(,fn ,span) t))))
   "Coq specific additional menu entry for \"Proof using\".
 annotation. See `proof-dependency-menu-system-specific'." )
 
