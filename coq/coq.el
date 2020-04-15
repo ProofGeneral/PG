@@ -2622,9 +2622,13 @@ Remarks and limitations:
   "Coq specific additional menu entry for \"Proof using\".
 annotation. See `proof-dependency-menu-system-specific'." )
 
+(defconst coq-proof-using-regexp "\\_<Proof\\(?:\\s-+using\\>\\)?\\([^.]*\\)\\."
+  "regexp matching Coq \"Proof( using xxx)?.\" annotation.
+There should be one subexp numbered 1 matching xxx if present.")
+
 (defun coq-mark-span-dependencies (span suggested)
   (goto-char (span-start span))
-  (let* ((endpos (re-search-forward "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\."))
+  (let* ((endpos (re-search-forward coq-proof-using-regexp))
          (proof-pos (match-beginning 0))
          (newspan (span-make proof-pos endpos)))
     (span-set-property newspan 'face 'proof-warning-face)
@@ -2657,7 +2661,7 @@ built from the list of strings in SUGGESTED."
   (with-current-buffer proof-script-buffer
     (save-excursion
       (goto-char (span-start span))
-      (let* ((endpos (re-search-forward "\\<Proof\\(?:\\s-+using\\)?\\>\\([^.]*\\)\\.")))
+      (let* ((endpos (re-search-forward coq-proof-using-regexp)))
         (when endpos
           (let* ((suggested (span-property span 'dependencies))
                  (proof-pos (match-beginning 0))
