@@ -770,7 +770,7 @@ If NUM is negative, move upwards.  Return new span."
    (list (pg-span-name span))
    (list (vector
 	  "Show/hide"
-	  (if idiom (list 'pg-toggle-element-visibility (quote idiom) name))
+          (if idiom (list 'pg-toggle-element-visibility `(quote ,idiom) name))
 	  (not (not idiom))))
    (list (vector
 	  "Copy"       (list 'pg-copy-span-contents span) t))
