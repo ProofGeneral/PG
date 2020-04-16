@@ -35,4 +35,4 @@ rootdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
 # form="(message \"OK\")"
 form="(progn (add-to-list 'load-path \"$rootdir\") (add-to-list 'load-path \"$srcdir\"))"
 
-assert emacs --batch -l ert -l init-tests.el --eval "$form" -l proof-general.el -f ert-run-tests-batch-and-exit
+assert emacs --batch -l ert -l init-tests.el --eval "$form" -l proof-general.el -l coq-tests.el -f ert-run-tests-batch-and-exit
