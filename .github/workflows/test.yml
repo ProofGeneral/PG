@@ -44,11 +44,11 @@ jobs:
 
     strategy:
       matrix:
-        emacs_version:
+        # emacs_version:
           # the emacs version in Ubuntu 18.04 LTS
-          - 25.2
+          # - 25.2
           # the emacs version in Debian Buster
-          - 26.1
+          # - 26.1
           # the emacs version in Debian Sid
           # - 26.3
         coq_version:
@@ -62,10 +62,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: purcell/setup-emacs@master
-      with:
-        version: ${{ matrix.emacs_version }}
-
     - uses: erikmd/docker-coq-action@alpha
       id: docker-coq-action
       with:
@@ -75,6 +71,10 @@ jobs:
         custom_script: |
           startGroup Print opam config
             opam config list; opam repo list; opam list
+          endGroup
+          startGroup Install emacs
+            sudo apt-get update -y -q
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
           endGroup
           startGroup Run tests
             ./ci/test.sh
