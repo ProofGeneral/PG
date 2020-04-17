@@ -38,3 +38,44 @@ jobs:
 
     - run: emacs --version
     - run: make
+
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          # the emacs version in Ubuntu 18.04 LTS
+          - 25.2
+          # the emacs version in Debian Buster
+          - 26.1
+          # the emacs version in Debian Sid
+          # - 26.3
+        coq_version:
+          - 8.11
+        ocaml_version:
+          - 4.07-flambda
+      # at most 20 concurrent jobs per free account
+      # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - uses: erikmd/docker-coq-action@alpha
+      id: docker-coq-action
+      with:
+        opam_file: 'dummy.opam'
+        coq_version: ${{ matrix.coq_version }}
+        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_script: |
+          startGroup Print opam config
+            opam config list; opam repo list; opam list
+          endGroup
+          startGroup Run tests
+            ./ci/test.sh
+          endGroup
