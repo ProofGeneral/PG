@@ -69,6 +69,8 @@
 
 
 
+
+
 ;; AVOID THE FOLLOWING ERROR:
 ;; Starting:  -emacs
 ;; Debugger entered--Lisp error: (wrong-type-argument stringp nil)
@@ -149,10 +151,7 @@
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
 (ert-deftest coq-test-running ()
-  (coq-init-exit
-   (lambda () 
-  (coq-test-cmd "Check 0.")
-  (should  (get-process "coq")))))
+    (should-not (equal (get-process "coq") nil)))
 
 (defun coq-test-main ()
   (coq-mock #'coq-test-001))
