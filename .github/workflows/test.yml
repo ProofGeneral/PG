@@ -54,7 +54,7 @@ jobs:
         coq_version:
           - 8.11
         ocaml_version:
-          - 4.07-flambda
+          - minimal
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 5
