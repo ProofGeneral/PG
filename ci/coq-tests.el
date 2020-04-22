@@ -135,6 +135,13 @@
      #'proof-done-invisible
      'no-error-display 'no-response-display 'no-goals-display)))
 
+; Fixture for init and exit coq
+(defun coq-init-exit (body)
+       (unwind-protect
+           (progn  (coq-test-init)
+                  (funcall body))
+          (coq-test-exit)))
+
 (defun coq-test-001 ()
   ;; TODO: retrieve the test status, maybe by changing the function above
   (coq-test-cmd (process-list)))
@@ -142,7 +149,10 @@
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
 (ert-deftest coq-test-running ()
-    (should-not (equal (get-process "coq") nil)))
+  (coq-init-exit
+   (lambda () 
+  (coq-test-cmd "Check 0.")
+  (should  (get-process "coq")))))
 
 (defun coq-test-main ()
   (coq-mock #'coq-test-001))
