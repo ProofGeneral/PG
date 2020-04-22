@@ -62,7 +62,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: erikmd/docker-coq-action@alpha
+    - uses: erikmd/docker-coq-action@master
       id: docker-coq-action
       with:
         opam_file: 'dummy.opam'
