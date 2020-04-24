@@ -5,7 +5,7 @@
 
 ;;;  Eval this to run the tests interactively <C-x C-e>
 ;;
-;; (call-interactively #'ert-run-tests-interactively)
+;; (progn (load-file "coq-tests.el") (call-interactively #'ert))
 
 (setq debug-on-error t) ; open the debugger on error -- may be commented-out
 
@@ -45,6 +45,18 @@
 
 (defconst coq-test-file-prefix "coq_test_")
 
+(defun get-string-from-file (filePath)
+  "Return filePath's file content."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (buffer-string)))
+
+(defun read-lines (filePath)
+  "Return a list of lines of a file at filePath."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (split-string (buffer-string) "\n" t)))
+
 (defun coq-test-init ()
   "Ensure `coq' is loaded."
   (unless (featurep 'coq)
@@ -57,33 +69,7 @@
   "Exit the Coq process."
   (proof-shell-exit t))
 
-
-
-;; AVOID THE FOLLOWING ERROR:
-;; Starting:  -emacs
-;; Debugger entered--Lisp error: (wrong-type-argument stringp nil)
-;;   file-name-directory(nil)
-;;   scomint-exec-1("coq" #<buffer *coq*> nil ("-emacs"))
-;;   scomint-exec(#<buffer *coq*> "coq" nil nil ("-emacs"))
-;;   scomint-make-in-buffer("coq" nil nil nil "-emacs")
-;;   apply(scomint-make-in-buffer "coq" nil nil nil "-emacs")
-;;   scomint-make("coq" nil nil "-emacs")
-;;   apply(scomint-make ("coq" nil nil "-emacs"))
-;;   proof-shell-start()
-;;   proof-shell-ready-prover()
-(defmacro coq-test-on-file (&rest body)
-  "Eval BODY like `progn' after opening a temporary Coq file."
-  ;; For more info: https://mullikine.github.io/posts/macro-tutorial/
-  `(let ((file (concat (make-temp-file coq-test-file-prefix) ".v")))
-     (message "Opening file %s ..." file)
-     (save-excursion          
-       (let ((buffer (find-file file))
-             (res (progn ,@body)))
-         (progn (kill-buffer buffer)
-                (ignore-errors (delete-file file))
-                res)))))
-; (pp (macroexpand '(coq-test-on-file (message "OK"))))
-; (coq-test-on-file (message (buffer-file-name)) (message "OK") 42)
+; (coq-test-on-file nil (message (buffer-file-name)) (message "OK") 42)
 
 ;; DEFINITION OF MOCKS, SEE `coq-mock' BELOW
 ;; Another solution would consist in using el-mock, mentioned in:
@@ -117,20 +103,48 @@
 ;; (coq-mock #'main)
 
 (defun coq-test-cmd (cmd)
-  (coq-test-on-file
-    (coq-test-init)
-    (proof-shell-invisible-command
-     cmd
-     'waitforit
-     #'proof-done-invisible
-     'no-error-display 'no-response-display 'no-goals-display)))
+  ;;(coq-test-on-file)
+  ;;(coq-test-init)
+  (proof-shell-invisible-command
+   cmd
+   'waitforit
+   #'proof-done-invisible
+   'no-error-display 'no-response-display 'no-goals-display))
 
-; Fixture for init and exit coq
-(defun coq-init-exit (body)
-       (unwind-protect
-           (progn  (coq-test-init)
-                  (funcall body))
-          (coq-test-exit)))
+
+(defun coq-fixture-on-file (file body)
+  "Fixture to setup the test env: open FILE if non-nil, or a temp file
+then evaluate the BODY function and finally tear-down (exit Coq)."
+;; AVOID THE FOLLOWING ERROR:
+;; Starting:  -emacs
+;; Debugger entered--Lisp error: (wrong-type-argument stringp nil)
+;;   file-name-directory(nil)
+;;   scomint-exec-1("coq" #<buffer *coq*> nil ("-emacs"))
+;;   scomint-exec(#<buffer *coq*> "coq" nil nil ("-emacs"))
+;;   scomint-make-in-buffer("coq" nil nil nil "-emacs")
+;;   apply(scomint-make-in-buffer "coq" nil nil nil "-emacs")
+;;   scomint-make("coq" nil nil "-emacs")
+;;   apply(scomint-make ("coq" nil nil "-emacs"))
+;;   proof-shell-start()
+;;   proof-shell-ready-prover()
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; For info on macros: https://mullikine.github.io/posts/macro-tutorial
+;;; (pp (macroexpand '(macro args)))
+  (save-excursion
+      (let* ((openfile (or file
+                           (concat (make-temp-file coq-test-file-prefix) ".v")))
+             ;; if FILE is nil, create a temporary Coq file, removed in the end
+             (rmfile (unless file openfile))
+             (buffer (find-file openfile)))
+        (message "Opening file %s ..." file)
+        (unwind-protect
+            (progn
+              (coq-test-init)
+              (set-buffer buffer)
+              (coq-mock body))
+          (kill-buffer buffer)
+          (when rmfile (message "Removing file %s ..." rmfile))
+          (ignore-errors (delete-file rmfile))))))
 
 (defun coq-test-001 ()
   ;; TODO: retrieve the test status, maybe by changing the function above
@@ -138,17 +152,43 @@
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
+
 (ert-deftest coq-test-running ()
-  (coq-init-exit
-   (lambda () 
-  (coq-test-cmd "Check 0.")
-  (should  (get-process "coq")))))
+  (coq-fixture-on-file nil
+   (lambda ()
+     (coq-test-cmd "Print 0.")
+     ;; (should (process-list)) ; wouldn't be a strong enough assert.
+     (should (get-process "coq")))))
 
-(defun coq-test-main ()
-  (coq-mock #'coq-test-001))
 
-;(ignore-errors (coq-test-exit))
-(coq-test-main)
+(ert-deftest coq-test-print ()
+  (coq-fixture-on-file "./test1.v"
+   (lambda ()
+     (coq-test-cmd (car (read-lines "./test1.v")))
+     ;; TODO/Cyril: call (proof-goto-point (point-max))
+     (should (equal "trois is defined"
+		    (string-trim
+                     (setq temp
+                     (with-current-buffer "*response*"
+                       (buffer-substring-no-properties (point-min) (point-max))))))))))
+
+;; TODO
+;; (ert-deftest coq-test-lemma ()
+;;   (coq-init-exit
+;;    (lambda ()
+;;      (coq-test-cmd (car (read-lines "./test1.v")))
+;;      (should (equal "trois is defined"
+;; 		    (with-current-buffer "*response*"
+;; 		      (goto-char (point-min))
+;; 		      (buffer-substring-no-properties (line-beginning-position) (line-end-position) )
+;; 		      )
+;; 		    )))))
+
+;; (defun coq-test-main ()
+;;   (coq-mock #'coq-test-001))
+
+;; ;(ignore-errors (coq-test-exit))
+;; (coq-test-main)
 
 (provide 'coq-tests)
 ;;; learn-ocaml-tests.el ends here
