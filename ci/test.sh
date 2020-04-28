@@ -29,8 +29,8 @@ assert () {
 
 assert emacs --version
 
-srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && cd .. && pwd )
-rootdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
+rootdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && cd .. && pwd )
+srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
 
 # form="(message \"OK\")"
 form="(progn (add-to-list 'load-path \"$rootdir\") (add-to-list 'load-path \"$srcdir\"))"
