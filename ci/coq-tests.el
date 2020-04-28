@@ -7,10 +7,16 @@
 ;;
 ;; (progn (load-file "coq-tests.el") (call-interactively #'ert))
 
+(unless (and (boundp 'coq-test-dir) coq-test-dir) ; if set by ./test.sh
+  (if buffer-file-name
+      (setq coq-test-dir (file-name-directory buffer-file-name))
+    (error "You should set 'coq-test-dir, or run coq-test.el from a file buffer.")))
+
 (setq debug-on-error t) ; open the debugger on error -- may be commented-out
 
-; (require 'ert-async)
-;(setq ert-async-timeout 2)
+(require 'subr-x) ;; for (string-trim)
+;;(require 'ert-async)
+;;(setq ert-async-timeout 2)
 
 ;;; Code:
 
@@ -42,6 +48,10 @@
 ;          (proof-insert-sendback-command "split.\nsplit.\nsplit.\nQed.")))
 ; 
 ; (test-process-invisible-tactics-then-reset-and-insert)
+
+(defun coq-test-full-path (basename)
+  "Return the absolute path of BASENAME (a filename such as ./foo.v)."
+  (concat coq-test-dir basename))
 
 (defconst coq-test-file-prefix "coq_test_")
 
@@ -136,22 +146,29 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
              ;; if FILE is nil, create a temporary Coq file, removed in the end
              (rmfile (unless file openfile))
              (buffer (find-file openfile)))
-        (message "Opening file %s ..." file)
+        (message "Opening file %s ..." openfile)
         (unwind-protect
             (progn
               (coq-test-init)
-              (set-buffer buffer)
-              (coq-mock body))
+              (with-current-buffer buffer
+                (coq-mock body)))
           (kill-buffer buffer)
           (when rmfile (message "Removing file %s ..." rmfile))
           (ignore-errors (delete-file rmfile))))))
 
-(defun coq-test-001 ()
-  ;; TODO: retrieve the test status, maybe by changing the function above
-  (coq-test-cmd (process-list)))
+(defun coq-test-goto-before (comment)
+  "Go just before COMMENT (a unique string in the .v file).
+For example, COMMENT could be (*test-definition*)"
+  (goto-char (point-max))
+  (search-backward comment))
+
+(defun coq-test-goto-after (comment)
+  "Go just before COMMENT (a unique string in the .v file)."
+  (goto-char (point-min))
+  (search-forward comment))
+
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
-
 
 (ert-deftest coq-test-running ()
   (coq-fixture-on-file nil
@@ -160,17 +177,17 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
      ;; (should (process-list)) ; wouldn't be a strong enough assert.
      (should (get-process "coq")))))
 
-
 (ert-deftest coq-test-print ()
-  (coq-fixture-on-file "./test1.v"
+  (coq-fixture-on-file
+   (coq-test-full-path "test1.v")
    (lambda ()
-     (coq-test-cmd (car (read-lines "./test1.v")))
-     ;; TODO/Cyril: call (proof-goto-point (point-max))
+     (coq-test-goto-before "(*test-definition*)")
+     (proof-goto-point)
+     (proof-shell-wait)
      (should (equal "trois is defined"
 		    (string-trim
-                     (setq temp
                      (with-current-buffer "*response*"
-                       (buffer-substring-no-properties (point-min) (point-max))))))))))
+                       (buffer-substring-no-properties (point-min) (point-max)))))))))
 
 ;; TODO
 ;; (ert-deftest coq-test-lemma ()
@@ -191,4 +208,5 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
 ;; (coq-test-main)
 
 (provide 'coq-tests)
-;;; learn-ocaml-tests.el ends here
+
+;;; coq-tests.el ends here
