@@ -141,23 +141,24 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
 ;;; For info on macros: https://mullikine.github.io/posts/macro-tutorial
 ;;; (pp (macroexpand '(macro args)))
   (save-excursion
-      (let* ((openfile (or file
-                           (concat (make-temp-file coq-test-file-prefix) ".v")))
-             ;; if FILE is nil, create a temporary Coq file, removed in the end
-             (rmfile (unless file openfile))
-             (buffer (find-file openfile)))
-        (message "Opening file %s ..." openfile)
-        (unwind-protect
-            (progn
-              (coq-test-init)
-              (with-current-buffer buffer
-                (setq proof-splash-enable nil)
-                (normal-mode) ;; or (coq-mode)
-                (coq-mock body)))
-          (coq-test-exit)
-          (kill-buffer buffer)
-          (when rmfile (message "Removing file %s ..." rmfile))
-          (ignore-errors (delete-file rmfile))))))
+    (let* ((openfile (or file
+                         (concat (make-temp-file coq-test-file-prefix) ".v")))
+           ;; if FILE is nil, create a temporary Coq file, removed in the end
+           (rmfile (unless file openfile))
+           (buffer (find-file openfile)))    
+      (message "Opening file %s ..." openfile)
+      (unwind-protect
+          (progn
+            (coq-test-init)
+            (with-current-buffer buffer
+              (setq proof-splash-enable nil)
+              (normal-mode) ;; or (coq-mode)
+              (coq-mock body))))
+      (coq-test-exit)
+      (not-modified nil) ; Clear modification  
+      (kill-buffer buffer) 
+      (when rmfile (message "Removing file %s ..." rmfile))
+      (ignore-errors (delete-file rmfile)))))
 
 (defun coq-test-goto-before (comment)
   "Go just before COMMENT (a unique string in the .v file).
@@ -192,23 +193,37 @@ For example, COMMENT could be (*test-definition*)"
                      (with-current-buffer "*response*"
                        (buffer-substring-no-properties (point-min) (point-max)))))))))
 
-;; TODO
-;; (ert-deftest coq-test-lemma ()
-;;   (coq-init-exit
-;;    (lambda ()
-;;      (coq-test-cmd (car (read-lines "./test1.v")))
-;;      (should (equal "trois is defined"
-;; 		    (with-current-buffer "*response*"
-;; 		      (goto-char (point-min))
-;; 		      (buffer-substring-no-properties (line-beginning-position) (line-end-position) )
-;; 		      )
-;; 		    )))))
 
-;; (defun coq-test-main ()
-;;   (coq-mock #'coq-test-001))
+(ert-deftest coq-test-position ()
+  (coq-fixture-on-file
+   (coq-test-full-path "test1.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-lemma*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (should (equal (proof-queue-or-locked-end) (point))))))
 
-;; ;(ignore-errors (coq-test-exit))
-;; (coq-test-main)
+
+(ert-deftest coq-test-insert ()
+  (coq-fixture-on-file
+   (coq-test-full-path "test1.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-lemma*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (let ((proof-point (point)))
+       (coq-test-goto-before "(*test-insert*)")
+       (move-beginning-of-line nil)
+       (insert "\n")
+       (previous-line)
+       (insert "  (0)")
+       (coq-test-goto-after "(0)")
+       ;; The locked end point should go up compared to before 
+       (should (< (proof-queue-or-locked-end) proof-point)))))) 
+
+
+;;TODO
+;other tests
 
 (provide 'coq-tests)
 
