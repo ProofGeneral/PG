@@ -71,7 +71,7 @@
   "Ensure `coq' is loaded."
   (unless (featurep 'coq)
     (add-to-list 'load-path
-		 (locate-dominating-file buffer-file-name "proof-general.el"))
+		 (locate-dominating-file coq-test-dir "proof-general.el"))
     (load "proof-general")
     (proofgeneral "coq")))
 
@@ -151,7 +151,10 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
             (progn
               (coq-test-init)
               (with-current-buffer buffer
+                (setq proof-splash-enable nil)
+                (normal-mode) ;; or (coq-mode)
                 (coq-mock body)))
+          (coq-test-exit)
           (kill-buffer buffer)
           (when rmfile (message "Removing file %s ..." rmfile))
           (ignore-errors (delete-file rmfile))))))
