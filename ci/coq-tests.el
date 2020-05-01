@@ -13,6 +13,7 @@
     (error "You should set 'coq-test-dir, or run coq-test.el from a file buffer.")))
 
 (setq debug-on-error t) ; open the debugger on error -- may be commented-out
+(setq ert-batch-backtrace-right-margin 79)
 
 (require 'subr-x) ;; for (string-trim)
 ;;(require 'ert-async)
