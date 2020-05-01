@@ -67,6 +67,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Add ert problem matcher
+      run: echo "::add-matcher::.github/ert.json"
+      
     - uses: coq-community/docker-coq-action@v1
       id: docker-coq-action
       with:
@@ -84,3 +87,5 @@ jobs:
           startGroup Run tests
             ./ci/test.sh
           endGroup
+
+  # - run: echo "::remove-matcher owner=ert-problem-matcher::"
