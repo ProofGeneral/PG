@@ -133,7 +133,6 @@ Hint Resolve lt_le_weak comparison2: sqrt.
 
 Theorem sqrt2_not_rational :
  forall p q : nat, q <> 0 -> p * p = 2 * (q * q) -> False.
-Proof.
 intros p q; generalize p; clear p; elim q using (well_founded_ind lt_wf).
 clear q; intros q Hrec p Hneq; generalize (neq_O_lt _ (sym_not_equal Hneq));
  intros Hlt_O_q Heq.
