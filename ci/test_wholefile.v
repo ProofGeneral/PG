@@ -1,4 +1,6 @@
 (* taken from https://coq.inria.fr/distrib/8.2/contribs/QArithSternBrocot.sqrt2.html *)
+(* Note: this file contains no "Proof" command (invariant to preserve)
+   in order to exercise 070_coq-test-regression-wholefile-no-proof. *)
 
 Require Export ArithRing.
 Require Export Compare_dec.
