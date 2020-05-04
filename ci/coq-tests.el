@@ -56,18 +56,6 @@
 
 (defconst coq-test-file-prefix "coq_test_")
 
-(defun get-string-from-file (filePath)
-  "Return filePath's file content."
-  (with-temp-buffer
-    (insert-file-contents filePath)
-    (buffer-string)))
-
-(defun read-lines (filePath)
-  "Return a list of lines of a file at filePath."
-  (with-temp-buffer
-    (insert-file-contents filePath)
-    (split-string (buffer-string) "\n" t)))
-
 (defun coq-test-init ()
   "Ensure `coq' is loaded."
   (unless (featurep 'coq)
@@ -85,7 +73,7 @@
 ;; DEFINITION OF MOCKS, SEE `coq-mock' BELOW
 ;; Another solution would consist in using el-mock, mentioned in:
 ;; https://www.gnu.org/software/emacs/manual/html_mono/ert.html#Mocks-and-Stubs
-(defun mock-proof-display-three-b (&rest rest)
+(defun coq-mock-proof-display-three-b (&rest rest)
   (message (concat "Skipping proof-display-three-b on input: "
                    (pp-to-string rest)))
   ; Result:
@@ -108,7 +96,7 @@
 (defun coq-mock (f)
   (require 'pg-response) ; load the feature defining proof-display-three-b first
    (cl-letf (;((symbol-function 'foo) #'mock-foo)
-             ((symbol-function 'proof-display-three-b) #'mock-proof-display-three-b))
+             ((symbol-function 'proof-display-three-b) #'coq-mock-proof-display-three-b))
      (funcall f)))
 ;; Run <C-x C-e> on:
 ;; (coq-mock #'main)
@@ -172,7 +160,7 @@ For example, COMMENT could be (*test-definition*)"
   (goto-char (point-min))
   (search-forward comment))
 
-(defun should-response (message)
+(defun coq-should-response (message)
   (should (equal message
 		 (string-trim
                   (with-current-buffer "*response*"
@@ -196,7 +184,7 @@ For example, COMMENT could be (*test-definition*)"
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
      (proof-shell-wait)
-     (should-response "trois is defined"))))
+     (coq-should-response "trois is defined"))))
 
 
 (ert-deftest coq-test-position ()
@@ -233,7 +221,7 @@ For example, COMMENT could be (*test-definition*)"
      (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
      (proof-goto-point)
      (proof-shell-wait)
-     (should-response "Error: Unable to unify \"false\" with \"true\".")
+     (coq-should-response "Error: Unable to unify \"false\" with \"true\".")
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
@@ -241,11 +229,12 @@ For example, COMMENT could be (*test-definition*)"
   (coq-fixture-on-file
    (coq-test-full-path "test_wholefile.v")
    (lambda ()
-     (let ((proof-point (save-excursion (coq-test-goto-after "(*end here*)"))))
+     (let ((proof-point (save-excursion
+			  (coq-test-goto-before "Theorem")
+			  (search-forward "Qed."))))
      (proof-process-buffer)
      (proof-shell-wait)
-     (should (equal (proof-queue-or-locked-end)  proof-point))))))
-
+     (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 (provide 'coq-tests)
 
