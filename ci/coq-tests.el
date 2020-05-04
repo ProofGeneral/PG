@@ -242,6 +242,18 @@ For example, COMMENT could be (*test-definition*)"
      (proof-shell-wait)
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
+
+(ert-deftest 070_coq-test-regression-wholefile-no-proof ()
+  "Regression test for no proof bug"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_wholefile.v")
+   (lambda ()
+     (proof-process-buffer)
+     (proof-shell-wait)
+     (goto-char (point-min))
+     (insert "(*.*)")
+     (should (equal (proof-queue-or-locked-end) 1)))))
+
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here
