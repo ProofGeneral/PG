@@ -78,7 +78,7 @@
 
 (defun coq-test-exit ()
   "Exit the Coq process."
-  (proof-shell-exit t))
+  (proof-shell-exit t)) 
 
 ; (coq-test-on-file nil (message (buffer-file-name)) (message "OK") 42)
 
@@ -172,6 +172,12 @@ For example, COMMENT could be (*test-definition*)"
   (goto-char (point-min))
   (search-forward comment))
 
+(defun should-response (message)
+  (should (equal message
+		 (string-trim
+                  (with-current-buffer "*response*"
+                    (buffer-substring-no-properties (point-min) (point-max)))))))
+
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
@@ -182,6 +188,7 @@ For example, COMMENT could be (*test-definition*)"
      ;; (should (process-list)) ; wouldn't be a strong enough assert.
      (should (get-process "coq")))))
 
+
 (ert-deftest coq-test-print ()
   (coq-fixture-on-file
    (coq-test-full-path "test1.v")
@@ -189,10 +196,7 @@ For example, COMMENT could be (*test-definition*)"
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
      (proof-shell-wait)
-     (should (equal "trois is defined"
-		    (string-trim
-                     (with-current-buffer "*response*"
-                       (buffer-substring-no-properties (point-min) (point-max)))))))))
+     (should-response "trois is defined"))))
 
 
 (ert-deftest coq-test-position ()
@@ -200,9 +204,10 @@ For example, COMMENT could be (*test-definition*)"
    (coq-test-full-path "test1.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma*)")
+     (let ((proof-point (point)))
      (proof-goto-point)
      (proof-shell-wait)
-     (should (equal (proof-queue-or-locked-end) (point))))))
+     (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
 (ert-deftest coq-test-insert ()
@@ -216,15 +221,31 @@ For example, COMMENT could be (*test-definition*)"
        (coq-test-goto-before "(*test-insert*)")
        (move-beginning-of-line nil)
        (insert "\n")
-       (previous-line)
-       (insert "  (0)")
-       (coq-test-goto-after "(0)")
        ;; The locked end point should go up compared to before 
-       (should (< (proof-queue-or-locked-end) proof-point)))))) 
+       (should (< (proof-queue-or-locked-end) proof-point))))))
 
 
-;;TODO
-;other tests
+(ert-deftest coq-test-lemma-false ()
+  (coq-fixture-on-file
+   (coq-test-full-path "test1.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-lemma2*)")
+     (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
+     (proof-goto-point)
+     (proof-shell-wait)
+     (should-response "Error: Unable to unify \"false\" with \"true\".")
+     (should (equal (proof-queue-or-locked-end) proof-point))))))
+
+
+(ert-deftest coq-test-wholefile ()
+  (coq-fixture-on-file
+   (coq-test-full-path "test_wholefile.v")
+   (lambda ()
+     (let ((proof-point (save-excursion (coq-test-goto-after "(*end here*)"))))
+     (proof-process-buffer)
+     (proof-shell-wait)
+     (should (equal (proof-queue-or-locked-end)  proof-point))))))
+
 
 (provide 'coq-tests)
 
