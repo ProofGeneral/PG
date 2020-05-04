@@ -2661,7 +2661,7 @@ built from the list of strings in SUGGESTED."
   (with-current-buffer proof-script-buffer
     (save-excursion
       (goto-char (span-start span))
-      (let* ((endpos (re-search-forward coq-proof-using-regexp)))
+      (let* ((endpos (re-search-forward coq-proof-using-regexp (span-end span) t)))
         (when endpos
           (let* ((suggested (span-property span 'dependencies))
                  (proof-pos (match-beginning 0))
