@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - master
-      - hybrid
+      #- master
+      #- hybrid
+      - "**"
   pull_request:
     branches:
       - '**'
@@ -66,6 +67,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Add ert problem matcher
+      run: echo "::add-matcher::.github/ert.json"
+      
     - uses: coq-community/docker-coq-action@v1
       id: docker-coq-action
       with:
@@ -81,5 +85,8 @@ jobs:
             sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
           endGroup
           startGroup Run tests
+            sudo chown -R coq:coq ./ci
             ./ci/test.sh
           endGroup
+
+  # - run: echo "::remove-matcher owner=ert-problem-matcher::"

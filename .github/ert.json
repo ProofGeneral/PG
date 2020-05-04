@@ -1,0 +1,14 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "ert-problem-matcher",
+            "severity": "error",
+            "pattern": [
+                {
+                    "regexp": "^\\s+((?:FAILED|failed|SKIPPED|skipped|ABORTED|aborted|QUIT|quit)\\s+[0-9]+/[0-9]+\\s+.*)$",
+                    "message": 1
+                }
+            ]
+        }
+    ]
+}

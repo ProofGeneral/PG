@@ -29,10 +29,11 @@ assert () {
 
 assert emacs --version
 
-srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && cd .. && pwd )
-rootdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
+rootdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && cd .. && pwd )
+srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
 
-# form="(message \"OK\")"
-form="(progn (add-to-list 'load-path \"$rootdir\") (add-to-list 'load-path \"$srcdir\"))"
+form="(progn (add-to-list 'load-path \"$rootdir\")
+(add-to-list 'load-path \"$srcdir\")
+(setq coq-test-dir \"$srcdir/\"))"  # we need a trailing slash here
 
 assert emacs --batch -l ert --eval "$form" -l init-tests.el -l proof-general.el -l coq-tests.el -f ert-run-tests-batch-and-exit
