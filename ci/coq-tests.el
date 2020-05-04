@@ -181,7 +181,7 @@ For example, COMMENT could be (*test-definition*)"
 (ert-deftest 020_coq-test-definition ()
   "Test *response* output after asserting a Definition."
   (coq-fixture-on-file
-   (coq-test-full-path "test1.v")
+   (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
@@ -192,7 +192,7 @@ For example, COMMENT could be (*test-definition*)"
 (ert-deftest 030_coq-test-position ()
   "Test locked region after Qed."
   (coq-fixture-on-file
-   (coq-test-full-path "test1.v")
+   (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma*)")
      (let ((proof-point (point)))
@@ -204,7 +204,7 @@ For example, COMMENT could be (*test-definition*)"
 (ert-deftest 040_coq-test-insert ()
   "Test retract on insert from Qed."
   (coq-fixture-on-file
-   (coq-test-full-path "test1.v")
+   (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma*)")
      (proof-goto-point)
@@ -220,7 +220,7 @@ For example, COMMENT could be (*test-definition*)"
 (ert-deftest 050_coq-test-lemma-false ()
   "Test retract on proof error."
   (coq-fixture-on-file
-   (coq-test-full-path "test1.v")
+   (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma2*)")
      (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
