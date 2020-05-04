@@ -169,7 +169,8 @@ For example, COMMENT could be (*test-definition*)"
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
-(ert-deftest coq-test-running ()
+(ert-deftest 010_coq-test-running ()
+  "Test that the coqtop process is started properly."
   (coq-fixture-on-file nil
    (lambda ()
      (coq-test-cmd "Print 0.")
@@ -177,7 +178,8 @@ For example, COMMENT could be (*test-definition*)"
      (should (get-process "coq")))))
 
 
-(ert-deftest coq-test-print ()
+(ert-deftest 020_coq-test-definition ()
+  "Test *response* output after asserting a Definition."
   (coq-fixture-on-file
    (coq-test-full-path "test1.v")
    (lambda ()
@@ -187,7 +189,8 @@ For example, COMMENT could be (*test-definition*)"
      (coq-should-response "trois is defined"))))
 
 
-(ert-deftest coq-test-position ()
+(ert-deftest 030_coq-test-position ()
+  "Test locked region after Qed."
   (coq-fixture-on-file
    (coq-test-full-path "test1.v")
    (lambda ()
@@ -198,7 +201,8 @@ For example, COMMENT could be (*test-definition*)"
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
-(ert-deftest coq-test-insert ()
+(ert-deftest 040_coq-test-insert ()
+  "Test retract on insert from Qed."
   (coq-fixture-on-file
    (coq-test-full-path "test1.v")
    (lambda ()
@@ -213,7 +217,8 @@ For example, COMMENT could be (*test-definition*)"
        (should (< (proof-queue-or-locked-end) proof-point))))))
 
 
-(ert-deftest coq-test-lemma-false ()
+(ert-deftest 050_coq-test-lemma-false ()
+  "Test retract on proof error."
   (coq-fixture-on-file
    (coq-test-full-path "test1.v")
    (lambda ()
@@ -225,7 +230,8 @@ For example, COMMENT could be (*test-definition*)"
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
-(ert-deftest coq-test-wholefile ()
+(ert-deftest 060_coq-test-wholefile ()
+  "Test `proof-process-buffer'."
   (coq-fixture-on-file
    (coq-test-full-path "test_wholefile.v")
    (lambda ()
