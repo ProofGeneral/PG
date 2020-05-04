@@ -5,12 +5,6 @@
             "severity": "error",
             "pattern": [
                 {
-                    "regexp": "^Test\\s+(.*?)\\s+condition:$"
-                },
-                {
-                    "regexp": "^\\s+(.*)$"
-                },
-                {
                     "regexp": "^\\s+((?:FAILED|failed|SKIPPED|skipped|ABORTED|aborted|QUIT|quit)\\s+[0-9]+/[0-9]+\\s+.*)$",
                     "message": 1
                 }
