@@ -4294,6 +4294,7 @@ assistant.  It supports most of the generic features of Proof General.
 @menu
 * Coq-specific commands::
 * Using the Coq project file::
+* Proof using annotations::
 * Multiple File Support::
 * Editing multiple proofs::
 * User-loaded tactics::
