@@ -41,6 +41,9 @@ jobs:
 
     - run: emacs --version
     - run: make
+    - name: Install makeinfo
+      run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo
+    - run: make doc.info
 
   test:
     runs-on: ubuntu-latest
