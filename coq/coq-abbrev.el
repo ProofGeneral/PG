@@ -78,7 +78,7 @@
 ;; Common part (script, response and goals buffers)
 (defconst coq-menu-common-entries
   `(
-    ["Toggle 3 Windows Mode" proof-three-window-toggle
+      ["Toggle 3 Windows Mode" proof-three-window-toggle
      :style toggle
      :selected proof-three-window-enable
      :help "Toggles the use of separate windows or frames for Coq responses and goals."
@@ -243,7 +243,7 @@
       :active (and coq-compile-before-require
 		   coq-compile-parallel-in-background)
       :help "Abort background compilation and kill all compilation processes."])
-    ("Diffs"
+     ("Diffs"
       ["off"
        (customize-set-variable 'coq-diffs 'off)
        :style radio
@@ -259,6 +259,11 @@
        :style radio
        :selected (eq coq-diffs 'removed)
        :help "Show diffs: added and removed"])
+    ["Show proof diffs"
+      coq-show-proof-toggle
+      :style toggle
+      :selected coq-show-proof
+      :help "Show the proof diffs in the response buffer"]
     ("\"Proof using\" mode..."
      ["ask"
       (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)

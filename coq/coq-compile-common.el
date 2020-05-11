@@ -458,6 +458,16 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
+;; Maybe not the good place
+(defcustom coq-show-proof nil
+  "TODO: doc"
+
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq-auto-compile)
+
+(proof-deftoggle coq-show-proof)
+
 (defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
 Otherwise start the external compilation without confirmation.

@@ -1222,7 +1222,14 @@ be called and no command will be sent to Coq."
      (string-match-p "BackTo\\s-" cmd))
     (if (coq--post-v810)
         (list "Unset Silent." (coq-diffs))
-      (list "Unset Silent.")))))
+      (list "Unset Silent.")))
+   ((or
+     ;; If doing (not closing) a proof, Show Proof if need be
+     (and (not (string-match-p coq-save-command-regexp-strict cmd))
+          (> (length coq-last-but-one-proofstack) 0)
+          (when coq-show-proof
+            (list  "Show Proof." "Show.")))))))
+
 
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
