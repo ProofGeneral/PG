@@ -1615,9 +1615,12 @@ by the filter is to send the next command from the queue."
       (setq proof-shell-delayed-output-end end)
       (setq proof-shell-delayed-output-flags flags)
       (if (proof-shell-exec-loop)
-	  (setq proof-shell-last-output-kind
+	  ;; (if (and  (string-match proof-show-diffs-regexp (car cmd))
+	  ;; 		  (memq 'empty-action-list flags))
+	  ;; (setq proof-shell-last-output-kind 'response)
 		;; only display result for last output
-		(proof-shell-handle-delayed-output)))
+	  (setq proof-shell-last-output-kind (proof-shell-handle-delayed-output)))
+      ;; 
       ;; send output to the proof tree visualizer
       (if proof-tree-external-display
 	  (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))))

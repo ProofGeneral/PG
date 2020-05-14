@@ -1304,6 +1304,9 @@ It is used:
   "*Font-lock table for Coq terms.")
 
 
+(defconst coq-show-diffs-regexp
+  "Show Proof\\(\\.\\| Diffs\\.\\| Diffs removed\\.\\)")
+
 (defconst coq-save-command-regexp
   ;; FIXME: The surrounding grouping parens are probably not needed.
   (concat "\\`\\(\\(?:Time\\s-+\\|Timeout\\s-+[[:digit:]]+\\s-+\\)*\\_<"

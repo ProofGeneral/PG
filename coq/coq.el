@@ -1208,14 +1208,27 @@ be called and no command will be sent to Coq."
      ;; If user issued a printing option then t printing.
      (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
-    (list "Show."))
+    (if coq-show-proof
+        (or
+    (when (eq coq-diffs 'off) (list "Show." "Show Proof." ))
+    (when (eq coq-diffs 'on) (list "Show." "Show Proof Diffs."))
+    (when (eq coq-diffs 'removed) (list "Show." "Show Proof Diffs removed.")))
+   (list "Show.")))
    ((or
      ;; If we go back in the buffer and the number of abort is less than
      ;; the number of nested goals, then Unset Silent and Show the goal
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
-    (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")))
+    (list "Unset Silent." (if (coq--post-v810) (coq-diffs)
+                            (if coq-show-proof
+    ((when (eq coq-diffs 'off)
+      "Show." "Show Proof." )
+    (when (eq coq-diffs 'on)
+      "Show." "Show Proof Diffs.")
+    (when (eq coq-diffs 'removed)
+       "Show." "Show Proof Diffs removed."))
+     "Show."))))
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
      ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
@@ -1228,7 +1241,7 @@ be called and no command will be sent to Coq."
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)
           (when coq-show-proof
-            (list  "Show Proof." "Show.")))))))
+            (list "Show." "Show Proof.")))))))
 
 
 (defpacustom auto-adapt-printing-width t
@@ -1896,6 +1909,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
         proof-goal-command "Goal %s. "
         proof-save-command "Save %s. "
         proof-find-theorems-command "Search %s. ")
+
+  (setq proof-show-diffs-regexp coq-show-diffs-regexp)
 
   (setq proof-shell-empty-action-list-command 'coq-empty-action-list-command)
 
