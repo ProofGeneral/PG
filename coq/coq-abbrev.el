@@ -259,11 +259,11 @@
        :style radio
        :selected (eq coq-diffs 'removed)
        :help "Show diffs: added and removed"])
-    ["Show proof diffs"
-      coq-show-proof-toggle
+    ["Show Proof (Diffs)"
+      coq-show-proof-stepwise-toggle
       :style toggle
-      :selected coq-show-proof
-      :help "Show the proof diffs in the response buffer"]
+      :selected coq-show-proof-stepwise
+      :help "Display the proof terms stepwise in the *response* buffer."]
     ("\"Proof using\" mode..."
      ["ask"
       (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)

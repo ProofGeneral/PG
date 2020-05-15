@@ -1304,7 +1304,8 @@ It is used:
   "*Font-lock table for Coq terms.")
 
 
-(defconst coq-show-diffs-regexp
+(defconst coq-show-proof-diffs-regexp
+  ;; FIXME/TODO: enhance this regexp
   "Show Proof\\(\\.\\| Diffs\\.\\| Diffs removed\\.\\)")
 
 (defconst coq-save-command-regexp

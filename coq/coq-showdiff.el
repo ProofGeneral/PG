@@ -2,7 +2,7 @@
 (defun coq-show-proof-fun ()
   (interactive)
   ;; TODO: Check if we are in a proof
-  (when coq-show-proof
+  (when coq-show-proof-stepwise
     (when (eq coq-diffs 'off)
       (proof-shell-invisible-command "Show Proof." ))
     (when (eq coq-diffs 'on)

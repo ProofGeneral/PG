@@ -399,7 +399,7 @@ NB: This setting is not used for matching output from the prover."
   :type 'regexp
   :group 'proof-script)
 
-(defcustom proof-show-diffs-regexp nil
+(defcustom proof-show-proof-diffs-regexp nil
   "Matches all Show Proof form"
   :type 'regexp
   :group 'proof-script)

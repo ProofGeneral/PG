@@ -459,14 +459,14 @@ This option can be set via menu
 (proof-deftoggle coq-lock-ancestors)
 
 ;; Maybe not the good place
-(defcustom coq-show-proof nil
+(defcustom coq-show-proof-stepwise nil
   "TODO: doc"
 
   :type 'boolean
   :safe 'booleanp
   :group 'coq-auto-compile)
 
-(proof-deftoggle coq-show-proof)
+(proof-deftoggle coq-show-proof-stepwise)
 
 (defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
