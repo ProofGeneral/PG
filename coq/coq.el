@@ -160,6 +160,16 @@ See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
   :group 'coq)
 
+(defcustom coq-show-proof-stepwise nil
+  "Display the proof terms stepwise in the *response* buffer.
+  This option can be combined with option `coq-diffs'.
+  It is mostly useful in three window mode, see also
+  `proof-three-window-mode-policy' for details."
+
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq-auto-compile)
+
 ;;
 ;; prooftree customization
 ;;
@@ -1208,40 +1218,42 @@ be called and no command will be sent to Coq."
      ;; If user issued a printing option then t printing.
      (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
-    (if coq-show-proof-stepwise
+    (list "Show."
+    (when coq-show-proof-stepwise
         (or
-    (when (eq coq-diffs 'off) (list "Show." "Show Proof." ))
-    (when (eq coq-diffs 'on) (list "Show." "Show Proof Diffs."))
-    (when (eq coq-diffs 'removed) (list "Show." "Show Proof Diffs removed.")))
-   (list "Show.")))
+    (when (eq coq-diffs 'off) "Show Proof.")
+    (when (eq coq-diffs 'on) "Show Proof Diffs.")
+    (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+   
    ((or
      ;; If we go back in the buffer and the number of abort is less than
      ;; the number of nested goals, then Unset Silent and Show the goal
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
-    (list "Unset Silent." (if (coq--post-v810) (coq-diffs)
-                            (if coq-show-proof-stepwise
-    ((when (eq coq-diffs 'off)
-      "Show." "Show Proof." )
-    (when (eq coq-diffs 'on)
-      "Show." "Show Proof Diffs.")
-    (when (eq coq-diffs 'removed)
-       "Show." "Show Proof Diffs removed."))
-     "Show."))))
+    (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")
+                                  (when coq-show-proof-stepwise
+                                    (or
+    (when (eq coq-diffs 'off) "Show Proof.")
+    (when (eq coq-diffs 'on) "Show Proof Diffs.")
+    (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
      ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
      (string-match-p "BackTo\\s-" cmd))
     (if (coq--post-v810)
-        (list "Unset Silent." (coq-diffs))
+        (list "Unset Silent." (coq-diffs) )
       (list "Unset Silent.")))
    ((or
      ;; If doing (not closing) a proof, Show Proof if need be
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)
           (when coq-show-proof-stepwise
-            (list "Show." "Show Proof.")))))))
+              (or
+    (when (eq coq-diffs 'off) (list "Show Proof." ))
+    (when (eq coq-diffs 'on) (list "Show Proof Diffs."))
+    (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))))
 
 
 (defpacustom auto-adapt-printing-width t

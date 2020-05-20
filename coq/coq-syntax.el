@@ -1305,7 +1305,7 @@ It is used:
 
 
 (defconst coq-show-proof-diffs-regexp
-  "^[ ]*Show Proof\\( Diffs\\| Diffs removed\\)?\\.$")
+  "\\bShow Proof\\(?: Diffs\\| Diffs removed\\)?\\.\\b")
 
 (defconst coq-save-command-regexp
   ;; FIXME: The surrounding grouping parens are probably not needed.

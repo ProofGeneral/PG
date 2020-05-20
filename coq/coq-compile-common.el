@@ -458,14 +458,6 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
-;; Maybe not the good place
-(defcustom coq-show-proof-stepwise nil
-  "TODO: doc"
-
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
-
 (proof-deftoggle coq-show-proof-stepwise)
 
 (defcustom coq-confirm-external-compilation t

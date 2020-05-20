@@ -1126,7 +1126,7 @@ contains only invisible elements for Prooftree synchronization."
 	;; but we delay this until sending the next command, attempting
 	;; to parallelize prover and Emacs somewhat.  (PG 4.0 change)
 
-  (setq proof-action-list (cdr proof-action-list))
+	(setq proof-action-list (cdr proof-action-list))
 
 	(setq cbitems (cons item
 			    (proof-shell-slurp-comments)))
@@ -1194,7 +1194,8 @@ contains only invisible elements for Prooftree synchronization."
 		 (cl-every
 		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 		  proof-action-list)
-		 (string= (car (nth 1 item)) "Show.")))))))
+		 ;; If the last command in proof-action-list is a "Show Proof" form then return t
+		 (string-match-p proof-show-proof-diffs-regexp (car (nth 1 (car (last proof-action-list)))))))))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
@@ -1616,12 +1617,9 @@ by the filter is to send the next command from the queue."
       (setq proof-shell-delayed-output-end end)
       (setq proof-shell-delayed-output-flags flags)
       (if (proof-shell-exec-loop)
-	  ;; (if (and  (string-match proof-show-diffs-regexp (car cmd))
-	  ;; 		  (memq 'empty-action-list flags))
-	  ;; (setq proof-shell-last-output-kind 'response)
+	  (setq proof-shell-last-output-kind
 		;; only display result for last output
-	  (setq proof-shell-last-output-kind (proof-shell-handle-delayed-output)))
-      ;; 
+		(proof-shell-handle-delayed-output)))
       ;; send output to the proof tree visualizer
       (if proof-tree-external-display
 	  (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))))
@@ -1716,7 +1714,7 @@ i.e., 'goals or 'response."
 	    (buffer-substring-no-properties rstart gmark)))
        ;; display goals output second so it persists in 2-pane mode
        (unless (memq 'no-goals-display flags)
-	 (pg-goals-display proof-shell-last-goals-output t))
+	 (pg-goals-display proof-shell-last-goals-output both))
        ;; indicate a goals output has been given
        'goals))
 

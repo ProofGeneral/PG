@@ -400,7 +400,7 @@ NB: This setting is not used for matching output from the prover."
   :group 'proof-script)
 
 (defcustom proof-show-proof-diffs-regexp nil
-  "Matches all Show Proof form"
+  "Matches all \"Show Proof\" forms (specific to the Coq prover)." 
   :type 'regexp
   :group 'proof-script)
 
