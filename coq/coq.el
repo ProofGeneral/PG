@@ -1246,14 +1246,16 @@ be called and no command will be sent to Coq."
         (list "Unset Silent." (coq-diffs) )
       (list "Unset Silent.")))
    ((or
+     ;; If starting a proof, Show Proof if need be
+     (coq-goal-command-str-p cmd)
      ;; If doing (not closing) a proof, Show Proof if need be
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
-          (> (length coq-last-but-one-proofstack) 0)
+          (> (length coq-last-but-one-proofstack) 0)))
           (when coq-show-proof-stepwise
               (or
     (when (eq coq-diffs 'off) (list "Show Proof." ))
     (when (eq coq-diffs 'on) (list "Show Proof Diffs."))
-    (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))))
+    (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))
 
 
 (defpacustom auto-adapt-printing-width t
