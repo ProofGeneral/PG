@@ -189,6 +189,17 @@ For example, COMMENT could be (*test-definition*)"
      (coq-should-response "trois is defined"))))
 
 
+(ert-deftest 021_coq-test-regression-goto-point ()
+  "Regression test for proof-goto-point after a comment, PR #90"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+       (coq-test-goto-after "(*test-definition*)")
+       (proof-goto-point)
+       (proof-shell-wait)
+       t)))
+
+
 (ert-deftest 030_coq-test-position ()
   "Test locked region after Qed."
   (coq-fixture-on-file
