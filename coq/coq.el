@@ -162,9 +162,9 @@ See also option `coq-hide-additional-subgoals'."
 
 (defcustom coq-show-proof-stepwise nil
   "Display the proof terms stepwise in the *response* buffer.
-  This option can be combined with option `coq-diffs'.
-  It is mostly useful in three window mode, see also
-  `proof-three-window-mode-policy' for details."
+This option can be combined with option `coq-diffs'.
+It is mostly useful in three window mode, see also
+`proof-three-window-mode-policy' for details."
 
   :type 'boolean
   :safe 'booleanp
@@ -1209,7 +1209,9 @@ Printing All set."
   "Return the list of commands to send to Coq after CMD
 if it is the last command of the action list.
 If CMD is tagged with 'empty-action-list then this function won't
-be called and no command will be sent to Coq."
+be called and no command will be sent to Coq.
+Note: the last command added if `coq-show-proof-stepwise' is set
+should match the `coq-show-proof-diffs-regexp'."
   (cond
    ((or
      ;; If closing a nested proof, Show the enclosing goal.
@@ -1219,11 +1221,11 @@ be called and no command will be sent to Coq."
      (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
     (list "Show."
-    (when coq-show-proof-stepwise
-        (or
-    (when (eq coq-diffs 'off) "Show Proof.")
-    (when (eq coq-diffs 'on) "Show Proof Diffs.")
-    (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+          (when coq-show-proof-stepwise
+            (or
+             (when (eq coq-diffs 'off) "Show Proof.")
+             (when (eq coq-diffs 'on) "Show Proof Diffs.")
+             (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
    
    ((or
      ;; If we go back in the buffer and the number of abort is less than
@@ -1232,11 +1234,11 @@ be called and no command will be sent to Coq."
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
     (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")
-                                  (when coq-show-proof-stepwise
-                                    (or
-    (when (eq coq-diffs 'off) "Show Proof.")
-    (when (eq coq-diffs 'on) "Show Proof Diffs.")
-    (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+          (when coq-show-proof-stepwise
+            (or
+             (when (eq coq-diffs 'off) "Show Proof.")
+             (when (eq coq-diffs 'on) "Show Proof Diffs.")
+             (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
 
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
@@ -1251,11 +1253,11 @@ be called and no command will be sent to Coq."
      ;; If doing (not closing) a proof, Show Proof if need be
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)))
-          (when coq-show-proof-stepwise
-              (or
-    (when (eq coq-diffs 'off) (list "Show Proof." ))
-    (when (eq coq-diffs 'on) (list "Show Proof Diffs."))
-    (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))
+    (when coq-show-proof-stepwise
+      (or
+       (when (eq coq-diffs 'off) (list "Show Proof." ))
+       (when (eq coq-diffs 'on) (list "Show Proof Diffs."))
+       (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))
 
 
 (defpacustom auto-adapt-printing-width t
