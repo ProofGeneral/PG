@@ -30,5 +30,4 @@
 (eval-when-compile
   (require 'ert-async))
 
-(provide 'init-tests)
 ;;; init-tests.el ends here

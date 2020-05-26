@@ -254,6 +254,4 @@ For example, COMMENT could be (*test-definition*)"
      (insert "(*.*)")
      (should (equal (proof-queue-or-locked-end) 1)))))
 
-(provide 'coq-tests)
-
 ;;; coq-tests.el ends here
