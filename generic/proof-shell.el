@@ -1833,6 +1833,7 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 (defun proof-done-invisible (span)
   "Callback for ‘proof-shell-invisible-command’.
 Call ‘proof-state-change-hook’."
+  (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
 ;;;###autoload

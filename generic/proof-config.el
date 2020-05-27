@@ -1771,6 +1771,15 @@ This hook is used within Proof General to refresh the toolbar."
   :type '(repeat function)
   :group 'proof-shell)
 
+
+(defcustom proof-state-change-pre-hook nil
+  "Things to do before proof-done-advancing.
+
+E.g. classify spans by looking at the prompt."
+  :type '(repeat function)
+  :group 'proof-shell)
+
+
 ;;;;;;
 (defcustom proof-dependencies-system-specific nil
   "Set this variable to handle system specific dependency output.
@@ -1787,7 +1796,6 @@ same type as `proof-dependency-in-span-context-menu' returns."
   :type '(repeat function)
   :group 'proof-shell)
 ;;;;;
-
 (defcustom proof-shell-syntax-table-entries nil
   "List of syntax table entries for proof script mode.
 A flat list of the form

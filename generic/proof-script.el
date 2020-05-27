@@ -1382,6 +1382,8 @@ Argument SPAN has just been processed."
     (if (span-live-p proof-queue-span)
 	(proof-set-queue-start end))
 
+    (run-hooks 'proof-state-change-pre-hook)
+
     (cond
      ;; CASE 1: Comments just get highlighted
      ((eq (span-property span 'type) 'comment)
@@ -2120,6 +2122,7 @@ which is true for some proof assistants (but probably not others)."
 	(span-delete span)
 	(if killfn (funcall killfn start end))))
   ;; State of scripting may have changed now
+  (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
 (defun proof-setup-retract-action (start end proof-commands remove-action &optional

@@ -661,7 +661,7 @@ If locked span already has a state number, then do nothing. Also updates
 ;; This hook seems the one we want.
 ;; WARNING! It is applied once after each command PLUS once before a group of
 ;; commands is started
-(add-hook 'proof-state-change-hook #'coq-set-state-infos)
+(add-hook 'proof-state-change-pre-hook #'coq-set-state-infos)
 
 
 (defun count-not-intersection (l notin)
