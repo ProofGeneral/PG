@@ -1766,15 +1766,34 @@ symbol is 'systemspecific."
   :type '(repeat function)
   :group 'proof-shell)
 
+
+(defcustom proof-state-change-pre-hook nil
+  "This hook is called when a scripting state change may have occurred.
+Specifically, this hook is called after a region has been asserted or
+retracted, or after a command has been sent to the prover with
+`proof-shell-invisible-command'.
+
+It is run *before* the generic processing of the command span is
+done (see function `prof-done-advancing'). See
+`proof-state-change-hook' to insert actions after it."
+  :type '(repeat function)
+  :group 'proof-shell)
+
 (defcustom proof-state-change-hook nil
   "This hook is called when a scripting state change may have occurred.
 Specifically, this hook is called after a region has been asserted or
 retracted, or after a command has been sent to the prover with
 `proof-shell-invisible-command'.
 
-This hook is used within Proof General to refresh the toolbar."
+It is run *after* the generic processing of the command span is
+done (see function `prof-done-advancing'). See
+`proof-state-change-pre-hook' to insert actions before it.
+
+This hook may be used to refresh the toolbar."
   :type '(repeat function)
   :group 'proof-shell)
+
+
 
 ;;;;;;
 (defcustom proof-dependencies-system-specific nil
@@ -1792,7 +1811,6 @@ same type as `proof-dependency-in-span-context-menu' returns."
   :type '(repeat function)
   :group 'proof-shell)
 ;;;;;
-
 (defcustom proof-shell-syntax-table-entries nil
   "List of syntax table entries for proof script mode.
 A flat list of the form

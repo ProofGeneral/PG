@@ -3107,7 +3107,8 @@ before and after sending the command.
 In case @var{cmd} is (or yields) nil, do nothing.
 
 @var{invisiblecallback} will be invoked after the command has finished,
-if it is set.  It should probably run the hook variables
+if it is set. It should probably run the hook variables
+@samp{@code{proof-state-change-pre-hook}} and
 @samp{@code{proof-state-change-hook}}.
 
 @var{flags} are additional flags to put onto the @samp{@code{proof-action-list}}.
@@ -4056,8 +4057,9 @@ not need to use these directly.
 @c TEXI DOCSTRING MAGIC: proof-grab-lock
 @defun proof-grab-lock &optional queuemode
 Grab the proof shell lock, starting the proof assistant if need be.@*
-Runs @samp{@code{proof-state-change-hook}} to notify state change.
-If @var{queuemode} is supplied, set the lock to that value.
+Runs @samp{@code{proof-state-change-pre-hook}} and
+@samp{@code{proof-state-change-hook}} to notify state change. If
+@var{queuemode} is supplied, set the lock to that value.
 @end defun
 
 @c TEXI DOCSTRING MAGIC: proof-release-lock

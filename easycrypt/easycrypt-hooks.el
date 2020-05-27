@@ -68,7 +68,7 @@
        (setq easycrypt-proof-weak-mode (car (cdr infos)))
      )))
 
-(add-hook 'proof-state-change-hook 'easycrypt-set-state-infos)
+(add-hook 'proof-state-change-pre-hook 'easycrypt-set-state-infos)
 
 (defun easycrypt-find-and-forget (span)
   (let ((span-staten (easycrypt-get-span-statenum span)))
