@@ -1499,6 +1499,19 @@ on `proof-shell-eager-annotation-start' and
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
+(defcustom proof-shell-last-cmd-left-goals-p nil
+  "A function to test: are we currently inside a proof?
+
+This function takes no argument and should use
+`proof-shell-last-prompt' and `proof-shell-last-output' to
+determine whether the last command ended up inside a
+proof (either by remaining inside one or opening a new one), or
+outside of any proof.
+"
+  :type 'function
+  :group 'proof-script)
+
+
 
 ;;
 ;; 3c. tokens mode: turning on/off tokens output

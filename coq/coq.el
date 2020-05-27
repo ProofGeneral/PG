@@ -614,6 +614,11 @@ and read by function `coq-empty-action-list-command'.")
 
 ;;TODO update docstring and comment
 
+(defun coq-open-goals-p ()
+  "Return non nil if we are inside a proof, see `proof-shell-open-goals-p'."
+  (car (cdr (cdr (coq-last-prompt-info-safe)))))
+
+
 (defun coq-set-state-infos ()
   "Set the last locked span's state number to the number found last time.
 This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
@@ -1897,6 +1902,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
           coq-compile-auto-save coq-lock-ancestors coq-diffs))
 
   (setq proof-goal-command-p #'coq-goal-command-p
+        proof-shell-last-cmd-left-goals-p #'coq-open-goals-p
         proof-find-and-forget-fn #'coq-find-and-forget
         pg-topterm-goalhyplit-fn #'coq-goal-hyp
         proof-state-preserving-p #'coq-state-preserving-p)
