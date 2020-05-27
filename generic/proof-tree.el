@@ -814,6 +814,7 @@ call `proof-tree-make-show-goal-callback', which evaluates to a
 lambda expressions that you can put into `proof-action-list'."
   ;;(message "PTSGC %s" state)
   (proof-tree-update-sequent state)
+  (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
 (defun proof-tree-make-show-goal-callback (state)

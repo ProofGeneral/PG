@@ -243,6 +243,7 @@ If QUEUEMODE is supplied, set the lock to that value."
   (setq proof-shell-interrupt-pending nil
 	proof-shell-busy (or queuemode t)
 	proof-shell-last-queuemode proof-shell-busy)
+  (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
 (defun proof-release-lock ()
@@ -1833,6 +1834,7 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 (defun proof-done-invisible (span)
   "Callback for ‘proof-shell-invisible-command’.
 Call ‘proof-state-change-hook’."
+  (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
 ;;;###autoload
