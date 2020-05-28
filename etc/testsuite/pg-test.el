@@ -113,10 +113,4 @@
   (setq pg-test-total-fail-count 0)
   (mapcar 'pg-execute-test-suite (mapcar 'car pg-test-suite-table)))
 
-
-
-
-
-
-(provide 'pg-test)
 ;; End of `pg-test.el'

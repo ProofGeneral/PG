@@ -959,7 +959,4 @@ test the result and side effects wth `assert'."
    (message "test failed with %s" err)
    (kill-emacs 1)))
 
-
-(provide 'coq-par-test)
-
 ;;; coq-par-test.el ends here
