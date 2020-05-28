@@ -1499,7 +1499,7 @@ on `proof-shell-eager-annotation-start' and
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
-(defcustom proof-shell-last-cmd-left-goals-p nil
+(defcustom proof-shell-last-cmd-left-goals-p (lambda () nil)
   "A function to test: are we currently inside a proof?
 
 This function takes no argument and should use
