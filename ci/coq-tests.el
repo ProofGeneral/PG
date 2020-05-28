@@ -66,7 +66,7 @@
 
 (defun coq-test-exit ()
   "Exit the Coq process."
-  (proof-shell-exit t)) 
+  (proof-shell-exit t))
 
 ; (coq-test-on-file nil (message (buffer-file-name)) (message "OK") 42)
 
@@ -110,8 +110,13 @@
    #'proof-done-invisible
    'no-error-display 'no-response-display 'no-goals-display))
 
+(defun coq-set-flags (val flags)
+  (when (member 'show-proof-stepwise flags) (setq coq-show-proof-stepwise val))
+  (when (member 'diffs-on flags) (if val (setq coq-diffs 'on) (setq coq-diffs 'off)))
+  )
 
-(defun coq-fixture-on-file (file body)
+
+(defun coq-fixture-on-file (file  body &rest flags)
   "Fixture to setup the test env: open FILE if non-nil, or a temp file
 then evaluate the BODY function and finally tear-down (exit Coq)."
 ;; AVOID THE FOLLOWING ERROR:
@@ -142,8 +147,10 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
             (with-current-buffer buffer
               (setq proof-splash-enable nil)
               (normal-mode) ;; or (coq-mode)
+	      (coq-set-flags t flags)
               (coq-mock body))))
       (coq-test-exit)
+      (coq-set-flags nil flags)
       (not-modified nil) ; Clear modification  
       (kill-buffer buffer) 
       (when rmfile (message "Removing file %s ..." rmfile))
@@ -166,12 +173,18 @@ For example, COMMENT could be (*test-definition*)"
                   (with-current-buffer "*response*"
                     (buffer-substring-no-properties (point-min) (point-max)))))))
 
+(defun coq-should-buffer (message)
+  (should (string-match-p message
+		 (string-trim
+                  (with-current-buffer "*coq*"
+                    (buffer-substring-no-properties (point-min) (point-max)))))))
+
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
 (ert-deftest 010_coq-test-running ()
   "Test that the coqtop process is started properly."
-  (coq-fixture-on-file nil
+  (coq-fixture-on-file nil 
    (lambda ()
      (coq-test-cmd "Print 0.")
      ;; (should (process-list)) ; wouldn't be a strong enough assert.
@@ -180,8 +193,8 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 020_coq-test-definition ()
   "Test *response* output after asserting a Definition."
-  (coq-fixture-on-file
-   (coq-test-full-path "test_stepwise.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
    (lambda ()
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
@@ -191,8 +204,8 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 021_coq-test-regression-goto-point ()
   "Regression test for proof-goto-point after a comment, PR #90"
-  (coq-fixture-on-file
-   (coq-test-full-path "test_stepwise.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
    (lambda ()
        (coq-test-goto-after "(*test-definition*)")
        (proof-goto-point)
@@ -202,8 +215,8 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 030_coq-test-position ()
   "Test locked region after Qed."
-  (coq-fixture-on-file
-   (coq-test-full-path "test_stepwise.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
    (lambda ()
      (coq-test-goto-before " (*test-lemma*)")
      (let ((proof-point (point)))
@@ -214,8 +227,8 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 040_coq-test-insert ()
   "Test retract on insert from Qed."
-  (coq-fixture-on-file
-   (coq-test-full-path "test_stepwise.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
    (lambda ()
      (coq-test-goto-before " (*test-lemma*)")
      (proof-goto-point)
@@ -230,8 +243,8 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 050_coq-test-lemma-false ()
   "Test retract on proof error."
-  (coq-fixture-on-file
-   (coq-test-full-path "test_stepwise.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
    (lambda ()
      (coq-test-goto-before " (*test-lemma2*)")
      (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
@@ -256,13 +269,39 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 070_coq-test-regression-wholefile-no-proof ()
   "Regression test for no proof bug"
-  (coq-fixture-on-file
-   (coq-test-full-path "test_wholefile.v")
+  (coq-fixture-on-file 
+   (coq-test-full-path "test_wholefile.v") 
    (lambda ()
      (proof-process-buffer)
      (proof-shell-wait)
      (goto-char (point-min))
      (insert "(*.*)")
      (should (equal (proof-queue-or-locked-end) 1)))))
+
+(ert-deftest 080_coq-test-regression-show-proof-stepwise()
+  "Regression test for the \"Show Proof\" option"
+    (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
+   (lambda ()
+     (coq-test-goto-before " (*test-insert*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (coq-should-response "(fun (A : Prop) (proof_of_A : A) => ?Goal)"))
+   'show-proof-stepwise))
+
+
+(ert-deftest 081_coq-test-regression-show-proof-diffs()
+  "Test for Show Proof Diffs"
+    (coq-fixture-on-file 
+   (coq-test-full-path "test_stepwise.v") 
+   (lambda ()
+     (coq-test-goto-before " (*test-insert*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (coq-should-buffer  "<diff\\.added\\.bg>(fun <diff\\.added>(</diff\\.added>A : Prop<diff\\.added>) (proof_of_A : A)</diff\\.added> => \\?Goal)</diff\\.added\\.bg>"))
+   'show-proof-stepwise 'diffs-on))
+ 
+
+(provide 'coq-tests)
 
 ;;; coq-tests.el ends here
