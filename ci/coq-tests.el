@@ -298,7 +298,10 @@ For example, COMMENT could be (*test-definition*)"
      (coq-test-goto-before " (*test-insert*)")
      (proof-goto-point)
      (proof-shell-wait)
-     (coq-should-buffer  "<diff\\.added\\.bg>(fun <diff\\.added>(</diff\\.added>A : Prop<diff\\.added>) (proof_of_A : A)</diff\\.added> => \\?Goal)</diff\\.added\\.bg>"))
+     ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
+     (if (coq--post-v811)
+	 (coq-should-buffer  "<diff\\.added\\.bg>(fun <diff\\.added>(</diff\\.added>A : Prop<diff\\.added>) (proof_of_A : A)</diff\\.added> => \\?Goal)</diff\\.added\\.bg>")
+       (coq-should-buffer "(fun (A : Prop) (proof_of_A : A) => \\?Goal)")))
    'show-proof-stepwise 'diffs-on))
  
 
