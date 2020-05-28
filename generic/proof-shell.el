@@ -1101,7 +1101,6 @@ processed without calling this function."
   "Add item to `proof-priority-action-list' and start the queue if necessary.
 Argument QUEUEITEM must be an action item as documented for
 `proof-action-list'."
-  (message "PATPQ")
   (push queueitem proof-priority-action-list)
   (start-prover-with-priority-items-maybe))
 
@@ -1661,14 +1660,40 @@ by the filter is to send the next command from the queue."
 	  (buffer-substring-no-properties start end))
 
     ;; sets proof-shell-last-output-kind
+    ;;; NB This will remove the span (and all following queued spans)
+    ;;; if an error occured. So don't use it in the following unless
+    ;;; you know the command was processed without error.
     (proof-shell-handle-immediate-output cmd start end flags)
 
     ;; insert a show proof command to have an up-to-date goals buffer
-    ;; in case of error
-    (when (eq proof-shell-last-output-kind 'error)
-      (proof-add-to-priority-queue
-       (proof-shell-action-list-item
-        proof-showproof-command 'proof-done-invisible (list 'invisible))))
+    ;; in case of error. Currently PG makes coq silent when proccesing
+    ;; a bunch of commands, and goes back to unsilent before the last
+    ;; command. Therefore if an error interrupts a bunch we are still
+    ;; in silent mode and the goal is not diplayed. The following
+    ;; inserts a show proof command to have an up-to-date goals buffer
+    ;; in case of error AND we are in a proof. We don't issue the show
+    ;; command in other cases as it would be redundant or wrong.
+
+    ;; NB: If we switch to "all silent, ask for show" protocol, then
+    ;; this would need to be generalized, but maybe not here.
+
+    ;; NB: To avoid looping on errors (like if the printing of the
+    ;; goal is not possible) these actions are tagged with the flag
+    ;; 'empty-action-list and trigger the following only if its this
+    ;; flag is missing.
+    (when (and (not (memq 'empty-action-list flags))
+               (funcall proof-shell-last-cmd-left-goals-p)
+               (eq proof-shell-last-output-kind 'error))
+      ;; to make the error message stay, we need to send a Show
+      ;; command without updating any buffer and then use the
+      ;; pg-goals-display can insert the output in goals buffer
+      ;; without changing the response buffer.
+      (let ((callback '(lambda (dummyspan);do not use the span, it is probably deleted
+                         (pg-goals-display proof-shell-last-output t))))
+        (proof-add-to-priority-queue
+         (proof-shell-action-list-item
+          proof-showproof-command callback ;'proof-done-invisible
+           (list 'no-goals-display 'invisible 'empty-action-list)))))
 
     (unless proof-shell-last-output-kind ; dealt with already
       (setq proof-shell-delayed-output-start start)
