@@ -1220,12 +1220,17 @@ should match the `coq-show-proof-diffs-regexp'."
      ;; If user issued a printing option then t printing.
      (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
-    (list "Show."
-          (when coq-show-proof-stepwise
-            (or
-             (when (eq coq-diffs 'off) "Show Proof.")
-             (when (eq coq-diffs 'on) "Show Proof Diffs.")
-             (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+    (let ((showlist (list "Show.")))
+      (when coq-show-proof-stepwise
+        (add-to-list 'showlist
+                     (if (coq--post-v811) 
+                     (or
+                      (when (eq coq-diffs 'off) "Show Proof.")
+                      (when (eq coq-diffs 'on) "Show Proof Diffs.")
+                      (when (eq coq-diffs 'removed) "Show Proof Diffs removed."))
+                     "Show Proof.")
+                     t))
+      showlist))
    
    ((or
      ;; If we go back in the buffer and the number of abort is less than
@@ -1233,12 +1238,23 @@ should match the `coq-show-proof-diffs-regexp'."
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
-    (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")
-          (when coq-show-proof-stepwise
-            (or
-             (when (eq coq-diffs 'off) "Show Proof.")
-             (when (eq coq-diffs 'on) "Show Proof Diffs.")
-             (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+    ;; (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")
+    ;;       (when coq-show-proof-stepwise
+    ;;         (or
+    ;;          (when (eq coq-diffs 'off) "Show Proof.")
+    ;;          (when (eq coq-diffs 'on) "Show Proof Diffs.")
+    ;;          (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
+    (let ((showlist (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show."))))
+      (when coq-show-proof-stepwise
+        (add-to-list 'showlist
+                     (if (coq--post-v811) 
+                     (or
+                      (when (eq coq-diffs 'off) "Show Proof.")
+                      (when (eq coq-diffs 'on) "Show Proof Diffs." )
+                      (when (eq coq-diffs 'removed) "Show Proof Diffs removed."))
+                     "Show Proof.")
+                     t))
+      showlist))
 
    ((or
      ;; If we go back in the buffer and not in the above case, then only Unset
@@ -1254,10 +1270,12 @@ should match the `coq-show-proof-diffs-regexp'."
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)))
     (when coq-show-proof-stepwise
+      (if (coq--post-v811) 
       (or
        (when (eq coq-diffs 'off) (list "Show Proof." ))
        (when (eq coq-diffs 'on) (list "Show Proof Diffs."))
-       (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))))))
+       (when (eq coq-diffs 'removed) (list "Show Proof Diffs removed.")))
+       (list "Show Proof."))))))
 
 
 (defpacustom auto-adapt-printing-width t
