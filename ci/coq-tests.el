@@ -165,21 +165,17 @@ For example, COMMENT could be (*test-definition*)"
   (goto-char (point-min))
   (search-forward comment))
 
-(defun coq-should-response (str)
-  (should (equal str
-		 (string-trim
-                  (with-current-buffer "*response*"
-                    (buffer-substring-no-properties (point-min) (point-max)))))))
+(defun coq-should-buffer-regexp (regexp &optional buffer-name)
+  "Check REGEXP matches in BUFFER-NAME (*response* if nil)."
+  (should (string-match-p
+	   regexp
+	   (string-trim
+	    (with-current-buffer (or buffer-name "*response*")
+	    (buffer-substring-no-properties (point-min) (point-max)))))))
 
-(defun coq-should-buffer-regexp (regexp)
-  (should (string-match-p regexp
-		 (string-trim
-                  (with-current-buffer "*coq*"
-                    (buffer-substring-no-properties (point-min) (point-max)))))))
-
-(defun coq-should-buffer-string (str)
+(defun coq-should-buffer-string (str &optional buffer-name)
   "Particular case of `coq-should-buffer-regexp'."
-  (coq-should-buffer-regexp (regexp-quote str)))
+  (coq-should-buffer-regexp (regexp-quote str) buffer-name))
 
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
@@ -201,7 +197,7 @@ For example, COMMENT could be (*test-definition*)"
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
      (proof-shell-wait)
-     (coq-should-response "trois is defined"))))
+     (coq-should-buffer-string "trois is defined"))))
 
 
 (ert-deftest 021_coq-test-regression-goto-point ()
@@ -252,7 +248,7 @@ For example, COMMENT could be (*test-definition*)"
      (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
      (proof-goto-point)
      (proof-shell-wait)
-     (coq-should-response "Error: Unable to unify \"false\" with \"true\".")
+     (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
@@ -282,7 +278,7 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 080_coq-test-regression-show-proof-stepwise()
   "Regression test for the \"Show Proof\" option"
-    (coq-fixture-on-file
+  (coq-fixture-on-file
    (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-insert*)")
@@ -294,7 +290,7 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 081_coq-test-regression-show-proof-diffs()
   "Test for Show Proof Diffs"
-    (coq-fixture-on-file
+  (coq-fixture-on-file
    (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-insert*)")
@@ -302,7 +298,7 @@ For example, COMMENT could be (*test-definition*)"
      (proof-shell-wait)
      ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
      (if (coq--post-v811)
-	 (coq-should-buffer-string  "<diff.added.bg>(fun <diff.added>(</diff.added>A : Prop<diff.added>) (proof_of_A : A)</diff.added> => ?Goal)</diff.added.bg>")
+	 (coq-should-buffer-string "<diff.added.bg>(fun <diff.added>(</diff.added>A : Prop<diff.added>) (proof_of_A : A)</diff.added> => ?Goal)</diff.added.bg>" "*coq*")
        (coq-should-buffer-string "(fun (A : Prop) (proof_of_A : A) => ?Goal)")))
    'show-proof-stepwise 'diffs-on))
  
