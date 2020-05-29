@@ -1139,12 +1139,12 @@ contains only invisible elements for Prooftree synchronization."
                    (not (memq 'empty-action-list flags))
                    proof-shell-empty-action-list-command)
           (let* ((cmd (mapconcat 'identity (nth 1 item) " "))
-                (extra-cmds (apply proof-shell-empty-action-list-command (list cmd)))
-                ;; tag all new items with 'empty-action-list
-                (extra-items (mapcar (lambda (s) (proof-shell-action-list-item
-                                                  s 'proof-done-invisible
-                                                  (list 'invisible 'empty-action-list)))
-                                     extra-cmds)))
+                 (extra-cmds (apply proof-shell-empty-action-list-command (list cmd)))
+                 ;; tag all new items with 'empty-action-list
+                 (extra-items (mapcar (lambda (s) (proof-shell-action-list-item
+                                                   s 'proof-done-invisible
+                                                   (list 'invisible 'empty-action-list)))
+                                      extra-cmds)))
             ;; action-list should be empty at this point
             (setq proof-action-list (append extra-items proof-action-list))))
 
@@ -1189,11 +1189,14 @@ contains only invisible elements for Prooftree synchronization."
 	    (pg-processing-complete-hint))
 	  (pg-finish-tracing-display))
 
-	(and (not proof-second-action-list-active)
-	     (or (null proof-action-list)
-		 (cl-every
-		  (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
-		  proof-action-list)))))))
+	(and (not proof-second-action-list-active) 
+	     (let ((last-command  (car (nth 1 (car (last proof-action-list))))))
+	       (or (null proof-action-list)
+	 	   (cl-every
+	 	    (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
+	 	    proof-action-list)
+	 	   ;; If the last command in proof-action-list is a "Show Proof" form then return t
+	 	   (when last-command (string-match-p proof-show-proof-diffs-regexp last-command)))))))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)

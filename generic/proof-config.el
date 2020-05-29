@@ -399,6 +399,11 @@ NB: This setting is not used for matching output from the prover."
   :type 'regexp
   :group 'proof-script)
 
+(defcustom proof-show-proof-diffs-regexp nil
+  "Matches all \"Show Proof\" forms (specific to the Coq prover)." 
+  :type 'regexp
+  :group 'proof-script)
+
 (defcustom proof-save-with-hole-regexp nil
   "Regexp which matches a command to save a named theorem.
 The name of the theorem is built from the variable

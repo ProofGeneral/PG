@@ -66,7 +66,7 @@
 
 (defun coq-test-exit ()
   "Exit the Coq process."
-  (proof-shell-exit t)) 
+  (proof-shell-exit t))
 
 ; (coq-test-on-file nil (message (buffer-file-name)) (message "OK") 42)
 
@@ -110,8 +110,11 @@
    #'proof-done-invisible
    'no-error-display 'no-response-display 'no-goals-display))
 
+(defun coq-set-flags (val flags)
+  (when (member 'show-proof-stepwise flags) (setq coq-show-proof-stepwise val))
+  (when (member 'diffs-on flags) (if val (setq coq-diffs 'on) (setq coq-diffs 'off))))
 
-(defun coq-fixture-on-file (file body)
+(defun coq-fixture-on-file (file body &rest flags)
   "Fixture to setup the test env: open FILE if non-nil, or a temp file
 then evaluate the BODY function and finally tear-down (exit Coq)."
 ;; AVOID THE FOLLOWING ERROR:
@@ -142,8 +145,10 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
             (with-current-buffer buffer
               (setq proof-splash-enable nil)
               (normal-mode) ;; or (coq-mode)
+	      (coq-set-flags t flags)
               (coq-mock body))))
       (coq-test-exit)
+      (coq-set-flags nil flags)
       (not-modified nil) ; Clear modification  
       (kill-buffer buffer) 
       (when rmfile (message "Removing file %s ..." rmfile))
@@ -160,11 +165,17 @@ For example, COMMENT could be (*test-definition*)"
   (goto-char (point-min))
   (search-forward comment))
 
-(defun coq-should-response (message)
-  (should (equal message
-		 (string-trim
-                  (with-current-buffer "*response*"
-                    (buffer-substring-no-properties (point-min) (point-max)))))))
+(defun coq-should-buffer-regexp (regexp &optional buffer-name)
+  "Check REGEXP matches in BUFFER-NAME (*response* if nil)."
+  (should (string-match-p
+	   regexp
+	   (string-trim
+	    (with-current-buffer (or buffer-name "*response*")
+	    (buffer-substring-no-properties (point-min) (point-max)))))))
+
+(defun coq-should-buffer-string (str &optional buffer-name)
+  "Particular case of `coq-should-buffer-regexp'."
+  (coq-should-buffer-regexp (regexp-quote str) buffer-name))
 
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
@@ -186,7 +197,18 @@ For example, COMMENT could be (*test-definition*)"
      (coq-test-goto-before "(*test-definition*)")
      (proof-goto-point)
      (proof-shell-wait)
-     (coq-should-response "trois is defined"))))
+     (coq-should-buffer-string "trois is defined"))))
+
+
+(ert-deftest 021_coq-test-regression-goto-point ()
+  "Regression test for proof-goto-point after a comment, PR #490"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+       (coq-test-goto-after "(*test-definition*)")
+       (proof-goto-point)
+       (proof-shell-wait)
+       t)))
 
 
 (ert-deftest 030_coq-test-position ()
@@ -226,7 +248,7 @@ For example, COMMENT could be (*test-definition*)"
      (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
      (proof-goto-point)
      (proof-shell-wait)
-     (coq-should-response "Error: Unable to unify \"false\" with \"true\".")
+     (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
@@ -253,5 +275,34 @@ For example, COMMENT could be (*test-definition*)"
      (goto-char (point-min))
      (insert "(*.*)")
      (should (equal (proof-queue-or-locked-end) 1)))))
+
+(ert-deftest 080_coq-test-regression-show-proof-stepwise()
+  "Regression test for the \"Show Proof\" option"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-insert*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (coq-should-buffer-string "(fun (A : Prop) (proof_of_A : A) => ?Goal)"))
+   'show-proof-stepwise))
+
+
+(ert-deftest 081_coq-test-regression-show-proof-diffs()
+  "Test for Show Proof Diffs"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-insert*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
+     (if (coq--post-v811)
+	 (coq-should-buffer-string "<diff.added.bg>(fun <diff.added>(</diff.added>A : Prop<diff.added>) (proof_of_A : A)</diff.added> => ?Goal)</diff.added.bg>" "*coq*")
+       (coq-should-buffer-string "(fun (A : Prop) (proof_of_A : A) => ?Goal)")))
+   'show-proof-stepwise 'diffs-on))
+ 
+
+(provide 'coq-tests)
 
 ;;; coq-tests.el ends here

@@ -458,6 +458,8 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
+(proof-deftoggle coq-show-proof-stepwise)
+
 (defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
 Otherwise start the external compilation without confirmation.
