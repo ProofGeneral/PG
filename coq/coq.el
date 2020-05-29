@@ -1237,13 +1237,6 @@ should match the `coq-show-proof-diffs-regexp'."
      ;; the number of nested goals, then Unset Silent and Show the goal
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
-    ;; "Set Diffs" always re-prints the proof context with (if enabled) diffs
-    ;; (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show.")
-    ;;       (when coq-show-proof-stepwise
-    ;;         (or
-    ;;          (when (eq coq-diffs 'off) "Show Proof.")
-    ;;          (when (eq coq-diffs 'on) "Show Proof Diffs.")
-    ;;          (when (eq coq-diffs 'removed) "Show Proof Diffs removed.")))))
     (let ((showlist (list "Unset Silent." (if (coq--post-v810) (coq-diffs) "Show."))))
       (when coq-show-proof-stepwise
         (add-to-list 'showlist
