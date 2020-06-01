@@ -236,6 +236,11 @@ It is mostly useful in three window mode, see also
   :type 'regexp
   :group 'coq-proof-tree)
 
+(defcustom coq-proof-tree-manage-dependent-evar-line t
+  "Switch dependent evar line on and off for proof tree displayed proofs."
+  :type 'boolean
+  :group 'coq-proof-tree)
+
 (defcustom coq-proof-tree-existentials-state-start-regexp
   "^(dependent evars:"
   "Coq instance of `proof-tree-existentials-state-start-regexp'."
@@ -2223,84 +2228,43 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
     (span-start span-res)))
 
 
-;; In Coq 8.6 the evar line is disabled by default because on some proofs it
-;; causes a severe performance hit. The disabled evar line causes prooftree to
-;; crash with a parsing error. Proof General must therefore turn on the evar
-;; output with the command "Set Printing Dependent Evars Line". Of course,
-;; after the proof, the evar line must be set back to what it was before the
-;; proof. I therefore test in proof-tree-start-display-hook the state of the
-;; Dependent Evars Line flag and remember the Coq state number in
-;; coq--proof-tree-must-disable-evars if the flag was off. When the proof tree
-;; display is switched off and the state is bigger, I reset the flag. This way
-;; the flag is not unnecessarily reset on undo. The only exception is, when you
-;; switch on the proof tree display a few commands before starting the proof.
+;; Since Coq 8.6 the evar line is disabled by default because on some
+;; proofs it causes a severe performance hit. For its features on evar
+;; creation and instantiation Prooftree needs the evar line and displays a
+;; warning for parsing errors caused by the missing evar line. Proof
+;; General therefore turns the evar line on when the proof tree display is
+;; enabled and off when the proof is finished or the display is disabled.
+;; This unconditional evar line switching is controled by
+;; `coq-proof-tree-manage-dependent-evar-line'. However, the flag in Coq
+;; that controls the printing of the dependent evar line will be restored
+;; to its old state by undo. Therefore, a combination of proof tree display
+;; and undo can cause the evar line to stay on until the next proof tree
+;; display is finished. One such way is to disable the proof tree display
+;; in the middle of a proof and then to undo a few tactics.
 
-(defvar coq--proof-tree-must-disable-evars nil
-  "Remember if evar printing must be disabled when leaving the current proof.
-When nil, evar printing does not need to be disabled. When
-non-nil, contains the state number where evar printing was
-enabled, to only disable it, when there was not undo.")
-
-(defun coq-proof-tree-enable-evar-callback (_span)
-  "Callback for the evar printing status test.
-This is the callback for the command ``Test Printing Dependent Evars Line''.
-It checks whether evar printing was off and remembers that
-fact in `coq--proof-tree-must-disable-evars'."
-  (with-current-buffer proof-shell-buffer
-    (save-excursion
-      ;; When the callback runs, the next item is sent to Coq already and
-      ;; therefore proof-marker points to the end of the next command
-      ;; already. proof-shell-filter-manage-output sets old-proof-marker
-      ;; before calling proof-shell-exec-loop, this therefore points to the
-      ;; end of the command of this callback.
-      (goto-char old-proof-marker)
-      (when (re-search-forward "The Printing Dependent Evars Line mode is "
-                               nil t)
-        (if (looking-at "off")
-            (progn
-              ;; (message "CPTEEC evar line mode was off")
-              (setq coq--proof-tree-must-disable-evars
-                    (car (coq-last-prompt-info-safe))))
-          ;; (message "CPTEEC evar line mode was on")
-          (setq coq--proof-tree-must-disable-evars nil))))))
-
-(defun coq-proof-tree-insert-evar-command (cmd &optional callback)
+(defun coq-proof-tree-insert-evar-command (cmd)
   "Insert an evar printing command at the head of `proof-action-list'."
   (proof-add-to-queue
    (list
     (proof-shell-action-list-item
      (concat cmd " Printing Dependent Evars Line.")
-     (if callback callback 'proof-done-invisible)
+     'proof-done-invisible
      (list 'invisible 'no-response-display)))))
 
 (defun coq-proof-tree-enable-evars ()
-  "Enable the evar status line for Coq >= 8.6.
-Test the status of evar printing to be able to set it back
-properly after the proof and enable the evar printing."
-  (when (coq--post-v86)
+  "Enable the evar status line for Coq >= 8.6."
+  (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (proof-shell-ready-prover)
-    (coq-proof-tree-insert-evar-command
-     "Test"
-     'coq-proof-tree-enable-evar-callback)
     (coq-proof-tree-insert-evar-command "Set")))
 
 (add-hook 'proof-tree-start-display-hook #'coq-proof-tree-enable-evars)
 
 (defun coq-proof-tree-disable-evars ()
-  "Disable evar printing if necessary.
-This function switches off evar printing after the proof, if it
-was off before the proof.  For undo commands, I rely on the fact
-that Coq itself undoes the effect of the evar printing change
-that I inserted before the goal statement and on the state number
-stored in coq--proof-tree-must-disable-evars.  I also rely on the
-fact that Proof General never backtracks into the middle of a
-proof.  (If this would happen, Coq would switch evar printing on
-and the code here would not switch it off after the proof.)"
-  (when coq--proof-tree-must-disable-evars
-    (when (> (car (coq-last-prompt-info-safe))
-             coq--proof-tree-must-disable-evars)
-      (coq-proof-tree-insert-evar-command "Unset"))
-    (setq coq--proof-tree-must-disable-evars nil)))
+  "Unconditionally disable evar printing.
+This function switches off evar printing when the proof tree
+display has bee finished (possibly by the end of the proof)."
+  (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
+    (coq-proof-tree-insert-evar-command "Unset")))
 
 (add-hook 'proof-tree-stop-display-hook #'coq-proof-tree-disable-evars)
 
