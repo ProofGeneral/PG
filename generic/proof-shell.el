@@ -1197,7 +1197,9 @@ contains only invisible elements for Prooftree synchronization."
 	 	    (lambda (item) (memq 'proof-tree-show-subgoal (nth 3 item)))
 	 	    proof-action-list)
 	 	   ;; If the last command in proof-action-list is a "Show Proof" form then return t
-	 	   (when last-command (string-match-p proof-show-proof-diffs-regexp last-command)))))))))
+	 	   (when last-command
+             (proof-shell-string-match-safe
+              proof-show-proof-diffs-regexp last-command)))))))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
