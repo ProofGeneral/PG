@@ -93,6 +93,8 @@ jobs:
           - '8.9'
           - '8.10'
           - '8.11'
+          - '8.12'
+          - '8.13'
         ocaml_version:
           - minimal
       # at most 20 concurrent jobs per free account
