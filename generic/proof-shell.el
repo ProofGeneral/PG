@@ -60,7 +60,6 @@
 ;; declare a few functions and variables from proof-tree - if we
 ;; require proof-tree the compiler complains about a recusive
 ;; dependency.
-(declare-function proof-tree-urgent-action "proof-tree" (flags))
 (declare-function proof-tree-handle-delayed-output "proof-tree"
 		  (old-proof-marker cmd flags span))
 ;; without the nil initialization the compiler still warns about this variable
@@ -143,7 +142,8 @@ and to be executed last is at the head.")
   (condition-case err
       (funcall (nth 2 listitem) (car listitem))
     (error
-     (message "error escaping proof-shell-invoke-callback: %s" err)
+     (message "error escaping proof-shell-invoke-callback %s for command %s: %s"
+              (nth 2 listitem) (nth 1 listitem) err)
      nil)))
 
 (defvar proof-second-action-list-active nil
@@ -1235,11 +1235,7 @@ contains only invisible elements for Prooftree synchronization."
 	;; proof-action-list and where the next item has not yet been
 	;; sent to the proof assistant. This is therefore one of the
 	;; few points where it is safe to manipulate
-	;; proof-action-list. The urgent proof-tree display actions
-	;; must therefore be called here, because they might add some
-	;; Show actions at the front of proof-action-list.
-	(if proof-tree-external-display
-	    (proof-tree-urgent-action flags))
+	;; proof-action-list.
 
         ;; Add priority actions to the front of proof-action-list.
         ;; Delay adding of priority items until there is no priority
@@ -1363,6 +1359,7 @@ ends with text matching `proof-shell-eager-annotation-end'."
    ((proof-looking-at-safe proof-shell-theorem-dependency-list-regexp)
     (proof-shell-process-urgent-message-thmdeps))
 
+   ;;XXX duplication?
    ((proof-looking-at-safe proof-shell-theorem-dependency-list-regexp)
     (proof-shell-process-urgent-message-thmdeps))
 
