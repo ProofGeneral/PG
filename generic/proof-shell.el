@@ -1237,6 +1237,11 @@ contains only invisible elements for Prooftree synchronization."
 	;; few points where it is safe to manipulate
 	;; proof-action-list.
 
+        ;; Call the urgent action of prooftree, if the display is on.
+        ;; This might enqueue items in the priority action list.
+        (when proof-tree-external-display
+          (proof-tree-check-proof-finish item))
+
         ;; Add priority actions to the front of proof-action-list.
         ;; Delay adding of priority items until there is no priority
         ;; item at the head of `proof-action-list', such that more

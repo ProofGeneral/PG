@@ -2034,6 +2034,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-tree-branch-finished-regexp coq-proof-tree-branch-finished-regexp
    proof-tree-show-sequent-command 'coq-show-sequent-command
    proof-tree-find-undo-position 'coq-proof-tree-find-undo-position
+   proof-tree-display-stop-command 'coq-proof-tree-disable-evars
    )
 
   (proof-shell-config-done))
@@ -2242,31 +2243,27 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 ;; display is finished. One such way is to disable the proof tree display
 ;; in the middle of a proof and then to undo a few tactics.
 
-(defun coq-proof-tree-insert-evar-command (cmd)
-  "Insert an evar printing command at the head of `proof-action-list'."
-  (proof-add-to-queue
-   (list
-    (proof-shell-action-list-item
-     (concat cmd " Printing Dependent Evars Line.")
-     'proof-done-invisible
-     (list 'invisible 'no-response-display)))))
+(defun coq-proof-tree-evar-command (cmd)
+  "Return the evar printing command for CMD as action list item."
+  (proof-shell-action-list-item
+   (concat cmd " Printing Dependent Evars Line.")
+   'proof-done-invisible
+   (list 'invisible 'no-response-display)))
 
 (defun coq-proof-tree-enable-evars ()
   "Enable the evar status line for Coq >= 8.6."
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (proof-shell-ready-prover)
-    (coq-proof-tree-insert-evar-command "Set")))
+    (proof-add-to-priority-queue (coq-proof-tree-evar-command "Set"))))
 
 (add-hook 'proof-tree-start-display-hook #'coq-proof-tree-enable-evars)
 
 (defun coq-proof-tree-disable-evars ()
-  "Unconditionally disable evar printing.
-This function switches off evar printing when the proof tree
-display has bee finished (possibly by the end of the proof)."
+  "Return action list item to disable evar printing.
+Function for `proof-tree-display-stop-command'."
+  ;; XXX disable proof tree completely for < 8.10
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
-    (coq-proof-tree-insert-evar-command "Unset")))
-
-(add-hook 'proof-tree-stop-display-hook #'coq-proof-tree-disable-evars)
+    (coq-proof-tree-evar-command "Unset")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
