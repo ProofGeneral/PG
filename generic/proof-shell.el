@@ -85,6 +85,7 @@ bother the user.  They may include
   'no-error-display         do not display errors/take error action
   'no-goals-display         do not goals in *goals* buffer
   'proof-tree-show-subgoal  item inserted by the proof-tree package
+  'priority-action          item added via proof-add-to-priority-queue
 
 Note that 'invisible does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -1102,9 +1103,13 @@ processed without calling this function."
 (defun proof-add-to-priority-queue (queueitem)
   "Add item to `proof-priority-action-list' and start the queue if necessary.
 Argument QUEUEITEM must be an action item as documented for
-`proof-action-list'."
-  (push queueitem proof-priority-action-list)
-  (proof-start-prover-with-priority-items-maybe))
+`proof-action-list'. Add flag 'priority-action to QUEUEITEM, such
+that priority items can be recognized and the order of added
+priority items can be preserved."
+  (let ((qi (list (car queueitem) (cadr queueitem) (caddr queueitem)
+                  (cons 'priority-action (cadddr queueitem)))))
+    (push qi proof-priority-action-list)
+    (proof-start-prover-with-priority-items-maybe)))
 
 
 ;;;###autoload
@@ -1202,8 +1207,16 @@ contains only invisible elements for Prooftree synchronization."
 	(if proof-tree-external-display
 	    (proof-tree-urgent-action flags))
 
-        ;; add priority actions to the front of proof-action-list
-        (when proof-priority-action-list
+        ;; Add priority actions to the front of proof-action-list.
+        ;; Delay adding of priority items until there is no priority
+        ;; item at the head of `proof-action-list', such that more
+        ;; recently added priority items cannot overtake older items
+        ;; that wait in `proof-action-list'.
+        (when
+            (and proof-priority-action-list
+                 (or (null proof-action-list)
+                     (not (member 'priority-action
+                                  (nth 3 (car proof-action-list))))))
           (setq proof-action-list
                 (nconc (nreverse proof-priority-action-list)
                        proof-action-list))
