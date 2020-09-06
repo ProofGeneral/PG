@@ -2626,7 +2626,7 @@ Warning: this makes the error messages (and location) wrong.")
   "<infomsg>\n?The proof of \\([^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\([^.]*\\)\\.")
 
 (defcustom coq-accept-proof-using-suggestion 'highlight
-  "Wether and how proofgeneral should insert \"Proof using\" suggestions.
+  "Whether and how proofgeneral should insert \"Proof using\" suggestions.
 Suggestions are emitted by Coq at Qed time. The possible values
 of this variable are:
 
