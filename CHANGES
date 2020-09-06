@@ -632,7 +632,7 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     - Indentation: several error fixed. If you want to indent tactics
     inside "Instance" or "Add Parametric Relation" etc, please put
     "Proof." before the tactics, there is no way for emacs to guess
-    wether these commands initiate new goals or not.
+    whether these commands initiate new goals or not.
     - coq prog args permanent settings is working again
     - when a proof is completed, the goals buffer is cleared again.
 
