@@ -1,7 +1,7 @@
 # Proof General — Organize your proofs! 
 
 [![CI](https://github.com/ProofGeneral/PG/workflows/CI/badge.svg?branch=master)](https://github.com/ProofGeneral/PG/actions?query=workflow%3ACI)
-[![MELPA](http://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
+[![MELPA](https://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
 
 ## Overview
 
@@ -117,14 +117,14 @@ Links:
 Supported proof assistants:
 
 * [Coq](https://coq.inria.fr/)
-* [EasyCrypt](http://www.easycrypt.info/)
-* [PhoX](http://www.lama.univ-savoie.fr/pagesmembres/raffalli/phox.html)
+* [EasyCrypt](https://www.easycrypt.info/)
+* [PhoX](https://raffalli.eu/phox/)
 
 Proof General used to support other proof assistants, but those
 instances are no longer maintained nor available in the MELPA package:
 
 * Legacy support of
-  [Isabelle](http://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
+  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
   [LEGO](http://www.dcs.ed.ac.uk/home/lego)
 * Experimental support of: CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
