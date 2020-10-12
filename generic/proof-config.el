@@ -1516,7 +1516,21 @@ outside of any proof.
   :type 'function
   :group 'proof-script)
 
+(defcustom proof-shell-timeout-warn-p t
+  "Whether Proof General should warn us if a command is taking
+too long and might be malformed.
 
+Set to nil to disable."
+  :type 'boolean
+  :group 'proof-shell)
+
+(defcustom proof-shell-timeout-warn-length 30
+  "If `proof-shell-timeout-p' is true, this tells PG how long to
+wait before warning the user, in seconds.
+
+Default value is 30 seconds. Set it as an integer."
+  :type 'integer
+  :group 'proof-shell)
 
 ;;
 ;; 3c. tokens mode: turning on/off tokens output
