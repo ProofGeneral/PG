@@ -1196,6 +1196,12 @@ contains only invisible elements for Prooftree synchronization."
 	    (pg-processing-complete-hint))
 	  (pg-finish-tracing-display))
 
+  (unless proof-shell-busy
+		;; if the shell isn't still busy, cancel timer
+		(if (and proof-shell-timer proof-shell-timeout-warn-p)
+			(progn (cancel-timer proof-shell-timer)
+			       (setq proof-shell-timer nil))))
+
 	(and (not proof-second-action-list-active) 
 	     (let ((last-command  (car (nth 1 (car (last proof-action-list))))))
 	       (or (null proof-action-list)
@@ -1205,13 +1211,7 @@ contains only invisible elements for Prooftree synchronization."
 	 	   ;; If the last command in proof-action-list is a "Show Proof" form then return t
 	 	   (when last-command
              (proof-shell-string-match-safe
-              proof-show-proof-diffs-regexp last-command))))))))
-
-	(unless proof-shell-busy
-		;; if the shell isn't still busy, cancel timer
-		(if (and proof-shell-timer proof-shell-timeout-p)
-			(progn (cancel-timer proof-shell-timer)
-			       (setq proof-shell-timer nil)))))
+              proof-show-proof-diffs-regexp last-command)))))))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
