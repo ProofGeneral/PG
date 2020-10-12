@@ -1205,7 +1205,13 @@ contains only invisible elements for Prooftree synchronization."
 	 	   ;; If the last command in proof-action-list is a "Show Proof" form then return t
 	 	   (when last-command
              (proof-shell-string-match-safe
-              proof-show-proof-diffs-regexp last-command)))))))))
+              proof-show-proof-diffs-regexp last-command))))))))
+
+	(unless proof-shell-busy
+		;; if the shell isn't still busy, cancel timer
+		(if (and proof-shell-timer proof-shell-timeout-p)
+			(progn (cancel-timer proof-shell-timer)
+			       (setq proof-shell-timer nil)))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)

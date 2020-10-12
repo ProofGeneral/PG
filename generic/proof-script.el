@@ -2025,7 +2025,15 @@ This function expects the buffer to be activated for advancing."
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
     (proof-script-delete-secondary-spans startpos lastpos)
-    (proof-extend-queue lastpos vanillas)))
+    (proof-extend-queue lastpos vanillas))
+
+  ;; arm the timeout timer
+  ;; cancelled in proof-shell-exec-loop unless proof-shell-busy
+  (if proof-shell-timeout-warn-p
+      (setq proof-shell-timer
+          (run-with-timer proof-shell-timeout-warn-length nil
+                          'message "This command is taking a while. \
+Is it malformed? Do C-c C-c or C-c C-x to abort."))))
 
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.
