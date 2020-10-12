@@ -149,6 +149,12 @@ This flag is set for the duration of `proof-shell-kill-function'
 to tell hooks in `proof-deactivate-scripting-hook' to refrain
 from calling `proof-shell-exit'.")
 
+(defvar proof-shell-timer nil
+  "A timer that alerts the user when the current command sent to the
+shell is taking too long and might be malformed. This is reset on entry
+of `proof-shell-exec-loop' and set when the next command is sent to
+the process. Disable by setting `proof-shell-timeout-p' to nil.
+Configure with `proof-shell-timeout-length'")
 
 
 ;;
@@ -1176,8 +1182,8 @@ contains only invisible elements for Prooftree synchronization."
 	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
 
 	(if proof-action-list
-	    ;; send the next command to the process.
-	    (proof-shell-insert-action-item (car proof-action-list)))
+	  ;; send the next command to the process.
+	  (proof-shell-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
 	(mapc 'proof-shell-invoke-callback cbitems)
