@@ -1211,7 +1211,7 @@ contains only invisible elements for Prooftree synchronization."
 		;; if the shell isn't still busy, cancel timer
 		(if (and proof-shell-timer proof-shell-timeout-p)
 			(progn (cancel-timer proof-shell-timer)
-			       (setq proof-shell-timer nil)))
+			       (setq proof-shell-timer nil)))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
