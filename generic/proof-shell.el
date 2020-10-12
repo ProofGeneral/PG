@@ -1181,9 +1181,9 @@ contains only invisible elements for Prooftree synchronization."
 	  (setq cbitems nil)
 	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
 
-	(if proof-action-list
-	  ;; send the next command to the process.
-	  (proof-shell-insert-action-item (car proof-action-list)))
+  (if proof-action-list
+	    ;; send the next command to the process.
+	    (proof-shell-insert-action-item (car proof-action-list)))
 
 	;; process the delayed callbacks now
 	(mapc 'proof-shell-invoke-callback cbitems)
@@ -1198,7 +1198,7 @@ contains only invisible elements for Prooftree synchronization."
 
   (unless proof-shell-busy
 		;; if the shell isn't still busy, cancel timer
-		(if (and proof-shell-timer proof-shell-timeout-warn-p)
+		(if (and proof-shell-timer proof-shell-timeout-warn)
 			(progn (cancel-timer proof-shell-timer)
 			       (setq proof-shell-timer nil))))
 

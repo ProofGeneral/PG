@@ -2029,9 +2029,9 @@ This function expects the buffer to be activated for advancing."
 
   ;; arm the timeout timer
   ;; cancelled in proof-shell-exec-loop unless proof-shell-busy
-  (if proof-shell-timeout-warn-p
+  (if proof-shell-timeout-warn
       (setq proof-shell-timer
-          (run-with-timer proof-shell-timeout-warn-length nil
+          (run-with-timer proof-shell-timeout-warn nil
                           'message "This command is taking a while. \
 Is it malformed? Do C-c C-c or C-c C-x to abort."))))
 

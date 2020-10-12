@@ -1516,19 +1516,13 @@ outside of any proof.
   :type 'function
   :group 'proof-script)
 
-(defcustom proof-shell-timeout-warn-p t
-  "Whether Proof General should warn us if a command is taking
-too long and might be malformed.
+(defcustom proof-shell-timeout-warn 30
+  "How many seconds (integer) to wait before PG warns us that
+a command is taking a long time and might be malformed.
 
-Set to nil to disable."
-  :type 'boolean
-  :group 'proof-shell)
+Nil disables the timeout timer.
 
-(defcustom proof-shell-timeout-warn-length 30
-  "If `proof-shell-timeout-p' is true, this tells PG how long to
-wait before warning the user, in seconds.
-
-Default value is 30 seconds. Set it as an integer."
+Default value is 30 (seconds)."
   :type 'integer
   :group 'proof-shell)
 
