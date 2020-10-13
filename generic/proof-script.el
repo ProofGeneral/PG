@@ -2033,7 +2033,7 @@ This function expects the buffer to be activated for advancing."
       (setq proof-shell-timer
           (run-with-timer proof-shell-timeout-warn nil
                           'message "This command is taking a while. \
-Is it malformed? Do C-c C-c or C-c C-x to abort."))))
+Is it malformed? Do C-c C-c to interrupt prover or C-c C-x to terminate it."))))
 
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.
