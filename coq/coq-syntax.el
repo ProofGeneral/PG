@@ -567,6 +567,7 @@ so for the following reasons:
    '(
      ("About" nil "About #." nil "About")
      ("Check" nil "Check" nil "Check")
+     ("Compute" nil "Compute" nil "Compute")
      ("Fail" nil "Fail" nil "fail")
      ("Inspect" nil "Inspect #." nil "Inspect")
      ("Locate File" nil "Locate File \"#\"." nil "Locate\\s-+File")
