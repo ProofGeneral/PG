@@ -1520,7 +1520,7 @@ outside of any proof.
   "How many seconds (integer) to wait before PG warns us that
 a command is taking a long time and might be malformed.
 
-Nil disables the timeout timer.
+nil disables the timeout timer.
 
 Default value is 30 (seconds)."
   :type 'integer

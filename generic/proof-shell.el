@@ -151,10 +151,11 @@ from calling `proof-shell-exit'.")
 
 (defvar proof-shell-timer nil
   "A timer that alerts the user when the current command sent to the
-shell is taking too long and might be malformed. This is reset on entry
-of `proof-shell-exec-loop' and set when the next command is sent to
-the process. Disable by setting `proof-shell-timeout-p' to nil.
-Configure with `proof-shell-timeout-length'")
+shell is taking too long and might be malformed. This is cancelled
+in `proof-shell-exec-loop' or if there was an error and armed when
+the next command is sent to the process.
+Disable by setting `proof-shell-timeout-warn' to nil. Configure by
+setting `proof-shell-timeout-warn' to an integer.")
 
 
 ;;
@@ -744,6 +745,11 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
     ;; proof-action-list is empty on error.
     (setq proof-action-list nil)
     (proof-release-lock)
+    (unless proof-shell-busy
+		;; if the shell isn't still busy, cancel timer on error
+      (if (and proof-shell-timer proof-shell-timeout-warn)
+          (progn (cancel-timer proof-shell-timer)
+                 (setq proof-shell-timer nil))))
     (unless flags
       ;; Give a hint about C-c C-`.  (NB: approximate test)
       (if (pg-response-has-error-location)

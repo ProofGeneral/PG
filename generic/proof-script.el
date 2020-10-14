@@ -2028,7 +2028,8 @@ This function expects the buffer to be activated for advancing."
     (proof-extend-queue lastpos vanillas))
 
   ;; arm the timeout timer
-  ;; cancelled in proof-shell-exec-loop unless proof-shell-busy
+  ;; cancelled 1. in `proof-shell-exec-loop' unless `proof-shell-busy' or
+  ;; 2. in the case of error, in `proof-shell-error-or-interrupt-action'
   (if proof-shell-timeout-warn
       (setq proof-shell-timer
           (run-with-timer proof-shell-timeout-warn nil
