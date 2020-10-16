@@ -457,20 +457,6 @@ This is a subroutine of `proof-shell-filter'."
     (pg-response-display-with-face strnotrailingspace))) ; face
 
 
-;; Trying to accept { and } as terminator for empty commands. Actually
-;; I am experimenting two new commands "{" and "}" (without no
-;; trailing ".") which behave like BeginSubProof and EndSubproof. The
-;; absence of a trailing "." makes it difficult to distinguish between
-;; "{" of normal coq code (implicits, records) and this the new
-;; commands. We therefore define a coq-script-parse-function to this
-;; purpose.
-
-;; coq-end-command-regexp is ni coq-indent.el
-(defconst coq-script-command-end-regexp coq-end-command-regexp)
-;;        "\\(?:[^.]\\|\\(?:\\.\\.\\)\\)\\.\\(\\s-\\|\\'\\)")
-
-
-
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
 ;; candidate for proof-script-parse-function), to allow "{" and "}" to be
 ;; command terminator when the command is empty. TO PLUG: swith the comment
@@ -1913,7 +1899,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
   (setq proof-terminal-string ".")
-  (setq proof-script-command-end-regexp coq-script-command-end-regexp)
+  ;; superseded by coq-script-parse-function
+  ;;(setq proof-script-command-end-regexp coq-script-command-end-regexp)
   (setq proof-script-parse-function 'coq-script-parse-function)
   (setq proof-script-comment-start comment-start)
   (setq proof-script-comment-end comment-end)
@@ -2741,8 +2728,6 @@ built from the list of strings in SUGGESTED."
   (lambda (span) (coq-insert-proof-using-suggestion span))
   "Coq specific dependency mechanism.
 Used for automatic insertion of \"Proof using\" annotations.")
-
-;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 
 
 (defun coq-insert-as-in-next-command ()
