@@ -709,18 +709,19 @@ The point should be at the beginning of the command name."
      ((and (equal tok "|") (eq (char-before) ?\{))
       (goto-char (1- (point))) "{|")
 
+     ;; curly braces can be beginproof/endproof or record stuff.
      ((and (zerop (length tok)) (member (char-before) '(?\{ ?\}))
            (save-excursion
              (forward-char -1)
              (if (and (looking-at "{")
-                      (looking-back "\\([0-9]+\\s-*:\\s-*\\)" nil t))
+                      (looking-back "\\(\\[?\\w+\\]?\\s-*:\\s-*\\)" nil t))
                  (goto-char (match-beginning 0)))
              (let ((nxttok (coq-smie-backward-token))) ;; recursive call
                (coq-is-cmdend-token nxttok))))
       (forward-char -1)
       (if (looking-at "}") "} subproof"
         (if (and (looking-at "{")
-                 (looking-back "\\([0-9]+\\s-*:\\s-*\\)" nil t))
+                 (looking-back "\\(\\[?\\w+\\]?\\s-*:\\s-*\\)" nil t))
             (goto-char (match-beginning 0)))
         "{ subproof"
         ))
@@ -855,15 +856,18 @@ The point should be at the beginning of the command name."
       ;; qualifier.
       (let ((nxtnxt (char-after (+ (point) (length tok)))))
 	(if (eq nxtnxt ?\() ". selector"
-	  (if (or (null nxtnxt) (eq (char-syntax nxtnxt) ?\ ))
-	      ;; command terminator: ". proofstart" et al
-	      (save-excursion (forward-char (- (length tok) 1))
-			      (coq-smie-.-deambiguate))
-	    (if (eq (char-syntax nxtnxt) ?w)
-		(let ((newtok (coq-smie-complete-qualid-backward)))
+          (if (eq nxtnxt ?}) ;; dot immediately followed by closesubproof. 
+              "."
+	    (if (or (null nxtnxt) (eq (char-syntax nxtnxt) ?\ ))
+	        ;; command terminator: ". proofstart" et al
+	        (save-excursion (forward-char (- (length tok) 1))
+			        (coq-smie-.-deambiguate))
+	      (cond
+               ((eq (char-syntax nxtnxt) ?w)
+	        (let ((newtok (coq-smie-complete-qualid-backward)))
 		  ;; qualified name
-		  (concat newtok tok))
-	      ". selector")))))  ;; probably a user defined syntax
+		  (concat newtok tok)))
+	       (t ". selector")))))))  ;; probably a user defined syntax
 
      ((and (and (eq (char-before) ?.) (member (char-syntax (char-after))
 					      '(?w ?_))))
@@ -1244,7 +1248,8 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
 
        ((member token '("in let" "in monadic")) (smie-rule-parent))
 
-       ((equal token "} subproof") (smie-rule-parent))
+       ((equal token "} subproof")
+        (smie-rule-parent))
 
        ;; proofstart is a special hack, since "." should be used as a
        ;; separator between commands, here it is recognized as an open
