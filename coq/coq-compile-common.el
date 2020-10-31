@@ -626,6 +626,7 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 
 ;;; manage coq--compile-response-buffer
 
+;; XXX apparently nobody calls this with display equal to nil
 (defun coq-compile-display-error (command error-message display)
   "Display COMMAND and ERROR-MESSAGE in `coq--compile-response-buffer'.
 If needed, reinitialize `coq--compile-response-buffer'.  Then
