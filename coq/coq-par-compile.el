@@ -37,6 +37,7 @@
 ;;   in a state before waiting-dep
 ;; - a coqdep error on a require command
 ;; - some dependency cycles
+;; - a job depending on a failed dependee, where the dependee has been finished before
 
 ;;; Code:
 
@@ -1967,7 +1968,7 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 	  exit-status
 	  (process-get process 'coq-process-output)
 	  (process-get process 'coq-process-command)))
-	job-max-time)
+	job-max-time dependee-failed)
     (if (stringp dependencies-or-error)
         (progn
           (when coq--debug-auto-compilation
@@ -1993,6 +1994,8 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
                                                    (get job 'load-path)
                                                    (get job 'src-file)))
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
+            (when (get dep-job 'failed)
+              (setq dependee-failed t))
             ;; XXX what happens when dep-job failed?
 	    (unless (eq (get dep-job 'state) 'ready)
               ;; the following clause is not needed for require jobs,
@@ -2001,7 +2004,11 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
               (when (coq-par-time-less job-max-time dep-time)
                 (setq job-max-time dep-time))
 	      (coq-par-add-coqc-dependency dep-job job)))))
-      (put job 'youngest-coqc-dependency job-max-time))
+      (put job 'youngest-coqc-dependency job-max-time)
+      (when dependee-failed
+        (cl-assert coq-compile-keep-going
+                   nil "compilation continues without keep going")
+        (coq-par-mark-job-failing job)))
     ;; common part for job where coqdep was successful and where
     ;; coqdep failed (when coq-compile-keep-going)
     (put job 'state 'waiting-dep)
