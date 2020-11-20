@@ -110,16 +110,20 @@ If it doesn't look right, try `coq-autodetect-version'."
   "Call coqtop with the given OPTION and return the output.
 The given option should make coqtop return immediately.
 Optionally check the return code and return nil if the check
-fails.
+fails.  Return also nil on other kinds of errors (e.g., `coq-prog-name'
+not found).
 This function supports calling coqtop via tramp."
   (let ((coq-command (or coq-prog-name "coqtop"))
         retv)
-    (with-temp-buffer
-      (setq retv (if option
-                     (process-file coq-command nil t nil option)
-                   (process-file coq-command nil t nil)))
-      (if (or (not expectedretv) (equal retv expectedretv))
-          (buffer-string)))))
+    (condition-case nil
+        (with-temp-buffer
+          (setq retv (if option
+                         (process-file coq-command nil t nil option)
+                       (process-file coq-command nil t nil)))
+          (if (or (not expectedretv) (equal retv expectedretv))
+              (buffer-string)))
+      (error nil))))
+        
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
