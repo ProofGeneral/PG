@@ -112,21 +112,14 @@ The given option should make coqtop return immediately.
 Optionally check the return code and return nil if the check
 fails.
 This function supports calling coqtop via tramp."
-  (let* ((default-directory
-           (if (file-accessible-directory-p default-directory)
-               default-directory
-             "/"))
-         (coq-command (shell-quote-argument (or coq-prog-name "coqtop")))) 
+  (let ((coq-command (or coq-prog-name "coqtop"))
+        retv)
     (with-temp-buffer
-      ;; Use `shell-command' via `find-file-name-handler' instead of
-      ;; `process-line': when the buffer is running TRAMP, PG uses
-      ;; `start-file-process', loading the binary from the remote server.
-      (let* ((shell-command-str (format "%s %s" coq-command (or option "")))
-             (fh (find-file-name-handler default-directory 'shell-command))
-             (retv (if fh (funcall fh 'shell-command shell-command-str (current-buffer))
-                     (shell-command shell-command-str (current-buffer)))))
-        (if (or (not expectedretv) (equal retv expectedretv))
-            (buffer-string))))))
+      (setq retv (if option
+                     (process-file coq-command nil t nil option)
+                   (process-file coq-command nil t nil)))
+      (if (or (not expectedretv) (equal retv expectedretv))
+          (buffer-string)))))
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
