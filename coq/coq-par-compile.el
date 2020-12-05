@@ -25,18 +25,19 @@
 ;;
 ;; - fix -I current-dir argument for coqc invocations
 ;; - on error, try to put location info into the error message
+;; - use file-attribute-modification-time and similar functions when
+;;   dropping support for emacs 25 (emacs 26.1 released on 05/2018)
+;; - use define-error when dropping support for emacs 24 (25.1
+;;   released on 09/2016)
 ;;
 ;; Note that all argument computations inherit `coq-autodetected-version': when
 ;; changing compilers, all compilation jobs must be terminated.  This is
 ;; consistent with the fact that the _CoqProject file is not reparsed.
 ;;
 ;; tests wanted:
-;; - a require command with no dependencies or all deps ignored
 ;; - unlock checks for ancestors of failed jobs in different cases
 ;; - two require jobs, where the first finishes, while the second is
 ;;   in a state before waiting-dep
-;; - a coqdep error on a require command
-;; - some dependency cycles
 ;; - a job depending on a failed dependee, where the dependee has been finished before
 
 ;;; Code:
@@ -664,6 +665,7 @@ in a cycle."
         ;; XXX when clause does not make sense: job is a dependee or
         ;; dependency of (car p), therefore (car p) can only be in
         ;; state 'waiting-dep
+        ;; XXX only recurse for dependants not visited yet
 	(when (eq (get (car p) 'state) 'waiting-dep)
           ;; XXX should not be called on visited ancestors?
 	  (setq cycle (coq-par-find-dependency-circle-for-job (car p) path)))

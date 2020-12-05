@@ -600,8 +600,8 @@ Changes the suffix from .vo to .vio.  VO-OBJ-FILE must have a .vo suffix."
   (concat (coq-library-src-of-vo-file vo-obj-file) "io"))
 
 (defun coq-library-vos-of-vo-file (vo-obj-file)
-  "Return .vok file name for VO-OBJ-FILE.
-Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
+  "Return .vos file name for VO-OBJ-FILE.
+Changes the suffix from .vo to .vos.  VO-OBJ-FILE must have a .vo suffix."
   (concat vo-obj-file "s"))
 
 
