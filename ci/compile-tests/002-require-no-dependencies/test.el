@@ -1,0 +1,45 @@
+;; This file is part of Proof General.
+;; 
+;; © Copyright 2020  Hendrik Tews
+;; 
+;; Authors: Hendrik Tews
+;; Maintainer: Hendrik Tews <hendrik@askra.de>
+;; 
+;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+
+;;; Commentary:
+;;
+;; Coq Compile Tests (cct) --
+;; ert tests for parallel background compilation for Coq
+;;
+;; Test parallel background compilation when one require command does
+;; not produce any dependencies.
+;;
+;; The following graph shows the file dependencies in this test:
+;; 
+;;      a    b
+;;           |
+;;           c
+
+
+;;; set configuration
+(cct-configure-proof-general)
+
+;;; Define the tests
+
+(ert-deftest cct-one-require-with-no-dependencies ()
+  "Test background compilation with an require with no dependencies."
+  (find-file "a.v")
+  (cct-process-to-line 25)
+  
+  (cct-check-locked 24 'locked)
+  (cct-locked-ancestors 22 '()))
+    
+(ert-deftest cct-two-requires-first-no-dependencies ()
+  "Test background compilation with an require with no dependencies."
+  (find-file "b.v")
+  (cct-process-to-line 25)
+  
+  (cct-check-locked 24 'locked)
+  (cct-locked-ancestors 22 '())
+  (cct-locked-ancestors 23 '("./c.v")))
