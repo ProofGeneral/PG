@@ -95,3 +95,45 @@ jobs:
           endGroup
 
   # - run: echo "::remove-matcher owner=ert-problem-matcher::"
+
+  compile-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        coq_version:
+          - '8.9'
+          - '8.10'
+          - '8.11'
+        ocaml_version:
+          - minimal
+      # at most 20 concurrent jobs per free account
+      # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
+      max-parallel: 6
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Add ert problem matcher
+      run: echo "::add-matcher::.github/ert.json"
+      
+    - uses: coq-community/docker-coq-action@v1
+      id: docker-coq-action
+      with:
+        opam_file: 'dummy.opam'
+        coq_version: ${{ matrix.coq_version }}
+        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_script: |
+          startGroup Print opam config
+            opam config list; opam repo list; opam list
+          endGroup
+          startGroup Install emacs
+            sudo apt-get update -y -q
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
+          endGroup
+          startGroup Run tests
+            sudo chown -R coq:coq ./ci
+            make -C ci/compile-tests test
+          endGroup
