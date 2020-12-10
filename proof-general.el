@@ -56,8 +56,9 @@
 ;;;###autoload
 (eval-and-compile
   (defvar pg-init--script-full-path
-    (or (and load-in-progress load-file-name)
-        (bound-and-true-p byte-compile-current-file)
+    (or (bound-and-true-p byte-compile-current-file)
+        (and load-in-progress load-file-name)
+
         (buffer-file-name)))
   (defvar pg-init--pg-root
     (file-name-directory pg-init--script-full-path)))
