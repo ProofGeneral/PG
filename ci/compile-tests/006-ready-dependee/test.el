@@ -125,6 +125,6 @@ Combine all the following tests in this order:
     (cct-check-main-buffer
      vo-times "10"
      '("./b.vo" "./c.vo" "./d.vo" "./e.vo" "./f.vo" "./g.vo"
-       "./h.vo" "./i.vo" "./j.v" "./k.v")
+       "./h.vo" "./i.vo" "./j.vo" "./k.vo")
      other-locked-files)
   ))

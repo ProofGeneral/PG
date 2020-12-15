@@ -39,6 +39,9 @@
 ;; - two require jobs, where the first finishes, while the second is
 ;;   in a state before waiting-dep
 ;; - a job depending on a failed dependee, where the dependee has been finished before
+;; - coq-par-create-file-job detects a dependency cycle
+;; - coq-par-create-file-job finds a job in every possible state
+;; - coq-par-create-file-job finds a failed job
 
 ;;; Code:
 
@@ -1577,18 +1580,24 @@ before."
         ;;
         ;; If this job has just been compiled then it is clearly
         ;; 'just-compiled. Otherwise it must be 'obj-mod-time, because
-        ;; if some ancestore were newer, this just would have been
+        ;; if some ancestor were newer, this just would have been
         ;; compiled. For failed jobs obj-mod-time might be nil, but
         ;; this does not matter.
         (dep-time (if just-compiled 'just-compiled
                     (get job 'obj-mod-time))))
     (put job 'youngest-coqc-dependency dep-time)
     (when coq--debug-auto-compilation
-      (message "%s: kickoff %d coqc dependencies with time %s"
-	       (get job 'name) (length (get job 'coqc-dependants))
-	       (if (eq dep-time 'just-compiled)
-		   'just-compiled
-		 (current-time-string dep-time))))
+      (let (ancs)
+        ;; don't use map-apply here, this changes the timing too much
+        (maphash
+         (lambda (anc-job not-used) (push (get anc-job 'src-file) ancs))
+         ancestor-hash)
+        (message "%s: kickoff %d coqc dependencies with time %s\n\tancestors %s"
+	         (get job 'name) (length (get job 'coqc-dependants))
+	         (if (eq dep-time 'just-compiled)
+		     'just-compiled
+		   (current-time-string dep-time))
+                 ancs)))
     ;; In the recursion coq-par-kickoff-coqc-dependants ->
     ;; coq-par-decrease-coqc-dependency -> coq-par-compile-job-maybe
     ;; -> coq-par-kickoff-coqc-dependants jobs on the path upwards
@@ -1605,8 +1614,7 @@ before."
 	       (if dependant-alive "some" "no")))
     (when (and (not dependant-alive)
                (not (get job 'failed)))
-      ;; job has not failed (see first assert), but all dependants
-      ;; have 'failed set
+      ;; job has not failed, but all dependants have 'failed set
       (coq-par-unlock-job-ancestors-on-error job))))
 
 (defun coq-par-start-coqdep-on-require (job)
@@ -1998,13 +2006,16 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
             (when (get dep-job 'failed)
               (setq dependee-failed t))
-            ;; XXX what happens when dep-job failed?
-	    (unless (eq (get dep-job 'state) 'ready)
+            (when (eq (get dep-job 'state) 'ready)
+              (merge-hash-content (get job 'ancestors) (get dep-job 'ancestors))
               ;; the following clause is not needed for require jobs,
               ;; but it doesn't harm either, so keep the code a little
               ;; bit more simple
               (when (coq-par-time-less job-max-time dep-time)
-                (setq job-max-time dep-time))
+                (setq job-max-time dep-time)))
+            ;; not adding the dependency link is fine now
+            ;; with a feature for background vo compilation, this link is needed
+            (unless (eq (get dep-job 'state) 'ready)
 	      (coq-par-add-coqc-dependency dep-job job)))))
       (put job 'youngest-coqc-dependency job-max-time)
       (when dependee-failed
