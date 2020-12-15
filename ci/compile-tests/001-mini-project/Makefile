@@ -11,8 +11,8 @@
 .PHONY: test
 test:
 	$(MAKE) clean
-	emacs -batch -l ert -l ../../../generic/proof-site.el -l ../cct-lib.el \
-		-l test.el -f ert-run-tests-batch-and-exit
+	emacs -batch -l ../../../generic/proof-site.el -l ../cct-lib.el \
+		-l runtest.el -f ert-run-tests-batch-and-exit
 
 .PHONY: clean
 clean:

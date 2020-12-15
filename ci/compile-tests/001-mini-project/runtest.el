@@ -25,6 +25,9 @@
 ;;       d   e   f
 
 
+;; require cct-lib for the elisp compilation, otherwise this is present already
+(require 'cct-lib)
+
 ;;; set configuration
 (cct-configure-proof-general)
 
