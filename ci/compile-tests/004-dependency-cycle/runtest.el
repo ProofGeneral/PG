@@ -25,6 +25,9 @@
 ;; where a1 and a2 are the 2 require commands in file a.v.
 
 
+;; require cct-lib for the elisp compilation, otherwise this is present already
+(require 'cct-lib)
+
 ;;; set configuration
 (cct-configure-proof-general)
 

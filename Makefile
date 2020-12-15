@@ -33,10 +33,26 @@ EMACS=$(shell if [ -z "`which emacs`" ]; then echo "Emacs executable not found";
 PREFIX=$(DESTDIR)/usr
 DEST_PREFIX=$(DESTDIR)/usr
 
+# subdirectories for provers: to be compiled and installed
 PROVERS=acl2 ccc coq easycrypt hol-light hol98 isar lego pghaskell pgocaml pgshell phox twelf
+
+# generic lisp code: to be compiled and installed
 OTHER_ELISP=generic lib
-ELISP_DIRS=${PROVERS} ${OTHER_ELISP}
+
+# additional lisp code: to be compiled but not installed
+ADDITIONAL_ELISP:=ci/compile-tests \
+		$(wildcard ci/compile-tests/[0-9][0-9][0-9]-*)
+
+# directories with lisp code to be installed
+ELISP_DIRS_INST=${PROVERS} ${OTHER_ELISP}
+
+# directories with lisp code to be compiled (superset of ELISP_DIRS_INST
+ELISP_DIRS_COMP=${ELISP_DIRS_INST} ${ADDITIONAL_ELISP}
+
+# to be installed
 ELISP_EXTRAS=
+
+# to be installed
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
@@ -54,11 +70,11 @@ BIN_SCRIPTS = lego/legotags coq/coqtags isar/isartags
 
 # Setting load path might be better in Elisp, but seems tricky to do
 # only during compilation.  Another idea: put a function in proof-site
-# to output the compile-time load path and ELISP_DIRS so these are set
+# to output the compile-time load path and ELISP_DIRS_COMP so these are set
 # just in that one place.
 ERROR_ON_WARN = nil
-BYTECOMP = $(BATCHEMACS) -eval '(setq load-path (append (mapcar (lambda (d) (expand-file-name (symbol-name d))) (quote (${ELISP_DIRS}))) load-path))' -eval '(progn (require (quote bytecomp)) (require (quote mouse)) (require (quote tool-bar)) (require (quote fontset)) (setq byte-compile-warnings (remove (quote cl-functions) (remove (quote noruntime) byte-compile-warning-types))) (setq byte-compile-error-on-warn $(ERROR_ON_WARN)))' -f batch-byte-compile
-EL=$(shell for f in $(ELISP_DIRS); do ls $$f/*.el; done)
+BYTECOMP = $(BATCHEMACS) -eval '(setq load-path (append (mapcar (lambda (d) (expand-file-name (symbol-name d))) (quote (${ELISP_DIRS_COMP}))) load-path))' -eval '(progn (require (quote bytecomp)) (require (quote mouse)) (require (quote tool-bar)) (require (quote fontset)) (setq byte-compile-warnings (remove (quote cl-functions) (remove (quote noruntime) byte-compile-warning-types))) (setq byte-compile-error-on-warn $(ERROR_ON_WARN)))' -f batch-byte-compile
+EL=$(shell for f in $(ELISP_DIRS_COMP); do ls $$f/*.el; done)
 ELC=$(EL:.el=.elc)
 
 .SUFFIXES:	.el .elc
@@ -189,15 +205,15 @@ install-elisp: install-el install-elc
 # Should use install program or fix ownerships afterwards here.
 install-el:
 	mkdir -p ${ELISP}
-	for f in ${ELISP_DIRS} ${EXTRA_DIRS}; do mkdir -p ${ELISP}/$$f; done
-	for f in ${ELISP_DIRS}; do cp -pf $$f/*.el ${ELISP}/$$f; done
+	for f in ${ELISP_DIRS_INST} ${EXTRA_DIRS}; do mkdir -p ${ELISP}/$$f; done
+	for f in ${ELISP_DIRS_INST}; do cp -pf $$f/*.el ${ELISP}/$$f; done
 	for f in ${EXTRA_DIRS}; do cp -prf $$f/* ${ELISP}/$$f; done
 	for f in ${ELISP_EXTRAS}; do cp -pf $$f ${ELISP}/$$f; done
 
 install-elc: compile
 	mkdir -p ${ELISP}
-	for f in ${ELISP_DIRS} ${EXTRA_DIRS}; do mkdir -p ${ELISP}/$$f; done
-	for f in ${ELISP_DIRS}; do cp -pf $$f/*.elc ${ELISP}/$$f; done
+	for f in ${ELISP_DIRS_INST} ${EXTRA_DIRS}; do mkdir -p ${ELISP}/$$f; done
+	for f in ${ELISP_DIRS_INST}; do cp -pf $$f/*.elc ${ELISP}/$$f; done
 	for f in ${ELISP_EXTRAS}; do cp -pf $$f ${ELISP}/$$f; done
 
 install-init:

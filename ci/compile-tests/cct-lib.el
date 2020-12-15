@@ -16,6 +16,27 @@
 ;; This file contains common definitions for the automated tests of
 ;; parallel background compilation.
 
+;; Require some libraries for the elisp compilation. When compiling,
+;; nothing is loaded, but all Proof General directories are in the
+;; load path. When this file is loaded as part of a test, proof-site
+;; has been loaded but only the generic subdir is in the load path.
+;; This file references variables from coq-compile-common and
+;; functions from proof-shell, therefore coq-compile-common must be
+;; required for compilation. When running a test, these files would be
+;; loaded anyway when the test visits the first Coq file. For
+;; executing tests, the coq subdir will only be added to the load path
+;; when the first Coq file is visited. Therefore we have to add it
+;; here via proof-ready-for-assistant. For compilation, we have to
+;; require proof-site, otherwise proof-ready-for-assistant won't be
+;; defined.
+(require 'proof-site)
+(proof-ready-for-assistant 'coq)
+(require 'coq-compile-common)
+(require 'ert)
+
+;; needed for seq-set-equal-p
+(require 'seq)
+
 
 (defmacro cct-implies (p q)
   "Short-circuit logical implication.
@@ -97,8 +118,7 @@ reports a test failure if there is none or more than one vanilla spans."
   "Extract the last line from the *Messages* buffer.
 Useful if the message is not present in the echo area any more
 and `current-message' does not return anything."
-  (save-excursion
-    (set-buffer "*Messages*")
+  (with-current-buffer "*Messages*"
     (goto-char (point-max))
     (forward-line -1)
     (buffer-substring (point) (- (point-max) 1))))
@@ -193,3 +213,5 @@ or changed since recording the time in the association."
         proof-three-window-enable nil
         coq-compile-auto-save 'save-coq
         coq--debug-auto-compilation nil))
+
+(provide 'cct-lib)

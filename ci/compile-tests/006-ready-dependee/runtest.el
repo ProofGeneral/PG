@@ -34,6 +34,9 @@
 ;; recompiled after k has changed.
 
 
+;; require cct-lib for the elisp compilation, otherwise this is present already
+(require 'cct-lib)
+
 ;;; set configuration
 (cct-configure-proof-general)
 
@@ -97,7 +100,6 @@ Combine all the following tests in this order:
 
 (ert-deftest cct-change-recompile ()
   "Test successful recompilation for a dependency in state ready."
-  ;; :expected-result :failed
   ;;(setq coq--debug-auto-compilation t)
   (find-file "a.v")
 

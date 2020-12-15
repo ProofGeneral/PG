@@ -17,8 +17,8 @@ TEST_SOURCES:=a.v b.v c.v d.v e.v f.v g.v h.v
 test:
 	$(MAKE) clean
 	$(MAKE) $(TEST_SOURCES)
-	emacs -batch -l ert -l ../../../generic/proof-site.el -l ../cct-lib.el \
-		-l test.el -f ert-run-tests-batch-and-exit
+	emacs -batch -l ../../../generic/proof-site.el -l ../cct-lib.el \
+		-l runtest.el -f ert-run-tests-batch-and-exit
 
 %.v: %.v.orig
 	cp $< $@
