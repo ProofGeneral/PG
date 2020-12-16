@@ -42,6 +42,7 @@
 ;; - coq-par-create-file-job detects a dependency cycle
 ;; - coq-par-create-file-job finds a job in every possible state
 ;; - coq-par-create-file-job finds a failed job
+;; - all tests in all quick and all vos variants
 
 ;;; Code:
 

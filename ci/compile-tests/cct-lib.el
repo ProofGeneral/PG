@@ -223,6 +223,13 @@ or changed since recording the time in the association."
         proof-auto-action-when-deactivating-scripting 'retract
         proof-three-window-enable nil
         coq-compile-auto-save 'save-coq
-        coq--debug-auto-compilation nil))
+        coq--debug-auto-compilation nil
+        )
+  (custom-set-variables '(coq-compile-quick 'ensure-vo))
+  (when (< coq--internal-max-jobs 4)
+    (custom-set-variables '(coq-max-background-compilation-jobs 4)))
+  (message "config coq-max-background-compilation-jobs: %s (means %d)"
+           coq-max-background-compilation-jobs
+           coq--internal-max-jobs))
 
 (provide 'cct-lib)
