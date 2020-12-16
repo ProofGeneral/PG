@@ -34,14 +34,27 @@
 (require 'coq-compile-common)
 (require 'ert)
 
-;; needed for seq-set-equal-p
-(require 'seq)
-
 
 (defmacro cct-implies (p q)
   "Short-circuit logical implication.
 Evaluate Q only if P is non-nil."
   `(or (not ,p) ,q))
+
+(defun cct-list-subset (l1 l2)
+  "Return t if all elements of L1 are in L2 (compared by `equal')"
+  (let ((res t))
+    (while (and l1 res)
+      (unless (member (pop l1) l2)
+        (setq res nil)))
+    res))
+
+;; Reimplementation of seq-set-equal-p for lists, because
+;; seq-set-equal-p is not present before emacs 26.
+;; XXX consider seq-set-equal-p when emacs 25 support is dropped.
+(defun cct-list-set-equal (l1 l2)
+  "Return t if L1 and L2 contain the elements (compared by `equal')"
+  (and (cct-list-subset l1 l2)
+       (cct-list-subset l2 l1)))
 
 (defun cct-goto-line (line)
   "Put point on start of line LINE.
@@ -70,18 +83,16 @@ cannot be accessed."
 (defun cct-split-change-times (file-change-times files)
   "Split assoc list FILE-CHANGE-TIMES.
 FILE-CHANGE-TIMES must be an assoc list and FILES must be a
-subset (i.e., each key occoring at most once) of the keys of
+subset (i.e., each key occurring at most once) of the keys of
 FILE-CHANGE-TIMES as list. This function returns two associations
 lists (as cons cell). The car contains those associations in
 FILE-CHANGE-TIMES with keys not in FILES, the cdr contains those
 with keys in FILES."
-  (seq-reduce
-   (lambda (acc file)
-     (push (assoc file (car acc)) (cdr acc))
-     (setcar acc (assoc-delete-all file (car acc)))
-     acc)
-   files
-   (cons (copy-alist file-change-times) nil)))
+  (let (out in)
+    (dolist (file-time file-change-times (cons out in))
+      (if (member (car file-time) files)
+          (push file-time in)
+        (push file-time out)))))
 
 (defun cct-process-to-line (line)
   "Assert/retract to line LINE and wait until processing completed."
@@ -159,7 +170,7 @@ documentation of coq/coq-par-compile.el."
   (let ((locked-ancestors
          (span-property (cct-get-vanilla-span line) 'coq-locked-ancestors)))
     (should
-     (seq-set-equal-p locked-ancestors ancestors))))
+     (cct-list-set-equal locked-ancestors ancestors))))
 
 (defun cct-file-unchanged (file time)
   "Check that modification time of FILE equals TIME.
