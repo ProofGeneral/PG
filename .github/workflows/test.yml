@@ -133,6 +133,12 @@ jobs:
             sudo apt-get update -y -q
             sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
           endGroup
+          startGroup other relevant configuration
+            getconf _NPROCESSORS_ONLN
+            emacs --version
+            coqc --version
+            ocaml --version
+          endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
             make -C ci/compile-tests test
