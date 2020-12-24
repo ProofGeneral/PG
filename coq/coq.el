@@ -136,11 +136,11 @@ Namely, goals that do not fit in the goals window."
 ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
 
-(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
+(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
   "*Regular expression indicating that the proof has been completed.")
 
 (defvar coq-goal-regexp
-  "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
+  "\\(============================\\)\\|\\(\\(?:sub\\)?goal [0-9]+\\)\n")
 
 
 (defconst coq-interrupt-regexp "User Interrupt."
@@ -154,7 +154,7 @@ A setting of nil means show all output from Coq.  See also option
   :group 'coq)
 
 (defcustom coq-end-goals-regexp-hide-subgoals
-  (concat "\\(\nsubgoal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
+  (concat "\\(\n\\(?:sub\\)?goal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
   "Regexp for `proof-shell-end-goals-regexp' when hiding additional subgoals.
 See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
@@ -212,9 +212,9 @@ It is mostly useful in three window mode, see also
   :group 'coq-proof-tree)
 
 (defcustom coq-proof-tree-current-goal-regexp
-  (concat "^[0-9]+ \\(?:focused \\)?subgoal\\(?:s\\)?\\s-*"
+  (concat "^[0-9]+ \\(?:focused \\)?\\(?:sub\\)?goal\\(?:s\\)?\\s-*"
           "\\(?:(\\(?:unfocused: [-0-9]+\\)?,?"
-          "\\s-*\\(?:shelved: [-0-9]+\\)?)\\)?\\(?:\\s-*, subgoal 1\\)? "
+          "\\s-*\\(?:shelved: [-0-9]+\\)?)\\)?\\(?:\\s-*, \\(?:sub\\)?goal 1\\)? "
           "(ID \\([0-9]+\\))\n\\s-*\n\\(\\(?: .*\n\\)+\\)\\(?:\n\\|$\\)")
   "Regexp for `proof-tree-current-goal-regexp'."
   :type 'regexp
@@ -228,7 +228,7 @@ It is mostly useful in three window mode, see also
   :group 'coq-proof-tree)
 
 (defcustom coq-proof-tree-additional-subgoal-ID-regexp
-  "^subgoal [0-9]+ (ID \\([0-9]+\\)) is:"
+  "^\\(?:sub\\)?goal [0-9]+ (ID \\([0-9]+\\)) is:"
   "Regexp for `proof-tree-additional-subgoal-ID-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
@@ -269,8 +269,8 @@ It is mostly useful in three window mode, see also
 ;; <infomsg>All the remaining goals are on the shelf.</infomsg>
 (defcustom coq-proof-tree-branch-finished-regexp
   (concat "^\\(\\(?:Proof completed\\.\\)\\|"
-          "\\(?:\\(?:<infomsg>\\)?No more subgoals\\)\\|"
-          "\\(No more subgoals but non-instantiated "
+          "\\(?:\\(?:<infomsg>\\)?No more \\(?:sub\\)?goals\\)\\|"
+          "\\(No more \\(?:sub\\)?goals but non-instantiated "
           "existential variables:\\)\\|"
           "\\(?:<infomsg>All the remaining goals are on the shelf\\)\\|"
           "\\(<infomsg>\\s-*This subproof is complete, but there are "
@@ -718,7 +718,7 @@ If locked span already has a state number, then do nothing. Also updates
    ((looking-at "============================\n")
     (goto-char (match-end 0))
     (cons 'goal (int-to-string coq-current-goal)))
-   ((looking-at "subgoal \\([0-9]+\\) is:\n")
+   ((looking-at "\\(?:sub\\)?goal \\([0-9]+\\) is:\n")
     (goto-char (match-end 0))
     (cons 'goal (match-string 1))       ;FIXME: This is dead-code!?  --Stef
     (setq coq-current-goal (string-to-number (match-string 1))))
@@ -2006,7 +2006,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-result-end "\372 End Pbp result \373"
 
 ;   proof-shell-start-goals-regexp          "^\\(?:(dependent evars:[^)]*)\\s-+\\)?[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? subgoals?"
+   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
    proof-shell-end-goals-regexp
    (if coq-hide-additional-subgoals
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
@@ -2552,7 +2552,7 @@ mouse activation."
 
 (defun coq--format-intros (output)
   "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
-  (let* ((shints1 (replace-regexp-in-string "^[0-9] subgoal\\(.\\|\n\\|\r\\)*"  "" output))
+  (let* ((shints1 (replace-regexp-in-string "^[0-9] \\(?:sub\\)?goal\\(.\\|\n\\|\r\\)*"  "" output))
          (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
     (if (or (string= "" shints)
             (string-match coq-error-regexp shints))
@@ -3159,7 +3159,7 @@ number of hypothesis displayed, without hiding the goal"
               (with-selected-window goal-win
                 ;; find snd goal or buffer end, if not found this goes to the
                 ;; end of buffer
-                (search-forward-regexp "subgoal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
+                (search-forward-regexp "\\(?:sub\\)?goal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
                 (beginning-of-line)
                 ;; find something backward else than a space: bottom of concl
                 (ignore-errors (search-backward-regexp "\\S-"))
@@ -3187,7 +3187,7 @@ number of hypothesis displayed, without hiding the goal"
   "Modify `minor-mode-alist' to display the number of subgoals in the modeline."
   (when (and proof-goals-buffer proof-script-buffer)
     (let ((nbgoals (with-current-buffer proof-goals-buffer
-                     (string-to-number (coq-first-word-before "focused\\|subgoal"))))
+                     (string-to-number (coq-first-word-before "focused\\|\\(?:sub\\)?goal"))))
           (nbunfocused (with-current-buffer proof-goals-buffer
                          (coq-get-from-to-paren "unfocused: "))))
       (with-current-buffer proof-script-buffer
