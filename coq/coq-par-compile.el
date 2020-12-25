@@ -1639,9 +1639,10 @@ was queued."
            (get job 'load-path)))
         (coq-load-path-include-current nil)
         (require-command
-         (mapconcat 'identity (nth 1 (car (get job 'queueitems))) " ")))
-    (put job 'temp-require-file
-         (make-temp-file "ProofGeneral-coq" nil ".v" require-command))
+         (mapconcat 'identity (nth 1 (car (get job 'queueitems))) " "))
+        (temp-file (make-temp-file "ProofGeneral-coq" nil ".v")))
+    (put job 'temp-require-file temp-file)
+    (with-temp-file temp-file (insert require-command))
     (when coq--debug-auto-compilation
       (message "%s: start coqdep for require job for file %s"
 	       (get job 'name)
