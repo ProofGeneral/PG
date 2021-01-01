@@ -57,44 +57,22 @@
   "All vo ancestors files.")
   
 
-(defun cct-replace-last-word (line word)
-  "Replace last word in line LINE with WORD.
-In current buffer, go to the end of line LINE and one word
-backward. Replace the word there with WORD."
-  (cct-goto-line line)
-  (end-of-line)
-  (backward-word)
-  (kill-word 1)
-  (insert word))
-
-(defun cct-check-main-buffer (vo-times new-sum recompiled-files
+(defun check-main-buffer (vo-times new-sum recompiled-files
                                        other-locked-files)
-  "Perform various checks for recompilation in buffer a.v.
-Combine all the following tests in this order:
-- line 21 in a.v is unlocked
-- after replacing the sum on line 28 with NEW-SUM, a.v can be
-  processed until line 38
-- files in VO-TIMES not listed in RECOMPILED-FILES have the same
-  last change time as in VO-TIMES
-- files in RECOMPILED-FILES have a newer change time
-- the spans in line 22 and 23 hold the ancestors of b and c, respectively.
-- all the buffers in OTHER-LOCKED-FILES are locked until line 18."
-  (let (splitted)
-    (set-buffer "a.v")
-    (cct-check-locked 21 'unlocked)
-    (cct-replace-last-word 28 new-sum)
-    (cct-process-to-line 38)
-    (cct-check-locked 37 'locked)
-    (setq splitted (cct-split-change-times vo-times recompiled-files))
-    (cct-unmodified-change-times (car splitted))
-    (cct-older-change-times (cdr splitted))
-    (cct-locked-ancestors 22 b-ancestors)
-    (cct-locked-ancestors 23 c-ancestors)
-    (mapc
-     (lambda (b)
-       (set-buffer b)
-       (cct-check-locked 18 'locked))
-     other-locked-files)))
+  "Perform various checks in buffer a.v.
+See `cct-generic-check-main-buffer'."
+  (cct-generic-check-main-buffer
+   "a.v"                                ; main-buf
+   21                                   ; main-unlocked
+   37                                   ; main-locked
+   28                                   ; main-sum-line
+   new-sum
+   vo-times
+   recompiled-files
+   `((22 . ,b-ancestors) (23 . ,c-ancestors)) ; require-ancestors
+   other-locked-files
+   18                                   ; other-locked-line
+   ))
 
 
 ;;; The test itself
@@ -116,7 +94,7 @@ Combine all the following tests in this order:
     ;; 2. retract and process again - nothing should be compiled
     (message "\n2. retract and process again - nothing should be compiled\n")
     (cct-process-to-line 21)
-    (cct-check-main-buffer vo-times "35" nil nil)
+    (check-main-buffer vo-times "35" nil nil)
 
     ;; 3. change c and process again - only c should be compiled
     (message "\n3. change c and process again - only c should be compiled\n")
@@ -124,7 +102,7 @@ Combine all the following tests in this order:
     (push "c.v" other-locked-files)
     (cct-check-locked 23 'locked)
     (cct-replace-last-word 23 "4")
-    (cct-check-main-buffer vo-times "36" '("./c.vo") other-locked-files)
+    (check-main-buffer vo-times "36" '("./c.vo") other-locked-files)
 
     ;; 4. change h and process again - everything except g should get compiled
     (message (concat "\n4. change h and process again - "
@@ -134,7 +112,7 @@ Combine all the following tests in this order:
     (push "h.v" other-locked-files)
     (cct-check-locked 21 'locked)
     (cct-replace-last-word 21 "10")
-    (cct-check-main-buffer
+    (check-main-buffer
      vo-times "38" '("./b.vo" "./c.vo" "./d.vo" "./e.vo" "./f.vo" "./h.vo")
      other-locked-files)
     
@@ -152,7 +130,7 @@ Combine all the following tests in this order:
     (cct-check-locked 23 'unlocked)
     (cct-replace-last-word 23 "10")
 
-    (cct-check-main-buffer
+    (check-main-buffer
      vo-times "45" '("./b.vo" "./c.vo" "./d.vo" "./f.vo") other-locked-files)
 
     ;; 6. change d and b and process again - only d and b should get compiled
@@ -167,7 +145,7 @@ Combine all the following tests in this order:
     (cct-check-locked 23 'unlocked)
     (cct-replace-last-word 23 "13")    ; increase by 6
 
-    (cct-check-main-buffer vo-times "56" '("./b.vo" "./d.vo")
+    (check-main-buffer vo-times "56" '("./b.vo" "./d.vo")
                            other-locked-files)
     
     ;; 7. delete b and process again - only b should get compiled
@@ -177,7 +155,7 @@ Combine all the following tests in this order:
     (delete-file "b.vo")
     (set-buffer "a.v")
     (cct-process-to-line 21)
-    (cct-check-main-buffer vo-times "56" '("./b.vo") other-locked-files)
+    (check-main-buffer vo-times "56" '("./b.vo") other-locked-files)
     
     ;; 8. delete h and process again - everything except g should get compiled
     (message (concat "\n8. delete h and process again - "
@@ -186,7 +164,7 @@ Combine all the following tests in this order:
     (delete-file "h.vo")
     (set-buffer "a.v")
     (cct-process-to-line 21)
-    (cct-check-main-buffer
+    (check-main-buffer
      vo-times "56" '("./b.vo" "./c.vo" "./d.vo" "./e.vo" "./f.vo" "./h.vo")
      other-locked-files)
     
@@ -201,7 +179,7 @@ Combine all the following tests in this order:
     (delete-file "g.vo")
     (set-buffer "a.v")
     (cct-process-to-line 21)
-    (cct-check-main-buffer vo-times "63" '("./b.vo" "./d.vo" "./g.vo")
+    (check-main-buffer vo-times "63" '("./b.vo" "./d.vo" "./g.vo")
                            other-locked-files)
     
     ;; 10. delete d, change g and process again - only b, d and g should
@@ -216,6 +194,6 @@ Combine all the following tests in this order:
     (cct-replace-last-word 21 "15")     ; increase by 8
     (set-buffer "a.v")
     (cct-process-to-line 21)
-    (cct-check-main-buffer vo-times "71" '("./b.vo" "./d.vo" "./g.vo")
+    (check-main-buffer vo-times "71" '("./b.vo" "./d.vo" "./g.vo")
                            other-locked-files)
   ))

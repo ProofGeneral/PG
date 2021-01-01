@@ -33,16 +33,6 @@
 ;; Note that all argument computations inherit `coq-autodetected-version': when
 ;; changing compilers, all compilation jobs must be terminated.  This is
 ;; consistent with the fact that the _CoqProject file is not reparsed.
-;;
-;; tests wanted:
-;; - unlock checks for ancestors of failed jobs in different cases
-;; - two require jobs, where the first finishes, while the second is
-;;   in a state before waiting-dep
-;; - a job depending on a failed dependee, where the dependee has been finished before
-;; - coq-par-create-file-job detects a dependency cycle
-;; - coq-par-create-file-job finds a job in every possible state
-;; - coq-par-create-file-job finds a failed job
-;; - all tests in all quick and all vos variants
 
 ;;; Code:
 
