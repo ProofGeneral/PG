@@ -35,6 +35,9 @@
 (require 'ert)
 
 
+(defvar cct--debug-tests nil
+  "Set to t to get more output during test runs.")
+
 (defmacro cct-implies (p q)
   "Short-circuit logical implication.
 Evaluate Q only if P is non-nil."
@@ -61,7 +64,9 @@ Evaluate Q only if P is non-nil."
 Very similar to `goto-line', but the documentation of `goto-line'
 says, programs should use this piece of code."
   (goto-char (point-min))
-  (forward-line (1- line)))
+  (forward-line (1- line))
+  (cl-assert (eq (line-number-at-pos) line) nil
+             "point not at required line in cct-goto-line"))
 
 (defun cct-library-vo-of-v-file (v-src-file)
   "Return .vo file name for V-SRC-FILE.
@@ -82,20 +87,31 @@ cannot be accessed."
 
 (defun cct-split-change-times (file-change-times files)
   "Split assoc list FILE-CHANGE-TIMES.
-FILE-CHANGE-TIMES must be an assoc list and FILES must be a
-subset (i.e., each key occurring at most once) of the keys of
-FILE-CHANGE-TIMES as list. This function returns two associations
-lists (as cons cell). The car contains those associations in
-FILE-CHANGE-TIMES with keys not in FILES, the cdr contains those
-with keys in FILES."
+FILE-CHANGE-TIMES must be an assoc list and FILES must be a list
+of some of the keys of FILE-CHANGE-TIMES. This function returns
+two associations lists (as cons cell). The car contains those
+associations in FILE-CHANGE-TIMES with keys not in FILES, the cdr
+contains those with keys in FILES."
   (let (out in)
     (dolist (file-time file-change-times (cons out in))
       (if (member (car file-time) files)
           (push file-time in)
         (push file-time out)))))
 
+(defun cct-replace-last-word (line word)
+  "Replace last word in line LINE with WORD.
+In current buffer, go to the end of line LINE and one word
+backward. Replace the word there with WORD."
+  (cct-goto-line line)
+  (end-of-line)
+  (backward-word)
+  (kill-word 1)
+  (insert word))
+
 (defun cct-process-to-line (line)
   "Assert/retract to line LINE and wait until processing completed."
+  (when cct--debug-tests
+    (message "assert/retrect to line %d in buffer %s" line (buffer-name)))
   (cct-goto-line line)
   (proof-goto-point)
 
@@ -140,12 +156,18 @@ LOCKED-STATE must be 'locked or 'unlocked. This function checks
 whether line LINE is inside or outside the asserted (locked)
 region of the buffer and signals a test failure if not."
   (let ((locked (eq locked-state 'locked)))
-    ;; (message "tcl line %d check %s: %s %s\n"
-    ;;          line (if locked "locked" "unlocked")
-    ;;          proof-locked-span
-    ;;          (if (overlayp proof-locked-span)
-    ;;              (span-end proof-locked-span)
-    ;;            "no-span"))
+    (when cct--debug-tests
+      (message (concat "check lock state in buffer %s: line %d should be %s;\n"
+                       "\tlocked-span: %s ends at char %s in line %d")
+               (buffer-name)
+               line (if locked "locked" "unlocked")
+               proof-locked-span
+               (if (overlayp proof-locked-span)
+                   (span-end proof-locked-span)
+                 "<no-span>")
+               (if (overlayp proof-locked-span)
+                   (line-number-at-pos (span-end proof-locked-span))
+                 "<no-span>")))
     (cl-assert (or locked (eq locked-state 'unlocked))
                nil "test-check-locked 2nd argument wrong")
     (cct-goto-line line)
@@ -177,10 +199,11 @@ documentation of coq/coq-par-compile.el."
 Used to check that FILE has not been changed since TIME was
 recorded before."
   (let ((file-time (nth 5 (file-attributes file))))
-    ;; (message "TFU on %s: rec: %s now: %s\n"
-    ;;          file
-    ;;          (format-time-string "%H:%M:%S.%3N" time)
-    ;;          (format-time-string "%H:%M:%S.%3N" file-time))
+    (when cct--debug-tests
+      (message "file %s should be unchanged, recorded time: %s now: %s\n"
+               file
+               (format-time-string "%H:%M:%S.%3N" time)
+               (format-time-string "%H:%M:%S.%3N" file-time)))
     (should
      (and file-time (equal time file-time)))))
 
@@ -192,6 +215,12 @@ times as returned by `cct-record-change-times' or
 modification time of files in FILE-TIME-ASSOC equals the time
 recorded in FILE-TIME-ASSOC, i.e., that the file has not been
 changed since FILE-TIME-ASSOC has been recorded."
+  (when cct--debug-tests
+    (message "Files should be unchanged: %s"
+             (mapconcat
+              (lambda (file-time) (car file-time))
+              file-time-assoc
+              ", ")))
   (mapc
    (lambda (file-time-cons)
      (cct-file-unchanged (car file-time-cons) (cdr file-time-cons)))
@@ -215,6 +244,54 @@ or changed since recording the time in the association."
      (cct-file-newer (car file-time-cons) (cdr file-time-cons)))
    file-time-assoc))
 
+(defun cct-generic-check-main-buffer
+    (main-buf main-unlocked main-locked main-sum-line new-sum
+              vo-times recompiled-files require-ancestors
+              other-locked-files other-locked-line)
+  "Perform various checks for recompilation in MAIN-BUF.
+MAIN-BUF is a buffer, MAIN-LOCKED and MAIN-SUM-line are line
+numbers in that buffer. NEW-SUM is a number as string. VO-TIMES
+is an association list of files and emacs times as returned by
+`cct-record-change-times' or `cct-split-change-times'.
+RECOMPILED-FILES is a list of some of the files in VO-TIMES.
+REQUIRE-ANCESTORS is a list of cons cells, each cons containing a
+line number in MAIN-BUF (which should contain a require) and a
+list of ancestor files that should get registered in the span of
+that require. OTHER-LOCKED-FILES is a list of buffers and
+OTHER-LOCKED-LINE is a common line number in those files.
+
+This function combines all the following tests in this order:
+- line MAIN-UNLOCKED in MAIN-BUF is unlocked
+- after replacing the sum on line MAIN-SUM-LINE with NEW-SUM,
+  MAIN-BUF can be processed until line MAIN-LOCKED
+- files in VO-TIMES not listed in RECOMPILED-FILES have the same
+  last change time as in VO-TIMES
+- files in RECOMPILED-FILES have a newer change time
+- the spans in lines in REQUIRE-ANCESTORS have precisely the
+  ancestors registered as specified in REQUIRE-ANCESTORS.
+- all the buffers in OTHER-LOCKED-FILES are locked until line
+  OTHER-LOCKED-LINE."
+  (let (splitted)
+    (set-buffer main-buf)
+    (cct-check-locked main-unlocked 'unlocked)
+    (cct-replace-last-word main-sum-line new-sum)
+    (cct-process-to-line (1+ main-locked))
+    (cct-check-locked main-locked 'locked)
+    (setq splitted (cct-split-change-times vo-times recompiled-files))
+    ;; (message "check file dates, unmodified %s, modified %s"
+    ;;          (car splitted) (cdr splitted))
+    (cct-unmodified-change-times (car splitted))
+    (cct-older-change-times (cdr splitted))
+    (mapc
+     (lambda (line-ancestors)
+       (cct-locked-ancestors (car line-ancestors) (cdr line-ancestors)))
+     require-ancestors)
+    (mapc
+     (lambda (b)
+       (set-buffer b)
+       (cct-check-locked other-locked-line 'locked))
+     other-locked-files)))
+
 (defun cct-configure-proof-general ()
   "Configure Proof General for test execution."
   (setq delete-old-versions t
@@ -231,5 +308,21 @@ or changed since recording the time in the association."
   (message "config coq-max-background-compilation-jobs: %s (means %d)"
            coq-max-background-compilation-jobs
            coq--internal-max-jobs))
+
+(defun configure-delayed-coq ()
+  "Configure PG to honor artificial delays in background compilation.
+Configure Proof General to use coqdep-delayed and coqc-delayed
+from directory ../bin. These scripts delay the start of the real
+coqdep and coqc as specified in the Coq soure file, see
+../bin/compile-test-start-delayed.
+
+This function uses relative file names and must be called in a
+test subdirectory parallel to the bin directory."
+  (let ((bin-dir (file-truename "../bin")))
+    (add-to-list 'exec-path bin-dir)
+    (setenv "PATH" (concat bin-dir ":" (getenv "PATH")))
+    (custom-set-variables
+     '(coq-dependency-analyzer "coqdep-delayed")
+     '(coq-compiler "coqc-delayed"))))
 
 (provide 'cct-lib)

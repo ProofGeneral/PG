@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec compile-test-start-delayed coqc-delay coqc "$*"

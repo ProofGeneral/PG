@@ -720,7 +720,7 @@ modification time stamps and .vo and .vio are older than the
 dependency.
 
 Elements 2-4 of a test specify the results and side effects of
-`coq-par-job-needs-compilation' for all setting of
+`coq-par-job-needs-compilation' for all settings of
 `coq-compile-quick' on the file configuration described in
 element 1. The options `quick-no-vio2vo' and `quick-and-vio2vo'
 are specified together with label `quick'.  Each result and side
