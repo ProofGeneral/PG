@@ -100,35 +100,35 @@ Must be used together with `coq-par-enable'."
 	ncpus
       nil)))
 
-(defvar coq--max-background-vio2vo-percentage-shadow 40
-  "Internal shadow value of `coq-max-background-vio2vo-percentage'.
+(defvar coq--max-background-second-stage-percentage-shadow 40
+  "XXXInternal shadow value of `coq-max-background-second-stage-percentage'.
 This variable does always contain the same value as
-`coq-max-background-vio2vo-percentage'.  It is used only to break
-the dependency cycle between `coq-set-max-vio2vo-jobs' and
-`coq-max-background-vio2vo-percentage'.")
+`coq-max-background-second-stage-percentage'.  It is used only to break
+the dependency cycle between `coq-set-max-second-stage-jobs' and
+`coq-max-background-second-stage-percentage'.")
 
-(defvar coq--internal-max-vio2vo-jobs 1
-  "Internal number of vio2vo jobs.
+(defvar coq--internal-max-second-stage-jobs 1
+  "XXXInternal number of vio2vo jobs.
 This is the internal value, use
-`coq-max-background-vio2vo-percentage' to configure.")
+`coq-max-background-second-stage-percentage' to configure.")
 
 (defvar coq--internal-max-jobs 1
   "Value of `coq-max-background-compilation-jobs' translated to a number.")
 
-(defun coq-set-max-vio2vo-jobs ()
-  "Set `coq--internal-max-vio2vo-jobs'."
-  (setq coq--internal-max-vio2vo-jobs
+(defun coq-set-max-second-stage-jobs ()
+  "Set `coq--internal-max-second-stage-jobs'."
+  (setq coq--internal-max-second-stage-jobs
 	(max 1
 	     (round (* coq--internal-max-jobs
-		       coq--max-background-vio2vo-percentage-shadow
+		       coq--max-background-second-stage-percentage-shadow
 		       0.01)))))
 
-(defun coq-max-vio2vo-setter (symbol new-value)
-  ":set function for `coq-max-background-vio2vo-percentage'.
-SYMBOL should be 'coq-max-background-vio2vo-percentage"
-  (set symbol new-value)
-  (setq coq--max-background-vio2vo-percentage-shadow new-value)
-  (coq-set-max-vio2vo-jobs))
+(defun coq-max-second-stage-setter (symbol new-value)
+  "XXX:set function for `coq-max-background-second-stage-percentage'.
+SYMBOL should be 'coq-max-background-second-stage-percentage"
+  (set symbol new-value)                    ;XXX use set-default
+  (setq coq--max-background-second-stage-percentage-shadow new-value)
+  (coq-set-max-second-stage-jobs))
 
 (defun coq-max-jobs-setter (symbol new-value)
   ":set function for `coq-max-background-compilation-jobs'.
@@ -142,7 +142,7 @@ SYMBOL should be 'coq-max-background-compilation-jobs"
    ((and (integerp new-value) (> new-value 0)) t)
    (t (setq new-value 1)))
   (setq coq--internal-max-jobs new-value)
-  (coq-set-max-vio2vo-jobs))
+  (coq-set-max-second-stage-jobs))
 
 (defun coq-compile-quick-setter (symbol new-value)
   ":set function for `coq-compile-quick' for pre 8.5 compatibility.
@@ -345,18 +345,43 @@ is not adapted."
   :set 'coq-max-jobs-setter
   :group 'coq-auto-compile)
 
-(defcustom coq-max-background-vio2vo-percentage 40
-  "Percentage of `coq-max-background-vio2vo-percentage' for vio2vo jobs.
+;; (list coq-max-background-second-stage-percentage coq-max-background-vio2vo-percentage coq-compile-second-stage-delay coq-compile-vio2vo-delay)
+(defcustom coq-max-background-second-stage-percentage
+  (or (and (boundp 'coq-max-background-vio2vo-percentage)
+           coq-max-background-vio2vo-percentage)
+      (and (get 'coq-max-background-vio2vo-percentage 'saved-value)
+           (eval (car (get 'coq-max-background-vio2vo-percentage 'saved-value))))
+      40)
+  ;; change in ProofGeneral.texi
+  "XXXPercentage of `coq-max-background-second-stage-percentage' for vio2vo jobs.
 This setting configures the maximal number of vio2vo background
 jobs (if you set `coq-compile-quick' to 'quick-and-vio2vo) as
 percentage of `coq-max-background-compilation-jobs'."
   :type 'number
   :safe 'numberp
-  :set 'coq-max-vio2vo-setter
+  :set 'coq-max-second-stage-setter
   :group 'coq-auto-compile)
 
-(defcustom coq-compile-vio2vo-delay 2.5
-  "Delay in seconds for the vio2vo compilation.
+(defcustom coq-max-background-vio2vo-percentage nil
+  "XXX"
+  :type 'number
+  :safe 'numberp
+  :group 'coq-auto-compile)
+
+
+(defcustom coq-compile-second-stage-delay
+  (or (and (boundp 'coq-compile-vio2vo-delay) coq-compile-vio2vo-delay)
+      (and (get 'coq-compile-vio2vo-delay 'saved-value)
+           (eval (car (get 'coq-compile-vio2vo-delay 'saved-value))))
+      2)
+  "XXX"
+  :type 'number
+  :safe 'numberp
+  :group 'coq-auto-compile)
+
+(defcustom coq-compile-vio2vo-delay nil
+  ;; replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
+  "XXX Delay in seconds for the vio2vo compilation.
 This delay helps to avoid running into a library inconsistency
 with 'quick-and-vio2vo, see Coq issue #5223."
   :type 'number
