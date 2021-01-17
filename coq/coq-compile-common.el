@@ -284,7 +284,7 @@ This option can be set via menu
    (eq coq-compile-quick 'quick-and-vio2vo)))
 
 (defcustom coq-compile-vos nil
-  "Control fast compilation, skipping opaque proofs with ``-vos''.
+  "XXXControl fast compilation, skipping opaque proofs with ``-vos''.
 When using coq >= 8.11, this option controls whether parallel
 background compilation is done with ``-vos'', skipping opaque
 proofs, thus being considerably faster and inconsistent.
@@ -303,9 +303,10 @@ For coq < 8.11 this option is ignored."
   :type
   '(radio
     (const :tag "unset, derive behavior from `coq-compile-quick'" nil)
-    (const :tag "use -vos" vos)
+    (const :tag "use -vos, don't do -vok" vos)
+    (const :tag "use -vos and do -vok" vos-and-vok)
     (const :tag "ensure vo compilation" ensure-vo))
-  :safe (lambda (v) (member v '(nil vos ensure-vo)))
+  :safe (lambda (v) (member v '(nil vos vos-and-vok ensure-vo)))
   :group 'coq-auto-compile)
 
 (defun coq-compile-prefer-vos ()
@@ -315,6 +316,7 @@ by checking the value of `coq-compile-quick' if `coq-compile-vos'
 is nil."
   (or
    (eq coq-compile-vos 'vos)
+   (eq coq-compile-vos 'vos-and-vok)
    (and (not coq-compile-vos)
         (eq coq-compile-quick 'quick-no-vio2vo))))
 
@@ -628,6 +630,11 @@ Changes the suffix from .vo to .vio.  VO-OBJ-FILE must have a .vo suffix."
   "Return .vos file name for VO-OBJ-FILE.
 Changes the suffix from .vo to .vos.  VO-OBJ-FILE must have a .vo suffix."
   (concat vo-obj-file "s"))
+
+(defun coq-library-vok-of-vo-file (vo-obj-file)
+  "Return .vok file name for VO-OBJ-FILE.
+Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
+  (concat vo-obj-file "k"))
 
 
 ;;; ancestor unlocking
