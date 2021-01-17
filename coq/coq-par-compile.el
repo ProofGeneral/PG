@@ -189,7 +189,7 @@
 ;;
 ;; For 5- using -vos for Coq >= 8.11
 ;;
-;; When Coq >= 8.11 is detected, -vos is used and coq-compile-vos is
+;; XXXWhen Coq >= 8.11 is detected, -vos is used and coq-compile-vos is
 ;; consulted in order to find out whether to compile to .vos or to .vo
 ;; files. For people switching PG or switching to Coq 8.11, there is a
 ;; backward compatibility path: When coq-compile-vos is nil, the
@@ -913,7 +913,7 @@ file to be deleted when the process does not finish successfully."
       (process-put process 'coq-process-rm file-rm))))
 
 (defun coq-par-process-sentinel (process event)
-  "Sentinel for all background processes.
+  "XXXSentinel for all background processes.
 Runs when process PROCESS terminated because of EVENT. It
 determines the exit status and calls the continuation function
 that has been registered with that process. Normal compilation
@@ -939,8 +939,11 @@ function and reported appropriately."
 	    (when (process-get process 'coq-process-rm)
 	      (ignore-errors
 		(delete-file (process-get process 'coq-process-rm))))
-	    (when (eq (process-get process 'coq-process-continuation)
-		      'coq-par-vio2vo-continuation)
+	    (when (or
+                   (eq (process-get process 'coq-process-continuation)
+		       'coq-par-vok-continuation)
+                   (eq (process-get process 'coq-process-continuation)
+		       'coq-par-vio2vo-continuation))
 	      (when coq--debug-auto-compilation
 		(message "%s: reenqueue for vio2vo"
 			 (get (process-get process 'coq-compilation-job) 'name)))
@@ -964,7 +967,7 @@ function and reported appropriately."
 	  (when (and coq--par-second-stage-in-progress
 		     (eq coq--current-background-jobs 0))
 	    (setq coq--par-second-stage-in-progress nil)
-	    (message "vio2vo compilation finished"))
+	    (message "XXXvio2vo compilation finished"))
 	  (when (and
 		 (not coq--par-delayed-last-job)
 		 (eq coq--current-background-jobs 0)
@@ -1002,12 +1005,13 @@ function and reported appropriately."
   ;; shortly before the timer triggers
   (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and XXX vio2vo in parallel 3")
-  (setq coq--par-second-stage-in-progress t)
   (setq coq--par-second-stage-delay-timer nil)
   (when coq--debug-auto-compilation
     (message "Start XXX vio2vo processing for %d jobs"
              (coq-par-second-stage-queue-length)))
-  (coq-par-start-jobs-until-full))
+  (when (> (coq-par-second-stage-queue-length) 0)
+    (setq coq--par-second-stage-in-progress t)
+    (coq-par-start-jobs-until-full)))
 
 (defun coq-par-require-processed (race-counter)
   "Callback for `proof-action-list' to signal completion of the last Require.
@@ -1139,7 +1143,7 @@ therefore delete a file if it might be in the way.  Sets the
 		(when vo-obj-time
 		  (setq file-to-delete vo-file))
 		(when (eq coq-compile-quick 'quick-and-vio2vo)
-		  (put job 'second-stage t)))
+		  (put job 'second-stage 'vio2vo)))
 	    (put job 'required-obj-file vo-file)
 	    (when vio-obj-time
 	      (setq file-to-delete vio-file)))
@@ -1218,7 +1222,7 @@ therefore delete a file if it might be in the way.  Sets the
 		(put job 'required-obj-file vio-file)
 		(put job 'obj-mod-time vio-obj-time)
 		(when (eq coq-compile-quick 'quick-and-vio2vo)
-		  (put job 'second-stage t))
+		  (put job 'second-stage 'vio2vo))
 		(when coq--debug-auto-compilation
 		  (message "%s: vio up-to-date; delete %s"
 			   (get job 'name)
@@ -1237,7 +1241,7 @@ therefore delete a file if it might be in the way.  Sets the
     result))
 
 (defun coq-par-job-needs-compilation-vos (job)
-  "Determine whether JOB needs to get compiled.
+  "XXXDetermine whether JOB needs to get compiled.
 This function decides whether JOB needs to get compiled for coq
 >= 8.11 and whether a .vo or a .vos should be produced. For the
 latter, `coq-compile-vos' is consulted and, if that is `nil',
@@ -1248,7 +1252,8 @@ has been created more recently. As result, this function sets the
 property 'use-quick to `vos' if JOB should be compiled with -vos.
 If compilation is needed, 'required-obj-file is set.
 If no compilation is needed, 'obj-mod-time is set to the time stamp of
-the .vos or .vo file, depending on `coq-compile-prefer-vos'."
+the .vos or .vo file, depending on `coq-compile-prefer-vos'.  Sets
+the 'second-stage property on job to 'vok if necessary."
   (let* ((vo-file (get job 'vo-file))
          (vos-file (coq-library-vos-of-vo-file vo-file))
          (dep-time (get job 'youngest-coqc-dependency))
@@ -1273,13 +1278,24 @@ the .vos or .vo file, depending on `coq-compile-prefer-vos'."
             (progn
     	      (put job 'required-obj-file vos-file)
 	      (put job 'use-quick 'vos)
+              (when (eq coq-compile-vos 'vos-and-vok)
+                (put job 'second-stage 'vok))
               (setq result t))
           (put job 'required-obj-file vo-file)
           (setq result t))
       ;; maybe need to compile if vo is required
       (if (coq-compile-prefer-vos)
-          ;; vo not required and vos is fine - no compilation
-          (put job 'obj-mod-time vos-obj-time)
+          ;; vo not required and vos is fine - no compilation, but maybe vok
+          (let* ((vok-file (coq-library-vok-of-vo-file vo-file))
+                 (vok-time (nth 5 (file-attributes vok-file))))
+            (put job 'obj-mod-time vos-obj-time)
+            (when (and (eq coq-compile-vos 'vos-and-vok)
+                       (or (not vok-time) ; no vok exists
+                           ;; vos/vo is younger than src and dep, see above
+                           ;; if vo present, vok and vo have often the same time
+                           ;; vos/vo younger than vok?
+                           (time-less-p vok-time vos-obj-time)))
+              (put job 'second-stage 'vok)))
         ;; vo required, may need to compile
         (let ((vo-obj-time (nth 5 (file-attributes vo-file))))
           (when coq--debug-auto-compilation
@@ -1341,9 +1357,12 @@ jobs when they transition from 'waiting-queue to 'ready:
        (get job 'ancestors)))
     ;; XXX each require job must have items, right?
     (when items
-      (when (and (not (coq--post-v811))
-                 (eq coq-compile-quick 'quick-and-vio2vo)
-		 (eq coq--last-compilation-job job))
+      (when (and
+             (eq coq--last-compilation-job job)
+             (or (and (coq--post-v811)
+                      (eq coq-compile-vos 'vos-and-vok))
+                 (and (not (coq--post-v811))
+                      (eq coq-compile-quick 'quick-and-vio2vo))))
 	(let ((2nd-stage-counter
 	       (setq coq--par-second-stage-start-id
 		     (1+ coq--par-second-stage-start-id))))
@@ -1465,8 +1484,10 @@ retired and transition to 'ready. This means:
 	      (with-current-buffer (or proof-script-buffer (current-buffer))
 		(proof-script-clear-queue-spans-on-error nil))
 	      (proof-release-lock)
-	      (when (and (not (coq--post-v811))
-                         (eq coq-compile-quick 'quick-and-vio2vo))
+	      (when (or (and (coq--post-v811)
+                             (eq coq-compile-vos 'vos-and-vok))
+                        (and (not (coq--post-v811))
+                             (eq coq-compile-quick 'quick-and-vio2vo)))
 		(cl-assert (not coq--par-second-stage-delay-timer)
 			nil "XXXvio2vo timer set before last compilation job")
 		(setq coq--par-second-stage-delay-timer
@@ -1692,6 +1713,23 @@ used."
      job
      (get job 'required-obj-file))))
 
+(defun coq-par-start-vok (job)
+  "XXXStart coqc -vok background compilation for JOB."
+  (when coq--debug-auto-compilation
+    (message "%s start coqc -vok for %s"
+             (get job 'name)
+             (get job 'src-file)))
+  (message "coqc -vok %s" (get job 'src-file))
+  (let ((arguments
+         (coq-par-coqc-arguments (get job 'src-file) (get job 'load-path))))
+    (push "-vok" arguments)
+    (coq-par-start-process
+     coq-compiler
+     arguments
+     'coq-par-vok-continuation
+     job
+     nil)))
+
 (defun coq-par-start-vio2vo (job)
   "Start vio2vo background job."
   (let ((arguments (coq-include-options (get job 'load-path)))
@@ -1725,7 +1763,9 @@ synchronously or asynchronously."
       (coq-par-start-coqdep-on-file job))
      ((eq job-state 'enqueued-coqc)
       (coq-par-start-coqc job))
-     ((eq job-state 'ready)
+     ((and (eq job-state 'ready) (eq (get job 'second-stage) 'vok))
+      (coq-par-start-vok job))
+     ((and (eq job-state 'ready) (eq (get job 'second-stage) 'vio2vo))
       (coq-par-start-vio2vo job))
      (t (cl-assert nil nil "coq-par-start-task with invalid job")))))
 
@@ -2061,6 +2101,23 @@ behind PROCESS."
 	    (coq-par-kickoff-coqc-dependants job nil))
 	(signal 'coq-compile-error-coqc
 		(get (process-get process 'coq-compilation-job) 'src-file))))))
+
+(defun coq-par-vok-continuation (process exit-status)
+  "XXXvok continuation function.
+Nothing to do in case of success. Otherwise display the errors."
+  (let ((job (process-get process 'coq-compilation-job)))
+    (if (eq exit-status 0)
+	;; success - nothing to do
+	(when coq--debug-auto-compilation
+	  (message "%s: vok finished successfully" (get job 'name)))
+      (when coq--debug-auto-compilation
+	(message "%s: vok failed" (get job 'name)))
+      (coq-compile-display-error
+       (mapconcat 'identity (process-get process 'coq-process-command) " ")
+       (process-get process 'coq-process-output)
+       t)
+      ;; don't signal an error or abort other vok processes
+      )))
 
 (defun coq-par-vio2vo-continuation (process exit-status)
   "Vio2vo continuation function.
