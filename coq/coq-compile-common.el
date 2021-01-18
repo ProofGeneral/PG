@@ -6,7 +6,7 @@
 ;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
-;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
+;; Portions © Copyright 2011-2013, 2016-2017, 2019-2021  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
 ;; Authors: Hendrik Tews
@@ -101,14 +101,14 @@ Must be used together with `coq-par-enable'."
       nil)))
 
 (defvar coq--max-background-second-stage-percentage-shadow 40
-  "XXXInternal shadow value of `coq-max-background-second-stage-percentage'.
+  "Internal shadow value of `coq-max-background-second-stage-percentage'.
 This variable does always contain the same value as
 `coq-max-background-second-stage-percentage'.  It is used only to break
 the dependency cycle between `coq-set-max-second-stage-jobs' and
 `coq-max-background-second-stage-percentage'.")
 
 (defvar coq--internal-max-second-stage-jobs 1
-  "XXXInternal number of vio2vo jobs.
+  "Internal number of second-stage background jobs (vok or vio2vo).
 This is the internal value, use
 `coq-max-background-second-stage-percentage' to configure.")
 
@@ -124,16 +124,16 @@ This is the internal value, use
 		       0.01)))))
 
 (defun coq-max-second-stage-setter (symbol new-value)
-  "XXX:set function for `coq-max-background-second-stage-percentage'.
+  ":set function for `coq-max-background-second-stage-percentage'.
 SYMBOL should be 'coq-max-background-second-stage-percentage"
-  (set symbol new-value)                    ;XXX use set-default
+  (set-default symbol new-value)
   (setq coq--max-background-second-stage-percentage-shadow new-value)
   (coq-set-max-second-stage-jobs))
 
 (defun coq-max-jobs-setter (symbol new-value)
   ":set function for `coq-max-background-compilation-jobs'.
 SYMBOL should be 'coq-max-background-compilation-jobs"
-  (set symbol new-value)
+  (set-default symbol new-value)
   (cond
    ((eq new-value 'all-cpus)
     (setq new-value (number-of-cpus))
@@ -154,7 +154,7 @@ Ignore any quick setting for Coq versions before 8.5."
     (message "Ignore coq-compile-quick setting %s for Coq before 8.5"
 	     new-value)
     (setq new-value 'no-quick)))
-  (set symbol new-value))
+  (set-default symbol new-value))
 
 
 ;;; user options and variables
@@ -284,15 +284,25 @@ This option can be set via menu
    (eq coq-compile-quick 'quick-and-vio2vo)))
 
 (defcustom coq-compile-vos nil
-  "XXXControl fast compilation, skipping opaque proofs with ``-vos''.
+  "Control fast compilation, skipping opaque proofs with ``-vos'' and ``-vok''.
 When using coq >= 8.11, this option controls whether parallel
 background compilation is done with ``-vos'', skipping opaque
 proofs, thus being considerably faster and inconsistent.
 
 Set this option to `vos' if you want fast background compilation
-and don't care if all proofs are correct. Set this option to
-`ensure-vo' if you want all proof and universe constraints
+without a second stage ``-vok'' run to check all proofs.  Set this
+option to `vos-and-vok' if you want fast background compilation
+but also want to check all proofs in a second stage with
+``-vok''.  Option `vos-and-vok' does not guarantee consistency,
+because not all universe constraints are checked.  Set this option
+to `ensure-vo' if you want all proofs and universe constraints
 checked carefully.
+
+The second stage ``-vok'' run starts in the background after
+`coq-compile-second-stage-delay' seconds on
+`coq-max-background-second-stage-percentage' per cent of the
+cores used for the first run (configured in
+`coq-max-background-compilation-jobs').
 
 For upgrading, if this option is `nil' (i.e., not configured),
 then the value of `coq-compile-quick' is considered and vos
@@ -347,25 +357,30 @@ is not adapted."
   :set 'coq-max-jobs-setter
   :group 'coq-auto-compile)
 
-;; (list coq-max-background-second-stage-percentage coq-max-background-vio2vo-percentage coq-compile-second-stage-delay coq-compile-vio2vo-delay)
 (defcustom coq-max-background-second-stage-percentage
   (or (and (boundp 'coq-max-background-vio2vo-percentage)
            coq-max-background-vio2vo-percentage)
       (and (get 'coq-max-background-vio2vo-percentage 'saved-value)
            (eval (car (get 'coq-max-background-vio2vo-percentage 'saved-value))))
       40)
-  ;; change in ProofGeneral.texi
-  "XXXPercentage of `coq-max-background-second-stage-percentage' for vio2vo jobs.
-This setting configures the maximal number of vio2vo background
-jobs (if you set `coq-compile-quick' to 'quick-and-vio2vo) as
-percentage of `coq-max-background-compilation-jobs'."
+  ;; XXX change in ProofGeneral.texi
+  "Percentage of `coq-max-background-compilation-jobs' for the second stage.
+This setting configures the maximal number of ``-vok'' or vio2vo background
+jobs running in a second stage as
+percentage of `coq-max-background-compilation-jobs'.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+`coq-max-background-vio2vo-percentage'."
   :type 'number
   :safe 'numberp
   :set 'coq-max-second-stage-setter
   :group 'coq-auto-compile)
 
 (defcustom coq-max-background-vio2vo-percentage nil
-  "XXX"
+  "Deprecated. Please configure `coq-max-background-second-stage-percentage'.
+This is the old configuration option for Coq < 8.11, used before
+the ``-vok'' second stage was implemented."
   :type 'number
   :safe 'numberp
   :group 'coq-auto-compile)
@@ -375,17 +390,25 @@ percentage of `coq-max-background-compilation-jobs'."
   (or (and (boundp 'coq-compile-vio2vo-delay) coq-compile-vio2vo-delay)
       (and (get 'coq-compile-vio2vo-delay 'saved-value)
            (eval (car (get 'coq-compile-vio2vo-delay 'saved-value))))
-      2)
-  "XXX"
+      2.5)
+  "Delay in seconds before starting the second stage compilation.
+The delay is applied to both ``-vok'' and vio2vo second stages.
+For Coq < 8.11 and vio2vo delay helps to avoid running into a
+library inconsistency with 'quick-and-vio2vo, see Coq issue
+#5223.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+`coq-compile-vio2vo-delay'."
   :type 'number
   :safe 'numberp
   :group 'coq-auto-compile)
 
 (defcustom coq-compile-vio2vo-delay nil
-  ;; replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
-  "XXX Delay in seconds for the vio2vo compilation.
-This delay helps to avoid running into a library inconsistency
-with 'quick-and-vio2vo, see Coq issue #5223."
+  ;; XXX replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
+  "Deprecated. Please configure `coq-compile-second-stage-delay'.
+This is the old configuration option for Coq < 8.11, used before
+the ``-vok'' second stage was implemented."
   :type 'number
   :safe 'numberp
   :group 'coq-auto-compile)
