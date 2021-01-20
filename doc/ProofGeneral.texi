@@ -4593,9 +4593,9 @@ compilation has finished.
 and dependencies on ML Modules reported by @code{coqdep} are
 ignored.
 
-Proof General uses @code{coqdep} in order to translate the
-qualified identifiers in @code{Require} commands to coq library
-file names and to determine library dependencies. Because Proof
+Proof General uses @code{coqdep} to determine which libraries a
+@code{Require} command will load and which files must be
+up-to-date. Because Proof
 General cannot know whether files are updated outside of Emacs,
 it checks for every @code{Require} command the complete
 dependency tree and recompiles files as necessary.
@@ -4621,10 +4621,9 @@ and via menu entries in @code{Coq -> Auto Compilation},
 Similar to @code{make -k}, background compilation can be
 configured to continue as far as possible after the first error,
 see option @code{coq-compile-keep-going} (menu @code{Coq -> Auto
-Compilation -> Keep going}). The keep-going option only applies
-to errors from @code{coqdep} and @code{coqc}. For all other
-errors (for instance when the translation from logical module
-names to physical files fails or when starting @code{coqc} or
+Compilation -> Keep going}). The keep-going option applies
+to errors from @code{coqdep} and @code{coqc}. However, when
+starting @code{coqc} or
 @code{coqdep} fails), the compilation is immediately aborted.
 
 When a @code{Require} command causes a compilation of some files,
@@ -4675,14 +4674,6 @@ compilation jobs.
 Parallel asynchronous compilation supports both vos and quick/vio
 compilation, but exclusively, depending on the Coq version,
 @ref{Quick and inconsistent compilation}. 
-
-Actually, even with parallel asynchronous compilation, not everything runs
-asynchronously. To translate module identifiers from the Coq
-sources into file names, Proof General runs coqdep on an
-automatically generated, one-line file. These coqdep jobs run
-synchronously while the Require commands are parsed. The coqdep
-jobs on the real source files do run asynchronously in the
-background. 
 @end table
 
 
@@ -4743,22 +4734,38 @@ detection of Proof General or by the setting
 @code{coq-pinned-version}) required modules are either compiled
 to @code{.vo} or @code{.vos} files, depending on the setting
 @code{coq-compile-vos}, which can also be set on menu @code{Coq
--> Auto Compilation -> vos compilation}. There are three choices:
+-> Auto Compilation -> vos compilation}. There are four choices:
 
 @table @asis
-@item @code{use-vos}
-Compile with @code{-vos}. Noticeably faster, but proofs are
-skipped during compilation and some universe constraints might be
-missing.
+@item @code{vos-and-vok}
+First compile using @code{-vos}, skipping proofs. When
+compilation finished, run @code{coqc -vok} in a second stage to
+check proofs on all files that require it. Some universe
+constraints might be missed, rendering this method possibly
+inconsistent.
+@item @code{vos}
+Only compile using @code{-vos}, skipping proofs. No @code{coqc
+-vok} run to check proofs. Obviously inconsistent.
 @item @code{ensure-vo}
 Compile without @code{-vos} to @code{.vo} files, checking all
-proofs and universe constraints.
+proofs and universe constraints. Only consistent choice.
 @item unset (@code{nil})
 Compile with @code{-vos} if @code{coq-compile-quick} (see below)
 equals @code{quick-no-vio2vo}. Otherwise compile without
 @code{-vos} to @code{.vo}. This value provides an upgrade path
 for users that configured @code{coq-compile-quick} in the past.
 @end table
+
+For @code{vos-and-vok} the second @code{-vok} stage runs
+asynchronously @code{coq-compile-second-stage-delay} seconds
+after the last @code{Require} command has been processed. Errors
+might pop up later and interrupt your normal interaction with
+Coq. Because the second stage is not time critical, it runs on
+@code{coq-max-background-second-stage-percentage} per cent of the
+cores configured for the first stage. When
+@code{coq-compile-keep-going} is configured and an error occurs,
+the second @code{-vok} stage is run on those dependencies not
+affected by the error.
 
 For Coq version 8.5 until before 8.11, Proof General supports
 quick or vio compilation with parallel asynchronous compilation.
@@ -4773,10 +4780,10 @@ that have not switched there development to
 @code{Proof using}. Use @code{quick-no-vio2vo}, if you want quick
 recompilation without producing .vo files. Option
 @code{quick-and-vio2vo} recompiles with @code{-quick}/@code{-vio} as
-@code{quick-no-vio2vo} does, but schedules a vio2vo compilation
-for missing @code{.vo} files after a certain delay. Finally, use
+@code{quick-no-vio2vo} does, but schedules a second vio2vo stage
+for missing @code{.vo} files. Finally, use
 @code{ensure-vo} for only importing @code{.vo} files with
-complete universe checks.
+complete universe checks. 
 
 Note that with all of @code{no-quick}, @code{quick-no-vio2vo} and
 @code{quick-and-vio2vo} your development might be unsound because
@@ -4833,16 +4840,9 @@ files, but don't compile prerequisites for which an up-to-date
 @code{.vo} file exists. Delete or overwrite outdated @code{.vio} files.
 
 @item quick-and-vio2vo
-Same as @code{quick-no-vio2vo}, but start vio2vo processes for
-missing @code{.vo} files after a certain delay when library
-compilation for the current queue region has finished. With this
-mode you might see asynchronous errors from vio2vo compilation
-while you are processing stuff far below the last require. vio2vo
-compilation is done on a subset of the available cores controlled
-by option @code{coq-compile-vio2vo-percentage}, @ref{Customizing
-Coq Multiple File Support}. When @code{coq-compile-keep-going} is
-set, vio2vo compilation is scheduled for those files for which
-@code{coqc} compilation was successful.
+Same as @code{quick-no-vio2vo}, but start a second vio2vo stage for
+missing @code{.vo} files. Everything described previously for the
+second @code{-vok} stage applies here as well.
 
 @emph{Warning}: This mode does only work when you process require
 commands in batches. Slowly single-stepping through require's
@@ -4850,7 +4850,7 @@ might lead to inconsistency errors when loading some libraries,
 see Coq issue #5223. To mitigate this risk, vio2vo compilation
 only starts after a certain delay after the last require command
 of the current queue region has been processed. This is
-controlled by @code{coq-compile-vio2vo-delay}, @ref{Customizing
+controlled by @code{coq-compile-second-stage-delay}, @ref{Customizing
 Coq Multiple File Support}.
 
 @item ensure-vo
@@ -4959,7 +4959,7 @@ is not adapted.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-max-background-vio2vo-percentage
+@c TEXI DOCSTRING MAGIC: coq-max-background-second-stage-percentage
 @defvar coq-max-background-vio2vo-percentage 
 Percentage of @samp{@code{coq-max-background-vio2vo-percentage}} for vio2vo jobs.@*
 This setting configures the maximal number of vio2vo background
@@ -4968,7 +4968,7 @@ percentage of @samp{@code{coq-max-background-compilation-jobs}}.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-compile-vio2vo-delay
+@c TEXI DOCSTRING MAGIC: coq-compile-second-stage-delay
 @defvar coq-compile-vio2vo-delay 
 Delay in seconds for the vio2vo compilation.@*
 This delay helps to avoid running into a library inconsistency
@@ -5116,10 +5116,6 @@ or not.
 @item
 No support for @code{Declare ML Module} commands and files
 depending on an ML module.
-@item
-Comments inside require commands should be avoided, see Proof
-General issue #352. The regular expression to extract module
-names does not skip over comments.
 @item
 When a compiled library has the same time stamp as the source
 file, it is considered outdated. Some old file systems (for
