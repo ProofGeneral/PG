@@ -3046,11 +3046,6 @@ and operating systems.  They are referred to mainly in
 @file{proof-compat} (which helps to keep the architecture and version
 dependent code in one place).
 
-@c TEXI DOCSTRING MAGIC: proof-running-on-win32
-@defvar proof-running-on-win32 
-Non-nil if Proof General is running on a windows variant system.
-@end defvar
-
 
 @node Useful functions and macros
 @section Useful functions and macros
