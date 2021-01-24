@@ -347,7 +347,17 @@ With prefix arg, no errors on unknown symbols.  (This results in
   (interactive "P")
   (save-excursion
     (goto-char (point-min))
-    (let ((magic (concat "^"
+    ;; Since emacs 26 grave accent and apostrophe are translated to
+    ;; unicode single quotation marks, \"`foo'" becomes "‘foo’", see
+    ;; Section Documentation -> Text Quoting Style (24.4 in emacs 27)
+    ;; in the elisp manual. This translation happens apparently
+    ;; already when accessing the documentation strings with
+    ;; `documentation-property' or similar functions; breaking the
+    ;; regular expressions for transforming the doc strings in this
+    ;; module. Set `text-quoting-style' to get the doc strings without
+    ;; this translation.
+    (let ((text-quoting-style 'grave)
+          (magic (concat "^"
 			 (regexp-quote texi-docstring-magic-comment)
 			 "\\s-*\\(\\(\\w\\|\\-\\)+\\)[ \t]*$"))
 	  p
