@@ -319,7 +319,9 @@ Markup as @code{stuff} or @lisp stuff @end Lisp."
 	 (def	    (symbol-function function))
 	 (macrop    (eq 'macro (car-safe def)))
 	 (argsyms   (cond ((eq (car-safe def) 'lambda)
-			   (nth 1 def))))
+			   (nth 1 def))
+                          ((eq (car-safe def) 'closure)
+                           (nth 2 def))))
 	 (args	    (mapcar 'symbol-name argsyms)))
       (cond
        ((commandp function)
