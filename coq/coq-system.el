@@ -485,13 +485,13 @@ path (including the -R lib options) (see `coq-load-path')."
 
 (defcustom coq-project-filename "_CoqProject"
   "The name of coq project file.
-The coq project file of a coq developpement (cf. Coq documentation on
+The coq project file of a coq development (cf. Coq documentation on
 \"makefile generation\") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
 options (preferably one per line).  If `coq-use-coqproject' is
-t (default) the content of this file will be used by proofgeneral to
+t (default) the content of this file will be used by Proof General to
 infer the `coq-load-path' and the `coq-prog-args' variables that set
-the coqtop invocation by proofgeneral.  This is now the recommended
+the coqtop invocation by Proof General.  This is now the recommended
 way of configuring the coqtop invocation.  Local file variables may
 still be used to override the coq project file's configuration.
 .dir-locals.el files also work and override project file settings."

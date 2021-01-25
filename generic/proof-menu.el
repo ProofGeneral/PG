@@ -34,7 +34,7 @@
 (defvar proof-display-some-buffers-count 0)
 
 (defun proof-display-some-buffers ()
-  "Display the reponse, trace, goals, or shell buffer, rotating.
+  "Display the response, trace, goals, or shell buffer, rotating.
 A fixed number of repetitions of this command switches back to
 the same buffer.
 Also move point to the end of the response buffer if it's selected.
