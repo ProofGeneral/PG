@@ -446,10 +446,10 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-goal-with-hole-result 2
-  "How to get theorem name after ‘proof-goal-with-hole-regexp’ match.
+  "How to get theorem name after `proof-goal-with-hole-regexp' match.
 String or Int.
-If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
-If a string, use ‘replace-match’.  In this case, ‘proof-goal-with-hole-regexp’
+If an int N, use `match-string' to get the value of the Nth parenthesis matched.
+If a string, use `replace-match'.  In this case, `proof-goal-with-hole-regexp'
 should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)

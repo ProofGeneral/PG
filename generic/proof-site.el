@@ -125,7 +125,7 @@
       (let ((s (getenv "PROOFGENERAL_HOME")))
 	(if s (file-name-as-directory s)))))
   "Directory where Proof General is installed.
-based on where the file `proof-site.el' was loaded from.
+Based on where the file `proof-site.el' was loaded from.
 Falls back to consulting the environment variable `PROOFGENERAL_HOME' if
 proof-site.el couldn't know where it was executed from.")
 
@@ -204,7 +204,7 @@ assistant, `SYMBOL-mode', run when files with AUTOMODE-REGEXP
 \(or with extension FILE-EXTENSION) are visited.  If present,
 IGNORED-EXTENSIONS-LIST is a list of file-name extensions to be
 ignored when doing file-name completion (IGNORED-EXTENSIONS-LIST
-is added to ‘completion-ignored-extensions’).
+is added to `completion-ignored-extensions').
 
 SYMBOL is also used to form the name of the directory and elisp
 file for the mode, which will be
