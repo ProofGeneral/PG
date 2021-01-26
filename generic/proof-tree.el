@@ -930,8 +930,10 @@ the flags and SPAN is the span."
     (let* ((proof-info (funcall proof-tree-get-proof-info))
 	   (current-proof-name (cadr proof-info)))
       (save-excursion
-	(if (<= (car proof-info) proof-tree-last-state)
+	(if (< (car proof-info) proof-tree-last-state)
 	    ;; went back to some old state: there must have been an undo command
+            ;; show goal commands do not increase the state number,
+            ;; therefore check with <
 	    (proof-tree-handle-undo proof-info)
 
 	  ;; else -- no undo command
