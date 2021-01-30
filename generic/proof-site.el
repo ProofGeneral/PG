@@ -44,6 +44,8 @@
     '(
       ;; Main instances of PG.
 
+      (qrhl "qRHL" "qrhl")
+      
       (isar "Isabelle" "thy")
       (coq "Coq" "v" nil (".vo" ".glob"))
       (easycrypt "EasyCrypt" "ec" "\\.eca?\\'")
