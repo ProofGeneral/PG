@@ -11,7 +11,7 @@
 		   ; We need to give some option here, otherwise proof-prog-name is interpreted
 		   ; as a shell command which leads to problems if the path contains spaces
 		   ; (see the documentation for proof-prog-name)
-           qrhl-prog-args '("--emacs")
+		   qrhl-prog-args '("--emacs")
 		   proof-script-command-end-regexp "\\.[ \t]*$"
 		   proof-shell-annotated-prompt-regexp "^\\(\\.\\.\\.\\|qrhl\\)> "
 		   proof-script-comment-start-regexp "#"
@@ -27,6 +27,7 @@
 		   proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\"" . "\\\""))
 		   proof-shell-cd-cmd "changeDirectory \"%s\"."
 		   proof-save-command-regexp "^adfuaisdfaoidsfasd" ; ProofGeneral produces warning when this is not set. But we don't want goal/save commands to be recognized because that makes ProofGeneral do an atomic undo.
+		   proof-tree-external-display nil
 		   )
 
 
