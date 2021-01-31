@@ -4960,19 +4960,29 @@ is not adapted.
 
 
 @c TEXI DOCSTRING MAGIC: coq-max-background-second-stage-percentage
-@defvar coq-max-background-vio2vo-percentage 
-Percentage of @samp{@code{coq-max-background-vio2vo-percentage}} for vio2vo jobs.@*
-This setting configures the maximal number of vio2vo background
-jobs (if you set @samp{@code{coq-compile-quick}} to @code{'quick-and-vio2vo}) as
+@defvar coq-max-background-second-stage-percentage 
+Percentage of @samp{@code{coq-max-background-compilation-jobs}} for the second stage.@*
+This setting configures the maximal number of @samp{`-vok}' or vio2vo background
+jobs running in a second stage as
 percentage of @samp{@code{coq-max-background-compilation-jobs}}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-max-background-vio2vo-percentage}}.
 @end defvar
 
 
 @c TEXI DOCSTRING MAGIC: coq-compile-second-stage-delay
-@defvar coq-compile-vio2vo-delay 
-Delay in seconds for the vio2vo compilation.@*
-This delay helps to avoid running into a library inconsistency
-with @code{'quick-and-vio2vo}, see Coq issue #@var{5223}.
+@defvar coq-compile-second-stage-delay 
+Delay in seconds before starting the second stage compilation.@*
+The delay is applied to both @samp{`-vok}' and vio2vo second stages.
+For Coq < 8.11 and vio2vo delay helps to avoid running into a
+library inconsistency with @code{'quick-and-vio2vo}, see Coq issue
+#@var{5223}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-compile-vio2vo-delay}}.
 @end defvar
 
 Locking ancestors can be disabled with the following option.
