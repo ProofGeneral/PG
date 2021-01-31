@@ -45,6 +45,37 @@ jobs:
       run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo
     - run: make doc.info
 
+  # Check that the texinfo sources of the manual can be updated
+  # with the documentation strings for variables and functions in
+  # the source code and that the manual is actually up-to-date.
+  # If the final git diff fails, then somebody forgot to update
+  # the manuals with ``make -C doc magic'' after changing a
+  # variable or function documentation that appears in one of the
+  # manuals.
+  check-doc-magic:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          # I don't think we need to check with all emacs
+          # versions. The latest two should be enough, maybe even
+          # only the latest one.
+          - 26.3
+          - 27.1
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - run: emacs --version
+    - run: make -C doc magic
+    - run: git diff --exit-code
+      
   test:
     runs-on: ubuntu-latest
 
