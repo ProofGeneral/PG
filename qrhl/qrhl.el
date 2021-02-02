@@ -5,7 +5,24 @@
   (proof-generic-count-undos span))
   
 (defvar qrhl-home (file-name-directory (directory-file-name (file-name-directory (directory-file-name (file-name-directory load-file-name))))))
-  
+
+(defvar qrhl-focus-cmd-regexp
+      (let* ((number "[0-9]+")
+	     (white "[[:blank:]]*")
+	     (number-or-range (concat number "\\(" white "-" white number "\\)?"))
+	     (range-list (concat number-or-range "\\(" white "," white number-or-range "\\)*"))
+	     (focus-label "\\({\\|}\\|[+*-]+\\)")
+	     (focus-cmd (concat "\\(" range-list white ":" white "\\)?" focus-label))
+	     )
+	focus-cmd))
+
+(defun qrhl-proof-script-parse-function ()
+  "Finds the command starting at the point"
+  (or (and (looking-at qrhl-focus-cmd-regexp)
+	   (goto-char (match-end 0))
+	   'cmd)
+      (proof-script-generic-parse-cmdend)))
+
 (proof-easy-config 'qrhl "qRHL"
 		   proof-prog-name (concat qrhl-home "bin/qrhl")
 		   ; We need to give some option here, otherwise proof-prog-name is interpreted
@@ -13,6 +30,7 @@
 		   ; (see the documentation for proof-prog-name)
 		   qrhl-prog-args '("--emacs")
 		   proof-script-command-end-regexp "\\.[ \t]*$"
+		   proof-script-parse-function 'qrhl-proof-script-parse-function
 		   proof-shell-annotated-prompt-regexp "^\\(\\.\\.\\.\\|qrhl\\)> "
 		   proof-script-comment-start-regexp "#"
 		   proof-script-comment-end "\n"
