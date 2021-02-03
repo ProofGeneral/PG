@@ -34,7 +34,7 @@
 		   proof-shell-annotated-prompt-regexp "^\\(\\.\\.\\.\\|qrhl\\)> "
 		   proof-script-comment-start-regexp "#"
 		   proof-script-comment-end "\n"
-		   proof-shell-error-regexp "\\[ERROR\\]\\|Exception"
+		   proof-shell-error-regexp "^\\(\\[ERROR\\]\\|Exception\\)"
 		   proof-undo-n-times-cmd "undo %s."
 		   proof-find-and-forget-fn 'qrhl-find-and-forget
 		   proof-shell-start-goals-regexp "^[0-9]+ subgoals:\\|^Goal:\\|^No current goal\\.\\|^In cheat mode\\.\\|^No focused goals (use "
