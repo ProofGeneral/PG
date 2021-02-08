@@ -43,7 +43,7 @@ your `.emacs` and restart Emacs:
 **Remark:** If you have Emacs 26.1 (which is precisely
 [the packaged version in Debian 10](https://packages.debian.org/emacs)),
 you may get the error message `Failed to download 'melpa' archive`
-during the package refresh step. This is a know bug
+during the package refresh step. This is a known bug
 ([debbug #34341](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34341))
 which has been fixed in Emacs 26.3 and 27.1, while a simple workaround
 consists in uncommenting the line
