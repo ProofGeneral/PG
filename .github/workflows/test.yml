@@ -131,6 +131,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      # change to selected versions of coq-emacs docker containers
       matrix:
         coq_version:
           - '8.9'
@@ -173,4 +174,51 @@ jobs:
           startGroup Run tests
             sudo chown -R coq:coq ./ci
             make -C ci/compile-tests test
+          endGroup
+
+  simple-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # change to selected versions of coq-emacs docker containers
+      matrix:
+        coq_version:
+          - '8.9'
+          - '8.10'
+          - '8.11'
+        ocaml_version:
+          - minimal
+      max-parallel: 6
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Add ert problem matcher
+      run: echo "::add-matcher::.github/ert.json"
+      
+    - uses: coq-community/docker-coq-action@v1
+      id: docker-coq-action
+      with:
+        opam_file: 'dummy.opam'
+        coq_version: ${{ matrix.coq_version }}
+        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_script: |
+          startGroup Print opam config
+            opam config list; opam repo list; opam list
+          endGroup
+          startGroup Install emacs
+            sudo apt-get update -y -q
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
+          endGroup
+          startGroup other relevant configuration
+            getconf _NPROCESSORS_ONLN
+            emacs --version
+            coqc --version
+            ocaml --version
+          endGroup
+          startGroup Run tests
+            sudo chown -R coq:coq ./ci
+            make -C ci/simple-tests all
           endGroup

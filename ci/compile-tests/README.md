@@ -5,6 +5,9 @@ compilation feature for Coq. The test check that
   are compiled
 - files are locked and registered in the right require commands.
 
+Each test comes with a hand-crafted set of Coq source files that
+implement a particular dependency tree. Therefore, most of the
+tests have a subdirectory on their own.
 
 Tests currently missing:
 - unlock checks for ancestors of failed jobs in different cases
