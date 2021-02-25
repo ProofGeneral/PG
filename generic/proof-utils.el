@@ -5,7 +5,7 @@
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
 ;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
-;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
+;; Portions © Copyright 2010, 2016, 2021  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
@@ -100,6 +100,28 @@ Return nil if not a script buffer or if no active scripting buffer."
       (require symbol)
     (file-error nil))
   (featurep symbol))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Facility to upgrade all ELPA packages (including ProofGeneral)
+;;
+
+
+(defun proof-upgrade-elpa-packages ()
+  "Upgrade all ELPA packages (using package.el)."
+  (interactive)
+  (unless (proof-try-require 'package)
+    (error "The package feature is not available!"))
+  (let ((old-async package-menu-async))
+    (setq package-menu-async nil)
+    (package-list-packages)
+    (package-menu-mark-upgrades)
+    (let ((use-dialog-box nil))
+      ;; make `y-or-n-p' show up within the minibuffer
+      ;; even if `proof-upgrade-elpa-packages' is called interactively
+      ;; to avoid any dialog-box overflow if many packages are updated
+      (package-menu-execute))
+    (setq package-menu-async old-async)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
