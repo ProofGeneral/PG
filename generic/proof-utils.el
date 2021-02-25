@@ -106,7 +106,7 @@ Return nil if not a script buffer or if no active scripting buffer."
 ;; Facility to upgrade all ELPA packages (including ProofGeneral)
 ;;
 
-
+;;;###autoload
 (defun proof-upgrade-elpa-packages ()
   "Upgrade all ELPA packages (using package.el)."
   (interactive)
