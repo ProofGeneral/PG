@@ -140,7 +140,10 @@ Interactively (with INTERACTIVE-P), show that number."
 (defun coq-autodetect-help (&optional interactive-p)
   "Record the output of coqotp -help in `coq-autodetected-help'."
   (interactive '(t))
-  (setq coq-autodetected-help (coq-callcoq "-help")))
+  (let ((coq-output (coq-callcoq "-help")))
+    (if coq-output
+        (setq coq-autodetected-help coq-output)
+      (setq coq-autodetected-help ""))))
 
 
 (defun coq--version< (v1 v2)
