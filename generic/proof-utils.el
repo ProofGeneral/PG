@@ -112,17 +112,14 @@ Return nil if not a script buffer or if no active scripting buffer."
   (interactive)
   (unless (proof-try-require 'package)
     (error "The package feature is not available!"))
-  (let ((old-async package-menu-async))
-    (setq package-menu-async nil)
+  (let ((package-menu-async nil))
     (package-list-packages)
     (package-menu-mark-upgrades)
     (let ((use-dialog-box nil))
       ;; make `y-or-n-p' show up within the minibuffer
       ;; even if `proof-upgrade-elpa-packages' is called interactively
       ;; to avoid any dialog-box overflow if many packages are updated
-      (package-menu-execute))
-    (setq package-menu-async old-async)))
-
+      (package-menu-execute))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
