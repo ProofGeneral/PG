@@ -27,6 +27,13 @@ Two editions of Proof General are currently available:
 
 ## Installing Proof General
 
+Proof General requires GNU Emacs `24.5` or later.
+
+The current policy aims at supporting multiple Emacs versions,
+including those available in [Debian Stable](https://packages.debian.org/stable/emacs)
+as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs24) distributions
+until their [End-Of-Support](https://wiki.ubuntu.com/Releases).
+
 ### Using MELPA (recommended procedure)
 
 [MELPA](https://melpa.org/) is a repository of Emacs packages. Skip

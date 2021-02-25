@@ -17,15 +17,15 @@ jobs:
     strategy:
       matrix:
         emacs_version:
-          - 24.3
-          - 24.4
           - 24.5
+          # 24.5 to be removed at End-of-Support of Ubuntu 16.04 LTS (https://wiki.ubuntu.com/Releases)
           - 25.1
           - 25.2
           - 25.3
           - 26.1
           - 26.2
           - 26.3
+          - 27.1
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 4
@@ -41,6 +41,7 @@ jobs:
 
     - run: emacs --version
     - run: make
+    # Erik: Extend this with linting?
     - name: Install makeinfo
       run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo
     - run: make doc.info
