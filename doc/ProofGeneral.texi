@@ -58,8 +58,8 @@
 @c
 
 @set version 4.5-git
-@set emacsversion 24.3
-@set last-update September 2016
+@set emacsversion 24.5
+@set last-update February 2021
 @set rcsid $Id$
 
 @dircategory Theorem proving
