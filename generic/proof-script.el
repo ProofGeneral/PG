@@ -1373,7 +1373,17 @@ With ARG, turn on scripting iff ARG is positive."
 
 (defun proof-done-advancing (span)
   "The callback function for `assert-until-point'.
-Argument SPAN has just been processed."
+Argument SPAN has just been processed.
+
+This is the callback for all the normal commands. Besides stuff
+that is not yet documented here, this function
+- extends the locked region
+- creates additional spans (without 'type property) for help,
+  tooltips, color and menus
+- merges spans with 'type as needed to achieve atomic undo for
+  proofs and sections
+- enters some commands and their spans in some database (with for
+  me unknown purpose)"
   (let ((end     (span-end span))
 	(cmd     (span-property span 'cmd)))
 
@@ -1406,6 +1416,8 @@ Argument SPAN has just been processed."
      ;; CASE 3: Proof completed one step or more ago, non-save
      ;; command seen, no nested goals allowed.
      ;;
+     ;; AFAICT case 3 is never taken for Coq.
+     ;; 
      ;; We make a fake goal-save from any previous
      ;; goal to the command before the present one.
      ;;
@@ -1463,11 +1475,23 @@ Argument SPAN has just been processed."
 
 
 (defun proof-done-advancing-save (span)
-  "A subroutine of `proof-done-advancing'.  Add info for save span SPAN."
+  "Retire commands that close a proof or some other region.
+This is a subroutine of `proof-done-advancing'.
+Besides stuff that is not yet documented here, this function
+- creates additional spans (without 'type property) for help,
+  tooltips, color and menus
+- in particular, adds the background color for omitted proofs
+- merges spans with 'type as needed to achieve atomic undo for
+  proofs and sections; for Coq this is done at least for proofs
+  and sections.
+- enters some commands and their spans in some database (with for
+  me unknown purpose)"
   (unless (or (eq proof-shell-proof-completed 1)
 	      (eq proof-assistant-symbol 'isar))
     ;; We expect saves to succeed only for recently completed top-level proofs.
     ;; NB: not true in Isar, because save commands can perform proof.
+    ;; Note: not true in Coq either, if there is a command (eg. a Check)
+    ;; between the tactic that finished the proof and the Qed.
     (proof-debug
      (format
       "PG: save command with proof-shell-proof-completed=%s, proof-nesting-depth=%s"
@@ -1480,6 +1504,13 @@ Argument SPAN has just been processed."
 	(savestart (span-start span))
 	(saveend   (span-end span))
 	(cmd       (span-property span 'cmd))
+        ;; With the omit proofs feature (see
+        ;; `proof-omit-proofs-configured'), the span of the Admitted
+        ;; command that replaces the proof contains an
+        ;; 'omitted-proof-region property, that holds the start and
+        ;; end of the omitted proof for colouring. The property is
+        ;; only inserted for omitted proofs in the replacing Admitted.
+        (omitted-proof-region (span-property span 'omitted-proof-region))
 	lev nestedundos nam next)
 
     (and proof-save-with-hole-regexp
@@ -1545,6 +1576,20 @@ Argument SPAN has just been processed."
 
       (proof-make-goalsave gspan (span-end gspan)
 			   savestart saveend nam nestedundos)
+
+      ;; In case SPAN (which is retired now) belongs to an admit
+      ;; command that closes an omitted proof: create an additional
+      ;; span for the different background color of the omitted span.
+      ;; Start and end point of this span has been computed before in
+      ;; `proof-script-omit-proofs'. This background color span is
+      ;; registered in the span of the goal command for the only
+      ;; reason to not leave it dangling around.
+      (when omitted-proof-region
+        (let ((omit-span (span-make (car omitted-proof-region)
+                                    (cadr omitted-proof-region))))
+          (span-set-property omit-span 'face 'proof-omitted-proof-face)
+          (span-set-property omit-span 'omitted-proof-span t)
+          (span-set-property gspan 'omit-color-span omit-span)))
 
       ;; *** Theorem dependencies ***
       (if proof-last-theorem-dependencies
@@ -1933,6 +1978,124 @@ Assumes that point is at the end of a command."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; Omit proofs feature.
+;;
+;; See `proof-omit-proofs-configured' for the feature. When the parsed
+;; buffer content has been converted to vanilla spans,
+;; `proof-script-omit-proofs' searches for complete opaque proofs in
+;; there and replaces them with `proof-script-proof-admit-command'.
+
+(defun proof-move-over-whitespace-to-next-line (pos)
+  "Return position of next line if one needs only to jump over white space.
+Utility function. In the current buffer, check if beginning of
+next line can be reached from POS by moving over white
+space (spaces, tabs) only. If yes return the beginning of next
+line, otherwise POS."
+  (save-excursion
+    (goto-char pos)
+    (skip-chars-forward " \t")
+    (setq pos (point))
+    (if (eolp)
+        (1+ (point))
+      pos)))
+  
+(defun proof-script-omit-proofs (vanillas)
+  "Return a copy of VANILLAS with complete opaque proofs omitted.
+See `proof-omit-proofs-configured' for the description of the
+omit proofs feature. This function uses
+`proof-script-proof-start-regexp',
+`proof-script-proof-end-regexp' and
+`proof-script-definition-end-regexp' to search for complete
+opaque proofs in the action list VANILLAS. Complete opaque proofs
+are replaced by `proof-script-proof-admit-command'. The span of
+the admit command contains an 'omitted-proof-region property with
+the region of the omitted proof. This is used in
+`proof-done-advancing-save' to colour the omitted proof with
+`proof-omitted-proof-face'.
+
+Report an error to the (probably surprised) user if another proof
+start is found inside a proof."
+  (cl-assert
+   (and proof-omit-proofs-configured proof-script-proof-start-regexp
+        proof-script-proof-end-regexp proof-script-definition-end-regexp
+        proof-script-proof-admit-command)
+   nil
+   "proof-script omit proof feature not properly configured")
+  (let (result maybe-result inside-proof
+        proof-start-span-start proof-start-span-end)
+    (dolist (item vanillas (nreverse (nconc maybe-result result)))
+      (let ((cmd (mapconcat 'identity (nth 1 item) " ")))
+        (if inside-proof
+            (progn
+              (when (string-match proof-script-proof-start-regexp cmd)
+                ;; found another proof start inside a proof
+                (error "found another proof start inside a proof"))
+              (if (string-match proof-script-proof-end-regexp cmd)
+                  (let
+                      ;; Reuse the Qed span for the whole proof,
+                      ;; including the faked Admitted command.
+                      ;; `proof-done-advancing' expects such a span.
+                      ((cmd-span (car item)))
+                    (span-set-property cmd-span 'type 'omitted-proof)
+                    (span-set-property cmd-span
+                                       'cmd proof-script-proof-admit-command)
+                    (span-set-endpoints cmd-span proof-start-span-end
+                                        (span-end (car item)))
+                    ;; Throw away all commands between start of proof
+                    ;; and the current point, in particular, delete
+                    ;; all the spans.
+                    (mapc
+                     (lambda (item) (span-detach (car item)))
+                     maybe-result)
+                    (setq maybe-result nil)
+                    ;; Record start and end point for the fancy
+                    ;; colored span that marks the skipped proof. The
+                    ;; span will be created in
+                    ;; `proof-done-advancing-save' when
+                    ;; `proof-script-proof-admit-command' is retired.
+                    (span-set-property
+                     cmd-span 'omitted-proof-region
+                     ;; for the start take proper line start if possible
+                     (list (proof-move-over-whitespace-to-next-line
+                            proof-start-span-start)
+                           ;; For the end, don't extend to the end of
+                           ;; the line, because then the fancy color
+                           ;; span is behind the end of the proof span
+                           ;; and will get deleted when undoing just
+                           ;; behind that proof.
+                           (span-end (car item))))
+                    (push (list cmd-span
+                                (list proof-script-proof-admit-command)
+                                'proof-done-advancing nil)
+                          result)
+                    (setq inside-proof nil))
+                (if (string-match proof-script-definition-end-regexp cmd)
+                    ;; A proof ending in Defined or something similar.
+                    ;; Need to keep all commands from the start of the proof.
+                    (progn
+                      (setq result (cons item (nconc maybe-result result)))
+                      (setq maybe-result nil)
+                      (setq inside-proof nil))
+                  ;; normal proof command - maybe it belongs to a
+                  ;; Defined, keep it separate, until we know.
+                  (push item maybe-result))))
+          ;; outside proof
+          (if (string-match proof-script-proof-start-regexp cmd)
+              (progn
+                (setq maybe-result nil)
+                ;; Keep the Proof using command in any case.
+                (push item result)
+                (setq proof-start-span-start (span-start (car item)))
+                (setq proof-start-span-end (span-end (car item)))
+                (setq inside-proof t))
+            ;; outside, no proof start - keep it unmodified
+            (push item result)))))
+    ;; return (nreverse (nconc maybe-result result)), see dolist above
+    ))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; Assert-until-point.
 ;;
 ;; This function parses some region of the script buffer into
@@ -2005,12 +2168,16 @@ SEMIS must be a non-empty list, in reverse order (last position first).
 We assume that the list is contiguous and begins at (proof-queue-or-locked-end).
 We also delete help spans which appear in the same region (in the expectation
 that these may be overwritten).
-This function expects the buffer to be activated for advancing."
+This function expects the buffer to be activated for advancing.
+If the omit proofs feature is active, complete opaque proofs will
+be omitted from the vanilla action list obtained from SEMIS."
   (cl-assert semis nil "proof-assert-semis: argument must be a list")
   (let ((startpos  (proof-queue-or-locked-end))
 	(lastpos   (nth 2 (car semis)))
 	(vanillas  (proof-semis-to-vanillas semis displayflags)))
     (proof-script-delete-secondary-spans startpos lastpos)
+    (when (and proof-omit-proofs-option proof-omit-proofs-configured)
+      (setq vanillas (proof-script-omit-proofs vanillas)))
     (proof-extend-queue lastpos vanillas)))
 
 (defun proof-retract-before-change (beg end)

@@ -99,6 +99,17 @@ be inserted as the user types commands to the prover."
   :set 'proof-set-value
   :group 'proof-user-options)
 
+(defcustom proof-omit-proofs-option nil
+  "Set to t to omit complete opaque proofs for speed reasons.
+When t, complete opaque proofs in the asserted region are not
+sent to the proof assistant (and thus not checked). For files
+with big proofs this can drastically reduce the processing time
+for the asserted region at the cost of not checking the proofs.
+For partial and non-opaque proofs in the asserted region all
+proof commands are sent to the proof assistant."
+  :type 'boolean
+  :group 'proof-user-options)
+
 (defcustom pg-show-hints t
   "*Whether to display keyboard hints in the minibuffer."
   :type 'boolean

@@ -696,6 +696,67 @@ needed for Coq."
   :type 'boolean
   :group 'proof-script)
 
+(defcustom proof-omit-proofs-configured nil
+  "t if the omit proofs feature has been configured by the proof assitant.
+See also `proof-omit-proofs-option' or the Proof General manual
+for a description of the feature. This option can only be set, if
+all of `proof-script-proof-start-regexp',
+`proof-script-proof-end-regexp',
+`proof-script-definition-end-regexp' and
+`proof-script-proof-admit-command' have been configured.
+
+The omit proofs feature skips over opaque proofs in the source
+code, admitting the theorems, to speed up processing.
+
+If `proof-omit-proofs-option' is set by the user, all proof
+commands in the source following a match of
+`proof-script-proof-start-regexp' up to and including the next
+match of `proof-script-proof-end-regexp', are omitted (not send
+to the proof assistant) and replaced by
+`proof-script-proof-admit-command'. If a match for
+`proof-script-definition-end-regexp' is found while searching
+forward for the proof end, the current proof (up to and including
+the match of `proof-script-definition-end-regexp') is considered
+to be not opaque and not omitted, thus all these proof commands
+_are_ sent to the proof assistant.
+
+If a match for `proof-script-proof-start-regexp' is found before
+the next match for `proof-script-proof-end-regexp' or
+`proof-script-definition-end-regexp', an error is signaled to the
+user.
+
+All the regular expressions for this feature are matched against
+the commands inside proof action items, that is as strings,
+without surrounding space."
+  :type 'boolean
+  :group 'proof-script)
+
+;; proof-omit-proofs-option is in proof-useropts as user option
+
+(defcustom proof-script-proof-start-regexp nil
+  "Regular expression for the start of a proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
+  :type 'regexp
+  :group 'proof-script)
+
+(defcustom proof-script-proof-end-regexp nil
+  "Regular expression for the end of an opaque proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
+  :type 'regexp
+  :group 'proof-script)
+
+(defcustom proof-script-definition-end-regexp nil
+  "Regexp for the end of a non-opaque proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
+  :type 'regexp
+  :group 'proof-script)
+  
+(defcustom proof-script-proof-admit-command nil
+  "Proof command to be inserted instead of omitted proofs."
+  :type 'string
+  :group 'proof-script)
+
+
 ;;
 ;; Proof script indentation
 ;;

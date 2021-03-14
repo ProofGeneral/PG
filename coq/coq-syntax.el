@@ -1107,6 +1107,31 @@ It is used:
              (not (string-match "\\`Proof\\s-*\\(\\.\\|\\_<with\\_>\\|\\_<using\\_>\\)" str))))))
 
 
+;; ----- regular expressions for the proof omit feature
+;; see `proof-omit-proofs-configured' in generic/proof-config
+
+(defcustom coq-proof-start-regexp "^Proof\\(\\.\\| \\)"
+  "Value for `proof-script-proof-start-regexp'."
+  :type 'regexp
+  :group 'coq)
+
+(defcustom coq-proof-end-regexp "^\\(Qed\\|Admitted\\)\\."
+  "Value for `proof-script-proof-end-regexp'.
+This is similar to `coq-save-command-regexp-strict' but slightly
+different."
+  :type 'regexp
+  :group 'coq)
+
+(defcustom coq-definition-end-regexp "^\\(Defined\\|Abort\\)\\(\\.\\| \\)"
+  "Value for `proof-script-definition-end-regexp'."
+  :type 'regexp
+  :group 'coq)
+  
+(defcustom coq-omit-proof-admit-command "Admitted."
+  "Value for `proof-script-proof-admit-command'."
+  :type 'string
+  :group 'coq)
+
 ;; ----- keywords for font-lock.
 
 (defvar coq-keywords-kill-goal
