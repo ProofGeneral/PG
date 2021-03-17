@@ -1814,43 +1814,6 @@ on @samp{@code{proof-shell-eager-annotation-start}} and
 Set to nil to disable.
 @end defvar
 
-@c TEXI DOCSTRING MAGIC: proof-shell-set-elisp-variable-regexp
-@defvar proof-shell-set-elisp-variable-regexp 
-Matches output telling Proof General to set some variable.@*
-This allows the proof assistant to configure Proof General directly
-and dynamically.   (It's also a fantastic backdoor security risk).
-
-More precisely, this should match a string which is bounded by
-matches on @samp{@code{proof-shell-eager-annotation-start}} and
-@samp{@code{proof-shell-eager-annotation-end}}.
-
-If the regexp matches output from the proof assistant, there should be
-two match strings: (@code{match-string} 1) should be the name of the elisp
-variable to be set, and (@code{match-string} 2) should be the value of the
-variable (which will be evaluated as a Lisp expression).
-
-A good markup for the second string is to delimit with #'s, since
-these are not valid syntax for elisp evaluation.
-
-Elisp errors will be trapped when evaluating; set
-@samp{@code{proof-general-debug}} to be informed when this happens.
-
-Example uses are to adjust PG's internal copies of proof assistant's
-settings, or to make automatic dynamic syntax adjustments in Emacs to
-match changes in theory, etc.
-
-If you pick a dummy variable name (e.g. @samp{proof-dummy-setting}) you
-can just evaluation arbitrary elisp expressions for their side
-effects, to adjust menu entries, or even launch auxiliary programs.
-But use with care -- there is no protection against catastrophic elisp!
-
-This setting could also be used to move some configuration settings
-from PG to the prover, but this is not really supported (most settings
-must be made before this mechanism will work).  In future, the PG
-standard protocol, @var{pgip}, will use this mechanism for making all
-settings.
-@end defvar
-
 @c TEXI DOCSTRING MAGIC: proof-shell-theorem-dependency-list-regexp
 @defvar proof-shell-theorem-dependency-list-regexp 
 Matches output telling Proof General about dependencies.@*
