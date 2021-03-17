@@ -106,7 +106,11 @@ sent to the proof assistant (and thus not checked). For files
 with big proofs this can drastically reduce the processing time
 for the asserted region at the cost of not checking the proofs.
 For partial and non-opaque proofs in the asserted region all
-proof commands are sent to the proof assistant."
+proof commands are sent to the proof assistant.
+
+Using a prefix argument for `proof-goto-point' (\\[proof-goto-point])
+or `proof-process-buffer' (\\[proof-process-buffer]) temporarily
+disables omitting proofs."
   :type 'boolean
   :group 'proof-user-options)
 
