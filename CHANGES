@@ -142,6 +142,15 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     file contains "Require ... ssreflect" on the same line; otherwise
     PG inserts "intros ..." as before.
 
+*** Customizing Search Blacklist (command created and menu entry moved)
+    To change the list of blacklisted string for Search commands
+    during development, use now
+    coq-change-search-blacklist-interactive. The menu for this has
+    moved, it is now in Coq/Other Queries/Search Blacklist.
+
+    To change the default blacklist, set variable
+    coq-search-blacklist-string (unchanged).
+
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
     - 123: Parallel background compliation fails to execute some

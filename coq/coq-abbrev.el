@@ -320,6 +320,7 @@
      ["Search..." coq-Search t]
      ["SearchRewrite..." coq-SearchRewrite t]
      ["SearchPattern..." coq-SearchIsos t]
+     ["Search Blacklist..." coq-change-search-blacklist-interactive t]
      ["Locate constant..." coq-LocateConstant t]
      ["Locate Library..." coq-LocateLibrary t]
      ["Pwd" coq-Pwd t]
