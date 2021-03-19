@@ -91,9 +91,23 @@ These are appended at the end of `coq-shell-init-cmd'."
 ;; Default coq is only Private_ and _subproof
 (defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
  "\"Private_\" \"_subproof\""
-  "String for blacklisting strings from requests to Coq environment."
+  "Initial strings to blacklist in requests to Coq environment.
+If you are setting this via emacs cutomization menus, you should
+restart Coq to see the effect. To change blacklist during a coq
+development, please use \\[coq-change-search-blacklist-interactive]
+instead (or menu: Coq/Settings/Search Blacklist)."
   :type 'string
   :group 'coq)
+
+;; Coq has no command to overwrite the current blacklist, only to add or remove
+;; particular strings. To provide the overwrite feature to the user we thus need
+;; to know the current value of blacklist to first remove everything, then add
+;; the new values.
+;;; TODO: retrieve the value from coq itself and remove this variable?
+(defvar coq-search-blacklist-current-string coq-search-blacklist-string
+  "Current value of Coq Search Blacklist.
+This may become desynchronized with Coq if you use the command
+\"Add/Remove Search Blacklist\" in you script." )
 
 (defcustom coq-prefer-top-of-conclusion nil
   "Prefer start of the conclusion over its end when displaying large goals.
@@ -101,18 +115,16 @@ Namely, goals that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
 
-;; this remembers the previous value of coq-search-blacklist-string, so that we
-;; can cook a remove+add blacklist command each time the variable is changed.
-;; initially we put it at current value of coq-search-blacklist-string.
-(defvar coq-search-blacklist-string-prev coq-search-blacklist-string)
 
-;TODO: remove Set Undo xx. It is obsolete since coq-8.5 at least.
-;;`(,(format "Set Undo %s . " coq-default-undo-limit) "Set Printing Width 75.")
 (defconst coq-shell-init-cmd
-  (append `(,(format "Add Search Blacklist %s. " coq-search-blacklist-string))
-          '("Set Suggest Proof Using. ")
-          coq-user-init-cmd)
- "Command to initialize the Coq Proof Assistant.")
+  (append
+   `(
+     ;; Should this variable be buffer-local? No opinion on that but if yes we
+     ;; should re-intialize to coq-search-blacklist-string instead of
+     ;; keeping the current value (that may come from another file).
+     ,(format "Add Search Blacklist %s. " coq-search-blacklist-current-string))
+   '("Set Suggest Proof Using. ") coq-user-init-cmd)
+  "Command to initialize the Coq Proof Assistant.")
 
 
 (require 'coq-syntax)
@@ -2153,22 +2165,33 @@ Set Diffs setting if Coq is running and has a version >= 8.10."
 ;;  :type 'integer
 ;;  :setting "Set Undo %i . ")
 
-(defun coq-set-search-blacklist (s)
-  (let ((res (format "Remove Search Blacklist %s. \nAdd Search Blacklist %s. "
-          coq-search-blacklist-string-prev s)))
-    (setq coq-search-blacklist-string-prev coq-search-blacklist-string)
-    res))
+;; Problem if the Remove or Add fails we leave Coq's blacklist in a strange
+;; state: unnoticed by the user, and desynched from
+;; coq-search-blacklist-current-string.
+;; TODO: have a way to detect error and re-set old value.
+(defun coq-change-search-blacklist (s)
+  (let* ((cmd-clean (list (format "Remove Search Blacklist %s."
+                                  coq-search-blacklist-current-string)))
+         (item-clean `(nil ,cmd-clean proof-done-invisible 'invisible))
+         (cmd-set (list (format "Add Search Blacklist %s." s)))
+         (item-set `(nil ,cmd-set proof-done-invisible 'invisible)))
+  (proof-add-to-queue `(,item-clean ,item-set) 'advancing)))
 
+(defun coq-change-search-blacklist-interactive ()
+  (interactive)
+  (proof-shell-ready-prover)
+  (let* ((current-value coq-search-blacklist-current-string)
+         (s (read-string
+             "Set search blacklist to: "
+             current-value 'proof-minibuffer-history)))
+    (coq-change-search-blacklist s)
+    (setq coq-search-blacklist-current-string s)))
 
-(defun coq-get-search-blacklist (s)
-  coq-search-blacklist-string)
-
-
-(defpacustom search-blacklist coq-search-blacklist-string
-  "Strings to blacklist in requests to Coq environment."
-  :type 'string
-  :get 'coq-get-search-blacklist
-  :setting coq-set-search-blacklist)
+;; (defpacustom search-blacklist coq-search-blacklist-string
+;;   "Strings to blacklist in requests to Coq environment."
+;;   :type 'string
+;;   :get 'coq-get-search-blacklist
+;;   :setting coq-set-search-blacklist)
 
 
 (defpacustom time-commands nil
