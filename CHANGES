@@ -151,6 +151,13 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     To change the default blacklist, set variable
     coq-search-blacklist-string (unchanged).
 
+*** Proof General can omit complete opaque proofs
+    This speeds up asserting of larger chunks at the price of
+    letting errors in these proofs go unnoticed. Configure
+    `proof-omit-proofs-option' or select "Proof-General -> Quick
+    Options -> Processing -> Omit Proofs". See also section
+    "11.5 Omitting proofs for speed" in the manual  
+
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
     - 123: Parallel background compliation fails to execute some
