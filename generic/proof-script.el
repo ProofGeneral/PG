@@ -2030,11 +2030,14 @@ This function expects the buffer to be activated for advancing."
   ;; arm the timeout timer
   ;; cancelled 1. in `proof-shell-exec-loop' unless `proof-shell-busy' or
   ;; 2. in the case of error, in `proof-shell-error-or-interrupt-action'
-  (if proof-shell-timeout-warn
+  (if (and proof-shell-timeout-warn
+           (not (eq (caar semis) 'comment)))
       (setq proof-shell-timer
           (run-with-timer proof-shell-timeout-warn nil
-                          'message "This command is taking a while. \
-Is it malformed? Do C-c C-c to interrupt prover or C-c C-x to terminate it."))))
+                          'message
+                          (substitute-command-keys "This command is taking a while. \
+Is it malformed? Do \\[proof-interrupt-process] to interrupt prover or
+\\[proof-shell-exit] to terminate it.")))))
 
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.

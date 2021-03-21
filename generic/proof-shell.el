@@ -1187,7 +1187,7 @@ contains only invisible elements for Prooftree synchronization."
 	  (setq cbitems nil)
 	  (proof-shell-handle-error-or-interrupt 'interrupt flags))
 
-  (if proof-action-list
+	(if proof-action-list
 	    ;; send the next command to the process.
 	    (proof-shell-insert-action-item (car proof-action-list)))
 
