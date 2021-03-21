@@ -1276,9 +1276,6 @@ ends with text matching `proof-shell-eager-annotation-end'."
    ((proof-looking-at-safe proof-shell-clear-goals-regexp)
     (proof-clean-buffer proof-goals-buffer))
 
-   ((proof-looking-at-safe proof-shell-set-elisp-variable-regexp)
-    (proof-shell-process-urgent-message-elisp))
-
    ((proof-looking-at-safe proof-shell-match-pgip-cmd)
     (pg-pgip-process-packet
      ;; NB: xml-parse-region ignores junk before XML

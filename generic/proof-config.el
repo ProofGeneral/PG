@@ -446,10 +446,10 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-goal-with-hole-result 2
-  "How to get theorem name after ‘proof-goal-with-hole-regexp’ match.
+  "How to get theorem name after `proof-goal-with-hole-regexp' match.
 String or Int.
-If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
-If a string, use ‘replace-match’.  In this case, ‘proof-goal-with-hole-regexp’
+If an int N, use `match-string' to get the value of the Nth parenthesis matched.
+If a string, use `replace-match'.  In this case, `proof-goal-with-hole-regexp'
 should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
@@ -694,20 +694,6 @@ is only the choice to fully retract the active buffer before
 starting scripting in a different buffer.  This last behavior is
 needed for Coq."
   :type 'boolean
-  :group 'proof-script)
-
-(defcustom proof-script-evaluate-elisp-comment-regexp "ELISP: -- \\(.*\\) --"
-  "Matches text within a comment telling Proof General to evaluate some code.
-This allows Emacs Lisp to be executed during scripting.
-\(It's also a fantastic backdoor security risk).
-
-If the regexp matches text inside a comment, there should be
-one subexpression match string, which will contain elisp code
-to be evaluated.
-
-Elisp errors will be trapped when evaluating; set
-`proof-general-debug' to be informed when this happens."
-  :type 'regexp
   :group 'proof-script)
 
 ;;
@@ -1344,44 +1330,6 @@ match data triggered by `proof-shell-retract-files-regexp'."
   "Regexp matching any \"special\" character sequence."
   :type 'string
   :group 'proof-shell)
-
-(defcustom proof-shell-set-elisp-variable-regexp nil
-  "Matches output telling Proof General to set some variable.
-This allows the proof assistant to configure Proof General directly
-and dynamically.   (It's also a fantastic backdoor security risk).
-
-More precisely, this should match a string which is bounded by
-matches on `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-If the regexp matches output from the proof assistant, there should be
-two match strings: (match-string 1) should be the name of the elisp
-variable to be set, and (match-string 2) should be the value of the
-variable (which will be evaluated as a Lisp expression).
-
-A good markup for the second string is to delimit with #'s, since
-these are not valid syntax for elisp evaluation.
-
-Elisp errors will be trapped when evaluating; set
-`proof-general-debug' to be informed when this happens.
-
-Example uses are to adjust PG's internal copies of proof assistant's
-settings, or to make automatic dynamic syntax adjustments in Emacs to
-match changes in theory, etc.
-
-If you pick a dummy variable name (e.g. `proof-dummy-setting') you
-can just evaluation arbitrary elisp expressions for their side
-effects, to adjust menu entries, or even launch auxiliary programs.
-But use with care -- there is no protection against catastrophic elisp!
-
-This setting could also be used to move some configuration settings
-from PG to the prover, but this is not really supported (most settings
-must be made before this mechanism will work).  In future, the PG
-standard protocol, PGIP, will use this mechanism for making all
-settings."
-  :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
 
 (defcustom proof-shell-match-pgip-cmd nil
   "Regexp used to match PGIP command from proof assistant.

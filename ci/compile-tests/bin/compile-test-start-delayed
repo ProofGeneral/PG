@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# This file is part of Proof General.
+# 
+# © Copyright 2021  Hendrik Tews
+# 
+# Authors: Hendrik Tews
+# Maintainer: Hendrik Tews <hendrik@askra.de>
+# 
+# License:     GPL (GNU GENERAL PUBLIC LICENSE)
+#
+# See function usage for documentation.
+
+set -e
+#set -x
+
+function usage(){
+    cat <<-EOF
+	usage: compile-test-start-delayed key prog args...
+
+	Start program prog with arguments args with some delay. There
+	must be at least one argument in args and the last one must be
+	a file. The delay is taken from a line in that file that
+	contains the key, followed by a space and the delay in seconds
+	(maybe somewhere in the middle of the line). The file must
+	contain at most one line containing key. When there is no line
+	containing key the delay is zero.
+EOF
+}
+
+if [ $# -lt 3 ] ; then
+    usage
+    exit 1
+fi
+
+# echo compile-test-start-delayed "$@"
+
+key="$1"
+file="${@: -1}"
+shift
+
+delay=$(sed -ne "/$key/ s/.*$key \([0-9]*\).*/\1/p" $file)
+
+if [ -z "$delay" ] ; then
+    # echo compile-test-start-delayed: key $key not found in $file >&9
+    delay=0
+fi
+
+if [ $delay -ne 0 ] ; then
+    date "+compile-test-start-delayed +%Y-%m-%d %T %Z" >&9
+    echo delay $delay for $@ >&9
+fi
+
+sleep $delay
+date "+compile-test-start-delayed +%Y-%m-%d %T %Z" >&9
+echo start $@ >&9
+
+#set -x
+#echo "$@"
+set +e
+exec "$@"

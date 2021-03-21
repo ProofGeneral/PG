@@ -4,8 +4,8 @@ Notation "[ ]" := nil : list_scope.
 Notation "[ a ; .. ; b ]" := (a :: .. (b :: []) ..) : list_scope.
 
 Require Import Arith.
-
-Definition arith1:
+Open Scope nat_scope.
+Definition arith1:=
   1 + 3 *
       4.
 
@@ -190,6 +190,27 @@ Module M1.
   End M2.
 End M1.
 
+Module GoalSelectors.
+  Theorem lt_n_S : (True \/ True \/ True \/ True \/ True ) -> True.
+  Proof.
+    refine (or_ind ?[aa] (or_ind ?[bb] (or_ind ?[cc] (or_ind ?[dd] ?[ee])))).
+    [aa]:{ auto. }
+    2:{  auto. }
+    [ee]:auto.
+    {  auto.}
+  Qed.
+  (* Same without space between "." and "}". *)
+  Theorem lt_n_S2 : (True \/ True \/ True \/ True \/ True ) -> True.
+  Proof.
+    refine (or_ind ?[aa] (or_ind ?[bb] (or_ind ?[cc] (or_ind ?[dd] ?[ee])))).
+    [aa]:{ auto.}
+    2:{  auto.}
+    [ee]:auto.
+    {  auto.}
+  Qed.
+
+
+End GoalSelectors.
 
 Module M1'.
   Module M2'.

@@ -154,13 +154,20 @@
        :active (and coq-compile-before-require
 		    coq-compile-parallel-in-background)
        :help "Derive behavior from Quick compilation setting above"]
-      ["use -vos"
+      ["use -vos and -vok"
+       (customize-set-variable 'coq-compile-vos 'vos-and-vok)
+       :style radio
+       :selected (eq coq-compile-vos 'vos-and-vok)
+       :active (and coq-compile-before-require
+		    coq-compile-parallel-in-background)
+       :help "Speedup with -vos, check proofs later, possibly inconsistent"]
+      ["use -vos, no -vok"
        (customize-set-variable 'coq-compile-vos 'vos)
        :style radio
        :selected (eq coq-compile-vos 'vos)
        :active (and coq-compile-before-require
 		    coq-compile-parallel-in-background)
-       :help "Speedup with -vos, possibly inconsistent"]
+       :help "Speedup with -vos, don't check proofs, possibly inconsistent"]
       ["ensure vo"
        (customize-set-variable 'coq-compile-vos 'ensure-vo)
        :style radio

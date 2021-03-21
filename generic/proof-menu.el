@@ -5,7 +5,7 @@
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
 ;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
-;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
+;; Portions © Copyright 2010, 2016, 2021  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
@@ -34,7 +34,7 @@
 (defvar proof-display-some-buffers-count 0)
 
 (defun proof-display-some-buffers ()
-  "Display the reponse, trace, goals, or shell buffer, rotating.
+  "Display the response, trace, goals, or shell buffer, rotating.
 A fixed number of repetitions of this command switches back to
 the same buffer.
 Also move point to the end of the response buffer if it's selected.
@@ -84,7 +84,6 @@ without adjusting window layout."
 	    (set-window-point (get-buffer-window proof-response-buffer t)
 			      (point-max)))
 	(pg-response-buffers-hint (buffer-name nextbuf))))))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -687,6 +686,10 @@ without adjusting window layout."
 	 (list (customize-menu-create 'proof-general-internals "Internals"))))
   "Advanced sub-menu of script functions and customize.")
 
+(defvar proof-upgrade-menu
+  '(["Upgrade ELPA packages..." proof-upgrade-elpa-packages
+     :help "Update all Emacs packages (including Proof General!)"])
+  "The Proof General generic menu for upgrading packages.")
 
 (defvar proof-menu
   '(["Next Error" proof-next-error
@@ -706,7 +709,8 @@ without adjusting window layout."
 	 proof-config-menu
 	 (list (customize-menu-create 'proof-user-options "Customize Options"))
 	 (list proof-advanced-menu)
-	 (list proof-help-menu))))
+	 (list proof-help-menu)
+         proof-upgrade-menu)))
 
 ;;;###autoload
 (defun proof-aux-menu ()
@@ -1052,10 +1056,6 @@ value) and the second for false."
     (if proof-assistant-setting-format
 	(funcall proof-assistant-setting-format setting)
       setting)))
-
-
-
-
 
 (provide 'proof-menu)
 

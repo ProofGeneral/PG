@@ -11,7 +11,7 @@
 
 ;; Authors: (see the AUTHORS file distributed along the sources)
 ;; URL: https://proofgeneral.github.io/
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.5"))
 ;; Version: 4.5-git
 
 ;; This software is free software; you can redistribute it and/or
@@ -56,8 +56,9 @@
 ;;;###autoload
 (eval-and-compile
   (defvar pg-init--script-full-path
-    (or (and load-in-progress load-file-name)
-        (bound-and-true-p byte-compile-current-file)
+    (or (bound-and-true-p byte-compile-current-file)
+        (and load-in-progress load-file-name)
+
         (buffer-file-name)))
   (defvar pg-init--pg-root
     (file-name-directory pg-init--script-full-path)))

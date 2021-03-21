@@ -428,6 +428,7 @@ so for the following reasons:
     ("Global Variables" "gvs" "Global Variables # , #: #." t "Global\\s-+Variables")
     ("Hint Constructors" "hc" "Hint Constructors # : #." t "Hint\\s-+Constructors")
     ("Hint Extern" "he" "Hint Extern @{cost} @{pat} => @{tac} : @{db}." t "Hint\\s-+Extern")
+    ("Hint Mode" "hm" "Hint Mode # @{mode...} : @{db}." t "Hint\\s-+Mode")
     ("Hint Immediate" "hi" "Hint Immediate # : @{db}." t "Hint\\s-+Immediate")
     ("Hint Resolve" "hr" "Hint Resolve # : @{db}." t "Hint\\s-+Resolve")
     ("Hint Rewrite ->" "hrw" "Hint Rewrite -> @{t1,t2...} using @{tac} : @{db}." t "Hint\\s-+Rewrite")
@@ -567,6 +568,7 @@ so for the following reasons:
    '(
      ("About" nil "About #." nil "About")
      ("Check" nil "Check" nil "Check")
+     ("Compute" nil "Compute" nil "Compute")
      ("Fail" nil "Fail" nil "fail")
      ("Inspect" nil "Inspect #." nil "Inspect")
      ("Locate File" nil "Locate File \"#\"." nil "Locate\\s-+File")

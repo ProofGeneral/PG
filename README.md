@@ -27,6 +27,13 @@ Two editions of Proof General are currently available:
 
 ## Installing Proof General
 
+Proof General requires GNU Emacs `24.5` or later.
+
+The current policy aims at supporting multiple Emacs versions,
+including those available in [Debian Stable](https://packages.debian.org/stable/emacs)
+as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs24) distributions
+until their [End-Of-Support](https://wiki.ubuntu.com/Releases).
+
 ### Using MELPA (recommended procedure)
 
 [MELPA](https://melpa.org/) is a repository of Emacs packages. Skip
@@ -35,13 +42,20 @@ your `.emacs` and restart Emacs:
 
 ```elisp
 (require 'package)
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  (add-to-list 'package-archives
-               (cons "melpa" (concat proto "://melpa.org/packages/")) t))
+;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3") ; see remark below
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 ```
+
+**Remark:** If you have Emacs 26.1 (which is precisely
+[the packaged version in Debian 10](https://packages.debian.org/emacs)),
+you may get the error message `Failed to download 'melpa' archive`
+during the package refresh step. This is a known bug
+([debbug #34341](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34341))
+which has been fixed in Emacs 26.3 and 27.1, while a simple workaround
+consists in uncommenting the line
+`(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")` above in your
+`.emacs`.
 
 **Note:** If you switch to MELPA from a previously manually-installed
 Proof General, make sure you removed the old versions of Proof General

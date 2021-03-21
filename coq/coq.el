@@ -136,11 +136,11 @@ Namely, goals that do not fit in the goals window."
 ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
 
-(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+subgoals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
+(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
   "*Regular expression indicating that the proof has been completed.")
 
 (defvar coq-goal-regexp
-  "\\(============================\\)\\|\\(subgoal [0-9]+\\)\n")
+  "\\(============================\\)\\|\\(\\(?:sub\\)?goal [0-9]+\\)\n")
 
 
 (defconst coq-interrupt-regexp "User Interrupt."
@@ -154,7 +154,7 @@ A setting of nil means show all output from Coq.  See also option
   :group 'coq)
 
 (defcustom coq-end-goals-regexp-hide-subgoals
-  (concat "\\(\nsubgoal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
+  (concat "\\(\n\\(?:sub\\)?goal 2 \\)\\|\\(" coq-end-goals-regexp-show-subgoals "\\)")
   "Regexp for `proof-shell-end-goals-regexp' when hiding additional subgoals.
 See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
@@ -212,9 +212,9 @@ It is mostly useful in three window mode, see also
   :group 'coq-proof-tree)
 
 (defcustom coq-proof-tree-current-goal-regexp
-  (concat "^[0-9]+ \\(?:focused \\)?subgoal\\(?:s\\)?\\s-*"
+  (concat "^[0-9]+ \\(?:focused \\)?\\(?:sub\\)?goal\\(?:s\\)?\\s-*"
           "\\(?:(\\(?:unfocused: [-0-9]+\\)?,?"
-          "\\s-*\\(?:shelved: [-0-9]+\\)?)\\)?\\(?:\\s-*, subgoal 1\\)? "
+          "\\s-*\\(?:shelved: [-0-9]+\\)?)\\)?\\(?:\\s-*, \\(?:sub\\)?goal 1\\)? "
           "(ID \\([0-9]+\\))\n\\s-*\n\\(\\(?: .*\n\\)+\\)\\(?:\n\\|$\\)")
   "Regexp for `proof-tree-current-goal-regexp'."
   :type 'regexp
@@ -228,7 +228,7 @@ It is mostly useful in three window mode, see also
   :group 'coq-proof-tree)
 
 (defcustom coq-proof-tree-additional-subgoal-ID-regexp
-  "^subgoal [0-9]+ (ID \\([0-9]+\\)) is:"
+  "^\\(?:sub\\)?goal [0-9]+ (ID \\([0-9]+\\)) is:"
   "Regexp for `proof-tree-additional-subgoal-ID-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
@@ -269,8 +269,8 @@ It is mostly useful in three window mode, see also
 ;; <infomsg>All the remaining goals are on the shelf.</infomsg>
 (defcustom coq-proof-tree-branch-finished-regexp
   (concat "^\\(\\(?:Proof completed\\.\\)\\|"
-          "\\(?:\\(?:<infomsg>\\)?No more subgoals\\)\\|"
-          "\\(No more subgoals but non-instantiated "
+          "\\(?:\\(?:<infomsg>\\)?No more \\(?:sub\\)?goals\\)\\|"
+          "\\(No more \\(?:sub\\)?goals but non-instantiated "
           "existential variables:\\)\\|"
           "\\(?:<infomsg>All the remaining goals are on the shelf\\)\\|"
           "\\(<infomsg>\\s-*This subproof is complete, but there are "
@@ -455,20 +455,6 @@ This is a subroutine of `proof-shell-filter'."
        (strnotrailingspace
         (coq-remove-starting-blanks (coq-remove-trailing-blanks str))))
     (pg-response-display-with-face strnotrailingspace))) ; face
-
-
-;; Trying to accept { and } as terminator for empty commands. Actually
-;; I am experimenting two new commands "{" and "}" (without no
-;; trailing ".") which behave like BeginSubProof and EndSubproof. The
-;; absence of a trailing "." makes it difficult to distinguish between
-;; "{" of normal coq code (implicits, records) and this the new
-;; commands. We therefore define a coq-script-parse-function to this
-;; purpose.
-
-;; coq-end-command-regexp is ni coq-indent.el
-(defconst coq-script-command-end-regexp coq-end-command-regexp)
-;;        "\\(?:[^.]\\|\\(?:\\.\\.\\)\\)\\.\\(\\s-\\|\\'\\)")
-
 
 
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
@@ -732,7 +718,7 @@ If locked span already has a state number, then do nothing. Also updates
    ((looking-at "============================\n")
     (goto-char (match-end 0))
     (cons 'goal (int-to-string coq-current-goal)))
-   ((looking-at "subgoal \\([0-9]+\\) is:\n")
+   ((looking-at "\\(?:sub\\)?goal \\([0-9]+\\) is:\n")
     (goto-char (match-end 0))
     (cons 'goal (match-string 1))       ;FIXME: This is dead-code!?  --Stef
     (setq coq-current-goal (string-to-number (match-string 1))))
@@ -1913,7 +1899,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
   (setq proof-terminal-string ".")
-  (setq proof-script-command-end-regexp coq-script-command-end-regexp)
+  ;; superseded by coq-script-parse-function
+  ;;(setq proof-script-command-end-regexp coq-script-command-end-regexp)
   (setq proof-script-parse-function 'coq-script-parse-function)
   (setq proof-script-comment-start comment-start)
   (setq proof-script-comment-end comment-end)
@@ -2019,7 +2006,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-result-end "\372 End Pbp result \373"
 
 ;   proof-shell-start-goals-regexp          "^\\(?:(dependent evars:[^)]*)\\s-+\\)?[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? subgoals?"
+   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
    proof-shell-end-goals-regexp
    (if coq-hide-additional-subgoals
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
@@ -2565,7 +2552,7 @@ mouse activation."
 
 (defun coq--format-intros (output)
   "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
-  (let* ((shints1 (replace-regexp-in-string "^[0-9] subgoal\\(.\\|\n\\|\r\\)*"  "" output))
+  (let* ((shints1 (replace-regexp-in-string "^[0-9] \\(?:sub\\)?goal\\(.\\|\n\\|\r\\)*"  "" output))
          (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
     (if (or (string= "" shints)
             (string-match coq-error-regexp shints))
@@ -2621,9 +2608,28 @@ Warning: this makes the error messages (and location) wrong.")
   (save-excursion (string-match "\\<as\\>" s)))
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
+;; global mechanism:
 
+;; When some dependency oinformation is detected (see
+;; `coq-shell-theorem-dependency-list-regexp') a hook is triggered by pg. We
+;; configure this hook to perform the following: if the user set
+;; `coq-accept-proof-using-suggestion' to 'always, then perform the insertion
+;; immediately via using `coq-insert-proof-using', otherwise add the menu entry
+;; to make it later (actually the current impolementation always adds the menu
+;; entry, which is wrong because the span is not there if the insertion was
+;; already performed.).
+
+
+;; This variable is used by generic pg code. Every time this is detected in the
+;; output, it sets the `proof-last-theorem-dependencies' variable. Substring 1
+;; should contain the name of the theorem, and substring 2 should contain its
+;; dependencies. The content of `proof-last-theorem-dependencies' is then used
+;; by pg generic code to trigger `proof-depends-process-dependencies', which
+;; itself sets the 'dependencies property of the span, and calls
+;; `proof-dependencies-system-specific'. The latter is bound to
+;; `coq-dependencies-system-specific' below.
 (setq coq-shell-theorem-dependency-list-regexp
-  "<infomsg>\n?The proof of \\([^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\([^.]*\\)\\.")
+  "<infomsg>\n?The proof of \\(?1:[^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\(?2:[^.]*\\)\\.")
 
 (defcustom coq-accept-proof-using-suggestion 'highlight
   "Whether and how proofgeneral should insert \"Proof using\" suggestions.
@@ -2662,6 +2668,12 @@ Remarks and limitations:
 	  (const :tag "Ignore completely" ignore)) 
   :group 'coq)
 
+;; putting "Type" instead of nothing, otherwise Coq may fail if a "with"
+;; anotation is also present: (Proof using with auto raises an error in
+;; coq<=8.12 at least).
+(defun coq-hack-proofusing-suggestion (suggested)
+  (if (string-equal "" suggested) "Type" suggested))
+
 ;; the additional menu for "proof using". highlights the "Proof." command, and
 ;; have a entry to insert the annotation and remove the highlight.
 (defvar coq-dependency-menu-system-specific
@@ -2669,20 +2681,31 @@ Remarks and limitations:
     (let* ((deps (span-property-safe span 'dependencies))
            (specialspans (spans-at-region-prop (span-start span) (span-end span) 'proofusing))
            (specialspan (and specialspans (not (cdr specialspans)) (car specialspans)))
-           (name (concat " insert \"proof using " (mapconcat 'identity deps " ") "\""))
+           (suggested (mapconcat 'identity deps " "))
+           (suggested (coq-hack-proofusing-suggestion suggested))
+           (name (concat " insert \"proof using " suggested "\""))
            (fn `(lambda (sp)
                  (coq-insert-proof-using-suggestion sp t)
-                 (span-delete ,specialspan))))
+                 (and ,specialspan (span-delete ,specialspan)))))
       (list "-------------" (vector name `(,fn ,span) t))))
   "Coq specific additional menu entry for \"Proof using\".
 annotation. See `proof-dependency-menu-system-specific'." )
 
-(defconst coq-proof-using-regexp "\\_<Proof\\(?:\\s-+using\\>\\)?\\([^.]*\\)\\."
-  "regexp matching Coq \"Proof( using xxx)?.\" annotation.
-There should be one subexp numbered 1 matching xxx if present.")
+(defconst coq-proof-using-regexp "\\_<Proof\\(?1:[^.]*\\)\\."
+  "Regexp matching Coq \"Proof ....\" annotation (with no \"using\" annotation).
+We suppose there is no \"using\" annotation, since Coq will fail
+in this case and no suggestion can be added without replaying the
+script. Actually the only possible content iafter Proof is a
+\"with annotation\".
+The substring matched numbered 1 must start at the possible
+insertion point for the \"using\" annotation. ")
 
-(defun coq-mark-span-dependencies (span suggested)
+
+;; span is typically the whole theorem statement+proof span built after a save
+;; command
+(defun coq-highlight-span-dependencies (span suggested)
   (goto-char (span-start span))
+  ; Search for the "Proof" command and build a hilighted span on it
   (let* ((endpos (re-search-forward coq-proof-using-regexp))
          (proof-pos (match-beginning 0))
          (newspan (span-make proof-pos endpos)))
@@ -2690,11 +2713,10 @@ There should be one subexp numbered 1 matching xxx if present.")
     (span-set-property newspan 'help-echo "Right click to insert \"proof using\"")
     (span-set-property newspan 'proofusing t)))
 
-(defun coq-insert-proof-using (proof-pos previous-content string-suggested)
-  (goto-char (+ 5 proof-pos)) ; "Proof" has length 6
+(defun coq-insert-proof-using (proof-pos previous-content insert-point string-suggested)
+  (goto-char insert-point)
   (let ((spl proof-locked-span))
     (span-read-write spl) ; temporarily make the locked span writable
-    (when previous-content (delete-char (length previous-content)))
     (insert (concat " using " string-suggested))
     (proof-span-read-only spl)))
 
@@ -2712,7 +2734,8 @@ There should be one subexp numbered 1 matching xxx if present.")
 (defun coq-insert-proof-using-suggestion (span &optional force)
   "Add the proof using annotation, respecting `coq-accept-proof-using-suggestion'.
 Insert \" using xxx\" After the \"Proof\" of SPAN, where xxx is
-built from the list of strings in SUGGESTED."
+built from the list of strings in SUGGESTED.
+SPAN is the span of the whole theorem (statement + proof)."
   (with-current-buffer proof-script-buffer
     (save-excursion
       (goto-char (span-start span))
@@ -2720,9 +2743,13 @@ built from the list of strings in SUGGESTED."
         (when endpos
           (let* ((suggested (span-property span 'dependencies))
                  (proof-pos (match-beginning 0))
-                 (previous-content (split-string (match-string 1)))
+                 (insert-point (match-beginning 1))
+                 (previous-string (match-string 1))
+                 (previous-content (split-string previous-string))
                  (string-suggested (mapconcat 'identity suggested " "))
-                 (same (and previous-content
+                 (string-suggested (coq-hack-proofusing-suggestion string-suggested))
+                 ;; disabled for now it never happens because Coq would suggest anything?
+                 (same (and nil previous-content
                             (not (cl-set-exclusive-or previous-content suggested
                                                       :test 'string-equal))))
                  (usersayyes
@@ -2732,17 +2759,16 @@ built from the list of strings in SUGGESTED."
                                          string-suggested ")")))))
             (unless same
               (if (or force (equal coq-accept-proof-using-suggestion 'always) usersayyes)
-                  (coq-insert-proof-using proof-pos previous-content string-suggested)
+                  (coq-insert-proof-using proof-pos previous-content insert-point string-suggested)
                 (when (member coq-accept-proof-using-suggestion '(highlight ask))
-                  (coq-mark-span-dependencies span suggested)
+                  (coq-highlight-span-dependencies span string-suggested)
                   (message "\"Proof using\" not set. M-x coq-insert-suggested-dependency or right click to add it. See also `coq-accept-proof-using-suggestion'."))))))))))
 
 (defvar coq-dependencies-system-specific
-  (lambda (span) (coq-insert-proof-using-suggestion span))
+  (lambda (span)
+    (coq-insert-proof-using-suggestion span))
   "Coq specific dependency mechanism.
 Used for automatic insertion of \"Proof using\" annotations.")
-
-;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 
 
 (defun coq-insert-as-in-next-command ()
@@ -3133,7 +3159,7 @@ number of hypothesis displayed, without hiding the goal"
               (with-selected-window goal-win
                 ;; find snd goal or buffer end, if not found this goes to the
                 ;; end of buffer
-                (search-forward-regexp "subgoal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
+                (search-forward-regexp "\\(?:sub\\)?goal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
                 (beginning-of-line)
                 ;; find something backward else than a space: bottom of concl
                 (ignore-errors (search-backward-regexp "\\S-"))
@@ -3161,7 +3187,7 @@ number of hypothesis displayed, without hiding the goal"
   "Modify `minor-mode-alist' to display the number of subgoals in the modeline."
   (when (and proof-goals-buffer proof-script-buffer)
     (let ((nbgoals (with-current-buffer proof-goals-buffer
-                     (string-to-number (coq-first-word-before "focused\\|subgoal"))))
+                     (string-to-number (coq-first-word-before "focused\\|\\(?:sub\\)?goal"))))
           (nbunfocused (with-current-buffer proof-goals-buffer
                          (coq-get-from-to-paren "unfocused: "))))
       (with-current-buffer proof-script-buffer

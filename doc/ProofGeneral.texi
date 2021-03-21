@@ -58,8 +58,8 @@
 @c
 
 @set version 4.5-git
-@set emacsversion 24.3
-@set last-update September 2016
+@set emacsversion 24.5
+@set last-update February 2021
 @set rcsid $Id$
 
 @dircategory Theorem proving
@@ -1728,7 +1728,7 @@ Query the user and exit the proof process.
 
 This simply kills the @samp{@code{proof-shell-buffer}} relying on the hook function
 
-@samp{@code{proof-shell-kill-function}} to do the hard work. If optional
+@samp{@code{proof-shell-kill-function}} to do the hard work.  If optional
 argument @var{dont-ask} is non-nil, the proof process is terminated
 without confirmation.
 
@@ -2306,11 +2306,13 @@ The size of the ring is set by the variable @code{pg-input-ring-size}.
 
 @c TEXI DOCSTRING MAGIC: pg-previous-input
 @deffn Command pg-previous-input arg
-Cycle backwards through input history, saving input.
+Cycle backwards through input history, saving input.@*
+If called interactively, @var{arg} is given by the prefix argument.
 @end deffn
 @c TEXI DOCSTRING MAGIC: pg-next-input
 @deffn Command pg-next-input arg
-Cycle forwards through input history.
+Cycle forwards through input history.@*
+If called interactively, @var{arg} is given by the prefix argument.
 @end deffn
 @c TEXI DOCSTRING MAGIC: pg-previous-matching-input
 @deffn Command pg-previous-matching-input regexp n
@@ -2685,7 +2687,7 @@ Show a buffer of all the shortcuts available.
 @deffn Command unicode-tokens-list-unicode-chars 
 Insert each Unicode character into a buffer.@*
 Lets you see which characters are available for literal display
-in your emacs font.
+in your Emacs font.
 
 (fn)
 @end deffn
@@ -3467,49 +3469,40 @@ For multiple frame mode, this function obeys the setting of
 
 For single frame mode:
 
-@itemize @bullet
-@item
-In two panes mode, this uses a canonical layout made by splitting
-Emacs windows in equal proportions. The splitting is vertical if
-emacs width is smaller than @samp{@code{split-width-threshold}} and
-horizontal otherwise. You can then adjust the proportions by
+- In two panes mode, this uses a canonical layout made by splitting
+Emacs windows in equal proportions.  The splitting is vertical if
+Emacs width is smaller than @samp{@code{split-width-threshold}} and
+horizontal otherwise.  You can then adjust the proportions by
 dragging the separating bars.
 
-@item
-In three pane mode, there are three display modes, depending
-where the three useful buffers are displayed: scripting
-buffer, goals buffer and response buffer.
+- In three pane mode, there are three display modes, depending
+@lisp
+  where the three useful buffers are displayed: scripting
+  buffer, goals buffer and response buffer.
 
-Here are the three modes:
+  Here are the three modes:
 
-@itemize @bullet
-@item
-@code{vertical}: the 3 buffers are displayed in one column.
+  - vertical: the 3 buffers are displayed in one column.
+  - hybrid: 2 columns mode, left column displays scripting buffer
+    and right column displays the 2 others.
+  - horizontal: 3 columns mode, one for each buffer (script, goals,
+    response).
 
-@item
-@code{hybrid}: 2 columns mode, left column displays scripting buffer
-and right column displays the 2 others.
+  By default, the display mode is automatically chosen by
+  considering the current Emacs frame width: if it is smaller
+  than @samp{@code{split-width-threshold}} then vertical mode is chosen,
+  otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
+  then hybrid mode is chosen, finally if the frame is larger than
+  1.5 * @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
 
-@item
-@code{horizontal}: 3 columns mode, one for each buffer (script, goals, response).
-@end itemize
+  You can change the value of @samp{@code{split-width-threshold}} at your
+  will.
 
-By default, the display mode is automatically chosen by
-considering the current emacs frame width: if it is smaller
-than @samp{@code{split-width-threshold}} then vertical mode is chosen,
-otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
-then hybrid mode is chosen, finally if the frame is larger than
-1.5 * @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
-
-You can change the value of @samp{@code{split-width-threshold}} at your
-will.
-
-If you want to force one of the layouts, you can set variable
-@samp{@code{proof-three-window-mode-policy}} to @code{'vertical}, @code{'horizontal} or
-@code{'hybrid}. The default value is @code{'smart} which sets the automatic
-behaviour described above.
-@end itemize
-
+  If you want to force one of the layouts, you can set variable
+  @samp{@code{proof-three-window-mode-policy}} to @code{'vertical}, @code{'horizontal} or
+  @code{'hybrid}.  The default value is @code{'smart} which sets the automatic
+  behaviour described above.
+@end lisp
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-shrink-windows-tofit
@@ -3537,7 +3530,7 @@ Hovers will be added when this option is non-nil.  Prover outputs
 can be displayed when the mouse hovers over the region that
 produced it and output is available (see @samp{@code{proof-full-annotation}}).
 If output is not available, the type of the output region is displayed.
-Changes of this option will not be reflected in already-processed 
+Changes of this option will not be reflected in already-processed
 regions of the script.
 
 The default value is @code{nil}.
@@ -3762,8 +3755,8 @@ locked (coloured blue); a buffer is completely unprocessed when there
 is no locked region.
 
 For some proof assistants (such as Coq) fully processed buffers make
-no sense. Setting this option to @code{'process} has then the same effect
-as leaving it unset (nil). (This behaviour is controlled by
+no sense.  Setting this option to @code{'process} has then the same effect
+as leaving it unset (nil).  (This behaviour is controlled by
 @samp{@code{proof-no-fully-processed-buffer}}.)
 
 The default value is @code{nil}.
@@ -4427,17 +4420,16 @@ Documentation of the user option @code{coq-project-filename}:
 @c TEXI DOCSTRING MAGIC: coq-project-filename
 @defvar coq-project-filename 
 The name of coq project file.@*
-The coq project file of a coq development (Cf Coq documentation
-on "makefile generation") should contain the arguments given to
+The coq project file of a coq development (cf. Coq documentation on
+"makefile generation") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
-options (preferably one per line). If @samp{coq-use-coqproject} is
-t (default) the content of this file will be used by Proof General
-to infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables
-that set the coqtop invocation by Proof General. This is now the
-recommended way of configuring the coqtop invocation. Local file
-variables may still be used to override the coq project file's
-configuration. .dir-locals.el files also work and override
-project file settings.
+options (preferably one per line).  If @samp{coq-use-coqproject} is
+t (default) the content of this file will be used by Proof General to
+infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables that set
+the coqtop invocation by Proof General.  This is now the recommended
+way of configuring the coqtop invocation.  Local file variables may
+still be used to override the coq project file's configuration.
+.dir-locals.el files also work and override project file settings.
 @end defvar
 
 
@@ -4451,8 +4443,8 @@ down to ``Coq Use Project File'').
 
 @c TEXI DOCSTRING MAGIC: coq-use-project-file
 @defvar coq-use-project-file 
-If t, when opening a coq file read the dominating _CoqProject.@*
-If t, when a coq file is opened, Proof General will look for a
+If t, when opening a Coq file read the dominating _CoqProject.@*
+If t, when a Coq file is opened, Proof General will look for a
 project file (see @samp{@code{coq-project-filename}}) somewhere in the
 current directory or its parent directories.  If there is one,
 its contents are read and used to determine the arguments that
@@ -4601,9 +4593,9 @@ compilation has finished.
 and dependencies on ML Modules reported by @code{coqdep} are
 ignored.
 
-Proof General uses @code{coqdep} in order to translate the
-qualified identifiers in @code{Require} commands to coq library
-file names and to determine library dependencies. Because Proof
+Proof General uses @code{coqdep} to determine which libraries a
+@code{Require} command will load and which files must be
+up-to-date. Because Proof
 General cannot know whether files are updated outside of Emacs,
 it checks for every @code{Require} command the complete
 dependency tree and recompiles files as necessary.
@@ -4629,10 +4621,9 @@ and via menu entries in @code{Coq -> Auto Compilation},
 Similar to @code{make -k}, background compilation can be
 configured to continue as far as possible after the first error,
 see option @code{coq-compile-keep-going} (menu @code{Coq -> Auto
-Compilation -> Keep going}). The keep-going option only applies
-to errors from @code{coqdep} and @code{coqc}. For all other
-errors (for instance when the translation from logical module
-names to physical files fails or when starting @code{coqc} or
+Compilation -> Keep going}). The keep-going option applies
+to errors from @code{coqdep} and @code{coqc}. However, when
+starting @code{coqc} or
 @code{coqdep} fails), the compilation is immediately aborted.
 
 When a @code{Require} command causes a compilation of some files,
@@ -4683,14 +4674,6 @@ compilation jobs.
 Parallel asynchronous compilation supports both vos and quick/vio
 compilation, but exclusively, depending on the Coq version,
 @ref{Quick and inconsistent compilation}. 
-
-Actually, even with parallel asynchronous compilation, not everything runs
-asynchronously. To translate module identifiers from the Coq
-sources into file names, Proof General runs coqdep on an
-automatically generated, one-line file. These coqdep jobs run
-synchronously while the Require commands are parsed. The coqdep
-jobs on the real source files do run asynchronously in the
-background. 
 @end table
 
 
@@ -4751,22 +4734,38 @@ detection of Proof General or by the setting
 @code{coq-pinned-version}) required modules are either compiled
 to @code{.vo} or @code{.vos} files, depending on the setting
 @code{coq-compile-vos}, which can also be set on menu @code{Coq
--> Auto Compilation -> vos compilation}. There are three choices:
+-> Auto Compilation -> vos compilation}. There are four choices:
 
 @table @asis
-@item @code{use-vos}
-Compile with @code{-vos}. Noticeably faster, but proofs are
-skipped during compilation and some universe constraints might be
-missing.
+@item @code{vos-and-vok}
+First compile using @code{-vos}, skipping proofs. When
+compilation finished, run @code{coqc -vok} in a second stage to
+check proofs on all files that require it. Some universe
+constraints might be missed, rendering this method possibly
+inconsistent.
+@item @code{vos}
+Only compile using @code{-vos}, skipping proofs. No @code{coqc
+-vok} run to check proofs. Obviously inconsistent.
 @item @code{ensure-vo}
 Compile without @code{-vos} to @code{.vo} files, checking all
-proofs and universe constraints.
+proofs and universe constraints. Only consistent choice.
 @item unset (@code{nil})
 Compile with @code{-vos} if @code{coq-compile-quick} (see below)
 equals @code{quick-no-vio2vo}. Otherwise compile without
 @code{-vos} to @code{.vo}. This value provides an upgrade path
 for users that configured @code{coq-compile-quick} in the past.
 @end table
+
+For @code{vos-and-vok} the second @code{-vok} stage runs
+asynchronously @code{coq-compile-second-stage-delay} seconds
+after the last @code{Require} command has been processed. Errors
+might pop up later and interrupt your normal interaction with
+Coq. Because the second stage is not time critical, it runs on
+@code{coq-max-background-second-stage-percentage} per cent of the
+cores configured for the first stage. When
+@code{coq-compile-keep-going} is configured and an error occurs,
+the second @code{-vok} stage is run on those dependencies not
+affected by the error.
 
 For Coq version 8.5 until before 8.11, Proof General supports
 quick or vio compilation with parallel asynchronous compilation.
@@ -4781,10 +4780,10 @@ that have not switched there development to
 @code{Proof using}. Use @code{quick-no-vio2vo}, if you want quick
 recompilation without producing .vo files. Option
 @code{quick-and-vio2vo} recompiles with @code{-quick}/@code{-vio} as
-@code{quick-no-vio2vo} does, but schedules a vio2vo compilation
-for missing @code{.vo} files after a certain delay. Finally, use
+@code{quick-no-vio2vo} does, but schedules a second vio2vo stage
+for missing @code{.vo} files. Finally, use
 @code{ensure-vo} for only importing @code{.vo} files with
-complete universe checks.
+complete universe checks. 
 
 Note that with all of @code{no-quick}, @code{quick-no-vio2vo} and
 @code{quick-and-vio2vo} your development might be unsound because
@@ -4841,16 +4840,9 @@ files, but don't compile prerequisites for which an up-to-date
 @code{.vo} file exists. Delete or overwrite outdated @code{.vio} files.
 
 @item quick-and-vio2vo
-Same as @code{quick-no-vio2vo}, but start vio2vo processes for
-missing @code{.vo} files after a certain delay when library
-compilation for the current queue region has finished. With this
-mode you might see asynchronous errors from vio2vo compilation
-while you are processing stuff far below the last require. vio2vo
-compilation is done on a subset of the available cores controlled
-by option @code{coq-compile-vio2vo-percentage}, @ref{Customizing
-Coq Multiple File Support}. When @code{coq-compile-keep-going} is
-set, vio2vo compilation is scheduled for those files for which
-@code{coqc} compilation was successful.
+Same as @code{quick-no-vio2vo}, but start a second vio2vo stage for
+missing @code{.vo} files. Everything described previously for the
+second @code{-vok} stage applies here as well.
 
 @emph{Warning}: This mode does only work when you process require
 commands in batches. Slowly single-stepping through require's
@@ -4858,7 +4850,7 @@ might lead to inconsistency errors when loading some libraries,
 see Coq issue #5223. To mitigate this risk, vio2vo compilation
 only starts after a certain delay after the last require command
 of the current queue region has been processed. This is
-controlled by @code{coq-compile-vio2vo-delay}, @ref{Customizing
+controlled by @code{coq-compile-second-stage-delay}, @ref{Customizing
 Coq Multiple File Support}.
 
 @item ensure-vo
@@ -4891,7 +4883,7 @@ Coq Auto Compile -> Coq Auto Compile}.
 @defvar coq-compile-before-require 
 If non-nil, check dependencies of required modules and compile if necessary.@*
 If non-nil ProofGeneral intercepts "Require" commands and checks if the
-required library module and its dependencies are up-to-date. If not, they
+required library module and its dependencies are up-to-date.  If not, they
 are compiled from the sources before the "Require" command is processed.
 
 This option can be set/reset via menu
@@ -4904,7 +4896,7 @@ This option can be set/reset via menu
 Buffers to save before checking dependencies for compilation.@*
 There are two orthogonal choices: Firstly one can save all or only the coq
 buffers, where coq buffers means all buffers in coq mode except the current
-buffer. Secondly, Emacs can ask about each such buffer or save all of them
+buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
 This makes four permitted values: @code{'ask-coq} to confirm saving all
@@ -4924,12 +4916,12 @@ The following options configure parallel compilation.
 @defvar coq-compile-parallel-in-background 
 Choose the internal compilation method.@*
 When Proof General compiles itself, you have the choice between
-two implementations. If this setting is nil, then Proof General
+two implementations.  If this setting is nil, then Proof General
 uses the old implementation and compiles everything sequentially
-with synchronous job. With this old method Proof General is
-locked during compilation. If this setting is t, then the new
+with synchronous job.  With this old method Proof General is
+locked during compilation.  If this setting is t, then the new
 method is used and compilation jobs are dispatched in parallel in
-the background. The maximal number of parallel compilation jobs
+the background.  The maximal number of parallel compilation jobs
 is set with @samp{@code{coq-max-background-compilation-jobs}}.
 
 This option can be set/reset via menu
@@ -4959,28 +4951,38 @@ This option can be set/reset via menu
 @defvar coq-max-background-compilation-jobs 
 Maximal number of parallel jobs, if parallel compilation is enabled.@*
 Use the number of available CPU cores if this is set to
-@code{'all-cpus}. This variable is the user setting. The value that is
-really used is @samp{@code{coq--internal-max-jobs}}. Use @samp{@code{coq-max-jobs-setter}}
-or the customization system to change this variable. Otherwise
+@code{'all-cpus}.  This variable is the user setting.  The value that is
+really used is @samp{@code{coq--internal-max-jobs}}.  Use @samp{@code{coq-max-jobs-setter}}
+or the customization system to change this variable.  Otherwise
 your change will have no effect, because @samp{@code{coq--internal-max-jobs}}
 is not adapted.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-max-background-vio2vo-percentage
-@defvar coq-max-background-vio2vo-percentage 
-Percentage of @samp{@code{coq-max-background-vio2vo-percentage}} for vio2vo jobs.@*
-This setting configures the maximal number of vio2vo background
-jobs (if you set @samp{@code{coq-compile-quick}} to @code{'quick-and-vio2vo}) as
+@c TEXI DOCSTRING MAGIC: coq-max-background-second-stage-percentage
+@defvar coq-max-background-second-stage-percentage 
+Percentage of @samp{@code{coq-max-background-compilation-jobs}} for the second stage.@*
+This setting configures the maximal number of @samp{`-vok}' or vio2vo background
+jobs running in a second stage as
 percentage of @samp{@code{coq-max-background-compilation-jobs}}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-max-background-vio2vo-percentage}}.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-compile-vio2vo-delay
-@defvar coq-compile-vio2vo-delay 
-Delay in seconds for the vio2vo compilation.@*
-This delay helps to avoid running into a library inconsistency
-with @code{'quick-and-vio2vo}, see Coq issue #@var{5223}.
+@c TEXI DOCSTRING MAGIC: coq-compile-second-stage-delay
+@defvar coq-compile-second-stage-delay 
+Delay in seconds before starting the second stage compilation.@*
+The delay is applied to both @samp{`-vok}' and vio2vo second stages.
+For Coq < 8.11 and vio2vo delay helps to avoid running into a
+library inconsistency with @code{'quick-and-vio2vo}, see Coq issue
+#@var{5223}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-compile-vio2vo-delay}}.
 @end defvar
 
 Locking ancestors can be disabled with the following option.
@@ -4989,7 +4991,7 @@ Locking ancestors can be disabled with the following option.
 @defvar coq-lock-ancestors 
 If non-nil, lock ancestor module files.@*
 If external compilation is used (via @samp{@code{coq-compile-command}}) then
-only the direct ancestors are locked. Otherwise all ancestors are
+only the direct ancestors are locked.  Otherwise all ancestors are
 locked when the "Require" command is processed.
 
 This option can be set via menu
@@ -5005,13 +5007,13 @@ configure the compilation command in @code{coq-compile-command}.
 
 @c TEXI DOCSTRING MAGIC: coq-compile-command
 @defvar coq-compile-command 
-External compilation command. If empty ProofGeneral compiles itself.@*
+External compilation command.  If empty ProofGeneral compiles itself.@*
 If unset (the empty string) ProofGeneral computes the dependencies of
-required modules with coqdep and compiles as necessary. This internal
+required modules with coqdep and compiles as necessary.  This internal
 dependency checking does currently not handle ML modules.
 
 If a non-empty string, the denoted command is called to do the
-dependency checking and compilation. Before executing this
+dependency checking and compilation.  Before executing this
 command the following keys are substituted as follows:
 @lisp
   %p  the (physical) directory containing the source of
@@ -5050,12 +5052,12 @@ configure these things with the following options.
 @defvar coq-load-path 
 Non-standard coq library load path.@*
 This list specifies the LoadPath extension for coqdep, coqc and
-coqtop. Usually, the elements of this list are strings (for
+coqtop.  Usually, the elements of this list are strings (for
 "-I") or lists of two strings (for "-R" dir path and
 "-Q" dir path).
 
 The possible forms of elements of this list correspond to the 4
-forms of include options (@samp{-I} @samp{-Q} and @samp{-R}). An element can be
+forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
 @lisp
   - A list of the form @samp{(}ocamlimport dir)', specifying (in 8.5) a
     directory to be added to ocaml path (@samp{-I}).
@@ -5086,10 +5088,10 @@ not the same (-I is for coq path).
 
 @c TEXI DOCSTRING MAGIC: coq-load-path-include-current
 @defvar coq-load-path-include-current 
-If @samp{t} let coqdep search the current directory too.@*
-Should be @samp{t} for normal users. If @samp{t} pass -Q dir "" to coqdep when
-processing files in directory "dir" in addition to any entries
-in @samp{@code{coq-load-path}}.
+If t, let coqdep search the current directory too.@*
+Should be t for normal users.  If t, pass -Q dir "" to coqdep when
+processing files in directory "dir" in addition to any entries in
+@samp{@code{coq-load-path}}.
 
 This setting is only relevant with Coq < 8.5.
 @end defvar
@@ -5105,12 +5107,12 @@ libraries.
 @defvar coq-compile-ignored-directories 
 Directories in which ProofGeneral should not compile modules.@*
 List of regular expressions for directories in which ProofGeneral
-should not compile modules. If a library file name matches one
+should not compile modules.  If a library file name matches one
 of the regular expressions in this list then ProofGeneral does
 neither compile this file nor check its dependencies for
-compilation. It makes sense to include non-standard coq library
+compilation.  It makes sense to include non-standard coq library
 directories here if they are not changed and if they are so big
-that dependency checking takes noticeable time. The regular
+that dependency checking takes noticeable time.  The regular
 expressions in here are always matched against the .vo file name,
 regardless whether @samp{`-quick}' would be used to compile the file
 or not.
@@ -5124,10 +5126,6 @@ or not.
 @item
 No support for @code{Declare ML Module} commands and files
 depending on an ML module.
-@item
-Comments inside require commands should be avoided, see Proof
-General issue #352. The regular expression to extract module
-names does not skip over comments.
 @item
 When a compiled library has the same time stamp as the source
 file, it is considered outdated. Some old file systems (for
@@ -5737,18 +5735,21 @@ Here are some of the other user options specific to EasyCrypt.  You can
 set these as usual with the customization mechanism.
 
 @c TEXI DOCSTRING MAGIC: easycrypt-prog-name
-@defvar easycrypt-prog-name
+@defopt easycrypt-prog-name 
 Name of program to run EasyCrypt.
-@end defvar
+
+The default value is @code{"easycrypt"}.
+@end defopt
 
 @c TEXI DOCSTRING MAGIC: easycrypt-load-path
-@defvar easycrypt-load-path
-Non-standard EasyCrypt library load path. This list specifies the
-include path for EasyCrypt.
+@defvar easycrypt-load-path 
+Non-standard EasyCrypt library load path.@*
+This list specifies the include path for EasyCrypt.  The elements of
+this list are strings.
 @end defvar
 
 @c TEXI DOCSTRING MAGIC: easycrypt-web-page
-@defvar easycrypt-web-page
+@defvar easycrypt-web-page 
 URL of web page for EasyCrypt.
 @end defvar
 

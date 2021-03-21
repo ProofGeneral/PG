@@ -169,7 +169,7 @@ RELEASENAMEDMG = $(RELEASENAME).dmg
 # Where to install a distribution
 DISTINSTALLDIR=/usr/local/share/elisp/proofgeneral
 
-SUBDIRS=$(ELISP_DIRS) etc doc images
+SUBDIRS=$(ELISP_DIRS_COMP) etc doc images
 
 PWD=$(shell pwd)
 

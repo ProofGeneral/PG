@@ -26,7 +26,8 @@
 
 (eval-when-compile
   (require 'scomint)
-  (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
+  ;; the following require causes make magic to fail with a recursive chain
+  ;; (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
   (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 
 (require 'proof-config)			; config variables

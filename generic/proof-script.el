@@ -1459,21 +1459,7 @@ Argument SPAN has just been processed."
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
     (let ((proof-shell-last-output "")) ; comments not sent, no last output
-      (pg-set-span-helphighlights bodyspan))
-
-    ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
-    (save-match-data
-      (setq str (buffer-substring-no-properties (span-start span)
-						(span-end span)))
-      (if (proof-string-match-safe proof-script-evaluate-elisp-comment-regexp str)
-	  (condition-case nil
-	      (eval (car (read-from-string (match-string-no-properties 1 str)))
-                    t)
-	    (t (proof-debug
-		(concat
-		 "lisp error when obeying proof-shell-evaluate-elisp-comment-regexp: \n"
-		 (prin1-to-string (match-string-no-properties 1))
-		 "\n"))))))))
+      (pg-set-span-helphighlights bodyspan))))
 
 
 (defun proof-done-advancing-save (span)

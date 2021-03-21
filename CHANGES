@@ -8,6 +8,11 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 ** Generic changes
 
+*** new command and menu item to easily upgrade all packages
+    - To upgrade all ELPA packages (including ProofGeneral if it was
+      installed via MELPA), do "M-x proof-upgrade-elpa-packages RET"
+      or use the "Proof-General > Upgrade ELPA packages..." menu item
+
 *** bug fixes
     - Using query-replace (or replace-string) in the processed region
       doesn't wrongly jump to the first match anymore.
@@ -29,7 +34,7 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 *** new menu Coq -> Auto Compilation for all background compilation options
 
-*** support for 8.11 vos compilation
+*** support for 8.11 vos and vok compilation
 
     See menu Coq -> Auto Compilation -> vos compilation, option
     coq-compile-vos and subsection "11.3.3 Quick and inconsistent
