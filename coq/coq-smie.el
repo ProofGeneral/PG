@@ -172,7 +172,7 @@ attention to case differences."
   (let ((case-fold-search nil))
     (save-excursion
       (coq-find-real-start)
-      (looking-at "\\(\\(Local\\|Global\\)\\s-+\\)?\\(Ltac\\|Tactic\\s-+Notation\\)\\s-"))))
+      (looking-at "\\(\\(Local\\|Global\\)\\s-+\\)?\\(Ltac2?\\|Tactic\\s-+Notation\\)\\s-"))))
 
 (defun coq-smie-is-inside-parenthesized-tactic ()
   (and (coq-smie-is-tactic) ;; fragile (uppercase test only)
@@ -239,7 +239,7 @@ the token of \".\" is simply \".\"."
 
 
 (defun coq-smie-find-unclosed-match-backward ()
-  (let ((tok (coq-smie-search-token-backward '("with" "match" "lazymatch" "multimatch" "."))))
+  (let ((tok (coq-smie-search-token-backward '("with" "match" "lazymatch" "multimatch" "lazy_match" "mult_match" "."))))
     (cond
      ((null tok) nil)
      ((equal tok ".") nil)
@@ -493,8 +493,7 @@ The point should be at the beginning of the command name."
       ;; we can.
       (save-excursion (coq-smie-backward-token)))
 
-     ;; easier to return directly than calling coq-smie-backward-token
-     ((member tok '("lazymatch" "multimatch")) "match")
+     ((member tok '("lazymatch" "lazy_match" "multimatch" "multi_match")) "match")
 
      ;; detect "with signature", otherwies use coq-smie-backward-token
      ((equal tok "with")
@@ -629,7 +628,7 @@ The point should be at the beginning of the command name."
      ((equal tok ",")
       (save-excursion
 	(let ((backtok (coq-smie-search-token-backward
-			'("forall" "∀" "∃" "exists" "|" "match" "lazymatch" "multimatch" "."))))
+			'("forall" "∀" "∃" "exists" "|" "match" "lazymatch" "multimatch" "lazy_match" "multi_match" "."))))
 	  (cond
 	   ((member backtok '("forall" "∀" "∃")) ", quantif")
 	   ((equal backtok "exists") ; there is a tactic called exists
@@ -645,9 +644,9 @@ The point should be at the beginning of the command name."
      ;; trying to discriminate between bollean operator || and tactical ||.
      ((equal tok "||")
       (save-excursion
-	(let ((backtok (coq-smie-search-token-backward '("." ";" "Ltac" "(" "[" "{"))))
+	(let ((backtok (coq-smie-search-token-backward '("." ";" "Ltac" "Ltac2" "(" "[" "{"))))
 	  (cond
-	   ((member backtok '("." "Ltac")) "|| tactic")
+	   ((member backtok '("." "Ltac" "Ltac2")) "|| tactic")
 	   ((and (equal backtok ";")
 		 (or (forward-char) t)
 		 (equal (coq-smie-backward-token) "; tactic")) ;; recursive
@@ -697,7 +696,7 @@ The point should be at the beginning of the command name."
 	;(coq-find-real-start)
 	(coq-smie-module-deambiguate)))
 
-     ((member tok '("lazymatch" "multimatch")) "match")
+     ((member tok '("lazy_?match" "multi_?match")) "match")
 
      ((equal tok "tryif") "if")
 
@@ -734,7 +733,7 @@ The point should be at the beginning of the command name."
      ;;  (forward-char -1)
      ;;  (if (looking-at "{") "{ subproof" "} subproof"))
 
-     ((and (equal tok ":") (looking-back "\\<\\(constr\\|ltac\\|uconstr\\)"
+     ((and (equal tok ":") (looking-back "\\<\\(constr\\|ltac2?\\|uconstr\\)"
                                          (- (point) 7)))
       ": ltacconstr")
 
@@ -745,8 +744,8 @@ The point should be at the beginning of the command name."
      ((equal tok "=>")
       (save-excursion
 	(let ((corresp (coq-smie-search-token-backward
-			'("|" "match" "lazymatch" "multimatch" "fun" ".")
-			nil '((("match" "lazymatch" "multimatch") . "end") ("fun" . "=>")))))
+			'("|" "match" "lazymatch" "multimatch" "lazy_match" "multi_match" "fun" ".")
+			nil '((("match" "lazy_match" "multi_match") . "end") ("fun" . "=>")))))
 	  (cond
 	   ((member corresp '("fun")) "=> fun") ; fun
 	   (t tok)))))
@@ -803,12 +802,12 @@ The point should be at the beginning of the command name."
       (save-excursion
 	(let ((prev-interesting
 	       (coq-smie-search-token-backward
-		'("match" "lazymatch" "multimatch" "Morphism" "Relation" "." ". proofstart"
+		'("match" "lazymatch" "multimatch" "lazy_match" "multi_match" "Morphism" "Relation" "." ". proofstart"
 		  "{ subproof" "} subproof" "as")
 		nil
-		'((("match" "lazymatch" "multimatch" "let") . "with") ("with" . "signature")))))
+		'((("match" "lazy_match" "multi_match" "let") . "with") ("with" . "signature")))))
 	  (cond
-	   ((member prev-interesting '("match" "lazymatch" "multimatch")) "as match")
+	   ((member prev-interesting '("match" "lazymatch" "multimatch" "lazy_match" "mult_match")) "as match")
 	   ((member prev-interesting '("Morphism" "Relation")) "as morphism")
 	   (t tok)))))
 
@@ -834,9 +833,9 @@ The point should be at the beginning of the command name."
       (save-excursion
 	(let ((prev-interesting
 	       (coq-smie-search-token-backward
-		'("let" "match" "lazymatch" "multimatch" ;"eval" should be "eval in" but this is not supported by search-token-backward
+		'("let" "match" "lazymatch" "multimatch" "lazy_match" "mult_match" ;"eval" should be "eval in" but this is not supported by search-token-backward
 		  "." ) nil
-		'((("match" "lazymatch" "multimatch") . "with") (("let" ;"eval"
+		'((("match" "lazymatch" "multimatch" "lazy_match" "mult_match") . "with") (("let" ;"eval"
 				       ) . "in")))))
 	  (cond
 	   ((member prev-interesting '("." nil)) "in tactic")
@@ -874,6 +873,10 @@ The point should be at the beginning of the command name."
       (forward-char -1)
       (let ((newtok (coq-smie-backward-token))) ; recursive call
 	(concat newtok "." tok)))
+
+     ;; easier to return directly than calling coq-smie-backward-token
+     ((member tok '("lazymatch" "lazy_match" "multimatch" "multi_match")) "match")
+
 
      ((coq-dot-friend-p tok) ".")
      (tok))))
