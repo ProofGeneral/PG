@@ -236,14 +236,16 @@ so for the following reasons:
      ("inversion_clear" "invcl" "inversion_clear" t "inversion_clear")
      ("lapply" "lap" "lapply" t "lapply")
      ("lazy" "lazy" "lazy beta delta [#] iota zeta" t "lazy")
-     ("lazymatch with" "m" "lazymatch # with\n| # => #\nend")
+     ("lazymatch with" "lazym" "lazymatch # with\n| # => #\nend")
+     ("lazy_match! with" "lazy_m" "lazy_match! # with\n| # => #\nend")
      ("left" "left" "left" t "left")
      ("lia" nil "lia" t "lia")
      ("linear" "lin" "linear" t "linear")
      ("load" "load" "load" t "load")
      ("lra" nil "lra" t "lra")
      ("move after" "mov" "move # after #" t "move")
-     ("multimatch with" "m" "multimatch # with\n| # => #\nend")
+     ("multimatch with" "mm" "multimatch # with\n| # => #\nend")
+     ("multi_match! with" "multi_m" "multi_match! # with\n| # => #\nend")
      ("nia" nil "nia" t "nia")
      ("now_show" nil "now_show" t "now_show")
      ("nra" nil "nra" t "nra")
@@ -955,7 +957,7 @@ so for the following reasons:
     ("forall (4 args)" "fo4" "forall (#:#) (#:#) (#:#) (#:#), #")
     ("if" "if" "if # then # else #" nil "if")
     ("let in" "li" "let # := # in #" nil "let")
-    ("match! (from type)" nil "" nil "match" coq-insert-match)
+    ("match?" nil "" nil "match" coq-insert-match)
     ("match with" "m" "match # with\n| # => #\nend")
     ("match with 2" "m2" "match # with\n| # => #\n| # => #\nend")
     ("match with 3" "m3" "match # with\n| # => #\n| # => #\n| # => #\nend")
@@ -1172,7 +1174,7 @@ It is used:
   (append
    '(
      "False" "True" "after" "as" "cofix" "fix" "forall" "fun" "match"
-     "lazymatch" "multimatch"
+     "lazymatch" "multimatch" "lazy_match" "multi_match"
      "return" "struct" "else" "end" "if" "in" "into" "let" "then"
      "using" "with" "beta" "delta" "iota" "zeta" "after" "until"
      "at" "Sort" "Time" "dest" "where"
