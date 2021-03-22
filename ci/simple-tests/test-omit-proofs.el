@@ -42,13 +42,29 @@ If so, return the first non-nil value returned by PRED."
     ;; to process.
     (accept-process-output nil 0.1)))
   
+(defun overlay-less (a b)
+  "Compare two overlays.
+Return t if overlay A has smaller size than overlay B and should
+therefore have a higher priority."
+  (let ((sa (- (overlay-end a) (overlay-start a)))
+        (sb (- (overlay-end b) (overlay-start b))))
+    (<= sa sb)))
+
+(defun overlays-at-point-sorted ()
+  "Return overlays at point in decreasing order of priority.
+Works only if no overlays has a priority property. Same
+'(overlays-at (point) t)', except that it also works on Emacs <= 25."
+  (sort (overlays-at (point) t) 'overlay-less))
+
 (defun first-overlay-face ()
   "Return the face of the first overlay/span that has a face property.
 Properties configured in that face are in effect. Properties not
 configured there may be taken from faces with less priority."
   (list-some
    (lambda (ov) (overlay-get ov 'face))
-   (overlays-at (point) t)))
+   ;; Need to sort overlays oneself, because emacs 25 returns overlays
+   ;; in increasing instead of decreasing priority.
+   (overlays-at-point-sorted)))
 
 (ert-deftest omit-proofs-omit-and-not-omit ()
   "Test the omit proofs feature.
@@ -122,6 +138,12 @@ In particular, test that with proof-omit-proofs-option configured:
   ;; Check 4: check proof-omitted-proof-face is active at marker 3
   (message "4: check proof-omitted-proof-face is active at marker 3")
   (should (search-backward "automatic test marker 3" nil t))
+  ;; debug overlay order
+  ;; (mapc
+  ;;  (lambda (ov)
+  ;;    (message "OV %d-%d face %s"
+  ;;             (overlay-start ov) (overlay-end ov) (overlay-get ov 'face)))
+  ;;    (overlays-at-point-sorted))
   (should (eq (first-overlay-face) 'proof-omitted-proof-face))
 
   ;; Check 5: check proof-locked-face is active at marker 1 and 2
