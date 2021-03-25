@@ -2022,14 +2022,33 @@ start is found inside a proof."
    nil
    "proof-script omit proof feature not properly configured")
   (let (result maybe-result inside-proof
-        proof-start-span-start proof-start-span-end)
-    (dolist (item vanillas (nreverse (nconc maybe-result result)))
-      (let ((cmd (mapconcat 'identity (nth 1 item) " ")))
-        (if inside-proof
-            (progn
-              (when (string-match proof-script-proof-start-regexp cmd)
+        proof-start-span-start proof-start-span-end
+        item cmd)
+    (while vanillas
+      (setq item (car vanillas))
+      ;; cdr vanillas is at the end of the loop
+      (setq cmd (mapconcat 'identity (nth 1 item) " "))
+      (if inside-proof
+          (progn
+            (if (string-match proof-script-proof-start-regexp cmd)
                 ;; found another proof start inside a proof
-                (error "found another proof start inside a proof"))
+                ;; stop omitting and pass the remainder unmodified
+                ;; the result in `result' is aggregated in reverse
+                ;; order, need to reverse vanillas
+                (progn
+                  (setq result (nconc (nreverse vanillas) maybe-result result))
+                  (setq maybe-result nil)
+                  (setq vanillas nil)
+                  ;; for Coq nobody will notice the warning, because
+                  ;; the error about nested proofs will pop up shortly
+                  ;; afterwards
+                  (display-warning
+                   '(proof-script)
+                   ;; use the end of the span, because the start is
+                   ;; usually on the preceding  line
+                   (format (concat "found second proof start at line %d"
+                                   " - are there nested proofs?")
+                           (line-number-at-pos (span-end (car item))))))
               (if (string-match proof-script-proof-end-regexp cmd)
                   (let
                       ;; Reuse the Qed span for the whole proof,
@@ -2078,20 +2097,21 @@ start is found inside a proof."
                       (setq inside-proof nil))
                   ;; normal proof command - maybe it belongs to a
                   ;; Defined, keep it separate, until we know.
-                  (push item maybe-result))))
-          ;; outside proof
-          (if (string-match proof-script-proof-start-regexp cmd)
-              (progn
-                (setq maybe-result nil)
-                ;; Keep the Proof using command in any case.
-                (push item result)
-                (setq proof-start-span-start (span-start (car item)))
-                (setq proof-start-span-end (span-end (car item)))
-                (setq inside-proof t))
-            ;; outside, no proof start - keep it unmodified
-            (push item result)))))
-    ;; return (nreverse (nconc maybe-result result)), see dolist above
-    ))
+                  (push item maybe-result)))))
+        ;; outside proof
+        (if (string-match proof-script-proof-start-regexp cmd)
+            (progn
+              (setq maybe-result nil)
+              ;; Keep the Proof using command in any case.
+              (push item result)
+              (setq proof-start-span-start (span-start (car item)))
+              (setq proof-start-span-end (span-end (car item)))
+              (setq inside-proof t))
+          ;; outside, no proof start - keep it unmodified
+          (push item result)))
+      (setq vanillas (cdr vanillas)))
+    (nreverse (nconc maybe-result result))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

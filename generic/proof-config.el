@@ -720,10 +720,13 @@ the match of `proof-script-definition-end-regexp') is considered
 to be not opaque and not omitted, thus all these proof commands
 _are_ sent to the proof assistant.
 
-If a match for `proof-script-proof-start-regexp' is found before
-the next match for `proof-script-proof-end-regexp' or
-`proof-script-definition-end-regexp', an error is signaled to the
-user.
+The feature does not work for nested proofs. If a match for
+`proof-script-proof-start-regexp' is found before the next match
+for `proof-script-proof-end-regexp' or
+`proof-script-definition-end-regexp', the search for opaque
+proofs immediately stops and all commands following the previous
+match of `proof-script-proof-start-regexp' are sent verbatim to
+the proof assistant.
 
 All the regular expressions for this feature are matched against
 the commands inside proof action items, that is as strings,

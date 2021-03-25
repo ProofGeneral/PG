@@ -5221,6 +5221,10 @@ With a prefix argument, both @code{proof-goto-point} and
 @code{proof-process-buffer} will temporarily disable the omit
 proofs feature and send the full proof script to Coq.
 
+If a nested proof is detected while searching for opaque proofs
+to omit, a warning is displayed and the complete remainder of the
+asserted region is sent unmodified to Coq. 
+
 
 @node Editing multiple proofs
 @section Editing multiple proofs

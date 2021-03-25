@@ -1162,7 +1162,9 @@ expressions to search for commands that start
 found, the opaque proof is replaced with a cheating command
 (@code{proof-script-proof-admit-command}). From this description
 it is immediate, that the omit proof feature does only work if
-proofs are not nested.
+proofs are not nested. If a nested proof is found, a warning is
+displayed and omitting proofs stops at that location for the
+currently asserted region.
 
 To enable the omit proofs feature, the following settings must be
 configured.
@@ -1192,10 +1194,13 @@ the match of @samp{@code{proof-script-definition-end-regexp}}) is considered
 to be not opaque and not omitted, thus all these proof commands
 _are_ sent to the proof assistant.
 
-If a match for @samp{@code{proof-script-proof-start-regexp}} is found before
-the next match for @samp{@code{proof-script-proof-end-regexp}} or
-@samp{@code{proof-script-definition-end-regexp}}, an error is signaled to the
-user.
+The feature does not work for nested proofs. If a match for
+@samp{@code{proof-script-proof-start-regexp}} is found before the next match
+for @samp{@code{proof-script-proof-end-regexp}} or
+@samp{@code{proof-script-definition-end-regexp}}, the search for opaque
+proofs immediately stops and all commands following the previous
+match of @samp{@code{proof-script-proof-start-regexp}} are sent verbatim to
+the proof assistant.
 
 All the regular expressions for this feature are matched against
 the commands inside proof action items, that is as strings,
