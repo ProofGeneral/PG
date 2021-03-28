@@ -1032,7 +1032,6 @@ being processed."
 	    "proof-append-alist: wrong queuemode detected for busy shell")
 	   (cl-assert (eq proof-shell-busy queuemode)))))
 
-
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
     (setq proof-action-list
@@ -1040,7 +1039,19 @@ being processed."
     
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-shell-slurp-comments)))
-	(mapc 'proof-shell-invoke-callback cbitems)))
+	(mapc 'proof-shell-invoke-callback cbitems)
+	(when (and (< (length cbitems) (length proof-action-list))
+		   proof-shell-timeout-warn
+		   (not proof-shell-timer))
+	  ;; arm the timer if proof-action-list isn't just comments
+	  ;; cancelled 1. in `proof-shell-exec-loop' unless `proof-shell-busy' or
+	  ;; 2. in the case of error, in `proof-shell-error-or-interrupt-action'
+	  (setq proof-shell-timer
+		(run-with-timer proof-shell-timeout-warn nil
+				'message
+				(substitute-command-keys "This command is taking a while. \
+Is the syntax correct? Do \\[proof-interrupt-process] to interrupt prover or
+\\[proof-shell-exit] to terminate it."))))))
   
     (if proof-action-list ;; something to do
 	(progn
@@ -1200,13 +1211,11 @@ contains only invisible elements for Prooftree synchronization."
 	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint))
-	  (pg-finish-tracing-display))
-
-  (unless proof-shell-busy
-		;; if the shell isn't still busy, cancel timer
-		(if (and proof-shell-timer proof-shell-timeout-warn)
-			(progn (cancel-timer proof-shell-timer)
-			       (setq proof-shell-timer nil))))
+	  (pg-finish-tracing-display)
+	  (when (and proof-shell-timeout-warn proof-shell-timer)
+	    ;; cancel timer if there's nothing in the action lists
+	    (progn (cancel-timer proof-shell-timer)
+		   (setq proof-shell-timer nil))))
 
 	(and (not proof-second-action-list-active) 
 	     (let ((last-command  (car (nth 1 (car (last proof-action-list))))))
