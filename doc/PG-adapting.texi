@@ -2469,6 +2469,10 @@ tokens (for example, editing documentation or source code files).
 @node Configuring Proof-Tree Visualization
 @chapter Configuring Proof-Tree Visualization
 
+@b{Parts of this section are outdated. Please create an issue at
+github.com/ProofGeneral/Proof General if you have a question for
+adapting Prooftree for a new proof assistant.}
+
 The proof-tree visualization feature was written with the idea of
 supporting Coq as well as other proof assistants. Nevertheless,
 supporting proof-tree visualization for a second proof assistant
@@ -2617,62 +2621,13 @@ proof-tree display is distributed in a few chunks over
 The main task of the Elisp code is to extract goals, undo events
 and information about existential variables from the
 proof-assistant output and to send all this data to Prooftree.
-The Elisp code does also determine if additional output must be
-requested from the proof assistant. In that case it adds
-appropriate commands to @code{proof-action-list}, @pxref{Proof
-script mode}. These additional commands are flagged with
+Additional commands inserted by Prooftree are flagged with
 @code{proof-tree-show-subgoal}, @code{no-goals-display} and
 @code{no-response-display}. The flag
 @code{proof-tree-show-subgoal} ensures that a number of internal
 functions ignore these additional commands. The other two flags
 ensure that their output is neither displayed in the goals nor
 the response buffer.
-
-For the decision about which goals must be sent to Prooftree, the
-Elisp code maintains the following two state variables.
-
-@c TEXI DOCSTRING MAGIC: proof-tree-sequent-hash
-@defvar proof-tree-sequent-hash 
-Hash table to remember sequent ID's.@*
-Needed because some proof assistants do not distinguish between
-new subgoals, which have been created by the last proof command,
-and older, currently unfocussed subgoals.  If Proof General meets
-a goal, it is treated as new subgoal if it is not in this hash yet.
-
-The hash is mostly used as a set of sequent ID's.  However, for
-undo operations it is necessary to delete all those sequents from
-the hash that have been created in a state later than the undo
-state.  For this purpose this hash maps sequent ID's to the state
-number in which the sequent has been created.
-
-The hash table is initialized in @samp{@code{proof-tree-start-process}}.
-@end defvar
-
-
-@c TEXI DOCSTRING MAGIC: proof-tree-existentials-alist
-@defvar proof-tree-existentials-alist 
-Alist mapping existential variables to sequent ID's.@*
-Used to remember which goals need a refresh when an existential
-variable gets instantiated.  To support undo commands the old
-contents of this list must be stored in
-@samp{@code{proof-tree-existentials-alist-history}}.  To ensure undo is
-properly working, this variable should only be changed by using
-@samp{@code{proof-tree-delete-existential-assoc}},
-@samp{@code{proof-tree-add-existential-assoc}} or
-@samp{@code{proof-tree-clear-existentials}}.
-@end defvar
-
-When retracting these two variables must be set to their previous
-state. For @code{proof-tree-sequent-hash} this is done with the
-state numbers that are stored in the hash. For
-@code{proof-tree-existentials-alist} a separate alist stores
-previous states.
-
-@c TEXI DOCSTRING MAGIC: proof-tree-existentials-alist-history
-@defvar proof-tree-existentials-alist-history 
-Alist mapping state numbers to old values of @samp{@code{proof-tree-existentials-alist}}.@*
-Needed for undo.
-@end defvar
 
 
 In Prooftree the separation between generic and proof-assistant
@@ -2788,28 +2743,29 @@ Urgent actions are those that must be executed before
 @code{proof-action-list} to the proof assistant. For execution
 speed, the amount of urgent code should be kept small.
 
-@c TEXI DOCSTRING MAGIC: proof-tree-urgent-action
-@defun proof-tree-urgent-action flags
-Handle urgent points before the next item is sent to the proof assistant.@*
-Schedule goal updates when existential variables have changed and
-call @samp{@code{proof-tree-urgent-action-hook}}. All this is only done if
-the current output does not come from a command (with the
-@code{'proof-tree-show-subgoal} flag) that this package inserted itself.
+@c TEXI DOCSTRING MAGIC: proof-tree-check-proof-finish
+@defun proof-tree-check-proof-finish last-item
+Urgent action to delay processing at proof end.@*
+This function is called from @samp{@code{proof-shell-exec-loop}} after the
+old item has been removed and before the next item from
+@samp{@code{proof-action-list}} is sent to the proof assistant. Of course
+only when the proof-tree display is active. At the end of the
+proof, this function delays items just following the previous
+proof until all show-goal commands from prooftree and the
+@samp{@code{proof-tree-display-stop-command}} (which switches the dependent
+evar line off for Coq) have been processed.
 
-Urgent actions are only needed if the external proof display is
-currently running. Therefore this function should not be called
-when @samp{@code{proof-tree-external-display}} is nil.
-
-This function assumes that the prover output is not suppressed.
-Therefore, @samp{@code{proof-tree-external-display}} being t is actually a
-necessary precondition.
-
-The not yet delayed output is in the region
-[@code{proof-shell-delayed-output-start}, @code{proof-shell-delayed-output-end}].
+If this function detects the end of the proof, it moves
+non-priority items following in @samp{@code{proof-action-list}} to
+@samp{@code{proof-tree--delayed-actions}} and sets
+@samp{@code{proof-second-action-list-active}}. When later the command from
+@samp{@code{proof-tree-display-stop-command}} is recognized, the items are
+moved back. If no items follow the end of the previous proof,
+@samp{@code{proof-tree-display-stop-command}} is set to t.
 @end defun
 
 
-The function @code{proof-tree-urgent-action} is called at a point
+The function @code{proof-tree-check-proof-finish} is called at a point
 where it is save to manipulate @code{proof-action-list}. This is
 essential, because @code{proof-tree-urgent-action} inserts goal
 display commands into @code{proof-action-list} when existential
@@ -3807,6 +3763,7 @@ bother the user.  They may include
   @code{'no-error-display}         do not display errors/take error action
   @code{'no-goals-display}         do not goals in @strong{goals} buffer
   @code{'proof-tree-show-subgoal}  item inserted by the proof-tree package
+  @code{'priority-action}          item added via @code{proof-add-to-priority-queue}
 @end lisp
 Note that @code{'invisible} does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -4310,7 +4267,7 @@ by the filter is to send the next command from the queue.
 Wrapper for @samp{@code{proof-shell-filter}}, protecting against parallel calls.@*
 In Emacs a process filter function can be called while the same
 filter is currently running for the same process, for instance,
-when the filter bocks on I/O. This wrapper protects the main
+when the filter blocks on I/O. This wrapper protects the main
 entry point, @samp{@code{proof-shell-filter}} against such parallel,
 overlapping calls.
 

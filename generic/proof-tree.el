@@ -6,7 +6,7 @@
 ;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
-;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
+;; Portions © Copyright 2011-2013, 2016-2017, 2019-2021  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
 ;; Authors:   Hendrik Tews
@@ -47,24 +47,56 @@
 ;; prover output is not suppressed (via `proof-full-annotation').
 ;; `proof-shell-should-be-silent' takes care of that.
 ;; 
-;; The design of Prooftree, of the glue code inside Proof General
-;; (mostly in this file) and of the communication protocol tries to
-;; achieve the following two goals:
+;; Earlier versions of prooftree maintained certain data structures
+;; twice, one time in prooftree and one time in Proof General. The
+;; copy in Proof General was necessary, because all necessary show
+;; goal commands had to be generated and processed immediately in the
+;; current state.
 ;;
-;;   * Functionality is preferably transferred into prooftree, to
-;;     enlarge Proof General not unnecessarily.
+;; With Coq 8.10 it is possible to issue a show goal command for an
+;; earlier state, therefore, in the current version all the processing
+;; is done in prooftree and prooftree sends asynchronous show goal
+;; requests to Proof General, if sequents are missing or must be
+;; updated. These show goal requests are processed in Proof General as
+;; priority actions, nevertheless, they can be delayed for quite some
+;; time. It might even happen, that the first show goal command for an
+;; additionally spawned subgoal arrives at Proof General only after
+;; the proof has been finished. Prooftree can request additinal
+;; sequent updates for instantiated existentials only after that first
+;; sequent has arrived. Prooftree keeps a tree with the instantiation
+;; dependencies of existentials, such that it can immediately issue
+;; all sequent update requests for all known instantiations. With this
+;; there is at most one round trip to prooftree necessary after a
+;; proof has been finished in Proof General.
 ;;
-;;   * To avoid synchronization trouble the communication between
-;;     Proof General and prooftree is almost one way only: Only Proof
-;;     General sends display or undo commands to Prooftree.  Prooftree
-;;     never requests any proof-state information from Proof General.
-;;     Prooftree only sends a quit message to Proof General when the
-;;     user closes the proof-tree display of the current proof.  This
-;;     goal requires that some of the heuristics, which decide which
-;;     subgoals are new and which have to be refreshed, have to be
-;;     implemented here.
+;; In the proof assistant source code, the next lemma might start
+;; immediately after finishing the preceeding proof. Before processing
+;; that next command, the proof tree display must be switched off in
+;; Proof General and for Coq, the command for disabling the dependent
+;; evar line must be processed. On the other hand, all show goal
+;; commands arriving late for the preceeding proof must be completely
+;; processed with proof tree display enabled. To solve that problem,
+;; `proof-tree-check-proof-finish' is called as urgent action inside
+;; `proof-shell-exec-loop', before the next command in the queue
+;; region is sent to the proof assistant. If this urgent action
+;; recognizes a proof end, it moves all non-priority actions from
+;; `proof-action-list' to `proof-tree--delayed-actions' signaling
+;; `proof-second-action-list-active'. This effectively stops
+;; processing of the queue region. When the end of the proof is
+;; processed in the delayed output handling, Proof General sends a
+;; proof-complete message to prooftree, thereby requesting a
+;; confirm-proof-complete from prooftree after prooftree has sent all
+;; show goal requests to Proof General. Via
+;; `proof-tree-display-stop-command' the confirmation message causes
+;; the insertion of an action item with tag 'proof-tree-last-item.
+;; When this item arrives inside `proof-tree-check-proof-finish', all
+;; show goal commands have been processed, because care is taken to
+;; process priority actions in order. `proof-tree-check-proof-finish'
+;; can therefore move the queued commands back to `proof-action-list'
+;; and continue normal processing.
 ;;
-;; In general the glue code here works on the delayed output.  That is,
+;; Apart from the urgent action discussed before, 
+;; the glue code here works on the delayed output.  That is,
 ;; the glue code here runs when the next proof command has already
 ;; been sent to the proof assistant.  The glue code makes a light
 ;; analysis on the output of the proof assistant, extracts the
@@ -73,13 +105,6 @@
 ;; here, the function `proof-tree-handle-delayed-output' from the
 ;; proof shell filter function after `proof-shell-exec-loop' has
 ;; finished.
-;;
-;; However, some aspects can not be delayed.  Those are treated by
-;; `proof-tree-urgent-action'.  Its primary use is for inserting
-;; special goal-displaying commands into `proof-action-list' before
-;; the next real proof command runs.  For Coq this needs to be done for
-;; newly generated subgoals and for goals that contain an existential
-;; variable that got instantiated in the last proof step.
 ;;
 ;; Actually, for every proof, Prooftree can display a set of disjunct
 ;; proof trees, which are organized into layers.  More than one proof
@@ -179,14 +204,16 @@ prooftree."
   :group 'proof-tree-internals)
 
 (defcustom proof-tree-update-goal-regexp nil
-  "Regexp to match a goal and its ID.
+  "Regexp to match a goal and its ID and the corresponding state.
 The regexp is matched against the output of additional show-goal
-commands inserted by Proof General with a command returned by
-`proof-tree-show-sequent-command'.  Proof General inserts such
-commands to update the goal text in prooftree.  This is necessary,
+commands inserted by prooftree with a command returned by
+`proof-tree-show-sequent-command'.  Prooftree inserts such
+commands to update the goal texts.  This is necessary,
 for instance, when existential variables get instantiated.  This
-regexp must have 2 grouping constructs, the first matching the ID
-of the goal, the second the complete sequent text."
+regexp must have 3 grouping constructs, the first matching the ID
+of the goal, the second the proof assistant state to which the
+sequent text corresponds, which must be a number, and the third
+the complete sequent text."
   :type 'regexp
   :group 'proof-tree-internals)
 
@@ -196,20 +223,6 @@ This regexp is used to extract the ID's of all additionally open
 goals.  The regexp is used in a while loop and must match one
 subgoal ID with subgroup 1."
   :type 'regexp
-  :group 'proof-tree-internals)
-
-(defcustom proof-tree-existential-regexp nil
-  "Regexp to match existential variables.
-Existential variables exist for instance in Isabelle/Hol and in
-Coq.  They are placeholders for terms that might (for Coq they
-must) get instantiated in a later stage of the proof.  This regexp
-should match one existential variable in subgroup 1. It is used
-inside a while loop to extract all existential variables from the
-goal text or from a list of existential variables.
-
-Leave this variable at nil for proof assistants that do not have
-existential variables."
-  :type '(choice regexp (const nil))
   :group 'proof-tree-internals)
 
 (defcustom proof-tree-existentials-state-start-regexp nil
@@ -269,31 +282,15 @@ is retracted (but no stuff before X)."
   :type 'function
   :group 'proof-tree-internals)
 
-(defcustom proof-tree-extract-instantiated-existentials nil
-  "Proof assistant specific function for instantiated existential variables.
-This function must only be defined if the prover has existential
-variables, that is, if `proof-tree-existential-regexp' is
-non-nil.
-
-If defined, this function should return the list of currently
-instantiated existential variables as a list of strings.  The
-function is called with `proof-shell-buffer' as current
-buffer and with two arguments start and stop, which designate the
-region containing the last output from the proof assistant.
-
-`proof-tree-extract-list' might be useful for writing this
-function."
-  :type '(choice function (const nil))
-  :group 'proof-tree-internals)
-
 (defcustom proof-tree-show-sequent-command nil
   "Proof assistant specific function for a show-goal command.
-This function is applied to an ID of a goal and should return a
-command (as string) that will display the complete sequent with
-that ID.  The regexp `proof-tree-update-goal-regexp' should match
-the output of the proof assistant for the returned command, such
-that `proof-tree-update-sequent' will update the sequent ID
-inside prooftree.
+This function is applied to a goal ID and a state number and
+should return a command (as string) that will display the
+complete sequent with that ID in the given state. The regexp
+`proof-tree-update-goal-regexp' should match the output of the
+proof assistant for the returned command, such that
+`proof-tree-update-sequent' will update the sequent ID inside
+prooftree.
 
 If the proof assistant is unable to redisplay sequent ID the
 function should return nil and prooftree will not get updated."
@@ -321,25 +318,34 @@ must return a buffer position."
   :type 'function
   :group 'proof-tree-internals)
 
-(defcustom proof-tree-urgent-action-hook ()
-  "Normal hook for prooftree actions that cannot be delayed.
-This hook is called (indirectly) from inside
-`proof-shell-exec-loop' after the preceeding command and any
-comments that follow have been choped off `proof-action-list' and
-before the next command is sent to the proof assistant.  This hook
-can therefore be used to insert additional commands into
-`proof-action-list' that must be executed before the next real
-proof command.
+(defcustom proof-tree-start-display-hook ()
+  "Normal hook for prooftree when external display starts.
+This hook is called when the external display is startet, more
+precisely, when the proof assistant is in the state that Proof
+General starts to send display commands to prooftree. This means,
+retraction to the start of the proof, in case it was necessary,
+has been done and `proof-action-list` is empty.
 
-Functions in this hook can rely on `proof-info' being bound to
-the result of `proof-tree-get-proof-info'.
-
-This hook is used, for instance, for Coq to insert Show commands
-for newly generated subgoals.  (The normal Coq output does not
-contain the complete sequent text of newly generated subgoals.)"
+This hook is used, for instance, for Coq to enable the dependent
+evars line."
   :type 'hook
   :group 'proof-tree-internals)
 
+(defcustom proof-tree-display-stop-command ()
+  "Function for the last command before switching off proof-tree display.
+This is a proof assistant specific function that must be
+instantiated. When a proof finishes with proof-tree display,
+prooftree may request a number of show goal commands after the
+proof has been finished in the proof assistant. This function
+must return an action item that can be inserted as last command
+in `proof-action-list' after all these show goal commands. An
+action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
+see `proof-action-list'. The action item must not be recognized
+as comment by `proof-shell-slurp-comments', that is COMMANDS must
+be a nonempty list of strings. The generic prooftree glue code
+will add 'proof-tree-last-item to DISPLAYFLAGS."
+  :type 'function
+  :group 'proof-tree-internals)
 
 ;;
 ;; Internal variables
@@ -373,6 +379,14 @@ Controlled by `proof-tree-external-display-toggle'.")
   "\nemacs exec: \\([-a-z]+\\) *\\([^\n]*\\)\n"
   "Regular expression to match callback commands from the prooftree process.")
 
+(defconst proof-tree--show-goal-command-regexp
+  "\"\\([^\"]*\\)\" at \\([0-9]*\\) for \"\\([^\"]*\\)\""
+  "Regular expression to match the data of the prooftree show-goal command.")
+
+(defconst proof-tree--confirm-complete-regexp
+  "\"\\([^\"]*\\)\""
+  "Regular expression to match the data of the confirm-proof-complete command.")
+
 (defvar proof-tree-last-state 0
   "Last state of the proof assistant.
 Used for undoing in prooftree.")
@@ -382,37 +396,37 @@ Used for undoing in prooftree.")
 This variable is only maintained and meaningful if
 `proof-tree-external-display' is t.")
 
-(defvar proof-tree-sequent-hash nil
-  "Hash table to remember sequent ID's.
-Needed because some proof assistants do not distinguish between
-new subgoals, which have been created by the last proof command,
-and older, currently unfocussed subgoals.  If Proof General meets
-a goal, it is treated as new subgoal if it is not in this hash yet.
+(defvar proof-tree--delayed-actions nil
+  "Hold delayed action items when waiting for prooftree after proof end.
+This internal variable is completely managed by
+`proof-tree-check-proof-finish'. After a proof with proof-tree
+display has been finished, it holds the following commands, until
+all requested show goal commands have been processed. If this
+variable is non-nil, then `proof-second-action-list-active' must
+be set. In addition to holding the to be delayed action items,
+this variable is used to remember that
+`proof-tree-check-proof-finish' waits for
+`proof-tree-display-stop-command' after it recognized the end of
+a proof. Therefore, if non-nil, this variable must either hold a
+nonempty list (the to be delayed action items) or t (if there are
+no action items to be delayed.")
 
-The hash is mostly used as a set of sequent ID's.  However, for
-undo operations it is necessary to delete all those sequents from
-the hash that have been created in a state later than the undo
-state.  For this purpose this hash maps sequent ID's to the state
-number in which the sequent has been created.
 
-The hash table is initialized in `proof-tree-start-process'.")
+;;; Missing in the library
 
-(defvar proof-tree-existentials-alist nil
-  "Alist mapping existential variables to sequent ID's.
-Used to remember which goals need a refresh when an existential
-variable gets instantiated.  To support undo commands the old
-contents of this list must be stored in
-`proof-tree-existentials-alist-history'.  To ensure undo is
-properly working, this variable should only be changed by using
-`proof-tree-delete-existential-assoc',
-`proof-tree-add-existential-assoc' or
-`proof-tree-clear-existentials'.")
-
-(defvar proof-tree-existentials-alist-history nil
-  "Alist mapping state numbers to old values of `proof-tree-existentials-alist'.
-Needed for undo.")
+(defun list-pred-partition (p l)
+  "Partition list L according to P.
+Returns a cons pair `(L1 . L2)' of lists, where L1 contains the
+elements of L for which P returns non-nil and L2 those for which
+P returns nil. The concatenation of L1 and L2 is a permutation of
+L, the order of elements in L is preserved. P must be a function
+that takes one argument."
+  (let (yes no)
+    (dolist (x l (cons (nreverse yes) (nreverse no)))
+      (if (funcall p x)
+          (push x yes)
+        (push x no)))))
   
-
 ;;
 ;; process filter function that receives prooftree output
 ;;
@@ -427,6 +441,28 @@ A function that handles a command from Prooftee might fail
 because not all data from Prooftee has yet arrived.  In this case
 the continuation is stored in this variable and will be called
 from `proof-tree-process-filter' when more output arrives.")
+
+
+(defun proof-tree-handle-goal-request (data)
+  "Handle a show-goal command from prooftree.
+The command from prooftree has the form \"emacs exec: show-goal
+\"29\" at 21\"."
+  (if (string-match proof-tree--show-goal-command-regexp data)
+      (let ((goal-id (match-string 1 data))
+            (state (string-to-number (match-string 2 data)))
+            (proof-name (match-string 3 data))
+            show-cmd)
+        ;; (message "show goal %s at %d for %s" goal-id state proof-name)
+        (setq show-cmd (funcall proof-tree-show-sequent-command goal-id state))
+	(when show-cmd
+          (proof-add-to-priority-queue
+	   (proof-shell-action-list-item
+	    show-cmd
+	    (proof-tree-make-show-goal-callback proof-name)
+	    '(no-goals-display no-response-display proof-tree-show-subgoal)))))
+    (display-warning
+     '(proof-general proof-tree)
+     (format "Malformed prooftree show-goal command") :warning)))
 
 (defun proof-tree-stop-external-display ()
   "Prooftree callback for the command \"stop-displaying\"."
@@ -473,6 +509,23 @@ from `proof-tree-process-filter' when more output arrives.")
        "Prooftree sent an invalid data length for insert-command"
        :warning))))
 
+(defun proof-tree-confirm-proof-complete (data)
+  "Callback function for confirm-proof-complete messages.
+Add command `proof-tree-display-stop-command' with
+'proof-tree-last-item flag, such that
+`proof-tree-check-proof-finish' eventually sees this last command
+and switches the proof-tree display processing off."
+  (if (string-match proof-tree--confirm-complete-regexp data)
+      ;; XXX assert proof-tree-display-stop-command when proof-tree is started
+      (let ((stop-cmd (funcall proof-tree-display-stop-command)))
+        ;; an action list item is a list (span commands action [displayflags])
+        (proof-add-to-priority-queue
+         (list (car stop-cmd) (nth 1 stop-cmd) (nth 2 stop-cmd)
+               (cons 'proof-tree-last-item (nth 3 stop-cmd)))))
+    (display-warning
+     '(proof-general proof-tree)
+     "Malformed prooftree confirm-proof-complete command" :error)))
+
 (defun proof-tree-insert-output (string &optional message)
   "Insert output or a message into the prooftree process buffer.
 If MESSAGE is t, a message is inserted and
@@ -490,8 +543,11 @@ newly arrived output."
       (if moving (goto-char (point-max))))))
 
 
-(defun proof-tree-process-filter (proc string)
-  "Output filter for prooftree.
+(defun proof-tree-process-filter-internal (proc string)
+  "Output filter for prooftree - internal worker part.
+This function is the worker for `proof-tree-process-filter', it
+implements all the functionality of `proof-tree-process-filter'.
+
 Records the output in the prooftree process buffer and checks for
 callback function requests. Such callback functions might fail
 because the complete output from Prooftree has not arrived yet.
@@ -500,7 +556,11 @@ In this case they store a continuation function in
 piece of output arrives. `proof-tree-output-marker' points to the
 next piece of Prooftree output that needs to get processed. If
 everything is processed, the marker is deleted and
-`proof-tree-insert-output' sets it again for the next output."
+`proof-tree-insert-output' sets it again for the next output.
+
+This function relies on the POSIX guarantee that up to 512 bytes
+are transmitted atomically over a pipe."
+  ;; (message "PTP filter received |%s|" string)
   (proof-tree-insert-output string)
   (let ((continuation proof-tree-filter-continuation)
 	command-found command data)
@@ -528,24 +588,38 @@ everything is processed, the marker is deleted and
 	      (set-marker proof-tree-output-marker (point-max)))))
 	(when command-found
 	  (cond
+           ((equal command "show-goal")
+            (proof-tree-handle-goal-request data))
 	   ((equal command "stop-displaying")
 	    (proof-tree-stop-external-display))
 	   ((equal command "undo")
 	    (proof-tree-handle-proof-tree-undo data))
 	   ((equal command "insert-proof-script")
 	    (proof-tree-insert-script data))
+           ((equal command "confirm-proof-complete")
+            (proof-tree-confirm-proof-complete data))
 	   (t
 	    (display-warning
 	     '(proof-general proof-tree)
 	     (format "Unknown prooftree command %s" command)
-	     :warning))))))
+	     :error))))))
     ;; one of the handling functions might have set a continuation
     ;; if not we clear the output marker
     (unless proof-tree-filter-continuation
       (set-marker proof-tree-output-marker nil)
       (setq proof-tree-output-marker nil))))
 
-
+(defun proof-tree-process-filter (proc string)
+  "Output filter for prooftree.
+This function is the exception wrapper, all the functionality is
+implemented in `proof-tree-process-filter-internal'. The filter
+records the output in `proof-tree-process-buffer' and calls
+callback functions as necessary."
+  (condition-case err
+      (proof-tree-process-filter-internal proc string)
+    (error
+     (message "Error escaping proof-tree-process-filter: %s" err)
+     (signal (car err) (cdr err)))))
 ;;
 ;; Process creation
 ;;
@@ -589,10 +663,6 @@ variables."
     (set-process-sentinel proof-tree-process 'proof-tree-process-sentinel)
     (set-process-query-on-exit-flag proof-tree-process nil)
     ;; other initializations
-    (setq proof-tree-sequent-hash (make-hash-table :test 'equal)
-	  proof-tree-last-state 0
-	  proof-tree-existentials-alist nil
-	  proof-tree-existentials-alist-history nil)
     (proof-tree-send-configure)))
 
 
@@ -611,7 +681,7 @@ variables."
 ;; Low-level communication primitives
 ;;
 
-(defconst proof-tree-protocol-version 3
+(defconst proof-tree-protocol-version 4
   "Version of the communication protocol between Proof General and Prooftree.
 Must be increased if one of the low-level communication
 primitives is changed.")
@@ -643,8 +713,9 @@ DATA as data sections to Prooftree."
 				   current-sequent-text additional-sequent-ids
 				   existential-info)
   "Send the current goal state to prooftree."
-  ;; (message "PTSGS id %s sequent %s ex-info %s"
-  ;; 	   current-sequent-id current-sequent-text existential-info)
+  ;; (message "PTSGS id %s command %s sequent %s ex-info %s"
+  ;; 	   current-sequent-id command-string current-sequent-text
+  ;;          existential-info)
   (let* ((add-id-string (mapconcat 'identity additional-sequent-ids " "))
 	 (second-line
 	  (format
@@ -666,18 +737,21 @@ DATA as data sections to Prooftree."
      (list proof-name command-string current-sequent-text
 	   add-id-string existential-info))))
 
-(defun proof-tree-send-update-sequent (state proof-name sequent-id sequent-text)
+(defun proof-tree-send-update-sequent (state proof-name sequent-id sequent-text
+                                       existential-info)
   "Send the updated sequent text to prooftree."
+  ;; (message "ptsus state %d proof %s sequent %s" state proof-name sequent-id)
   (let ((second-line
 	 (format
 	  (concat "update-sequent state %d sequent %s proof-name-bytes %d "
-		  "sequent-text-bytes %d")
+		  "sequent-text-bytes %d existential-bytes %d")
 	  state sequent-id
 	  (1+ (string-bytes proof-name))
-	  (1+ (string-bytes sequent-text)))))
+	  (1+ (string-bytes sequent-text))
+          (1+ (string-bytes existential-info)))))
     (proof-tree-send-message
      second-line
-     (list proof-name sequent-text))))
+     (list proof-name sequent-text existential-info))))
 
 (defun proof-tree-send-switch-goal (proof-state proof-name current-id)
   "Send switch-to command to prooftree."
@@ -723,192 +797,87 @@ DATA as data sections to Prooftree."
 
 
 ;;
-;; proof-tree-existentials-alist manipulations and history
-;;
-
-(defun proof-tree-record-existentials-state (state &optional dont-copy)
-  "Store the current state of `proof-tree-existentials-alist' for undo.
-Usually this involves making a copy of
-`proof-tree-existentials-alist' because of the destructive
-updates used on that list. If optional argument DONT-COPY is
-non-nil no copy is done."
-  (setq proof-tree-existentials-alist-history
-	(cons (cons state
-		    (if dont-copy
-			 proof-tree-existentials-alist
-		      (copy-alist proof-tree-existentials-alist)))
-	      proof-tree-existentials-alist-history)))
-
-(defun proof-tree-undo-state-var (proof-state var-symbol history-symbol)
-  "Undo changes to VAR-SYMBOL using HISTORY-SYMBOL.
-This is a general undo function for variables that keep their
-undo information in a alist that maps state numbers to old
-values. Argument PROOF-STATE is the state to reestablish,
-VAR-SYMBOL is (the symbol of) the variable to undo and
-HISTORY-SYMBOL is (the symbol of) the undo history alist."
-  (let ((undo-not-finished t)
-	(history (symbol-value history-symbol))
-	(var (symbol-value var-symbol)))
-    (while (and undo-not-finished history)
-      (if (> (caar history) proof-state)
-	  (progn
-	    (setq var (cdr (car history)))
-	    (setq history (cdr history)))
-	(setq undo-not-finished nil)))
-    (set var-symbol var)
-    (set history-symbol history)))
-
-(defun proof-tree-undo-existentials (proof-state)
-  "Undo changes in `proof-tree-existentials-alist'.
-Change `proof-tree-existentials-alist' back to its contents in
-state PROOF-STATE."
-  (proof-tree-undo-state-var proof-state
-			     'proof-tree-existentials-alist
-			     'proof-tree-existentials-alist-history))
-
-(defun proof-tree-delete-existential-assoc (state ex-assoc)
-  "Delete mapping EX-ASSOC from ‘proof-tree-existentials-alist’."
-  (proof-tree-record-existentials-state state)
-  (setq proof-tree-existentials-alist
-	(delq ex-assoc proof-tree-existentials-alist)))
-  
-(defun proof-tree-add-existential-assoc (state ex-var sequent-id)
-  "Add the mapping EX-VAR -> SEQUENT-ID to ‘proof-tree-existentials-alist’.
-Do nothing if this mapping does already exist."
-  (let ((ex-var-assoc (assoc ex-var proof-tree-existentials-alist)))
-    (if ex-var-assoc
-	(unless (member sequent-id (cdr ex-var-assoc))
-	  (proof-tree-record-existentials-state state)
-	  (setcdr ex-var-assoc (cons sequent-id (cdr ex-var-assoc))))
-      (proof-tree-record-existentials-state state)
-      (setq proof-tree-existentials-alist
-	    (cons (cons ex-var (list sequent-id))
-		  proof-tree-existentials-alist)))))
-
-(defun proof-tree-clear-existentials ()
-  "Clear the mapping in `proof-tree-existentials-alist' and its history."
-  (setq proof-tree-existentials-alist nil)
-  (setq proof-tree-existentials-alist-history nil))
-
-
-;;
-;; Process urgent output from the proof assistant
-;;
-
-(defun proof-tree-show-goal-callback (state)
-  "Callback for display-goal commands inserted by this package.
-Update the sequent and run hooks in `proof-state-change-hook'.
-Argument STATE is the state number (i.e., an integer) with which
-the update sequent command should be associated.
-
-The STATE is necessary, because a comment following a branching
-command cat get retired together with the branching command
-before the show-goal commands that update sequents are processed.
-The effect of the sequent update would therefore be undone when
-the comment alone is retracted.
-
-You CANNOT put this function directly as callback into
-`proof-action-list' because callbacks receive the span as
-argument and this function expects an integer! Rather you should
-call `proof-tree-make-show-goal-callback', which evaluates to a
-lambda expressions that you can put into `proof-action-list'."
-  ;;(message "PTSGC %s" state)
-  (proof-tree-update-sequent state)
-  (run-hooks 'proof-state-change-pre-hook)
-  (run-hooks 'proof-state-change-hook))
-
-(defun proof-tree-make-show-goal-callback (state)
-  "Create the callback for display-goal commands."
-  `(lambda (span) (proof-tree-show-goal-callback ,state)))
-
-(defun proof-tree-urgent-action (flags)
-  "Handle urgent points before the next item is sent to the proof assistant.
-Schedule goal updates when existential variables have changed and
-call `proof-tree-urgent-action-hook'. All this is only done if
-the current output does not come from a command (with the
-'proof-tree-show-subgoal flag) that this package inserted itself.
-
-Urgent actions are only needed if the external proof display is
-currently running. Therefore this function should not be called
-when `proof-tree-external-display' is nil.
-
-This function assumes that the prover output is not suppressed.
-Therefore, `proof-tree-external-display' being t is actually a
-necessary precondition.
-
-The not yet delayed output is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
-  ;; (message "PTUA flags %s start %s end %s pal %s ptea %s"
-  ;; 	   flags
-  ;; 	   proof-shell-delayed-output-start
-  ;; 	   proof-shell-delayed-output-end
-  ;; 	   proof-action-list
-  ;; 	   proof-tree-existentials-alist)
-  (let* ((proof-info (funcall proof-tree-get-proof-info))
-	 (state (car proof-info))
-	 (start proof-shell-delayed-output-start)
-	 (end proof-shell-delayed-output-end)
-	 inst-ex-vars)
-    (unless (memq 'proof-tree-show-subgoal flags)
-      (when (and (> state proof-tree-last-state)
-		 proof-tree-existential-regexp
-		 proof-tree-existentials-alist)
-	;; Only deal with existentials if this is not and undo
-	;; command, if the proof assistant actually has existentials
-	;; (i.e., proof-tree-existential-regexp is set) and if there
-	;; are some goals with existentials.
-	(setq inst-ex-vars
-	      (with-current-buffer proof-shell-buffer
-		(funcall proof-tree-extract-instantiated-existentials
-			 start end)))
-	(dolist (ex-var inst-ex-vars)
-	  (let ((var-goal-assoc (assoc ex-var proof-tree-existentials-alist)))
-	    (when var-goal-assoc
-	      (dolist (sequent-id (cdr var-goal-assoc))
-		(let ((show-cmd
-		       (funcall proof-tree-show-sequent-command sequent-id)))
-		  (if show-cmd
-		      (setq proof-action-list
-			    (cons (proof-shell-action-list-item
-				   show-cmd
-				   (proof-tree-make-show-goal-callback state)
-				   '(no-goals-display no-response-display
-				     proof-tree-show-subgoal))
-				  proof-action-list)))))
-	      (proof-tree-delete-existential-assoc state var-goal-assoc)))))
-      (run-hooks 'proof-tree-urgent-action-hook))
-    ;; (message "PTUA END pal %s ptea %s"
-    ;; 	   proof-action-list
-    ;; 	   proof-tree-existentials-alist)
-  ))
-
-
-;;
 ;; Process output from the proof assistant
 ;;
 
-(defun proof-tree-quit-proof ()
-  "Reset internal state when there is no current proof any more.
-Because currently it is not possible to undo into the middle of a
-proof, we can safely flush the `proof-tree-sequent-hash' and
-`proof-tree-existentials-alist-history' when the current proof is
-finished or quit."
-  (clrhash proof-tree-sequent-hash)
-  (proof-tree-clear-existentials)
-  (setq proof-tree-current-proof nil))
+(defun proof-tree-show-goal-callback (proof-name)
+  "Callback for display-goal commands inserted by this package.
+Update the sequent and run hooks in `proof-state-change-hook'.
+Argument PROOF-NAME is necessary, because show goal commands can
+be delayed until after the proof.
 
-(defun proof-tree-register-existentials (current-state sequent-id sequent-text)
-  "Register existential variables that appear in SEQUENT-TEXT.
-If SEQUENT-TEXT contains existential variables, then SEQUENT-ID
-is stored in `proof-tree-existentials-alist'."
-  (if proof-tree-existential-regexp
-      (let ((start 0))
-	(while (proof-string-match proof-tree-existential-regexp
-				   sequent-text start)
-	  (setq start (match-end 0))
-	  (proof-tree-add-existential-assoc current-state
-					    (match-string 1 sequent-text)
-					    sequent-id)))))
+You CANNOT put this function directly as callback into
+`proof-action-list' because callbacks receive the span as
+argument and this function expects a string! Rather you should
+call `proof-tree-make-show-goal-callback', which evaluates to a
+lambda expressions that you can put into `proof-action-list'."
+  (proof-tree-update-sequent proof-name)
+  (run-hooks 'proof-state-change-pre-hook)
+  (run-hooks 'proof-state-change-hook))
+
+(defun proof-tree-make-show-goal-callback (proof-name)
+  "Create the callback for display-goal commands."
+  `(lambda (span) (proof-tree-show-goal-callback ,proof-name)))
+
+(defun proof-tree-quit-proof ()
+  "Switch proof-tree display handling off inside Proof General."
+  (setq proof-tree-current-proof nil)
+  (proof-add-to-priority-queue (funcall proof-tree-display-stop-command)))
+
+(defun proof-tree-check-proof-finish (last-item)
+  "Urgent action to delay processing at proof end.
+This function is called from `proof-shell-exec-loop' after the
+old item has been removed and before the next item from
+`proof-action-list' is sent to the proof assistant. Of course
+only when the proof-tree display is active. At the end of the
+proof, this function delays items just following the previous
+proof until all show-goal commands from prooftree and the
+`proof-tree-display-stop-command' (which switches the dependent
+evar line off for Coq) have been processed.
+
+If this function detects the end of the proof, it moves
+non-priority items following in `proof-action-list' to
+`proof-tree--delayed-actions' and sets
+`proof-second-action-list-active'. When later the command from
+`proof-tree-display-stop-command' is recognized, the items are
+moved back. If no items follow the end of the previous proof,
+`proof-tree-display-stop-command' is set to t."
+  (cl-assert proof-tree-external-display nil
+             "proof-tree-check-proof-finish precondition failure")
+  ;; (message "PTCPF pt %s current %s mode %s delayed %s item %s"
+  ;;          proof-tree-current-proof (cadr (funcall proof-tree-get-proof-info))
+  ;;          proof-shell-busy proof-tree--delayed-actions
+  ;;          last-item)
+  (if (and proof-tree-current-proof
+           ;; the current proof has been finished
+           (not (cadr (funcall proof-tree-get-proof-info)))
+           ;; it was not an undo aborting the proof
+           (eq proof-shell-busy 'advancing)
+           ;; first time we enter this
+           (not proof-tree--delayed-actions))
+      (let ((urgent-normal
+             (list-pred-partition
+              (lambda (action) (memq 'proof-tree-show-subgoal (nth 3 action)))
+              proof-action-list)))
+        (cl-assert (not proof-second-action-list-active) nil
+                   "proof-tree-check-proof-finish: second action list active")
+        (setq proof-action-list (car urgent-normal))
+        (if (cdr urgent-normal)
+            (setq proof-tree--delayed-actions (cdr urgent-normal))
+          (setq proof-tree--delayed-actions t))
+        (setq proof-second-action-list-active t))
+    (when (and (memq 'proof-tree-last-item (nth 3 last-item))
+               proof-tree--delayed-actions)
+      (when proof-action-list
+        (lwarn '(proof-tree) :warning
+               "proof-action-list not empty when proof display is stopped"))
+      (when (listp proof-tree--delayed-actions)
+        (setq proof-action-list
+              (nconc proof-action-list proof-tree--delayed-actions)))
+      (setq proof-tree--delayed-actions nil)
+      (setq proof-second-action-list-active nil)
+      (setq proof-tree-current-proof nil)
+      (setq proof-tree-external-display nil))))
 
 (defun proof-tree-extract-goals (start end)
   "Extract the current goal state information from the delayed output.
@@ -931,29 +900,6 @@ current buffer."
 	(list sequent-id sequent-text additional-goal-ids))
     nil))
 
-
-(defun proof-tree-extract-list (start end start-regexp end-regexp item-regexp)
-  "Extract items between START-REGEXP and END-REGEXP.
-In the region given by START and END, determine the subregion
-between START-REGEXP and END-REGEXP and return the list of all
-items in the subregion. An item is a match of subgroub 1 of
-ITEM-REGEXP. The items in the returned list have the same order
-as in the text.
-
-Return nil if START-REGEXP or ITEM-REGEXP is nil. The subregion
-extends up to END if END-REGEXP is nil."
-  (let (result)
-    (when (and start-regexp item-regexp)
-      (goto-char start)
-      (when (proof-re-search-forward start-regexp end t)
-	(setq start (point))
-	(if (and end-regexp (proof-re-search-forward end-regexp end t))
-	    (setq end (match-beginning 0)))
-	(goto-char start)
-        (while (proof-re-search-forward item-regexp end t)
-          (setq result (cons (match-string-no-properties 1)
-                             result)))))
-    (nreverse result)))
 
 (defun proof-tree-extract-existential-info (start end)
   "Extract the information display of existential variables.
@@ -1025,13 +971,7 @@ command was sent to the proof assistant."
 	   current-sequent-id
 	   current-sequent-text
 	   (nth 2 current-goals)
-	   (proof-tree-extract-existential-info start end))
-	  ;; put current sequent into hash (if it is not there yet)
-	  (unless (gethash current-sequent-id proof-tree-sequent-hash)
-	    (puthash current-sequent-id proof-state proof-tree-sequent-hash))
-	  (proof-tree-register-existentials proof-state
-					    current-sequent-id
-					    current-sequent-text))))))
+	   (proof-tree-extract-existential-info start end)))))))
 
 (defun proof-tree-handle-navigation (proof-info)
   "Handle a navigation command.
@@ -1068,23 +1008,9 @@ The delayed output of the navigation command is in the region
     (setq proof-tree-last-state (car proof-info))))
     
 (defun proof-tree-handle-undo (proof-info)
-  "Undo prooftree to current state.
-Send the undo command to prooftree and undo changes to the
-internal state of this package. The latter involves currently two
-points:
-* delete those goals from `proof-tree-sequent-hash' that have
-  been generated after the state to which we undo now;
-* change proof-tree-existentials-alist back to its previous content."
+  "Undo prooftree to current state."
   ;; (message "PTHU info %s" proof-info)
   (let ((proof-state (car proof-info)))
-    ;; delete sequents from the hash
-    (maphash
-     (lambda (sequent-id state)
-       (if (> state proof-state)
-	   (remhash sequent-id proof-tree-sequent-hash)))
-     proof-tree-sequent-hash)
-    ;; undo changes in other state vars
-    (proof-tree-undo-existentials proof-state)
     (unless (equal (cadr proof-info) proof-tree-current-proof)
       ;; went back to a point before the start of the proof that we
       ;; are displaying;
@@ -1099,20 +1025,19 @@ points:
     (setq proof-tree-last-state (- proof-state 1))))
 
 
-(defun proof-tree-update-sequent (proof-state)
+(defun proof-tree-update-sequent (proof-name)
   "Prepare an update-sequent command for prooftree.
 This function processes delayed output that the proof assistant
-generated in response to commands that Proof General inserted in
-order to keep prooftree up-to-date.  Such commands are tagged with
-a 'proof-tree-show-subgoal flag.
+generated in response to commands that prooftree inserted in
+order to keep its display up-to-date.  Such commands are tagged
+with a 'proof-tree-show-subgoal flag.  Argument PROOF-NAME
+originally comes from prooftree and is passed back now, because
+processing a show goal command might happen after the proof.
 
 This function uses `proof-tree-update-goal-regexp' to find a
-sequent and its ID in the delayed output.  If something is found
-an appropriate update-sequent command is sent to prooftree.
-
-The update-sequent command is associated with state PROOF-STATE
-for proper undo effects, see also the comments for
-`proof-tree-show-goal-callback'.
+sequent, its ID and the corresponding state in the delayed
+output. If something is found an appropriate update-sequent
+command is sent to prooftree.
 
 The delayed output is in the region
 \[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
@@ -1123,22 +1048,16 @@ The delayed output is in the region
   (if (proof-tree-is-running)
       (with-current-buffer proof-shell-buffer
 	(let* ((start proof-shell-delayed-output-start)
-	       (end   proof-shell-delayed-output-end)
-	       (proof-info (funcall proof-tree-get-proof-info))
-	       (proof-name (cadr proof-info)))
+	       (end   proof-shell-delayed-output-end))
 	  (goto-char start)
 	  (if (proof-re-search-forward proof-tree-update-goal-regexp end t)
 	      (let ((sequent-id (match-string-no-properties 1))
-		    (sequent-text (match-string-no-properties 2)))
+                    (proof-state
+                     (string-to-number (match-string-no-properties 2)))
+		    (sequent-text (match-string-no-properties 3)))
 		(proof-tree-send-update-sequent
-		 proof-state proof-name sequent-id sequent-text)
-		;; put current sequent into hash (if it is not there yet)
-		(unless (gethash sequent-id proof-tree-sequent-hash)
-		  (puthash sequent-id proof-state proof-tree-sequent-hash))
-		(proof-tree-register-existentials proof-state
-						  sequent-id
-						  sequent-text)))))))
-
+		 proof-state proof-name sequent-id sequent-text
+                 (proof-tree-extract-existential-info start end))))))))
 
 (defun proof-tree-handle-delayed-output (old-proof-marker cmd flags span)
   "Process delayed output for prooftree.
@@ -1162,8 +1081,10 @@ the flags and SPAN is the span."
     (let* ((proof-info (funcall proof-tree-get-proof-info))
 	   (current-proof-name (cadr proof-info)))
       (save-excursion
-	(if (<= (car proof-info) proof-tree-last-state)
+	(if (< (car proof-info) proof-tree-last-state)
 	    ;; went back to some old state: there must have been an undo command
+            ;; show goal commands do not increase the state number,
+            ;; therefore check with <
 	    (proof-tree-handle-undo proof-info)
 
 	  ;; else -- no undo command
@@ -1173,11 +1094,10 @@ the flags and SPAN is the span."
 	    ;; started a new proof
 	    (setq proof-tree-current-proof current-proof-name))
 	   ((and proof-tree-current-proof (null current-proof-name))
-	    ;; finished the current proof
-	    (proof-tree-send-proof-complete (car proof-info)
-					    proof-tree-current-proof)
-	    (proof-tree-quit-proof)
-	    (setq proof-tree-external-display nil))
+	    ;; signal prooftree that the proof is finished here and
+	    ;; that we are waiting for confirmation
+            (proof-tree-send-proof-complete (car proof-info)
+                                            proof-tree-current-proof))
 	   ((and proof-tree-current-proof current-proof-name
 		 (not (equal proof-tree-current-proof current-proof-name)))
 	    ;; new proof before old was finished?
@@ -1237,6 +1157,7 @@ position of the current proof."
 	(proof-retract-until-point)
 	(while (consp proof-action-list)
 	  (accept-process-output))
+        (run-hooks 'proof-tree-start-display-hook)
 	;; undo switched external display off; switch on again
 	(setq proof-tree-external-display t)
 	(goto-char locked-end)
@@ -1275,6 +1196,7 @@ display is switched off."
 	  ;; inside an unfinished proof -> start for this proof
 	  (proof-tree-display-current-proof proof-start)
 	;; outside a proof -> wait for the next proof
+        (run-hooks 'proof-tree-start-display-hook)
 	(setq proof-tree-external-display t)
 	(proof-tree-send-undo proof-tree-last-state)
 	(message
