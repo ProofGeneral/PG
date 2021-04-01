@@ -1,6 +1,6 @@
 ;; This file is part of Proof General.
 ;; 
-;; © Copyright 2020  Hendrik Tews
+;; © Copyright 2020 - 2021  Hendrik Tews
 ;; 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
@@ -37,6 +37,13 @@
 
 (defvar cct--debug-tests nil
   "Set to t to get more output during test runs.")
+
+(defvar cct-before-busy-waiting-hook nil
+  "Hooks run by ‘cct-process-to-line’ before busy waiting.")
+
+(defvar cct-after-busy-waiting-hook nil
+  "Hooks run by ‘cct-process-to-line’ after busy waiting.")
+
 
 (defmacro cct-implies (p q)
   "Short-circuit logical implication.
@@ -109,12 +116,16 @@ backward. Replace the word there with WORD."
   (insert word))
 
 (defun cct-process-to-line (line)
-  "Assert/retract to line LINE and wait until processing completed."
+  "Assert/retract to line LINE and wait until processing completed.
+Runs `cct-before-busy-waiting-hook' and
+`cct-after-busy-waiting-hook' before and after busy waiting for
+the prover. In many tests these hooks are not used."
   (when cct--debug-tests
     (message "assert/retrect to line %d in buffer %s" line (buffer-name)))
   (cct-goto-line line)
   (proof-goto-point)
 
+  (run-hooks 'cct-before-busy-waiting-hook)
   (while (or proof-second-action-list-active (consp proof-action-list))
     ;; (message "wait for coq/compilation with %d items queued\n"
     ;;          (length proof-action-list))
@@ -122,7 +133,8 @@ backward. Replace the word there with WORD."
     ;; accept-process-output without timeout returns rather quickly,
     ;; apparently most times without process output or any other event
     ;; to process.
-    (accept-process-output nil 0.1)))
+    (accept-process-output nil 0.1))
+  (run-hooks 'cct-after-busy-waiting-hook))
 
 (defun cct-get-vanilla-span (line)
   "Get THE vanilla span for line LINE, report an error if there is none.
@@ -158,7 +170,7 @@ region of the buffer and signals a test failure if not."
   (let ((locked (eq locked-state 'locked)))
     (when cct--debug-tests
       (message (concat "check lock state in buffer %s: line %d should be %s;\n"
-                       "\tlocked-span: %s ends at char %s in line %d")
+                       "\tlocked-span: %s ends at char %s in line %s")
                (buffer-name)
                line (if locked "locked" "unlocked")
                proof-locked-span
