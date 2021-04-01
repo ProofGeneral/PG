@@ -905,40 +905,39 @@ file to be deleted when the process does not finish successfully."
 	(process-name (format "pro-%s" coq--par-next-id))
 	process)
     (setq coq--par-next-id (1+ coq--par-next-id))
-    (with-current-buffer (or proof-script-buffer (current-buffer))
-      (when coq--debug-auto-compilation
-	(message "%s %s: start %s %s in %s"
-		 (get job 'name) process-name
-		 command (mapconcat 'identity arguments " ")
-		 default-directory))
-      (condition-case err
-	  ;; If the command is wrong, start-process aborts with an
-	  ;; error. However, in Emacs 23.4.1. it will leave a process
-	  ;; behind, which is in a very strange state: running with no
-	  ;; pid. Emacs 24.2 fixes this.
-	  (setq process (apply 'start-process process-name
-			       nil	; no process buffer
-			       command arguments))
-	(error
-	 (when coq--debug-auto-compilation
-           (message "%s %s: error in start process, %s"
-		    (get job 'name) process-name
-                    (if file-rm
-                        (format "rm %s" file-rm)
-                      "no file removal")))         
-	 (when file-rm
-	   (ignore-errors (delete-file file-rm)))
-	 (signal 'coq-compile-error-command-start
-		 (list (cons command arguments) (nth 2 err)))))
-      (set-process-filter process 'coq-par-process-filter)
-      (set-process-sentinel process 'coq-par-process-sentinel)
-      (set-process-query-on-exit-flag process nil)
-      (setq coq--current-background-jobs (1+ coq--current-background-jobs))
-      (process-put process 'coq-compilation-job job)
-      (process-put process 'coq-process-continuation continuation)
-      (process-put process 'coq-process-command (cons command arguments))
-      (process-put process 'coq-process-output "")
-      (process-put process 'coq-process-rm file-rm))))
+    (when coq--debug-auto-compilation
+      (message "%s %s: start %s %s in %s"
+	       (get job 'name) process-name
+	       command (mapconcat 'identity arguments " ")
+	       default-directory))
+    (condition-case err
+	;; If the command is wrong, start-process aborts with an
+	;; error. However, in Emacs 23.4.1. it will leave a process
+	;; behind, which is in a very strange state: running with no
+	;; pid. Emacs 24.2 fixes this.
+	(setq process (apply 'start-process process-name
+			     nil	; no process buffer
+			     command arguments))
+      (error
+       (when coq--debug-auto-compilation
+         (message "%s %s: error in start process, %s"
+		  (get job 'name) process-name
+                  (if file-rm
+                      (format "rm %s" file-rm)
+                    "no file removal")))         
+       (when file-rm
+	 (ignore-errors (delete-file file-rm)))
+       (signal 'coq-compile-error-command-start
+	       (list (cons command arguments) (nth 2 err)))))
+    (set-process-filter process 'coq-par-process-filter)
+    (set-process-sentinel process 'coq-par-process-sentinel)
+    (set-process-query-on-exit-flag process nil)
+    (setq coq--current-background-jobs (1+ coq--current-background-jobs))
+    (process-put process 'coq-compilation-job job)
+    (process-put process 'coq-process-continuation continuation)
+    (process-put process 'coq-process-command (cons command arguments))
+    (process-put process 'coq-process-output "")
+    (process-put process 'coq-process-rm file-rm)))
 
 (defun coq-par-process-sentinel (process event)
   "Sentinel for all kinds of Coq background compilation processes.
@@ -981,7 +980,10 @@ function and reported appropriately."
 			 (get (process-get process 'coq-compilation-job) 'name)))
 	      (coq-par-second-stage-enqueue
 	       (process-get process 'coq-compilation-job))))
-	(let (exit-status)
+        ;; process was not killed explicitly by us
+	(let (exit-status
+              (default-directory
+                (get (process-get process 'coq-compilation-job) 'current-dir)))
 	  (when coq--debug-auto-compilation
 	    (message
              "%s %s: process status changed to %s (default-dir %s curr buf %s)"
@@ -1840,7 +1842,7 @@ synchronously or asynchronously."
       (coq-par-start-task new-job)
     (coq-par-job-enqueue new-job)))
 
-(defun coq-par-job-init-common (coq-load-path type)
+(defun coq-par-job-init-common (coq-load-path type current-dir)
   "Common initialization for 'require and 'file jobs.
 Create a new job of type TYPE and initialize all common fields of
 require and file jobs that need an initialization different from
@@ -1851,6 +1853,7 @@ nil."
     (put new-job 'coqc-dependency-count 0)
     (put new-job 'type type)
     (put new-job 'state 'enqueued-coqdep)
+    (put new-job 'current-dir current-dir)
     ;; The ancestor modification time is not really needed in require
     ;; jobs, however, if the field is present, we can treat require
     ;; and file jobs more uniformely.
@@ -1859,7 +1862,8 @@ nil."
     (put new-job 'load-path coq-load-path)
     new-job))
 
-(defun coq-par-create-require-job (coq-load-path require-items require-span)
+(defun coq-par-create-require-job (coq-load-path require-items require-span
+                                                 current-dir)
   "Create a new require job for REQUIRE-SPAN.
 Create a new require job and initialize its fields. COQ-LOAD-PATH
 is the load path configured for the current scripting buffer,
@@ -1875,10 +1879,9 @@ not search the current directory.
 This function is called synchronously when asserting. The new
 require job is neither started nor enqueued here - the caller
 must do this."
-  (let ((new-job (coq-par-job-init-common coq-load-path 'require)))
+  (let ((new-job (coq-par-job-init-common coq-load-path 'require current-dir)))
     (put new-job 'require-span require-span)
     (put new-job 'queueitems require-items)
-    (put new-job 'current-dir default-directory)
     (when coq--debug-auto-compilation
       (let* ((require-item (car require-items))
              (require-command (mapconcat 'identity (nth 1 require-item) " ")))
@@ -1890,7 +1893,8 @@ must do this."
 ;; there was some error and it was not used anywhere back then, but
 ;; job is now needed as a dependency of some other file?
 ;; XXX what happens if the job exists and is failed?
-(defun coq-par-create-file-job (module-vo-file coq-load-path dep-src-file)
+(defun coq-par-create-file-job (module-vo-file coq-load-path dep-src-file
+                                               current-dir)
   "Create a new file job for MODULE-VO-FILE.
 DEP-SRC-FILE is the source file whose coqdep output we are just
 processing and which depends on MODULE-VO-FILE. This argument is
@@ -1907,7 +1911,7 @@ If a new job is created it is started or enqueued right away."
   (cond
    ((gethash module-vo-file coq--compilation-object-hash))
    (t
-    (let ((new-job (coq-par-job-init-common coq-load-path 'file)))
+    (let ((new-job (coq-par-job-init-common coq-load-path 'file current-dir)))
       ;; fields 'required-obj-file and obj-mod-time are implicitely set to nil
       (put new-job 'vo-file module-vo-file)
       (put new-job 'src-file (coq-library-src-of-vo-file module-vo-file))
@@ -2090,7 +2094,8 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 	(unless (coq-compile-ignore-file dep-vo-file)
 	  (let* ((dep-job (coq-par-create-file-job dep-vo-file
                                                    (get job 'load-path)
-                                                   (get job 'src-file)))
+                                                   (get job 'src-file)
+                                                   (get job 'current-dir)))
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
             (when (get dep-job 'failed)
               (setq dependee-failed t))
@@ -2220,7 +2225,9 @@ This function is called synchronously when asserting."
      `(lambda ()
 	(coq-unlock-all-ancestors-of-span ,span)))
     ;; create a new require job and maintain coq--last-compilation-job
-    (setq new-job (coq-par-create-require-job coq-load-path require-items span))
+    (setq new-job
+          (coq-par-create-require-job coq-load-path require-items span
+                                      default-directory))
     (when coq--last-compilation-job
       (coq-par-add-queue-dependency coq--last-compilation-job new-job))
     (setq coq--last-compilation-job new-job)
