@@ -983,10 +983,13 @@ function and reported appropriately."
 	       (process-get process 'coq-compilation-job))))
 	(let (exit-status)
 	  (when coq--debug-auto-compilation
-	    (message "%s %s: process status changed to %s"
-		     (get (process-get process 'coq-compilation-job) 'name)
-		     (process-name process)
-		     event))
+	    (message
+             "%s %s: process status changed to %s (default-dir %s curr buf %s)"
+	     (get (process-get process 'coq-compilation-job) 'name)
+	     (process-name process)
+	     event
+             default-directory
+             (buffer-name)))
 	  (cond
 	   ((eq (process-status process) 'exit)
 	    (setq exit-status (process-exit-status process)))
@@ -1145,6 +1148,9 @@ therefore delete a file if it might be in the way.  Sets the
        (if vio-obj-time (time-less-p vio-obj-time src-time) "-")
        (if vo-obj-time (coq-par-time-less vo-obj-time dep-time) "-")
        (if vio-obj-time (coq-par-time-less vio-obj-time dep-time) "-")))
+    ;; the source file must exist
+    (cl-assert src-time nil
+               "internal error - cannot find src file I")
     ;; Compute first the max of vo-obj-time and vio-obj-time and remember
     ;; which of both is newer. This is only meaningful if at least one of
     ;; the .vo or .vio file exists.
@@ -1295,12 +1301,19 @@ the 'second-stage property on job to 'vok if necessary."
          (vos-obj-time (nth 5 (file-attributes vos-file)))
          result)
     (when coq--debug-auto-compilation
-      (message "%s: compare mod times: vos mod %s, src mod %s, youngest dep %s"
+      (message
+       (concat "%s: compare mod times: vos mod %s, src mod %s, youngest dep %s\n"
+               "\tsrc file %s in %s")
                (get job 'name)
                (if vos-obj-time (current-time-string vos-obj-time) "-")
                (if src-time (current-time-string src-time) "-")
                (if (eq dep-time 'just-compiled) "just compiled"
-	         (current-time-string dep-time))))
+	         (current-time-string dep-time))
+               (get job 'src-file)
+               default-directory))
+    ;; the source file must exist
+    (cl-assert src-time nil
+               "internal error - cannot find src file II")
     (if (or (eq dep-time 'just-compiled) ; a dep has been just compiled
             (not vos-obj-time)           ; neither vos nor vo present
 	    ;; src younger than vos?
