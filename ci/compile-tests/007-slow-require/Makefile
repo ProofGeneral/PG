@@ -19,6 +19,11 @@ TEST_SOURCES:=\
 	a5.v b5.v c5.v d5.v \
 	a6.v b6.v c6.v d6.v
 
+# This test uses ../bin/compile-test-start-delayed to start certain
+# commands with specified delays to check carfully constructed
+# internal states. compile-test-start-delayed outputs diagnostics on
+# file descriptor 9, which bypasses emacs and is joined with stderr of
+# the current make. Open file descriptor 9 here.
 .PHONY: test
 test:
 	$(MAKE) clean

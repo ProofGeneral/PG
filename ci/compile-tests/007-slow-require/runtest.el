@@ -17,7 +17,11 @@
 ;; in each possible state. For specifying the different delays there
 ;; are 6 mini projects, one for each test in this file. Each project
 ;; consists of four files, a1.v, b1.v, c1.v and d1.v for the first one
-;; and a6.v, b6.v, c6.v and d6.v for the sixth one.
+;; and a6.v, b6.v, c6.v and d6.v for the sixth one. Each project is
+;; one ert test, described further below. In each project or test, the
+;; top level require commands are asserted and retracted several times
+;; with changes in different files to test (almost) all possible
+;; internal state combinations.
 ;;
 ;; The dependencies are the same in all projects:
 ;; 
