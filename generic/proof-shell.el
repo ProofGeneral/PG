@@ -746,10 +746,10 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
     (setq proof-action-list nil)
     (proof-release-lock)
     (unless proof-shell-busy
-		;; if the shell isn't still busy, cancel timer on error
+      ;; if the shell isn't still busy, cancel timer on error
       (if (and proof-shell-timer proof-shell-timeout-warn)
-          (progn (cancel-timer proof-shell-timer)
-                 (setq proof-shell-timer nil))))
+	  (progn (cancel-timer proof-shell-timer)
+		 (setq proof-shell-timer nil))))
     (unless flags
       ;; Give a hint about C-c C-`.  (NB: approximate test)
       (if (pg-response-has-error-location)
@@ -928,6 +928,19 @@ used in `proof-add-to-queue' when we start processing a queue, and in
       ;; Replace CRs from string with spaces to avoid spurious prompts.
       (if proof-shell-strip-crs-from-input
 	  (setq string (subst-char-in-string ?\n ?\  string)))
+      ;; arm the timer if we've received a user command (callback is proof-done-advancing)
+      (when (and (eq 'proof-done-advancing action)
+		 proof-shell-timeout-warn)
+	(when proof-shell-timer
+	  ;; cancel previous timer, if it exists
+	  (cancel-timer proof-shell-timer)
+	  (setq proof-shell-timer nil))
+	(setq proof-shell-timer
+	      (run-with-timer proof-shell-timeout-warn nil
+			      'message
+			      (substitute-command-keys "This command is taking a while. \
+Is the syntax correct? Do \\[proof-interrupt-process] to interrupt prover or
+\\[proof-shell-exit] to terminate it."))))
 
       (insert string)
 
@@ -1039,19 +1052,7 @@ being processed."
     
     (when nothingthere ; process comments immediately
       (let ((cbitems  (proof-shell-slurp-comments)))
-	(mapc 'proof-shell-invoke-callback cbitems)
-	(when (and (< (length cbitems) (length proof-action-list))
-		   proof-shell-timeout-warn
-		   (not proof-shell-timer))
-	  ;; arm the timer if proof-action-list isn't just comments
-	  ;; cancelled 1. in `proof-shell-exec-loop' unless `proof-shell-busy' or
-	  ;; 2. in the case of error, in `proof-shell-error-or-interrupt-action'
-	  (setq proof-shell-timer
-		(run-with-timer proof-shell-timeout-warn nil
-				'message
-				(substitute-command-keys "This command is taking a while. \
-Is the syntax correct? Do \\[proof-interrupt-process] to interrupt prover or
-\\[proof-shell-exit] to terminate it."))))))
+	(mapc 'proof-shell-invoke-callback cbitems)))
   
     (if proof-action-list ;; something to do
 	(progn
