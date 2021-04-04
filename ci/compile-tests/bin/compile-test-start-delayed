@@ -37,6 +37,9 @@ fi
 
 key="$1"
 file="${@: -1}"
+
+#echo key $key file "\"$file\""
+
 shift
 
 delay=$(sed -ne "/$key/ s/.*$key \([0-9]*\).*/\1/p" $file)
