@@ -30,7 +30,8 @@ All tests are for parallel background compilation.
   coqdep and coqc
 008-default-dir
 : test that the default/current directory is set correctly
-  independent of user/emacs changing the current buffer
+  independent of user/emacs changing the current buffer during
+  first and second stage compilation
 
 # Tests currently missing
 
@@ -43,3 +44,8 @@ All tests are for parallel background compilation.
   in state waiting-queue
 - coq-par-create-file-job finds a failed job
 - all tests in all quick and all vos variants
+- test two coq-par-kickoff-queue-from-action-list entries being
+  active at the same time: assert one region, let compilation
+  fail, assert second region, while first region is still busy,
+  this should fail in some weird way, because failed is not
+  propagated
