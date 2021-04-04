@@ -84,6 +84,7 @@
 ;; 4- using -quick and the handling of .vo/.vio prerequisites for Coq < 8.11
 ;; 5- using -vos for Coq >= 8.11
 ;; 6- running vio2vo or -vok to check proofs
+;; 7- default-directory / current directory
 ;;
 ;;
 ;; For 1- where to put the Require command and the items that follow it:
@@ -228,6 +229,21 @@
 ;; `coq--par-second-stage-start-id' and only acts if that is still the
 ;; current value when the callback is executed.
 ;;
+;;
+;; For 7- default-directory / current directory
+;;
+;; `default-directory' determines the current directory for background
+;; processes. In a sentinel or process filter, default-directory is
+;; taken from the current buffer, which is basically random. Starting
+;; with a wrong current directory will cause compilation failures.
+;; Therefore all entry points of this library must set
+;; default-directory. Entry points are coq-par-process-sentinel, the
+;; functions started from timer and those started from an empty entry
+;; in `proof-action-list'. To set default-directory in these cases, I
+;; record default-directory in 'current-dir inside
+;; `coq-par-preprocess-require-commands' and then pass it on to all
+;; jobs created.
+;; 
 ;; 
 ;; Properties of compilation jobs
 ;;
@@ -297,8 +313,10 @@
 ;;   'visited         - used in the dependency cycle detection to mark
 ;;                      visited jobs
 ;;   'current-dir     - current directory or default-directory of the buffer
-;;                      that contained the require command. Only present in
-;;                      require jobs. Only needed for 8.4 compatibility.
+;;                      that contained the require command. Passed recursively
+;;                      to all jobs. Used to set default-directory in the
+;;                      sentinel and other functions, because it can otherwise
+;;                      be more or less random.
 ;;   'temp-require-file  - temporary file name just containing the require
 ;;                         command of a require job for determining the files
 ;;                         needed for that require. Must be deleted after
@@ -521,14 +539,22 @@ their SOURCE binding."
   "Insert X in queue QUEUE."
   (push x (car queue)))
 
+(defun coq-par-queue-reverse-if-needed (queue)
+  "Reorganize QUEUE, such that the pop-end contains something.
+Of course only if necessary and possible."
+  (unless (cdr queue)
+    (setcdr queue (nreverse (car queue)))
+    (setcar queue nil)))
+
+(defun coq-par-queue-head (queue)
+  "Return the head of QUEUE, if any, without removing it."
+  (coq-par-queue-reverse-if-needed queue)
+  (cadr queue))
+
 (defun coq-par-dequeue (queue)
   "Dequeue the next item from QUEUE."
-  (let ((res (pop (cdr queue))))
-    (unless res
-      (setcdr queue (nreverse (car queue)))
-      (setcar queue nil)
-      (setq res (pop (cdr queue))))
-    res))
+  (coq-par-queue-reverse-if-needed queue)
+  (pop (cdr queue)))
 
 (defun coq-par-queue-length (queue)
   "Length of QUEUE."
@@ -572,6 +598,10 @@ Use `coq-par-second-stage-enqueue',
   (coq-par-enqueue coq--par-second-stage-queue job)
   (when coq--debug-auto-compilation
     (message "%s: enqueue job in second stage queue" (get job 'name))))
+
+(defun coq-par-second-stage-head ()
+  "Return the head of the second stage queue, if any, without removing it."
+  (coq-par-queue-head coq--par-second-stage-queue))
 
 (defun coq-par-second-stage-dequeue ()
   "Dequeue the next job from the second stage queue."
@@ -1037,7 +1067,10 @@ function and reported appropriately."
 ;;; second stage compilation (vio2vo and vok)
 
 (defun coq-par-run-second-stage-queue ()
-  "Start delayed second stage compilation (vio2vo or vok)."
+  "Start delayed second stage compilation (vio2vo or vok).
+Set `default-directory' from the 'current-dir property of the
+head of the second stage queue, such that processes started here
+run with the right current directory."
   ;; XXX this assert can be triggered - just start a compilation
   ;; shortly before the timer triggers
   (cl-assert (not coq--last-compilation-job)
@@ -1046,9 +1079,12 @@ function and reported appropriately."
   (when coq--debug-auto-compilation
     (message "Start second stage processing for %d jobs"
              (coq-par-second-stage-queue-length)))
-  (when (> (coq-par-second-stage-queue-length) 0)
-    (setq coq--par-second-stage-in-progress t)
-    (coq-par-start-jobs-until-full)))
+  (let ((head (coq-par-second-stage-head))
+        default-directory)
+    (when head
+      (setq default-directory (get head 'current-dir))
+      (setq coq--par-second-stage-in-progress t)
+      (coq-par-start-jobs-until-full))))
 
 (defun coq-par-require-processed (race-counter)
   "Callback for `proof-action-list' to signal completion of the last Require.
@@ -1098,6 +1134,11 @@ item will be processed as comment and only the callback will be called."
     (message "%s -> %s: add coqc dependency"
 	     (get dependee 'name) (get dependant 'name))))
 
+;; XXX need to propagate 'failed from dependee to dependant
+;; Relevant, if user asserts second region when for the first one
+;; compilation has failed already, but the queue region is still
+;; processing. What happens with coq--par-delayed-last-job and the
+;; delayed coq-par-kickoff-queue-maybe call?
 (defun coq-par-add-queue-dependency (dependee dependant)
   "Add queue dependency from require job DEPENDEE to require job DEPENDANT.
 The require item of DEPENDANT comes after those of DEPENDEE.
@@ -1433,6 +1474,14 @@ jobs when they transition from 'waiting-queue to 'ready:
       ;; resetting queueitems is on the save side in any case
       (put job 'queueitems nil))))
 
+(defun coq-par-kickoff-queue-from-action-list (job)
+  "Trigger `coq-par-kickoff-queue-maybe' from action list.
+Simple wrapper around `coq-par-kickoff-queue-maybe' to set
+`default-directory' when entering background compilation
+functions from `proof-action-list'."
+  (let ((default-directory (get job 'current-dir)))
+    (coq-par-kickoff-queue-maybe job)))
+
 (defun coq-par-kickoff-queue-maybe (job)
   "Transition require job JOB to 'waiting-queue and maybe to 'ready.
 This function can only be called for require jobs. It further
@@ -1496,7 +1545,8 @@ retired and transition to 'ready. This means:
 	  (setq coq--par-delayed-last-job t)
 	  (proof-add-to-queue
 	   (list (coq-par-callback-queue-item
-		  `(lambda (span) (coq-par-kickoff-queue-maybe ',job))))
+		  `(lambda (span)
+                     (coq-par-kickoff-queue-from-action-list ',job))))
 	   'advancing))
       (put job 'state 'ready)
       (when coq--debug-auto-compilation
@@ -1873,8 +1923,9 @@ following the REQUIRE-SPAN, they are temporarily stored in the
 new require job outside of `proof-action-list'. 
 
 The current directory (from `default-directory') is stored in
-property 'current-dir for <8.5 compatibility, where coqdep did
-not search the current directory.
+property 'current-dir and propagated to all dependend jobs. This
+is used to set `default-directory' when entering background
+compilation from a sentinel or elsewhere.
 
 This function is called synchronously when asserting. The new
 require job is neither started nor enqueued here - the caller

@@ -20,7 +20,8 @@ function usage(){
 
 	Start program prog with arguments args with some delay. There
 	must be at least one argument in args and the last one must be
-	a file. The delay is taken from a line in that file that
+	a file or something that becomes a file when ".v" is appended.
+        The delay is taken from a line in that file that
 	contains the key, followed by a space and the delay in seconds
 	(maybe somewhere in the middle of the line). The file must
 	contain at most one line containing key. When there is no line
@@ -41,6 +42,16 @@ file="${@: -1}"
 #echo key $key file "\"$file\""
 
 shift
+
+# vio2vo needs a module name or a .vio file on the command line
+# support only module names for now
+if [ ! -f "$file" ] ; then
+    if [ -f "$file.v" ] ; then
+        file="$file.v"
+    else
+        exit 22
+    fi
+fi
 
 delay=$(sed -ne "/$key/ s/.*$key \([0-9]*\).*/\1/p" $file)
 
