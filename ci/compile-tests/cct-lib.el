@@ -136,6 +136,27 @@ the prover. In many tests these hooks are not used."
     (accept-process-output nil 0.1))
   (run-hooks 'cct-after-busy-waiting-hook))
 
+(defun cct-wait-for-second-stage ()
+  "Wait until second stage compilation is complete.
+Runs `cct-before-busy-waiting-hook' and
+`cct-after-busy-waiting-hook' before and after busy waiting."
+  (run-hooks 'cct-before-busy-waiting-hook)
+  (when cct--debug-tests
+    (message
+     "%s start waiting for vok/vio2vo timer %s 2nd-stage-in-progress %s"
+     (current-time-string)
+     coq--par-second-stage-delay-timer
+     coq--par-second-stage-in-progress))
+  (while (or coq--par-second-stage-delay-timer
+             coq--par-second-stage-in-progress)
+    (accept-process-output nil 0.5)
+    (when cct--debug-tests
+      (message "%s wait for vok/vio2vo timer %s 2nd-stage-in-progress %s"
+               (current-time-string)
+               coq--par-second-stage-delay-timer
+               coq--par-second-stage-in-progress)))
+  (run-hooks 'cct-after-busy-waiting-hook))
+
 (defun cct-get-vanilla-span (line)
   "Get THE vanilla span for line LINE, report an error if there is none.
 PG uses a number of overlapping and non-overlapping spans (read
@@ -212,7 +233,7 @@ Used to check that FILE has not been changed since TIME was
 recorded before."
   (let ((file-time (nth 5 (file-attributes file))))
     (when cct--debug-tests
-      (message "file %s should be unchanged, recorded time: %s now: %s\n"
+      (message "file %s should be unchanged, recorded time: %s now: %s"
                file
                (format-time-string "%H:%M:%S.%3N" time)
                (format-time-string "%H:%M:%S.%3N" file-time)))
@@ -241,6 +262,14 @@ changed since FILE-TIME-ASSOC has been recorded."
 (defun cct-file-newer (file time)
   "Check that FILE exists and its modification time is more recent than TIME."
   (let ((file-time (nth 5 (file-attributes file))))
+    (when cct--debug-tests
+      (message "file %s in %s should be changed, recorded time: %s now: %s"
+               file
+               default-directory
+               (if time (format-time-string "%H:%M:%S.%3N" time) "---")
+               (if file-time
+                   (format-time-string "%H:%M:%S.%3N" file-time)
+                 "---")))
     (should (and file-time (time-less-p time file-time)))))
 
 (defun cct-older-change-times (file-time-assoc)
@@ -251,10 +280,22 @@ times as returned by `cct-record-change-times' or
 FILE-TIME-ASSOC do exist and that their modification time is more
 recent than in the association list, i.e., they have been updated
 or changed since recording the time in the association."
+  (when cct--debug-tests
+    (message "Files should have been changed: %s"
+             (mapconcat
+              (lambda (file-time) (car file-time))
+              file-time-assoc
+              ", ")))
   (mapc
    (lambda (file-time-cons)
      (cct-file-newer (car file-time-cons) (cdr file-time-cons)))
    file-time-assoc))
+
+(defun cct-files-are-readable (files)
+  "Check that FILES exist and are readable."
+  (when cct--debug-tests
+    (message "Files should exist and be readable: %s" files))
+  (mapc (lambda (fname) (should (file-readable-p fname))) files))
 
 (defun cct-generic-check-main-buffer
     (main-buf main-unlocked main-locked main-sum-line new-sum
