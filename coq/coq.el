@@ -1417,13 +1417,13 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
   (propertize
    "-"
    'face 'coq-button-face
-   'mouse-face 'coq-button-face-pressed))
+   'mouse-face 'coq-button-face-active))
 
 (defun coq-hypcross-folded-string()
   (propertize
    "+"
-   'face 'coq-button-face
-   'mouse-face 'coq-button-face-pressed))
+   'face 'coq-button-face-pressed
+   'mouse-face 'coq-button-face-active))
 
 ;; hypcross is displayerd with a "-" when unfolded and a "+" when unfolded.
 ;; It is highlighted when hovered, is clickable and have a special
@@ -1444,7 +1444,7 @@ Maintained by a hook in `proof-shell-handle-delayed-output-hook'.")
       ;(overlay-put ov 'width .6)
       ;(overlay-put ov 'height -1)
       (when (eq coq-hypcross-hovering-help t)
-        (overlay-put ov 'help-echo "mouse-3: unfold; mouse-2 copy name")))
+        (overlay-put ov 'help-echo "MOUSE-1: (un)fold ; MOUSE-2 copy hyp name at point")))
     ov))
 
 ;; Once we have created the 3 overlays, each recieves a reference to the 2
@@ -1705,7 +1705,7 @@ Used on hyptohesis overlays in goals buffer mainly."
        )
       (overlay-put hyp-overlay 'evaporate t)
       (overlay-put hyp-overlay 'mouse-face 'proof-command-mouse-highlight-face)
-      (overlay-put hyp-overlay 'help-echo "mouse-3: unfold; mouse-2 copy name")
+      (overlay-put hyp-overlay 'help-echo "MOUSE-1: unfold; MOUSE-2 copy name at point")
       (overlay-put hyp-overlay 'hyp-name h)
       (overlay-put hyp-overlay 'keymap coq-hidden-hyp-map)
       (overlay-put hypcross-ov 'display (coq-hypcross-folded-string)))))
@@ -3022,18 +3022,20 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; point.
 (when coq-hypname-map
   (define-key coq-hypname-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hypcross-map [(return)] 'coq-toggle-fold-hyp-at-point)
   (define-key coq-hypname-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 ;; Default binding: clicking on the cross to folds/unfold hyp.
 ;; Click on it with button 2 copies the names at current point.
 (when coq-hypname-map
   (define-key coq-hypcross-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
-  (define-key coq-hypcross-map [return] 'coq-toggle-fold-hyp-at-point)
+  (define-key coq-hypcross-map [(return)] 'coq-toggle-fold-hyp-at-point)
   (define-key coq-hypcross-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 ;; Ddefault binding: clicking on a hidden hyp with button 3 unfolds it, with
 ;; button 2 it copies hyp name at current point.
 (when coq-hidden-hyp-map
-  (define-key coq-hidden-hyp-map [(mouse-3)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hidden-hyp-map [(mouse-1)] 'coq-toggle-fold-hyp-at-mouse)
+  (define-key coq-hypcross-map [(return)] 'coq-toggle-fold-hyp-at-point)
   (define-key coq-hidden-hyp-map [(mouse-2)] 'coq-insert-at-point-hyp-at-mouse))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
