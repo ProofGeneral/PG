@@ -2851,7 +2851,7 @@ Also insert holes at insertion positions."
     (setq cmd (read-string "Build match for type: "))
     (let* ((thematch
            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (match (replace-regexp-in-string "=> \n" "=> #\n" thematch)))
+           (match (replace-regexp-in-string "=> *\n" "=> #\n" thematch)))
       ;; if error, it will be displayed in response buffer (see def of
       ;; proof-shell-invisible-cmd-get-result), otherwise:
       (unless (proof-string-match coq-error-regexp match)
