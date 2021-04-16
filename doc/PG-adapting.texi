@@ -3899,6 +3899,7 @@ bother the user.  They may include
   @code{'no-error-display}         do not display errors/take error action
   @code{'no-goals-display}         do not goals in @strong{goals} buffer
   @code{'proof-tree-show-subgoal}  item inserted by the proof-tree package
+  @code{'priority-action}          item added via @code{proof-add-to-priority-queue}
 @end lisp
 Note that @code{'invisible} does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -4402,7 +4403,7 @@ by the filter is to send the next command from the queue.
 Wrapper for @samp{@code{proof-shell-filter}}, protecting against parallel calls.@*
 In Emacs a process filter function can be called while the same
 filter is currently running for the same process, for instance,
-when the filter bocks on I/O. This wrapper protects the main
+when the filter blocks on I/O. This wrapper protects the main
 entry point, @samp{@code{proof-shell-filter}} against such parallel,
 overlapping calls.
 
