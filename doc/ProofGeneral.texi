@@ -5225,6 +5225,16 @@ If a nested proof is detected while searching for opaque proofs
 to omit, a warning is displayed and the complete remainder of the
 asserted region is sent unmodified to Coq. 
 
+If the proof script relies on sections, it is highly recommended to use
+a @code{Proof using} annotation for all lemmas contained in a Section,
+otherwise @code{Coq} will compute a wrong type for these lemmas when
+this omitting-proofs feature is enabled.
+
+To automate this, we recall that ProofGeneral provides a dedicated
+feature to generate these @code{Proof using} annotations (a defective
+form being e.g. @code{Proof using Type} if no section hypothesis is
+used), see the menu command @code{Coq > "Proof using" mode} and
+@ref{Proof using annotations} for details.
 
 @node Editing multiple proofs
 @section Editing multiple proofs

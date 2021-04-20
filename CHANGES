@@ -156,7 +156,11 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     letting errors in these proofs go unnoticed. Configure
     `proof-omit-proofs-option' or select "Proof-General -> Quick
     Options -> Processing -> Omit Proofs". See also section
-    "11.5 Omitting proofs for speed" in the manual  
+    "11.5 Omitting proofs for speed" in the manual.
+
+    Beware that if lemmas are proved in a section, these lemmas should
+    start with a "Proof using" annotation, otherwise Coq would compute
+    a wrong type for them when this omitting-proofs feature is enabled.
 
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
