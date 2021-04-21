@@ -1495,6 +1495,42 @@ will stop exactly where the proof script fails, showing you the error
 message and the last processed command.  So you can easily continue
 development from exactly the right place in the script.
 
+In normal development, one often jumps into the middle or to the
+end of some file, because this is the point, where a lemma must
+be added or a definition must be fixed. Before starting the real
+work, one needs to assert the file up to that point, usually with
+@kbd{C-c C-RET} (@code{proof-goto-point}). Even for medium sized
+files, asserting a big portion can take several seconds. There
+are different ways to speed this process up.
+@itemize @bullet
+@item
+One can split the development into smaller files. This works
+quite well with Coq, automatic background compilation,
+@ref{Automatic Compilation in Detail}, and the fast compilation
+options, @ref{Quick and inconsistent compilation}.
+@item
+One can configure @code{proof-omit-proofs-option} to @code{t} to
+omit complete opaque proofs when larger chunks are asserted. A
+proof is opaque, if its proof script or proof term cannot
+influence the following code. In Coq, opaque proofs are finished
+with @code{Qed}, non-opaque ones with @code{Defined}. When this
+omit proofs feature is configured, complete opaque proofs are
+silently replace with a suitable cheating command
+(@code{Admitted} for Coq) before sending the proof to the proof
+assistant. For files with big proofs this can bring down the
+processing time to 10% with the obvious disadvantage that errors
+in the omitted proofs go unnoticed. For checking the proofs
+occasionally, a prefix argument for @code{proof-goto-point} and
+@code{proof-process-buffer} causes these commands to disregard
+the setting of @code{proof-omit-proofs-option}. Currently, the
+omit proofs feature is only supported for Coq.
+@item
+An often used poor man's solution is to collect all new material
+at the end of one file, regardless where the material really
+belongs. When the final theorem has been proved, one cleans up
+the mess and moves all stuff where it really belongs.
+@end itemize
+
 Here is the full set of script processing commands.
 
 @c TEXI DOCSTRING MAGIC: proof-assert-next-command-interactive
@@ -1522,15 +1558,19 @@ deleted text.
 
 
 @c TEXI DOCSTRING MAGIC: proof-goto-point
-@deffn Command proof-goto-point 
+@deffn Command proof-goto-point &optional raw
 Assert or retract to the command at current position.@*
 Calls @samp{@code{proof-assert-until-point}} or @samp{@code{proof-retract-until-point}} as
-appropriate.
+appropriate. With prefix argument @var{raw} the omit proofs feature
+(@samp{@code{proof-omit-proofs-option}}) is temporaily disabled to check all
+proofs in the asserted region.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-process-buffer
-@deffn Command proof-process-buffer 
-Process the current (or script) buffer, and maybe move point to the end.
+@deffn Command proof-process-buffer &optional raw
+Process the current (or script) buffer, and maybe move point to the end.@*
+With prefix argument @var{raw} the omit proofs feature (@samp{@code{proof-omit-proofs-option}})
+is temporaily disabled to check all proofs in the asserted region.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-retract-buffer
@@ -3636,6 +3676,21 @@ If non-nil, format for newlines after each command in a script.
 The default value is @code{t}.
 @end defopt
 
+@c TEXI DOCSTRING MAGIC: proof-omit-proofs-option
+@defvar proof-omit-proofs-option 
+Set to t to omit complete opaque proofs for speed reasons.@*
+When t, complete opaque proofs in the asserted region are not
+sent to the proof assistant (and thus not checked). For files
+with big proofs this can drastically reduce the processing time
+for the asserted region at the cost of not checking the proofs.
+For partial and non-opaque proofs in the asserted region all
+proof commands are sent to the proof assistant.
+
+Using a prefix argument for @samp{@code{proof-goto-point}} (M-x @code{proof-goto-point})
+or @samp{@code{proof-process-buffer}} (M-x @code{proof-process-buffer}) temporarily
+disables omitting proofs.
+@end defvar
+
 @c TEXI DOCSTRING MAGIC: proof-prog-name-ask
 @defopt proof-prog-name-ask 
 If non-nil, query user which program to run for the inferior process.
@@ -4289,6 +4344,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Using the Coq project file::
 * Proof using annotations::
 * Multiple File Support::
+* Omitting proofs for speed::
 * Editing multiple proofs::
 * User-loaded tactics::
 * Indentation tweaking::
@@ -5134,6 +5190,51 @@ stamps with one second granularity. On such configurations Proof
 General will perform some unnecessary compilations.
 @end itemize
 
+
+@node Omitting proofs for speed
+@section Omitting proofs for speed
+
+To speed up asserting larger chunks, Proof General can omit
+complete opaque proofs by silently replacing the whole proof
+script with @code{Admitted}, @ref{Script processing commands}.
+This works when
+@itemize
+@item
+proofs are not nested
+@item
+opaque and non-opaque proofs start with @code{Proof.} or
+@code{Proof using}
+@item
+opaque proofs end with @code{Qed} or @code{Admitted}
+@item
+non-opaque proofs or definition end with @code{Defined}
+@end itemize
+Aborted proofs can be present if they start with a variant of
+@code{Proof} and end with @code{Abort}. They are handled like
+non-opaque proofs (i.e., not omitted).
+
+To enable omitting proofs, configure
+@code{proof-omit-proofs-option} or select @code{Proof-General ->
+Quick Options -> Processing -> Omit Proofs}.
+
+With a prefix argument, both @code{proof-goto-point} and
+@code{proof-process-buffer} will temporarily disable the omit
+proofs feature and send the full proof script to Coq.
+
+If a nested proof is detected while searching for opaque proofs
+to omit, a warning is displayed and the complete remainder of the
+asserted region is sent unmodified to Coq. 
+
+If the proof script relies on sections, it is highly recommended to use
+a @code{Proof using} annotation for all lemmas contained in a Section,
+otherwise @code{Coq} will compute a wrong type for these lemmas when
+this omitting-proofs feature is enabled.
+
+To automate this, we recall that ProofGeneral provides a dedicated
+feature to generate these @code{Proof using} annotations (a defective
+form being e.g. @code{Proof using Type} if no section hypothesis is
+used), see the menu command @code{Coq > "Proof using" mode} and
+@ref{Proof using annotations} for details.
 
 @node Editing multiple proofs
 @section Editing multiple proofs

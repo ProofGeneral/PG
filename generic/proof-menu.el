@@ -334,6 +334,7 @@ without adjusting window layout."
 (proof-deftoggle proof-fast-process-buffer)
 (proof-deftoggle proof-imenu-enable proof-imenu-toggle)
 (proof-deftoggle proof-keep-response-history)
+(proof-deftoggle proof-omit-proofs-option)
 
 (proof-eval-when-ready-for-assistant
  ;; togglers for settings separately configurable per-prover
@@ -361,6 +362,11 @@ without adjusting window layout."
 ;;;       :selected proof-keep-response-history]
 
      ("Processing"
+      ["Omit Proofs" proof-omit-proofs-option-toggle
+       :style toggle
+       :selected proof-omit-proofs-option
+       :active proof-omit-proofs-configured
+       :help "Skip over proofs, admitting theorems, when asserting larger chunks"]
       ["Fast Process Buffer" proof-fast-process-buffer-toggle
        :style toggle
        :selected proof-fast-process-buffer

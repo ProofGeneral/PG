@@ -1979,6 +1979,14 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-tree-find-begin-of-unfinished-proof
      'coq-find-begin-of-unfinished-proof)
 
+  ;; proof-omit-proofs config
+  (setq
+   proof-omit-proofs-configured t
+   proof-script-proof-start-regexp coq-proof-start-regexp
+   proof-script-proof-end-regexp coq-proof-end-regexp
+   proof-script-definition-end-regexp coq-definition-end-regexp
+   proof-script-proof-admit-command coq-omit-proof-admit-command)
+
   (setq proof-cannot-reopen-processed-files nil)
 
   (proof-config-done)

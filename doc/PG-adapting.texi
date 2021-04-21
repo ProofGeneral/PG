@@ -648,6 +648,7 @@ the behaviour of script management.
 * Recognizing other elements::
 * Configuring undo behaviour::
 * Nested proofs::
+* Omitting proofs for speed::
 * Safe (state-preserving) commands::
 * Activate scripting hook::
 * Automatic multiple files::
@@ -1137,6 +1138,97 @@ history.
 @end defvar
 
 
+@node Omitting proofs for speed
+@section Omitting proofs for speed
+
+In normal operation, the commands in an asserted region are sent
+successively to the proof assistant. When the proof assistant
+reports an error, processing stops. This ensures the consistency
+of the development. Proof General supports omitting portions of
+the asserted region to speed processing up at the cost of
+consistency. Portions that can be potentially omitted are called
+@emph{opaque proofs} in Proof General, because usually only
+opaque proofs (in the sense of Coq) can be omitted without
+risking to break the following code. This feature is also
+described in the Proof General manual, @inforef{Script processing
+commands, ,ProofGeneral} and @inforef{Omitting proofs for speed,
+,ProofGeneral}.
+
+The omit proofs feature works in a simple, straightforward way:
+After parsing the asserted region, Proof General uses regular
+expressions to search for commands that start
+(@code{proof-script-proof-start-regexp}) and end
+(@code{proof-script-proof-end-regexp}) an opaque proof. If one is
+found, the opaque proof is replaced with a cheating command
+(@code{proof-script-proof-admit-command}). From this description
+it is immediate, that the omit proof feature does only work if
+proofs are not nested. If a nested proof is found, a warning is
+displayed and omitting proofs stops at that location for the
+currently asserted region.
+
+To enable the omit proofs feature, the following settings must be
+configured.
+
+@c TEXI DOCSTRING MAGIC: proof-omit-proofs-configured
+@defvar proof-omit-proofs-configured 
+t if the omit proofs feature has been configured by the proof assitant.@*
+See also @samp{@code{proof-omit-proofs-option}} or the Proof General manual
+for a description of the feature. This option can only be set, if
+all of @samp{@code{proof-script-proof-start-regexp}},
+@samp{@code{proof-script-proof-end-regexp}},
+@samp{@code{proof-script-definition-end-regexp}} and
+@samp{@code{proof-script-proof-admit-command}} have been configured.
+
+The omit proofs feature skips over opaque proofs in the source
+code, admitting the theorems, to speed up processing.
+
+If @samp{@code{proof-omit-proofs-option}} is set by the user, all proof
+commands in the source following a match of
+@samp{@code{proof-script-proof-start-regexp}} up to and including the next
+match of @samp{@code{proof-script-proof-end-regexp}}, are omitted (not send
+to the proof assistant) and replaced by
+@samp{@code{proof-script-proof-admit-command}}. If a match for
+@samp{@code{proof-script-definition-end-regexp}} is found while searching
+forward for the proof end, the current proof (up to and including
+the match of @samp{@code{proof-script-definition-end-regexp}}) is considered
+to be not opaque and not omitted, thus all these proof commands
+_are_ sent to the proof assistant.
+
+The feature does not work for nested proofs. If a match for
+@samp{@code{proof-script-proof-start-regexp}} is found before the next match
+for @samp{@code{proof-script-proof-end-regexp}} or
+@samp{@code{proof-script-definition-end-regexp}}, the search for opaque
+proofs immediately stops and all commands following the previous
+match of @samp{@code{proof-script-proof-start-regexp}} are sent verbatim to
+the proof assistant.
+
+All the regular expressions for this feature are matched against
+the commands inside proof action items, that is as strings,
+without surrounding space.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-start-regexp
+@defvar proof-script-proof-start-regexp 
+Regular expression for the start of a proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-end-regexp
+@defvar proof-script-proof-end-regexp 
+Regular expression for the end of an opaque proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-definition-end-regexp
+@defvar proof-script-definition-end-regexp 
+Regexp for the end of a non-opaque proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-admit-command
+@defvar proof-script-proof-admit-command 
+Proof command to be inserted instead of omitted proofs.
+@end defvar
 @node Safe (state-preserving) commands
 @section Safe (state-preserving) commands
 
