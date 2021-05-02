@@ -1085,8 +1085,8 @@ function and reported appropriately."
 Set `default-directory' from the 'current-dir property of the
 head of the second stage queue, such that processes started here
 run with the right current directory."
-  ;; XXX this assert can be triggered - just start a compilation
-  ;; shortly before the timer triggers
+  ;; when the user starts another compilation, the timer for second
+  ;; stage is canceled
   (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and second stage in parallel 1")
   (setq coq--par-second-stage-delay-timer nil)
@@ -1679,12 +1679,9 @@ necessary transitions."
     (message "%s: coqc dependency count down to %d"
 	     (get dependant 'name) (get dependant 'coqc-dependency-count)))
   (when (coq-par-dependencies-ready dependant)
-    (cond
-     ;;; XXX rewrite with if
-     ((eq (get dependant 'type) 'file)
-      (coq-par-compile-job-maybe dependant))
-     ((eq (get dependant 'type) 'require)
-      (coq-par-kickoff-queue-maybe dependant)))))
+    (if (eq (get dependant 'type) 'file)
+        (coq-par-compile-job-maybe dependant)
+      (coq-par-kickoff-queue-maybe dependant))))
 
 (defun coq-par-kickoff-coqc-dependants (job just-compiled)
   "Handle transition to state 'ready for file job JOB.
