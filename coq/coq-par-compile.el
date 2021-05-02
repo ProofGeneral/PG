@@ -783,13 +783,28 @@ or .vos files must be done elsewhere."
   ;;   (message "analyse coqdep output \"%s\"" output))
   (if (or
        (not (eq status 0))
+       ;; when a file on the command line is missing, coqdep drops it,
+       ;; possibly outputting nothing
+       (equal output "")
+       ;; when a dependency is missing coqdep outputs a warning with status 0
        (string-match coq-coqdep-error-regexp output))
       (progn
 	;; display the error
-	(coq-compile-display-error (mapconcat 'identity command " ") output t)
-        (if (eq status 0)
-            "unsatisfied dependencies"
-          (format "coqdep exist status %d" status)))
+	(coq-compile-display-error
+         (mapconcat 'identity command " ")
+         (if (equal output "")
+             "No coqdep output - file probably inaccessible"
+           output)
+         t)
+        ;; give back a string to signal error - the string content
+        ;; will only become visible during debugging
+        (cond
+         ((not (eq status 0))
+          (format "coqdep exit status %d" status))
+         ((equal output "")
+          "no coqdep output")
+         (t
+          "unsatisfied dependencies")))
     ;; In 8.5, coqdep produces two lines. Match with .* here to
     ;; extract only a part of the first line.
     ;; We could match against (concat "^[^:]*" obj-file "[^:]*: \\(.*\\)")
@@ -810,7 +825,7 @@ or .vos files must be done elsewhere."
 Return t if some process was killed."
   ;; need to first mark processes as killed, because delete process
   ;; starts running sentinels in the order processes terminated, so
-  ;; after the first delete-process we see sentinentels of non-killed
+  ;; after the first delete-process we see sentinels of non-killed
   ;; processes running
   (let ((kill-needed))
     (mapc
