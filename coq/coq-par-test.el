@@ -16,13 +16,13 @@
 
 ;;; Commentary:
 ;;
-;; This file file contains tests for `coq-par-job-needs-compilation'.
+;; This file file contains tests for `coq-par-job-needs-compilation-quick'.
 ;; It specifies for all combinations of `coq-compile-quick', existing
 ;; files and relative file ages the required result and side effects
-;; of `coq-par-job-needs-compilation'.
+;; of `coq-par-job-needs-compilation-quick'.
 ;;
 ;; Run the tests with
-;; Emacs -batch -L . -L ../generic -L ../lib -load coq-par-test.el
+;; emacs -batch -L . -L ../generic -L ../lib -load coq-par-test.el
 ;;
 ;;; TODO:
 ;;
@@ -704,7 +704,7 @@
      (quick              t              nil      vio )
      (ensure-vo          t              vio      vo  ))
     )
-  "Test and result specification for `coq-par-job-needs-compilation'.
+  "Test and result specification for `coq-par-job-needs-compilation-quick'.
 
 List of tests.  A test is a list of 4 elements.  The first element,
 a list, specifies the existing files and their relative age.  In
@@ -720,7 +720,7 @@ modification time stamps and .vo and .vio are older than the
 dependency.
 
 Elements 2-4 of a test specify the results and side effects of
-`coq-par-job-needs-compilation' for all settings of
+`coq-par-job-needs-compilation-quick' for all settings of
 `coq-compile-quick' on the file configuration described in
 element 1. The options `quick-no-vio2vo' and `quick-and-vio2vo'
 are specified together with label `quick'.  Each result and side
@@ -728,8 +728,8 @@ effect specification (also called a variant in the source code
 below) is itself a list of 4 elements.  Element 1 is the value for
 `coq-compile-quick', where `quick' denotes both `quick-no-vio2vo'
 and `quick-and-vio2vo'.  Element 2 specifies the result of
-`coq-par-job-needs-compilation', nil for don't compile, t for do
-compile.  Elements 3-5 specify side effects.  Element 3 which file
+`coq-par-job-needs-compilation-quick', nil for don't compile, t for do
+compile.  Elements 3-4 specify side effects.  Element 3 which file
 must be deleted, where nil means no file must be deleted.  Element
 4 specifies which file name must be stored in the
 `required-obj-file' property of the job.  This file will be used
@@ -815,8 +815,8 @@ test the result and side effects wth `assert'."
 	(file-descr-flattened (coq-par-test-flatten-files file-descr))
 	same-time-stamp file-list
 	obj-mod-result result)
-    (message "test case %s/576: %s %s%s" counter (car variant) file-descr
-	     (if dep-just-compiled " just" ""))
+    (message "test case %d/576: %s %s just-compiled: %s"
+             counter (car variant) file-descr dep-just-compiled)
     (when (not compilation-result)
       (setq obj-mod-result req-obj-result))
     (ignore-errors
@@ -874,7 +874,7 @@ test the result and side effects wth `assert'."
 	(sleep-for 0 15)))
     (when dep-just-compiled
       (put job 'youngest-coqc-dependency 'just-compiled))
-    (setq result (coq-par-job-needs-compilation job))
+    (setq result (coq-par-job-needs-compilation-quick job))
     ;; check result
     (cl-assert (eq result compilation-result)
 	    nil (concat id " result"))
@@ -906,41 +906,64 @@ test the result and side effects wth `assert'."
 	      nil (concat id " obj-mod-time nil")))
     ;; check 'use-quick property
     (cl-assert (eq (not (not (and compilation-result (eq req-obj-result 'vio))))
-		(get job 'use-quick))
-	    nil (concat id " use-quick"))
-    ;; check vio2vo-needed property
+		   (eq (get job 'use-quick) 'vio))
+	       nil (concat id " use-quick"))
+    ;; Check vio2vo-needed property: this property is not present in
+    ;; the test specification because it can be logically derived. The
+    ;; property must be present, if and only if vio2vo mode is
+    ;; selected, a vio will be produced and the vo is unusable, either
+    ;; because it is not present or it must be deleted.
     (cl-assert (eq
-	     (and (eq quick-mode 'quick-and-vio2vo)
-		  (eq req-obj-result 'vio)
-		  (or (eq delete-result 'vo)
-		      (not (member 'vo file-descr-flattened))))
-	     (get job 'vio2vo-needed))
-	    nil (concat id " vio2vo-needed wrong"))
+	        (and (eq quick-mode 'quick-and-vio2vo)
+		     (eq req-obj-result 'vio)
+		     (or (eq delete-result 'vo)
+		         (not (member 'vo file-descr-flattened))))
+	        (eq (get job 'second-stage) 'vio2vo))
+	       nil (concat id " vio2vo-needed wrong"))
     (ignore-errors
       (delete-directory dir t))))
 
-(defvar test-coq-par-counter 0
+
+(defvar test--coq-par-counter 0
   "Stupid counter.")
+
+(defconst test--coq-par-only-test nil
+  "If non-nil, run this test only.
+Must be nil under normal circumstances. Can be set to a number
+for debugging, then only this test number is run.")
+
+
+(defun test-coq-par-one-test-wrapper
+    (counter dir file-descr variant dep-just-compiled)
+  "Wrapper around `test-coq-par-one-test'."
+  ;;(setq coq--debug-auto-compilation t)
+  (when (or
+         (not test--coq-par-only-test)
+         (and test--coq-par-only-test
+              (eq test--coq-par-only-test test--coq-par-counter)))
+    (test-coq-par-one-test
+     counter dir file-descr variant dep-just-compiled)))
+
 
 (defun test-coq-par-one-spec (dir files variant dep-just-compiled)
   "Run one test for one variant and split it for the 2 quick settings."
   (if (eq (car variant) 'quick)
       (progn
-	(test-coq-par-one-test test-coq-par-counter dir files
-			       (cons 'quick-no-vio2vo (cdr variant))
-			       dep-just-compiled)
-	(setq test-coq-par-counter (1+ test-coq-par-counter))
-	(test-coq-par-one-test test-coq-par-counter dir files
-			       (cons 'quick-and-vio2vo (cdr variant))
-			       dep-just-compiled))
-    (test-coq-par-one-test test-coq-par-counter dir files variant
-			   dep-just-compiled))
-  (setq test-coq-par-counter (1+ test-coq-par-counter)))
+	(test-coq-par-one-test-wrapper
+         test--coq-par-counter dir files (cons 'quick-no-vio2vo (cdr variant))
+	 dep-just-compiled)
+	(setq test--coq-par-counter (1+ test--coq-par-counter))
+	(test-coq-par-one-test-wrapper
+         test--coq-par-counter dir files (cons 'quick-and-vio2vo (cdr variant))
+	 dep-just-compiled))
+    (test-coq-par-one-test-wrapper test--coq-par-counter dir files variant
+			           dep-just-compiled))
+  (setq test--coq-par-counter (1+ test--coq-par-counter)))
 
-(defun test-coq-par-job-needs-compilation (dir)
+(defun test-coq-par-job-needs-compilation-quick (dir)
   "Check test data wellformedness and run all the tests."
   (test-coq-par-test-data-invarint)
-  (setq test-coq-par-counter 1)
+  (setq test--coq-par-counter 1)
   (mapc
    (lambda (test)
      (mapc
@@ -953,7 +976,8 @@ test the result and side effects wth `assert'."
 
 (condition-case err
     (progn
-      (test-coq-par-job-needs-compilation (make-temp-name "/tmp/coq-par-test"))
+      (test-coq-par-job-needs-compilation-quick
+       (make-temp-name "/tmp/coq-par-test"))
       (message "test completed successfully"))
   (error
    (message "test failed with %s" err)
