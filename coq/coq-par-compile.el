@@ -54,7 +54,7 @@
 ;; compilation jobs are created when Require commands are recognized and
 ;; when the output of coqdep is processed. If there is space, new jobs
 ;; are directly launched. Otherwise, they are put into a queue
-;; (`coq-par-compilation-queue') to be launched when some other
+;; (`coq--par-compilation-queue') to be launched when some other
 ;; process terminates.
 ;;
 ;; Dependencies between files are reflected with suitable links. They
@@ -563,21 +563,20 @@ Of course only if necessary and possible."
 
 ;;; job queue
 
-;; XXX local variable -- check all defvars for local variables
-(defvar coq-par-compilation-queue (coq-par-new-queue)
+(defvar coq--par-compilation-queue (coq-par-new-queue)
   "Queue of compilation jobs that wait for a free core to get started.
 Use `coq-par-job-enqueue' and `coq-par-job-dequeue' to access the
 queue.")
 
 (defun coq-par-job-enqueue (job)
   "Insert JOB in the queue of waiting compilation jobs."
-  (coq-par-enqueue coq-par-compilation-queue job)
+  (coq-par-enqueue coq--par-compilation-queue job)
   (when coq--debug-auto-compilation
     (message "%s: enqueue job in waiting queue" (get job 'name))))
 
 (defun coq-par-job-dequeue ()
   "Dequeue the next job from the compilation queue."
-  (let ((res (coq-par-dequeue coq-par-compilation-queue)))
+  (let ((res (coq-par-dequeue coq--par-compilation-queue)))
     (when coq--debug-auto-compilation
       (if res
 	  (message "%s: dequeue" (get res 'name))
@@ -869,7 +868,7 @@ background job that was killed."
     (when coq--debug-auto-compilation
       (message "kill all jobs and cleanup state"))
     (setq proc-killed (coq-par-kill-all-processes))
-    (setq coq-par-compilation-queue (coq-par-new-queue))
+    (setq coq--par-compilation-queue (coq-par-new-queue))
     (setq coq--last-compilation-job nil)
     (setq coq--par-second-stage-queue (coq-par-new-queue))
     (setq coq--par-second-stage-in-progress nil)
