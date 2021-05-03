@@ -41,7 +41,8 @@ OTHER_ELISP=generic lib
 
 # additional lisp code: to be compiled but not installed
 ADDITIONAL_ELISP:=ci/compile-tests \
-		$(wildcard ci/compile-tests/[0-9][0-9][0-9]-*)
+		$(wildcard ci/compile-tests/[0-9][0-9][0-9]-*) \
+		ci/simple-tests
 
 # directories with lisp code to be installed
 ELISP_DIRS_INST=${PROVERS} ${OTHER_ELISP}

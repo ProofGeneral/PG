@@ -1,4 +1,4 @@
-;;; coq-par-test.el --- tests for parallel compilation
+;;; test-coq-par-job-needs-compilation-quick.el --- test compilation internals
 
 ;; This file is part of Proof General.
 
@@ -6,7 +6,7 @@
 ;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
-;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
+;; Portions © Copyright 2011-2013, 2016-2017 2021 Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
 ;; Authors: Hendrik Tews
@@ -19,17 +19,21 @@
 ;; This file file contains tests for `coq-par-job-needs-compilation-quick'.
 ;; It specifies for all combinations of `coq-compile-quick', existing
 ;; files and relative file ages the required result and side effects
-;; of `coq-par-job-needs-compilation-quick'.
+;; of `coq-par-job-needs-compilation-quick'. There are more than 500
+;; single tests, which are all independent. One could therefore define
+;; each of these single tests as an ERT test. However, one line in
+;; `coq--par-job-needs-compilation-tests' generates between 1 and 4 of
+;; such single tests. Therefore, making each an ERT test is probably
+;; not worth the effort.
 ;;
-;; Run the tests with
-;; emacs -batch -L . -L ../generic -L ../lib -load coq-par-test.el
-;;
-;;; TODO:
-;;
-;; - integrate into PG build and test(?) system
+;; Debugging hints: Set test--coq-par-only-test to the failing test
+;; number and set coq--debug-auto-compilation to t. Don't forget to
+;; reset all this when done.
 
 ;;; Code:
 
+(require 'proof-site)
+(proof-ready-for-assistant 'coq)
 (require 'coq-par-compile)
 (eval-when-compile (require 'cl-lib))
 
@@ -754,32 +758,28 @@ relative ages.")
    (lambda (test)
      (let ((test-id (format "%s" (car test))))
        ;; a test is a list of 4 elements and the first element is a list itself
-       (cl-assert
+       (should
 	(and
 	 (eq (length test) 4)
-	 (listp (car test)))
-	nil (concat test-id " 1"))
+	 (listp (car test))))
        (mapc
 	(lambda (variant)
 	  ;; a variant is a list of 4 elements
-	  (cl-assert (eq (length variant) 4) nil (concat test-id " 2"))
+	  (should (eq (length variant) 4))
 	  (let ((files (coq-par-test-flatten-files (car test)))
 		(quick-mode (car variant))
 		(compilation-result (nth 1 variant))
 		(delete-result (nth 2 variant))
 		(req-obj-result (nth 3 variant)))
 	    ;; the delete field, when set, must be a member of the files list
-	    (cl-assert (or (not delete-result)
-			(member delete-result files))
-		    nil (concat test-id " 3"))
+	    (should (or (not delete-result)
+			(member delete-result files)))
 	    ;; 8.4 compatibility check
 	    (when (and (or (eq quick-mode 'no-quick) (eq quick-mode 'ensure-vo))
 		       (not (member 'vio files)))
-	      (cl-assert (not delete-result)
-		      nil (concat test-id " 4"))
-	      (cl-assert (eq compilation-result
-			  (not (eq (car (last (car test))) 'vo)))
-		      nil (concat test-id " 5")))))
+	      (should (not delete-result))
+	      (should (eq compilation-result
+			  (not (eq (car (last (car test))) 'vo)))))))
 	  (cdr test))))
    coq--par-job-needs-compilation-tests))
 
@@ -876,50 +876,55 @@ test the result and side effects wth `assert'."
       (put job 'youngest-coqc-dependency 'just-compiled))
     (setq result (coq-par-job-needs-compilation-quick job))
     ;; check result
-    (cl-assert (eq result compilation-result)
-	    nil (concat id " result"))
+    (when coq--debug-auto-compilation
+      (message "check result"))
+    (should (eq result compilation-result))
     ;; check file deletion
-    (cl-assert (or (not delete-result)
+    (when coq--debug-auto-compilation
+      (message "check file deletion"))
+    (should (or (not delete-result)
 		(not (file-attributes
-		      (test-coq-par-sym-to-file dir delete-result))))
-	    nil (concat id " delete file"))
+		      (test-coq-par-sym-to-file dir delete-result)))))
     ;; check no other file is deleted
+    (when coq--debug-auto-compilation
+      (message "check no other file is deleted"))
     (dolist (f file-descr-flattened)
       (unless (eq f delete-result)
-	(cl-assert (file-attributes (test-coq-par-sym-to-file dir f))
-		nil (format "%s non del file %s: %s"
-			    id f
-			    (test-coq-par-sym-to-file dir f)))))
+	(should (file-attributes (test-coq-par-sym-to-file dir f)))))
     ;; check value of 'required-obj-file property
-    (cl-assert (equal (get job 'required-obj-file)
-		   (test-coq-par-sym-to-file dir req-obj-result))
-	    nil (concat id " required-obj-file"))
+    (when coq--debug-auto-compilation
+      (message "check value of 'required-obj-file property"))
+    (should (equal (get job 'required-obj-file)
+		   (test-coq-par-sym-to-file dir req-obj-result)))
     ;; check 'obj-mod-time property
+    (when coq--debug-auto-compilation
+      (message "check 'obj-mod-time property with obj-mod-result %s"
+               (if obj-mod-result "set" "unset")))
     (if obj-mod-result
-	(cl-assert
+	(should
 	 (equal
 	  (get job 'obj-mod-time)
 	  (nth 5 (file-attributes
-		  (test-coq-par-sym-to-file dir obj-mod-result))))
-	 nil (concat id " obj-mod-time non nil"))
-      (cl-assert (not (get job 'obj-mod-time))
-	      nil (concat id " obj-mod-time nil")))
+		  (test-coq-par-sym-to-file dir obj-mod-result)))))
+      (should (not (get job 'obj-mod-time))))
     ;; check 'use-quick property
-    (cl-assert (eq (not (not (and compilation-result (eq req-obj-result 'vio))))
-		   (eq (get job 'use-quick) 'vio))
-	       nil (concat id " use-quick"))
+    (when coq--debug-auto-compilation
+      (message "check 'use-quick property"))
+    (should (eq (not (not (and compilation-result (eq req-obj-result 'vio))))
+		(eq (get job 'use-quick) 'vio)))
     ;; Check vio2vo-needed property: this property is not present in
     ;; the test specification because it can be logically derived. The
     ;; property must be present, if and only if vio2vo mode is
     ;; selected, a vio will be produced and the vo is unusable, either
     ;; because it is not present or it must be deleted.
-    (cl-assert (eq
-	        (and (eq quick-mode 'quick-and-vio2vo)
-		     (eq req-obj-result 'vio)
-		     (or (eq delete-result 'vo)
-		         (not (member 'vo file-descr-flattened))))
-	        (eq (get job 'second-stage) 'vio2vo))
-	       nil (concat id " vio2vo-needed wrong"))
+    (when coq--debug-auto-compilation
+      (message "check vio2vo-needed property"))
+    (should (eq
+	     (and (eq quick-mode 'quick-and-vio2vo)
+		  (eq req-obj-result 'vio)
+		  (or (eq delete-result 'vo)
+		      (not (member 'vo file-descr-flattened))))
+	     (eq (get job 'second-stage) 'vio2vo)))
     (ignore-errors
       (delete-directory dir t))))
 
@@ -936,7 +941,6 @@ for debugging, then only this test number is run.")
 (defun test-coq-par-one-test-wrapper
     (counter dir file-descr variant dep-just-compiled)
   "Wrapper around `test-coq-par-one-test'."
-  ;;(setq coq--debug-auto-compilation t)
   (when (or
          (not test--coq-par-only-test)
          (and test--coq-par-only-test
@@ -960,8 +964,10 @@ for debugging, then only this test number is run.")
 			           dep-just-compiled))
   (setq test--coq-par-counter (1+ test--coq-par-counter)))
 
-(defun test-coq-par-job-needs-compilation-quick (dir)
+(defun test-coq-par-job-needs-compilation-quick-fun (dir)
   "Check test data wellformedness and run all the tests."
+  (when coq--debug-auto-compilation
+    (message "check coq--par-job-needs-compilation-tests invariant")) 
   (test-coq-par-test-data-invarint)
   (setq test--coq-par-counter 1)
   (mapc
@@ -974,13 +980,10 @@ for debugging, then only this test number is run.")
       (cdr test)))
    coq--par-job-needs-compilation-tests))
 
-(condition-case err
-    (progn
-      (test-coq-par-job-needs-compilation-quick
-       (make-temp-name "/tmp/coq-par-test"))
-      (message "test completed successfully"))
-  (error
-   (message "test failed with %s" err)
-   (kill-emacs 1)))
+(ert-deftest test-coq-par-job-needs-compilation-quick ()
+  "Run all tests for coq-par-job-needs-compilation-quick."
+  ;;(setq coq--debug-auto-compilation t)
+  (test-coq-par-job-needs-compilation-quick-fun
+   (make-temp-name "/tmp/coq-par-test")))
 
-;;; coq-par-test.el ends here
+;;; test-coq-par-job-needs-compilation-quick.el ends here
