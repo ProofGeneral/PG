@@ -1381,6 +1381,15 @@ different."
   (concat "\\(" (mapconcat #'identity coq-keywords-defn "\\|")
           "\\)\\s-+\\(" coq-id "\\)"))
 
+;; Any command can be prefixed with Local, Global of #[anyhting,anything,...]
+(defconst coq-command-prefix-regexp "\\(Local\\s-\\|Global\\s-\\|#[[][^]]*[]]\\)")
+;; FIXME: incomplete
+
+(defun coq-add-command-prefix (reg) (concat "\\(" coq-command-prefix-regexp "\\)?" (mapconcat #'identity coq-keywords-defn "\\|")))
+
+(defconst coq-command-decl-regexp (coq-add-command-prefix coq-keywords-decl))
+(defconst coq-command-defn-regexp (coq-add-command-prefix coq-keywords-defn))
+
 ;; must match:
 ;; "with f x y :" (followed by = or not)
 ;; "with f x y (z:" (not followed by =)

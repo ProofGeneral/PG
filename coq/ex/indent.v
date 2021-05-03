@@ -340,6 +340,11 @@ Module X.
         | _ => fail
         end.
 
+        match goal with
+        | ?g := _:rec |- ?a /\ ?b => split
+              | _ => fail
+        end.
+
         Fail
           lazymatch goal with
             _:rec |- ?a /\ ?b => split
