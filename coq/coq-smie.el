@@ -552,6 +552,10 @@ The point should be at the beginning of the command name."
      )))
 
 
+(defun coq-is-at-def ()
+  ;; This is very approximate and should be used with care
+  (let ((case-fold-search nil)) (looking-at coq-command-defn-regexp)))
+
 
 ;; ":= with module" is really to declare some sub-information ":=
 ;; with" is for mutual definitions where both sides are of the same
@@ -584,7 +588,10 @@ The point should be at the beginning of the command name."
      ((equal corresp "where") ":= inductive") ;; inductive or fixpoint, nevermind
      ((or (eq ?\{ (char-before))) ":= record")
      ((equal (point) cmdstrt)
-      (if (looking-at "Equations") ":="
+      (if (or (looking-at "Equations") ;; note: "[[]" is the regexp for a single "["  
+              (not (coq-is-at-def))
+              )
+          ":="
         ":= def")) ; := outside of any parenthesis
      (t ":=")
      ))) ; a parenthesis stopped the search
