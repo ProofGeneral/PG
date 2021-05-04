@@ -23,5 +23,5 @@
 
 Require Export d4.
 
-(* This is line 27 *)
+(* This is line 26 *)
 Definition b : nat := 2.

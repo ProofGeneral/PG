@@ -11,13 +11,7 @@
 # This test modifies some .v files during the test. The original
 # versions are in .v.orig files. They are moved to the corresponding
 # .v files before the test starts.
-TEST_SOURCES:=\
-	a1.v b1.v c1.v d1.v \
-	a2.v b2.v c2.v d2.v \
-	a3.v b3.v c3.v d3.v \
-	a4.v b4.v c4.v d4.v \
-	a5.v b5.v c5.v d5.v \
-	a6.v b6.v c6.v d6.v
+TEST_SOURCES:= a.v b.v c.v
 
 # This test uses ../bin/compile-test-start-delayed to start certain
 # commands with specified delays to check carfully constructed

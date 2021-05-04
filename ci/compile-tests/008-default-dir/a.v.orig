@@ -16,12 +16,25 @@
  * DO NOT INSERT ANY LINE UNLESS YOU KNOW WHAT YOU ARE DOING.
  *)
 
-(* Specify delays for coqdep and coqc when processing this file:
- * coqdep-delay 0
- * coqc-delay 0
+(* The delay for coqdep is specified in comments with key coqdep-delay,
+ * see compile-test-start-delayed.
  *)
 
-Require Export d1.
 
+(* This is line 24 *)
+Require Export (* coqdep-delay 1 *) b.
 (* This is line 26 *)
-Definition b : nat := 2.
+
+
+(* This is line 29 *)
+Definition sum : nat := 5.
+
+
+(* This is line 33 *)
+Lemma x : b + c = sum.
+Proof using.
+  unfold b, c, sum in *.
+  simpl.
+  trivial.
+Qed.
+(* This is line 40 *)

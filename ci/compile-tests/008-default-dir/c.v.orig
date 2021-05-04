@@ -16,12 +16,8 @@
  * DO NOT INSERT ANY LINE UNLESS YOU KNOW WHAT YOU ARE DOING.
  *)
 
-(* Specify delays for coqdep and coqc when processing this file:
- * coqdep-delay 0
- * coqc-delay 0
- *)
 
-Require Export d1.
 
-(* This is line 26 *)
-Definition b : nat := 2.
+
+(* This is line 22 *)
+Definition c : nat := 3.

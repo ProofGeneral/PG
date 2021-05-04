@@ -84,6 +84,8 @@
 ;; 4- using -quick and the handling of .vo/.vio prerequisites for Coq < 8.11
 ;; 5- using -vos for Coq >= 8.11
 ;; 6- running vio2vo or -vok to check proofs
+;; 7- default-directory / current directory
+;; 8- sentinels running interleaved
 ;;
 ;;
 ;; For 1- where to put the Require command and the items that follow it:
@@ -228,6 +230,42 @@
 ;; `coq--par-second-stage-start-id' and only acts if that is still the
 ;; current value when the callback is executed.
 ;;
+;;
+;; For 7- default-directory / current directory
+;;
+;; `default-directory' determines the current directory for background
+;; processes. In a sentinel or process filter, default-directory is
+;; taken from the current buffer, which is basically random. Starting
+;; with a wrong current directory will cause compilation failures.
+;; Therefore all entry points of this library must set
+;; default-directory. Entry points are coq-par-process-sentinel, the
+;; functions started from timer and those started from an empty entry
+;; in `proof-action-list'. To set default-directory in these cases, I
+;; record default-directory in 'current-dir inside
+;; `coq-par-preprocess-require-commands' and then pass it on to all
+;; jobs created.
+;;
+;;
+;; For 8- sentinels running interleaved
+;;
+;; Sentinels (and also process filters) run only when emacs waits
+;; inside certain functions. The functions in this library start
+;; asynchronous background processes but do not perform such waiting.
+;; From this one could naively infer that invocations of
+;; `coq-par-process-sentinel' can never run interleaved. This is
+;; indeed the case when working with local files only (as contrast to
+;; remote files in the sense of Tramp). However, when working with
+;; remote files (possibly via Tramp), a lot of normal system functions
+;; (`file-attributes', `file-truename', and so on) run as synchronous
+;; processes that wait for the remote side. Without precautions
+;; several sentinels may then run interleaved. To avoid this, the
+;; sentinel and other functions entering this library must aquire the
+;; `coq--par-process-sentinels' lock. When the lock is busy, newly
+;; incoming sentinels wait in `coq--par-sentinel-queue'. Before
+;; exiting a function that aquired the lock, one runs
+;; `coq-par-run-queued-sentinels' to run all waiting sentinels and to
+;; release the lock.
+;; 
 ;; 
 ;; Properties of compilation jobs
 ;;
@@ -297,8 +335,10 @@
 ;;   'visited         - used in the dependency cycle detection to mark
 ;;                      visited jobs
 ;;   'current-dir     - current directory or default-directory of the buffer
-;;                      that contained the require command. Only present in
-;;                      require jobs. Only needed for 8.4 compatibility.
+;;                      that contained the require command. Passed recursively
+;;                      to all jobs. Used to set default-directory in the
+;;                      sentinel and other functions, because it can otherwise
+;;                      be more or less random.
 ;;   'temp-require-file  - temporary file name just containing the require
 ;;                         command of a require job for determining the files
 ;;                         needed for that require. Must be deleted after
@@ -461,6 +501,12 @@ which is otherwise started when `coq--last-compilation-job' has
 not been retired but no compilation process is running in the
 background.")
 
+(defvar coq--par-process-sentinels nil
+  "Lock for entering `coq-par-process-sentinel' and other functions.
+This lock needs to be taken before entering functions in this
+library that modify the internal state of compilation jobs. When
+the lock is busy, sentinels must queue in `coq--par-sentinel-queue'.")
+
 
 ;;; utility functions
 
@@ -521,14 +567,22 @@ their SOURCE binding."
   "Insert X in queue QUEUE."
   (push x (car queue)))
 
+(defun coq-par-queue-reverse-if-needed (queue)
+  "Reorganize QUEUE, such that the pop-end contains something.
+Of course only if necessary and possible."
+  (unless (cdr queue)
+    (setcdr queue (nreverse (car queue)))
+    (setcar queue nil)))
+
+(defun coq-par-queue-head (queue)
+  "Return the head of QUEUE, if any, without removing it."
+  (coq-par-queue-reverse-if-needed queue)
+  (cadr queue))
+
 (defun coq-par-dequeue (queue)
   "Dequeue the next item from QUEUE."
-  (let ((res (pop (cdr queue))))
-    (unless res
-      (setcdr queue (nreverse (car queue)))
-      (setcar queue nil)
-      (setq res (pop (cdr queue))))
-    res))
+  (coq-par-queue-reverse-if-needed queue)
+  (pop (cdr queue)))
 
 (defun coq-par-queue-length (queue)
   "Length of QUEUE."
@@ -573,6 +627,10 @@ Use `coq-par-second-stage-enqueue',
   (when coq--debug-auto-compilation
     (message "%s: enqueue job in second stage queue" (get job 'name))))
 
+(defun coq-par-second-stage-head ()
+  "Return the head of the second stage queue, if any, without removing it."
+  (coq-par-queue-head coq--par-second-stage-queue))
+
 (defun coq-par-second-stage-dequeue ()
   "Dequeue the next job from the second stage queue."
   (let ((res (coq-par-dequeue coq--par-second-stage-queue)))
@@ -585,6 +643,36 @@ Use `coq-par-second-stage-enqueue',
 (defun coq-par-second-stage-queue-length ()
   "Return the length of the second stage queue."
   (coq-par-queue-length coq--par-second-stage-queue))
+
+
+;;; queue for process sentinels
+
+(defvar coq--par-sentinel-queue (coq-par-new-queue)
+  "Queue of waiting sentinels.
+To be executed when the currently running sentinel finishes. Use
+`coq-par-sentinel-enqueue' and `coq-par-sentinel-dequeue' to
+access the queue.")
+
+(defun coq-par-sentinel-enqueue (process event)
+  "Insert the sentinel arguments PROCESS and EVENT in the sentinel queue."
+  (coq-par-enqueue coq--par-sentinel-queue (cons process event))
+  (when coq--debug-auto-compilation
+    (message "%s %s: enqueue sentinel"
+	     (get (process-get process 'coq-compilation-job) 'name)
+	     (process-name process))))
+
+(defun coq-par-sentinel-dequeue ()
+  "Dequeue the next pair of sentinel arguments from the sentinel queue.
+Returns a cons of process and event arguments for
+`coq--par-process-sentinels'."
+  (let ((res (coq-par-dequeue coq--par-sentinel-queue)))
+    (when coq--debug-auto-compilation
+      (if res
+	  (message "%s %s: dequeue sentinel"
+	           (get (process-get (car res) 'coq-compilation-job) 'name)
+	           (process-name (car res)))
+	(message "sentinel queue empty")))
+    res))
 
 
 ;;; error symbols
@@ -753,13 +841,28 @@ or .vos files must be done elsewhere."
   ;;   (message "analyse coqdep output \"%s\"" output))
   (if (or
        (not (eq status 0))
+       ;; when a file on the command line is missing, coqdep drops it,
+       ;; possibly outputting nothing
+       (equal output "")
+       ;; when a dependency is missing coqdep outputs a warning with status 0
        (string-match coq-coqdep-error-regexp output))
       (progn
 	;; display the error
-	(coq-compile-display-error (mapconcat 'identity command " ") output t)
-        (if (eq status 0)
-            "unsatisfied dependencies"
-          (format "coqdep exist status %d" status)))
+	(coq-compile-display-error
+         (mapconcat 'identity command " ")
+         (if (equal output "")
+             "No coqdep output - file probably inaccessible"
+           output)
+         t)
+        ;; give back a string to signal error - the string content
+        ;; will only become visible during debugging
+        (cond
+         ((not (eq status 0))
+          (format "coqdep exit status %d" status))
+         ((equal output "")
+          "no coqdep output")
+         (t
+          "unsatisfied dependencies")))
     ;; In 8.5, coqdep produces two lines. Match with .* here to
     ;; extract only a part of the first line.
     ;; We could match against (concat "^[^:]*" obj-file "[^:]*: \\(.*\\)")
@@ -780,8 +883,9 @@ or .vos files must be done elsewhere."
 Return t if some process was killed."
   ;; need to first mark processes as killed, because delete process
   ;; starts running sentinels in the order processes terminated, so
-  ;; after the first delete-process we see sentinentels of non-killed
+  ;; after the first delete-process we see sentinels of non-killed
   ;; processes running
+  ;; XXX maybe the two stage kill is not needed anymore because of sentinel lock
   (let ((kill-needed))
     (mapc
      (lambda (process)
@@ -819,7 +923,10 @@ Used for unlocking ancestors on compilation errors."
   "Kill all background compilation, cleanup internal state and unlock ancestors.
 This is the common core of `coq-par-emergency-cleanup' and
 `coq-par-user-interrupt'.  Returns t if there actually was a
-background job that was killed."
+background job that was killed. This function does not cleanup
+the sentinel lock and the sentinel queue, because this function
+might get called from inside `coq-par-process-sentinel-wrapper',
+which is protected by the sentinel lock."
   (let (proc-killed)
     (when coq--debug-auto-compilation
       (message "kill all jobs and cleanup state"))
@@ -905,43 +1012,110 @@ file to be deleted when the process does not finish successfully."
 	(process-name (format "pro-%s" coq--par-next-id))
 	process)
     (setq coq--par-next-id (1+ coq--par-next-id))
-    (with-current-buffer (or proof-script-buffer (current-buffer))
-      (when coq--debug-auto-compilation
-	(message "%s %s: start %s %s in %s"
-		 (get job 'name) process-name
-		 command (mapconcat 'identity arguments " ")
-		 default-directory))
-      (condition-case err
-	  ;; If the command is wrong, start-process aborts with an
-	  ;; error. However, in Emacs 23.4.1. it will leave a process
-	  ;; behind, which is in a very strange state: running with no
-	  ;; pid. Emacs 24.2 fixes this.
-	  (setq process (apply 'start-process process-name
-			       nil	; no process buffer
-			       command arguments))
-	(error
-	 (when coq--debug-auto-compilation
-           (message "%s %s: error in start process, %s"
-		    (get job 'name) process-name
-                    (if file-rm
-                        (format "rm %s" file-rm)
-                      "no file removal")))         
-	 (when file-rm
-	   (ignore-errors (delete-file file-rm)))
-	 (signal 'coq-compile-error-command-start
-		 (list (cons command arguments) (nth 2 err)))))
-      (set-process-filter process 'coq-par-process-filter)
-      (set-process-sentinel process 'coq-par-process-sentinel)
-      (set-process-query-on-exit-flag process nil)
-      (setq coq--current-background-jobs (1+ coq--current-background-jobs))
-      (process-put process 'coq-compilation-job job)
-      (process-put process 'coq-process-continuation continuation)
-      (process-put process 'coq-process-command (cons command arguments))
-      (process-put process 'coq-process-output "")
-      (process-put process 'coq-process-rm file-rm))))
+    (when coq--debug-auto-compilation
+      (message "%s %s: start %s %s in %s"
+	       (get job 'name) process-name
+	       command (mapconcat 'identity arguments " ")
+	       default-directory))
+    (condition-case err
+	;; If the command is wrong, start-process aborts with an
+	;; error. However, in Emacs 23.4.1. it will leave a process
+	;; behind, which is in a very strange state: running with no
+	;; pid. Emacs 24.2 fixes this.
+	(setq process (apply 'start-file-process process-name
+			     nil	; no process buffer
+			     command arguments))
+      (error
+       (when coq--debug-auto-compilation
+         (message "%s %s: error in start process, %s"
+		  (get job 'name) process-name
+                  (if file-rm
+                      (format "rm %s" file-rm)
+                    "no file removal")))         
+       (when file-rm
+	 (ignore-errors (delete-file file-rm)))
+       (signal 'coq-compile-error-command-start
+	       (list (cons command arguments) (nth 2 err)))))
+    (set-process-filter process 'coq-par-process-filter)
+    (set-process-sentinel process 'coq-par-process-sentinel)
+    (set-process-query-on-exit-flag process nil)
+    (setq coq--current-background-jobs (1+ coq--current-background-jobs))
+    (process-put process 'coq-compilation-job job)
+    (process-put process 'coq-process-continuation continuation)
+    (process-put process 'coq-process-command (cons command arguments))
+    (process-put process 'coq-process-output "")
+    (process-put process 'coq-process-rm file-rm)))
 
 (defun coq-par-process-sentinel (process event)
-  "Sentinel for all kinds of Coq background compilation processes.
+  "Sentinel for all processes started by `coq-par-start-process'.
+Depending on the sentinel lock `coq--par-process-sentinels',
+directly execute the sentinel functionality or queue it. If the
+lock is taken here, run all sentinels that queued during the run
+time of this sentinel at the end."
+  (if coq--par-process-sentinels
+      (coq-par-sentinel-enqueue process event)
+    (cl-assert (not (coq-par-sentinel-dequeue)) nil
+               "sentinel queue non-empty when sentinel lock is free")
+    (setq coq--par-process-sentinels t)
+    (unwind-protect
+        (coq-par-process-sentinel-wrapper process event)
+      (coq-par-run-queued-sentinels))))
+
+(defun coq-par-run-queued-sentinels ()
+  "Run all queued sentinels and free the lock `coq--par-process-sentinels'.
+Ensure sentinel queue is empty and sentinel lock is free, even in
+case of error. This function should run _after_ killing all
+processes in an emergency cleanup, for instance in an unwind
+protect around the error handler that triggers the cleanup in
+case of error. Oherwise the queue and the lock will be left
+behind."
+  (let (process-event)
+    (cl-assert coq--par-process-sentinels nil
+               "sentinel lock not busy before clearing sentinel queue")
+    (unwind-protect
+        ;; In case of an error in one of the queued sentinels, none of
+        ;; the following sentinels and no sentinel for all the killed
+        ;; jobs will run. This will leave all 'coq-process-rm content
+        ;; behind, in the worst case partially written vo or vio
+        ;; files. XXX consider to make at least one attempt to clean
+        ;; up 'coq-process-rm stuff after an error.
+        (while (setq process-event (coq-par-sentinel-dequeue))
+          (coq-par-process-sentinel-wrapper
+           (car process-event) (cdr process-event)))
+      ;; In case of normal termination the queue is empty at this
+      ;; point, reinitializing it only wastes a cons cell. In case of
+      ;; abnormal termination cleanup is essential.
+      (setq coq--par-sentinel-queue (coq-par-new-queue))
+      (setq coq--par-process-sentinels nil))))
+
+(defun coq-par-process-sentinel-wrapper (process event)
+  "Exception and debug status wrapper around `coq-par-process-sentinel-internal'.
+The funcion must not be called without acquiring the sentinel lock
+`coq--par-process-sentinels' first."
+  (condition-case err
+      (progn
+        (when coq--debug-auto-compilation
+          (message "%s %s: enter sentinel"
+	           (get (process-get process 'coq-compilation-job) 'name)
+	           (process-name process)))
+        (cl-assert coq--par-process-sentinels nil
+                   "sentinel lock not busy before entering real sentinel")
+        (coq-par-process-sentinel-internal process event)
+        (when coq--debug-auto-compilation
+          (message "%s %s: leave sentinel normally"
+	           (get (process-get process 'coq-compilation-job) 'name)
+	           (process-name process))))
+    (error
+     (message "%s %s: leave sentinel abnormally"
+	      (get (process-get process 'coq-compilation-job) 'name)
+	      (process-name process))
+     (signal (car err) (cdr err)))))
+
+(defun coq-par-process-sentinel-internal (process event)
+  "Real functionality of the sentinel for all compilation processes.
+This function must not be called when a different instance is
+still running. 
+
 Runs when process PROCESS terminated because of EVENT. It
 determines the exit status and calls the continuation function
 that has been registered with that process. Normal compilation
@@ -981,12 +1155,18 @@ function and reported appropriately."
 			 (get (process-get process 'coq-compilation-job) 'name)))
 	      (coq-par-second-stage-enqueue
 	       (process-get process 'coq-compilation-job))))
-	(let (exit-status)
+        ;; process was not killed explicitly by us
+	(let (exit-status
+              (default-directory
+                (get (process-get process 'coq-compilation-job) 'current-dir)))
 	  (when coq--debug-auto-compilation
-	    (message "%s %s: process status changed to %s"
-		     (get (process-get process 'coq-compilation-job) 'name)
-		     (process-name process)
-		     event))
+	    (message
+             "%s %s: process status changed to %s (default-dir %s curr buf %s)"
+	     (get (process-get process 'coq-compilation-job) 'name)
+	     (process-name process)
+	     event
+             default-directory
+             (buffer-name)))
 	  (cond
 	   ((eq (process-status process) 'exit)
 	    (setq exit-status (process-exit-status process)))
@@ -1032,18 +1212,34 @@ function and reported appropriately."
 ;;; second stage compilation (vio2vo and vok)
 
 (defun coq-par-run-second-stage-queue ()
-  "Start delayed second stage compilation (vio2vo or vok)."
+  "Start delayed second stage compilation (vio2vo or vok).
+Set `default-directory' from the 'current-dir property of the
+head of the second stage queue, such that processes started here
+run with the right current directory."
+  ;; XXX protect this function against escaping exceptions and clean
+  ;; up, if this happens similar to sentinel and
+  ;; coq-par-preprocess-require-commands
   ;; XXX this assert can be triggered - just start a compilation
   ;; shortly before the timer triggers
   (cl-assert (not coq--last-compilation-job)
 	  nil "normal compilation and second stage in parallel 1")
   (setq coq--par-second-stage-delay-timer nil)
   (when coq--debug-auto-compilation
-    (message "Start second stage processing for %d jobs"
+    (message "Kickoff second stage processing for %d jobs"
              (coq-par-second-stage-queue-length)))
-  (when (> (coq-par-second-stage-queue-length) 0)
-    (setq coq--par-second-stage-in-progress t)
-    (coq-par-start-jobs-until-full)))
+  (let ((head (coq-par-second-stage-head))
+        default-directory)
+    (when head
+      (setq default-directory (get head 'current-dir))
+      ;; XXX fix this to ensure this cannot fire
+      (cl-assert (not coq--par-process-sentinels) nil
+                 "sentinel lock busy when starting second stage")
+      (setq coq--par-process-sentinels t)
+      (setq coq--par-second-stage-in-progress t)
+      (coq-par-start-jobs-until-full)
+      (coq-par-run-queued-sentinels)
+      (when coq--debug-auto-compilation
+        (message "Leave second stage kickoff")))))
 
 (defun coq-par-require-processed (race-counter)
   "Callback for `proof-action-list' to signal completion of the last Require.
@@ -1093,6 +1289,11 @@ item will be processed as comment and only the callback will be called."
     (message "%s -> %s: add coqc dependency"
 	     (get dependee 'name) (get dependant 'name))))
 
+;; XXX need to propagate 'failed from dependee to dependant
+;; Relevant, if user asserts second region when for the first one
+;; compilation has failed already, but the queue region is still
+;; processing. What happens with coq--par-delayed-last-job and the
+;; delayed coq-par-kickoff-queue-maybe call?
 (defun coq-par-add-queue-dependency (dependee dependant)
   "Add queue dependency from require job DEPENDEE to require job DEPENDANT.
 The require item of DEPENDANT comes after those of DEPENDEE.
@@ -1145,6 +1346,9 @@ therefore delete a file if it might be in the way.  Sets the
        (if vio-obj-time (time-less-p vio-obj-time src-time) "-")
        (if vo-obj-time (coq-par-time-less vo-obj-time dep-time) "-")
        (if vio-obj-time (coq-par-time-less vio-obj-time dep-time) "-")))
+    ;; the source file must exist
+    (cl-assert src-time nil
+               "internal error - cannot find src file I")
     ;; Compute first the max of vo-obj-time and vio-obj-time and remember
     ;; which of both is newer. This is only meaningful if at least one of
     ;; the .vo or .vio file exists.
@@ -1295,12 +1499,20 @@ the 'second-stage property on job to 'vok if necessary."
          (vos-obj-time (nth 5 (file-attributes vos-file)))
          result)
     (when coq--debug-auto-compilation
-      (message "%s: compare mod times: vos mod %s, src mod %s, youngest dep %s"
+      (message
+       (concat "%s: compare mod times: vos mod %s, src mod %s, youngest dep %s\n"
+               "\tvos %s src %s in %s")
                (get job 'name)
                (if vos-obj-time (current-time-string vos-obj-time) "-")
                (if src-time (current-time-string src-time) "-")
                (if (eq dep-time 'just-compiled) "just compiled"
-	         (current-time-string dep-time))))
+	         (current-time-string dep-time))
+               vos-file
+               (get job 'src-file)
+               default-directory))
+    ;; the source file must exist
+    (cl-assert src-time nil
+               "internal error - cannot find src file II")
     (if (or (eq dep-time 'just-compiled) ; a dep has been just compiled
             (not vos-obj-time)           ; neither vos nor vo present
 	    ;; src younger than vos?
@@ -1418,6 +1630,22 @@ jobs when they transition from 'waiting-queue to 'ready:
       ;; resetting queueitems is on the save side in any case
       (put job 'queueitems nil))))
 
+(defun coq-par-kickoff-queue-from-action-list (job)
+  "Trigger `coq-par-kickoff-queue-maybe' from action list.
+Simple wrapper around `coq-par-kickoff-queue-maybe' to set
+`default-directory' when entering background compilation
+functions from `proof-action-list'."
+  ;; XXX protect this function against escaping exceptions and clean
+  ;; up, if this happens similar to sentinel and
+  ;; coq-par-preprocess-require-commands
+  (let ((default-directory (get job 'current-dir)))
+    ;; XXX fix this to ensure this cannot fire
+    (cl-assert (not coq--par-process-sentinels) nil
+               "sentinel lock busy when kickoff queue from action list")
+    (setq coq--par-process-sentinels t)
+    (coq-par-kickoff-queue-maybe job)
+    (coq-par-run-queued-sentinels)))
+
 (defun coq-par-kickoff-queue-maybe (job)
   "Transition require job JOB to 'waiting-queue and maybe to 'ready.
 This function can only be called for require jobs. It further
@@ -1481,7 +1709,8 @@ retired and transition to 'ready. This means:
 	  (setq coq--par-delayed-last-job t)
 	  (proof-add-to-queue
 	   (list (coq-par-callback-queue-item
-		  `(lambda (span) (coq-par-kickoff-queue-maybe ',job))))
+		  `(lambda (span)
+                     (coq-par-kickoff-queue-from-action-list ',job))))
 	   'advancing))
       (put job 'state 'ready)
       (when coq--debug-auto-compilation
@@ -1585,7 +1814,8 @@ transition is triggered for DEPENDANT.  For 'file jobs this is
 This function must be called for failed jobs to complete all
 necessary transitions."
 
-  ;(message "%s: CPDCD with time %s" (get dependant 'name) dependee-time)
+  ;; (message "%s: CPDCD state %s with time %s"
+  ;;          (get dependant 'name) (get dependant 'state) dependee-time)
   (cl-assert (eq (get dependant 'state) 'waiting-dep)
 	  nil "wrong state of parent dependant job")
   (when (coq-par-time-less (get dependant 'youngest-coqc-dependency)
@@ -1694,7 +1924,14 @@ was queued."
         (coq-load-path-include-current nil)
         (require-command
          (mapconcat 'identity (nth 1 (car (get job 'queueitems))) " "))
-        (temp-file (make-temp-file "ProofGeneral-coq" nil ".v")))
+        temp-file temp-file-local-part)
+    (if (fboundp 'make-nearby-temp-file)
+        ;; make-nearby-temp-file was introduced in 26.1
+        (progn
+          (setq temp-file (make-nearby-temp-file "ProofGeneral-coq" nil ".v"))
+          (setq temp-file-local-part (file-local-name temp-file)))
+      (setq temp-file (make-temp-file "ProofGeneral-coq" nil ".v"))
+      (setq temp-file-local-part temp-file))
     (put job 'temp-require-file temp-file)
     (with-temp-file temp-file (insert require-command))
     (when coq--debug-auto-compilation
@@ -1703,7 +1940,7 @@ was queued."
 	       (get job 'temp-require-file)))
     (coq-par-start-process
      coq-dependency-analyzer
-     (coq-par-coqdep-arguments (get job 'temp-require-file) load-path)
+     (coq-par-coqdep-arguments temp-file-local-part load-path)
      'coq-par-process-coqdep-result
      job
      (get job 'temp-require-file))))
@@ -1827,7 +2064,7 @@ synchronously or asynchronously."
       (coq-par-start-task new-job)
     (coq-par-job-enqueue new-job)))
 
-(defun coq-par-job-init-common (coq-load-path type)
+(defun coq-par-job-init-common (coq-load-path type current-dir)
   "Common initialization for 'require and 'file jobs.
 Create a new job of type TYPE and initialize all common fields of
 require and file jobs that need an initialization different from
@@ -1838,6 +2075,7 @@ nil."
     (put new-job 'coqc-dependency-count 0)
     (put new-job 'type type)
     (put new-job 'state 'enqueued-coqdep)
+    (put new-job 'current-dir current-dir)
     ;; The ancestor modification time is not really needed in require
     ;; jobs, however, if the field is present, we can treat require
     ;; and file jobs more uniformely.
@@ -1846,7 +2084,8 @@ nil."
     (put new-job 'load-path coq-load-path)
     new-job))
 
-(defun coq-par-create-require-job (coq-load-path require-items require-span)
+(defun coq-par-create-require-job (coq-load-path require-items require-span
+                                                 current-dir)
   "Create a new require job for REQUIRE-SPAN.
 Create a new require job and initialize its fields. COQ-LOAD-PATH
 is the load path configured for the current scripting buffer,
@@ -1856,16 +2095,16 @@ following the REQUIRE-SPAN, they are temporarily stored in the
 new require job outside of `proof-action-list'. 
 
 The current directory (from `default-directory') is stored in
-property 'current-dir for <8.5 compatibility, where coqdep did
-not search the current directory.
+property 'current-dir and propagated to all dependend jobs. This
+is used to set `default-directory' when entering background
+compilation from a sentinel or elsewhere.
 
 This function is called synchronously when asserting. The new
 require job is neither started nor enqueued here - the caller
 must do this."
-  (let ((new-job (coq-par-job-init-common coq-load-path 'require)))
+  (let ((new-job (coq-par-job-init-common coq-load-path 'require current-dir)))
     (put new-job 'require-span require-span)
     (put new-job 'queueitems require-items)
-    (put new-job 'current-dir default-directory)
     (when coq--debug-auto-compilation
       (let* ((require-item (car require-items))
              (require-command (mapconcat 'identity (nth 1 require-item) " ")))
@@ -1877,7 +2116,8 @@ must do this."
 ;; there was some error and it was not used anywhere back then, but
 ;; job is now needed as a dependency of some other file?
 ;; XXX what happens if the job exists and is failed?
-(defun coq-par-create-file-job (module-vo-file coq-load-path dep-src-file)
+(defun coq-par-create-file-job (module-vo-file coq-load-path dep-src-file
+                                               current-dir)
   "Create a new file job for MODULE-VO-FILE.
 DEP-SRC-FILE is the source file whose coqdep output we are just
 processing and which depends on MODULE-VO-FILE. This argument is
@@ -1894,7 +2134,7 @@ If a new job is created it is started or enqueued right away."
   (cond
    ((gethash module-vo-file coq--compilation-object-hash))
    (t
-    (let ((new-job (coq-par-job-init-common coq-load-path 'file)))
+    (let ((new-job (coq-par-job-init-common coq-load-path 'file current-dir)))
       ;; fields 'required-obj-file and obj-mod-time are implicitely set to nil
       (put new-job 'vo-file module-vo-file)
       (put new-job 'src-file (coq-library-src-of-vo-file module-vo-file))
@@ -2077,7 +2317,8 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 	(unless (coq-compile-ignore-file dep-vo-file)
 	  (let* ((dep-job (coq-par-create-file-job dep-vo-file
                                                    (get job 'load-path)
-                                                   (get job 'src-file)))
+                                                   (get job 'src-file)
+                                                   (get job 'current-dir)))
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
             (when (get dep-job 'failed)
               (setq dependee-failed t))
@@ -2207,7 +2448,9 @@ This function is called synchronously when asserting."
      `(lambda ()
 	(coq-unlock-all-ancestors-of-span ,span)))
     ;; create a new require job and maintain coq--last-compilation-job
-    (setq new-job (coq-par-create-require-job coq-load-path require-items span))
+    (setq new-job
+          (coq-par-create-require-job coq-load-path require-items span
+                                      default-directory))
     (when coq--last-compilation-job
       (coq-par-add-queue-dependency coq--last-compilation-job new-job))
     (setq coq--last-compilation-job new-job)
@@ -2312,27 +2555,35 @@ does the error checking/reporting for
 `coq-par-preprocess-require-commands-internal', which does all
 the work. This function is called synchronously when asserting."
   (when coq-compile-before-require
-    (condition-case err
-	(coq-par-preprocess-require-commands-internal)
-      (coq-compile-error
-       (coq-par-emergency-cleanup)
-       (message "%s %s" (get (car err) 'error-message) (cdr err)))
-      (coq-unclassifiable-version
-       (coq-par-emergency-cleanup)
-       (if (equal (cdr err) "trunk")
-	   (message
-	    (concat "your Coq version \"trunk\" is too unspecific for "
-		    "Proof General; please customize coq-pinned-version"))
-	 (message "%s \"%s\"; consider customizing coq-pinned-version"
-		  (get (car err) 'error-message) (cdr err))))
-      (file-error
-       (coq-par-emergency-cleanup)
-       (message "Error: %s" (mapconcat 'identity (cdr err) ": ")))
-      (error
-       (message "Unexpected error during parallel compilation: %s"
-		err)
-       (coq-par-emergency-cleanup)
-       (signal (car err) (cdr err))))))
+    (unwind-protect
+        (condition-case err
+            (progn
+              ;; XXX transform the synchronously called functions here
+              ;; such that this assert cannot be triggered any more
+              (cl-assert (not coq--par-process-sentinels) nil
+                         "sentinel lock busy when entering compilation")
+              (setq coq--par-process-sentinels t)
+	      (coq-par-preprocess-require-commands-internal))
+          (coq-compile-error
+           (coq-par-emergency-cleanup)
+           (message "%s %s" (get (car err) 'error-message) (cdr err)))
+          (coq-unclassifiable-version
+           (coq-par-emergency-cleanup)
+           (if (equal (cdr err) "trunk")
+	       (message
+	        (concat "your Coq version \"trunk\" is too unspecific for "
+		        "Proof General; please customize coq-pinned-version"))
+	     (message "%s \"%s\"; consider customizing coq-pinned-version"
+		      (get (car err) 'error-message) (cdr err))))
+          (file-error
+           (coq-par-emergency-cleanup)
+           (message "Error: %s" (mapconcat 'identity (cdr err) ": ")))
+          (error
+           (message "Unexpected error during parallel compilation: %s"
+		    err)
+           (coq-par-emergency-cleanup)
+           (signal (car err) (cdr err))))
+      (coq-par-run-queued-sentinels))))
 
 
 (provide 'coq-par-compile)
