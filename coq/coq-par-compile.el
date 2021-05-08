@@ -99,7 +99,7 @@
 ;; back into proof-action-list and lets Proof General process them as
 ;; usual.
 ;;
-;; All 'require commands are linked with so-called 'queue-dependent
+;; All 'require commands are linked with so-called 'queue-dependant
 ;; links, such that later 'require jobs can be delayed until earlier
 ;; ones are ready. The later 'require job is said to be a queue
 ;; dependant of the earlier one.
@@ -109,22 +109,23 @@
 ;;
 ;; Consider "Require a. Require b." where a and b depend on c. Locking
 ;; must be done such that c is only unlocked, when "Require a" is
-;; undone and not when "Require b" is undone alone. During compilation,
-;; files are locked just before coqdep is started on them (after they
-;; have been identified as a dependency). At that time the 'lock-state
-;; property of the job is set to 'locked. Ancestors are then
-;; propagated upwards in the dependency tree and stored in the
-;; 'ancestors property of jobs. When a require job is retired all
-;; direct and indirect ancestors with 'lock-state 'locked are stored
-;; in the 'coq-locked-ancestors property of the span belonging to that
-;; require command (in the 'require-span property). The 'lock-state is
-;; then set to 'asserted, such that any other require job will ignore
-;; these jobs. A span delete action will unlock all uncestors in the
+;; undone and not when "Require b" is undone alone. In case
+;; compilation of c fails then c and all its ancestors must be
+;; unlocked. During compilation, files are locked just before coqdep
+;; is started on them (after they have been identified as a
+;; dependency). At that time the 'lock-state property of the job is
+;; set to 'locked. When a require job is retired, all ancestors with
+;; 'lock-state property 'locked are collected by following the
+;; downward links. When the require job was successful, the collected
+;; jobs are stored in the 'coq-locked-ancestors property of the span
+;; belonging to that require command (in the 'require-span property).
+;; Furhter, the 'lock-state is set to 'asserted, such that another
+;; collection from a following require job ignores these jobs. A span
+;; delete action will unlock all uncestors in the
 ;; 'coq-locked-ancestors property.
 ;;
-;; The 'ancestors property holds a hash that is used as a set, to
-;; avoid exponential duplication of ancestors, see Proof General
-;; issue 499.
+;; When the require job was unsuccessful, all collected jobs are
+;; unlocked.
 ;;
 ;;
 ;; For 3- error reporting:
@@ -273,6 +274,10 @@
 ;;                      when this job finishes it propagates the
 ;;                      necessary information to it's parent jobs and
 ;;                      decreases their 'coqc-dependency-count
+;;   'coqc-dependees  - list of child jobs this job depends on
+;;                      reverse links of 'coqc-dependants, needed to
+;;                      efficiently traverse the tree to collect ancestors
+;;                      for locking and unlocking
 ;;   'coqc-dependency-count - number of unfinished child jobs
 ;;                            increased for every subjob spawned
 ;;                            during coqdep output processing
@@ -291,14 +296,12 @@
 ;;                              are compiled, but queue items are only
 ;;                              put back into proof-action-list when
 ;;                              this property becomes nil
+;;   'queue-dependee  - previous top-level job, only present in require jobs
+;;                      reverse link of 'queue-dependant, needed to unlock
+;;                      ancestors in case of error
 ;;   'src-file        - the .v file name, only in file jobs
 ;;   'load-path       - value of coq-load-path, propagated to all
 ;;                      dependencies
-;;   'ancestors       - set of ancestor jobs, implemented as hash
-;;			mapping jobs to t; for file jobs
-;;			this set includes the job itself; the hash is
-;;			necessary to avoid an exponentially growing
-;;			number of duplicates
 ;;   'lock-state      - nil for require jobs, 'unlocked if the file
 ;;                      corresponding to job is not locked, 'locked if that
 ;;                      file has been locked, 'asserted if it has been
@@ -520,13 +523,6 @@ latter is greater then everything else."
   "(Re-)Initialize `coq--compilation-object-hash'."
   (setq coq--compilation-object-hash (make-hash-table :test 'equal)))
 
-(defun merge-hash-content (target source)
-  "Add all elements of hash SOURCE to hash TARGET.
-Keys present in TARGET and in SOURCE are replaced in TARGET with
-their SOURCE binding."
-  (maphash
-   (lambda (key val) (puthash key val target))
-   source))
 
 ;;; generic queues
 ;; Standard implementation with two lists.
@@ -1139,14 +1135,19 @@ item will be processed as comment and only the callback will be called."
   "Return t if all dependencies of compilation job JOB are ready."
   (eq (get job 'coqc-dependency-count) 0))
 
-(defun coq-par-add-coqc-dependency (dependee dependant)
-  "Add normal Coq dependency from child job DEPENDEE to parent job DEPENDANT."
-  (put dependant 'coqc-dependency-count
-       (1+ (get dependant 'coqc-dependency-count)))
+(defun coq-par-add-coqc-dependency (dependee dependant count)
+  "Add normal Coq dependency from child job DEPENDEE to parent job DEPENDANT.
+If argument COUNT is non-nil, the dependency counter in DEPENDANT
+is increased, such that DEPENDANT waits for the completion of DEPENDEE."
+  (when count
+    (put dependant 'coqc-dependency-count
+         (1+ (get dependant 'coqc-dependency-count))))
   (push dependant (get dependee 'coqc-dependants))
+  (push dependee (get dependant 'coqc-dependees))
   (when coq--debug-auto-compilation
-    (message "%s -> %s: add coqc dependency"
-	     (get dependee 'name) (get dependant 'name))))
+    (message "%s -> %s: add %s coqc dependency"
+	     (get dependee 'name) (get dependant 'name)
+             (if count "counted" "uncounted"))))
 
 ;; XXX need to propagate 'failed from dependee to dependant
 ;; Relevant, if user asserts second region when for the first one
@@ -1162,6 +1163,7 @@ Therefore DEPENDANT must wait for DEPENDEE to finish. "
 	  nil "queue dependency cannot be added")
   (put dependant 'queue-dependant-waiting t)
   (put dependee 'queue-dependant dependant)
+  (put dependant 'queue-dependee dependee)
   (when coq--debug-auto-compilation
     (message "%s -> %s: add queue dependency"
 	     (get dependee 'name) (get dependant 'name))))
@@ -1419,7 +1421,6 @@ the 'second-stage property on job to 'vok if necessary."
             (put job 'obj-mod-time vo-obj-time)))))
     result))
 
-
 (defun coq-par-job-needs-compilation (job)
   "Determine if JOB nees to get compiled and possibly do some side effects.
 This function calls `coq-par-job-needs-compilation-vos for coq >=
@@ -1431,6 +1432,70 @@ If compilation is needed, 'required-obj-file is set.  Property
   (if (coq--post-v811)
       (coq-par-job-needs-compilation-vos job)
     (coq-par-job-needs-compilation-quick job)))
+
+(defun coq-par-collect-locked-ancestors-dependees (job)
+  "Collect locked, not-yet-found ancestors from ancestors of JOB.
+Apply `coq-par-collect-locked-file-ancestors' recursively to all
+dependees to return those ancestors that are not yet asserted and
+have not been returned yet by a previous invocation of this
+function on a different job. This function sets the
+'collect-visited property on all returned jobs, which should be
+cleared before the next collection run."
+  ;; (message "CLAD: job %s: dependees %s"
+  ;;          (get job 'name)
+  ;;          (mapconcat
+  ;;           (lambda (job) (get job 'name))
+  ;;           (get job 'coqc-dependees) " "))
+  (apply 'nconc (mapcar 'coq-par-collect-locked-file-ancestors
+                        (get job 'coqc-dependees))))
+
+(defun coq-par-collect-locked-file-ancestors (job)
+  "Collect locked, not-yet-found ancestors of JOB.
+Return JOB if JOB is not asserted yet and has not been visited
+before by this function. Do the same recursively on all ancestors
+to return all not-yet-asserted ancestors of JOB. This function
+sets the 'collect-visited property on all returned jobs, which
+should be cleared before the next collection run."
+  ;; (message "CLFA job %s cv %s ls %s"
+  ;;          (get job 'name) (get job 'collect-visited) (get job 'lock-state))
+  (when (and (not (get job 'collect-visited))
+             (eq (get job 'lock-state) 'locked))
+    (put job 'collect-visited t)
+    (cons job (coq-par-collect-locked-ancestors-dependees job))))
+
+(defun coq-par-collect-locked-require-ancestors-rec (job)
+  "Collect locked, not yet found ancestorors for require job JOB.
+Return all not yet asserted ancestors for successful jobs JOB as
+well as for failed jobs JOB. For successful jobs, the not yet
+asserted ancestors of preceeding require jobs have been collected
+in a previous collection run. For failed jobs, this is not the
+case, therefore, for failed jobs, this function recureses into
+the preceeding require job, if it exists."
+  (let ((this-anc (coq-par-collect-locked-ancestors-dependees job))
+        (q-dep (get job 'queue-dependee))
+        prev-anc)
+    (when (and q-dep (get q-dep 'failed))
+      (setq prev-anc (coq-par-collect-locked-require-ancestors-rec q-dep)))
+    (nconc this-anc prev-anc)))
+
+(defun coq-par-collect-locked-require-ancestors (job)
+  "Top-level ancestor collection function - collects not asserted ancestors.
+Return all not yet asserted ancestors for successful jobs JOB as
+well as for failed jobs JOB. For failed require jobs JOB, this
+entails visiting the preceeding require job. The recursion
+internally uses property 'collect-visited to mark already visited
+jobs in order to avoid an exponential blowup in graphs that are
+not trees. This property is reset here after collection, such
+that its use stays internal."
+  (let ((ancs (coq-par-collect-locked-require-ancestors-rec job)))
+    (mapc (lambda (job) (put job 'collect-visited nil)) ancs)
+    (when coq--debug-auto-compilation
+      (message "%s: locked ancestors: %s"
+               (get job 'name)
+               (mapconcat
+                (lambda (job) (get job 'name))
+                ancs " ")))
+    ancs))
 
 (defun coq-par-retire-top-level-job (job)
   "Register ancestors and start queue items.
@@ -1450,15 +1515,14 @@ jobs when they transition from 'waiting-queue to 'ready:
   (let ((span (get job 'require-span))
 	(items (get job 'queueitems)))
     (when coq-lock-ancestors
-      (maphash
-       (lambda (anc-job not-used)
-         (cl-assert (not (eq (get anc-job 'lock-state) 'unlocked))
+      (mapc
+       (lambda (anc-job)
+         (cl-assert (eq (get anc-job 'lock-state) 'locked)
                     nil "bad ancestor lock state")
-         (when (eq (get anc-job 'lock-state) 'locked)
-           (put anc-job 'lock-state 'asserted)
-           (push (get anc-job 'src-file)
-                 (span-property span 'coq-locked-ancestors))))
-       (get job 'ancestors)))
+         (put anc-job 'lock-state 'asserted)
+         (push (get anc-job 'src-file)
+               (span-property span 'coq-locked-ancestors)))
+       (coq-par-collect-locked-require-ancestors job)))
     ;; XXX each require job must have items, right?
     (when items
       (when (and
@@ -1593,6 +1657,17 @@ retired and transition to 'ready. This means:
 	  (when (eq coq--last-compilation-job job)
 	    (when (get job 'failed)
 	      ;; proof-action-list is empty, see above
+              ;; unlock ancestors
+              (mapc
+               (lambda (anc-job)
+                 (cl-assert (eq (get anc-job 'lock-state) 'locked)
+                            nil "bad ancestor lock state")
+                 (when coq--debug-auto-compilation
+                   (message "%s: %s unlock because of error"
+                            (get anc-job 'name) (get anc-job 'src-file)))
+                 (coq-unlock-ancestor (get anc-job 'src-file))
+                 (put anc-job 'lock-state 'unlocked))
+               (coq-par-collect-locked-require-ancestors job))
 	      ;; variables that hold the queue span are buffer local
 	      (with-current-buffer (or proof-script-buffer (current-buffer))
 		(proof-script-clear-queue-spans-on-error nil))
@@ -1646,16 +1721,14 @@ transition 'enqueued-coqc -> 'ready is triggered."
       (coq-par-second-stage-enqueue job))
     (coq-par-kickoff-coqc-dependants job nil)))
 
-(defun coq-par-decrease-coqc-dependency (dependant dependee-time
-						   dependee-anc-hash)
+(defun coq-par-decrease-coqc-dependency (dependant dependee-time)
   "Clear Coq dependency and update dependee information in DEPENDANT.
 This function handles a Coq dependency from child dependee to
 parent dependant when the dependee has finished compilation (ie.
 is in state 'ready).  DEPENDANT must be in state
 'waiting-dep.  The time of the most recent ancestor is updated, if
 necessary using DEPENDEE-TIME.  DEPENDEE-TIME must be an Emacs
-time or 'just-compiled.  The ancestors of dependee in hash
-DEPENDEE-ANC-HASH are propagated to DEPENDANT.  The dependency
+time or 'just-compiled.  The dependency
 count of DEPENDANT is decreased and, if it reaches 0, the next
 transition is triggered for DEPENDANT.  For 'file jobs this is
 'waiting-dep -> 'enqueued-coqc and for 'require jobs this is
@@ -1663,14 +1736,12 @@ transition is triggered for DEPENDANT.  For 'file jobs this is
 
 This function must be called for failed jobs to complete all
 necessary transitions."
-
   ;(message "%s: CPDCD with time %s" (get dependant 'name) dependee-time)
   (cl-assert (eq (get dependant 'state) 'waiting-dep)
 	  nil "wrong state of parent dependant job")
   (when (coq-par-time-less (get dependant 'youngest-coqc-dependency)
 			   dependee-time)
     (put dependant 'youngest-coqc-dependency dependee-time))
-  (merge-hash-content (get dependant 'ancestors) dependee-anc-hash)
   (put dependant 'coqc-dependency-count
        (1- (get dependant 'coqc-dependency-count)))
   (cl-assert (<= 0 (get dependant 'coqc-dependency-count))
@@ -1693,11 +1764,11 @@ not necessary or failed (with JUST-COMPILED being nil). This
 function sets 'youngest-coqc-dependency to the maximal (youngest)
 time stamp of the vo file for this job and all its ancestors.
 This function also decreases the dependency counter on all
-dependants, propagates 'youngest-coqc-dependency and the
-ancestors and starts any necessary state transitions on the
-dependants. Finally, if this job has not failed, but all
-dependants are marked as failed already, then the ancestors are
-unlocked as necessary.
+dependants, propagates 'youngest-coqc-dependency and
+starts any necessary state transitions on the
+dependants.  Nothing special happens, if this job is successful
+but all its dependants are marked failed.  Ancestor unlocking will
+be done when the last require job is retired.
 
 For the case that JUST-COMPILED is nil and that JOB has not
 failed, this function relies on 'obj-mod-time has been set
@@ -1705,8 +1776,7 @@ before."
   (cl-assert (not (eq (get job 'type) 'require))
              nil "kickoff-coqc-dependants called for require job")
   ;; most actions are not relevant for failed jobs, but do not harm
-  (let ((ancestor-hash (get job 'ancestors))
-	(dependant-alive nil)
+  (let ((dependant-alive nil)
         ;; take max (youngest) time of this job and all ancestors
         ;;
         ;; If this job has just been compiled then it is clearly
@@ -1719,16 +1789,11 @@ before."
     (put job 'youngest-coqc-dependency dep-time)
     (when coq--debug-auto-compilation
       (let (ancs)
-        ;; don't use map-apply here, this changes the timing too much
-        (maphash
-         (lambda (anc-job not-used) (push (get anc-job 'src-file) ancs))
-         ancestor-hash)
-        (message "%s: kickoff %d coqc dependencies with time %s\n\tancestors %s"
+        (message "%s: kickoff %d coqc dependencies with time %s"
 	         (get job 'name) (length (get job 'coqc-dependants))
 	         (if (eq dep-time 'just-compiled)
 		     'just-compiled
-		   (current-time-string dep-time))
-                 ancs)))
+		   (current-time-string dep-time)))))
     ;; In the recursion coq-par-kickoff-coqc-dependants ->
     ;; coq-par-decrease-coqc-dependency -> coq-par-compile-job-maybe
     ;; -> coq-par-kickoff-coqc-dependants jobs on the path upwards
@@ -1736,17 +1801,13 @@ before."
     ;; might take one of those as witness for an ongoing compilation.
     (put job 'state 'ready)
     (dolist (dependant (get job 'coqc-dependants))
-      (coq-par-decrease-coqc-dependency dependant dep-time ancestor-hash)
+      (coq-par-decrease-coqc-dependency dependant dep-time)
       (unless (get dependant 'failed)
 	(setq dependant-alive t)))
     (when coq--debug-auto-compilation
       (message (concat "%s: coqc kickoff finished, %s dependant alive")
 	       (get job 'name)
-	       (if dependant-alive "some" "no")))
-    (when (and (not dependant-alive)
-               (not (get job 'failed)))
-      ;; job has not failed, but all dependants have 'failed set
-      (coq-par-unlock-job-ancestors-on-error job))))
+	       (if dependant-alive "some" "no")))))
 
 (defun coq-par-start-coqdep-on-require (job)
   "Start coqdep for require job JOB.
@@ -1792,7 +1853,6 @@ Lock the source file and start the coqdep background process."
              ;; locked registered files in `proof-included-files-list'
 	     (eq (get job 'lock-state) 'unlocked))
     (proof-register-possibly-new-processed-file (get job 'src-file))
-    (puthash job t (get job 'ancestors))
     (put job 'lock-state 'locked))
   (coq-par-start-process
    coq-dependency-analyzer
@@ -1919,7 +1979,6 @@ nil."
     ;; jobs, however, if the field is present, we can treat require
     ;; and file jobs more uniformely.
     (put new-job 'youngest-coqc-dependency '(0 0))
-    (put new-job 'ancestors (make-hash-table :size 7 :rehash-size 2.1))
     (put new-job 'load-path coq-load-path)
     new-job))
 
@@ -1999,78 +2058,6 @@ If a new job is created it is started or enqueued right away."
       (coq-par-start-or-enqueue new-job)
       new-job))))
 
-(defun coq-par-ongoing-compilation (job)
-  "Determine if the source file for JOB needs to stay looked.
-Return t if job has a direct or indirect dependant that has not
-failed yet and that is in a state before 'ready. Also,
-return t if JOB has a dependant that is a top-level job which has
-not yet failed."
-  ;; This function is called on jobs with 'lock-state 'locked. A job
-  ;; that is 'asserted has all its ancestors 'asserted as well.
-  ;; Therefore all direct and indirect dependants of job (i.e.,
-  ;; everything above) cannot be 'asserted. In a stable state all
-  ;; dependants must be 'locked. But when this function is called,
-  ;; ancestors from some failing job are unlocked in no particular
-  ;; order, therefore some dependant might already be 'unlocked.
-  (cl-assert (not (eq (get job 'lock-state) 'asserted))
-	  nil "coq-par-ongoing-compilation precondition failed")
-  (cond
-   ((get job 'failed)
-    nil)
-   ((or (eq (get job 'state) 'waiting-dep)
-	(eq (get job 'state) 'enqueued-coqc)
-	;; top-level job that has compilation finished but has not
-	;; been asserted yet and has not been set to 'failed (see
-	;; first cond check)
-	(eq (get job 'state) 'waiting-queue)
-	;; Note that job cannot be a top-level in state 'ready,
-	;; because we started from job with 'lock-state property equal
-	;; to 'locked. Top-level job in state 'ready have all
-	;; dependees with 'lock-state equal to 'asserted.
-	)
-    t)
-   ;; The following recursive clause needs to match file and require
-   ;; jobs that were ready, before the current mark-failing or
-   ;; unlocking-ancestors procedure started. Additionally, it also
-   ;; needs to match dependants that are right now inside
-   ;; coq-par-kickoff-coqc-dependants in the loop to propagate their
-   ;; ancestors to their dependants. Therefore it is important that
-   ;; coq-par-kickoff-coqc-dependants sets the state to 'ready quite
-   ;; early.
-   ((eq (get job 'state) 'ready)
-    ;; internal ready job
-    (let ((dependants (get job 'coqc-dependants))
-	  (res nil)
-	  dep)
-      (while (and (not res) (setq dep (pop dependants)))
-	(setq res (coq-par-ongoing-compilation dep)))
-      res))
-   (t
-    (cl-assert nil nil
-	    "impossible ancestor state %s on job %s"
-	    (get job 'state) (get job 'name)))))
-
-;; XXX check whether this needs to be called only when job is set to 'failed
-;; - when job was set to failed earlier, then the ancestors should have been
-;; unlocked earlier too
-(defun coq-par-unlock-job-ancestors-on-error (job)
-  "Unlock those ancestors of JOB that need to be unlocked.
-For a failing job JOB, an ancestor needs to stay looked if there
-is still some compilation going on for which this ancestor is a
-dependee or if a top level job with JOB as ancestor has finished
-it's compilation successfully.  In all other cases the ancestor
-must be unlocked."
-  (maphash
-   (lambda (anc-job not-used)
-     (when (and (eq (get anc-job 'lock-state) 'locked)
-                (not (coq-par-ongoing-compilation anc-job)))
-       (when coq--debug-auto-compilation
-         (message "%s: %s unlock because no ongoing compilation"
-                  (get anc-job 'name) (get anc-job 'src-file)))
-       (coq-unlock-ancestor (get anc-job 'src-file))
-       (put anc-job 'lock-state 'unlocked)))
-   (get job 'ancestors)))
-
 (defun coq-par-mark-queue-failing (job)
   "Mark require JOB and its queue dependants with 'failed.
 Mark JOB with 'failed and unlock ancestors as appropriate.
@@ -2085,7 +2072,6 @@ Recurse for queue dependants."
 	       (if (eq (get job 'state) 'waiting-queue)
 		   "and unlock ancestors"
 		 "wait")))
-    (coq-par-unlock-job-ancestors-on-error job)
     (when (get job 'queue-dependant)
       (coq-par-mark-queue-failing (get job 'queue-dependant)))))
 
@@ -2097,8 +2083,7 @@ JOB.  Along the way, unlock ancestors as determined by
   (unless (get job 'failed)
     (put job 'failed t)
     (when coq--debug-auto-compilation
-      (message "%s: mark as failed and unlock free ancestors" (get job 'name)))
-    (coq-par-unlock-job-ancestors-on-error job)
+      (message "%s: mark as failed" (get job 'name)))
     (dolist (dependant (get job 'coqc-dependants))
       (coq-par-mark-job-failing dependant))
     (when (get job 'queue-dependant)
@@ -2161,17 +2146,14 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
             (when (get dep-job 'failed)
               (setq dependee-failed t))
-            (when (eq (get dep-job 'state) 'ready)
-              (merge-hash-content (get job 'ancestors) (get dep-job 'ancestors))
+            (when (and (eq (get dep-job 'state) 'ready)
+                       (coq-par-time-less job-max-time dep-time))
               ;; the following clause is not needed for require jobs,
               ;; but it doesn't harm either, so keep the code a little
               ;; bit more simple
-              (when (coq-par-time-less job-max-time dep-time)
-                (setq job-max-time dep-time)))
-            ;; not adding the dependency link is fine now
-            ;; with a feature for background vo compilation, this link is needed
-            (unless (eq (get dep-job 'state) 'ready)
-	      (coq-par-add-coqc-dependency dep-job job)))))
+              (setq job-max-time dep-time))
+	    (coq-par-add-coqc-dependency
+             dep-job job (not (eq (get dep-job 'state) 'ready))))))
       (put job 'youngest-coqc-dependency job-max-time)
       (when dependee-failed
         (cl-assert coq-compile-keep-going
