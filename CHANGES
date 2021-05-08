@@ -193,6 +193,16 @@ also https://wiki.ubuntu.com/Releases).
     - 92: Compile before require from current directory failing
       with 8.5
 
+*** indentation code refactored
+
+    A big refactoring of the code for indentation has been done. You
+    may experience a few changes in indentation results. Mostly small
+    shifts to the right.
+
+    Variable `coq-indent-box-style' only affects indentation after
+    quantifiers (used to affect script braces "{").
+
+
 * Changes of Proof General 4.4 from Proof General 4.3
 
 ** ProofGeneral has moved to GitHub!
