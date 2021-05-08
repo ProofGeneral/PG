@@ -78,7 +78,7 @@ No context checking.")
 (defconst coq-bullet-prefix-regexp-backward
   (concat "\\(?:\\(?:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\(?:\\.\\s-+\\)"
           "\\(?:\\(?:" coq-goal-selector-regexp "\\)?"
-          "{\\|}\\|-\\|+\\|\\*\\)*\\)"))
+          "{\\|}\\|-\\|+\\|\\*\\s-\\)*\\)"))
 
 ;; matches regular command end (. and ... followed by a space or "}" or buffer end)
 ;; ". " and "... " are command endings, ".. " is not, same as in
