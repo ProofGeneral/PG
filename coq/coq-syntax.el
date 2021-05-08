@@ -1375,7 +1375,7 @@ different."
 (defconst coq-command-prefix-regexp "\\(Local\\s-\\|Global\\s-\\|#[[][^]]*[]]\\)")
 ;; FIXME: incomplete
 
-(defun coq-add-command-prefix (reg) (concat "\\(" coq-command-prefix-regexp "\\)?" (mapconcat #'identity coq-keywords-defn "\\|")))
+(defun coq-add-command-prefix (reg) (concat "\\(" coq-command-prefix-regexp "\\)?" (mapconcat #'identity reg "\\|")))
 
 (defconst coq-command-decl-regexp (coq-add-command-prefix coq-keywords-decl))
 (defconst coq-command-defn-regexp (coq-add-command-prefix coq-keywords-defn))
