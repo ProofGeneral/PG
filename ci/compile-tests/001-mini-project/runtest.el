@@ -36,6 +36,7 @@
 (ert-deftest cct-mini-project ()
   "Test successful background compilation and ancestor recording."
   (find-file "a.v")
+  ; (setq coq--debug-auto-compilation t)
   (cct-process-to-line 25)
   
   (cct-check-locked 24 'locked)
