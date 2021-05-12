@@ -4,12 +4,13 @@ Compatibility of Proof General
 This version of Proof General has been tested with these Emacs versions
 on recent Linux systems:
 
- Emacs 24.5          -- recommended and supported
- Emacs 24.3, 24.4    -- previous versions, should work
- Emacs 25 (dev)      -- next version, should work
- Emacs 23.2, earlier -- obsolete versions, do NOT work
+ Emacs 25.1          -- minimal supported version
+ Emacs 24.5, earlier -- previous versions, do NOT work
 
-and (main) prover versions:  Coq 8.4, Coq 8.5
+and (main) prover versions:
+
+  Coq 8.9, 8.10, 8.11, 8.12, 8.13 -- tested versions in PG's CI
+  Coq 8.4, 8.5, 8.6, 8.7, 8.8     -- previous versions, should work
 
 See below for notes about other operating systems.
 
@@ -43,12 +44,3 @@ For tips, please see here:
 Note that Windows compatibility isn't tested by the maintainers.  If
 you discover problems, please add notes on the Wiki page above, and
 submit patches to http://proofgeneral.inf.ed.ac.uk/trac
-
-
-
-
-
-
-
-
-
