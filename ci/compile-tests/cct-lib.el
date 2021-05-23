@@ -214,6 +214,20 @@ region of the buffer and signals a test failure if not."
            (funcall (if locked '< '>)
                     (point) (span-end proof-locked-span)))))))
 
+(defun cct-check-files-locked (line lock-state files)
+  "Check that all FILES at line number LINE have lock state LOCK-STATE.
+LOCK-STATE must be either 'locked or 'unlocked. FILES must be
+list of file names."
+  (when cct--debug-tests
+    (message "check files %s at line %d: %s"
+             (if (eq lock-state 'locked) "locked" "unlocked") line files))
+  (save-current-buffer
+    (mapc
+     (lambda (file)
+       (find-file file)
+       (cct-check-locked line lock-state))
+     files)))
+
 (defun cct-locked-ancestors (line ancestors)
   "Check that the vanilla span at line LINE has ANCESTORS recorded.
 The comparison treats ANCESTORS as set but the file names must
@@ -296,6 +310,12 @@ or changed since recording the time in the association."
   (when cct--debug-tests
     (message "Files should exist and be readable: %s" files))
   (mapc (lambda (fname) (should (file-readable-p fname))) files))
+
+(defun cct-files-dont-exist (files)
+  "Check that FILES don't exist."
+  (when cct--debug-tests
+    (message "Files should not exist: %s" files))
+  (mapc (lambda (fname) (should-not (file-exists-p fname))) files))
 
 (defun cct-generic-check-main-buffer
     (main-buf main-unlocked main-locked main-sum-line new-sum

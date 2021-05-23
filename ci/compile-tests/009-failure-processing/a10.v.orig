@@ -1,0 +1,28 @@
+(* This file is part of Proof General.
+ *
+ * © Copyright 2021  Hendrik Tews
+ *
+ * Authors: Hendrik Tews
+ * Maintainer: Hendrik Tews <hendrik@askra.de>
+ *
+ * License:     GPL (GNU GENERAL PUBLIC LICENSE)
+ *
+ *
+ * This file is part of an automatic test case for parallel background
+ * compilation in coq-par-compile.el. See runtest.el in this directory.
+ *)
+
+(* The test script relies on absolute line numbers. 
+ * DO NOT INSERT/DELETE ANY LINE UNLESS YOU KNOW WHAT YOU ARE DOING.
+ *)
+
+(* The delay for coqdep is specified in comments with key coqdep-delay,
+ * see compile-test-start-delayed.
+ *)
+
+
+(* This is line 24 *)
+Require Export b10.
+Require Export c10.
+Require Export d10.
+(* This is line 28 *)

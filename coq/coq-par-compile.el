@@ -1026,10 +1026,12 @@ function and reported appropriately."
                 (get (process-get process 'coq-compilation-job) 'current-dir)))
 	  (when coq--debug-auto-compilation
 	    (message
-             "%s %s: process status changed to %s (default-dir %s curr buf %s)"
+             (concat "%s %s: TTT process status changed to %s  "
+                     "command: %s\n  default-dir: %s curr buf %s")
 	     (get (process-get process 'coq-compilation-job) 'name)
 	     (process-name process)
 	     event
+             (mapconcat 'identity (process-get process 'coq-process-command) " ")
              default-directory
              (buffer-name)))
 	  (cond
@@ -1558,6 +1560,9 @@ Simple wrapper around `coq-par-kickoff-queue-maybe' to set
 `default-directory' when entering background compilation
 functions from `proof-action-list'."
   (let ((default-directory (get job 'current-dir)))
+    (when coq--debug-auto-compilation
+      (message "%s: TTT retry queue kickoff after processing action list"
+               (get job 'name)))
     (coq-par-kickoff-queue-maybe job)))
 
 (defun coq-par-kickoff-queue-maybe (job)
@@ -1835,7 +1840,7 @@ was queued."
     (put job 'temp-require-file temp-file)
     (with-temp-file temp-file (insert require-command))
     (when coq--debug-auto-compilation
-      (message "%s: start coqdep for require job for file %s"
+      (message "%s: TTT start coqdep for require job for file %s"
 	       (get job 'name)
 	       (get job 'temp-require-file)))
     (coq-par-start-process
@@ -1854,6 +1859,10 @@ Lock the source file and start the coqdep background process."
 	     (eq (get job 'lock-state) 'unlocked))
     (proof-register-possibly-new-processed-file (get job 'src-file))
     (put job 'lock-state 'locked))
+  (when coq--debug-auto-compilation
+    (message "%s: TTT start coqdep for file job for file %s"
+	     (get job 'name)
+	     (get job 'src-file)))
   (coq-par-start-process
    coq-dependency-analyzer
    (coq-par-coqdep-arguments (get job 'src-file) (get job 'load-path))
@@ -1877,6 +1886,10 @@ used."
      ((eq (get job 'use-quick) 'vos) (push "-vos" arguments))
      ((eq (get job 'use-quick) 'vio) (push "-quick" arguments))
      (t t))
+    (when coq--debug-auto-compilation
+      (message "%s: TTT start coqc compile for file job for file %s"
+	       (get job 'name)
+	       (get job 'src-file)))
     (coq-par-start-process
      coq-compiler
      arguments
@@ -1891,6 +1904,10 @@ used."
              (get job 'name)
              (get job 'src-file)))
   (message "coqc -vok %s" (get job 'src-file))
+  (when coq--debug-auto-compilation
+    (message "%s: TTT start coqc -vok for file job for file %s"
+	     (get job 'name)
+	     (get job 'src-file)))
   (let ((arguments
          (coq-par-coqc-arguments (get job 'src-file) (get job 'load-path))))
     (push "-vok" arguments)
@@ -1912,6 +1929,10 @@ used."
 	       (get job 'name)
 	       (get job 'src-file)))
     (message "vio2vo %s" (get job 'src-file))
+    (when coq--debug-auto-compilation
+      (message "%s: TTT start vio2vo for file job for file %s"
+	       (get job 'name)
+	       (get job 'src-file)))
     (coq-par-start-process
      ;; in 8.9.1 and before only coqtop accepts -schedule-vio2vo
      ;; after change 103f59e only coqc accepts -schedule-vio2vo
@@ -2067,11 +2088,7 @@ Recurse for queue dependants."
     (cl-assert (not (eq (get job 'state) 'ready))
 	    nil "coq-par-mark-queue-failing impossible state")
     (when coq--debug-auto-compilation
-      (message "%s: mark as failed, %s"
-	       (get job 'name)
-	       (if (eq (get job 'state) 'waiting-queue)
-		   "and unlock ancestors"
-		 "wait")))
+      (message "%s: mark as failed" (get job 'name)))
     (when (get job 'queue-dependant)
       (coq-par-mark-queue-failing (get job 'queue-dependant)))))
 
