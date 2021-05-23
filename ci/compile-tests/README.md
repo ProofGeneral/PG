@@ -32,10 +32,14 @@ All tests are for parallel background compilation.
 : test that the default/current directory is set correctly
   independent of user/emacs changing the current buffer during
   first and second stage compilation
+009-failure-processing
+: check ancestor unlocking for a failed job with
+  coq-compile-keep-going; test also the case, where the last
+  (failed) require job must be delayed, because some queue
+  dependee is still processing
 
 # Tests currently missing
 
-- unlock checks for ancestors of failed jobs in different cases
 - a job depending on a failed dependee, where the dependee has
   been finished before
 - coq-par-create-file-job detects a dependency cycle
