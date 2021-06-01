@@ -376,7 +376,8 @@ so for the following reasons:
 (defvar coq-solve-cheat-tactics-db
   (append
    '(("admit" nil "admit" t "admit")
-     ("Admitted" nil "Admitted" t "Admitted"))
+     ("Admitted" nil "Admitted" t "Admitted")
+     ("Abort" nil "Abort" t "Abort"))
    coq-user-cheat-tactics-db)
   "Coq tactic(al)s that solve a subgoal."
   )

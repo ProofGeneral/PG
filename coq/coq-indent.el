@@ -188,7 +188,7 @@ There are 3 substrings (2 and 3 may be nil):
 * number 2 is the left context matched that is not part of the ending string
 * number 3 is the right context matched that is not part of the ending string
 
-Remqrk: This regexp is much more precise than `coq-end-command-regexp-forward' but only
+Remark: This regexp is much more precise than `coq-end-command-regexp-forward' but only
 works when searching backward.")
 
 
