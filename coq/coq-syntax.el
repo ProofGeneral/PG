@@ -1300,6 +1300,10 @@ different."
 (defun coq-first-abstr-regexp (paren end)
   (concat paren "\\s-*\\(" coq-ids "\\)\\s-*" end))
 
+(defun coq-first-abstr-without-space-regexp (paren end)
+  "Variant of `coq-first-abstr-regexp' without space between PAREN & `coq-ids'."
+  (concat paren "\\(" coq-ids "\\)\\s-*" end))
+
 (defcustom coq-variable-highlight-enable t
   "Activates partial bound variable highlighting."
   :type 'boolean
@@ -1334,7 +1338,8 @@ different."
       ;;               (list 0 font-lock-variable-name-face)))
       ;; parenthesized binders
       (list (coq-first-abstr-regexp "(" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
-      (list (coq-first-abstr-regexp "{" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
+      ;; Don't use coq-first-abstr-regexp here, see ProofGeneral/PG#581:
+      (list (coq-first-abstr-without-space-regexp "{" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
       )))
   "*Font-lock table for Coq terms.")
 
