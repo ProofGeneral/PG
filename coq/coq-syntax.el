@@ -1340,6 +1340,8 @@ different."
       (list (coq-first-abstr-regexp "(" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
       ;; Don't use coq-first-abstr-regexp here, see ProofGeneral/PG#581:
       (list (coq-first-abstr-without-space-regexp "{" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
+      ;; Likewise, for https://coq.github.io/doc/V8.12.0/refman/language/extensions/implicit-arguments.html#implicit-argument-binders :
+      (list (coq-first-abstr-without-space-regexp "\\[" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
       )))
   "*Font-lock table for Coq terms.")
 
