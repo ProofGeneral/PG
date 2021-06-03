@@ -8,6 +8,15 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 ** Generic changes
 
+*** require GNU Emacs 25.1 or later
+
+The current policy aims at supporting multiple Emacs versions,
+including those available in distributions Debian Stable
+(https://packages.debian.org/stable/emacs) and Ubuntu LTS
+(https://packages.ubuntu.com/emacs), until their End-Of-Support (see
+also https://wiki.ubuntu.com/Releases).
+
+
 *** new command and menu item to easily upgrade all packages
     - To upgrade all ELPA packages (including ProofGeneral if it was
       installed via MELPA), do "M-x proof-upgrade-elpa-packages RET"
