@@ -12,6 +12,9 @@ coq-test-par-job-needs-compilation-quick
   possible cases
 coq-test-prelude-correct
 : test that the Proof General prelude is correct
+test-goals-present
+: test that Proof General shows goals correctly in various
+  situations
 
 # Overview of existing tests for qRHL
 
