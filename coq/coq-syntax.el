@@ -455,6 +455,7 @@ so for the following reasons:
 
 (defvar coq-defn-db
   '(
+    ("Canonical Structure" nil "Canonical Structure #." t "Canonical\\s-+Structure")
     ("CoFixpoint" "cfix" "CoFixpoint # (#:#) : # :=\n#." t "CoFixpoint")
     ("CoInductive" "coindv" "CoInductive # : # :=\n|# : #." t "CoInductive")
     ("Class" "class" "Class [ # ] := \n# : #;\n# : #." t "Class")
@@ -616,7 +617,7 @@ so for the following reasons:
     ("Local Arguments" nil "Local Arguments @{id} : @{rule}" t "Local\\s-+Arguments")
     ("Arguments" "args" "Arguments @{id} : @{rule}" t "Arguments")
     ("Bind Scope" "bndsc" "Bind Scope @{scope} with @{type}" t "Bind\\s-+Scope")
-    ("Canonical Structure" nil "Canonical Structure #." t "Canonical\\s-+Structure")
+    ("Canonical" nil "Canonical #." t "Canonical")
     ("Cd" nil "Cd #." nil "Cd")
     ("Local Close Scope" "lclsc" "Local Close Scope #" t "Local\\s-+Close\\s-+Scope")
     ("Close Scope" "clsc" "Close Scope #" t "Close\\s-+Scope")
