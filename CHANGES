@@ -32,6 +32,15 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 ** Coq changes
 
+*** fix highlighting issues for ssr tactics ending with colon
+
+    Now, { exact: term. } will always be correctly highlighted.
+
+    However, only (forall {T: Type}, Type) will be highlighted,
+    unlike term (forall { T: Type }, Type) that has a spurious space.
+
+    Also in (forall [T: Type], Type), variable T is now highlighted.
+
 *** new menu Coq -> Auto Compilation for all background compilation options
 
 *** support for 8.11 vos and vok compilation
