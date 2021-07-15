@@ -1,123 +1,206 @@
-(* First check that ".." is not considered as a command end. *)
-Require Export Coq.Lists.List.
-Notation "[ ]" := nil : list_scope.
-Notation "[ a ; .. ; b ]" := (a :: .. (b :: []) ..) : list_scope.
-
-Require Import Arith.
-Open Scope nat_scope.
-Definition arith1:=
-  1 + 3 *
-      4.
-
-Definition arith2 :=
-  1 * 3 +
-  4.
-
-Definition logic1 :=
-  True \/ False /\
-          False.
-
-Definition logic2 :=
-  True /\ False \/
-  False.
-
-Definition logic3 :=
-  let x := True /\ False in True \/
-                            False .
-Definition logic4 :=
-  (let x := True /\ False in True) \/
-  False .
-
-
-Record a : Type := make_a {
-                       aa : nat
-                     }.
 
 Module foo.
-  Inductive test : nat -> Prop :=
-    C1 : forall n, test n
-  | C2 : forall n, test n
-  | C3 : forall n, test n
-  | C4 : forall n, test n.
+  Lemma toto:nat.
+  Proof.
+    {{
+        exact 3.
+    }}
+  Qed.
 
-  Inductive testbar' : nat -> Prop :=
-  | Cbar1 : forall n, test n
-  | Cbar2 : forall n, test n
-  | Cbar3 : forall n, test n
-  | Cbar4 : forall n, test n.
-  
-  Inductive test2 : nat -> Prop
-    := | C21 : forall n, test2 n
-    | C22 : forall n, test2 n
-    | C23 : forall n, test2 n
-    | C24 : forall n, test2 n.
-  
-  Inductive test' : nat -> Prop :=
-    C1' : forall n, test' n
-  | C2' : forall n, test' n
-  | C3' : forall n, test' n
-  | C4' : forall n, test' n
-  with
-    test2' : nat -> Prop :=
-    C21' : forall n, test2' n
-  | C22' : forall n, test2' n
-  | C23' : forall n, test2' n
-  | C24' : forall n, test2' n
-  with test3' : nat -> Prop :=
-    C21' : forall n, test2' n
-  | C22' : forall n, test2' n
-  | C23' : forall n, test2' n
-  | C24' : forall n, test2' n
-  with test4' : nat -> Prop :=
-  | C21' : forall n, test2' n
-  | C22' : forall n, test2' n
-  | C23' : forall n, test2' n
-  | C24' : forall n, test2' n.
-  
-  Let x := 1.  Let y := 2.
-  
-  Let y2 := (1, 2, 3,
-             4, 5).
-  
-  Inductive test3             (* fixindent *)
-    : nat -> Prop
-    := C31 : forall n, test3 n
-     | C32 : forall n, test3 n.
-  
-End foo.
-
-Lemma toto:nat.
-Proof.
-  {{
-      exact 3.
-  }}
-Qed.
-
-Let xxx                        (* Precedence of "else" w.r.t "," and "->"!  *)
-  : if true then nat * nat else nat ->
-                                nat
-  := (if true then 1 else 2,
-      3).
-
-Module Y.
   Lemma L : forall x:nat , Nat.iter x (A:=nat) (plus 2) 0 >= x.
   Proof with auto with arith.
     intros x.
+    
     induction x;simpl;intros...
+
+    induction x;
+      simpl ;
+      simpl ;
+      simpl ;
+      intros.
+
+    Ltac foo:=
+      intros x;
+      induction x;
+      simpl ;
+      simpl ;
+      simpl ;
+      intros.
+
+    
+    induction x
+    ;
+      simpl
+    ;
+      intros
+    ;
+      intros
+    ;
+      intros
+    .
+    
+    
+    idtac
+    ;
+      [
+        induction x
+        ;
+          simpl
+        ;
+          intros
+      ].
+
+    
+    Ltac foo
+      :=
+      intros x
+      ;
+        induction x
+      ;
+        simpl
+      ;
+        intros
+      ;
+        intros
+    .
+    
+
+    idtac
+    ;
+      [
+        induction x
+        ;
+          simpl ;
+        simpl
+      | intros
+      ].
+    
+    Ltac foo :=
+      intros x
+      ;
+        induction x
+      ;
+        simpl
+      ;
+        intros
+      ;
+        intros
+    .
+    
+
+
+
+    induction x ;
+      simpl ;
+      intros.
+
+    induction x
+    ;
+      simpl ;
+      intros.
+
+    induction x ;
+      simpl
+    ;
+      simpl ;
+      intros.
+    
+    
+    intros x
+    ; induction x
+    ; simpl
+    ; intros.
+    
+    idtac;(intros x
+           ; induction x
+           ; simpl
+           ; intros).
+    
+
+    idtac;( induction x;
+            simpl ;
+            intros ).
+    
+    idtac;[ intros x
+            ; induction x
+            ; simpl
+            ; intros].
+
+    idtac
+    ;
+      [
+        induction x;
+        simpl ;
+        intros
+      | simpl
+        ; intros ].
+
+
+    idtac;[ intros x
+            ; induction x
+          | simpl
+            ; intros].
+    
+
+    idtac;[ intros x ;
+            induction x
+          | simpl ;
+            intros
+      ].
+    
+
+    idtac foobar;[ induction x;
+                   simpl ;
+                   intros ].
+
   Qed.
+
+  Ltac foo:=
+    intros x;
+    induction x;
+    simpl ;
+    intros.
+  
+
+  Lemma L :
+    forall x:nat ,
+      Nat.iter x (A:=nat) (plus 2) 0 >= x.
+  Proof with auto with arith.
+    intros x;
+      induction x;
+      simpl ;
+      intros.
+    idtacjqslkjd;[
+        intros x ;
+        induction x ;
+        simpl ;
+        intros].
+  Qed.
+  Lemma L : forall x:nat , Nat.iter x (A:=nat) (plus 2) 0 >= x.
+  Proof with auto with arith.
+    intros x;
+      [ induction x;
+        [
+          simpl;
+          intros...
+        ]
+      ]
+  Qed.
+
+
   Lemma L2 : forall x:nat , Nat.iter x (A:=nat) (plus 2) 0 >= x.
   Proof with auto with arith.
     idtac.
     (* "as" tactical *)
     induction x
       as
-        [ | x IHx]. 
+      [ | x IHx]. 
     - cbn.
       apply Nat.le_trans
         with
-          (n:=0) (* aligning the different closes of a "with". *)
-          (m:=0)
-          (p:=0).
+        (n:=0) (* aligning the different closes of a "with". *)
+        (m:=0)
+        (p:=0).
       + auto with arith.
       + auto with arith.
     - simpl.
@@ -219,18 +302,23 @@ Module M1'.
       intros.
       Lemma l7: forall n:nat, n = n.
       Proof.
-        destruct n.
+        destruct n. intros.
         {
           auto.
         }
         { 
-          destruct n.
-          {
-            idtac;[
+          destruct n. 
+          idtac a
+          ;
+            [
+              auto;
               auto
+            |
+              auto;
+              auto.
             ].
-          }
-          auto.
+        }
+        auto.
         } 
       Qed.
       {destruct n.
@@ -254,8 +342,8 @@ Module M4'.
         - auto.
         - destruct n.
           + idtac;[
-              auto
-            ].
+                auto
+              ].
           + destruct n.
             * auto.
             * auto.
@@ -283,28 +371,30 @@ End M1''.
 
 
 Record rec:Set := {
-                   fld1:nat;
-                   fld2:nat;
-                   fld3:bool
-                 }.
+    fld1:nat;
+    fld2:nat;
+    fld3:bool
+  }.
 
 Class cla {X:Set}:Set := {
-                          cfld1:nat;
-                          cld2:nat;
-                          cld3:bool
-                        }.
+    cfld1:nat;
+    cld2:nat;
+    cld3:bool
+  }.
 
 
 
 Module X.
-  Lemma l
-  :
+  Lemma l:
     forall r:rec,
     exists r':rec,
       r'.(fld1) = r.(fld2)/\ r'.(fld2) = r.(fld1).
   Proof.
-    intros r.
-    { exists
+    idtac.
+    idtac.
+    idtac.
+    intros r. {
+      exists
         {|
           fld1:=r.(fld2);
           fld2:=r.(fld1);
@@ -314,9 +404,20 @@ Module X.
       {auto. }
       {auto. }
     }
+    auto.
+    auto.
   Qed.
   
-  
+  (* Issue #574 *)
+  Goal let x := 1 in True.
+  Proof.
+    intro.
+    match goal with
+    | y := _ : unit |- _ => idtac "unit"
+    | y := _ : nat |- _ => idtac "nat"
+    end.
+  Qed.
+
   Lemma l2 :
     forall r:rec,
     exists r':rec,
@@ -359,6 +460,27 @@ Module X.
 
         { simpl. auto. }
         { simpl. auto. }}}
+
+    - split.
+      match
+        goal
+      with
+        X => foo
+      end.
+    - split.
+      match goal with
+        X |- _ => foo
+      | H: X := Y |- _ => foo
+      end.
+    - split.
+      match H with
+        ?a = ?b |- _ => foo
+      | ?a < ?b |- _ => foo
+      end.
+    - split.
+      let x := f y in
+      let foo := idtac x in
+      idtac foo.
   Qed.
 End X.
 
@@ -419,25 +541,25 @@ Section SET.
     (Vector.t T n) ->  Prop :=
     match v1 with
       Vector.nil _ =>
-      fun v2 =>
-        match v2 with 
-          Vector.nil _ => True
-        | _ => False
-        end
+        fun v2 =>
+          match v2 with 
+            Vector.nil _ => True
+          | _ => False
+          end
     | (Vector.cons _ x n' v1') =>
-      fun v2 =>
-        (* indentation of dependen "match" clause. *)
-        match v2
-              as
-              X
-              in
-              Vector.t _ n''
-              return
-              (Vector.t T (pred n'') -> Prop) -> Prop
-        with 
-        | Vector.nil _ => fun _ => False 
-        | (Vector.cons _ y n'' v2') => fun v2'' => (x y) /\ (v2'' v2')
-        end (setVecProd T n' v1')
+        fun v2 =>
+          (* indentation of dependen "match" clause. *)
+          match v2
+                as
+                X
+                in
+                Vector.t _ n''
+                return
+                (Vector.t T (pred n'') -> Prop) -> Prop
+          with 
+          | Vector.nil _ => fun _ => False 
+          | (Vector.cons _ y n'' v2') => fun v2'' => (x y) /\ (v2'' v2')
+          end (setVecProd T n' v1')
     end.
   
 End SET.
@@ -459,8 +581,8 @@ Module curlybracesatend.
   Qed.
   
   Lemma foo2: forall n: nat,
-      exists m:nat,  (* This is strange compared to the same line in the previous lemma *)
-        m = n + 1.
+    exists m:nat,
+      m = n + 1.
   Proof.
     intros n.
     destruct n. {
@@ -473,9 +595,19 @@ Module curlybracesatend.
     reflexivity.
   Qed.
   
-  Lemma foo3: forall n: nat,
-      exists m:nat,  (* This is strange compared to the same line in the previous lemma *)
-        m = n + 1.
+  Lemma foo3:
+    forall n: nat,
+    forall n: nat,
+    forall n: nat,
+    forall n: nat,
+    forall n: nat,
+    exists m:nat,
+      m = n + 1 ->
+      m = n + 1 ->
+      m = n + 1
+      -> m = n + 1
+      -> m = n + 1 ->
+      m = n + 1.
   Proof.
     intros n. cut (n = n). {
       destruct n. {
@@ -485,6 +617,37 @@ Module curlybracesatend.
         simpl.
         rewrite Nat.add_1_r.
         reflexivity. }
+    }
+    idtac.
+    reflexivity.
+  Qed.
+
+  Lemma foooooooooooooooo3: forall n: nat,
+    forall n: nat, forall n: nat,
+      f x ->
+      g y ->
+      f x -> forall n: nat,
+        forall n: nat,
+        forall n: nat,
+        exists m:nat,
+          m = n + 1 ->
+          m = n + 1 ->
+          m = n + 1
+          -> m = n + 1
+          -> m = n + 1 ->
+          m = n + 1 -> 
+          True.
+  Proof.
+    intros n. cut (n = n).
+    {
+      destruct n. {
+        exists 1.
+        reflexivity. } {
+        exists (S (S n)).
+        simpl.
+        rewrite Nat.add_1_r.
+        reflexivity.
+      }
     }
     idtac.
     reflexivity.
