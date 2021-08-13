@@ -1,9 +1,9 @@
-;;; texi-docstring-magic.el --- munge internal docstrings into texi
+;;; texi-docstring-magic.el --- munge internal docstrings into texi  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -110,28 +110,32 @@ Compatibility between FSF Emacs and XEmacs."
       (setq strings (cdr strings)))
     str))
 
+(defvar texi-docstring--args)
+(defvar texi-docstring--in-quoted-region)
+
 (defconst texi-docstring-magic-munge-table
-  '(;; 0. Escape @, { and } characters
+  `(;; 0. Escape @, { and } characters
     ("\\(@\\)" t "@@")
     ("\\({\\)" t "@{")
     ("\\(}\\)" t "@}")
     ;; 1. Indented lines are gathered into @lisp environment.
     ("^\\(\n\\|.+\\)$"
      t
-     (let
-	 ((line (match-string 0 docstring)))
-       (if (save-match-data (string-match "^[ \t]" line))
-	   ;; whitespace
-	   (if in-quoted-region
-	       line
-	     (setq in-quoted-region t)
-	     (concat "@lisp\n" line))
-	 ;; non-white space/carriage return
-	 (if (and in-quoted-region (not (equal line "\n")))
-	     (progn
-	       (setq in-quoted-region nil)
-	       (concat "@end lisp\n" line))
-	   line))))
+     ,(lambda (docstring)
+	(let
+	    ((line (match-string 0 docstring)))
+	  (if (save-match-data (string-match "^[ \t]" line))
+	      ;; whitespace
+	      (if texi-docstring--in-quoted-region
+	          line
+	        (setq texi-docstring--in-quoted-region t)
+	        (concat "@lisp\n" line))
+	    ;; non-white space/carriage return
+	    (if (and texi-docstring--in-quoted-region (not (equal line "\n")))
+	        (progn
+	          (setq texi-docstring--in-quoted-region nil)
+	          (concat "@end lisp\n" line))
+	      line)))))
     ;; 2. Pieces of text `stuff' or surrounded in quotes
     ;; are marked up with @samp.  NB: Must be backquote
     ;; followed by forward quote for this to work.
@@ -142,21 +146,25 @@ Compatibility between FSF Emacs and XEmacs."
     ;; and symbols put inside quotes.
     ("\\(`\\([^']+\\)'\\)"
      t
-     (concat "@samp{" (match-string 2 docstring) "}"))
+     ,(lambda (docstring)
+        (concat "@samp{" (match-string 2 docstring) "}")))
     ;; 3. Words *emphasized* are made @strong{emphasized}
     ("\\(\\*\\(\\w+\\)\\*\\)"
      t
-     (concat "@strong{" (match-string 2 docstring) "}"))
+     ,(lambda (docstring)
+        (concat "@strong{" (match-string 2 docstring) "}")))
     ;; 4. Words sym-bol which are symbols become @code{sym-bol}.
     ;; Must have at least one hyphen to be recognized,
     ;; terminated in whitespace, end of line, or punctuation.
     ;; Only consider symbols made from word constituents
     ;; and hyphen.
-    ("\\(\\(\\w+\\-\\(\\w\\|\\-\\)+\\)\\)\\(\\s\)\\|\\s-\\|\\s.\\|$\\)"
-     (or (boundp (intern (match-string 2 docstring)))
-	 (fboundp (intern (match-string 2 docstring))))
-     (concat "@code{" (match-string 2 docstring) "}"
-	     (match-string 4 docstring)))
+    ("\\(\\(\\w+-\\(\\w\\|-\\)+\\)\\)\\(\\s)\\|\\s-\\|\\s.\\|$\\)"
+     ,(lambda (docstring)
+	(or (boundp (intern (match-string 2 docstring)))
+	    (fboundp (intern (match-string 2 docstring)))))
+     ,(lambda (docstring)
+	(concat "@code{" (match-string 2 docstring) "}"
+	        (match-string 4 docstring))))
     ;; 5. Upper cased words ARG corresponding to arguments become
     ;; @var{arg}
     ;; In fact, include any word so long as it is more than 3 characters
@@ -165,19 +173,23 @@ Compatibility between FSF Emacs and XEmacs."
     ;; FIXME: maybe we don't want to downcase stuff already
     ;; inside @samp
     ;; FIXME: should - terminate?  should _ be included?
-    ("\\([A-Z0-9_\\-]+\\)\\(/\\|\)\\|}\\|\\s-\\|\\s.\\|$\\)"
-     (or (> (length (match-string 1 docstring)) 3)
-	 (member (downcase (match-string 1 docstring)) args))
-     (concat "@var{" (downcase (match-string 1 docstring)) "}"
-	     (match-string 2 docstring)))
+    ("\\([A-Z0-9_\\-]+\\)\\(/\\|)\\|}\\|\\s-\\|\\s.\\|$\\)"
+     ,(lambda (docstring)
+	(or (> (length (match-string 1 docstring)) 3)
+	    (member (downcase (match-string 1 docstring))
+	            texi-docstring--args)))
+     ,(lambda (docstring)
+	(concat "@var{" (downcase (match-string 1 docstring)) "}"
+	        (match-string 2 docstring))))
 
     ;; 6. Words 'sym which are lisp quoted are
     ;; marked with @code.
-    ("\\(\\(\\s-\\|^\\)'\\(\\(\\w\\|\\-\\)+\\)\\)\\(\\s\)\\|\\s-\\|\\s.\\|$\\)"
+    ("\\(\\(\\s-\\|^\\)'\\(\\(\\w\\|-\\)+\\)\\)\\(\\s)\\|\\s-\\|\\s.\\|$\\)"
      t
-     (concat (match-string 2 docstring)
-	     "@code{'" (match-string 3 docstring) "}"
-	     (match-string 5 docstring)))
+     ,(lambda (docstring)
+	(concat (match-string 2 docstring)
+	        "@code{'" (match-string 3 docstring) "}"
+	        (match-string 5 docstring))))
     ;; 7,8. Clean up for @lisp environments left with spurious newlines
     ;; after 1.
     ("\\(\\(^\\s-*$\\)\n@lisp\\)" t "@lisp")
@@ -186,14 +198,16 @@ Compatibility between FSF Emacs and XEmacs."
     ;; Changed to just @samp of uppercase.
     ("\\(@samp{@var{\\([^}]+\\)}}\\)"
      t
-     (concat "@samp{" (upcase (match-string 2 docstring)) "}")))
+     ,(lambda (docstring)
+        (concat "@samp{" (upcase (match-string 2 docstring)) "}"))))
     "Table of regexp matches and replacements used to markup docstrings.
 Format of table is a list of elements of the form
-   (regexp predicate replacement-form)
-If regexp matches and predicate holds, then replacement-form is
-evaluated to get the replacement for the match.
-predicate and replacement-form can use variables arg,
-and forms such as (match-string 1 docstring)
+   (REGEXP PREDICATE REPLACEMENT)
+If REGEXP matches and PREDICATE holds, then REPLACEMENT is
+used to replace the match.
+PREDICATE and REPLACEMENT can be functions taking
+the docstring as argument and they can use the dynamically scoped
+variables `texi-docstring--args' and `texi-docstring--in-quoted-region'.
 Match string 1 is assumed to determine the
 length of the matched item, hence where parsing restarts from.
 The replacement must cover the whole match (match string 0),
@@ -207,30 +221,34 @@ including any whitespace included to delimit matches.")
     (untabify (point-min) (point-max))
     (buffer-string)))
 
+(defun texi-docstring--funcall (f arg)
+  (if (functionp f) (funcall f arg) f))
+
 (defun texi-docstring-magic-munge-docstring (docstring args)
   "Markup DOCSTRING for texi according to regexp matches."
   ;; FIXME(EMD): seems buggy as ARGS is not used
-  (let ((case-fold-search nil))
+  (let ((case-fold-search nil)
+        (texi-docstring--args args))
     (setq docstring (texi-docstring-magic-untabify docstring))
     (dolist (test texi-docstring-magic-munge-table)
       (let ((regexp	(nth 0 test))
 	    (predicate  (nth 1 test))
 	    (replace    (nth 2 test))
 	    (i		0)
-	    in-quoted-region)
+	    texi-docstring--in-quoted-region)
 
 	(while (and
 		(< i (length docstring))
 		(string-match regexp docstring i))
 	  (setq i (match-end 1))
-	  (if (eval predicate)
+	  (if (texi-docstring--funcall predicate docstring)
 	      (let* ((origlength  (- (match-end 0) (match-beginning 0)))
-		     (replacement (eval replace))
+		     (replacement (texi-docstring--funcall replace docstring))
 		     (newlength   (length replacement)))
 		(setq docstring
 		      (replace-match replacement t t docstring))
 		(setq i (+ i (- newlength origlength))))))
-	(if in-quoted-region
+	(if texi-docstring--in-quoted-region
 	    (setq docstring (concat docstring "\n@end lisp"))))))
   ;; Force a new line after (what should be) the first sentence,
   ;; if not already a new paragraph.
@@ -322,7 +340,7 @@ Markup as @code{stuff} or @lisp stuff @end Lisp."
 			   (nth 1 def))
                           ((eq (car-safe def) 'closure)
                            (nth 2 def))))
-	 (args	    (mapcar 'symbol-name argsyms)))
+	 (args	    (mapcar #'symbol-name argsyms)))
       (cond
        ((commandp function)
 	(texi-docstring-magic-texi "fn" "Command" name docstring args))
@@ -361,7 +379,7 @@ With prefix arg, no errors on unknown symbols.  (This results in
     (let ((text-quoting-style 'grave)
           (magic (concat "^"
 			 (regexp-quote texi-docstring-magic-comment)
-			 "\\s-*\\(\\(\\w\\|\\-\\)+\\)[ \t]*$"))
+			 "\\s-*\\(\\(\\w\\|-\\)+\\)[ \t]*$"))
 	  p
 	  symbol
 	  deleted)

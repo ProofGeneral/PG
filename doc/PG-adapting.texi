@@ -335,7 +335,7 @@ more details.
 @c Internals.
 
 @c TEXI DOCSTRING MAGIC: proof-assistant-table
-@defopt proof-assistant-table 
+@defvar proof-assistant-table 
 Proof General's table of supported proof assistants.@*
 This is copied from @samp{@code{proof-assistant-table-default}} at load time,
 removing any entries that do not have a corresponding directory
@@ -360,9 +360,7 @@ file for the mode, which will be
 @end lisp
 where @var{proof-home-directory} is the value of the
 variable @samp{@code{proof-home-directory}}.
-
-The default value is @code{((isar "Isabelle" "thy") (coq "Coq" "v" nil (".vo" ".glob")) (easycrypt "EasyCrypt" "ec" "\\.eca?\\'") (phox "PhoX" "phx" nil (".phi" ".pho")) (pgshell "PG-Shell" "pgsh") (pgocaml "PG-OCaml" "pgml") (pghaskell "PG-Haskell" "pghci"))}.
-@end defopt
+@end defvar
 
 
 The final step of the description above is where the work lies.  There
@@ -2914,7 +2912,7 @@ assistant is already busy with the next item from
 @code{proof-action-list}. 
 
 @c TEXI DOCSTRING MAGIC: proof-tree-handle-delayed-output
-@defun proof-tree-handle-delayed-output old-proof-marker cmd flags span
+@defun proof-tree-handle-delayed-output old-proof-marker cmd flags _span
 Process delayed output for prooftree.@*
 This function is the main entry point of the Proof General
 prooftree support.  It examines the delayed output in order to
@@ -3307,9 +3305,9 @@ extension.  The proof assistants enabled are the ones listed
 in the @code{proof-assistants} setting.
 
 @c TEXI DOCSTRING MAGIC: proof-assistants
-@defopt proof-assistants 
+@defvar proof-assistants 
 Choice of proof assistants to use with Proof General.@*
-A list of symbols chosen from: @code{'isar} @code{'coq} @code{'easycrypt} @code{'phox} @code{'pgshell} @code{'pgocaml} @code{'pghaskell}.
+A list of symbols chosen from: @samp{isar} @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
 If nil, the default will be ALL available proof assistants.
 
 Each proof assistant defines its own instance of Proof General,
@@ -3325,9 +3323,7 @@ symbols you want, for example "lego isa".  Or you can
 edit the file @samp{proof-site.el} itself.
 
 Note: to change proof assistant, you must start a new Emacs session.
-
-The default value is @code{nil}.
-@end defopt
+@end defvar
 
 The file @file{proof-site.el} also defines a version variable.
 
