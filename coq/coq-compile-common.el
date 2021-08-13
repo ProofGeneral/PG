@@ -1,9 +1,9 @@
-;;; coq-compile-common.el --- common part of compilation feature
+;;; coq-compile-common.el --- common part of compilation feature  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017, 2019-2021  Hendrik Tews
@@ -47,33 +47,33 @@
   "Enable parallel compilation.
 Must be used together with `coq-seq-disable'."
   (add-hook 'proof-shell-extend-queue-hook
-	    'coq-par-preprocess-require-commands)
+	    #'coq-par-preprocess-require-commands)
   (add-hook 'proof-shell-signal-interrupt-hook
-	    'coq-par-user-interrupt)
+	    #'coq-par-user-interrupt)
   (add-hook 'proof-shell-handle-error-or-interrupt-hook
-	    'coq-par-user-interrupt))
+	    #'coq-par-user-interrupt))
 
 (defun coq-par-disable ()
   "Disable parallel compilation.
 Must be used together with `coq-seq-enable'."
   (remove-hook 'proof-shell-extend-queue-hook
-	       'coq-par-preprocess-require-commands)
+	       #'coq-par-preprocess-require-commands)
   (remove-hook 'proof-shell-signal-interrupt-hook
-	       'coq-par-user-interrupt)
+	       #'coq-par-user-interrupt)
   (remove-hook 'proof-shell-handle-error-or-interrupt-hook
-	       'coq-par-user-interrupt))
+	       #'coq-par-user-interrupt))
 
 (defun coq-seq-enable ()
   "Enable sequential synchronous compilation.
 Must be used together with `coq-par-disable'."
   (add-hook 'proof-shell-extend-queue-hook
-	    'coq-seq-preprocess-require-commands))
+	    #'coq-seq-preprocess-require-commands))
 
 (defun coq-seq-disable ()
   "Disable sequential synchronous compilation.
 Must be used together with `coq-par-enable'."
   (remove-hook 'proof-shell-extend-queue-hook
-	       'coq-seq-preprocess-require-commands))
+	       #'coq-seq-preprocess-require-commands))
 
 
 
@@ -173,8 +173,7 @@ are compiled from the sources before the \"Require\" command is processed.
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Compile Before Require'."
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 (proof-deftoggle coq-compile-before-require)
 
@@ -192,8 +191,7 @@ is set with `coq-max-background-compilation-jobs'.
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Compile Parallel In Background'."
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 (proof-deftoggle coq-compile-parallel-in-background)
 
@@ -272,10 +270,9 @@ This option can be set via menu
     (const :tag "use -quick, don't do vio2vo" quick-no-vio2vo)
     (const :tag "use -quick and do vio2vo" quick-and-vio2vo)
     (const :tag "ensure vo compilation, delete vio files" ensure-vo))
-  :safe (lambda (v) (member v '(no-quick quick-no-vio2vo
-					 quick-and-vio2vo ensure-vo)))
-  :set 'coq-compile-quick-setter
-  :group 'coq-auto-compile)
+  :safe (lambda (v)
+	  (member v '(no-quick quick-no-vio2vo quick-and-vio2vo ensure-vo)))
+  :set #'coq-compile-quick-setter)
 
 (defun coq-compile-prefer-quick ()
   "Return t if a .vio file would be prefered."
@@ -316,8 +313,7 @@ For coq < 8.11 this option is ignored."
     (const :tag "use -vos, don't do -vok" vos)
     (const :tag "use -vos and do -vok" vos-and-vok)
     (const :tag "ensure vo compilation" ensure-vo))
-  :safe (lambda (v) (member v '(nil vos vos-and-vok ensure-vo)))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (member v '(nil vos vos-and-vok ensure-vo))))
 
 (defun coq-compile-prefer-vos ()
   "Decide whether ``-vos'' should be used.
@@ -354,8 +350,7 @@ is not adapted."
   :type '(choice (const :tag "use all CPU cores" all-cpus)
 		 (integer :tag "fixed number" :value 1))
   :safe (lambda (v) (or (eq v 'all-cpus) (and (integerp v) (> v 0))))
-  :set 'coq-max-jobs-setter
-  :group 'coq-auto-compile)
+  :set #'coq-max-jobs-setter)
 
 (defcustom coq-max-background-second-stage-percentage
   (or (and (boundp 'coq-max-background-vio2vo-percentage)
@@ -374,16 +369,14 @@ is initialized from the now deprecated option
 `coq-max-background-vio2vo-percentage'."
   :type 'number
   :safe 'numberp
-  :set 'coq-max-second-stage-setter
-  :group 'coq-auto-compile)
+  :set #'coq-max-second-stage-setter)
 
 (defcustom coq-max-background-vio2vo-percentage nil
   "Deprecated. Please configure `coq-max-background-second-stage-percentage'.
 This is the old configuration option for Coq < 8.11, used before
 the ``-vok'' second stage was implemented."
   :type 'number
-  :safe 'numberp
-  :group 'coq-auto-compile)
+  :safe 'numberp)
 
 
 (defcustom coq-compile-second-stage-delay
@@ -401,8 +394,7 @@ For backward compatibility, if this option is not customized, it
 is initialized from the now deprecated option
 `coq-compile-vio2vo-delay'."
   :type 'number
-  :safe 'numberp
-  :group 'coq-auto-compile)
+  :safe 'numberp)
 
 (defcustom coq-compile-vio2vo-delay nil
   ;; XXX replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
@@ -410,8 +402,7 @@ is initialized from the now deprecated option
 This is the old configuration option for Coq < 8.11, used before
 the ``-vok'' second stage was implemented."
   :type 'number
-  :safe 'numberp
-  :group 'coq-auto-compile)
+  :safe 'numberp)
 
 (defcustom coq-compile-command ""
   "External compilation command.  If empty ProofGeneral compiles itself.
@@ -440,8 +431,7 @@ minibuffer if `coq-confirm-external-compilation' is t."
   :safe (lambda (v)
           (and (stringp v)
                (or (not (boundp 'coq-confirm-external-compilation))
-                   coq-confirm-external-compilation)))
-  :group 'coq-auto-compile)
+                   coq-confirm-external-compilation))))
 
 (defconst coq-compile-substitution-list
   '(("%p" physical-dir)
@@ -454,9 +444,9 @@ Value must be a list of substitutions, where each substitution is
 a 2-element list.  The first element of a substitution is the
 regexp to substitute, the second the replacement.  The replacement
 is evaluated before passing it to `replace-regexp-in-string', so
-it might be a string, or one of the symbols 'physical-dir,
-'module-object, 'module-source, 'qualified-id and
-'requiring-file, which are bound to, respectively, the physical
+it might be a string, or one of the symbols `physical-dir',
+`module-object', `module-source', `qualified-id' and
+`requiring-file', which are bound to, respectively, the physical
 directory containing the source file, the Coq object file in
 'physical-dir that will be loaded, the Coq source file in
 'physical-dir whose object will be loaded, the qualified module
@@ -489,8 +479,7 @@ This option can be set via menu
      "save all coq-mode buffers except the current buffer without confirmation"
      save-coq)
     (const :tag "save all buffers without confirmation" save-all))
-  :safe (lambda (v) (member v '(ask-coq ask-all save-coq save-all)))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (member v '(ask-coq ask-all save-coq save-all))))
 
 (defcustom coq-lock-ancestors t
   "If non-nil, lock ancestor module files.
@@ -502,8 +491,7 @@ This option can be set via menu
 `Coq -> Auto Compilation -> Lock Ancestors'."
 
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
@@ -516,8 +504,7 @@ Otherwise start the external compilation without confirmation.
 
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Confirm External Compilation'."
-  :type 'boolean
-  :group 'coq-auto-compile)
+  :type 'boolean)
 
 
 (defcustom coq-compile-ignored-directories nil
@@ -533,8 +520,7 @@ expressions in here are always matched against the .vo file name,
 regardless whether ``-quick'' would be used to compile the file
 or not."
   :type '(repeat regexp)
-  :safe (lambda (v) (cl-every #'stringp v))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (cl-every #'stringp v)))
 
 (defcustom coq-coqdep-error-regexp
   (concat "^\\*\\*\\* Warning: in file .*, library .* is required "
@@ -550,8 +536,7 @@ library at multiple places in the load path.  If you want to turn
 the latter condition into an error, then set this variable to
 \"^\\*\\*\\* Warning\"."
   :type 'string
-  :safe 'stringp
-  :group 'coq-auto-compile)
+  :safe 'stringp)
 
 
 (defconst coq-require-id-regexp
@@ -675,7 +660,7 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 
 (defun coq-unlock-all-ancestors-of-span (span)
   "Unlock all ancestors that have been locked when SPAN was asserted."
-  (mapc 'coq-unlock-ancestor (span-property span 'coq-locked-ancestors))
+  (mapc #'coq-unlock-ancestor (span-property span 'coq-locked-ancestors))
   (span-set-property span 'coq-locked-ancestors ()))
 
 
@@ -732,7 +717,9 @@ the command whose output will appear in the buffer."
   (with-current-buffer coq--compile-response-buffer
     ;; fontification enables the error messages
     (let ((font-lock-verbose nil)) ; shut up font-lock messages
-      (font-lock-fontify-buffer)))
+      (if (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+        (with-no-warnings (font-lock-fontify-buffer)))))
   ;; Make it so the next C-x ` will use this buffer.
   (setq next-error-last-buffer (get-buffer coq--compile-response-buffer))
   (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)

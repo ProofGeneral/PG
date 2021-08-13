@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -87,7 +87,7 @@ indentation work well.
 
 An example of cofiguration is:
 
-(setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
+  (setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
 
 to have token \"xor\" and \"ifb\" be considered as having
 repectively same priority and associativity as \"or\" and \"if\".
@@ -158,7 +158,7 @@ attention to case differences."
 ;; coq grammar tacticals. This is not too problematic here since only
 ;; in records the indentation changes (maily for ";").
 (defun coq-smie-is-tactic ()
-  (let* ((pos (point))
+  (let* (;; (pos (point))
          (cmdstrt (save-excursion (coq-find-real-start)))
          (enclosing (coq-is-inside-enclosing cmdstrt)))
     (cond
@@ -361,12 +361,11 @@ inside parenthesis)."
 		  (let ((parops ; corresponding matcher may be a list
 			 (if (listp (car parop)) (car parop) (cons (car parop) nil))))
 		    ; go to corresponding closer or meet "."
-		    (when (member
-			   (coq-smie-search-token-backward
-			    (append parops (cons "." nil))
-			    end ignore-between)
-			   (cons "." nil))
-		      next))
+		    (coq-smie-search-token-backward
+		     ;; Add "." at the head of the list, since
+		     ;; it's more efficient and ordering is ignored anyway.
+		     (cons "." parops)
+		     end ignore-between))
 		;; Do not consider "." when not followed by a space
 		;(message "SPACE?: %S , %S , %S" next next (looking-at ".[[:space:]]"))
 		(when (or (not (equal next "."))
@@ -558,7 +557,7 @@ The point should be at the beginning of the command name."
 ;; with" is for mutual definitions where both sides are of the same
 ;; level
 (defun coq-smie-:=-deambiguate ()
-  (let* ((orig (point))
+  (let* (;; (orig (point))
          (cmdstrt (save-excursion (coq-find-real-start)))
          (corresp (coq-smie-search-token-backward
 		   '("let" "Inductive" "CoInductive" "{|" "." "with" "Module" "where"
@@ -592,7 +591,7 @@ The point should be at the beginning of the command name."
 
 
 (defun coq-smie-semicolon-deambiguate ()
-  (let* ((pos (point))
+  (let* (;; (pos (point))
          (cmdstrt (save-excursion (coq-find-real-start)))
          (istac (or (coq-smie-is-tactic)
                     (coq-smie-is-ltacdef)
@@ -834,9 +833,12 @@ The point should be at the beginning of the command name."
 	(let ((prev-interesting
 	       (coq-smie-search-token-backward
 		'("let" "match" "lazymatch" "multimatch" "lazy_match" "mult_match" ;"eval" should be "eval in" but this is not supported by search-token-backward
-		  "." ) nil
-		'((("match" "lazymatch" "multimatch" "lazy_match" "mult_match") . "with") (("let" ;"eval"
-				       ) . "in")))))
+		  "." )
+		nil
+		'((("match" "lazymatch" "multimatch" "lazy_match" "mult_match")
+		   . "with")
+		  (("let") ;"eval"
+		   . "in")))))
 	  (cond
 	   ((member prev-interesting '("." nil)) "in tactic")
 	   ((equal prev-interesting "let") "in let")
@@ -1153,9 +1155,8 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
    (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
           (end (cadr parent))
           (regi (list (list beg end)))
-          (tok (caddr parent))
+          ;; (tok (caddr parent))
           (face (cond
-                 ((equal num 1) 'hlt-regexp-level-1)
                  ((equal num 2) 'hlt-regexp-level-2)
                  (t 'hlt-regexp-level-1))))
      (and parent (hlt-highlight-regions regi face)))))
@@ -1281,7 +1282,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
        ;;  (if (smie-rule-bolp) 2 0))
        ;(and (zerop (length tok)) (member (char-before) '(?\{ ?\})))
        ((and (zerop (length token))
-             (looking-back "}") ;; "|}" useless when looking backward
+             (looking-back "}" (1- (point))) ;; "|}" useless when looking backward
              (not coq-indent-box-style))
         (smie-backward-sexp)
         (smie-backward-sexp t)

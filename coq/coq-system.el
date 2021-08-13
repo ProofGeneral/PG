@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -137,13 +137,11 @@ Interactively (with INTERACTIVE-P), show that number."
   (when interactive-p (coq-show-version))
   coq-autodetected-version)
 
-(defun coq-autodetect-help (&optional interactive-p)
-  "Record the output of coqotp -help in `coq-autodetected-help'."
+(defun coq-autodetect-help (&optional _interactive-p)
+  "Record the output of coqtop -help in `coq-autodetected-help'."
   (interactive '(t))
   (let ((coq-output (coq-callcoq "-help")))
-    (if coq-output
-        (setq coq-autodetected-help coq-output)
-      (setq coq-autodetected-help ""))))
+    (setq coq-autodetected-help (or coq-output ""))))
 
 
 (defun coq--version< (v1 v2)
@@ -654,7 +652,7 @@ Does nothing if `coq-use-project-file' is nil."
 (add-hook 'coq-mode-hook
           (lambda ()
             (add-hook 'hack-local-variables-hook
-                      'coq-load-project-file
+                      #'coq-load-project-file
                       nil t)))
 
 ; detecting coqtop args should happen at the last moment before
@@ -672,7 +670,7 @@ Does nothing if `coq-use-project-file' is nil."
           (lambda ()
             (when (and (fboundp 'show-paren--default)
                        (boundp 'show-paren-data-function))
-              (setq show-paren-data-function 'show-paren--default))))
+              (setq show-paren-data-function #'show-paren--default))))
 
 
 

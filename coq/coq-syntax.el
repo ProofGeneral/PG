@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -590,8 +590,8 @@ so for the following reasons:
      ("Test" nil "Test" nil "Test" nil t) ; let us not highlight all possible options for Test
      ("Timeout" nil "Timeout" nil "Timeout")
      )
-   "Coq queries command, that deserve a separate menu for sending them to coq without insertion."
-   )
+   "Coq queries command.
+They deserve a separate menu for sending them to Coq without insertion.")
 
 ;; command that are not declarations, definition or goal starters
 (defvar coq-other-commands-db

@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -188,8 +188,8 @@ There are 3 substrings (2 and 3 may be nil):
 * number 2 is the left context matched that is not part of the ending string
 * number 3 is the right context matched that is not part of the ending string
 
-Remark: This regexp is much more precise than `coq-end-command-regexp-forward' but only
-works when searching backward.")
+Remark: This regexp is much more precise than `coq-end-command-regexp-forward'
+but only works when searching backward.")
 
 
 (defun coq-search-comment-delimiter-forward ()

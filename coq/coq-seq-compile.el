@@ -1,9 +1,9 @@
-;;; coq-seq-compile.el --- sequential compilation of required modules
+;;; coq-seq-compile.el --- sequential compilation of required modules  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -84,7 +84,7 @@ break."
       (message "call coqdep arg list: %S" coqdep-arguments))
     (with-temp-buffer
       (setq coqdep-status
-            (apply 'call-process
+            (apply #'call-process
                    coq-dependency-analyzer nil (current-buffer) nil
                    coqdep-arguments))
       (setq coqdep-output (buffer-string)))
@@ -100,7 +100,7 @@ break."
                                this-command)))
           ;; display the error
           (coq-init-compile-response-buffer
-           (mapconcat 'identity full-command " "))
+           (mapconcat #'identity full-command " "))
           (let ((inhibit-read-only t))
             (with-current-buffer coq--compile-response-buffer
               (insert coqdep-output)))
@@ -120,11 +120,11 @@ Display errors in buffer `coq--compile-response-buffer'."
 	  (list src-file)))
         coqc-status)
     (coq-init-compile-response-buffer
-     (mapconcat 'identity (cons coq-compiler coqc-arguments) " "))
+     (mapconcat #'identity (cons coq-compiler coqc-arguments) " "))
     (when coq--debug-auto-compilation
       (message "call coqc arg list: %s" coqc-arguments))
     (setq coqc-status
-          (apply 'call-process
+          (apply #'call-process
                  coq-compiler nil coq--compile-response-buffer t coqc-arguments))
     (when coq--debug-auto-compilation
       (message "compilation %s exited with %s, output |%s|"
@@ -243,8 +243,7 @@ function."
       (puthash lib-obj-file result coq-obj-hash)
       result)))
 
-(defun coq-seq-auto-compile-externally (span qualified-id
-					     absolute-module-obj-file)
+(defun coq-seq-auto-compile-externally (span q-id absolute-module-obj-file)
   "Make MODULE up-to-date according to `coq-compile-command'.
 Start a compilation to make ABSOLUTE-MODULE-OBJ-FILE up-to-date.
 The compilation command is derived from `coq-compile-command' by
@@ -260,7 +259,14 @@ span for for proper unlocking on retract.
 This function uses the low-level interface `compilation-start',
 therefore the customizations for `compile' do not apply."
   (unless (coq-compile-ignore-file absolute-module-obj-file)
+    ;; Dynvar list taken from `coq-compile-substitution-list'.
+    (defvar physical-dir)
+    (defvar module-object)
+    (defvar module-source)
+    (defvar qualified-id)
+    (defvar requiring-file)
     (let* ((local-compile-command coq-compile-command)
+           (qualified-id q-id)
            (physical-dir (file-name-directory absolute-module-obj-file))
            (module-object (file-name-nondirectory absolute-module-obj-file))
            (module-source (coq-library-src-of-vo-file module-object))
@@ -269,7 +275,7 @@ therefore the customizations for `compile' do not apply."
        (lambda (substitution)
          (setq local-compile-command
                (replace-regexp-in-string
-                (car substitution) (eval (car (cdr substitution)))
+                (car substitution) (eval (car (cdr substitution)) t)
                 local-compile-command)))
        coq-compile-substitution-list)
       (if coq-confirm-external-compilation
@@ -287,7 +293,7 @@ therefore the customizations for `compile' do not apply."
        span
        (coq-library-src-of-vo-file absolute-module-obj-file)))))
 
-(defun coq-seq-map-module-id-to-obj-file (module-id span &optional from)
+(defun coq-seq-map-module-id-to-obj-file (module-id _span &optional from)
   "Map MODULE-ID to the appropriate coq object file.
 The mapping depends of course on `coq-load-path'.  The current
 implementation invokes coqdep with a one-line require command.
@@ -363,7 +369,7 @@ will be used for all \"Require\" commands added at once to the queue."
       (if (> (length coq-compile-command) 0)
           (coq-seq-auto-compile-externally span module-id module-obj-file)
         (unless (symbol-value coq-object-local-hash-symbol)
-          (set coq-object-local-hash-symbol (make-hash-table :test 'equal)))
+          (set coq-object-local-hash-symbol (make-hash-table :test #'equal)))
         (coq-seq-make-lib-up-to-date (symbol-value coq-object-local-hash-symbol)
                                  span module-obj-file)))))
 
@@ -371,31 +377,33 @@ will be used for all \"Require\" commands added at once to the queue."
   "Coq function for `proof-shell-extend-queue-hook'.
 If `coq-compile-before-require' is non-nil, this function performs the
 compilation (if necessary) of the dependencies."
-  (if coq-compile-before-require
-      (let (;; coq-object-hash-symbol serves as a pointer to the
-            ;; coq-obj-hash (see coq-seq-make-lib-up-to-date). The hash
-            ;; will be initialized when needed and stored in the value
-            ;; cell of coq-object-hash-symbol. The symbol is initialized
-            ;; here to use one hash for all the requires that are added now.
-            (coq-object-hash-symbol nil)
-            string)
-        (dolist (item queueitems)
-          (let ((string (mapconcat 'identity (nth 1 item) " ")))
-            (when (and string
-                       (string-match coq-require-command-regexp string))
-              (let ((span (car item))
-                    (start (match-end 0))
-                    (prefix (match-string 1 string)))
-                (span-add-delete-action
-                 span
-                 `(lambda ()
-                    (coq-unlock-all-ancestors-of-span ,span)))
-                (coq-compile-save-some-buffers)
-                ;; now process all required modules
-                (while (string-match coq-require-id-regexp string start)
-                  (setq start (match-end 0))
-                  (coq-seq-check-module 'coq-object-hash-symbol span
-                                    (match-string 1 string) prefix)))))))))
+  (when coq-compile-before-require
+    (defvar coq-object-hash-symbol)
+    (let (;; coq-object-hash-symbol serves as a pointer to the
+          ;; coq-obj-hash (see coq-seq-make-lib-up-to-date). The hash
+          ;; will be initialized when needed and stored in the value
+          ;; cell of coq-object-hash-symbol. The symbol is initialized
+          ;; here to use one hash for all the requires that are added now.
+          ;; FIXME: Why not create the hash table eagerly here and
+          ;; avoid the indirection (and avoid passing dynbound variable
+          ;; names around)?
+          (coq-object-hash-symbol nil))
+      (dolist (item queueitems)
+        (let ((string (mapconcat 'identity (nth 1 item) " ")))
+          (when (and string
+                     (string-match coq-require-command-regexp string))
+            (let ((span (car item))
+                  (start (match-end 0))
+                  (prefix (match-string 1 string)))
+              (span-add-delete-action
+               span
+               (lambda () (coq-unlock-all-ancestors-of-span span)))
+              (coq-compile-save-some-buffers)
+              ;; now process all required modules
+              (while (string-match coq-require-id-regexp string start)
+                (setq start (match-end 0))
+                (coq-seq-check-module 'coq-object-hash-symbol span
+                                      (match-string 1 string) prefix)))))))))
 
 
 (provide 'coq-seq-compile)

@@ -1,4 +1,4 @@
-;;; coq-diffs.el --- highlight text marked with XML-like tags for Coq diffs
+;;; coq-diffs.el --- highlight text marked with XML-like tags for Coq diffs  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

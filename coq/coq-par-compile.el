@@ -1,9 +1,9 @@
-;;; coq-par-compile.el --- parallel compilation of required modules
+;;; coq-par-compile.el --- parallel compilation of required modules  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017, 2019-2021 Hendrik Tews
@@ -734,10 +734,10 @@ If no circle is found return nil, otherwise the list of files
 belonging to the circle.  Jobs in state 'enqueue-coqc can be
 ignored, because they can never participate in a cycle."
   (let (cycle)
-    (maphash (lambda (key job) (put job 'visited nil))
+    (maphash (lambda (_key job) (put job 'visited nil))
 	     coq--compilation-object-hash)
     (maphash
-     (lambda (key job)
+     (lambda (_key job)
        (when (and (not cycle) (not (get job 'visited))
 		  (eq (get job 'state) 'waiting-dep))
 	 (setq cycle (coq-par-find-dependency-circle-for-job job nil))))
@@ -747,22 +747,22 @@ ignored, because they can never participate in a cycle."
 
 ;;; map coq module names to files, using synchronously running coqdep
 
-(defun coq-par-coqdep-arguments (lib-src-file coq-load-path)
+(defun coq-par-coqdep-arguments (lib-src-file clpath)
   "Compute the command line arguments for invoking coqdep on LIB-SRC-FILE.
-Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
+Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqdep-prog-args coq-load-path
+  (nconc (coq-coqdep-prog-args clpath
                                (file-name-directory lib-src-file)
                                (coq--pre-v85))
          (list lib-src-file)))
 
-(defun coq-par-coqc-arguments (lib-src-file coq-load-path)
+(defun coq-par-coqc-arguments (lib-src-file clpath)
   "Compute the command line arguments for invoking coqc on LIB-SRC-FILE.
-Argument COQ-LOAD-PATH must be `coq-load-path' from the buffer
+Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqc-prog-args coq-load-path (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (coq-coqc-prog-args clpath (file-name-directory lib-src-file) (coq--pre-v85))
          (list lib-src-file)))
 
 (defun coq-par-analyse-coq-dep-exit (status output command)
@@ -786,7 +786,7 @@ or .vos files must be done elsewhere."
       (progn
 	;; display the error
 	(coq-compile-display-error
-         (mapconcat 'identity command " ")
+         (mapconcat #'identity command " ")
          (if (equal output "")
              "No coqdep output - file probably inaccessible"
            output)
@@ -849,7 +849,7 @@ Return t if some process was killed."
 Used for unlocking ancestors on compilation errors."
   (when coq--compilation-object-hash
     (maphash
-     (lambda (key job)
+     (lambda (_key job)
        (when (eq (get job 'lock-state) 'locked)
          (coq-unlock-ancestor (get job 'src-file))
 	 (put job 'lock-state 'unlocked)))
@@ -948,14 +948,14 @@ file to be deleted when the process does not finish successfully."
     (when coq--debug-auto-compilation
       (message "%s %s: start %s %s in %s"
 	       (get job 'name) process-name
-	       command (mapconcat 'identity arguments " ")
+	       command (mapconcat #'identity arguments " ")
 	       default-directory))
     (condition-case err
 	;; If the command is wrong, start-process aborts with an
 	;; error. However, in Emacs 23.4.1. it will leave a process
 	;; behind, which is in a very strange state: running with no
 	;; pid. Emacs 24.2 fixes this.
-	(setq process (apply 'start-process process-name
+	(setq process (apply #'start-process process-name
 			     nil	; no process buffer
 			     command arguments))
       (error
@@ -969,8 +969,8 @@ file to be deleted when the process does not finish successfully."
 	 (ignore-errors (delete-file file-rm)))
        (signal 'coq-compile-error-command-start
 	       (list (cons command arguments) (nth 2 err)))))
-    (set-process-filter process 'coq-par-process-filter)
-    (set-process-sentinel process 'coq-par-process-sentinel)
+    (set-process-filter process #'coq-par-process-filter)
+    (set-process-sentinel process #'coq-par-process-sentinel)
     (set-process-query-on-exit-flag process nil)
     (setq coq--current-background-jobs (1+ coq--current-background-jobs))
     (process-put process 'coq-compilation-job job)
@@ -1056,7 +1056,7 @@ function and reported appropriately."
 	    (let ((cycle (coq-par-find-dependency-circle)))
 	      (if cycle
 		  (signal 'coq-compile-error-circular-dep
-			  (mapconcat 'identity cycle " -> "))
+			  (mapconcat #'identity cycle " -> "))
 		(error "Deadlock in parallel compilation"))))))
     ;; coq-compile-error-start can be signaled inside the continuation
     ;; function, if that tries to start new jobs
@@ -1115,7 +1115,7 @@ detect more than one active callback, see
 	      (not (eq race-counter coq--par-second-stage-start-id)))
     (setq coq--par-second-stage-delay-timer
 	  (run-at-time coq-compile-second-stage-delay nil
-		       'coq-par-run-second-stage-queue))))
+		       #'coq-par-run-second-stage-queue))))
 
 (defun coq-par-callback-queue-item (callback)
   "Create queue item containing just CALLBACK.
@@ -1448,8 +1448,8 @@ cleared before the next collection run."
   ;;          (mapconcat
   ;;           (lambda (job) (get job 'name))
   ;;           (get job 'coqc-dependees) " "))
-  (apply 'nconc (mapcar 'coq-par-collect-locked-file-ancestors
-                        (get job 'coqc-dependees))))
+  (apply #'nconc (mapcar #'coq-par-collect-locked-file-ancestors
+                         (get job 'coqc-dependees))))
 
 (defun coq-par-collect-locked-file-ancestors (job)
   "Collect locked, not-yet-found ancestors of JOB.
@@ -1543,8 +1543,8 @@ jobs when they transition from 'waiting-queue to 'ready:
 		 (car items)		; this is the require
 		 (cons
 		  (coq-par-callback-queue-item
-		   `(lambda (span) (coq-par-require-processed
-                                    ,2nd-stage-counter)))
+		   (lambda (_span) (coq-par-require-processed
+                               2nd-stage-counter)))
 		  (cdr items))))))
       (proof-add-to-queue items 'advancing)
       (when coq--debug-auto-compilation
@@ -1628,8 +1628,8 @@ retired and transition to 'ready. This means:
 	  (setq coq--par-delayed-last-job t)
 	  (proof-add-to-queue
 	   (list (coq-par-callback-queue-item
-		  `(lambda (span)
-                     (coq-par-kickoff-queue-from-action-list ',job))))
+		  (lambda (_span)
+                    (coq-par-kickoff-queue-from-action-list job))))
 	   'advancing))
       (put job 'state 'ready)
       (when coq--debug-auto-compilation
@@ -1686,7 +1686,7 @@ retired and transition to 'ready. This means:
                            "second stage timer set before last compilation job")
 		(setq coq--par-second-stage-delay-timer
 		      (run-at-time coq-compile-second-stage-delay nil
-				   'coq-par-run-second-stage-queue))))
+				   #'coq-par-run-second-stage-queue))))
 	    (setq coq--last-compilation-job nil)
 	    (setq proof-second-action-list-active nil)
 	    (when coq--debug-auto-compilation
@@ -1793,12 +1793,12 @@ before."
                     (get job 'obj-mod-time))))
     (put job 'youngest-coqc-dependency dep-time)
     (when coq--debug-auto-compilation
-      (let (ancs)
-        (message "%s: kickoff %d coqc dependencies with time %s"
-	         (get job 'name) (length (get job 'coqc-dependants))
-	         (if (eq dep-time 'just-compiled)
-		     'just-compiled
-		   (current-time-string dep-time)))))
+      ;; (let (ancs)
+      (message "%s: kickoff %d coqc dependencies with time %s"
+	       (get job 'name) (length (get job 'coqc-dependants))
+	       (if (eq dep-time 'just-compiled)
+		   'just-compiled
+		 (current-time-string dep-time))))
     ;; In the recursion coq-par-kickoff-coqc-dependants ->
     ;; coq-par-decrease-coqc-dependency -> coq-par-compile-job-maybe
     ;; -> coq-par-kickoff-coqc-dependants jobs on the path upwards
@@ -1835,7 +1835,7 @@ was queued."
            (get job 'load-path)))
         (coq-load-path-include-current nil)
         (require-command
-         (mapconcat 'identity (nth 1 (car (get job 'queueitems))) " "))
+         (mapconcat #'identity (nth 1 (car (get job 'queueitems))) " "))
         (temp-file (make-temp-file "ProofGeneral-coq" nil ".v")))
     (put job 'temp-require-file temp-file)
     (with-temp-file temp-file (insert require-command))
@@ -1984,7 +1984,7 @@ synchronously or asynchronously."
       (coq-par-start-task new-job)
     (coq-par-job-enqueue new-job)))
 
-(defun coq-par-job-init-common (coq-load-path type current-dir)
+(defun coq-par-job-init-common (clpath type current-dir)
   "Common initialization for 'require and 'file jobs.
 Create a new job of type TYPE and initialize all common fields of
 require and file jobs that need an initialization different from
@@ -2000,13 +2000,13 @@ nil."
     ;; jobs, however, if the field is present, we can treat require
     ;; and file jobs more uniformely.
     (put new-job 'youngest-coqc-dependency '(0 0))
-    (put new-job 'load-path coq-load-path)
+    (put new-job 'load-path clpath)
     new-job))
 
-(defun coq-par-create-require-job (coq-load-path require-items require-span
-                                                 current-dir)
+(defun coq-par-create-require-job (clpath require-items require-span
+                                          current-dir)
   "Create a new require job for REQUIRE-SPAN.
-Create a new require job and initialize its fields. COQ-LOAD-PATH
+Create a new require job and initialize its fields. CLPATH
 is the load path configured for the current scripting buffer,
 that is passed down to all dependencies and used in all
 compilations. REQUIRE-ITEMS are the non-require commands
@@ -2021,12 +2021,13 @@ compilation from a sentinel or elsewhere.
 This function is called synchronously when asserting. The new
 require job is neither started nor enqueued here - the caller
 must do this."
-  (let ((new-job (coq-par-job-init-common coq-load-path 'require current-dir)))
+  (let* ((coq-load-path clpath)
+         (new-job (coq-par-job-init-common clpath 'require current-dir)))
     (put new-job 'require-span require-span)
     (put new-job 'queueitems require-items)
     (when coq--debug-auto-compilation
       (let* ((require-item (car require-items))
-             (require-command (mapconcat 'identity (nth 1 require-item) " ")))
+             (require-command (mapconcat #'identity (nth 1 require-item) " ")))
         (message "%s: create require job for %s"
                  (get new-job 'name) require-command)))
     new-job))
@@ -2035,7 +2036,7 @@ must do this."
 ;; there was some error and it was not used anywhere back then, but
 ;; job is now needed as a dependency of some other file?
 ;; XXX what happens if the job exists and is failed?
-(defun coq-par-create-file-job (module-vo-file coq-load-path dep-src-file
+(defun coq-par-create-file-job (module-vo-file clpath dep-src-file
                                                current-dir)
   "Create a new file job for MODULE-VO-FILE.
 DEP-SRC-FILE is the source file whose coqdep output we are just
@@ -2053,7 +2054,8 @@ If a new job is created it is started or enqueued right away."
   (cond
    ((gethash module-vo-file coq--compilation-object-hash))
    (t
-    (let ((new-job (coq-par-job-init-common coq-load-path 'file current-dir)))
+    (let* ((coq-load-path clpath)
+           (new-job (coq-par-job-init-common clpath 'file current-dir)))
       ;; fields 'required-obj-file and obj-mod-time are implicitely set to nil
       (put new-job 'vo-file module-vo-file)
       (put new-job 'src-file (coq-library-src-of-vo-file module-vo-file))
@@ -2206,7 +2208,7 @@ behind PROCESS."
 	  (coq-par-kickoff-coqc-dependants job t))
       ;; coqc error
       (coq-compile-display-error
-       (mapconcat 'identity (process-get process 'coq-process-command) " ")
+       (mapconcat #'identity (process-get process 'coq-process-command) " ")
        (process-get process 'coq-process-output)
        t)
       (if coq-compile-keep-going
@@ -2283,8 +2285,7 @@ This function is called synchronously when asserting."
         (message "handle require command \"%s\"" require-command)))
     (span-add-delete-action
      span
-     `(lambda ()
-	(coq-unlock-all-ancestors-of-span ,span)))
+     (lambda () (coq-unlock-all-ancestors-of-span span)))
     ;; create a new require job and maintain coq--last-compilation-job
     (setq new-job
           (coq-par-create-require-job coq-load-path require-items span
@@ -2302,7 +2303,7 @@ This function is called synchronously when asserting."
   "Return t if ITEM contains a Require command.
 Predicate for `split-list-at-predicate', used to split the new
 queue items at each Require command."
-  (let ((string (mapconcat 'identity (nth 1 item) " ")))
+  (let ((string (mapconcat #'identity (nth 1 item) " ")))
     (and string
 	 (string-match coq-require-command-regexp string))))
 
