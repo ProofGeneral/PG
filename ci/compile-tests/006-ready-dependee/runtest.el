@@ -1,4 +1,4 @@
-;; This file is part of Proof General.
+;; This file is part of Proof General.  -*- lexical-binding: t; -*-
 ;;
 ;; © Copyright 2020  Hendrik Tews
 ;;
@@ -35,7 +35,7 @@
 
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
-(require 'cct-lib)
+(require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
@@ -53,7 +53,7 @@
   "All ancestors.")
 
 (defconst all-compiled-ancestors
-  (mapcar 'cct-library-vo-of-v-file all-ancestors)
+  (mapcar #'cct-library-vo-of-v-file all-ancestors)
   "All vo ancestors files.")
 
 (defun cct-replace-last-word (line word)

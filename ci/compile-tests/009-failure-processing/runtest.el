@@ -1,4 +1,4 @@
-;; This file is part of Proof General.
+;; This file is part of Proof General.  -*- lexical-binding: t; -*-
 ;;
 ;; © Copyright 2021  Hendrik Tews
 ;;
@@ -61,7 +61,7 @@
 
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
-(require 'cct-lib)
+(require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
@@ -95,7 +95,7 @@ create a ``.X'' file, whose absense is checked in the test."
 
 (defun all-compiled-vo (n)
   "All vo files for part N."
-  (mapcar 'cct-library-vo-of-v-file (all-compiled n)))
+  (mapcar #'cct-library-vo-of-v-file (all-compiled n)))
 
 (defun not-compiled (n)
   "Files that should not be compiled for part N, see `pre-not-compiled'."
