@@ -1,9 +1,9 @@
-;; bufhist.el --- keep read-only history of buffer contents for browsing
+;; bufhist.el --- keep read-only history of buffer contents for browsing  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -59,8 +59,7 @@
   :group 'tools)
 
 (defcustom bufhist-ring-size 30
-  "*Default size of buffer history ring."
-  :group 'bufhist
+  "Default size of buffer history ring."
   :type 'integer)
 
 (defvar bufhist-ring nil
@@ -98,10 +97,10 @@
 		 (let ((map (make-sparse-keymap)))
 		   ;; FIXME: clicking can go wrong here because the
 		   ;; current buffer can be something else which has no hist!
-		   (define-key map [mode-line mouse-1] 'bufhist-prev)
-		   (define-key map [mode-line mouse-3] 'bufhist-next)
-		   ;; (define-key map [mode-line control mouse-1] 'bufhist-first)
-		   ;; (define-key map [mode-line control mouse-3] 'bufhist-last)
+		   (define-key map [mode-line mouse-1] #'bufhist-prev)
+		   (define-key map [mode-line mouse-3] #'bufhist-next)
+		   ;; (define-key map [mode-line control mouse-1] #'bufhist-first)
+		   ;; (define-key map [mode-line control mouse-3] #'bufhist-last)
 		   map))
        'mouse-face 'mode-line-highlight))))
 
@@ -113,15 +112,17 @@
 
 ;;; Minor mode
 
-(defconst bufhist-minor-mode-map
+(define-obsolete-variable-alias
+  'bufhist-minor-mode-map 'bufhist-mode-map "2021")
+(defconst bufhist-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; (define-key map [mouse-2] 'bufhist-popup-menu)
-    (define-key map [(meta left)] 'bufhist-prev)
-    (define-key map [(meta right)] 'bufhist-next)
-    (define-key map [(meta up)] 'bufhist-first)
-    (define-key map [(meta down)] 'bufhist-last)
-    (define-key map [(meta c)] 'bufhist-clear)
-    (define-key map [(meta d)] 'bufhist-delete)
+    ;; (define-key map [mouse-2]   #'bufhist-popup-menu)
+    (define-key map [(meta left)]  #'bufhist-prev)
+    (define-key map [(meta right)] #'bufhist-next)
+    (define-key map [(meta up)]    #'bufhist-first)
+    (define-key map [(meta down)]  #'bufhist-last)
+    (define-key map [(meta c)]     #'bufhist-clear)
+    (define-key map [(meta d)]     #'bufhist-delete)
     map)
   "Keymap for `bufhist-minor-mode'.")
 
@@ -129,15 +130,14 @@
 (define-minor-mode bufhist-mode
   "Minor mode retaining an in-memory history of the buffer contents.
 
-Commands:\\<bufhist-minor-mode-map>
+Commands:\\<bufhist-mode-map>
 \\[bufhist-prev]    bufhist-prev    go back in history
 \\[bufhist-next]    bufhist-next    go forward in history
 \\[bufhist-first]   bufhist-first   go to first item in history
 \\[bufhist-last]    bufhist-last    go to last (current) item in history.
 \\[bufhist-clear]   bufhist-clear   clear history.
 \\[bufhist-delete]  bufhist-clear   delete current item from history."
-  nil "" bufhist-minor-mode-map
-  :group 'bufhist
+  :lighter ""
   (if bufhist-mode
       (bufhist-init)
     (bufhist-exit)))
@@ -335,7 +335,7 @@ If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."
 
 ;; Restore the latest buffer contents before changes from elsewhere.
 
-(defun bufhist-before-change-function (&rest args)
+(defun bufhist-before-change-function (&rest _)
   "Restore the most recent contents of the buffer before changes."
   (bufhist-switch-to-index 0))
 

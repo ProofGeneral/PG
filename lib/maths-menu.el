@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -55,7 +55,7 @@
 
 ;;; Code:
 
-(defvar maths-menu-filter-predicate (lambda (char) t)
+(defvar maths-menu-filter-predicate (lambda (_char) t)
   "Predicate function used to filter menu elements.")
 
 (defvar maths-menu-tokenise-insert #'insert
@@ -72,9 +72,9 @@
 			(concat "maths-menu-insert-"
 				(replace-regexp-in-string " " "-" (cadr elt))))))
 	    (fset fname
-		  `(lambda ()
-		     (interactive)
-		     (funcall maths-menu-tokenise-insert ,(car elt))))
+		  (lambda ()
+		    (interactive)
+		    (funcall maths-menu-tokenise-insert (car elt))))
 	    (define-key-after pane-map
 	      (vector (intern (string (car elt)))) ; convenient unique symbol
 	      (list 'menu-item
@@ -356,7 +356,7 @@
 Uses window system menus only when they can display multilingual text.
 Otherwise the menu-bar item activates the text-mode menu system.
 This mode is only useful with a font which can display the maths repertoire."
-  nil nil maths-menu-mode-map)
+  :lighter nil)
 
 (provide 'maths-menu)
 ;;; maths-menu.el ends here

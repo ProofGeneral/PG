@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -112,9 +112,9 @@ which should be removed when making the text into a hole."
 
 (defvar hole-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [(mouse-1)] 'holes-mouse-set-active-hole)
-    (define-key map [(mouse-3)] 'holes-mouse-destroy-hole)
-    (define-key map [(mouse-2)] 'holes-mouse-forget-hole)
+    (define-key map [(mouse-1)] #'holes-mouse-set-active-hole)
+    (define-key map [(mouse-3)] #'holes-mouse-destroy-hole)
+    (define-key map [(mouse-2)] #'holes-mouse-forget-hole)
     map)
   "Keymap to use on the holes's overlays.
 This keymap is used only when point is on a hole.
@@ -122,14 +122,15 @@ See `holes-mode-map' for the keymap of `holes-mode'.")
 
 (defvar holes-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [(control c) (h)] 'holes-set-make-active-hole)
-    (define-key map [(control c) (control y)] 'holes-replace-update-active-hole)
+    (define-key map [(control c) (h)] #'holes-set-make-active-hole)
+    (define-key map [(control c) (control y)]
+      #'holes-replace-update-active-hole)
     (define-key map [(control meta down-mouse-1)]
-      'holes-mouse-set-make-active-hole)
+      #'holes-mouse-set-make-active-hole)
     (define-key map [(control meta shift down-mouse-1)]
-      'holes-mouse-replace-active-hole)
+      #'holes-mouse-replace-active-hole)
     (define-key map [(control c) (control j)]
-      'holes-set-point-next-hole-destroy)
+      #'holes-set-point-next-hole-destroy)
     map)
   "Keymap of `holes-mode'.
 
@@ -473,7 +474,7 @@ Sets `holes-active-hole' to the next hole if it exists."
 ;; have nearly the same meaning for me.  So I define this
 ;; track-mouse-selection.
 
-(defalias 'holes-track-mouse-selection 'mouse-drag-track)
+(defalias 'holes-track-mouse-selection #'mouse-drag-track)
 (defsubst holes-track-mouse-clicks ()
   "See `mouse-track-click-count'."
   (+ mouse-selection-click-count 1))
@@ -722,7 +723,7 @@ it mean anyway?)
 
  o Cutting or pasting a hole will not produce new holes, and
 undoing on holes cannot make holes re-appear."
-  nil " Holes" holes-mode-map
+  :lighter " Holes"
   (if holes-mode
       (add-hook 'skeleton-end-hook #'holes-skeleton-end-hook nil t)
     (remove-hook 'skeleton-end-hook #'holes-skeleton-end-hook t)
