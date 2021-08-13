@@ -74,7 +74,7 @@ BIN_SCRIPTS = lego/legotags coq/coqtags isar/isartags
 # to output the compile-time load path and ELISP_DIRS_COMP so these are set
 # just in that one place.
 ERROR_ON_WARN = nil
-BYTECOMP = $(BATCHEMACS) -eval '(setq load-path (append (mapcar (lambda (d) (expand-file-name (symbol-name d))) (quote (${ELISP_DIRS_COMP}))) load-path))' -eval '(progn (require (quote bytecomp)) (require (quote mouse)) (require (quote tool-bar)) (require (quote fontset)) (setq byte-compile-warnings (remove (quote cl-functions) (remove (quote noruntime) byte-compile-warning-types))) (setq byte-compile-error-on-warn $(ERROR_ON_WARN)))' -f batch-byte-compile
+BYTECOMP = $(BATCHEMACS) -eval '(setq load-path (append (mapcar (lambda (d) (expand-file-name (symbol-name d))) (quote (\. ${ELISP_DIRS_COMP}))) load-path))' -eval '(progn (require (quote bytecomp)) (require (quote mouse)) (require (quote tool-bar)) (require (quote fontset)) (setq byte-compile-warnings (remove (quote noruntime) byte-compile-warning-types)) (setq byte-compile-error-on-warn $(ERROR_ON_WARN)))' -f batch-byte-compile
 EL=$(shell for f in $(ELISP_DIRS_COMP); do ls $$f/*.el; done)
 ELC=$(EL:.el=.elc)
 
