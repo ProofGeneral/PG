@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -189,7 +189,7 @@ proof-site.el couldn't know where it was executed from.")
 	    (list dne)
 	  nil)))
     proof-assistant-table-default))
-  "*Proof General's table of supported proof assistants.
+  "Proof General's table of supported proof assistants.
 This is copied from `proof-assistant-table-default' at load time,
 removing any entries that do not have a corresponding directory
 under `proof-home-directory'.
@@ -220,11 +220,12 @@ variable `proof-home-directory'."
 
 (defcustom proof-assistants nil
   (concat
-   "*Choice of proof assistants to use with Proof General.
-A list of symbols chosen from:"
-   (apply 'concat (mapcar (lambda (astnt)
-			    (concat " '" (symbol-name (car astnt))))
-			  proof-assistant-table))
+   "Choice of proof assistants to use with Proof General.
+A list of symbols chosen from: "
+   (mapconcat (lambda (astnt)
+		(concat "`" (symbol-name (car astnt)) "'"))
+	      proof-assistant-table
+	      " ")
 ".\nIf nil, the default will be ALL available proof assistants.
 
 Each proof assistant defines its own instance of Proof General,
@@ -247,9 +248,10 @@ Note: to change proof assistant, you must start a new Emacs session.")
   :group 'proof-general)
 
 (defvar proof-general-configured-provers
-  (or (mapcar 'intern (split-string (or (getenv "PROOFGENERAL_ASSISTANTS") "")))
+  (or (mapcar #'intern (split-string
+                        (or (getenv "PROOFGENERAL_ASSISTANTS") "")))
       proof-assistants
-      (mapcar (lambda (astnt) (car astnt)) proof-assistant-table))
+      (mapcar #'car proof-assistant-table))
   "A list of the configured proof assistants.
 Set on startup to contents of environment variable PROOFGENERAL_ASSISTANTS,
 the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
@@ -279,6 +281,8 @@ the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'
 
 	 ;; Stub to initialize and load specific code.
 	 (mode-stub
+	  ;; FIXME: Make it a closure with (:documentation EXP)
+          ;; once we don't need compatibility with Emacs<25.
 	  `(lambda ()
 	     ,(concat
 	       "Major mode for editing scripts for proof assistant "
@@ -321,7 +325,7 @@ the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'
 
 (defun proof-chose-prover (prompt)
   (completing-read prompt
-		   (mapcar 'symbol-name
+		   (mapcar #'symbol-name
 			   proof-general-configured-provers)))
 
 (defun proofgeneral (prover)

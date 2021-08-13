@@ -1,9 +1,9 @@
-;;; proof-splash.el --- Splash welcome screen for Proof General
+;;; proof-splash.el --- Splash welcome screen for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -109,8 +109,8 @@ If it is nil, a new line is inserted."
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
-(define-key proof-splash-mode-map "q" 'bury-buffer)
-(define-key proof-splash-mode-map [mouse-3] 'bury-buffer)
+(define-key proof-splash-mode-map "q" #'bury-buffer)
+(define-key proof-splash-mode-map [mouse-3] #'bury-buffer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -157,7 +157,7 @@ Borrowed from startup-center-spaces."
 ;; Symptom is ProofGeneral mode instead of the native script mode.
 ;; 
 
-(defun proof-splash-remove-screen (&optional nothing)
+(defun proof-splash-remove-screen (&optional _nothing)
   "Remove splash screen and restore window config."
   (let ((splashbuf (get-buffer proof-splash-welcome)))
     (proof-splash-unset-frame-titles)
@@ -192,8 +192,8 @@ Borrowed from startup-center-spaces."
   "Insert splash buffer contents into current buffer."
  (let*
      ((splash-contents (append
-			(eval proof-splash-contents)
-			(eval proof-splash-startup-msg)))
+			(eval proof-splash-contents t)
+			(eval proof-splash-startup-msg t)))
       s)
    (setq buffer-read-only nil)
    (erase-buffer)
@@ -258,13 +258,13 @@ binding to remove this buffer."
 	 (setq proof-splash-timeout-conf
 	       (cons
 		(add-timeout proof-splash-time
-			     'proof-splash-remove-screen nil)
+			     #'proof-splash-remove-screen nil)
 		savedwincnf))
-	 (add-hook 'proof-mode-hook 'proof-splash-timeout-waiter))))
+	 (add-hook 'proof-mode-hook #'proof-splash-timeout-waiter))))
 
    (setq proof-splash-seen t)))
 
-(defalias 'pg-about 'proof-splash-display-screen)
+(defalias 'pg-about #'proof-splash-display-screen)
 
 ;;;###autoload
 (defun proof-splash-message ()
@@ -279,9 +279,8 @@ binding to remove this buffer."
           ;; otherwise it can have undesired interference.
           (run-with-timer
            0 nil
-           `(lambda ()
-	      (proof-splash-display-screen
-               ,(not (called-interactively-p 'any))))))
+           (let ((nci (not (called-interactively-p 'any))))
+             (lambda () (proof-splash-display-screen nci)))))
       ;; Otherwise, a message
       (message "Welcome to %s Proof General!" proof-assistant))
     (setq proof-splash-seen t)))
@@ -297,7 +296,7 @@ binding to remove this buffer."
       (if (input-pending-p)
 	  (setq unread-command-events
 		(cons (next-command-event) unread-command-events))))
-  (remove-hook 'proof-mode-hook 'proof-splash-timeout-waiter))
+  (remove-hook 'proof-mode-hook #'proof-splash-timeout-waiter))
 
 (defvar proof-splash-old-frame-title-format nil)
 

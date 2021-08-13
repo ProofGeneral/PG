@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -86,6 +86,7 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
        (cus-internals (intern (concat cusgrp-rt "-config")))
        (elisp-dir     sname)		; NB: dirname same as symbol name!
        (loadpath-elt  (concat proof-home-directory elisp-dir "/")))
+    ;; FIXME: Yuck!!
     (eval `(progn
        ;; Make a customization group for this assistant
        (defgroup ,cusgrp nil
@@ -116,11 +117,12 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'."
        ;; Extend the load path if necessary
        (proof-add-to-load-path ,loadpath-elt)
        ;; Run hooks for late initialisation
-       (run-hooks 'proof-ready-for-assistant-hook))))))
+       (run-hooks 'proof-ready-for-assistant-hook))
+          t))))
 
 
 (defalias 'proof-active-buffer-fake-minor-mode
-  'proof-toggle-active-scripting)
+  #'proof-toggle-active-scripting)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -601,8 +603,7 @@ It is recorded in the span with the 'rawname property."
 	 (rawname  name)
 	 (name	   (or name id))
 	 (idiom    (symbol-name idiomsym))
-	 (delfn	   `(lambda () (pg-remove-element
-				(quote ,idiomsym) (quote ,idsym))))
+	 (delfn	   (lambda () (pg-remove-element idiomsym idsym)))
 	 (elts (cdr-safe (assq idiomsym pg-script-portions))))
     (unless elts
       (setq pg-script-portions
@@ -741,7 +742,7 @@ Each span has a 'type property, one of:
 (defvar pg-span-context-menu-keymap
   (let ((map (make-sparse-keymap
 	      "Keymap for context-sensitive menus on spans")))
-      (define-key map [down-mouse-3] 'pg-span-context-menu)
+      (define-key map [down-mouse-3] #'pg-span-context-menu)
       map)
     "Keymap for the span context menu.")
 
@@ -1465,8 +1466,7 @@ that is not yet documented here, this function
 		    (+ (length comment-start) (span-start span))
 		    (- (span-end span)
 		       (max 1 (length comment-end)))))
-	(id        (proof-next-element-id 'comment))
-	str)
+	(id        (proof-next-element-id 'comment)))
     (pg-add-element 'comment id bodyspan)
     (span-set-property span 'id (intern id))
     (span-set-property span 'idiom 'comment)
@@ -2027,7 +2027,7 @@ start is found inside a proof."
     (while vanillas
       (setq item (car vanillas))
       ;; cdr vanillas is at the end of the loop
-      (setq cmd (mapconcat 'identity (nth 1 item) " "))
+      (setq cmd (mapconcat #'identity (nth 1 item) " "))
       (if inside-proof
           (progn
             (if (string-match proof-script-proof-start-regexp cmd)
@@ -2790,9 +2790,9 @@ finish setup which depends on specific proof assistant configuration."
 ;; This key-binding was disabled following a request in PG issue #160.
 ;;	(define-key proof-mode-map
 ;;	  (vconcat [(control c)] (vector (aref proof-terminal-string 0)))
-;;	  'proof-electric-terminator-toggle)
+;;	  #'proof-electric-terminator-toggle)
 	(define-key proof-mode-map (vector (aref proof-terminal-string 0))
-	  'proof-electric-terminator)))
+	  #'proof-electric-terminator)))
 
   ;; Toolbar, main menu (loads proof-toolbar,setting p.-toolbar-scripting-menu)
   (proof-toolbar-setup)
@@ -2800,8 +2800,6 @@ finish setup which depends on specific proof assistant configuration."
   ;; Menus: the Proof-General and the specific menu
   (proof-menu-define-main)
   (proof-menu-define-specific)
-  (easy-menu-add proof-mode-menu proof-mode-map)
-  (easy-menu-add proof-assistant-menu proof-mode-map)
 
   ;; Define parsing functions
   (proof-setup-parsing-mechanism)

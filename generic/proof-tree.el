@@ -1,9 +1,9 @@
-;;; proof-tree.el --- Proof General prooftree communication.
+;;; proof-tree.el --- Proof General prooftree communication.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -467,7 +467,7 @@ from `proof-tree-process-filter' when more output arrives.")
 	   ;; there yet
 	   ;; need to try again later
 	   (setq proof-tree-filter-continuation
-		 `(lambda () (proof-tree-insert-script ,data)))))
+		 (lambda () (proof-tree-insert-script data)))))
       (display-warning
        '(proof-general proof-tree)
        "Prooftree sent an invalid data length for insert-command"
@@ -490,7 +490,7 @@ newly arrived output."
       (if moving (goto-char (point-max))))))
 
 
-(defun proof-tree-process-filter (proc string)
+(defun proof-tree-process-filter (_proc string)
   "Output filter for prooftree.
 Records the output in the prooftree process buffer and checks for
 callback function requests. Such callback functions might fail
@@ -550,7 +550,7 @@ everything is processed, the marker is deleted and
 ;; Process creation
 ;;
 
-(defun proof-tree-process-sentinel (proc event)
+(defun proof-tree-process-sentinel (_proc event)
   "Sentinel for prooftee.
 Runs on process status changes and cleans up when prooftree dies."
   (proof-tree-insert-output (concat "\nsubprocess status change: " event) t)
@@ -579,14 +579,14 @@ variables."
     ;; now start the new process
     (proof-tree-insert-output "\nStart new prooftree process\n\n" t)
     (setq proof-tree-process
-	  (apply 'start-process
+	  (apply #'start-process
 	   proof-tree-process-name
 	   proof-tree-process-buffer
 	   proof-tree-program
 	   proof-tree-arguments))
     (set-process-coding-system proof-tree-process 'utf-8-unix 'utf-8-unix)
-    (set-process-filter proof-tree-process 'proof-tree-process-filter)
-    (set-process-sentinel proof-tree-process 'proof-tree-process-sentinel)
+    (set-process-filter proof-tree-process #'proof-tree-process-filter)
+    (set-process-sentinel proof-tree-process #'proof-tree-process-sentinel)
     (set-process-query-on-exit-flag proof-tree-process nil)
     ;; other initializations
     (setq proof-tree-sequent-hash (make-hash-table :test 'equal)
@@ -627,7 +627,7 @@ DATA as data sections to Prooftree."
      (format "second line %03d\n%s\n%s%s"
 	     (1+ second-line-len)
 	     second-line
-	     (mapconcat 'identity data "\n")
+	     (mapconcat #'identity data "\n")
 	     (if data "\n" "")))))
 
 (defun proof-tree-send-configure ()
@@ -645,7 +645,7 @@ DATA as data sections to Prooftree."
   "Send the current goal state to prooftree."
   ;; (message "PTSGS id %s sequent %s ex-info %s"
   ;; 	   current-sequent-id current-sequent-text existential-info)
-  (let* ((add-id-string (mapconcat 'identity additional-sequent-ids " "))
+  (let* ((add-id-string (mapconcat #'identity additional-sequent-ids " "))
 	 (second-line
 	  (format
 	   (concat "current-goals state %d current-sequent %s %s %s "
@@ -819,7 +819,7 @@ lambda expressions that you can put into `proof-action-list'."
 
 (defun proof-tree-make-show-goal-callback (state)
   "Create the callback for display-goal commands."
-  `(lambda (span) (proof-tree-show-goal-callback ,state)))
+  (lambda (_span) (proof-tree-show-goal-callback state)))
 
 (defun proof-tree-urgent-action (flags)
   "Handle urgent points before the next item is sent to the proof assistant.
@@ -1054,8 +1054,8 @@ The delayed output of the navigation command is in the region
 (defun proof-tree-handle-proof-command (old-proof-marker cmd proof-info)
   "Display current goal in prooftree unless CMD should be ignored."
   ;; (message "PTHPC")
-  (let ((proof-state (car proof-info))
-	(cmd-string (mapconcat 'identity cmd " ")))
+  (let (;; (proof-state (car proof-info))
+	(cmd-string (mapconcat #'identity cmd " ")))
     (unless (and proof-tree-ignored-commands-regexp
 		 (proof-string-match proof-tree-ignored-commands-regexp
 				     cmd-string))
@@ -1140,7 +1140,7 @@ The delayed output is in the region
 						  sequent-text)))))))
 
 
-(defun proof-tree-handle-delayed-output (old-proof-marker cmd flags span)
+(defun proof-tree-handle-delayed-output (old-proof-marker cmd flags _span)
   "Process delayed output for prooftree.
 This function is the main entry point of the Proof General
 prooftree support.  It examines the delayed output in order to
@@ -1205,7 +1205,7 @@ the flags and SPAN is the span."
   (if (and proof-tree-configured (proof-tree-is-running))
       (proof-tree-send-undo 0)))
 
-(add-hook 'proof-deactivate-scripting-hook 'proof-tree-leave-buffer)
+(add-hook 'proof-deactivate-scripting-hook #'proof-tree-leave-buffer)
 
 
 ;;

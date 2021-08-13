@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -101,7 +101,7 @@ Called from `proof-done-advancing' when a save is processed and
 	 ;; one depends on; update their list of dependents,
 	 ;; and return resulting list paired up with names.
 	 (depspans
-	  (apply 'append
+	  (apply #'append
 		 (span-mapcar-spans
 		  (lambda (depspan)
 		    (let ((dname (span-property depspan 'name)))
@@ -144,15 +144,15 @@ specific entries."
           (list
            "-------------"
            (proof-dep-make-submenu "Local Dependency..."
-			           (lambda (namespan) (car namespan))
-			           'proof-goto-dependency
+			           #'car
+			           #'proof-goto-dependency
 			           (span-property span 'dependencies-within-file))
            (proof-make-highlight-depts-menu "Highlight Dependencies"
 				            'proof-highlight-depcs
 				            span 'dependencies-within-file)
            (proof-dep-make-submenu "Local Dependents..."
-			           (lambda (namepos) (car namepos))
-			           'proof-goto-dependency
+			           #'car
+			           #'proof-goto-dependency
 			           (span-property span 'dependents))
            (proof-make-highlight-depts-menu "Highlight Dependents"
 				            'proof-highlight-depts
@@ -184,9 +184,9 @@ specific entries."
 			 (cdr nestedtop))
 		 (mapcar (lambda (sm)
 			   (proof-dep-make-submenu (car sm)
-						   'car
-						   'proof-show-dependency
-						   (mapcar 'list (cdr sm))))
+						   #'car
+						   #'proof-show-dependency
+						   (mapcar #'list (cdr sm))))
 			 (car nestedtop)))))
       (vector menuname nil nil))))
 
@@ -214,9 +214,10 @@ If LIST is empty, return a disabled menu item with NAME.
 NAMEFN is applied to each element of LIST to make the names."
   (if list
       (cons name
-	    (mapcar `(lambda (l)
-		       (vector (,namefn l)
-			       (cons (quote ,appfn) l) t)) list))
+	    (mapcar (lambda (l)
+		      (vector (funcall namefn l)
+			      (cons appfn l) t))
+		    list))
     (vector name nil nil)))
 
 (defun proof-make-highlight-depts-menu (name fn span prop)
