@@ -58,7 +58,7 @@
 @c
 
 @set version 4.5-git
-@set emacsversion 24.5
+@set emacsversion 25.1
 @set last-update February 2021
 @set rcsid $Id$
 
