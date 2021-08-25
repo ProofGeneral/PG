@@ -31,7 +31,7 @@ Proof General requires GNU Emacs `25.1` or later.
 
 The current policy aims at supporting multiple Emacs versions,
 including those available in [Debian Stable](https://packages.debian.org/stable/emacs)
-as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs24) distributions
+as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs) distributions
 until their [End-Of-Support](https://wiki.ubuntu.com/Releases).
 
 ### Using MELPA (recommended procedure)
