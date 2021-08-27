@@ -223,3 +223,32 @@ jobs:
             sudo chown -R coq:coq ./ci
             make -C ci/simple-tests all
           endGroup
+
+  # Run indentation tests in ci/test-indent on all supported emacs
+  # versions without coq installed.
+  test-indent:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          - 25.1
+          - 25.2
+          - 25.3
+          - 26.1
+          - 26.2
+          - 26.3
+          - 27.1
+      max-parallel: 4
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - run: emacs --version
+    - run: make -C ci/test-indent
