@@ -11,7 +11,7 @@
 
 ;; Author:     David Aspinall and others
 
-;; License:    GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;

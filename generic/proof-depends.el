@@ -12,7 +12,7 @@
 ;; Authors:      David Aspinall <David.Aspinall@ed.ac.uk>
 ;;	         Earlier version by Fiona McNeil.
 
-;; License:      GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;

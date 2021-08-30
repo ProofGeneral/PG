@@ -121,7 +121,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 with GNU Emacs @value{emacsversion} or
 later versions (subject to Emacs API changes).  Proof General is
-distributed under the terms of the GNU General Public License (GPL);
+distributed under the terms of the GNU General Public License (GPL),
+version 3 or later;
 please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
@@ -204,6 +205,8 @@ other documentation, system downloads, etc.
 @node News for Version 4.5
 @unnumberedsec News for Version 4.5
 @cindex news
+
+Proof-General is now distributed under the GPLv3+ license.
 
 The old code for the support of the following systems have been
 removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam,

@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (C) 2004 - Universite de Savoie, France.
 ;; Authors:   Jean-Roch SOTTY, Christophe Raffalli
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
 ;; $Id$
 ;;

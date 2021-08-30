@@ -12,7 +12,7 @@
 ;; Authors:   David Aspinall, Healfdene Goguen,
 ;;	      Thomas Kleymann, Dilip Sequiera
 
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;; 

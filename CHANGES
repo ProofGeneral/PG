@@ -7,6 +7,7 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 * Changes of Proof General 4.5 from Proof General 4.4
 
 ** Generic changes
+*** License changed to GPLv3+
 *** Remove support for the following systems:
 Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam, Isabelle, HOL98.
 

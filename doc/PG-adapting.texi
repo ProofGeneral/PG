@@ -117,8 +117,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 GNU Emacs @value{emacsversion} or (as far as possible) later versions.
 Proof General is distributed under the terms of the GNU General Public
-License (GPL); please check the accompanying file @file{COPYING} for
-more details.
+License (GPL), version 3 or later;
+please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
 

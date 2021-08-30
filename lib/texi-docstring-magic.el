@@ -12,10 +12,10 @@
 ;; Author:     David Aspinall <David.Aspinall@ed.ac.uk>
 ;; Keywords: lisp, docs, tex
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is distributed under the terms of the GNU General Public
-;; License, Version 2.  Find a copy of the GPL with your version of
+;; License, Version 3 or later.  Find a copy of the GPL with your version of
 ;; GNU Emacs or Texinfo.
 
 ;;; Commentary:

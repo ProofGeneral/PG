@@ -144,12 +144,3 @@ instances are no longer maintained nor available in the MELPA package:
   [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/)
 
 A few example proofs are included in each prover subdirectory.
-
-## Contributing
-
-Contributions to this repository are placed under the BSD-3 license.
-As BSD-3 is compatible with both GPLv2 and GPLv3+, this means that
-we can merge them in both `master` and `async` branches if need be,
-using the same license as the rest of the codebase, while you keep
-all the rights on your code.
-For more info, see <https://opensource.org/licenses/BSD-3-Clause>.
