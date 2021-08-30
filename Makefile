@@ -9,6 +9,7 @@
 ##  make scripts	- edit paths to bash/perl/PGHOME in scripts
 ##  make install	- install into system directories
 ##  make clean		- return to clean source
+##  make tests		- run the suite of regression tests
 ##
 ## Edit the EMACS setting below or call with an explicit one, like this:
 ##
@@ -103,14 +104,12 @@ compile: $(EL)
 	@echo "****************************************************************"
 
 ## 
-## compile : byte compile all lisp files
-##
-## Compiling can show up errors in the code, but be wary of fixing obsoletion
-## or argument call warnings unless they're valid for all supported Emacsen.
+## check : make sure compilation doesn't emit warnings
 ##
 ## The check target aborts compilation on any byte-compiler warning.
-## Compile with this target once before commiting your changes to 
+## Compile with this target once before commiting your changes to
 ## the repository.
+## FIXME: Compilation currently emits many warnings :-(
 ##
 check: $(EL) 
 	@echo "****************************************************************"
@@ -121,6 +120,11 @@ check: $(EL)
 	@echo " Finished."
 	@echo "****************************************************************"
 
+##
+## tests : run regression tests
+##
+tests:
+	ci/test.sh
 
 ##
 ## Make an individual .elc.  Building separately means we need to be
