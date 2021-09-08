@@ -121,10 +121,19 @@ check: $(EL)
 	@echo "****************************************************************"
 
 ##
-## tests : run regression tests
+## tests : run a selection of regression tests
 ##
+.PHONY: tests
 tests:
 	ci/test.sh
+
+##
+## dist-tests : run all regression tests
+##
+.PHONY: dist-tests
+dist-tests:
+	+$(MAKE) -C ci/simple-tests all
+	+$(MAKE) -C ci/compile-tests test
 
 ##
 ## Make an individual .elc.  Building separately means we need to be
