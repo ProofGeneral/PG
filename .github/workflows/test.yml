@@ -73,7 +73,7 @@ jobs:
 
     - run: emacs --version
     - run: make -C doc magic
-    - run: git diff --exit-code
+    - run: git diff --exit-code -- doc
       
   test:
     runs-on: ubuntu-latest

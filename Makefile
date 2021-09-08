@@ -130,10 +130,18 @@ tests:
 ##
 ## dist-tests : run all regression tests
 ##
-.PHONY: dist-tests
+.PHONY: dist-tests check-doc-magic
 dist-tests:
 	+$(MAKE) -C ci/simple-tests all
 	+$(MAKE) -C ci/compile-tests test
+
+##
+## check-doc-magic : check *.texi are up-to-date w.r.t. docstrings
+##
+.PHONY: check-doc-magic
+check-doc-magic:
+	+$(MAKE) -C doc magic
+	git diff --exit-code -- doc
 
 ##
 ## Make an individual .elc.  Building separately means we need to be
