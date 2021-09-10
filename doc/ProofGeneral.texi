@@ -4105,72 +4105,53 @@ the file.
 @b{Remark 1:} The examples in the following are for Coq but the
 trick is applicable to other provers. 
 
-@b{Remark 2:} For Coq specifically, there is a recommended other way
-of configuring Coq options:
-project files (@ref{Using the Coq project file}).
-Actually, project files are intended to be included in the
-distribution of a library (and included in its repository), so the Coq
-options specified in project files are supposed to work for all users.
-In contrast, user-defined options such as @code{coq-prog-name} should
-preferably be specified in a directory-local-variables file (see below).
+@b{Remark 2:} For Coq specifically, there is a recommended other way of
+configuring Coq command-line options: project files (@ref{Using the Coq
+project file}). However file variables are useful to set a specific
+@code{coqtop} executable, or for defining file-specific command-line
+options. Actually, since project files are intended to be included in
+the distribution of a library (and included in its repository), the file
+variables can be used to set non versioned options like
+@code{coq-prog-name}.
 
-For example, in Coq projects involving multiple directories, it is necessary
-to set the variable @code{coq-load-path} 
-(@ref{Customizing Coq Multiple File Support}). 
-Here is an example:
-Assume the file @file{.../dir/bar/foo.v} depends on modules in
-@code{.../dir/theories/}. Then you can put the following at the
-end of @file{foo.v}:
+@b{Remark 3:} For obvious security reasons, when emacs reads file
+variables, it asks for permission to the user before applying the
+assignment. You should read carefully the content of the variable before
+accepting. You can hit @code{!} to accept definitely the exact values at
+hand.
 
-@lisp
-(* 
-*** Local Variables: ***
-*** coq-load-path: ("../theories") ***
-*** End: ***
-*)
-@end lisp
-
-This way, the right command line arguments are passed to the
-invocation of
-@code{coqtop} when scripting starts in
-@file{foo.v}. Note that the load path @code{"../theories"} is
-project or even file specific, and that therefore a global
-setting via the
-configuration tool would be inappropriate.
-With file variables, Emacs will set @code{coq-load-path}
-automatically when visiting @code{foo.v}. Moreover, the setting of
-@code{coq-load-path} in different files or buffers will not be
-affected. (File variables become buffer local.) 
-
-Extending the previous example, if the makefile for @file{foo.v} is
-located in directory @file{.../dir/}, you can add the right compile
-command. You can also specify a "-R" command. And if you want a non
-standard coq executable to be used, here is what you should put in
-variables:
+Let us take a concrete example: suppose the makefile for @file{foo.v} is
+located in directory @file{.../dir/}, you need the right compile command
+in the @code{compile-command} emacs variable. Moreover suppose that you
+want @code{coqtop} to be found in a non standard directory. To put these
+values in file variables, here is what you should put at the end of
+@file{foo.v}:
 
 @lisp
 (* 
 *** Local Variables: ***
 *** coq-prog-name: "../../coqsrc/bin/coqtop" ***
-*** coq-load-path: (("../util" "util") "../theories") ***
 *** compile-command: "make -C .. -k bar/foo.vo" ***
 *** End:***
 *)
 @end lisp
 
 And then the right call to make will be done if you use the @kbd{M-x
-compile} command. Note that the lines are commented in order to be
-ignored by the proof assistant. It is possible to use this mechanism for
-all variables, @inforef{File Variables, ,emacs}.
+compile} command, and the correct @code{coqtop} will be called by
+ProofGeneral. Note that the lines are commented in order to be ignored
+by the proof assistant. It is possible to use this mechanism for all
+variables, @inforef{File Variables, ,emacs}.
+
+@emph{NOTE:} @code{coq-prog-name} should contain only the @code{coqtop}
+executable, @emph{not the options}.
 
 One can also specify file variables on a per directory basis,
-@inforef{Directory Variables, ,emacs}. For instance,
-assume you have a Coq project with several subdirectories and you
-want to put each subdirectory into @code{coq-load-path} for every
-file in the project. You can achieve this by storing
+@inforef{Directory Variables, ,emacs}. You can achieve almost the same
+as above for all the files of a directory by storing
 
 @lisp
-((coq-mode . ((coq-load-path . (("../util" "util") "../theories")))))
+((coq-mode . ((coq-prog-name . "/home/xxx/yyy/coqsrc/bin/coqtop")
+              (compile-command . "make -C .. -k"))))
 @end lisp
 
 into the file @code{.dir-locals.el} in one of the parent directories.
@@ -4178,20 +4159,8 @@ The value in this file must be an alist that maps mode names to alists,
 where these latter alists map variables to values. You can aso put
 arbitrary code in this file @inforef{Directory Variables, ,emacs}.
 
-Regarding the configuration of the @code{coq-prog-name} variable, the
-@code{.dir-locals.el} file should contain something like:
-
-@lisp
-((coq-mode . ((coq-prog-name . ".../path/to/coqtop"))))
-@end lisp
-
 @emph{Note:} if you add such content to the @code{.dir-locals.el} file
-you should restart Emacs to take this change into account (or
-just run @kbd{M-x proof-shell-exit RET yes RET}
-and @kbd{M-x normal-mode RET} in the Coq buffer
-before restarting the Coq process).
-
-
+you should restart Emacs or revert your buffer.
 
 @node Using abbreviations
 @section Using abbreviations
@@ -4216,16 +4185,6 @@ expansion of abbreviations (which can be annoying), the @code{Abbrev}
 minor mode, type @kbd{M-x abbrev-mode RET}. When you are not in Abbrev
 mode you can expand an abbreviation by pressing @kbd{C-x '}
 (@code{expand-abbrev}). See the Emacs manual for more details.
-
-Coq Proof General has a special experimental feature called "Holes"
-which makes use of the abbreviation mechanism and includes a large list
-of command abbreviations. @xref{Holes feature}, for details.  With other
-provers, you may use the standard Emacs commands above to set up your
-own abbreviation tables.
-
-
-
-
 
 
 @c =================================================================
@@ -4336,6 +4295,10 @@ Lego home page URL.
 @node Coq Proof General
 @chapter Coq Proof General
 
+@macro coqrefman {sectionurl,txt}
+@uref{https://coq.inria.fr/distrib/current/refman/\sectionurl\,\txt\}
+@end macro
+
 Coq Proof General is an instantiation of Proof General for the Coq proof
 assistant.  It supports most of the generic features of Proof General.
 
@@ -4404,14 +4367,19 @@ Inserts ``End <section-name>.'' (this should work well with nested sections).
 
 The Coq project file is the recommended way to configure the Coq
 load path and the mapping of logical module names to physical
-file path'. The project file is typically named
+file path (-R,-Q,-I options). The project file is typically named
 @code{_CoqProject} and must be located at the directory root of
 your Coq project. Proof General searches for the Coq project file
 starting at the current directory and walking the directory
 structure upwards. The Coq project file contains the common
 options (especially @code{-R}) and a list of the files of the
-project, see the Coq reference manual, Section 15.3, ``Creating a
-Makefile for Coq modules''.
+project, see the Coq reference manual, Section
+@coqrefman{practical-tools/utilities.html#building-a-coq-project,
+``Building a Coq project''}.
+
+
+@c @uref{https://coq.inria.fr/distrib/current/refman/practical-tools/utilities.html#building-a-coq-project,
+@c ``Building a Coq project''}.
 
 The Coq project file should contain something like:
 
@@ -4429,15 +4397,22 @@ project file and uses them for @code{coqtop} background
 processes as well as for @code{coqdep} and @code{coqc} when you use
 the auto compilation feature, @ref{Automatic Compilation in
 Detail}. For the example above, Proof General will start
-@code{coqtop -foo3 -R foo bar -I foo2}.
+@code{coqtop -emacs -foo3 -R foo bar -I foo2} (remark:
+@code{-emacs} is always added to the options).
 
-@emph{Remarque:} @code{-arg} must be followed by one and only one option
+@emph{NOTE:} @code{-arg} must be followed by one and only one option
 to pass to coqtop/coqc, use several @code{-arg} to issue several
 options. One per line (limitation of Proof General).
 
 For backward compatibility, one can also configure the load path
 with the option @code{coq-load-path}, but this is not compatible
 with @code{CoqIde} or @code{coq_makefile}.
+
+@emph{NOTE:} the Coq project file cannot define which version of
+@code{coqtop} is launched. You need either to launch emacs with the
+right executable in the path or use @inforef{File Variables, ,emacs} or
+@inforef{Directory Variables, ,emacs}. See @ref{Using file variables}
+below.
 
 @menu
 * Changing the name of the coq project file::
@@ -5381,9 +5356,9 @@ and
 @end verbatim
 @end itemize
 
-NOTE: This feature is experimental.
+@emph{NOTE:} This feature is experimental.
 
-NOTE: the ``pg tokens'' are actually the ones PG generates internally by
+@emph{NOTE:} the ``pg tokens'' are actually the ones PG generates internally by
 exploring the file around the indentation point. Consequently this
 refers to internals of PoofGeneral. Contact the Proof General team if you
 need help.
@@ -5438,8 +5413,7 @@ several layers.
 
 Coq 8.10 supports automatically highlighting the differences
 between successive proof steps in Proof General.  The feature is described in the
-@uref{https://coq.inria.fr/distrib/current/refman/proof-engine/proof-handling.html#showing-differences-between-proof-steps,
-Coq Documentation}.
+Coq Documentation, section @coqrefman{proofs/writing-proofs/proof-mode.html#showing-differences-between-proof-steps, Showing differences between proof steps}.
 
 The Coq proof diff does more than a basic "diff" operation.  For example:
 
@@ -5973,7 +5947,7 @@ General is loaded.  To load it manually, type
 
 If you do not want to use customize, simply add a line like this:
 @lisp
-  (setq coq-prog-name "/usr/bin/coqtop -emacs")
+  (setq coq-prog-name "/usr/bin/coqtop")
 @end lisp
 to your @file{.emacs} file.
 For more advice on how to customize the @code{coq-prog-name} variable,
