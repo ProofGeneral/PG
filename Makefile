@@ -130,8 +130,8 @@ tests:
 ##
 ## dist-tests : run all regression tests
 ##
-.PHONY: dist-tests check-doc-magic
-dist-tests:
+.PHONY: dist-tests
+dist-tests: tests check-doc-magic
 	+$(MAKE) -C ci/simple-tests all
 	+$(MAKE) -C ci/compile-tests test
 	+$(MAKE) -C ci/test-indent
