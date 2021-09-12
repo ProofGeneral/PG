@@ -73,7 +73,7 @@ jobs:
 
     - run: emacs --version
     - run: make -C doc magic
-    - run: git diff --exit-code
+    - run: git diff --exit-code -- doc
       
   test:
     runs-on: ubuntu-latest
@@ -123,7 +123,7 @@ jobs:
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
-            ./ci/test.sh
+            make tests
           endGroup
 
   # - run: echo "::remove-matcher owner=ert-problem-matcher::"

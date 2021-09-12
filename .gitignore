@@ -5,3 +5,4 @@ ChangeLog
 proof-general-autoloads.el
 *.elc
 *~
+/ci/.lia.cache

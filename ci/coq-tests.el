@@ -274,7 +274,7 @@ For example, COMMENT could be (*test-definition*)"
      (proof-shell-wait)
      (goto-char (point-min))
      (insert "(*.*)")
-     (should (equal (proof-queue-or-locked-end) 1)))))
+     (should (equal (proof-queue-or-locked-end) (point-min))))))
 
 (ert-deftest 080_coq-test-regression-show-proof-stepwise()
   "Regression test for the \"Show Proof\" option"
