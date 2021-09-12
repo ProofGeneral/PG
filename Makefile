@@ -134,6 +134,7 @@ tests:
 dist-tests:
 	+$(MAKE) -C ci/simple-tests all
 	+$(MAKE) -C ci/compile-tests test
+	+$(MAKE) -C ci/test-indent
 
 ##
 ## check-doc-magic : check *.texi are up-to-date w.r.t. docstrings
