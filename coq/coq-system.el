@@ -123,7 +123,6 @@ This function supports calling coqtop via tramp."
           (if (or (not expectedretv) (equal retv expectedretv))
               (buffer-string)))
       (error nil))))
-        
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
@@ -131,7 +130,7 @@ Interactively (with INTERACTIVE-P), show that number."
   (interactive '(t))
   (setq coq-autodetected-version nil)
   (let* ((str (coq-callcoq "-v" 0))
-         (mtch (and str (string-match "version \\([^ ]+\\)" str))))
+         (mtch (and str (string-match "version \\([^ \n]+\\)" str))))
     (when mtch
       (setq coq-autodetected-version (match-string 1 str))))
   (when interactive-p (coq-show-version))
