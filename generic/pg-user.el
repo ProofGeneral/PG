@@ -192,6 +192,9 @@ If inside a comment, just process until the start of the comment."
    (save-excursion
      (goto-char (proof-queue-or-locked-end))
      (skip-chars-forward " \t\n")
+     (if (eq proof-assistant-symbol 'coq)
+         (smie-indent-line)
+       (proof-indent-line))
      (proof-assert-until-point))
    (proof-maybe-follow-locked-end)))
 
