@@ -2200,12 +2200,17 @@ be omitted from the vanilla action list obtained from SEMIS."
       (setq vanillas (proof-script-omit-proofs vanillas)))
     (proof-extend-queue lastpos vanillas)))
 
+(defvar proof--inhibit-retract-on-change nil)
+
 (defun proof-retract-before-change (beg end)
   "For `before-change-functions'.  Retract to BEG unless BEG and END in comment.
 No effect if prover is busy."
-  (when (and (> (proof-queue-or-locked-end) beg)
-	     (not (and (proof-inside-comment beg)
-		       (proof-inside-comment end))))
+  (unless (or (<= (proof-queue-or-locked-end) beg)
+	      proof--inhibit-retract-on-change
+	      (and (proof-inside-comment beg)
+		   ;; FIXME: This may mis fire if a change starts in a comment
+		   ;; and ends in another but with non-comment code in-between.
+		   (proof-inside-comment end)))
     (when proof-shell-busy
       (message "Interrupting prover")
       (proof-interrupt-process)
@@ -2825,6 +2830,13 @@ finish setup which depends on specific proof assistant configuration."
   (when proof-layout-windows-on-visit-file
       (proof-shell-make-associated-buffers)
       (proof-layout-windows))
+
+  ;; Allow reindenting the already-processed code without causing
+  ;; a retraction.
+  (add-function :around (local 'indent-line-function)
+                #'(lambda (orig-fun &rest args)
+                    (let ((proof--inhibit-retract-on-change t))
+                      (apply orig-fun args))))
 
   ;; Make sure the user has been welcomed!
   (proof-splash-message))
