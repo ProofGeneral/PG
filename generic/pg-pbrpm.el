@@ -1,4 +1,4 @@
-;; pg-pbrpm.el --- Proof General - Proof By Rules Pop-up Menu - mode.
+;; pg-pbrpm.el --- Proof General - Proof By Rules Pop-up Menu - mode.  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2004 - Universite de Savoie, France.
 ;; Authors:   Jean-Roch SOTTY, Christophe Raffalli
@@ -98,12 +98,10 @@ Matches the region to be returned.")
 	    (mapc (lambda (sp)
 		    (let* ((p1 (span-start sp))
 			   (p2 (span-end sp))
-			   (spl (span-at p1 'pglock)))
-		      (span-read-write spl)
+			   (proof--inhibit-retract-on-change t))
 		      (goto-char p1)
 		      (insert (span-string span))
-		      (delete-region (+ p1 len) (+ p2 len))
-		      (span-read-only spl)))
+		      (delete-region (+ p1 len) (+ p2 len))))
 		  (span-property span 'occurrences)))))))
 
 
@@ -257,7 +255,8 @@ The prover command is processed via pg-pbrpm-run-command."
 		       (insert-gui-button (make-gui-button
 					   (concat (int-to-string count) ")")
 					   'pg-pbrpm-run-command
-					   (list command act spans)) pos))
+					   (list command act spans))
+					  pos))
 		     (insert "\n")))
 		 (insert-gui-button
 		  (make-gui-button

@@ -2732,10 +2732,8 @@ insertion point for the \"using\" annotation. ")
 
 (defun coq-insert-proof-using (_proof-pos _previous-content insert-point string-suggested)
   (goto-char insert-point)
-  (let ((spl proof-locked-span))
-    (span-read-write spl) ; temporarily make the locked span writable
-    (insert (concat " using " string-suggested))
-    (proof-span-read-only spl)))
+  (let ((proof--inhibit-retract-on-change t))
+    (insert (concat " using " string-suggested))))
 
 (defun coq-insert-suggested-dependency ()
   (interactive)
