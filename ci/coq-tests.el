@@ -303,6 +303,44 @@ For example, COMMENT could be (*test-definition*)"
    'show-proof-stepwise 'diffs-on))
  
 
+(ert-deftest 090_coq-test-regression-Fail()
+  "Test for Fail"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+     (coq-test-goto-before "(*FailNoTrace*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (proof-assert-next-command-interactive) ;; pas the comment
+     (proof-assert-next-command-interactive)
+     (proof-shell-wait)
+     (if (coq--version< (coq-version) "8.10.0")
+         (coq-should-buffer-string "The command has indeed failed with message:
+In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.
+Tactic failure: Cannot solve this goal.")
+       (coq-should-buffer-string "The command has indeed failed with message:
+Tactic failure: Cannot solve this goal." "*coq*")))))
+
+
+;; (coq-should-buffer-regexp (regexp-quote "The command has indeed failed with message: Tactic failure: Cannot solve this goal.") "*response*")
+
+(ert-deftest 091_coq-test-regression-Fail()
+  "Test for Fail"
+  (coq-fixture-on-file
+   (coq-test-full-path "test_stepwise.v")
+   (lambda ()
+     (coq-test-goto-before "(*FailTrace*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (proof-assert-next-command-interactive) ;; pas the comment
+     (proof-assert-next-command-interactive)
+     (proof-shell-wait)
+     ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
+     (coq-should-buffer-string "The command has indeed failed with message:
+In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.
+Tactic failure: Cannot solve this goal."))))
+ 
+
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here

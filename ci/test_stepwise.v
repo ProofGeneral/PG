@@ -11,6 +11,22 @@ Proof using .
   exact proof_of_A.
 Qed. (*test-lemma*)
 
+Section failSection.
+  Local Unset Ltac Backtrace.
+  Goal False.
+  Proof. (*FailNoTrace*)
+    Fail (now auto).
+    auto.
+  Abort.
+
+  Local Set Ltac Backtrace.
+  Goal False. (*FailTrace*) 
+    Fail (now auto).
+    auto.
+  Abort.
+End failSection.
+
+
 Lemma false_proof : forall A B : bool, A = B. 
 Proof.
   intros A B.
