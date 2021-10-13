@@ -133,7 +133,9 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
 ;;; For info on macros: https://mullikine.github.io/posts/macro-tutorial
 ;;; (pp (macroexpand '(macro args)))
   (save-excursion
-    (let* ((openfile (or file
+    (let* (;; avoids bad width detection in batch mode 
+           (coq-auto-adapt-printing-width nil)
+           (openfile (or file
                          (concat (make-temp-file coq-test-file-prefix) ".v")))
            ;; if FILE is nil, create a temporary Coq file, removed in the end
            (rmfile (unless file openfile))

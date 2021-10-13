@@ -1172,9 +1172,6 @@ Printing All set."
   (interactive)
   (coq-ask-do-show-all "Show goal number" "Show" t))
 
-;; Check
-(defvar coq-auto-adapt-printing-width); defpacustom
-
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
 ;; when retracting, so that it will be auto-adapted at the next command. Not
@@ -1182,15 +1179,9 @@ Printing All set."
 
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
-(defun coq-set-auto-adapt-printing-width (&optional _symb val); args are for :set compatibility
-  "Function called when setting `auto-adapt-printing-width'."
-  (setq coq-auto-adapt-printing-width val)
-  (if coq-auto-adapt-printing-width
-      (progn
-        (add-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
-        (add-hook 'proof-retract-command-hook #'coq-reset-printing-width))
-    (remove-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
-    (remove-hook 'proof-retract-command-hook #'coq-reset-printing-width)))
+;; This obeyx coq-auto-adapt-printing-width
+(add-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
+(add-hook 'proof-retract-command-hook #'coq-reset-printing-width)
 
 (defun coq--show-proof-stepwise-cmds ()
   (when coq-show-proof-stepwise
@@ -1250,7 +1241,8 @@ should match the `coq-show-proof-diffs-regexp'."
           (> (length coq-last-but-one-proofstack) 0)))
     (coq--show-proof-stepwise-cmds))))
 
-
+;; This does not Set Printing Width, it rather tells pg to do that before each
+;; command (if necessary)
 (defpacustom auto-adapt-printing-width t
   "If non-nil, adapt automatically printing width of goals window.
 Each time the user sends a bunch of commands to Coq, check if the
@@ -1260,17 +1252,7 @@ is chosen arbitrarily.  WARNING 2: when backtracking the printing
 width is synchronized by coq (?!)."
   :type 'boolean
   :safe 'booleanp
-  :group 'coq
-  :eval (coq-set-auto-adapt-printing-width))
-
-
-;; defpacustom fails to call :eval during inititialization, see trac #456
-(coq-set-auto-adapt-printing-width)
-
-;; this initiates auto adapt printing width at start, by reading the config
-;; var. Let us put this at the end of hooks to have a chance to read local
-;; variables first.
-(add-hook 'coq-mode-hook #'coq-auto-adapt-printing-width t)
+  :group 'coq)
 
 (defvar coq-shell-current-line-width nil
   "Current line width of the Coq printing width.
@@ -1333,14 +1315,15 @@ present, current pg display mode and current geometry otherwise."
 A Show command is also issued if SHOW is non-nil, so that the goal is
 redisplayed."
   (interactive)
-  (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
-    ;; if no available width, or unchanged, do nothing
-    (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-      (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
-      (setq coq-shell-current-line-width wdth)
-      ;; Show iff show non nil and some proof is under way
-      (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
-        (proof-shell-invisible-command (format "Show.") t nil 'no-error-display)))))
+  (when coq-auto-adapt-printing-width
+    (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
+      ;; if no available width, or unchanged, do nothing
+      (when (and wdth (not (equal wdth coq-shell-current-line-width)))
+        (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
+        (setq coq-shell-current-line-width wdth)
+        ;; Show iff show non nil and some proof is under way
+        (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
+          (proof-shell-invisible-command (format "Show.") t nil 'no-error-display))))))
 
 (defun coq-adapt-printing-width-and-show (&optional _show width)
   (interactive)
