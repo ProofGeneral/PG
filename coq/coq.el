@@ -3021,6 +3021,9 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (defvar last-coq-error-location nil
   "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
 
+(defvar coq--error-location-regexp
+  "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n"
+  "A regexp to search the header of coq error locations.")
 
 ;; I don't use proof-shell-last-output here since it is not always set to the
 ;; really last output (specially when a *tactic* gives an error) instead I go
@@ -3049,7 +3052,7 @@ buffer."
     ;; then highlight the corresponding error location
     (proof-with-current-buffer-if-exists proof-response-buffer
       (goto-char (point-max)) ;\nToplevel input, character[^:]:\n
-      (when (re-search-backward "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n" nil t)
+      (when (re-search-backward coq--error-location-regexp nil t)
         (let ((text (match-string 1))
               (pos (length (match-string 2)))
               (len (length (match-string 3))))
