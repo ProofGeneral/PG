@@ -11,6 +11,9 @@ on:
       - '**'
 
 jobs:
+  ###########################################################################
+  ####### compile and build manual
+  ###########################################################################
   build:
     runs-on: ubuntu-latest
 
@@ -45,6 +48,9 @@ jobs:
       run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo
     - run: make doc.info
 
+  ###########################################################################
+  ####### make magic
+  ###########################################################################
   # Check that the texinfo sources of the manual can be updated
   # with the documentation strings for variables and functions in
   # the source code and that the manual is actually up-to-date.
@@ -63,6 +69,7 @@ jobs:
           # only the latest one.
           - 26.3
           - 27.2
+      # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
     steps:
@@ -76,28 +83,46 @@ jobs:
     - run: make -C doc magic
     - run: git diff --exit-code -- doc
       
+  ###########################################################################
+  ####### first tests: ci/test.sh runs tests in ci/coq-tests.el
+  ###########################################################################
   test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        # emacs_version:
-          # the emacs version in Ubuntu 18.04 LTS
-          # - 25.2
-          # the emacs version in Debian Buster
-          # - 26.1
-          # the emacs version in Debian Sid
-          # - 26.3
-        coq_version:
-          - '8.9'
-          - '8.10'
-          - '8.11'
-          - '8.12'
-          - '8.13'
-          - '8.14'
-          - '8.15'
-        ocaml_version:
-          - minimal
+        coq_emacs_version:
+          - coq-8.6-emacs-25.2
+          - coq-8.6-emacs-27.2
+          - coq-8.7-emacs-25.3
+          - coq-8.7-emacs-27.2
+          - coq-8.8-emacs-26.1
+          - coq-8.8-emacs-27.2
+          - coq-8.9-emacs-26.2
+          - coq-8.9-emacs-27.2
+          - coq-8.10-emacs-27.2
+          - coq-8.11-emacs-25.2
+          - coq-8.11-emacs-26.2
+          - coq-8.11-emacs-26.3
+          - coq-8.11-emacs-27.2
+          - coq-8.12-emacs-25.2
+          - coq-8.12-emacs-26.2
+          - coq-8.12-emacs-26.3
+          - coq-8.12-emacs-27.1
+          - coq-8.12-emacs-27.2
+          - coq-8.13-emacs-25.2
+          - coq-8.13-emacs-26.2
+          - coq-8.13-emacs-26.3
+          - coq-8.13-emacs-27.1
+          - coq-8.13-emacs-27.2
+          - coq-8.14-emacs-25.1
+          - coq-8.14-emacs-25.2
+          - coq-8.14-emacs-25.3
+          - coq-8.14-emacs-26.1
+          - coq-8.14-emacs-26.2
+          - coq-8.14-emacs-26.3
+          - coq-8.14-emacs-27.1
+          - coq-8.14-emacs-27.2
+          # XXXX 8.15 is missing
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 6
@@ -114,45 +139,64 @@ jobs:
       id: docker-coq-action
       with:
         opam_file: 'dummy.opam'
-        coq_version: ${{ matrix.coq_version }}
-        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_image: proofgeneral/coq-emacs:${{matrix.coq_emacs_version}}
         custom_script: |
           startGroup Print opam config
             opam config list; opam repo list; opam list
           endGroup
-          startGroup Install emacs
-            sudo apt-get update -y -q
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
+          startGroup other relevant configuration
+            echo getconf _NPROCESSORS_ONLN: $(getconf _NPROCESSORS_ONLN)
+            emacs --version
+            coqc --version
+            ocamlc -v
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
             make tests
           endGroup
 
-  # - run: echo "::remove-matcher owner=ert-problem-matcher::"
-
-  compile-test:
+  ###########################################################################
+  ####### compilation tests: all tests in subdirectories of ci/compile-tests
+  ###########################################################################
+  compile-tests:
     runs-on: ubuntu-latest
-
     strategy:
-      # change to selected versions of coq-emacs docker containers
       matrix:
-        coq_version:
-          - '8.9'
-          - '8.10'
-          - '8.11'
-          - '8.12'
-          - '8.13'
-          - '8.14'
-          - '8.15'
-        ocaml_version:
-          - minimal
-      # at most 20 concurrent jobs per free account
-      # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
-      max-parallel: 6
+        coq_emacs_version:
+          - coq-8.6-emacs-25.2
+          - coq-8.6-emacs-27.2
+          - coq-8.7-emacs-25.3
+          - coq-8.7-emacs-27.2
+          - coq-8.8-emacs-26.1
+          - coq-8.8-emacs-27.2
+          - coq-8.9-emacs-26.2
+          - coq-8.9-emacs-27.2
+          - coq-8.10-emacs-27.2
+          - coq-8.11-emacs-25.2
+          - coq-8.11-emacs-26.2
+          - coq-8.11-emacs-26.3
+          - coq-8.11-emacs-27.2
+          - coq-8.12-emacs-25.2
+          - coq-8.12-emacs-26.2
+          - coq-8.12-emacs-26.3
+          - coq-8.12-emacs-27.1
+          - coq-8.12-emacs-27.2
+          - coq-8.13-emacs-25.2
+          - coq-8.13-emacs-26.2
+          - coq-8.13-emacs-26.3
+          - coq-8.13-emacs-27.1
+          - coq-8.13-emacs-27.2
+          - coq-8.14-emacs-25.1
+          - coq-8.14-emacs-25.2
+          - coq-8.14-emacs-25.3
+          - coq-8.14-emacs-26.1
+          - coq-8.14-emacs-26.2
+          - coq-8.14-emacs-26.3
+          - coq-8.14-emacs-27.1
+          - coq-8.14-emacs-27.2
+          # XXXX 8.15 missing
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
-
     steps:
     - uses: actions/checkout@v2
 
@@ -163,44 +207,59 @@ jobs:
       id: docker-coq-action
       with:
         opam_file: 'dummy.opam'
-        coq_version: ${{ matrix.coq_version }}
-        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_image: proofgeneral/coq-emacs:${{matrix.coq_emacs_version}}
         custom_script: |
-          startGroup Print opam config
-            opam config list; opam repo list; opam list
-          endGroup
-          startGroup Install emacs
-            sudo apt-get update -y -q
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
-          endGroup
           startGroup other relevant configuration
-            getconf _NPROCESSORS_ONLN
+            echo getconf _NPROCESSORS_ONLN: $(getconf _NPROCESSORS_ONLN)
             emacs --version
             coqc --version
-            ocaml --version
+            ocamlc -v
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
             make -C ci/compile-tests test
           endGroup
 
+  ###########################################################################
+  ####### Additional tests in ci/simple-tests
+  ###########################################################################
   simple-tests:
     runs-on: ubuntu-latest
-
     strategy:
-      # change to selected versions of coq-emacs docker containers
       matrix:
-        coq_version:
-          - '8.9'
-          - '8.10'
-          - '8.11'
-          - '8.12'
-          - '8.13'
-          - '8.14'
-          - '8.15'
-        ocaml_version:
-          - minimal
-      max-parallel: 6
+        coq_emacs_version:
+          - coq-8.6-emacs-25.2
+          - coq-8.6-emacs-27.2
+          - coq-8.7-emacs-25.3
+          - coq-8.7-emacs-27.2
+          - coq-8.8-emacs-26.1
+          - coq-8.8-emacs-27.2
+          - coq-8.9-emacs-26.2
+          - coq-8.9-emacs-27.2
+          - coq-8.10-emacs-27.2
+          - coq-8.11-emacs-25.2
+          - coq-8.11-emacs-26.2
+          - coq-8.11-emacs-26.3
+          - coq-8.11-emacs-27.2
+          - coq-8.12-emacs-25.2
+          - coq-8.12-emacs-26.2
+          - coq-8.12-emacs-26.3
+          - coq-8.12-emacs-27.1
+          - coq-8.12-emacs-27.2
+          - coq-8.13-emacs-25.2
+          - coq-8.13-emacs-26.2
+          - coq-8.13-emacs-26.3
+          - coq-8.13-emacs-27.1
+          - coq-8.13-emacs-27.2
+          - coq-8.14-emacs-25.1
+          - coq-8.14-emacs-25.2
+          - coq-8.14-emacs-25.3
+          - coq-8.14-emacs-26.1
+          - coq-8.14-emacs-26.2
+          - coq-8.14-emacs-26.3
+          - coq-8.14-emacs-27.1
+          - coq-8.14-emacs-27.2
+          # XXXX 8.15 is missing
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -214,27 +273,22 @@ jobs:
       id: docker-coq-action
       with:
         opam_file: 'dummy.opam'
-        coq_version: ${{ matrix.coq_version }}
-        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_image: proofgeneral/coq-emacs:${{matrix.coq_emacs_version}}
         custom_script: |
-          startGroup Print opam config
-            opam config list; opam repo list; opam list
-          endGroup
-          startGroup Install emacs
-            sudo apt-get update -y -q
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
-          endGroup
           startGroup other relevant configuration
-            getconf _NPROCESSORS_ONLN
+            echo getconf _NPROCESSORS_ONLN: $(getconf _NPROCESSORS_ONLN)
             emacs --version
             coqc --version
-            ocaml --version
+            ocamlc -v
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
             make -C ci/simple-tests all
           endGroup
 
+  ###########################################################################
+  ####### indentation tests in ci/test-indent
+  ###########################################################################
   # Run indentation tests in ci/test-indent on all supported emacs
   # versions without coq installed.
   test-indent:
