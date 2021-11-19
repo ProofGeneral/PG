@@ -194,6 +194,7 @@ other documentation, system downloads, etc.
 
 
 @menu
+* News for Version 4.5::
 * News for Version 4.4::
 * News for Version 4.3::
 * News for Version 4.2::
@@ -202,6 +203,13 @@ other documentation, system downloads, etc.
 * Future::
 * Credits::                     
 @end menu
+
+@node News for Version 4.5
+@unnumberedsec News for Version 4.5
+@cindex news
+
+The old code for the support of the following systems have been
+removed: Twelf.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -515,7 +523,6 @@ script file for your proof assistant, for example:
 @item       HOL98         @tab @file{.sml}    @tab @code{hol98-mode}
 @item       HOL Light     @tab @file{.ml}     @tab @code{hol-light-mode}
 @item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
-@item       Twelf         @tab @file{.elf}    @tab @code{twelf-mode}
 @item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
 @item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
 @item       CCC           @tab @file{.ccc}    @tab @code{ccc-mode}

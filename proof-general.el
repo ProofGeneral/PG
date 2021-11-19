@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -81,7 +81,7 @@
            ;; FIXME: These dirs used to not be listed, but I needed to add
            ;; them for the compilation to succeed for me.  --Stef
            ;; These dirs are now obsolete and not published on MELPA.  --Erik
-           ;; "isar" "lego" "twelf" "obsolete/plastic"
+           ;; "isar" "lego" "obsolete/plastic"
        )))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))

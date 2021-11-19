@@ -66,7 +66,6 @@
 
       ;; (hol98	"HOL" "sml")
       ;; (acl2	"ACL2" "acl2")
-      ;; (twelf	"Twelf" "elf")
       ;; (plastic "Plastic" "lf")        ; obsolete
       ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
       ;; (demoisa "Isabelle Demo" "ML")  ; obsolete
