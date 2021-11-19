@@ -158,7 +158,6 @@ assistants Coq, EasyCrypt, and PhoX.
 * Graphical Proof-Tree Visualization::
 * Customizing Proof General::   
 * Hints and Tips::
-* LEGO Proof General::          
 * Coq Proof General::           
 * Isabelle Proof General::    
 * HOL Light Proof General::
@@ -209,7 +208,7 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf, CCC, HOL98.
+removed: Twelf, CCC, Lego, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -310,7 +309,6 @@ webpage}.  Help us to help you organize your proofs!
 
 @node Credits
 @unnumberedsec Credits
-@cindex @code{lego-mode}
 @cindex maintenance
 
 The original developers of the basis of Proof General were:
@@ -516,7 +514,6 @@ script file for your proof assistant, for example:
 
 @multitable @columnfractions .35 .3 .35
 @item       @b{Prover}    @tab @b{Extensions} @tab @b{Mode}
-@item       LEGO          @tab @file{.l}      @tab @code{lego-mode}
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
 @item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
@@ -529,8 +526,8 @@ script file for your proof assistant, for example:
 @end multitable
 (the exact list of Proof Assistants supported may vary according to the
 version of Proof General and its local configuration).  You can also
-invoke the mode command directly, e.g., type @kbd{M-x lego-mode}, to
-turn a buffer into a lego script buffer.
+invoke the mode command directly, e.g., type @kbd{M-x coq-mode}, to
+turn a buffer into a Coq script buffer.
 
 You'll find commands to process the proof script are available from the
 toolbar, menus, and keyboard.  Type @kbd{C-h m} to get a list of the
@@ -665,9 +662,6 @@ proof assistants, including these:
 @c FLAG VERSIONS HERE
 @itemize @bullet
 @item 
-@b{LEGO Proof General} for LEGO Version 1.3.1@*
-@xref{LEGO Proof General}, for more details.
-@item 
 @b{Coq Proof General} for Coq Version 8.2@*
 @xref{Coq Proof General}, for more details.
 @item 
@@ -705,7 +699,7 @@ standard instances documented in this manual are listed above.
 
 Note that there is some variation between the features supported by
 different instances of Proof General.  The main variation is proof by
-pointing, which is only supported in LEGO at the moment.  For advanced
+pointing, which has been supported only in LEGO so far.  For advanced
 features like this, some extensions to the output routines of the proof
 assistant are required, typically.  If you like Proof General, @b{please
 help us by asking the implementors of your favourite proof assistant to
@@ -1283,9 +1277,9 @@ file and a @code{.thy} theory file which defines its theory.
 If you have a partly processed scripting buffer and use @kbd{C-c C-s},
 or you attempt to use script processing in a new buffer, Proof General
 will ask you if you want to retract what has been proved so far,
-@code{Scripting incomplete in buffer myproof.l, retract?}
+@code{Scripting incomplete in buffer myproof.v, retract?}
 or if you want to process the remainder of the active buffer, 
-@code{Completely process buffer myproof.l instead?}
+@code{Completely process buffer myproof.v instead?}
 before you can start scripting in a new buffer.  If you refuse to do
 either, Proof General will give an error message: 
 @code{Cannot have more than one active scripting buffer!}.
@@ -1407,7 +1401,7 @@ Set point to end of command at point.
 
 @vindex proof-terminal-string
 The variable @code{proof-terminal-string} is a prover-specific string
-to terminate proof commands.  LEGO and Isabelle use a semicolon,
+to terminate proof commands.  LEGO and Isabelle used a semicolon,
 @samp{;}. Coq employs a full-stop @samp{.}.
 
 @c TEXI DOCSTRING MAGIC: proof-goto-end-of-locked
@@ -1483,7 +1477,7 @@ design, by allowing successive assertion commands without complaining.}
 
 The last command, @code{proof-electric-terminator-toggle}, is triggered
 using the character which terminates proof commands for your proof
-assistant's script language.  For LEGO and Isabelle, use @kbd{C-c ;},
+assistant's script language.  LEGO and Isabelle used @kbd{C-c ;},
 for Coq, use @kbd{C-c .}.  This not really a script processing
 command. Instead, if enabled, it causes subsequent key presses of
 @kbd{;} or @kbd{.} to automatically activate
@@ -1799,7 +1793,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 
@@ -2121,8 +2115,8 @@ Basic modularity in large proof developments can be achieved by
 splitting proof scripts across various files. Let's assume that you are
 in the middle of a proof development. You are working on a soundness
 proof of Hoare Logic in a file called@footnote{The suffix may depend of
-the specific proof assistant you are using e.g, LEGO's proof script
-files have to end with @file{.l}.} @file{HSound.l}. It
+the specific proof assistant you are using e.g, Coq's proof script
+files have to end with @file{.v}.} @file{HSound.v}. It
 depends on a number of other files which develop underlying
 concepts e.g. syntax and semantics of expressions, assertions,
 imperative programs. You notice that the current lemma is too difficult
@@ -2131,11 +2125,11 @@ about determinism of the programming language. Or perhaps a previous
 definition is too cumbersome or even wrong.
 
 At this stage, you would like to visit the appropriate file, say
-@file{sos.l} and retract to where changes are required. Then, using
+@file{sos.v} and retract to where changes are required. Then, using
 script management, you want to develop some more basic theory in
-@file{sos.l}. Once this task has been completed (possibly involving
+@file{sos.v}. Once this task has been completed (possibly involving
 retraction across even earlier files) and the new development has been
-asserted, you want to switch back to @file{HSound.l} and replay to the
+asserted, you want to switch back to @file{HSound.v} and replay to the
 point you got stuck previously.
 
 Some hours (or days) later you have completed the soundness proof and
@@ -2156,7 +2150,7 @@ or retract the current script buffer.
 Proof General tries to be aware of all files that the proof assistant
 has processed or is currently processing.  In the best case, it relies
 on the proof assistant explicitly telling it whenever it processes a new
-file which corresponds@footnote{For example, LEGO generates additional
+file which corresponds@footnote{For example, LEGO generated additional
 compiled (optimised) proof script files for efficiency.} to a file
 containing a proof script.
 
@@ -2198,16 +2192,6 @@ problem and flashes up a warning in the response buffer.  You can then
 visit the modified buffer, save it and retract to the beginning. Then
 you are back on track.
 
-
-
-@c only true for LEGO!
-@c If the proof assistant is not happy with the script and
-@c complains with an error message, the buffer will still be marked as
-@c having been completely processed. Sorry. You need to visit the
-@c troublesome file, retract (which will always retract to the beginning of 
-@c the file) and debug the problem e.g., by asserting all of the buffer
-@c under the supervision of Proof General, see @ref{Script processing
-@c commands}. 
 
 
 @node Retracting across files
@@ -2830,7 +2814,6 @@ and @code{etags}.
 
 @node Syntax highlighting
 @section Syntax highlighting
-@vindex lego-mode-hooks
 @vindex coq-mode-hooks
 @vindex isa-mode-hooks
 @cindex font lock 
@@ -2996,8 +2979,8 @@ through all the files with one command.  Recording the function names
 and positions makes possible the @kbd{M-.} command which finds the
 definition of a function by looking up which of the files it is in.
 
-Some instantiations of Proof General (currently LEGO and Coq) are
-supplied with external programs (@file{legotags} and @file{coqtags}) for
+Some instantiations of Proof General (currently Coq) are
+supplied with external programs (@file{coqtags}) for
 making tags tables.  For example, invoking @samp{coqtags *.v} produces a
 file @file{TAGS} for all files @samp{*.v} in the current
 directory. Invoking @samp{coqtags `find . -name \*.v`} produces a file
@@ -3042,7 +3025,7 @@ Add completions from the current tags table.
 This chapter describes what you can do from inside the goals buffer,
 providing support for these features exists for your proof assistant.
 
-As of Proof General 4.0, this support only exists for LEGO and
+As of Proof General 4.4, this support has existed only for LEGO and
 proof-by-pointing functionality has been temporarily removed from the
 interface.  If you would like to see subterm activation support for
 Proof General in another proof assistant, please petition the developers
@@ -3995,8 +3978,8 @@ and save these variables, saving them may have no practical effect
 because the default settings are mostly hard-wired into the proof
 assistant code.  Ones we expect may need changing appear as proof
 assistant specific configurations.  For example,
-@code{proof-assistant-home-page} is set in the LEGO code from the value
-of the customization setting @code{lego-www-home-page}.  At present
+@code{proof-assistant-home-page} is set in the Coq code from the value
+of the customization setting @code{coq-www-home-page}.  At present
 there is no easy way to save changes to other configuration variables
 across sessions, other than by editing the source code.  (In future
 versions of Proof General, we plan to make all configuration
@@ -4187,107 +4170,6 @@ expansion of abbreviations (which can be annoying), the @code{Abbrev}
 minor mode, type @kbd{M-x abbrev-mode RET}. When you are not in Abbrev
 mode you can expand an abbreviation by pressing @kbd{C-x '}
 (@code{expand-abbrev}). See the Emacs manual for more details.
-
-
-@c =================================================================
-@c
-@c  CHAPTER: LEGO Proof General
-@c 
-@node LEGO Proof General
-@chapter LEGO Proof General
-@cindex LEGO Proof General
-
-LEGO proof script mode is a mode derived from proof script mode for
-editing LEGO scripts. An important convention is that proof script
-buffers @emph{must} start with a module declaration. If the proof script
-buffer's file name is @file{fermat.l}, then it must commence with a
-declaration of the form
-
-@lisp
-Module fermat;
-@end lisp
-
-If, in the development of the module @samp{fermat}, you require material
-from other module e.g., @samp{lib_nat} and @samp{galois}, you need to
-specify this dependency as part of the module declaration:
-
-@lisp
-Module fermat Import lib_nat galois;
-@end lisp
-
-No need to worry too much about efficiency. When you retract back to a
-module declaration to add a new import item, LEGO does not actually
-retract the previously imported modules. Therefore, reasserting the
-extended module declaration really only processes the newly imported
-modules.
-
-Using the LEGO Proof General, you never ever need to use administrative
-LEGO commands such as @samp{Forget}, @samp{ForgetMark}, @samp{KillRef},
-@samp{Load}, @samp{Make}, @samp{Reload} and @samp{Undo} again
-@footnote{And please, don't even think of including those in your LEGO
-proof script!}. 
-
-@menu
-* LEGO specific commands::      
-* LEGO tags::                   
-* LEGO customizations::         
-@end menu
-
-
-@node LEGO specific commands
-@section LEGO specific commands
-
-In addition to the commands provided by the generic Proof General (as
-discussed in the previous sections) the LEGO Proof General provides a
-few extensions. In proof scripts, there are some abbreviations for
-common commands:
-
-@kindex C-c C-a C-i
-@kindex C-c C-a C-I
-@kindex C-c C-a C-R
-@table @kbd
-@item C-c C-a C-i   
-intros
-@item C-c C-a C-I   
-Intros
-@item C-c C-a C-R   
-Refine
-@end table
-
-@node LEGO tags
-@section LEGO tags
-
-You
-might want to ask your local system administrator to tag the directories
-@file{lib_Prop}, @file{lib_Type} and @file{lib_TYPE} of the LEGO
-library. See @ref{Support for tags}, for further details on tags.
-
-
-
-@node LEGO customizations
-@section LEGO customizations
-
-We refer to chapter @ref{Customizing Proof General}, for an introduction
-to the customisation mechanism. In addition to customizations at the
-generic level, for LEGO you can also customize:
-
-@defopt lego-tags 
-The directory of the @var{tags} table for the @var{lego} library
-
-The default value is @code{"/usr/lib/lego/lib_Type/"}.
-@end defopt
-
-@defvar lego-www-home-page 
-Lego home page URL.
-@end defvar
-
-@c We don't worry about the following for now. These are too obscure.
-@c lego-indent
-@c lego-test-all-name
-
-@c We also don't document any of the internal variables which have been
-@c set to configure the generic Proof General and which the user should
-@c not tamper with
 
 
 @c =================================================================
@@ -5898,7 +5780,7 @@ The distribution is available in the master branch of the repository.
 Tagged versions of the sources may be redistributed by third party
 packagers in other forms.
 
-The sources includes the generic elisp code, and code for Coq, LEGO,
+The sources includes the generic elisp code, and code for Coq, EasyCrypt,
 Isabelle, and other provers.  Also included are installation
 instructions (reproduced in brief below) and this documentation.
 
@@ -5986,7 +5868,7 @@ providing the variables in @file{proof-site.el} are adjusted
 accordingly (see @i{Proof General site configuration} in
 @i{Adapting Proof General} for more details).  Make sure that
 the @file{generic/} and assistant-specific elisp files are kept in
-subdirectories (@file{coq/}, @file{isa/}, @file{lego/}) of
+subdirectories (@file{coq/}, @file{isa/}, @file{easycrypt/}, ...) of
 @code{proof-home-directory} so that the autoload directory calculations
 are correct.
 
@@ -6095,7 +5977,6 @@ l'INRIA Sophia Antipolis RR-3286
 @c
 @node History of Proof General
 @unnumbered History of Proof General
-@cindex @code{lego-mode}
 @cindex history
 
 It all started some time in 1994. There was no Emacs interface for LEGO.

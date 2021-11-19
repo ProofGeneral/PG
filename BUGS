@@ -100,12 +100,4 @@ See manual for further description of this.
 ** coqtags doesn't find all declarations. 
 
 It cannot handle lists e.g., with "Parameter x,y:nat" it only tags x
-but not y. [The same problem exists for legotags] Workaround: don't
-rely too much on the etags mechanism.
-
-
-* LEGO Proof General Bugs
-
-See lego/BUGS
-
-
+but not y. Workaround: don't rely too much on the etags mechanism.

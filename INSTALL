@@ -148,7 +148,7 @@ Removing support for unwanted provers
 
 You cannot run more than one instance of Proof General at a time in
 the same Emacs process: e.g. if you're using Coq, you won't be able to
-run LEGO scripts.
+run EasyCrypt scripts.
 
 If there are some assistants supported that you never want to use, you
 can remove them from the variable `proof-assistants' to prevent Proof

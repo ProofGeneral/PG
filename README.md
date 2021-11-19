@@ -138,11 +138,12 @@ Proof General used to support other proof assistants, but those
 instances are no longer maintained nor available in the MELPA package:
 
 * Legacy support of
-  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
+  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/)
+  
 * Experimental support of: ACL2, Hol-Light, Lambda-Clam, Shell
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
-* Removed instances: Twelf, CCC, HOL98
+* Removed instances: Twelf, CCC, HOL98,
+  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
 
 A few example proofs are included in each prover subdirectory.
 

@@ -139,7 +139,7 @@ of @b{Proof General}, a generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion}.  It is supplied ready customized for the proof
-assistants Coq, Lego, Isabelle, and HOL.
+assistants Coq, EasyCrypt, Isabelle, and HOL.
 
 This manual contains information for customizing to new proof
 assistants; see the user manual for details about how to use
@@ -1634,7 +1634,7 @@ prompts than expected, things will break!  Extending the variable
 stripped of carriage returns before being sent.
 
 Example uses:
-@var{lego} uses this hook for setting the pretty printer width if
+Lego used this hook for setting the pretty printer width if
 the window width has changed;
 Plastic uses it to remove literate-style markup from @samp{string}.
 
@@ -2012,9 +2012,7 @@ quote characters must be escaped.  The setting
   '(("@var{\\\\}" . "@var{\\\\}")
     ("\"" . "\\\""))
 @end lisp
-achieves this.   This does not apply to @var{lego}, which does not
-need backslash escapes and does not allow filenames with
-quote characters.
+achieves this.
 
 This setting is used inside the function @samp{@code{proof-format-filename}}.
 @end defvar
@@ -3319,7 +3317,7 @@ only select the proof assistants you (or your site) may need.
 You can select which proof assistants you want by setting this
 variable before @samp{proof-site.el} is loaded, or by setting
 the environment variable @samp{PROOFGENERAL_ASSISTANTS} to the
-symbols you want, for example "lego isa".  Or you can
+symbols you want, for example "coq easycrypt".  Or you can
 edit the file @samp{proof-site.el} itself.
 
 Note: to change proof assistant, you must start a new Emacs session.
@@ -3938,7 +3936,7 @@ Choice of syntax tree encoding for terms.
 
 If nil, prover is expected to make no optimisations.
 If non-nil, the pretty printer of the prover only reports local changes.
-For @var{lego} 1.3.1 use nil, for Coq 6.2, use t.
+For Coq 6.2, use t.
 @end defvar
 
 
@@ -4016,7 +4014,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 @c
@@ -4488,7 +4486,7 @@ This is a note by David Aspinall about proof by pointing and similar
 features.
 
 Proof General already supports proof by pointing, and experimental
-support is provided in LEGO.  We would like to extend this support to
+support was provided in LEGO.  We would like to extend this support to
 other proof assistants.  Unfortunately, proof by pointing requires
 rather heavy support from the proof assistant.  There are two aspects to
 the support:

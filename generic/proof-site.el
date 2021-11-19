@@ -51,8 +51,6 @@
 
       ;; Obscure instances or conflict with other Emacs modes.
 
-      ;; (lego "LEGO" "l")
-
       ;; (hol-light "HOL Light" "ml") ; [for testing]
 
       ;; Cut-and-paste management only
@@ -234,7 +232,7 @@ only select the proof assistants you (or your site) may need.
 You can select which proof assistants you want by setting this
 variable before `proof-site.el' is loaded, or by setting
 the environment variable `PROOFGENERAL_ASSISTANTS' to the
-symbols you want, for example \"lego isa\".  Or you can
+symbols you want, for example \"coq easycrypt\".  Or you can
 edit the file `proof-site.el' itself.
 
 Note: to change proof assistant, you must start a new Emacs session.")

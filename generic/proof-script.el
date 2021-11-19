@@ -2258,7 +2258,7 @@ No effect if prover is busy."
 ;;
 
 ;; Most of the hard work (computing the commands to do the retraction)
-;; is implemented in the customisation module (lego.el or coq.el), so
+;; is implemented in the customisation module (e.g. coq.el), so
 ;; code here is fairly straightforward.
 
 
