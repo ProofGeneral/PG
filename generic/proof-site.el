@@ -57,7 +57,6 @@
 
       ;; Incomplete/obsolete:
 
-      ;; (acl2	"ACL2" "acl2")
       ;; (plastic "Plastic" "lf")        ; obsolete
       ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
       ;; (demoisa "Isabelle Demo" "ML")  ; obsolete

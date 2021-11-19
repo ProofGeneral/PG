@@ -140,9 +140,9 @@ instances are no longer maintained nor available in the MELPA package:
 * Legacy support of
   [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/)
   
-* Experimental support of: ACL2, Lambda-Clam, Shell
+* Experimental support of: Lambda-Clam, Shell
 * Obsolete instances: Demoisa, Lambda-Clam, Plastic
-* Removed instances: Twelf, CCC, Hol-Light, HOL98,
+* Removed instances: Twelf, CCC, Hol-Light, ACL2, HOL98,
   [LEGO](http://www.dcs.ed.ac.uk/home/lego)
 
 A few example proofs are included in each prover subdirectory.

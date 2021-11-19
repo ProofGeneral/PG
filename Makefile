@@ -35,7 +35,7 @@ PREFIX=$(DESTDIR)/usr
 DEST_PREFIX=$(DESTDIR)/usr
 
 # subdirectories for provers: to be compiled and installed
-PROVERS=acl2 coq easycrypt isar pghaskell pgocaml pgshell phox
+PROVERS=coq easycrypt isar pghaskell pgocaml pgshell phox
 
 # generic lisp code: to be compiled and installed
 OTHER_ELISP=generic lib
@@ -58,7 +58,7 @@ ELISP_EXTRAS=
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
-DOC_EXAMPLES=acl2/*.acl2 isar/*.thy lclam/*.lcm pgshell/*.pgsh phox/*.phx plastic/*.lf
+DOC_EXAMPLES=isar/*.thy lclam/*.lcm pgshell/*.pgsh phox/*.phx plastic/*.lf
 DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS 
 
 BATCHEMACS=${EMACS} --batch --no-site-file -q 
