@@ -57,7 +57,6 @@
 
       ;; Incomplete/obsolete:
 
-      ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
       ;; (demoisa "Isabelle Demo" "ML")  ; obsolete
       )
     "Default value for `proof-assistant-table', which see.")

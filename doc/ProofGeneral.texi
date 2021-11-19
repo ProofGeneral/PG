@@ -207,7 +207,7 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, HOL98.
+removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -516,7 +516,6 @@ script file for your proof assistant, for example:
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
 @item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
-@item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
 @item       PG-Shell      @tab @file{.pgsh}   @tab @code{pgshell-mode}
 @item       EasyCrypt     @tab @file{.ec}     @tab @code{easycrypt-mode}
 @end multitable

@@ -58,7 +58,7 @@ ELISP_EXTRAS=
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
-DOC_EXAMPLES=isar/*.thy lclam/*.lcm pgshell/*.pgsh phox/*.phx
+DOC_EXAMPLES=isar/*.thy pgshell/*.pgsh phox/*.phx
 DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS 
 
 BATCHEMACS=${EMACS} --batch --no-site-file -q 
