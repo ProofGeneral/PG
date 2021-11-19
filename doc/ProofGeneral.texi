@@ -160,7 +160,6 @@ assistants Coq, EasyCrypt, and PhoX.
 * Hints and Tips::
 * Coq Proof General::           
 * Isabelle Proof General::    
-* HOL Light Proof General::
 * EasyCrypt Proof General::
 * Shell Proof General::
 @c * PhoX Proof General::
@@ -208,7 +207,7 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf, CCC, Lego, HOL98.
+removed: Twelf, CCC, Lego, Hol-Light, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -517,7 +516,6 @@ script file for your proof assistant, for example:
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
 @item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
-@item       HOL Light     @tab @file{.ml}     @tab @code{hol-light-mode}
 @item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
 @item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
 @item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
@@ -671,9 +669,6 @@ Isabelle for more details.
 @c @item
 @c @b{PhoX Proof General} for PhoX 0.8X@*
 @c @xref{PhoX Proof General}, for more details.
-@item
-@b{HOL Light Proof General} for HOL Light@*
-@xref{HOL Light Proof General}, for more details.
 @item
 @b{EasyCrypt Proof General} for EasyCrypt@*
 @xref{EasyCrypt Proof General}, for mode details.
@@ -5605,48 +5600,6 @@ URL of web page for Isabelle.
 
 @c FIXME todo: theorem dependencies
 
-
-@c =================================================================
-@c
-@c  CHAPTER: HOL Light Proof General
-@c
-@node HOL Light Proof General
-@chapter HOL Light Proof General
-@cindex HOL Light Proof General
-
-HOL Light Proof General is a "technology demonstration" of Proof General
-for HOL Light.  This means that only a basic instantiation has been
-provided, and that it is not yet supported as a maintained instantiation
-of Proof General.
-
-HOL Light Proof General has basic script management support, with a
-little bit of decoration of scripts and output.  It does not rely on a
-modified version of HOL Light, so the pattern matching may be fragile in
-certain cases.  
-
-@c Support for multiple files deduces dependencies
-@c automatically, so there is no interaction with the HOL make system yet.
-
-See the @file{example.ml} file for a demonstration proof script
-which works with Proof General.
-
-Note that HOL Light Proof Script proof scripts often use batch-oriented
-single step tactic proofs, but Proof General does not (yet) offer an
-easy way to edit these kind of proofs.  They will replay simply as a
-single step proof and you will need to convert from the interactive to
-batch form as usual if you wish to obtain batch proofs.  Also note that
-Proof General does not contain an SML parser, so there can be problems
-if you write complex ML in proof scripts.
-@c Old section was helpful on this: @xref{ML files}, for the same issue with Isabelle.
-
-HOL Light is the most recently tested version of HOL with Proof General,
-but the Proof General distribution also contains experimental support
-for HOL 4 (aka HOL 98).  To improve this older version, or to support a
-new HOL variant, a few of the settings probably need to be tweaked to
-cope with small differences in output between the systems.  Please let
-us know if you try this out and want help.  We welcome any interested
-collaborators from the HOL communities to help improve Proof General as
-an interface for HOL provers.
 
 @c =================================================================
 @c

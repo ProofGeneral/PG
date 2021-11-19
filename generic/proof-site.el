@@ -49,10 +49,6 @@
       (easycrypt "EasyCrypt" "ec" "\\.eca?\\'")
       (phox "PhoX" "phx" nil (".phi" ".pho"))
 
-      ;; Obscure instances or conflict with other Emacs modes.
-
-      ;; (hol-light "HOL Light" "ml") ; [for testing]
-
       ;; Cut-and-paste management only
 
       (pgshell	 "PG-Shell" "pgsh")
