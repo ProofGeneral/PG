@@ -209,7 +209,7 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf, Hol98.
+removed: Twelf, CCC, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -524,7 +524,6 @@ script file for your proof assistant, for example:
 @item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
 @item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
 @item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
-@item       CCC           @tab @file{.ccc}    @tab @code{ccc-mode}
 @item       PG-Shell      @tab @file{.pgsh}   @tab @code{pgshell-mode}
 @item       EasyCrypt     @tab @file{.ec}     @tab @code{easycrypt-mode}
 @end multitable

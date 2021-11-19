@@ -52,7 +52,6 @@
       ;; Obscure instances or conflict with other Emacs modes.
 
       ;; (lego "LEGO" "l")
-      ;; (ccc    "CASL Consistency Checker" "ccc")
 
       ;; (hol-light "HOL Light" "ml") ; [for testing]
 
