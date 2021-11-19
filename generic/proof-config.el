@@ -1662,7 +1662,7 @@ stripped of carriage returns before being sent.
 Example uses:
 Lego used this hook for setting the pretty printer width if
 the window width has changed;
-Plastic uses it to remove literate-style markup from `string'.
+Plastic used it to remove literate-style markup from `string'.
 
 See also `proof-script-preprocess' which can munge text when
 it is added to the queue of commands."

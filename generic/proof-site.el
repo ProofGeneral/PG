@@ -57,7 +57,6 @@
 
       ;; Incomplete/obsolete:
 
-      ;; (plastic "Plastic" "lf")        ; obsolete
       ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
       ;; (demoisa "Isabelle Demo" "ML")  ; obsolete
       )
