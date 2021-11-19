@@ -209,7 +209,7 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf.
+removed: Twelf, Hol98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -520,7 +520,6 @@ script file for your proof assistant, for example:
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
 @item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
-@item       HOL98         @tab @file{.sml}    @tab @code{hol98-mode}
 @item       HOL Light     @tab @file{.ml}     @tab @code{hol-light-mode}
 @item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
 @item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
@@ -679,9 +678,6 @@ Isabelle for more details.
 @c @item
 @c @b{PhoX Proof General} for PhoX 0.8X@*
 @c @xref{PhoX Proof General}, for more details.
-@c @item
-@c @b{HOL Proof General} for HOL98 (HOL4)@*
-@c @xref{HOL Proof General}, for more details.
 @item
 @b{HOL Light Proof General} for HOL Light@*
 @xref{HOL Light Proof General}, for more details.

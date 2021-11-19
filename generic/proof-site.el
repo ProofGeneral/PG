@@ -64,7 +64,6 @@
 
       ;; Incomplete/obsolete:
 
-      ;; (hol98	"HOL" "sml")
       ;; (acl2	"ACL2" "acl2")
       ;; (plastic "Plastic" "lf")        ; obsolete
       ;; (lclam "Lambda-CLAM" "lcm")     ; obsolete
