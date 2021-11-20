@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -150,10 +150,10 @@ of the buffer first."
 
 
 
-;;; Local Variables: ***
-;;; fill-column: 85 ***
-;;; indent-tabs-mode: nil ***
-;;; End: ***
+;; Local Variables: ***
+;; fill-column: 85 ***
+;; indent-tabs-mode: nil ***
+;; End: ***
 
 (provide 'local-vars-list)
 ;;; local-vars-list.el ends here

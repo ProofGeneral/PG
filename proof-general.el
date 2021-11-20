@@ -69,8 +69,8 @@
   (require 'proof-site (expand-file-name "generic/proof-site" pg-init--pg-root)))
 
 (eval-when-compile
-  ;; FIXME: This is used during installation of the ELPA package:
-  ;; we presume that this file will be compiled before any of the files in
+  ;; FIXME: [ This is used during installation of the ELPA package ]
+  ;; We presume that this file will be compiled before any of the files in
   ;; sub-directories and we presume that all files are compiled within the same
   ;; session, so we here add to load-path all the subdirectories so
   ;; that files in (say) coq/ can (require 'coq-foo) and the compiler will find

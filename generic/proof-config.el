@@ -1626,7 +1626,7 @@ bound to `queueitems'."
   :group 'proof-shell)
 
 (defcustom proof-shell-insert-hook nil
-  "Hooks run by `proof-shell-insert' before inserting a command.
+  "Hook run by `proof-shell-insert' before inserting a command.
 Can be used to configure the proof assistant to the interface in
 various ways -- for example, to observe or alter the commands sent to
 the prover, or to sneak in extra commands to configure the prover.
@@ -1665,6 +1665,9 @@ Plastic used it to remove literate-style markup from `string'.
 
 See also `proof-script-preprocess' which can munge text when
 it is added to the queue of commands."
+  ;; FIXME: The docstring suggests this is used by the backend code (e.g. LEGO
+  ;; support) rather than by the end user, so maybe it shouldn't be
+  ;; a `defcustom'?
   :type '(repeat function)
   :group 'proof-shell)
 
