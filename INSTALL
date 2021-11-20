@@ -32,8 +32,8 @@ Proof General loaded.
 
 The command above will set the Emacs load path and add auto-loads for
 proof assistants, for example, visiting a file ending in .v will start
-Coq Proof General, and a file ending in .thy will start 
-Isabelle Proof General.  See the manual for a full list of file
+Coq Proof General, and a file ending in .ec will start 
+EasyCrypt Proof General.  See the manual for a full list of file
 extensions and proof assistants, and the note below for how to disable
 those you don't need.
 

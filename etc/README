@@ -15,8 +15,6 @@ ProofGeneral.menu      Menu file for some Linux versions.
 ProofGeneral.desktop   Menu file for some Linux versions.  
 		       Install in /etc/X11/applnk/Applications/
 
-isa					  Isabelle Proof General
-isar					  Isar PG
 demoisa					  Isabelle Demo PG
 coq					  Coq
 <otherprover>				   .. others, similarly

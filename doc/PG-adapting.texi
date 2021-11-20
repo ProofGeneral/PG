@@ -139,7 +139,7 @@ of @b{Proof General}, a generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion}.  It is supplied ready customized for the proof
-assistants Coq, EasyCrypt, Isabelle, and HOL.
+assistants Coq, EasyCrypt, and PhoX.
 
 This manual contains information for customizing to new proof
 assistants; see the user manual for details about how to use
@@ -3305,7 +3305,7 @@ in the @code{proof-assistants} setting.
 @c TEXI DOCSTRING MAGIC: proof-assistants
 @defvar proof-assistants 
 Choice of proof assistants to use with Proof General.@*
-A list of symbols chosen from: @samp{isar} @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
+A list of symbols chosen from: @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
 If nil, the default will be ALL available proof assistants.
 
 Each proof assistant defines its own instance of Proof General,

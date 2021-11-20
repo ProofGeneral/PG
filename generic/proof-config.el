@@ -1449,8 +1449,7 @@ This is an experimental feature, currently work-in-progress."
   "Splits strings which match `proof-shell-theorem-dependency-list-regexp'.
 Used as an argument to `split-string'; nil defaults to whitespace.
 \(This setting is necessary for provers which allow whitespace in
-the names of theorems/definitions/constants), see setting for
-Isabelle in isa/isa.el and isar/isar.el."
+the names of theorems/definitions/constants)."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 

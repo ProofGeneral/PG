@@ -147,7 +147,7 @@ TAR=tar
 
 # Files not to include the distribution area or tarball
 UNFINISHED_ELISP=
-ETC_FILES=etc/coq etc/demoisa etc/isa etc/isar etc/patches etc/*.txt
+ETC_FILES=etc/coq etc/demoisa etc/patches etc/*.txt
 NONDISTFILES=.gitignore */.gitignore Makefile.devel etc/trac etc/testsuite $(UNFINISHED_ELISP) $(ETC_FILES)
 DOCDISTFILES=ProofGeneral.info PG-adapting.info
 

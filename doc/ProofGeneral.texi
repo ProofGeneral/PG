@@ -159,7 +159,6 @@ assistants Coq, EasyCrypt, and PhoX.
 * Customizing Proof General::   
 * Hints and Tips::
 * Coq Proof General::           
-* Isabelle Proof General::    
 * EasyCrypt Proof General::
 * Shell Proof General::
 @c * PhoX Proof General::
@@ -207,7 +206,8 @@ other documentation, system downloads, etc.
 @cindex news
 
 The old code for the support of the following systems have been
-removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam, HOL98.
+removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam,
+Isabelle, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -514,7 +514,6 @@ script file for your proof assistant, for example:
 @multitable @columnfractions .35 .3 .35
 @item       @b{Prover}    @tab @b{Extensions} @tab @b{Mode}
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
-@item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
 @item       PG-Shell      @tab @file{.pgsh}   @tab @code{pgshell-mode}
 @item       EasyCrypt     @tab @file{.ec}     @tab @code{easycrypt-mode}
@@ -659,10 +658,6 @@ proof assistants, including these:
 @item 
 @b{Coq Proof General} for Coq Version 8.2@*
 @xref{Coq Proof General}, for more details.
-@item 
-@b{Isabelle Proof General} for Isabelle2009-2@*
-@xref{Isabelle Proof General}, and documentation supplied with
-Isabelle for more details.
 @c @item
 @c @b{PhoX Proof General} for PhoX 0.8X@*
 @c @xref{PhoX Proof General}, for more details.
@@ -786,6 +781,7 @@ then describe the concepts and functions in more detail.
 * Interrupting during trace output::
 @end menu
 
+@c FIXME: Rewrite this to use Coq since Isabelle support was removed.
 @node Walkthrough example in Isabelle
 @section Walkthrough example in Isabelle
 
@@ -2484,6 +2480,7 @@ file @code{@i{PA}-unicode-tokens.el}, or customize the main
 variables it contains, for example @code{@i{PA}-token-name-alist} and 
 @code{@i{PA}-shortcut-alist}. 
 
+@c FIXME: Isabelle support was removed.
 E.g., for Isabelle 
 @example
   M-x customize-variable isar-token-name-alist RET
@@ -2807,7 +2804,6 @@ and @code{etags}.
 @node Syntax highlighting
 @section Syntax highlighting
 @vindex coq-mode-hooks
-@vindex isa-mode-hooks
 @cindex font lock 
 @cindex colour
 @c Proof General specifics  
@@ -3801,8 +3797,8 @@ For example,
 @lisp
    ssh bigjobs
 @end lisp
-Would cause Proof General to issue the command @samp{ssh bigjobs isabelle}
-to start Isabelle remotely on our large compute server called @samp{bigjobs}.
+Would cause Proof General to issue the command @samp{ssh bigjobs coqtop}
+to start Coq remotely on our large compute server called @samp{bigjobs}.
 
 The protocol used should be configured so that no user interaction
 (passwords, or whatever) is required to get going.  For proper
@@ -4028,8 +4024,8 @@ code like this to your @file{.emacs} file:
 
 This lisp fragment adds bindings for every buffer in proof script
 mode (the Emacs keymap is called @code{proof-mode-map}).  To just
-affect one prover, use a keymap name like @code{isar-mode-map} and
-evaluate after the library @code{isar} has been loaded.
+affect one prover, use a keymap name like @code{coq-mode-map} and
+evaluate after the library @code{coq} has been loaded.
 
 To find the names of the functions you may want to bind, look in this
 manual, or query current bindings interactively with @kbd{C-h k}.  This
@@ -5325,281 +5321,6 @@ with non-@code{Bg} faces.
 
 @c =================================================================
 @c
-@c  CHAPTER: Isabelle Proof General
-@c
-@node Isabelle Proof General
-@chapter Isabelle Proof General
-@cindex Isabelle Proof General
-
-Isabelle Proof General supports major generic features of Proof General,
-including integration with Isabelle's theory loader for proper automatic
-multiple file handling.  
-@comment Support for tags and proof-by-pointing is missing.
-
-Isabelle provides its own way to invoke Proof General via the
-@code{isabelle} command.  Running @code{isabelle emacs} starts an Emacs
-session with Isabelle Proof General.  The defaults may be changed by
-editing the Isabelle settings, see the Isabelle documentation for
-details.
-
-Proof General for Isabelle manages Isar @file{.thy} files.  Proof
-General provides reliable control over incremental execution of the
-text.
-
-@menu
-* Choosing logic and starting isabelle::
-* Isabelle commands::
-* Isabelle settings::
-* Isabelle customizations::
-@end menu
-
-@node Choosing logic and starting isabelle
-@section Choosing logic and starting isabelle
-@cindex Isabelle logic
-
-When you load an Isabelle theory file into Proof General, you may be
-prompted for the path to the program @code{isabelle} if it is not on the
-system @code{PATH} already.  This is used to generate further
-information for invoking Isabelle, in particular, the list of available
-logics.
-
-The Isabelle menu offers an easy way to select the invoked object logic.
-If you look at the menu:
-@lisp
-        Isabelle -> Logics -> 
-@end lisp 
-you should see the list of logics available to Isabelle.  This menu is
-generated from the output of the command @code{isabelle findlogics}.
-(Similarly, the documentation menu is partly generated from
-@code{isabelle doc}).  Instead of the menu, you can use the
-keyboard command @code{isabelle-chose-logic} to choose from the list.
-
-The logics list is refreshed dynamically so you can select any newly
-built heap images in the same Emacs session.  However, notice that the
-choices are greyed out while Isabelle is actually running --- you can
-only switch to a new logic if you first exit Isabelle (similarly to
-Proof General, Isabelle operates with only one logic at a time).
-
-Another way to set the logic before Isabelle is launched is using an
-Emacs local variable setting inside a comment at the top of the file,
-see the documentation of @code{isabelle-chosen-logic} below.
-
-In case you do not have the @code{isabelle} program available or want to
-override its behaviour, you may set the variable
-@code{isabelle-program-name-override} to define the name of the
-executable used to start Isabelle.  The standard options are and 
-logic name are still appended.  
-@c in fact, we also have ISABELLE_OPTIONS and PROOFGENERAL_LOGIC,
-@c but lets not mention these.
-
-
-@c TEXI DOCSTRING MAGIC: isabelle-program-name-override
-@defopt isabelle-program-name-override 
-Name of executable program to run Isabelle.
-
-You can set customize this in case the automatic settings
-mechanism does not work for you, perhaps because isabelle
-is not on your path, or you are running it remotely.
-
-The logic image name is tagged onto the end.
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-chosen-logic
-@defopt isabelle-chosen-logic 
-Choice of logic to use with Isabelle.@*
-If non-nil, added onto the Isabelle command line for invoking Isabelle.
-
-You can set this as a file local variable, using a special comment
-at the top of your theory file, like this:
-@lisp
-   (* -*- @code{isabelle-chosen-logic}: "ZF" -*- *)
-@end lisp
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-choose-logic
-@deffn Command isabelle-choose-logic logic
-Adjust isabelle-prog-name and @code{proof-prog-name} for running @var{logic}.
-@end deffn
-@node Isabelle commands
-@section Isabelle commands
-@cindex Isabelle commands
-
-
-@kindex C-c C-a r
-@kindex C-c C-a C-q
-@kindex C-c C-a C-d
-@kindex C-c C-a C-p
-@kindex C-c C-a h A
-@kindex C-c C-a h C
-@kindex C-c C-a h I
-@kindex C-c C-a h S
-@kindex C-c C-a h T
-@kindex C-c C-a h a
-@kindex C-c C-a h b
-@kindex C-c C-a h c
-@kindex C-c C-a h f
-@kindex C-c C-a h i
-@kindex C-c C-a h m
-@kindex C-c C-a h o
-@kindex C-c C-a h t
-@kindex C-c C-a C-s
-@kindex C-c C-a C-m
-@kindex C-c C-a C-f
-@kindex C-c C-f
-
-The Isabelle instance of Proof General supplies several specific
-help key bindings; these functions are offered within the prover help
-menu as well.
-
-@table @kbd
-@item C-c C-a r
-Invokes Isar command @code{refute} on the current subgoal.  Only available in HOL
-and derived logics.
-@item C-c C-a C-q
-Invokes Isar command @code{quickcheck} on the current subgoal.
-@item C-c C-a C-d
-Displays a draft document of the current theory.
-@item C-c C-a C-p
-Prints a draft document of the current theory.
-@item C-c C-a h A
-Shows available antiquotation commands and options.
-@item C-c C-a h C
-Shows the current Classical Reasoner context.
-@item C-c C-a h I
-Shows the current set of induct/cases rules.
-@item C-c C-a h S
-Shows the current Simplifier context.
-@item C-c C-a h T
-Shows the current set of transitivity rules (for calculational reasoning).
-@item C-c C-a h a
-Shows attributes available in current theory context.
-@item C-c C-a h b
-Shows all local term bindings.
-@item C-c C-a h c
-Shows all named local contexts (cases).
-@item C-c C-a h f
-Shows all local facts.
-@item C-c C-a h i
-Shows inner syntax of the current theory context (for types and terms).
-@item C-c C-a h m
-Shows proof methods available in current theory context.
-@item C-c C-a h o
-Shows all available commands of Isabelle's outer syntax.
-@item C-c C-a h t
-Shows theorems stored in the current theory node.
-@item C-c C-a C-s
-Invoke sledgehammer on first subgoal.
-@item C-c C-a C-m 
-Find theorems containing given arguments (prompt in minibuffer).
-Invokes the @code{thms_containing} command.  Arguments are
-separated by white space as usual in Isar.
-@item C-c C-a C-f 
-Find theorems containing (argument in form)
-@item C-c C-f
-Find theorems: either of the above.  
-@end table
-
-@comment da: this isn't a very good way!!
-@comment it may override settings for other provers, or have no effect, I think!
-@comment we should introduce specific Isar setting.
-@c You can customize the default behaviour of the toolbar or
-@c menu item for find theorems by
-@c setting @code{proof-find-theorems-command} 
-@c to 
-@c @code{isar-find-theorems-minibuffer} or
-@c @code{isar-find-theorems-form}.  The setting
-@c can be customized on the menu:
-@c @example
-@c  Proof-General -> Advanced -> Internals -> Prover Config
-@c @end example
-
-
-@kindex C-c C-a b
-@kindex C-c C-a C-b
-@kindex C-c C-a C-u
-@kindex C-c C-a C-l
-@kindex C-c C-a u
-@kindex C-c C-a l
-@kindex C-c C-a C-i
-@kindex C-c C-a C-r
-@kindex C-c C-a C-a
-
-The following shortcuts insert control sequences into the text,
-modifying the appearance of individual symbols (single letters,
-mathematical entities etc.); the Tokens package will provide immediate
-visual feedback.
-
-@table @kbd
-@item C-c C-a C-b
-Inserts "\<^bold>" (bold character)
-@item C-c C-a C-c
-Inserts "\<^loc>" (``local'' control)
-@item C-c C-a C-u
-Inserts "\<^sup>"  (superscript character)
-@item C-c C-a C-l
-Inserts "\<^sub>" (subscript character)
-@item C-c C-a u
-Inserts "\<^bsup> \<^esup>"  (superscript string)
-@item C-c C-a l
-Inserts "\<^bsub> \<^esub>"  (subscript string)
-@item C-c C-a C-i
-Inserts "\<^isub>"  (identifier subscript letter)
-@item C-c C-a C-r
-Inserts "\<^raw:>"  (raw LaTeX text)
-@item C-c C-a C-a
-Inserts "@@@{text ""@}"  (anti-quotation).
-@item C-c C-a C-x
-Inserts "ML @{* *@}"  (inline ML code).
-@end table
-
-Command termination via `@code{;}' is an optional feature of Isar
-syntax.  Neither Isabelle nor Proof General require semicolons to
-do their job.  The following command allows to get rid of command
-terminators in existing texts.
-
-@c TEXI DOCSTRING MAGIC: isar-strip-terminators
-@deffn Command isar-strip-terminators 
-Remove explicit Isabelle/Isar command terminators @samp{;} from the buffer.
-@end deffn
-
-
-@node Isabelle settings
-@section Isabelle settings
-
-The Isabelle menu also contains a @code{Settings} submenu, which
-allows you to configure things such as the behaviour of Isabelle's term
-pretty printer (display of types, sorts, etc).  Note that you won't
-see this sub-menu until Isabelle has been started, because it is
-generated by Isabelle itself.  Proof General, on the other hand, is
-responsible for recording any settings that are configured when you
-select @code{Isabelle -> Settings -> Save Settings}.  They are stored
-along with the other Emacs customization settings.
-
-
-
-@node Isabelle customizations
-@section Isabelle customizations
-@cindex Isabelle customizations
-
-Here are some of the other user options specific to Isabelle.  You can
-set these as usual with the customization mechanism.
-
-@c TEXI DOCSTRING MAGIC: isabelle-web-page
-@defvar isabelle-web-page 
-URL of web page for Isabelle.
-@end defvar
-
-
-
-
-
-@c FIXME todo: theorem dependencies
-
-
-@c =================================================================
-@c
 @c  CHAPTER: EasyCrypt Proof General
 @c
 @node EasyCrypt Proof General
@@ -5731,7 +5452,7 @@ Tagged versions of the sources may be redistributed by third party
 packagers in other forms.
 
 The sources includes the generic elisp code, and code for Coq, EasyCrypt,
-Isabelle, and other provers.  Also included are installation
+and other provers.  Also included are installation
 instructions (reproduced in brief below) and this documentation.
 
 @node Installing Proof General from sources
@@ -5818,7 +5539,7 @@ providing the variables in @file{proof-site.el} are adjusted
 accordingly (see @i{Proof General site configuration} in
 @i{Adapting Proof General} for more details).  Make sure that
 the @file{generic/} and assistant-specific elisp files are kept in
-subdirectories (@file{coq/}, @file{isa/}, @file{easycrypt/}, ...) of
+subdirectories (@file{coq/}, @file{phox/}, @file{easycrypt/}, ...) of
 @code{proof-home-directory} so that the autoload directory calculations
 are correct.
 
@@ -5830,7 +5551,7 @@ details if you don't know where to find this file.
 @unnumberedsubsec Removing support for unwanted provers
 
 You cannot run more than one instance of Proof General at a time: so if
-you're using Coq, visiting an @file{.ML} file will not load Isabelle
+you're using Coq, visiting an @file{.ec} file will not load EasyCrypt
 Proof General, and the buffer remains in fundamental mode.  If there are
 some assistants supported that you never want to use, you can adjust the
 variable @code{proof-assistants} in @file{proof-site.el} to remove the

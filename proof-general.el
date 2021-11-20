@@ -78,11 +78,7 @@
   (let ((byte-compile-directories
          '("generic" "lib"
            "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox"
-           ;; FIXME: These dirs used to not be listed, but I needed to add
-           ;; them for the compilation to succeed for me.  --Stef
-           ;; These dirs are now obsolete and not published on MELPA.  --Erik
-           ;; "isar"
-       )))
+           )))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))
 

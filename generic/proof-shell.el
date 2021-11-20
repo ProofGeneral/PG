@@ -376,7 +376,7 @@ process command."
 	      proof-shell-process-connection-type)
 
 	     ;; Trac #324, Trac #284: default with Emacs 23 variants
-	     ;; is t.  nil gives marginally better results with "make
+	     ;; is t.  nil gave marginally better results with "make
 	     ;; profile.isar" on homogenous test input.  Top-level
 	     ;; Emacs loop causes slow down on Mac and Windows ports.
 	     (process-adaptive-read-buffering nil)
