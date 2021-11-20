@@ -2,7 +2,8 @@
 nohup.out
 TAGS
 ChangeLog
-proof-general-autoloads.el
+/proof-general-autoloads.el
+/proof-general-pkg.el
 *.elc
 *~
 /ci/.lia.cache
