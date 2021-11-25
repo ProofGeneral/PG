@@ -5,7 +5,7 @@
 # Authors: Hendrik Tews
 # Maintainer: Hendrik Tews <hendrik@askra.de>
 # 
-# License:     GPL (GNU GENERAL PUBLIC LICENSE)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 
 TESTS:=$(wildcard test-*.el)

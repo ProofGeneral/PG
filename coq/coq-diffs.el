@@ -6,7 +6,7 @@
 
 ;; Author:      Jim Fehrle <jim.fehrle@gmail.com>
 
-;; License:  BSD-3 (3-Clause BSD License)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;; 

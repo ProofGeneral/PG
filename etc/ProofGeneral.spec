@@ -3,7 +3,7 @@ Name:		ProofGeneral
 Version:	4.5-git
 Release:	1
 Group:		Text Editors/Integrated Development Environments (IDE)
-License:	GPL
+License:	GPLv3+
 Url:		http://proofgeneral.inf.ed.ac.uk/
 Packager:	David Aspinall <David.Aspinall@ed.ac.uk>
 Source:		http://proofgeneral.inf.ed.ac.uk/ProofGeneral-%{version}.tgz
@@ -16,7 +16,7 @@ BuildArchitectures: noarch
 %description
 Proof General is a generic Emacs interface for proof assistants,
 suitable for use by pacifists and Emacs militants alike.
-It is supplied ready-customized for LEGO, Coq, and Isabelle.
+It is supplied ready-customized for EasyCrypt, Coq, and PhoX.
 You can adapt Proof General to other proof assistants if you know a
 little bit of Emacs Lisp.
 

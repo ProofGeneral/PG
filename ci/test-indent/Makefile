@@ -5,7 +5,7 @@
 # Authors: Pierre Courtieu
 # Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 # 
-# License:     GPL2+ (GNU GENERAL PUBLIC LICENSE)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 TESTS:=$(wildcard indent-*.v)
 INDENTED:=$(subst indent-,indented_indent-, $(TESTS))

@@ -117,8 +117,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 GNU Emacs @value{emacsversion} or (as far as possible) later versions.
 Proof General is distributed under the terms of the GNU General Public
-License (GPL); please check the accompanying file @file{COPYING} for
-more details.
+License (GPL), version 3 or later;
+please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
 
@@ -139,7 +139,7 @@ of @b{Proof General}, a generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion}.  It is supplied ready customized for the proof
-assistants Coq, Lego, Isabelle, and HOL.
+assistants Coq, EasyCrypt, and PhoX.
 
 This manual contains information for customizing to new proof
 assistants; see the user manual for details about how to use
@@ -1601,7 +1601,7 @@ input, then newlines can be retained in the input.
 
 @c TEXI DOCSTRING MAGIC: proof-shell-insert-hook
 @defvar proof-shell-insert-hook 
-Hooks run by @samp{@code{proof-shell-insert}} before inserting a command.@*
+Hook run by @samp{@code{proof-shell-insert}} before inserting a command.@*
 Can be used to configure the proof assistant to the interface in
 various ways -- for example, to observe or alter the commands sent to
 the prover, or to sneak in extra commands to configure the prover.
@@ -1634,9 +1634,9 @@ prompts than expected, things will break!  Extending the variable
 stripped of carriage returns before being sent.
 
 Example uses:
-@var{lego} uses this hook for setting the pretty printer width if
+Lego used this hook for setting the pretty printer width if
 the window width has changed;
-Plastic uses it to remove literate-style markup from @samp{string}.
+Plastic used it to remove literate-style markup from @samp{string}.
 
 See also @samp{@code{proof-script-preprocess}} which can munge text when
 it is added to the queue of commands.
@@ -2012,9 +2012,7 @@ quote characters must be escaped.  The setting
   '(("@var{\\\\}" . "@var{\\\\}")
     ("\"" . "\\\""))
 @end lisp
-achieves this.   This does not apply to @var{lego}, which does not
-need backslash escapes and does not allow filenames with
-quote characters.
+achieves this.
 
 This setting is used inside the function @samp{@code{proof-format-filename}}.
 @end defvar
@@ -3307,7 +3305,7 @@ in the @code{proof-assistants} setting.
 @c TEXI DOCSTRING MAGIC: proof-assistants
 @defvar proof-assistants 
 Choice of proof assistants to use with Proof General.@*
-A list of symbols chosen from: @samp{isar} @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
+A list of symbols chosen from: @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
 If nil, the default will be ALL available proof assistants.
 
 Each proof assistant defines its own instance of Proof General,
@@ -3319,7 +3317,7 @@ only select the proof assistants you (or your site) may need.
 You can select which proof assistants you want by setting this
 variable before @samp{proof-site.el} is loaded, or by setting
 the environment variable @samp{PROOFGENERAL_ASSISTANTS} to the
-symbols you want, for example "lego isa".  Or you can
+symbols you want, for example "coq easycrypt".  Or you can
 edit the file @samp{proof-site.el} itself.
 
 Note: to change proof assistant, you must start a new Emacs session.
@@ -3938,7 +3936,7 @@ Choice of syntax tree encoding for terms.
 
 If nil, prover is expected to make no optimisations.
 If non-nil, the pretty printer of the prover only reports local changes.
-For @var{lego} 1.3.1 use nil, for Coq 6.2, use t.
+For Coq 6.2, use t.
 @end defvar
 
 
@@ -4016,7 +4014,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 @c
@@ -4488,7 +4486,7 @@ This is a note by David Aspinall about proof by pointing and similar
 features.
 
 Proof General already supports proof by pointing, and experimental
-support is provided in LEGO.  We would like to extend this support to
+support was provided in LEGO.  We would like to extend this support to
 other proof assistants.  Unfortunately, proof by pointing requires
 rather heavy support from the proof assistant.  There are two aspects to
 the support:

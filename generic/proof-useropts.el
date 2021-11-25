@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -11,7 +11,7 @@
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -392,8 +392,8 @@ For example,
 
    ssh bigjobs
 
-Would cause Proof General to issue the command `ssh bigjobs isabelle'
-to start Isabelle remotely on our large compute server called `bigjobs'.
+Would cause Proof General to issue the command `ssh bigjobs coqtop'
+to start Coq remotely on our large compute server called `bigjobs'.
 
 The protocol used should be configured so that no user interaction
 \(passwords, or whatever) is required to get going.  For proper

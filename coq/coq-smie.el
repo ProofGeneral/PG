@@ -13,7 +13,7 @@
 ;;          Stefan Monnier
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-;; License:     GPLv3+ (GNU GENERAL PUBLIC LICENSE version 3 or later)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 

@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -12,7 +12,7 @@
 ;; Authors:   David Aspinall, Healfdene Goguen,
 ;;		Thomas Kleymann and Dilip Sequeira
 
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -377,7 +377,7 @@ Returns non-nil if response buffer was cleared."
   ;; NB: this displays an empty buffer sometimes when it's not
   ;; so useful.  It _is_ useful if the user has requested to
   ;; see the proof state and there is none
-  ;; (Isabelle/Isar displays nothing: might be better if it did).
+  ;; (Isabelle/Isar displayed nothing: might be better if it did).
   (proof-display-and-keep-buffer proof-response-buffer))
 
 ;;

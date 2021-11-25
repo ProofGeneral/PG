@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2019  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -14,9 +14,10 @@
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 4.5-git
 
-;; This software is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License
-;; version 2, as published by the Free Software Foundation.
+;; The software is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,8 +70,8 @@
   (require 'proof-site (expand-file-name "generic/proof-site" pg-init--pg-root)))
 
 (eval-when-compile
-  ;; FIXME: This is used during installation of the ELPA package:
-  ;; we presume that this file will be compiled before any of the files in
+  ;; FIXME: [ This is used during installation of the ELPA package ]
+  ;; We presume that this file will be compiled before any of the files in
   ;; sub-directories and we presume that all files are compiled within the same
   ;; session, so we here add to load-path all the subdirectories so
   ;; that files in (say) coq/ can (require 'coq-foo) and the compiler will find
@@ -78,11 +79,7 @@
   (let ((byte-compile-directories
          '("generic" "lib"
            "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox"
-           ;; FIXME: These dirs used to not be listed, but I needed to add
-           ;; them for the compilation to succeed for me.  --Stef
-           ;; These dirs are now obsolete and not published on MELPA.  --Erik
-           ;; "isar" "lego" "twelf" "obsolete/plastic"
-       )))
+           )))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))
 

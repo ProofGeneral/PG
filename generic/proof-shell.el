@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -12,7 +12,7 @@
 ;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
 ;;            Thomas Kleymann and Dilip Sequeira
 
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -376,7 +376,7 @@ process command."
 	      proof-shell-process-connection-type)
 
 	     ;; Trac #324, Trac #284: default with Emacs 23 variants
-	     ;; is t.  nil gives marginally better results with "make
+	     ;; is t.  nil gave marginally better results with "make
 	     ;; profile.isar" on homogenous test input.  Top-level
 	     ;; Emacs loop causes slow down on Mac and Windows ports.
 	     (process-adaptive-read-buffering nil)
@@ -627,7 +627,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be \"cached\" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq)."
+object files, used by Coq)."
   (interactive)
   (when proof-shell-busy
     (proof-interrupt-process)

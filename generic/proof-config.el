@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -11,7 +11,7 @@
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -1449,8 +1449,7 @@ This is an experimental feature, currently work-in-progress."
   "Splits strings which match `proof-shell-theorem-dependency-list-regexp'.
 Used as an argument to `split-string'; nil defaults to whitespace.
 \(This setting is necessary for provers which allow whitespace in
-the names of theorems/definitions/constants), see setting for
-Isabelle in isa/isa.el and isar/isar.el."
+the names of theorems/definitions/constants)."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
@@ -1581,9 +1580,7 @@ they appear inside ML strings and the backslash character and
 quote characters must be escaped.  The setting
   '((\"\\\\\\\\\" . \"\\\\\\\\\")
     (\"\\\"\" . \"\\\\\\\"\"))
-achieves this.   This does not apply to LEGO, which does not
-need backslash escapes and does not allow filenames with
-quote characters.
+achieves this.
 
 This setting is used inside the function `proof-format-filename'."
   :type '(list (cons string string))
@@ -1629,7 +1626,7 @@ bound to `queueitems'."
   :group 'proof-shell)
 
 (defcustom proof-shell-insert-hook nil
-  "Hooks run by `proof-shell-insert' before inserting a command.
+  "Hook run by `proof-shell-insert' before inserting a command.
 Can be used to configure the proof assistant to the interface in
 various ways -- for example, to observe or alter the commands sent to
 the prover, or to sneak in extra commands to configure the prover.
@@ -1662,12 +1659,15 @@ prompts than expected, things will break!  Extending the variable
 stripped of carriage returns before being sent.
 
 Example uses:
-LEGO uses this hook for setting the pretty printer width if
+Lego used this hook for setting the pretty printer width if
 the window width has changed;
-Plastic uses it to remove literate-style markup from `string'.
+Plastic used it to remove literate-style markup from `string'.
 
 See also `proof-script-preprocess' which can munge text when
 it is added to the queue of commands."
+  ;; FIXME: The docstring suggests this is used by the backend code (e.g. LEGO
+  ;; support) rather than by the end user, so maybe it shouldn't be
+  ;; a `defcustom'?
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1679,10 +1679,9 @@ by the user.  It is run by `proof-assert-until-point'.
 WARNING: don't call `proof-assert-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width.  Note
-that `proof-shell-insert-hook' may be use instead (see lego mode)
-if no more prompt will be displayed (see
-`proof-shell-insert-hook' for details)."
+Example of use: Insert a command to adapt printing width.
+Note that `proof-shell-insert-hook' (which see) may be use instead
+if no more prompt will be displayed."
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1694,10 +1693,9 @@ Can be used to insert commands.  It is run by
 WARNING: don't call `proof-retract-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width.  Note
-that `proof-shell-insert-hook' may be use instead (see lego mode)
-if no more prompt will be displayed (see
-`proof-shell-insert-hook' for details)."
+Example of use: Insert a command to adapt printing width.
+Note that `proof-shell-insert-hook' (which see) may be use instead
+if no more prompt will be displayed."
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1855,11 +1853,12 @@ Leave unset if no special characters are being used."
   :group 'proof-goals)
 
 (defcustom pg-subterm-anns-use-stack nil
+  ;; FIXME: The docstring suggest we should use t!?
   "Choice of syntax tree encoding for terms.
 
 If nil, prover is expected to make no optimisations.
 If non-nil, the pretty printer of the prover only reports local changes.
-For LEGO 1.3.1 use nil, for Coq 6.2, use t."
+For Coq 6.2, use t."
   :type 'boolean
   :group 'proof-goals)
 

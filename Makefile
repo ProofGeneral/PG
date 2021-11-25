@@ -35,13 +35,13 @@ PREFIX=$(DESTDIR)/usr
 DEST_PREFIX=$(DESTDIR)/usr
 
 # subdirectories for provers: to be compiled and installed
-PROVERS=acl2 ccc coq easycrypt hol-light hol98 isar lego pghaskell pgocaml pgshell phox twelf
+PROVERS=coq easycrypt pghaskell pgocaml pgshell phox
 
 # generic lisp code: to be compiled and installed
 OTHER_ELISP=generic lib
 
 # additional lisp code: to be compiled but not installed
-ADDITIONAL_ELISP:=ci/compile-tests \
+ADDITIONAL_ELISP:=ci/compile-tests			       \
 		$(wildcard ci/compile-tests/[0-9][0-9][0-9]-*) \
 		ci/simple-tests
 
@@ -58,17 +58,16 @@ ELISP_EXTRAS=
 EXTRA_DIRS = images
 
 DOC_FILES=AUTHORS BUGS COMPATIBILITY CHANGES COPYING INSTALL README REGISTER doc/*.pdf
-DOC_EXAMPLES=acl2/*.acl2 hol98/*.sml isar/*.thy lclam/*.lcm lego/*.l pgshell/*.pgsh phox/*.phx plastic/*.lf twelf/*.elf
+DOC_EXAMPLES=pgshell/*.pgsh phox/*.phx
 DOC_SUBDIRS=${DOC_EXAMPLES} */README* */CHANGES */BUGS 
 
 BATCHEMACS=${EMACS} --batch --no-site-file -q 
 
 # Scripts to edit paths to shells
-BASH_SCRIPTS = isar/interface
-PERL_SCRIPTS = lego/legotags coq/coqtags isar/isartags
+PERL_SCRIPTS = coq/coqtags
 
 # Scripts to install to bin directory
-BIN_SCRIPTS = lego/legotags coq/coqtags isar/isartags
+BIN_SCRIPTS = coq/coqtags
 
 # Setting load path might be better in Elisp, but seems tricky to do
 # only during compilation.  Another idea: put a function in proof-site
@@ -274,36 +273,33 @@ scripts: bashscripts perlscripts
 
 .PHONY: bashscripts
 bashscripts:
-	(bash="`which bash`"; \
-	 if [ -z "$$bash" ]; then \
+	(bash="`which bash`";					    \
+	 if [ -z "$$bash" ]; then				    \
 	   echo "Could not find bash - bash paths not checked" >&2; \
-	   exit 0; \
-	 fi; \
-	 for i in $(BASH_SCRIPTS); do \
-	   sed -i.orig "s|^#.*!.*/bin/bash.*$$|#!$$bash|" $$i; \
-	 done)
+	   exit 0;						    \
+	 fi)
 
 .PHONY: perlscripts
 perlscripts:
-	(perl="`which perl`"; \
-	 if [ -z "$$perl" ]; then \
+	(perl="`which perl`";					    \
+	 if [ -z "$$perl" ]; then				    \
 	   echo "Could not find perl - perl paths not checked" >&2; \
-	   exit 0; \
-	 fi; \
-	 for i in $(PERL_SCRIPTS); do \
-	   sed -i.orig "s|^#.*!.*/bin/perl.*$$|#!$$perl|" $$i; \
+	   exit 0;						    \
+	 fi;							    \
+	 for i in $(PERL_SCRIPTS); do			    	    \
+	   sed -i.orig "s|^#.*!.*/bin/perl.*$$|#!$$perl|" $$i;      \
 	 done)
 
 # Set PGHOME path in scripts back to default location.
 .PHONY: cleanscripts
 cleanscripts:
-	(for i in $(BASH_SCRIPTS) $(PERL_SCRIPTS); do \
-	   if [ -f $$i.rm ] ; then \
-	     rm -f $$i.rm; \
-	   fi; \
-	   if [ -f $$i.orig ] ; then \
-             mv -f $$i.orig $$i; \
-           fi; \
+	(for i in $(PERL_SCRIPTS); do \
+	   if [ -f $$i.rm ] ; then    \
+	     rm -f $$i.rm; 	      \
+	   fi; 			      \
+	   if [ -f $$i.orig ] ; then  \
+             mv -f $$i.orig $$i;      \
+           fi; 			      \
 	 done)
 
 ##

@@ -137,19 +137,10 @@ Supported proof assistants:
 Proof General used to support other proof assistants, but those
 instances are no longer maintained nor available in the MELPA package:
 
-* Legacy support of
-  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
-* Experimental support of: CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
-* Obsolete instances: Demoisa, Lambda-Clam, Plastic
+* Experimental support of: Shell
+* Obsolete instances: Demoisa
+* Removed instances: Twelf, CCC, Hol-Light, ACL2, Plastic, Lambda-Clam, HOL98,
+  [LEGO](http://www.dcs.ed.ac.uk/home/lego),
+  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/)
 
 A few example proofs are included in each prover subdirectory.
-
-## Contributing
-
-Contributions to this repository are placed under the BSD-3 license.
-As BSD-3 is compatible with both GPLv2 and GPLv3+, this means that
-we can merge them in both `master` and `async` branches if need be,
-using the same license as the rest of the codebase, while you keep
-all the rights on your code.
-For more info, see <https://opensource.org/licenses/BSD-3-Clause>.

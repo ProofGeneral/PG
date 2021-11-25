@@ -12,7 +12,7 @@
 ;; Authors:      David Aspinall <David.Aspinall@ed.ac.uk>
 ;;	         Earlier version by Fiona McNeil.
 
-;; License:      GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -89,7 +89,7 @@ Called from `proof-done-advancing' when a save is processed and
   (span-set-property gspan 'dependencies
 		     ;; Ancestors of NAME are in the second component.
 		     ;; FIXME: for now we ignore the first component:
-		     ;; NAME may not be enough [Isar allows proof regions
+		     ;; NAME may not be enough [e.g. Isar allowed proof regions
 		     ;; with multiple names, which are reported in dep'c'y
 		     ;; output].
 		     (cdr proof-last-theorem-dependencies))

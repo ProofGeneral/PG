@@ -121,7 +121,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 with GNU Emacs @value{emacsversion} or
 later versions (subject to Emacs API changes).  Proof General is
-distributed under the terms of the GNU General Public License (GPL);
+distributed under the terms of the GNU General Public License (GPL),
+version 3 or later;
 please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
@@ -158,10 +159,7 @@ assistants Coq, EasyCrypt, and PhoX.
 * Graphical Proof-Tree Visualization::
 * Customizing Proof General::   
 * Hints and Tips::
-* LEGO Proof General::          
 * Coq Proof General::           
-* Isabelle Proof General::    
-* HOL Light Proof General::
 * EasyCrypt Proof General::
 * Shell Proof General::
 @c * PhoX Proof General::
@@ -194,6 +192,7 @@ other documentation, system downloads, etc.
 
 
 @menu
+* News for Version 4.5::
 * News for Version 4.4::
 * News for Version 4.3::
 * News for Version 4.2::
@@ -202,6 +201,16 @@ other documentation, system downloads, etc.
 * Future::
 * Credits::                     
 @end menu
+
+@node News for Version 4.5
+@unnumberedsec News for Version 4.5
+@cindex news
+
+Proof-General is now distributed under the GPLv3+ license.
+
+The old code for the support of the following systems have been
+removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam,
+Isabelle, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -302,7 +311,6 @@ webpage}.  Help us to help you organize your proofs!
 
 @node Credits
 @unnumberedsec Credits
-@cindex @code{lego-mode}
 @cindex maintenance
 
 The original developers of the basis of Proof General were:
@@ -508,24 +516,15 @@ script file for your proof assistant, for example:
 
 @multitable @columnfractions .35 .3 .35
 @item       @b{Prover}    @tab @b{Extensions} @tab @b{Mode}
-@item       LEGO          @tab @file{.l}      @tab @code{lego-mode}
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
-@item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
-@item       HOL98         @tab @file{.sml}    @tab @code{hol98-mode}
-@item       HOL Light     @tab @file{.ml}     @tab @code{hol-light-mode}
-@item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
-@item       Twelf         @tab @file{.elf}    @tab @code{twelf-mode}
-@item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
-@item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
-@item       CCC           @tab @file{.ccc}    @tab @code{ccc-mode}
 @item       PG-Shell      @tab @file{.pgsh}   @tab @code{pgshell-mode}
 @item       EasyCrypt     @tab @file{.ec}     @tab @code{easycrypt-mode}
 @end multitable
 (the exact list of Proof Assistants supported may vary according to the
 version of Proof General and its local configuration).  You can also
-invoke the mode command directly, e.g., type @kbd{M-x lego-mode}, to
-turn a buffer into a lego script buffer.
+invoke the mode command directly, e.g., type @kbd{M-x coq-mode}, to
+turn a buffer into a Coq script buffer.
 
 You'll find commands to process the proof script are available from the
 toolbar, menus, and keyboard.  Type @kbd{C-h m} to get a list of the
@@ -660,24 +659,11 @@ proof assistants, including these:
 @c FLAG VERSIONS HERE
 @itemize @bullet
 @item 
-@b{LEGO Proof General} for LEGO Version 1.3.1@*
-@xref{LEGO Proof General}, for more details.
-@item 
 @b{Coq Proof General} for Coq Version 8.2@*
 @xref{Coq Proof General}, for more details.
-@item 
-@b{Isabelle Proof General} for Isabelle2009-2@*
-@xref{Isabelle Proof General}, and documentation supplied with
-Isabelle for more details.
 @c @item
 @c @b{PhoX Proof General} for PhoX 0.8X@*
 @c @xref{PhoX Proof General}, for more details.
-@c @item
-@c @b{HOL Proof General} for HOL98 (HOL4)@*
-@c @xref{HOL Proof General}, for more details.
-@item
-@b{HOL Light Proof General} for HOL Light@*
-@xref{HOL Light Proof General}, for more details.
 @item
 @b{EasyCrypt Proof General} for EasyCrypt@*
 @xref{EasyCrypt Proof General}, for mode details.
@@ -703,7 +689,7 @@ standard instances documented in this manual are listed above.
 
 Note that there is some variation between the features supported by
 different instances of Proof General.  The main variation is proof by
-pointing, which is only supported in LEGO at the moment.  For advanced
+pointing, which has been supported only in LEGO so far.  For advanced
 features like this, some extensions to the output routines of the proof
 assistant are required, typically.  If you like Proof General, @b{please
 help us by asking the implementors of your favourite proof assistant to
@@ -798,6 +784,7 @@ then describe the concepts and functions in more detail.
 * Interrupting during trace output::
 @end menu
 
+@c FIXME: Rewrite this to use Coq since Isabelle support was removed.
 @node Walkthrough example in Isabelle
 @section Walkthrough example in Isabelle
 
@@ -1281,9 +1268,9 @@ file and a @code{.thy} theory file which defines its theory.
 If you have a partly processed scripting buffer and use @kbd{C-c C-s},
 or you attempt to use script processing in a new buffer, Proof General
 will ask you if you want to retract what has been proved so far,
-@code{Scripting incomplete in buffer myproof.l, retract?}
+@code{Scripting incomplete in buffer myproof.v, retract?}
 or if you want to process the remainder of the active buffer, 
-@code{Completely process buffer myproof.l instead?}
+@code{Completely process buffer myproof.v instead?}
 before you can start scripting in a new buffer.  If you refuse to do
 either, Proof General will give an error message: 
 @code{Cannot have more than one active scripting buffer!}.
@@ -1405,7 +1392,7 @@ Set point to end of command at point.
 
 @vindex proof-terminal-string
 The variable @code{proof-terminal-string} is a prover-specific string
-to terminate proof commands.  LEGO and Isabelle use a semicolon,
+to terminate proof commands.  LEGO and Isabelle used a semicolon,
 @samp{;}. Coq employs a full-stop @samp{.}.
 
 @c TEXI DOCSTRING MAGIC: proof-goto-end-of-locked
@@ -1481,7 +1468,7 @@ design, by allowing successive assertion commands without complaining.}
 
 The last command, @code{proof-electric-terminator-toggle}, is triggered
 using the character which terminates proof commands for your proof
-assistant's script language.  For LEGO and Isabelle, use @kbd{C-c ;},
+assistant's script language.  LEGO and Isabelle used @kbd{C-c ;},
 for Coq, use @kbd{C-c .}.  This not really a script processing
 command. Instead, if enabled, it causes subsequent key presses of
 @kbd{;} or @kbd{.} to automatically activate
@@ -1797,7 +1784,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 
@@ -2119,8 +2106,8 @@ Basic modularity in large proof developments can be achieved by
 splitting proof scripts across various files. Let's assume that you are
 in the middle of a proof development. You are working on a soundness
 proof of Hoare Logic in a file called@footnote{The suffix may depend of
-the specific proof assistant you are using e.g, LEGO's proof script
-files have to end with @file{.l}.} @file{HSound.l}. It
+the specific proof assistant you are using e.g, Coq's proof script
+files have to end with @file{.v}.} @file{HSound.v}. It
 depends on a number of other files which develop underlying
 concepts e.g. syntax and semantics of expressions, assertions,
 imperative programs. You notice that the current lemma is too difficult
@@ -2129,11 +2116,11 @@ about determinism of the programming language. Or perhaps a previous
 definition is too cumbersome or even wrong.
 
 At this stage, you would like to visit the appropriate file, say
-@file{sos.l} and retract to where changes are required. Then, using
+@file{sos.v} and retract to where changes are required. Then, using
 script management, you want to develop some more basic theory in
-@file{sos.l}. Once this task has been completed (possibly involving
+@file{sos.v}. Once this task has been completed (possibly involving
 retraction across even earlier files) and the new development has been
-asserted, you want to switch back to @file{HSound.l} and replay to the
+asserted, you want to switch back to @file{HSound.v} and replay to the
 point you got stuck previously.
 
 Some hours (or days) later you have completed the soundness proof and
@@ -2154,7 +2141,7 @@ or retract the current script buffer.
 Proof General tries to be aware of all files that the proof assistant
 has processed or is currently processing.  In the best case, it relies
 on the proof assistant explicitly telling it whenever it processes a new
-file which corresponds@footnote{For example, LEGO generates additional
+file which corresponds@footnote{For example, LEGO generated additional
 compiled (optimised) proof script files for efficiency.} to a file
 containing a proof script.
 
@@ -2196,16 +2183,6 @@ problem and flashes up a warning in the response buffer.  You can then
 visit the modified buffer, save it and retract to the beginning. Then
 you are back on track.
 
-
-
-@c only true for LEGO!
-@c If the proof assistant is not happy with the script and
-@c complains with an error message, the buffer will still be marked as
-@c having been completely processed. Sorry. You need to visit the
-@c troublesome file, retract (which will always retract to the beginning of 
-@c the file) and debug the problem e.g., by asserting all of the buffer
-@c under the supervision of Proof General, see @ref{Script processing
-@c commands}. 
 
 
 @node Retracting across files
@@ -2506,6 +2483,7 @@ file @code{@i{PA}-unicode-tokens.el}, or customize the main
 variables it contains, for example @code{@i{PA}-token-name-alist} and 
 @code{@i{PA}-shortcut-alist}. 
 
+@c FIXME: Isabelle support was removed.
 E.g., for Isabelle 
 @example
   M-x customize-variable isar-token-name-alist RET
@@ -2828,9 +2806,7 @@ and @code{etags}.
 
 @node Syntax highlighting
 @section Syntax highlighting
-@vindex lego-mode-hooks
 @vindex coq-mode-hooks
-@vindex isa-mode-hooks
 @cindex font lock 
 @cindex colour
 @c Proof General specifics  
@@ -2994,8 +2970,8 @@ through all the files with one command.  Recording the function names
 and positions makes possible the @kbd{M-.} command which finds the
 definition of a function by looking up which of the files it is in.
 
-Some instantiations of Proof General (currently LEGO and Coq) are
-supplied with external programs (@file{legotags} and @file{coqtags}) for
+Some instantiations of Proof General (currently Coq) are
+supplied with external programs (@file{coqtags}) for
 making tags tables.  For example, invoking @samp{coqtags *.v} produces a
 file @file{TAGS} for all files @samp{*.v} in the current
 directory. Invoking @samp{coqtags `find . -name \*.v`} produces a file
@@ -3040,7 +3016,7 @@ Add completions from the current tags table.
 This chapter describes what you can do from inside the goals buffer,
 providing support for these features exists for your proof assistant.
 
-As of Proof General 4.0, this support only exists for LEGO and
+As of Proof General 4.4, this support has existed only for LEGO and
 proof-by-pointing functionality has been temporarily removed from the
 interface.  If you would like to see subterm activation support for
 Proof General in another proof assistant, please petition the developers
@@ -3824,8 +3800,8 @@ For example,
 @lisp
    ssh bigjobs
 @end lisp
-Would cause Proof General to issue the command @samp{ssh bigjobs isabelle}
-to start Isabelle remotely on our large compute server called @samp{bigjobs}.
+Would cause Proof General to issue the command @samp{ssh bigjobs coqtop}
+to start Coq remotely on our large compute server called @samp{bigjobs}.
 
 The protocol used should be configured so that no user interaction
 (passwords, or whatever) is required to get going.  For proper
@@ -3993,8 +3969,8 @@ and save these variables, saving them may have no practical effect
 because the default settings are mostly hard-wired into the proof
 assistant code.  Ones we expect may need changing appear as proof
 assistant specific configurations.  For example,
-@code{proof-assistant-home-page} is set in the LEGO code from the value
-of the customization setting @code{lego-www-home-page}.  At present
+@code{proof-assistant-home-page} is set in the Coq code from the value
+of the customization setting @code{coq-www-home-page}.  At present
 there is no easy way to save changes to other configuration variables
 across sessions, other than by editing the source code.  (In future
 versions of Proof General, we plan to make all configuration
@@ -4051,8 +4027,8 @@ code like this to your @file{.emacs} file:
 
 This lisp fragment adds bindings for every buffer in proof script
 mode (the Emacs keymap is called @code{proof-mode-map}).  To just
-affect one prover, use a keymap name like @code{isar-mode-map} and
-evaluate after the library @code{isar} has been loaded.
+affect one prover, use a keymap name like @code{coq-mode-map} and
+evaluate after the library @code{coq} has been loaded.
 
 To find the names of the functions you may want to bind, look in this
 manual, or query current bindings interactively with @kbd{C-h k}.  This
@@ -4185,107 +4161,6 @@ expansion of abbreviations (which can be annoying), the @code{Abbrev}
 minor mode, type @kbd{M-x abbrev-mode RET}. When you are not in Abbrev
 mode you can expand an abbreviation by pressing @kbd{C-x '}
 (@code{expand-abbrev}). See the Emacs manual for more details.
-
-
-@c =================================================================
-@c
-@c  CHAPTER: LEGO Proof General
-@c 
-@node LEGO Proof General
-@chapter LEGO Proof General
-@cindex LEGO Proof General
-
-LEGO proof script mode is a mode derived from proof script mode for
-editing LEGO scripts. An important convention is that proof script
-buffers @emph{must} start with a module declaration. If the proof script
-buffer's file name is @file{fermat.l}, then it must commence with a
-declaration of the form
-
-@lisp
-Module fermat;
-@end lisp
-
-If, in the development of the module @samp{fermat}, you require material
-from other module e.g., @samp{lib_nat} and @samp{galois}, you need to
-specify this dependency as part of the module declaration:
-
-@lisp
-Module fermat Import lib_nat galois;
-@end lisp
-
-No need to worry too much about efficiency. When you retract back to a
-module declaration to add a new import item, LEGO does not actually
-retract the previously imported modules. Therefore, reasserting the
-extended module declaration really only processes the newly imported
-modules.
-
-Using the LEGO Proof General, you never ever need to use administrative
-LEGO commands such as @samp{Forget}, @samp{ForgetMark}, @samp{KillRef},
-@samp{Load}, @samp{Make}, @samp{Reload} and @samp{Undo} again
-@footnote{And please, don't even think of including those in your LEGO
-proof script!}. 
-
-@menu
-* LEGO specific commands::      
-* LEGO tags::                   
-* LEGO customizations::         
-@end menu
-
-
-@node LEGO specific commands
-@section LEGO specific commands
-
-In addition to the commands provided by the generic Proof General (as
-discussed in the previous sections) the LEGO Proof General provides a
-few extensions. In proof scripts, there are some abbreviations for
-common commands:
-
-@kindex C-c C-a C-i
-@kindex C-c C-a C-I
-@kindex C-c C-a C-R
-@table @kbd
-@item C-c C-a C-i   
-intros
-@item C-c C-a C-I   
-Intros
-@item C-c C-a C-R   
-Refine
-@end table
-
-@node LEGO tags
-@section LEGO tags
-
-You
-might want to ask your local system administrator to tag the directories
-@file{lib_Prop}, @file{lib_Type} and @file{lib_TYPE} of the LEGO
-library. See @ref{Support for tags}, for further details on tags.
-
-
-
-@node LEGO customizations
-@section LEGO customizations
-
-We refer to chapter @ref{Customizing Proof General}, for an introduction
-to the customisation mechanism. In addition to customizations at the
-generic level, for LEGO you can also customize:
-
-@defopt lego-tags 
-The directory of the @var{tags} table for the @var{lego} library
-
-The default value is @code{"/usr/lib/lego/lib_Type/"}.
-@end defopt
-
-@defvar lego-www-home-page 
-Lego home page URL.
-@end defvar
-
-@c We don't worry about the following for now. These are too obscure.
-@c lego-indent
-@c lego-test-all-name
-
-@c We also don't document any of the internal variables which have been
-@c set to configure the generic Proof General and which the user should
-@c not tamper with
 
 
 @c =================================================================
@@ -5449,323 +5324,6 @@ with non-@code{Bg} faces.
 
 @c =================================================================
 @c
-@c  CHAPTER: Isabelle Proof General
-@c
-@node Isabelle Proof General
-@chapter Isabelle Proof General
-@cindex Isabelle Proof General
-
-Isabelle Proof General supports major generic features of Proof General,
-including integration with Isabelle's theory loader for proper automatic
-multiple file handling.  
-@comment Support for tags and proof-by-pointing is missing.
-
-Isabelle provides its own way to invoke Proof General via the
-@code{isabelle} command.  Running @code{isabelle emacs} starts an Emacs
-session with Isabelle Proof General.  The defaults may be changed by
-editing the Isabelle settings, see the Isabelle documentation for
-details.
-
-Proof General for Isabelle manages Isar @file{.thy} files.  Proof
-General provides reliable control over incremental execution of the
-text.
-
-@menu
-* Choosing logic and starting isabelle::
-* Isabelle commands::
-* Isabelle settings::
-* Isabelle customizations::
-@end menu
-
-@node Choosing logic and starting isabelle
-@section Choosing logic and starting isabelle
-@cindex Isabelle logic
-
-When you load an Isabelle theory file into Proof General, you may be
-prompted for the path to the program @code{isabelle} if it is not on the
-system @code{PATH} already.  This is used to generate further
-information for invoking Isabelle, in particular, the list of available
-logics.
-
-The Isabelle menu offers an easy way to select the invoked object logic.
-If you look at the menu:
-@lisp
-        Isabelle -> Logics -> 
-@end lisp 
-you should see the list of logics available to Isabelle.  This menu is
-generated from the output of the command @code{isabelle findlogics}.
-(Similarly, the documentation menu is partly generated from
-@code{isabelle doc}).  Instead of the menu, you can use the
-keyboard command @code{isabelle-chose-logic} to choose from the list.
-
-The logics list is refreshed dynamically so you can select any newly
-built heap images in the same Emacs session.  However, notice that the
-choices are greyed out while Isabelle is actually running --- you can
-only switch to a new logic if you first exit Isabelle (similarly to
-Proof General, Isabelle operates with only one logic at a time).
-
-Another way to set the logic before Isabelle is launched is using an
-Emacs local variable setting inside a comment at the top of the file,
-see the documentation of @code{isabelle-chosen-logic} below.
-
-In case you do not have the @code{isabelle} program available or want to
-override its behaviour, you may set the variable
-@code{isabelle-program-name-override} to define the name of the
-executable used to start Isabelle.  The standard options are and 
-logic name are still appended.  
-@c in fact, we also have ISABELLE_OPTIONS and PROOFGENERAL_LOGIC,
-@c but lets not mention these.
-
-
-@c TEXI DOCSTRING MAGIC: isabelle-program-name-override
-@defopt isabelle-program-name-override 
-Name of executable program to run Isabelle.
-
-You can set customize this in case the automatic settings
-mechanism does not work for you, perhaps because isabelle
-is not on your path, or you are running it remotely.
-
-The logic image name is tagged onto the end.
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-chosen-logic
-@defopt isabelle-chosen-logic 
-Choice of logic to use with Isabelle.@*
-If non-nil, added onto the Isabelle command line for invoking Isabelle.
-
-You can set this as a file local variable, using a special comment
-at the top of your theory file, like this:
-@lisp
-   (* -*- @code{isabelle-chosen-logic}: "ZF" -*- *)
-@end lisp
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-choose-logic
-@deffn Command isabelle-choose-logic logic
-Adjust isabelle-prog-name and @code{proof-prog-name} for running @var{logic}.
-@end deffn
-@node Isabelle commands
-@section Isabelle commands
-@cindex Isabelle commands
-
-
-@kindex C-c C-a r
-@kindex C-c C-a C-q
-@kindex C-c C-a C-d
-@kindex C-c C-a C-p
-@kindex C-c C-a h A
-@kindex C-c C-a h C
-@kindex C-c C-a h I
-@kindex C-c C-a h S
-@kindex C-c C-a h T
-@kindex C-c C-a h a
-@kindex C-c C-a h b
-@kindex C-c C-a h c
-@kindex C-c C-a h f
-@kindex C-c C-a h i
-@kindex C-c C-a h m
-@kindex C-c C-a h o
-@kindex C-c C-a h t
-@kindex C-c C-a C-s
-@kindex C-c C-a C-m
-@kindex C-c C-a C-f
-@kindex C-c C-f
-
-The Isabelle instance of Proof General supplies several specific
-help key bindings; these functions are offered within the prover help
-menu as well.
-
-@table @kbd
-@item C-c C-a r
-Invokes Isar command @code{refute} on the current subgoal.  Only available in HOL
-and derived logics.
-@item C-c C-a C-q
-Invokes Isar command @code{quickcheck} on the current subgoal.
-@item C-c C-a C-d
-Displays a draft document of the current theory.
-@item C-c C-a C-p
-Prints a draft document of the current theory.
-@item C-c C-a h A
-Shows available antiquotation commands and options.
-@item C-c C-a h C
-Shows the current Classical Reasoner context.
-@item C-c C-a h I
-Shows the current set of induct/cases rules.
-@item C-c C-a h S
-Shows the current Simplifier context.
-@item C-c C-a h T
-Shows the current set of transitivity rules (for calculational reasoning).
-@item C-c C-a h a
-Shows attributes available in current theory context.
-@item C-c C-a h b
-Shows all local term bindings.
-@item C-c C-a h c
-Shows all named local contexts (cases).
-@item C-c C-a h f
-Shows all local facts.
-@item C-c C-a h i
-Shows inner syntax of the current theory context (for types and terms).
-@item C-c C-a h m
-Shows proof methods available in current theory context.
-@item C-c C-a h o
-Shows all available commands of Isabelle's outer syntax.
-@item C-c C-a h t
-Shows theorems stored in the current theory node.
-@item C-c C-a C-s
-Invoke sledgehammer on first subgoal.
-@item C-c C-a C-m 
-Find theorems containing given arguments (prompt in minibuffer).
-Invokes the @code{thms_containing} command.  Arguments are
-separated by white space as usual in Isar.
-@item C-c C-a C-f 
-Find theorems containing (argument in form)
-@item C-c C-f
-Find theorems: either of the above.  
-@end table
-
-@comment da: this isn't a very good way!!
-@comment it may override settings for other provers, or have no effect, I think!
-@comment we should introduce specific Isar setting.
-@c You can customize the default behaviour of the toolbar or
-@c menu item for find theorems by
-@c setting @code{proof-find-theorems-command} 
-@c to 
-@c @code{isar-find-theorems-minibuffer} or
-@c @code{isar-find-theorems-form}.  The setting
-@c can be customized on the menu:
-@c @example
-@c  Proof-General -> Advanced -> Internals -> Prover Config
-@c @end example
-
-
-@kindex C-c C-a b
-@kindex C-c C-a C-b
-@kindex C-c C-a C-u
-@kindex C-c C-a C-l
-@kindex C-c C-a u
-@kindex C-c C-a l
-@kindex C-c C-a C-i
-@kindex C-c C-a C-r
-@kindex C-c C-a C-a
-
-The following shortcuts insert control sequences into the text,
-modifying the appearance of individual symbols (single letters,
-mathematical entities etc.); the Tokens package will provide immediate
-visual feedback.
-
-@table @kbd
-@item C-c C-a C-b
-Inserts "\<^bold>" (bold character)
-@item C-c C-a C-c
-Inserts "\<^loc>" (``local'' control)
-@item C-c C-a C-u
-Inserts "\<^sup>"  (superscript character)
-@item C-c C-a C-l
-Inserts "\<^sub>" (subscript character)
-@item C-c C-a u
-Inserts "\<^bsup> \<^esup>"  (superscript string)
-@item C-c C-a l
-Inserts "\<^bsub> \<^esub>"  (subscript string)
-@item C-c C-a C-i
-Inserts "\<^isub>"  (identifier subscript letter)
-@item C-c C-a C-r
-Inserts "\<^raw:>"  (raw LaTeX text)
-@item C-c C-a C-a
-Inserts "@@@{text ""@}"  (anti-quotation).
-@item C-c C-a C-x
-Inserts "ML @{* *@}"  (inline ML code).
-@end table
-
-Command termination via `@code{;}' is an optional feature of Isar
-syntax.  Neither Isabelle nor Proof General require semicolons to
-do their job.  The following command allows to get rid of command
-terminators in existing texts.
-
-@c TEXI DOCSTRING MAGIC: isar-strip-terminators
-@deffn Command isar-strip-terminators 
-Remove explicit Isabelle/Isar command terminators @samp{;} from the buffer.
-@end deffn
-
-
-@node Isabelle settings
-@section Isabelle settings
-
-The Isabelle menu also contains a @code{Settings} submenu, which
-allows you to configure things such as the behaviour of Isabelle's term
-pretty printer (display of types, sorts, etc).  Note that you won't
-see this sub-menu until Isabelle has been started, because it is
-generated by Isabelle itself.  Proof General, on the other hand, is
-responsible for recording any settings that are configured when you
-select @code{Isabelle -> Settings -> Save Settings}.  They are stored
-along with the other Emacs customization settings.
-
-
-
-@node Isabelle customizations
-@section Isabelle customizations
-@cindex Isabelle customizations
-
-Here are some of the other user options specific to Isabelle.  You can
-set these as usual with the customization mechanism.
-
-@c TEXI DOCSTRING MAGIC: isabelle-web-page
-@defvar isabelle-web-page 
-URL of web page for Isabelle.
-@end defvar
-
-
-
-
-
-@c FIXME todo: theorem dependencies
-
-
-@c =================================================================
-@c
-@c  CHAPTER: HOL Light Proof General
-@c
-@node HOL Light Proof General
-@chapter HOL Light Proof General
-@cindex HOL Light Proof General
-
-HOL Light Proof General is a "technology demonstration" of Proof General
-for HOL Light.  This means that only a basic instantiation has been
-provided, and that it is not yet supported as a maintained instantiation
-of Proof General.
-
-HOL Light Proof General has basic script management support, with a
-little bit of decoration of scripts and output.  It does not rely on a
-modified version of HOL Light, so the pattern matching may be fragile in
-certain cases.  
-
-@c Support for multiple files deduces dependencies
-@c automatically, so there is no interaction with the HOL make system yet.
-
-See the @file{example.ml} file for a demonstration proof script
-which works with Proof General.
-
-Note that HOL Light Proof Script proof scripts often use batch-oriented
-single step tactic proofs, but Proof General does not (yet) offer an
-easy way to edit these kind of proofs.  They will replay simply as a
-single step proof and you will need to convert from the interactive to
-batch form as usual if you wish to obtain batch proofs.  Also note that
-Proof General does not contain an SML parser, so there can be problems
-if you write complex ML in proof scripts.
-@c Old section was helpful on this: @xref{ML files}, for the same issue with Isabelle.
-
-HOL Light is the most recently tested version of HOL with Proof General,
-but the Proof General distribution also contains experimental support
-for HOL 4 (aka HOL 98).  To improve this older version, or to support a
-new HOL variant, a few of the settings probably need to be tweaked to
-cope with small differences in output between the systems.  Please let
-us know if you try this out and want help.  We welcome any interested
-collaborators from the HOL communities to help improve Proof General as
-an interface for HOL provers.
-
-@c =================================================================
-@c
 @c  CHAPTER: EasyCrypt Proof General
 @c
 @node EasyCrypt Proof General
@@ -5896,8 +5454,8 @@ The distribution is available in the master branch of the repository.
 Tagged versions of the sources may be redistributed by third party
 packagers in other forms.
 
-The sources includes the generic elisp code, and code for Coq, LEGO,
-Isabelle, and other provers.  Also included are installation
+The sources includes the generic elisp code, and code for Coq, EasyCrypt,
+and other provers.  Also included are installation
 instructions (reproduced in brief below) and this documentation.
 
 @node Installing Proof General from sources
@@ -5984,7 +5542,7 @@ providing the variables in @file{proof-site.el} are adjusted
 accordingly (see @i{Proof General site configuration} in
 @i{Adapting Proof General} for more details).  Make sure that
 the @file{generic/} and assistant-specific elisp files are kept in
-subdirectories (@file{coq/}, @file{isa/}, @file{lego/}) of
+subdirectories (@file{coq/}, @file{phox/}, @file{easycrypt/}, ...) of
 @code{proof-home-directory} so that the autoload directory calculations
 are correct.
 
@@ -5996,7 +5554,7 @@ details if you don't know where to find this file.
 @unnumberedsubsec Removing support for unwanted provers
 
 You cannot run more than one instance of Proof General at a time: so if
-you're using Coq, visiting an @file{.ML} file will not load Isabelle
+you're using Coq, visiting an @file{.ec} file will not load EasyCrypt
 Proof General, and the buffer remains in fundamental mode.  If there are
 some assistants supported that you never want to use, you can adjust the
 variable @code{proof-assistants} in @file{proof-site.el} to remove the
@@ -6093,7 +5651,6 @@ l'INRIA Sophia Antipolis RR-3286
 @c
 @node History of Proof General
 @unnumbered History of Proof General
-@cindex @code{lego-mode}
 @cindex history
 
 It all started some time in 1994. There was no Emacs interface for LEGO.

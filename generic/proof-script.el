@@ -12,7 +12,7 @@
 ;; Authors:   David Aspinall, Yves Bertot, Healfdene Goguen,
 ;;            Thomas Kleymann and Dilip Sequeira
 
-;; License:   GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -749,7 +749,7 @@ Each span has a 'type property, one of:
 (defun pg-last-output-displayform ()
   "Return displayable form of `proof-shell-last-output'.
 This is used to annotate the buffer with the result of proof steps."
-  ;; NOTE: Isabelle/Isar uses urgent messages (sigh) in its ordinary output.
+  ;; NOTE: Isabelle/Isar used urgent messages (sigh) in its ordinary output.
   ;; ("Successful attempt...").  This loses here.
   (if (string= proof-shell-last-output "") ""
     (let* ((text (proof-shell-strip-output-markup
@@ -1409,7 +1409,7 @@ that is not yet documented here, this function
 	       ;; don't amalgamate unless the nesting depth is 0,
 	       ;; i.e. we're in a top-level proof.
 	       ;; This assumes prover keeps history for nested proofs.
-	       ;; (True for Isabelle/Isar).
+	       ;; (was true for Isabelle/Isar).
 	       (eq proof-nesting-depth 0)
 	     t))
       (proof-done-advancing-save span))
@@ -1487,9 +1487,10 @@ Besides stuff that is not yet documented here, this function
 - enters some commands and their spans in some database (with for
   me unknown purpose)"
   (unless (or (eq proof-shell-proof-completed 1)
-	      (eq proof-assistant-symbol 'isar))
+	      ;; (eq proof-assistant-symbol 'isar)
+	      )
     ;; We expect saves to succeed only for recently completed top-level proofs.
-    ;; NB: not true in Isar, because save commands can perform proof.
+    ;; NB: Wasn't true in Isar, because save commands could perform proof.
     ;; Note: not true in Coq either, if there is a command (eg. a Check)
     ;; between the tactic that finished the proof and the Qed.
     (proof-debug
@@ -2258,7 +2259,7 @@ No effect if prover is busy."
 ;;
 
 ;; Most of the hard work (computing the commands to do the retraction)
-;; is implemented in the customisation module (lego.el or coq.el), so
+;; is implemented in the customisation module (e.g. coq.el), so
 ;; code here is fairly straightforward.
 
 

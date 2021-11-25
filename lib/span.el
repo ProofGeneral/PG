@@ -12,7 +12,7 @@
 ;; Author:      Healfdene Goguen
 ;; Maintainer:  David Aspinall <David.Aspinall@ed.ac.uk>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
