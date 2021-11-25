@@ -78,7 +78,7 @@ No context checking.")
 (defconst coq-bullet-prefix-regexp-backward
   (concat "\\(?:\\(?:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\(?:\\.\\s-+\\)"
           "\\(?:\\(?:" coq-goal-selector-regexp "\\)?"
-          "{\\|}\\|-\\|+\\|\\*\\s-\\)*\\)"))
+          "{\\|}\\|-\\|+\\|\\*\\)+\\s-*\\)"))
 
 ;; matches regular command end (. and ... followed by a space or "}" or buffer end)
 ;; ". " and "... " are command endings, ".. " is not, same as in
@@ -124,7 +124,7 @@ There are 2 substrings:
      "\\(?2:"
        "\\(?:" coq-bullet-prefix-regexp-forward"\\)\\)"
       "\\(?1:\\(?:" coq-goal-selector-regexp "\\)?{\\)"
-      "\\(?3:[^|]\\)"
+      "\\(?3:\\s-*[^|{]\\)"
      "\\|"
      ;; [^|]}
      "\\(?2:[^|.]\\|\\=\\)\\(?1:}\\)\\)")
@@ -175,7 +175,7 @@ precise regexp (but only when searching backward).")
 
 ; Order here is significant, when two pattern match with the same
 ; starting position, the first regexp is preferred. period-command is
-; the shorter one so let us have it at the end, but what about cury vs
+; the shorter one so let us have it at the end, but what about curly vs
 ; bullets?
 (defconst coq-end-command-regexp-backward
   (concat coq-bullet-end-command-backward "\\|"
@@ -190,6 +190,38 @@ There are 3 substrings (2 and 3 may be nil):
 
 Remark: This regexp is much more precise than `coq-end-command-regexp-forward'
 but only works when searching backward.")
+
+(defconst coq-cmd-end-backward-matcher (concat "\\(?2:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\.\\s-"))
+
+(defun coq-looking-at-comment ()
+  "Return non-nil if point is inside a comment."
+  (or (proof-inside-comment (point))
+      (proof-inside-comment (+ 1 (point)))))
+
+(defun coq-find-previous-endcmd ()
+  "Internal use, look backward for a \".\" that is an end of command.
+
+Go backward and put point exactly after the first \".\" that is
+an end of command, or at point-min if none found. Return the new
+position."
+  (re-search-backward (concat "\\(?2:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\.\\s-") (point-min) 'dummy)
+  (while (coq-looking-at-comment) ;; we are looking for ". " so this is enough
+    (re-search-backward (concat "\\(?2:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\.\\s-") (point-min) 'dummy))
+  ;; unless we reached point-min, jump over the "."
+  (when (match-end 2) (goto-char (match-end 2)) (forward-char 1))
+  (point))
+
+(defun coq-find-start-of-cmd ()
+  (let ((p (point)) (something-found))
+    (coq-find-previous-endcmd)
+    (while (not something-found)
+      (forward-comment (point-max))
+      (if (and (looking-at "\\({\\|}\\|\\++\\|\\*+\\|-+\\)")
+               (< (point) p) ;; if we are after the starting point then anything is the start of the current command, even "#" or ".".
+               )
+          (forward-char 1)
+        (setq something-found t))))
+  (point))
 
 
 (defun coq-search-comment-delimiter-forward ()
@@ -417,6 +449,7 @@ regexp."
 
 ;; This is not used by generic pg, just by a few functions in here.
 ;; It is less trustable that itsforward version above.
+;; FIXME: rely on coq-find-previous-endcmd
 (defun coq-script-parse-cmdend-backward (&optional limit)
   "Move to the first end of command (not commented) found looking up.
 Point is put exactly before the last ending token (before the last
@@ -430,7 +463,7 @@ and return nil."
     (if (> (coq-is-on-ending-context) 0)
         (ignore-errors(forward-char (coq-is-on-ending-context))))
     (let (foundbeg)
-      ;; Find end of command
+      ;; Find end of previous command
       (while (and (setq foundbeg
                         (and
                          (re-search-backward coq-end-command-regexp-backward limit 'dummy)
@@ -477,9 +510,7 @@ the (point-min) if there is no previous command."
 (defun coq-find-real-start ()
   "Move to the start of command at point.
 The point is put exactly before first non comment letter of the command."
-  (coq-find-current-start)
-  (forward-comment (point-max))
-  (point))
+  (coq-find-start-of-cmd))
 
 ;; (defun same-line (pt pt2)
 ;;  (or (= (line-number-at-pos pt) (line-number-at-pos pt2))))

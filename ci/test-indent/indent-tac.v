@@ -184,7 +184,7 @@ Module foo.
           simpl;
           intros...
         ]
-      ]
+      ].
   Qed.
 
 

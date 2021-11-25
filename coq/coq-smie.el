@@ -1142,6 +1142,7 @@ Typical values are 2 or 4."
 	    (exp))
 
       (commands (commands "." commands)
+                ;(commands ". sameline" commands)
 		(commands "- bullet" commands)
 		(commands "+ bullet" commands)
 		(commands "* bullet" commands)
@@ -1171,7 +1172,7 @@ Typical values are 2 or 4."
       (assoc "-- bullet") (assoc "++ bullet") (assoc "** bullet")
       (assoc "--- bullet") (assoc "+++ bullet") (assoc "*** bullet")
       (assoc "---- bullet") (assoc "++++ bullet") (assoc "**** bullet")
-      (left ".")
+      (assoc ".")
       (assoc "with inductive" "with fixpoint" "where"))
     '((nonassoc "Com start") (assoc ":= equations")
       (assoc ":= def" ":= inductive")
@@ -1368,7 +1369,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
       (pcase (cons kind token)
         (`(,_ . (or "; record")) (smie-rule-separator kind)) ;; see also the "before" rule
         (`(:elem . basic) (or coq-indent-basic (bound-and-true-p proof-indent) 2))
-        (`(:elem . arg) nil)
+        (`(:elem . arg)  (if (smie-rule-prev-p "} subproof") 0 nil)) ;; hack: "{} {}"" not an application
         (`(:close-all . ,_) t)
         (`(:list-intro . ,_) (member token '("fun" "forall" "quantif exists"
                                              "with" "Com start")))
@@ -1409,34 +1410,14 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
              ;; rather querying its virtual indentation to compute indentation of another
              ;; (child) token. unbox ==> indent relative to parent.
              ;; unboxed indent for "{" not at bol:
-             ((and (or "{ subproof" "[" "{") (guard (not (smie-rule-bolp))))
-              (cond 
-               ((smie-rule-prev-p "} subproof" "]" "}") (parent 0))
-               (t (parent 2))))
-             ;; unboxed indent for quantifiers (if coq-indent-box-style non nil)
-             ((and (or "forall" "quantif exists") (guard (not boxed))
-                   (guard (not (smie-rule-bolp))) )
+             ((and (or "forall" "quantif exists") (guard (and (not (smie-rule-bolp)) (not boxed))))
               (parent coq-smie-after-bolp-indentation))
-             ;;((guard (and (message "DEFAULTING") nil)) nil)
-             )))))))
-
-
-
-;; No need of this hack anymore?
-;;       ((and (equal token "Proof End")
-;;             (parent-p "Module" "Section" "goalcmd"))
-;;        ;; ¡¡Major gross hack!!
-;;        ;; This typically happens when a Lemma had no "Proof" keyword.
-;;        ;; We should ideally find some other way to handle it (e.g. matching Qed
-;;        ;; not with Proof but with any of the keywords like Lemma that can
-;;        ;; start a new proof), but we can workaround the problem here, because
-;;        ;; SMIE happened to decide arbitrarily that Qed will stop before Module
-;;        ;; when parsing backward.
-;;        ;; FIXME: This is fundamentally very wrong, but it seems to work
-;;        ;; OK in practice.
-;;        (parent 2))
-
-
+             ((and (or "[" "{") (guard (not (smie-rule-bolp)))) (parent 2))
+             ((guard (and (smie-rule-prev-p "} subproof" "{ subproof" ".") (not (smie-rule-bolp))))
+              (cond
+               ((smie-rule-prev-p "} subproof") (parent))
+               ((smie-rule-prev-p "{ subproof") (coq-smie-backward-token) (+ 2 (smie-indent-virtual)))
+               ((smie-rule-prev-p ".") (smie-backward-sexp 'half) (smie-indent-virtual)))))))))))
 
 
 (provide 'coq-smie)
