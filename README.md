@@ -124,6 +124,8 @@ See:
 Links:
 
 * [https://proofgeneral.github.io/doc](https://proofgeneral.github.io/doc) for online documentation of Proof General
+* [https://coq.zulipchat.com](https://coq.zulipchat.com/) for chatting with PG maintainers and developers on the Zulip chat of Coq (in streams [Proof General devs](https://coq.zulipchat.com/#narrow/stream/304020-Proof-General.20devs) and [Proof General users](https://coq.zulipchat.com/#narrow/stream/304019-Proof-General.20users))
+* [https://coq.gitlab.io/zulip-archive](https://coq.gitlab.io/zulip-archive) for the corresponding public Zulip archive (read-only, no authentication required)
 
 Supported proof assistants:
 
