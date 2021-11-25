@@ -15,15 +15,13 @@ This is version 4.5-git of Proof General.
 
 Two editions of Proof General are currently available:
 
-* the (legacy) REPL-based, stable version of Proof General,
+* the (standard) REPL-based, stable version of Proof General,
   gathered in the
-  [master](https://github.com/ProofGeneral/PG/tree/master) branch, and
-  licensed under GPLv2;
-* the (newest) Coq-specific, experimental version of Proof General,
+  [master](https://github.com/ProofGeneral/PG/tree/master) branch;
+* the (unmaintained) Coq-specific, experimental version of Proof General,
   supporting asynchronous proof processing,
   gathered in the
-  [async](https://github.com/ProofGeneral/PG/tree/async) branch, and
-  licensed under GPLv3+.
+  [async](https://github.com/ProofGeneral/PG/tree/async) branch.
 
 ## Installing Proof General
 
