@@ -5937,8 +5937,7 @@ Public License (GPL).  Compared with the previous more restrictive
 license, this means the program can now be redistributed by third
 parties, and used in any context without applying for a special
 license.  Despite these legal changes, we would still appreciate if
-you send us back any useful improvements you make to Proof General,
-and register your use of Proof General on the web site.
+you send us back any useful improvements you make to Proof General.
 
 @node Old News for 3.5
 @unnumberedsec Old News for 3.5
