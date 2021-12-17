@@ -2,7 +2,6 @@
 
 This is a summary of main changes.  For details, please see
 the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
-and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 * Changes of Proof General 4.5 from Proof General 4.4
 
@@ -212,8 +211,7 @@ also https://wiki.ubuntu.com/Releases).
 
    https://github.com/ProofGeneral/PG
 
-   Please submit new bugs there, old bugs may stay in good old PG trac
-   for a while though: http://proofgeneral.inf.ed.ac.uk/trac
+   Please submit new bugs there.
 
 ** Coq changes
 

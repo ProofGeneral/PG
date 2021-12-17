@@ -95,7 +95,6 @@ A. Unfortunately this is a bug in the display engine inside
    of emacs, Emacs 23.3.1 on Ubuntu 11.10, suffers.
 
    The solution is to switch to another version (e.g. Emacs 23.2).
-   (See Trac#409: <http://proofgeneral.inf.ed.ac.uk/trac/ticket/409>)
 
    You may be able to get better results with different fonts, even
    without upgrading Emacs.
@@ -141,8 +140,7 @@ A. Please check the documentation carefully, particularly the
    If you still cannot solve your problem, try to contact someone
    else who is using Proof General with a similar setup.  The
    best way to do this may be through the user mailing list for your
-   proof assistant.  If you think the problem is Proof General related,
-   consult the PG Wiki and Trac pages.
+   proof assistant.
 
 -----------------------------------------------------------------
 
@@ -219,18 +217,6 @@ A. Coq has a limited history for Undo.  Change
     Coq -> Settings -> Undo Depth
 
    to something higher.  Default is 200 (100 outside PG).
-
------------------------------------------------------------------
-
-Q. Can I join any mailing lists for Proof General?
-
-A. Of course, email <proofgeneral-request@informatics.ed.ac.uk>
-   with the line "subscribe" in the message body, to join the
-   users' and announcements list.
-
-   There is also a list for developers, proofgeneral-devel:
-   <http://proofgeneral.inf.ed.ac.uk/mailinglist>
-   for more details.
 
 -----------------------------------------------------------------
 

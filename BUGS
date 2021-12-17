@@ -2,9 +2,6 @@
 
 * Known Bugs and Workarounds for Proof General.
 
-For latest, see: http://proofgeneral.inf.ed.ac.uk/trac
-See also FAQ:    http://proofgeneral.inf.ed.ac.uk/FAQ
-
 The bugs here are split into problems which are generic,
 and those which only apply to particular provers.  
 

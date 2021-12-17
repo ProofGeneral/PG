@@ -126,7 +126,6 @@ See:
 Links:
 
 * [https://proofgeneral.github.io/doc](https://proofgeneral.github.io/doc) for online documentation of Proof General
-* [http://proofgeneral.inf.ed.ac.uk/mailinglist](http://proofgeneral.inf.ed.ac.uk/mailinglist) for mailing list information
 
 Supported proof assistants:
 
