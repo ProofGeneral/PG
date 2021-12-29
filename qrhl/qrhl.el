@@ -1,3 +1,4 @@
+;; Author: Dominique Unruh
 
 (load-library "qrhl-input")
 
