@@ -2,9 +2,6 @@
 
 * Known Bugs and Workarounds for Proof General.
 
-For latest, see: http://proofgeneral.inf.ed.ac.uk/trac
-See also FAQ:    http://proofgeneral.inf.ed.ac.uk/FAQ
-
 The bugs here are split into problems which are generic,
 and those which only apply to particular provers.  
 
@@ -79,18 +76,6 @@ assistant.  Files ought to be coloured red while they are being
 processed, just as single lines are.  Workaround: be careful not to
 edit a file as it is being read by the proof assistant.
 
-* Problems with Isabelle
-
-** Issues with tracing mode 
-
-Large volumes of output can cause Emacs to hog CPU spending
-all its time processing the output (esp with fontifying and X-symbol
-decoding).   It becomes difficult to use normal editing commands,
-even C-c C-c to interrupt the prover.  Workaround: hitting C-g,
-the Emacs quit key, will interrupt the prover in this state.
-See manual for further description of this.
-
-
 * Problems with Coq
 
 ** Multiple file handling and auto-compilation is incomplete
@@ -100,12 +85,4 @@ See manual for further description of this.
 ** coqtags doesn't find all declarations. 
 
 It cannot handle lists e.g., with "Parameter x,y:nat" it only tags x
-but not y. [The same problem exists for legotags] Workaround: don't
-rely too much on the etags mechanism.
-
-
-* LEGO Proof General Bugs
-
-See lego/BUGS
-
-
+but not y. Workaround: don't rely too much on the etags mechanism.

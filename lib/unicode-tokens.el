@@ -1,9 +1,9 @@
-;;; unicode-tokens.el --- Support for control and symbol tokens
+;;; unicode-tokens.el --- Support for control and symbol tokens  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -11,11 +11,11 @@
 
 ;; Author:    David Aspinall <David.Aspinall@ed.ac.uk>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 
 ;; This software is distributed in the hope that it will be useful,
@@ -71,8 +71,10 @@
   (interactive)
   (customize-set-variable 'unicode-tokens-add-help-echo
 			  (not unicode-tokens-add-help-echo))
-  ;; NB: approximate, should refontify all...
-  (font-lock-fontify-buffer))
+  (if (fboundp 'font-lock-flush)        ;Emacs-25
+      (font-lock-flush)
+    ;; NB: approximate, should refontify all...
+    (with-no-warnings (font-lock-fontify-buffer))))
 
 ;;
 ;; Variables that should be set by client modes
@@ -127,7 +129,8 @@ The shortcuts are only used for input convenience; no reverse
 mapping back to shortucts is performed.  Behaviour is like abbrev.")
 
 (defvar unicode-tokens-shortcut-replacement-alist nil
-  "Overrides `unicode-tokens-shortcut-alist' for `unicode-tokens-replace-shortcuts'.")
+  "Overrides `unicode-tokens-shortcut-alist'.
+Used for `unicode-tokens-replace-shortcuts'.")
 
 
 ;;
@@ -194,12 +197,14 @@ and (match-string 2) has the display control applied.")
   (intern (concat "unicode-tokens-" (symbol-name sym) "-variable")))
 
 (dolist (sym unicode-tokens-configuration-variables)
+  ;; FIXME: This dolist loop does nothing!
  (lambda (sym)
    (eval `(defvar ,(unicode-tokens-config-var sym)
 	   nil
 	   ,(format
 	     "Name of a variable used to configure %s.\nValue should be a symbol."
-	     (symbol-name (unicode-tokens-config sym)))))))
+	     (symbol-name (unicode-tokens-config sym))))
+	 t)))
 
 (defun unicode-tokens-copy-configuration-variables ()
   "Initialise the configuration variables by copying from variable names.
@@ -578,7 +583,9 @@ Optional argument OBJECT is the string or buffer containing the text."
   (setq unicode-tokens-show-symbols
 	(if (null arg) (not unicode-tokens-show-symbols)
 	  (> (prefix-numeric-value arg) 0)))
-  (font-lock-fontify-buffer))
+  (if (fboundp 'font-lock-flush)        ;Emacs-25
+      (font-lock-flush)
+    (with-no-warnings (font-lock-fontify-buffer))))
 
 (defun unicode-tokens-symbs-to-props (symbs &optional facenil)
   "Turn the property name list SYMBS into a list of text properties.
@@ -615,31 +622,33 @@ Optional argument FACENIL means set the face property to nil, unless 'face is in
     (add-to-invisibility-spec 'unicode-tokens-show-controls))
   (redraw-display))
 
-(defun unicode-tokens-control-char (name s &rest props)
+(defun unicode-tokens-control-char (_name s &rest props)
   `(,(format unicode-tokens-control-char-format-regexp (regexp-quote s))
     (1 '(face nil invisible unicode-tokens-show-controls) prepend)
     ;; simpler but buggy with font-lock-prepend-text-property:
     ;; (2 ',(unicode-tokens-symbs-to-props props t) prepend)
     (2 (unicode-tokens-prepend-text-properties-in-match
-	',(unicode-tokens-symbs-to-props props t) 2) prepend)
+	',(unicode-tokens-symbs-to-props props t) 2)
+       prepend)
     ))
 
-(defun unicode-tokens-control-region (name start end &rest props)
+(defun unicode-tokens-control-region (_name start end &rest props)
   `(,(format unicode-tokens-control-region-format-regexp
 	     (regexp-quote start) (regexp-quote end))
     (1 '(face nil invisible unicode-tokens-show-controls) prepend)
     ;; simpler but buggy with font-lock-prepend-text-property:
     ;; (2 ',(unicode-tokens-symbs-to-props props t) prepend)
     (2 (unicode-tokens-prepend-text-properties-in-match
-	',(unicode-tokens-symbs-to-props props t) 2) prepend)
+	',(unicode-tokens-symbs-to-props props t) 2)
+       prepend)
     (3 '(face nil invisible unicode-tokens-show-controls) prepend)
     ))
 
 (defun unicode-tokens-control-font-lock-keywords ()
   (append
-   (mapcar (lambda (args) (apply 'unicode-tokens-control-char args))
+   (mapcar (lambda (args) (apply #'unicode-tokens-control-char args))
 	   unicode-tokens-control-characters)
-   (mapcar (lambda (args) (apply 'unicode-tokens-control-region args))
+   (mapcar (lambda (args) (apply #'unicode-tokens-control-region args))
 	   unicode-tokens-control-regions)))
 
 ;;
@@ -678,20 +687,14 @@ Optional argument FACENIL means set the face property to nil, unless 'face is in
   "Define the token and shortcut input rules.
 Calculated from `unicode-tokens-token-name-alist' and
 `unicode-tokens-shortcut-alist'."
-  (let ((unicode-tokens-quail-define-rules
-	 (list 'quail-define-rules)))
-    (let ((ulist (copy-sequence unicode-tokens-shortcut-alist))
-	  ustring shortcut)
-      (setq ulist (sort ulist 'unicode-tokens-map-ordering))
-      (while ulist
-	(setq shortcut (caar ulist))
-	(setq ustring (cdar ulist))
-	(nconc unicode-tokens-quail-define-rules
-	       (list (list shortcut
-			   (vector ustring))))
-	(setq ulist (cdr ulist))))
-    (eval unicode-tokens-quail-define-rules)))
-
+  (eval `(quail-define-rules
+          ,@(mapcar (lambda (x)
+                      (let ((shortcut (car x))
+			    (ustring (cdr x)))
+			(list shortcut (vector ustring))))
+                    (sort (copy-sequence unicode-tokens-shortcut-alist)
+	                  #'unicode-tokens-map-ordering)))
+        t))
 
 ;;
 ;; User-level functions
@@ -826,7 +829,7 @@ but multiple characters in the underlying buffer."
   (interactive "p")
   (if (> (point) (point-min))
       (save-match-data
-	(let ((pos    (point))
+	(let (;; (pos    (point))
 	      (token  (unicode-tokens-prev-token)))
 	  (when (not token)
 	    (goto-char (point))
@@ -854,7 +857,7 @@ but multiple characters in the underlying buffer."
   (interactive "p")
   (unicode-tokens-rotate-token-forward (if n (- n) -1)))
 
-(defun unicode-tokens-replace-shortcut-match (&rest ignore)
+(defun unicode-tokens-replace-shortcut-match (&rest _ignore)
   "Subroutine for `unicode-tokens-replace-shortcuts'."
   (let* ((match (match-string-no-properties 0))
 	 (repl  (if match
@@ -868,7 +871,7 @@ but multiple characters in the underlying buffer."
 Starts from point."
   (interactive)
   (let ((shortcut-regexp
-	 (regexp-opt (mapcar 'car unicode-tokens-shortcut-replacement-alist))))
+	 (regexp-opt (mapcar #'car unicode-tokens-shortcut-replacement-alist))))
     ;; override the display of the regexp because it's huge!
     ;; (doesn't help with C-h: need way to programmatically show string)
     (cl-flet ((query-replace-descr (str)
@@ -877,7 +880,7 @@ Starts from point."
 		       (cons 'unicode-tokens-replace-shortcut-match nil)
 		       t t nil))))
 
-(defun unicode-tokens-replace-unicode-match (&rest ignore)
+(defun unicode-tokens-replace-unicode-match (&rest _ignore)
   "Subroutine for `unicode-tokens-replace-unicode'."
   (let* ((useq	(match-string-no-properties 0))
 	 (token (gethash useq unicode-tokens-uchar-hash-table)))
@@ -971,7 +974,7 @@ Starts from point."
 			   'face
 			   'header-line)))))))
 
-(defalias 'unicode-tokens-list-unicode-chars 'unicode-chars-list-chars)
+(defalias 'unicode-tokens-list-unicode-chars #'unicode-chars-list-chars)
 
 (defun unicode-tokens-encode-in-temp-buffer (str fn)
   "Compute an encoded version of STR and call FN onto."
@@ -1046,7 +1049,9 @@ tokenised symbols."
   (setq unicode-tokens-highlight-unicode
 	(not unicode-tokens-highlight-unicode))
   (unicode-tokens-highlight-unicode-setkeywords)
-  (font-lock-fontify-buffer))
+  (if (fboundp 'font-lock-flush)        ;Emacs-25
+      (font-lock-flush)
+    (with-no-warnings (font-lock-fontify-buffer))))
 
 (defun unicode-tokens-highlight-unicode-setkeywords ()
   "Adjust font lock keywords according to variable `unicode-tokens-highlight-unicode'."
@@ -1144,7 +1149,9 @@ Commands available are:
 
       (unicode-tokens-highlight-unicode-setkeywords)
 
-      (font-lock-fontify-buffer)
+      (if (fboundp 'font-lock-flush)        ;Emacs-25
+          (font-lock-flush)
+        (with-no-warnings (font-lock-fontify-buffer)))
 
       ;; experimental: this may be rude for non-nil standard tables
       (setq buffer-display-table unicode-tokens-display-table)
@@ -1167,12 +1174,15 @@ Commands available are:
       (remove-from-invisibility-spec 'unicode-tokens-show-controls)
 
       (when flks
-	(font-lock-unfontify-buffer)
+	(unless (fboundp 'font-lock-flush)        ;Emacs-25
+	  (font-lock-unfontify-buffer))
 	(setq font-lock-extra-managed-props
 	      (get 'font-lock-extra-managed-props major-mode))
 	(setq font-lock-set-defaults nil) ; force font-lock-set-defaults to reinit
-	(font-lock-fontify-buffer)
-	(set-input-method nil))
+	(if (fboundp 'font-lock-flush)        ;Emacs-25
+            (font-lock-flush)
+          (with-no-warnings (font-lock-fontify-buffer)))
+        (set-input-method nil))
 
       ;; experimental: this may be rude for non-nil standard tables
       (setq buffer-display-table nil)
@@ -1211,12 +1221,12 @@ Commands available are:
 	 (with-no-warnings
 	   ns-input-font)))
      (t
-      (apply 'old-ns-respond-to-change-font args))))
+      (apply #'old-ns-respond-to-change-font args))))
 
   (defun ns-popup-font-panel (&rest args)
     (setq unicode-tokens-respond-to-change-font nil)
     (with-no-warnings
-      (apply 'old-ns-popup-font-panel args)))
+      (apply #'old-ns-popup-font-panel args)))
 
   (defun unicode-tokens-popup-font-panel (fontvar)
     (setq unicode-tokens-respond-to-change-font fontvar)
@@ -1229,17 +1239,17 @@ Commands available are:
 (defun unicode-tokens-set-font-var (fontvar)
   "Interactively select a font for FONTVAR."
   (interactive)
-  (let (font spec)
-    (if (fboundp 'ns-popup-font-panel)
-	(with-no-warnings
-	  (unicode-tokens-popup-font-panel fontvar))
-      (cond
-       ((fboundp 'x-select-font)
-	(setq font (x-select-font)))
-       ((fboundp 'mouse-select-font)
-	(setq font (mouse-select-font)))
-       (t
-	(setq font (unicode-tokens-mouse-set-font))))
+  (if (fboundp 'ns-popup-font-panel)
+      (with-no-warnings
+	(unicode-tokens-popup-font-panel fontvar))
+    (let (;; spec
+	  (font (cond
+	         ((fboundp 'x-select-font)
+	          (x-select-font))
+	         ((fboundp 'mouse-select-font)
+	          (mouse-select-font))
+	         (t
+	          (unicode-tokens-mouse-set-font)))))
       (unicode-tokens-set-font-var-aux fontvar font))))
 
 (defun unicode-tokens-set-font-var-aux (fontvar font)
@@ -1270,6 +1280,9 @@ Commands available are:
       (and (display-graphic-p f)
 	   (dolist (w (window-list f))
 	     (with-current-buffer (window-buffer w)
+	       ;; FIXME: Why should we need to re-fontify those buffers?  We've
+	       ;; only changed the definition of some faces, whereas font-lock
+	       ;; only choose which faces to use: the two are independent!
 	       (when font-lock-mode (font-lock-fontify-buffer))))))))
 
 ;; based on mouse-set-font from mouse.el in Emacs 22.2.1
@@ -1295,6 +1308,7 @@ Commands available are:
   (let ((facevar (unicode-tokens-face-font-sym fontsym)))
     (unicode-tokens-set-font-var facevar)
     (unicode-tokens-initialise)
+    ;; FIXME: Why do we need this here?
     (font-lock-fontify-buffer)))
 
 ;;
@@ -1305,9 +1319,9 @@ Commands available are:
   "Save the customized font variables."
   ;; save all customized faces (tricky to do less)
   (interactive)
-  (apply 'unicode-tokens-custom-save-faces
-   (mapcar 'unicode-tokens-face-font-sym
-	   unicode-tokens-fonts)))
+  (apply #'unicode-tokens-custom-save-faces
+	 (mapcar #'unicode-tokens-face-font-sym
+	         unicode-tokens-fonts)))
 
 (defun unicode-tokens-custom-save-faces (&rest faces)
   "Save custom faces FACES."
@@ -1328,10 +1342,10 @@ Commands available are:
 
 (define-key unicode-tokens-mode-map
   [remap delete-backward-char]
-  'unicode-tokens-delete-backward-char)
+  #'unicode-tokens-delete-backward-char)
 (define-key unicode-tokens-mode-map
   [remap delete-char]
-  'unicode-tokens-delete-char)
+  #'unicode-tokens-delete-char)
 
 ;; support delete selection mode
 (put 'unicode-tokens-delete-backward-char 'delete-selection 'supersede)
@@ -1346,7 +1360,7 @@ Commands available are:
 ;; FIXME: does this work?
 (define-key unicode-tokens-quail-translation-keymap
      [remap quail-delete-last-char]
-     'unicode-tokens-quail-delete-last-char)
+     #'unicode-tokens-quail-delete-last-char)
 
 (defun unicode-tokens-quail-delete-last-char ()
   (interactive)
@@ -1364,22 +1378,22 @@ Commands available are:
 
 
 (define-key unicode-tokens-mode-map [(control ?,)]
-  'unicode-tokens-rotate-token-backward)
+  #'unicode-tokens-rotate-token-backward)
 (define-key unicode-tokens-mode-map [(control ?.)]
-  'unicode-tokens-rotate-token-forward)
+  #'unicode-tokens-rotate-token-forward)
 (define-key unicode-tokens-mode-map
-  [(control c) (control t) (control t)] 'unicode-tokens-insert-token)
+  [(control c) (control t) (control t)] #'unicode-tokens-insert-token)
 (define-key unicode-tokens-mode-map
   [(control c) (control backspace)]
-  'unicode-tokens-delete-token-near-point)
+  #'unicode-tokens-delete-token-near-point)
 (define-key unicode-tokens-mode-map
-  [(control c) (control t) (control r)] 'unicode-tokens-annotate-region)
+  [(control c) (control t) (control r)] #'unicode-tokens-annotate-region)
 (define-key unicode-tokens-mode-map
-  [(control c) (control t) (control e)] 'unicode-tokens-insert-control)
+  [(control c) (control t) (control e)] #'unicode-tokens-insert-control)
 (define-key unicode-tokens-mode-map
-  [(control c) (control t) (control z)] 'unicode-tokens-show-symbols)
+  [(control c) (control t) (control z)] #'unicode-tokens-show-symbols)
 (define-key unicode-tokens-mode-map
-  [(control c) (control t) (control t)] 'unicode-tokens-show-controls)
+  [(control c) (control t) (control t)] #'unicode-tokens-show-controls)
 
 
 ;;
@@ -1388,9 +1402,10 @@ Commands available are:
 
 (defun unicode-tokens-customize-submenu ()
   (mapcar (lambda (cv)
-	    (vector (car cv)
-		    `(lambda () (interactive)
-		       (customize-variable (quote ,(cadr cv))))))
+	    (let ((v (cadr cv)))
+	      (vector (car cv)
+		      (lambda () (interactive)
+		        (customize-variable v)))))
 	  unicode-tokens-tokens-customizable-variables))
 
 (defun unicode-tokens-define-menu ()
@@ -1407,8 +1422,8 @@ Commands available are:
 	     (mapcar
 	     (lambda (fmt)
 	       (vector (car fmt)
-		       `(lambda () (interactive)
-			  (funcall 'unicode-tokens-insert-control ',(car fmt)))
+		       (lambda () (interactive)
+			 (unicode-tokens-insert-control (car fmt)))
 		       :help (concat "Format next item as "
 				     (downcase (car fmt)))))
 	     unicode-tokens-control-characters))
@@ -1416,8 +1431,8 @@ Commands available are:
 	    (mapcar
 	     (lambda (fmt)
 	       (vector (car fmt)
-		       `(lambda () (interactive)
-			 (funcall 'unicode-tokens-annotate-region ',(car fmt)))
+		       (lambda () (interactive)
+			 (unicode-tokens-annotate-region (car fmt)))
 		       :help (concat "Format region as "
 				     (downcase (car fmt)))
 		       :active 'mark-active))
@@ -1472,8 +1487,8 @@ Commands available are:
 	 (lambda (var)
 	   (vector
 	    (upcase-initials (symbol-name var))
-	    `(lambda () (interactive)
-		(funcall 'unicode-tokens-set-font-restart ',var))
+	    (lambda () (interactive)
+	      (unicode-tokens-set-font-restart var))
 	     :help (concat "Set the " (symbol-name var) " font")))
 	 unicode-tokens-fonts)
 	 (list "----"

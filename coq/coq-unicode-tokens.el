@@ -1,9 +1,9 @@
-;;; coq-unicode-tokens.el --- (No) Tokens for Unicode Tokens package -*- coding: utf-8; -*-
+;;; coq-unicode-tokens.el --- (No) Tokens for Unicode Tokens package -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -169,7 +169,7 @@ The string mapping can be anything, but should be such that
 tokens can be uniquely recovered from a decoded text; otherwise
 results will be undefined when files are saved."
   :type 'unicode-tokens-token-symbol-map
-  :set 'coq-unicode-tokens-set
+  :set #'coq-unicode-tokens-set
   :group 'coq
   :tag "Coq Unicode Token Mapping")
 
@@ -253,7 +253,7 @@ performed.  This means that the target strings need to have a defined
 meaning to be useful."
   :type '(repeat (cons (string :tag "Shortcut sequence")
 		       (string :tag "Unicode string")))
-  :set 'coq-unicode-tokens-set
+  :set #'coq-unicode-tokens-set
   :group 'coq
   :tag "Coq Unicode Input Shortcuts")
 
@@ -275,7 +275,7 @@ meaning to be useful."
     ("Superscript" "^^" sup)))
 
 ;(defconst coq-control-region-format-regexp "\\(\s*%s\{\\)\\([^}]*\\)\\(\}\s*\\)")
-(defconst coq-control-region-format-regexp "\\(%s\{\\)\\([^}]*\\)\\(\}\\)")
+(defconst coq-control-region-format-regexp "\\(%s{\\)\\([^}]*\\)\\(}\\)")
 
 (defconst coq-control-regions
   '(("Subscript" "," "" sub)

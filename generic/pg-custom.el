@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003, 2012, 2014, 2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -11,14 +11,14 @@
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
 ;; Prover specific settings and user options.
 ;;
 ;; The settings defined here automatically use the current proof
-;; assistant symbol as a prefix, i.e.  isar-favourites, coq-favourites,
+;; assistant symbol as a prefix, i.e.  coq-favourites,
 ;; or whatever will be defined on evaluation.
 ;;
 ;; This file is loaded only by mode stubs defined in `proof-site.el',
@@ -117,7 +117,7 @@ For example for coq on Windows you might need something like:
 
 (defpgcustom quit-timeout
   (cond
-   ((eq proof-assistant-symbol 'isar)    45)
+   ;; ((eq proof-assistant-symbol 'isar)    45)
    (t					 5))
   "The number of seconds to wait after sending `proof-shell-quit-cmd'.
 After this timeout, the proof shell will be killed off more rudely.
@@ -180,7 +180,7 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
 
 (defpgcustom one-command-per-line
   (cond
-   ((eq proof-assistant-symbol 'isar)  nil)
+   ;; ((eq proof-assistant-symbol 'isar)  nil)
    (t t))
   "*If non-nil, format for newlines after each command in a script."
   :type 'boolean
@@ -195,7 +195,7 @@ Currently this setting is UNIMPLEMENTED, changes have no effect."
   :set 'proof-set-value
   :group 'proof-user-options)
 
-(defpgcustom unicode-tokens-enable (eq proof-assistant-symbol 'isar)
+(defpgcustom unicode-tokens-enable nil ;; (eq proof-assistant-symbol 'isar)
   "*Non-nil for using Unicode token input mode in Proof General."
   :type 'boolean
   :set 'proof-set-value

@@ -17,15 +17,13 @@ jobs:
     strategy:
       matrix:
         emacs_version:
-          - 24.3
-          - 24.4
-          - 24.5
           - 25.1
           - 25.2
           - 25.3
           - 26.1
           - 26.2
           - 26.3
+          - 27.1
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 4
@@ -41,10 +39,42 @@ jobs:
 
     - run: emacs --version
     - run: make
+    # Erik: Extend this with linting?
     - name: Install makeinfo
       run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo
     - run: make doc.info
 
+  # Check that the texinfo sources of the manual can be updated
+  # with the documentation strings for variables and functions in
+  # the source code and that the manual is actually up-to-date.
+  # If the final git diff fails, then somebody forgot to update
+  # the manuals with ``make -C doc magic'' after changing a
+  # variable or function documentation that appears in one of the
+  # manuals.
+  check-doc-magic:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          # I don't think we need to check with all emacs
+          # versions. The latest two should be enough, maybe even
+          # only the latest one.
+          - 26.3
+          - 27.1
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - run: emacs --version
+    - run: make -C doc magic
+    - run: git diff --exit-code -- doc
+      
   test:
     runs-on: ubuntu-latest
 
@@ -61,6 +91,8 @@ jobs:
           - '8.9'
           - '8.10'
           - '8.11'
+          - '8.12'
+          - '8.13'
         ocaml_version:
           - minimal
       # at most 20 concurrent jobs per free account
@@ -91,7 +123,7 @@ jobs:
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
-            ./ci/test.sh
+            make tests
           endGroup
 
   # - run: echo "::remove-matcher owner=ert-problem-matcher::"
@@ -100,6 +132,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      # change to selected versions of coq-emacs docker containers
       matrix:
         coq_version:
           - '8.9'
@@ -143,3 +176,79 @@ jobs:
             sudo chown -R coq:coq ./ci
             make -C ci/compile-tests test
           endGroup
+
+  simple-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # change to selected versions of coq-emacs docker containers
+      matrix:
+        coq_version:
+          - '8.9'
+          - '8.10'
+          - '8.11'
+        ocaml_version:
+          - minimal
+      max-parallel: 6
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Add ert problem matcher
+      run: echo "::add-matcher::.github/ert.json"
+      
+    - uses: coq-community/docker-coq-action@v1
+      id: docker-coq-action
+      with:
+        opam_file: 'dummy.opam'
+        coq_version: ${{ matrix.coq_version }}
+        ocaml_version: ${{ matrix.ocaml_version }}
+        custom_script: |
+          startGroup Print opam config
+            opam config list; opam repo list; opam list
+          endGroup
+          startGroup Install emacs
+            sudo apt-get update -y -q
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends emacs
+          endGroup
+          startGroup other relevant configuration
+            getconf _NPROCESSORS_ONLN
+            emacs --version
+            coqc --version
+            ocaml --version
+          endGroup
+          startGroup Run tests
+            sudo chown -R coq:coq ./ci
+            make -C ci/simple-tests all
+          endGroup
+
+  # Run indentation tests in ci/test-indent on all supported emacs
+  # versions without coq installed.
+  test-indent:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          - 25.1
+          - 25.2
+          - 25.3
+          - 26.1
+          - 26.2
+          - 26.3
+          - 27.1
+      max-parallel: 4
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - run: emacs --version
+    - run: make -C ci/test-indent

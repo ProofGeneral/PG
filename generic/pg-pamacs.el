@@ -1,9 +1,9 @@
-;;; pg-pamacs.el --- Macros for per-proof assistant configuration
+;;; pg-pamacs.el --- Macros for per-proof assistant configuration  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -75,7 +75,7 @@ This macro should only be invoked once a specific prover is engaged."
 (defun proof-ass-differs-from-default (sym)
   "Return non-nil if SYM for current prover differs from its customize standard value."
   (let ((pasym (proof-ass-symv sym)))
-    (not (equal (eval (car (get pasym 'standard-value)))
+    (not (equal (eval (car (get pasym 'standard-value)) t)
 		(symbol-value pasym)))))
 
 (defun proof-defpgcustom-fn (sym args)
@@ -83,14 +83,16 @@ This macro should only be invoked once a specific prover is engaged."
 Helper for macro `defpgcustom'."
   (let ((specific-var (proof-ass-symv sym))
 	 (generic-var  (intern (concat "proof-assistant-" (symbol-name sym))))
-	 (newargs     (if (member :group args)
-			  args
-			(append (list :group
-				      proof-assistant-internals-cusgrp)
-				args))))
+	 ;; (newargs     (if (member :group args)
+	 ;;        	  args
+	 ;;        	(append (list :group
+	 ;;        		      proof-assistant-internals-cusgrp)
+	 ;;        		args)))
+	 )
     (eval
      `(defcustom ,specific-var
-	,@args))
+	,@args)
+     t)
     ;; For functions, we could simply use defalias.  Unfortunately there
     ;; is nothing similar for values, so we define a new set/get function.
     (eval
@@ -100,7 +102,8 @@ Helper for macro `defpgcustom'."
 If NEWVAL is present, set the variable, otherwise return its current value.")
 	(if newval
 	    (setq ,specific-var newval)
-	  ,specific-var)))))
+	  ,specific-var))
+     t)))
 
 (defun undefpgcustom (sym)
   (let ((specific-var (proof-ass-symv sym))
@@ -188,7 +191,7 @@ Usage: (defpgdefault SYM VALUE)"
 	(setq args (cdr args)))
        ((eq (car args) :type)
 	(setq type (cadr args))
-	(if (eq (eval type) 'float)
+	(if (eq (eval type t) 'float)
 	    (setq type (quote 'number))) ; widget type for defcustom
 	(setq args (cdr args))
 	(setq newargs (cons type (cons :type newargs))))
@@ -198,10 +201,7 @@ Usage: (defpgdefault SYM VALUE)"
     (setq newargs (reverse newargs))
     (setq descr (car-safe newargs))
     (unless (and type
-		  (or (eq (eval type) 'boolean)
-		      (eq (eval type) 'integer)
-		      (eq (eval type) 'number)
-		      (eq (eval type) 'string)))
+		  (memq (eval type t) '(boolean integer number string)))
       (error "Macro defpacustom: missing :type keyword or wrong :type value"))
 
     ;; Error in case a defpacustom is repeated.
@@ -212,21 +212,23 @@ Usage: (defpgdefault SYM VALUE)"
     (eval
      `(defpgcustom ,name ,val
 	,@newargs
-	:set 'proof-set-value
-	:group (quote ,proof-assistant-cusgrp)))
+	:set #'proof-set-value
+	:group (quote ,proof-assistant-cusgrp))
+     t)
     (cond
      (evalform
       (eval
        `(defpgfun ,name ()
-	  ,evalform)))
+	  ,evalform)
+       t))
      (setting
       (eval
        `(defpgfun ,name ()
 	  (proof-assistant-invisible-command-ifposs
-	   (proof-assistant-settings-cmd (quote ,name)))))))
-    (setq proof-assistant-settings
-	  (cons (list name setting (eval type) descr)
-		proof-assistant-settings))))
+	   (proof-assistant-settings-cmd (quote ,name))))
+       t)))
+    (push (list name setting (eval type t) descr)
+	  proof-assistant-settings)))
 
 ;;;###autoload
 (defmacro defpacustom (name val &rest args)

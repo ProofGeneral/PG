@@ -15,7 +15,7 @@
 ;; Basic configuration is controlled by one line in `proof-site.el'.
 ;; It has this line in proof-assistant-table:
 ;;
-;;     (demoisa "Isabelle Demo"	"\\.ML$")
+;;     (demoisa "Isabelle Demo"	"\\.ML\\'")
 ;;
 ;; From this it loads this file "demoisa/demoisa.el" whenever
 ;; a .ML file is visited, and sets the mode to `demoisa-mode'

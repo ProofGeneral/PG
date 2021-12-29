@@ -1,11 +1,11 @@
-;; This file is part of Proof General.
+;; This file is part of Proof General.  -*- lexical-binding: t; -*-
 ;; 
 ;; © Copyright 2021  Hendrik Tews
 ;; 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
 ;; 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -17,7 +17,11 @@
 ;; in each possible state. For specifying the different delays there
 ;; are 6 mini projects, one for each test in this file. Each project
 ;; consists of four files, a1.v, b1.v, c1.v and d1.v for the first one
-;; and a6.v, b6.v, c6.v and d6.v for the sixth one.
+;; and a6.v, b6.v, c6.v and d6.v for the sixth one. Each project is
+;; one ert test, described further below. In each project or test, the
+;; top level require commands are asserted and retracted several times
+;; with changes in different files to test (almost) all possible
+;; internal state combinations.
 ;;
 ;; The dependencies are the same in all projects:
 ;; 
@@ -50,7 +54,7 @@
 ;; state enqueued-coqc.
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
-(require 'cct-lib)
+(require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
@@ -79,7 +83,7 @@
 
 (defun all-compiled-ancestors (n)
   "All vo ancestor files for part N."
-  (mapcar 'cct-library-vo-of-v-file (all-ancestors n)))
+  (mapcar #'cct-library-vo-of-v-file (all-ancestors n)))
 
 (defun check-main-buffer (n vo-times new-sum recompiled-files
                                        other-locked-files)

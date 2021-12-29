@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -12,7 +12,7 @@
 ;; Author:      Healfdene Goguen
 ;; Maintainer:  David Aspinall <David.Aspinall@ed.ac.uk>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -50,11 +50,6 @@
   ;; (overlay-put span 'read-only t))
   (span-set-property span 'modification-hooks '(span-read-only-hook))
   (span-set-property span 'insert-in-front-hooks '(span-read-only-hook)))
-
-(defun span-read-write (span)
-  "Set SPAN to be writeable."
-  (span-set-property span 'modification-hooks nil)
-  (span-set-property span 'insert-in-front-hooks nil))
 
 (defun span-write-warning (span fun)
   "Give a warning message when SPAN is changed, unless `inhibit-read-only' is non-nil."

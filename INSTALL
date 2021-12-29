@@ -32,22 +32,14 @@ Proof General loaded.
 
 The command above will set the Emacs load path and add auto-loads for
 proof assistants, for example, visiting a file ending in .v will start
-Coq Proof General, and a file ending in .thy will start 
-Isabelle Proof General.  See the manual for a full list of file
+Coq Proof General, and a file ending in .ec will start 
+EasyCrypt Proof General.  See the manual for a full list of file
 extensions and proof assistants, and the note below for how to disable
 those you don't need.
 
 In case of difficulty, please check the documentation in doc/, the
 notes below, the README file for each prover, and the file BUGS.  
 
-If none of these files help, then contact me via the address below.
-
-   David Aspinall,
-   LFCS, School Of Informatics,
-   University of Edinburgh.
-   Edinburgh.
-   
-   http://proofgeneral.inf.ed.ac.uk/trac
 
 
 
@@ -148,7 +140,7 @@ Removing support for unwanted provers
 
 You cannot run more than one instance of Proof General at a time in
 the same Emacs process: e.g. if you're using Coq, you won't be able to
-run LEGO scripts.
+run EasyCrypt scripts.
 
 If there are some assistants supported that you never want to use, you
 can remove them from the variable `proof-assistants' to prevent Proof

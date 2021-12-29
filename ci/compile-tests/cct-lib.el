@@ -1,11 +1,11 @@
 ;; This file is part of Proof General.
 ;; 
-;; © Copyright 2020  Hendrik Tews
+;; © Copyright 2020 - 2021  Hendrik Tews
 ;; 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
 ;; 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 
 ;;; Commentary:
@@ -37,6 +37,13 @@
 
 (defvar cct--debug-tests nil
   "Set to t to get more output during test runs.")
+
+(defvar cct-before-busy-waiting-hook nil
+  "Hooks run by ‘cct-process-to-line’ before busy waiting.")
+
+(defvar cct-after-busy-waiting-hook nil
+  "Hooks run by ‘cct-process-to-line’ after busy waiting.")
+
 
 (defmacro cct-implies (p q)
   "Short-circuit logical implication.
@@ -109,12 +116,16 @@ backward. Replace the word there with WORD."
   (insert word))
 
 (defun cct-process-to-line (line)
-  "Assert/retract to line LINE and wait until processing completed."
+  "Assert/retract to line LINE and wait until processing completed.
+Runs `cct-before-busy-waiting-hook' and
+`cct-after-busy-waiting-hook' before and after busy waiting for
+the prover. In many tests these hooks are not used."
   (when cct--debug-tests
     (message "assert/retrect to line %d in buffer %s" line (buffer-name)))
   (cct-goto-line line)
   (proof-goto-point)
 
+  (run-hooks 'cct-before-busy-waiting-hook)
   (while (or proof-second-action-list-active (consp proof-action-list))
     ;; (message "wait for coq/compilation with %d items queued\n"
     ;;          (length proof-action-list))
@@ -122,7 +133,29 @@ backward. Replace the word there with WORD."
     ;; accept-process-output without timeout returns rather quickly,
     ;; apparently most times without process output or any other event
     ;; to process.
-    (accept-process-output nil 0.1)))
+    (accept-process-output nil 0.1))
+  (run-hooks 'cct-after-busy-waiting-hook))
+
+(defun cct-wait-for-second-stage ()
+  "Wait until second stage compilation is complete.
+Runs `cct-before-busy-waiting-hook' and
+`cct-after-busy-waiting-hook' before and after busy waiting."
+  (run-hooks 'cct-before-busy-waiting-hook)
+  (when cct--debug-tests
+    (message
+     "%s start waiting for vok/vio2vo timer %s 2nd-stage-in-progress %s"
+     (current-time-string)
+     coq--par-second-stage-delay-timer
+     coq--par-second-stage-in-progress))
+  (while (or coq--par-second-stage-delay-timer
+             coq--par-second-stage-in-progress)
+    (accept-process-output nil 0.5)
+    (when cct--debug-tests
+      (message "%s wait for vok/vio2vo timer %s 2nd-stage-in-progress %s"
+               (current-time-string)
+               coq--par-second-stage-delay-timer
+               coq--par-second-stage-in-progress)))
+  (run-hooks 'cct-after-busy-waiting-hook))
 
 (defun cct-get-vanilla-span (line)
   "Get THE vanilla span for line LINE, report an error if there is none.
@@ -158,7 +191,7 @@ region of the buffer and signals a test failure if not."
   (let ((locked (eq locked-state 'locked)))
     (when cct--debug-tests
       (message (concat "check lock state in buffer %s: line %d should be %s;\n"
-                       "\tlocked-span: %s ends at char %s in line %d")
+                       "\tlocked-span: %s ends at char %s in line %s")
                (buffer-name)
                line (if locked "locked" "unlocked")
                proof-locked-span
@@ -181,6 +214,20 @@ region of the buffer and signals a test failure if not."
            (funcall (if locked '< '>)
                     (point) (span-end proof-locked-span)))))))
 
+(defun cct-check-files-locked (line lock-state files)
+  "Check that all FILES at line number LINE have lock state LOCK-STATE.
+LOCK-STATE must be either 'locked or 'unlocked. FILES must be
+list of file names."
+  (when cct--debug-tests
+    (message "check files %s at line %d: %s"
+             (if (eq lock-state 'locked) "locked" "unlocked") line files))
+  (save-current-buffer
+    (mapc
+     (lambda (file)
+       (find-file file)
+       (cct-check-locked line lock-state))
+     files)))
+
 (defun cct-locked-ancestors (line ancestors)
   "Check that the vanilla span at line LINE has ANCESTORS recorded.
 The comparison treats ANCESTORS as set but the file names must
@@ -200,7 +247,7 @@ Used to check that FILE has not been changed since TIME was
 recorded before."
   (let ((file-time (nth 5 (file-attributes file))))
     (when cct--debug-tests
-      (message "file %s should be unchanged, recorded time: %s now: %s\n"
+      (message "file %s should be unchanged, recorded time: %s now: %s"
                file
                (format-time-string "%H:%M:%S.%3N" time)
                (format-time-string "%H:%M:%S.%3N" file-time)))
@@ -229,6 +276,14 @@ changed since FILE-TIME-ASSOC has been recorded."
 (defun cct-file-newer (file time)
   "Check that FILE exists and its modification time is more recent than TIME."
   (let ((file-time (nth 5 (file-attributes file))))
+    (when cct--debug-tests
+      (message "file %s in %s should be changed, recorded time: %s now: %s"
+               file
+               default-directory
+               (if time (format-time-string "%H:%M:%S.%3N" time) "---")
+               (if file-time
+                   (format-time-string "%H:%M:%S.%3N" file-time)
+                 "---")))
     (should (and file-time (time-less-p time file-time)))))
 
 (defun cct-older-change-times (file-time-assoc)
@@ -239,10 +294,28 @@ times as returned by `cct-record-change-times' or
 FILE-TIME-ASSOC do exist and that their modification time is more
 recent than in the association list, i.e., they have been updated
 or changed since recording the time in the association."
+  (when cct--debug-tests
+    (message "Files should have been changed: %s"
+             (mapconcat
+              (lambda (file-time) (car file-time))
+              file-time-assoc
+              ", ")))
   (mapc
    (lambda (file-time-cons)
      (cct-file-newer (car file-time-cons) (cdr file-time-cons)))
    file-time-assoc))
+
+(defun cct-files-are-readable (files)
+  "Check that FILES exist and are readable."
+  (when cct--debug-tests
+    (message "Files should exist and be readable: %s" files))
+  (mapc (lambda (fname) (should (file-readable-p fname))) files))
+
+(defun cct-files-dont-exist (files)
+  "Check that FILES don't exist."
+  (when cct--debug-tests
+    (message "Files should not exist: %s" files))
+  (mapc (lambda (fname) (should-not (file-exists-p fname))) files))
 
 (defun cct-generic-check-main-buffer
     (main-buf main-unlocked main-locked main-sum-line new-sum

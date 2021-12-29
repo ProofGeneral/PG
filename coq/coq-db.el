@@ -11,7 +11,7 @@
 
 ;; Author: Pierre Courtieu <courtieu@lri.fr>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -325,26 +325,31 @@ See `coq-syntax-db' for DB structure."
   "Face used for `ltac:', `constr:', and `uconstr:' headers."
   :group 'proof-faces)
 
-;; This messes columns, can't figure out why putting this face makes the overlay
-;; larger than a character
+;; This is so quite ugly, better have our own face.
 ;; (defface coq-button-face
-;;   '((t :inherit custom-button :background "dark gray"))
-;;   ""
-;;   :group 'proof-faces)
-
-;; (defface coq-button-face-pressed
-;;   '((t :inherit custom-button-pressed :background "light gray"))
+;;   '((t :inherit custom-button :background "dark gray"
+;;        ;; -1 avoids messing with line and column sizes
+;;        :box (:line-width (-1 . -1) :style key-pressed)))
 ;;   ""
 ;;   :group 'proof-faces)
 
 (defface coq-button-face
-  '((t . (:background "light gray")))
-  ""
+  '(
+    (((class color) (background light)) . (:background "light gray"))
+    (((class color) (background dark)) . (:background "gray" :foreground "black")))
+  "Coq face for the (un)folding hypothesis button"
   :group 'proof-faces)
 
 (defface coq-button-face-pressed
-  '((t . (:background "dark gray")))
-  ""
+  '((((class color) (background light)) . (:background "gray"))
+    (((class color) (background dark)) . (:background "dim gray" :foreground "black")))
+  "Coq face for the (un)folding hypothesis button"
+  :group 'proof-faces)
+
+(defface coq-button-face-active
+  '((((class color) (background light)) . (:background "black" :foreground "white"))
+    (((class color) (background dark)) . (:background "grey24" :foreground "black")))
+  "Coq face for the (un)folding hypothesis button"
   :group 'proof-faces)
 
 (defconst coq-solve-tactics-face 'coq-solve-tactics-face

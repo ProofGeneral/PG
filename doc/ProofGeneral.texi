@@ -58,8 +58,8 @@
 @c
 
 @set version 4.5-git
-@set emacsversion 24.3
-@set last-update September 2016
+@set emacsversion 25.1
+@set last-update February 2021
 @set rcsid $Id$
 
 @dircategory Theorem proving
@@ -121,7 +121,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 with GNU Emacs @value{emacsversion} or
 later versions (subject to Emacs API changes).  Proof General is
-distributed under the terms of the GNU General Public License (GPL);
+distributed under the terms of the GNU General Public License (GPL),
+version 3 or later;
 please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
@@ -158,10 +159,7 @@ assistants Coq, EasyCrypt, and PhoX.
 * Graphical Proof-Tree Visualization::
 * Customizing Proof General::   
 * Hints and Tips::
-* LEGO Proof General::          
 * Coq Proof General::           
-* Isabelle Proof General::    
-* HOL Light Proof General::
 * EasyCrypt Proof General::
 * Shell Proof General::
 @c * PhoX Proof General::
@@ -194,6 +192,7 @@ other documentation, system downloads, etc.
 
 
 @menu
+* News for Version 4.5::
 * News for Version 4.4::
 * News for Version 4.3::
 * News for Version 4.2::
@@ -202,6 +201,16 @@ other documentation, system downloads, etc.
 * Future::
 * Credits::                     
 @end menu
+
+@node News for Version 4.5
+@unnumberedsec News for Version 4.5
+@cindex news
+
+Proof-General is now distributed under the GPLv3+ license.
+
+The old code for the support of the following systems have been
+removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam,
+Isabelle, HOL98.
 
 @node News for Version 4.4
 @unnumberedsec News for Version 4.4
@@ -302,7 +311,6 @@ webpage}.  Help us to help you organize your proofs!
 
 @node Credits
 @unnumberedsec Credits
-@cindex @code{lego-mode}
 @cindex maintenance
 
 The original developers of the basis of Proof General were:
@@ -508,24 +516,15 @@ script file for your proof assistant, for example:
 
 @multitable @columnfractions .35 .3 .35
 @item       @b{Prover}    @tab @b{Extensions} @tab @b{Mode}
-@item       LEGO          @tab @file{.l}      @tab @code{lego-mode}
 @item       Coq           @tab @file{.v}      @tab @code{coq-mode}
-@item       Isabelle      @tab @file{.thy}    @tab @code{isar-mode}
 @item       Phox          @tab @file{.phx}    @tab @code{phox-mode}
-@item       HOL98         @tab @file{.sml}    @tab @code{hol98-mode}
-@item       HOL Light     @tab @file{.ml}     @tab @code{hol-light-mode}
-@item       ACL2          @tab @file{.acl2}   @tab @code{acl2-mode}
-@item       Twelf         @tab @file{.elf}    @tab @code{twelf-mode}
-@item       Plastic       @tab @file{.lf}     @tab @code{plastic-mode}
-@item       Lambda-CLAM   @tab @file{.lcm}    @tab @code{lclam-mode}
-@item       CCC           @tab @file{.ccc}    @tab @code{ccc-mode}
 @item       PG-Shell      @tab @file{.pgsh}   @tab @code{pgshell-mode}
 @item       EasyCrypt     @tab @file{.ec}     @tab @code{easycrypt-mode}
 @end multitable
 (the exact list of Proof Assistants supported may vary according to the
 version of Proof General and its local configuration).  You can also
-invoke the mode command directly, e.g., type @kbd{M-x lego-mode}, to
-turn a buffer into a lego script buffer.
+invoke the mode command directly, e.g., type @kbd{M-x coq-mode}, to
+turn a buffer into a Coq script buffer.
 
 You'll find commands to process the proof script are available from the
 toolbar, menus, and keyboard.  Type @kbd{C-h m} to get a list of the
@@ -660,24 +659,11 @@ proof assistants, including these:
 @c FLAG VERSIONS HERE
 @itemize @bullet
 @item 
-@b{LEGO Proof General} for LEGO Version 1.3.1@*
-@xref{LEGO Proof General}, for more details.
-@item 
 @b{Coq Proof General} for Coq Version 8.2@*
 @xref{Coq Proof General}, for more details.
-@item 
-@b{Isabelle Proof General} for Isabelle2009-2@*
-@xref{Isabelle Proof General}, and documentation supplied with
-Isabelle for more details.
 @c @item
 @c @b{PhoX Proof General} for PhoX 0.8X@*
 @c @xref{PhoX Proof General}, for more details.
-@c @item
-@c @b{HOL Proof General} for HOL98 (HOL4)@*
-@c @xref{HOL Proof General}, for more details.
-@item
-@b{HOL Light Proof General} for HOL Light@*
-@xref{HOL Light Proof General}, for more details.
 @item
 @b{EasyCrypt Proof General} for EasyCrypt@*
 @xref{EasyCrypt Proof General}, for mode details.
@@ -703,7 +689,7 @@ standard instances documented in this manual are listed above.
 
 Note that there is some variation between the features supported by
 different instances of Proof General.  The main variation is proof by
-pointing, which is only supported in LEGO at the moment.  For advanced
+pointing, which has been supported only in LEGO so far.  For advanced
 features like this, some extensions to the output routines of the proof
 assistant are required, typically.  If you like Proof General, @b{please
 help us by asking the implementors of your favourite proof assistant to
@@ -798,6 +784,7 @@ then describe the concepts and functions in more detail.
 * Interrupting during trace output::
 @end menu
 
+@c FIXME: Rewrite this to use Coq since Isabelle support was removed.
 @node Walkthrough example in Isabelle
 @section Walkthrough example in Isabelle
 
@@ -1281,9 +1268,9 @@ file and a @code{.thy} theory file which defines its theory.
 If you have a partly processed scripting buffer and use @kbd{C-c C-s},
 or you attempt to use script processing in a new buffer, Proof General
 will ask you if you want to retract what has been proved so far,
-@code{Scripting incomplete in buffer myproof.l, retract?}
+@code{Scripting incomplete in buffer myproof.v, retract?}
 or if you want to process the remainder of the active buffer, 
-@code{Completely process buffer myproof.l instead?}
+@code{Completely process buffer myproof.v instead?}
 before you can start scripting in a new buffer.  If you refuse to do
 either, Proof General will give an error message: 
 @code{Cannot have more than one active scripting buffer!}.
@@ -1405,7 +1392,7 @@ Set point to end of command at point.
 
 @vindex proof-terminal-string
 The variable @code{proof-terminal-string} is a prover-specific string
-to terminate proof commands.  LEGO and Isabelle use a semicolon,
+to terminate proof commands.  LEGO and Isabelle used a semicolon,
 @samp{;}. Coq employs a full-stop @samp{.}.
 
 @c TEXI DOCSTRING MAGIC: proof-goto-end-of-locked
@@ -1481,7 +1468,7 @@ design, by allowing successive assertion commands without complaining.}
 
 The last command, @code{proof-electric-terminator-toggle}, is triggered
 using the character which terminates proof commands for your proof
-assistant's script language.  For LEGO and Isabelle, use @kbd{C-c ;},
+assistant's script language.  LEGO and Isabelle used @kbd{C-c ;},
 for Coq, use @kbd{C-c .}.  This not really a script processing
 command. Instead, if enabled, it causes subsequent key presses of
 @kbd{;} or @kbd{.} to automatically activate
@@ -1494,6 +1481,42 @@ a script you are adapting to prove a different theorem), Proof General
 will stop exactly where the proof script fails, showing you the error
 message and the last processed command.  So you can easily continue
 development from exactly the right place in the script.
+
+In normal development, one often jumps into the middle or to the
+end of some file, because this is the point, where a lemma must
+be added or a definition must be fixed. Before starting the real
+work, one needs to assert the file up to that point, usually with
+@kbd{C-c C-RET} (@code{proof-goto-point}). Even for medium sized
+files, asserting a big portion can take several seconds. There
+are different ways to speed this process up.
+@itemize @bullet
+@item
+One can split the development into smaller files. This works
+quite well with Coq, automatic background compilation,
+@ref{Automatic Compilation in Detail}, and the fast compilation
+options, @ref{Quick and inconsistent compilation}.
+@item
+One can configure @code{proof-omit-proofs-option} to @code{t} to
+omit complete opaque proofs when larger chunks are asserted. A
+proof is opaque, if its proof script or proof term cannot
+influence the following code. In Coq, opaque proofs are finished
+with @code{Qed}, non-opaque ones with @code{Defined}. When this
+omit proofs feature is configured, complete opaque proofs are
+silently replace with a suitable cheating command
+(@code{Admitted} for Coq) before sending the proof to the proof
+assistant. For files with big proofs this can bring down the
+processing time to 10% with the obvious disadvantage that errors
+in the omitted proofs go unnoticed. For checking the proofs
+occasionally, a prefix argument for @code{proof-goto-point} and
+@code{proof-process-buffer} causes these commands to disregard
+the setting of @code{proof-omit-proofs-option}. Currently, the
+omit proofs feature is only supported for Coq.
+@item
+An often used poor man's solution is to collect all new material
+at the end of one file, regardless where the material really
+belongs. When the final theorem has been proved, one cleans up
+the mess and moves all stuff where it really belongs.
+@end itemize
 
 Here is the full set of script processing commands.
 
@@ -1522,15 +1545,19 @@ deleted text.
 
 
 @c TEXI DOCSTRING MAGIC: proof-goto-point
-@deffn Command proof-goto-point 
+@deffn Command proof-goto-point &optional raw
 Assert or retract to the command at current position.@*
 Calls @samp{@code{proof-assert-until-point}} or @samp{@code{proof-retract-until-point}} as
-appropriate.
+appropriate. With prefix argument @var{raw} the omit proofs feature
+(@samp{@code{proof-omit-proofs-option}}) is temporaily disabled to check all
+proofs in the asserted region.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-process-buffer
-@deffn Command proof-process-buffer 
-Process the current (or script) buffer, and maybe move point to the end.
+@deffn Command proof-process-buffer &optional raw
+Process the current (or script) buffer, and maybe move point to the end.@*
+With prefix argument @var{raw} the omit proofs feature (@samp{@code{proof-omit-proofs-option}})
+is temporaily disabled to check all proofs in the asserted region.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-retract-buffer
@@ -1728,7 +1755,7 @@ Query the user and exit the proof process.
 
 This simply kills the @samp{@code{proof-shell-buffer}} relying on the hook function
 
-@samp{@code{proof-shell-kill-function}} to do the hard work. If optional
+@samp{@code{proof-shell-kill-function}} to do the hard work.  If optional
 argument @var{dont-ask} is non-nil, the proof process is terminated
 without confirmation.
 
@@ -1757,7 +1784,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 
@@ -2079,8 +2106,8 @@ Basic modularity in large proof developments can be achieved by
 splitting proof scripts across various files. Let's assume that you are
 in the middle of a proof development. You are working on a soundness
 proof of Hoare Logic in a file called@footnote{The suffix may depend of
-the specific proof assistant you are using e.g, LEGO's proof script
-files have to end with @file{.l}.} @file{HSound.l}. It
+the specific proof assistant you are using e.g, Coq's proof script
+files have to end with @file{.v}.} @file{HSound.v}. It
 depends on a number of other files which develop underlying
 concepts e.g. syntax and semantics of expressions, assertions,
 imperative programs. You notice that the current lemma is too difficult
@@ -2089,11 +2116,11 @@ about determinism of the programming language. Or perhaps a previous
 definition is too cumbersome or even wrong.
 
 At this stage, you would like to visit the appropriate file, say
-@file{sos.l} and retract to where changes are required. Then, using
+@file{sos.v} and retract to where changes are required. Then, using
 script management, you want to develop some more basic theory in
-@file{sos.l}. Once this task has been completed (possibly involving
+@file{sos.v}. Once this task has been completed (possibly involving
 retraction across even earlier files) and the new development has been
-asserted, you want to switch back to @file{HSound.l} and replay to the
+asserted, you want to switch back to @file{HSound.v} and replay to the
 point you got stuck previously.
 
 Some hours (or days) later you have completed the soundness proof and
@@ -2114,7 +2141,7 @@ or retract the current script buffer.
 Proof General tries to be aware of all files that the proof assistant
 has processed or is currently processing.  In the best case, it relies
 on the proof assistant explicitly telling it whenever it processes a new
-file which corresponds@footnote{For example, LEGO generates additional
+file which corresponds@footnote{For example, LEGO generated additional
 compiled (optimised) proof script files for efficiency.} to a file
 containing a proof script.
 
@@ -2156,16 +2183,6 @@ problem and flashes up a warning in the response buffer.  You can then
 visit the modified buffer, save it and retract to the beginning. Then
 you are back on track.
 
-
-
-@c only true for LEGO!
-@c If the proof assistant is not happy with the script and
-@c complains with an error message, the buffer will still be marked as
-@c having been completely processed. Sorry. You need to visit the
-@c troublesome file, retract (which will always retract to the beginning of 
-@c the file) and debug the problem e.g., by asserting all of the buffer
-@c under the supervision of Proof General, see @ref{Script processing
-@c commands}. 
 
 
 @node Retracting across files
@@ -2306,11 +2323,13 @@ The size of the ring is set by the variable @code{pg-input-ring-size}.
 
 @c TEXI DOCSTRING MAGIC: pg-previous-input
 @deffn Command pg-previous-input arg
-Cycle backwards through input history, saving input.
+Cycle backwards through input history, saving input.@*
+If called interactively, @var{arg} is given by the prefix argument.
 @end deffn
 @c TEXI DOCSTRING MAGIC: pg-next-input
 @deffn Command pg-next-input arg
-Cycle forwards through input history.
+Cycle forwards through input history.@*
+If called interactively, @var{arg} is given by the prefix argument.
 @end deffn
 @c TEXI DOCSTRING MAGIC: pg-previous-matching-input
 @deffn Command pg-previous-matching-input regexp n
@@ -2464,6 +2483,7 @@ file @code{@i{PA}-unicode-tokens.el}, or customize the main
 variables it contains, for example @code{@i{PA}-token-name-alist} and 
 @code{@i{PA}-shortcut-alist}. 
 
+@c FIXME: Isabelle support was removed.
 E.g., for Isabelle 
 @example
   M-x customize-variable isar-token-name-alist RET
@@ -2685,7 +2705,7 @@ Show a buffer of all the shortcuts available.
 @deffn Command unicode-tokens-list-unicode-chars 
 Insert each Unicode character into a buffer.@*
 Lets you see which characters are available for literal display
-in your emacs font.
+in your Emacs font.
 
 (fn)
 @end deffn
@@ -2786,9 +2806,7 @@ and @code{etags}.
 
 @node Syntax highlighting
 @section Syntax highlighting
-@vindex lego-mode-hooks
 @vindex coq-mode-hooks
-@vindex isa-mode-hooks
 @cindex font lock 
 @cindex colour
 @c Proof General specifics  
@@ -2952,8 +2970,8 @@ through all the files with one command.  Recording the function names
 and positions makes possible the @kbd{M-.} command which finds the
 definition of a function by looking up which of the files it is in.
 
-Some instantiations of Proof General (currently LEGO and Coq) are
-supplied with external programs (@file{legotags} and @file{coqtags}) for
+Some instantiations of Proof General (currently Coq) are
+supplied with external programs (@file{coqtags}) for
 making tags tables.  For example, invoking @samp{coqtags *.v} produces a
 file @file{TAGS} for all files @samp{*.v} in the current
 directory. Invoking @samp{coqtags `find . -name \*.v`} produces a file
@@ -2998,7 +3016,7 @@ Add completions from the current tags table.
 This chapter describes what you can do from inside the goals buffer,
 providing support for these features exists for your proof assistant.
 
-As of Proof General 4.0, this support only exists for LEGO and
+As of Proof General 4.4, this support has existed only for LEGO and
 proof-by-pointing functionality has been temporarily removed from the
 interface.  If you would like to see subterm activation support for
 Proof General in another proof assistant, please petition the developers
@@ -3467,49 +3485,40 @@ For multiple frame mode, this function obeys the setting of
 
 For single frame mode:
 
-@itemize @bullet
-@item
-In two panes mode, this uses a canonical layout made by splitting
-Emacs windows in equal proportions. The splitting is vertical if
-emacs width is smaller than @samp{@code{split-width-threshold}} and
-horizontal otherwise. You can then adjust the proportions by
+- In two panes mode, this uses a canonical layout made by splitting
+Emacs windows in equal proportions.  The splitting is vertical if
+Emacs width is smaller than @samp{@code{split-width-threshold}} and
+horizontal otherwise.  You can then adjust the proportions by
 dragging the separating bars.
 
-@item
-In three pane mode, there are three display modes, depending
-where the three useful buffers are displayed: scripting
-buffer, goals buffer and response buffer.
+- In three pane mode, there are three display modes, depending
+@lisp
+  where the three useful buffers are displayed: scripting
+  buffer, goals buffer and response buffer.
 
-Here are the three modes:
+  Here are the three modes:
 
-@itemize @bullet
-@item
-@code{vertical}: the 3 buffers are displayed in one column.
+  - vertical: the 3 buffers are displayed in one column.
+  - hybrid: 2 columns mode, left column displays scripting buffer
+    and right column displays the 2 others.
+  - horizontal: 3 columns mode, one for each buffer (script, goals,
+    response).
 
-@item
-@code{hybrid}: 2 columns mode, left column displays scripting buffer
-and right column displays the 2 others.
+  By default, the display mode is automatically chosen by
+  considering the current Emacs frame width: if it is smaller
+  than @samp{@code{split-width-threshold}} then vertical mode is chosen,
+  otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
+  then hybrid mode is chosen, finally if the frame is larger than
+  1.5 * @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
 
-@item
-@code{horizontal}: 3 columns mode, one for each buffer (script, goals, response).
-@end itemize
+  You can change the value of @samp{@code{split-width-threshold}} at your
+  will.
 
-By default, the display mode is automatically chosen by
-considering the current emacs frame width: if it is smaller
-than @samp{@code{split-width-threshold}} then vertical mode is chosen,
-otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
-then hybrid mode is chosen, finally if the frame is larger than
-1.5 * @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
-
-You can change the value of @samp{@code{split-width-threshold}} at your
-will.
-
-If you want to force one of the layouts, you can set variable
-@samp{@code{proof-three-window-mode-policy}} to @code{'vertical}, @code{'horizontal} or
-@code{'hybrid}. The default value is @code{'smart} which sets the automatic
-behaviour described above.
-@end itemize
-
+  If you want to force one of the layouts, you can set variable
+  @samp{@code{proof-three-window-mode-policy}} to @code{'vertical}, @code{'horizontal} or
+  @code{'hybrid}.  The default value is @code{'smart} which sets the automatic
+  behaviour described above.
+@end lisp
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-shrink-windows-tofit
@@ -3537,7 +3546,7 @@ Hovers will be added when this option is non-nil.  Prover outputs
 can be displayed when the mouse hovers over the region that
 produced it and output is available (see @samp{@code{proof-full-annotation}}).
 If output is not available, the type of the output region is displayed.
-Changes of this option will not be reflected in already-processed 
+Changes of this option will not be reflected in already-processed
 regions of the script.
 
 The default value is @code{nil}.
@@ -3642,6 +3651,21 @@ If non-nil, format for newlines after each command in a script.
 
 The default value is @code{t}.
 @end defopt
+
+@c TEXI DOCSTRING MAGIC: proof-omit-proofs-option
+@defvar proof-omit-proofs-option 
+Set to t to omit complete opaque proofs for speed reasons.@*
+When t, complete opaque proofs in the asserted region are not
+sent to the proof assistant (and thus not checked). For files
+with big proofs this can drastically reduce the processing time
+for the asserted region at the cost of not checking the proofs.
+For partial and non-opaque proofs in the asserted region all
+proof commands are sent to the proof assistant.
+
+Using a prefix argument for @samp{@code{proof-goto-point}} (M-x @code{proof-goto-point})
+or @samp{@code{proof-process-buffer}} (M-x @code{proof-process-buffer}) temporarily
+disables omitting proofs.
+@end defvar
 
 @c TEXI DOCSTRING MAGIC: proof-prog-name-ask
 @defopt proof-prog-name-ask 
@@ -3762,8 +3786,8 @@ locked (coloured blue); a buffer is completely unprocessed when there
 is no locked region.
 
 For some proof assistants (such as Coq) fully processed buffers make
-no sense. Setting this option to @code{'process} has then the same effect
-as leaving it unset (nil). (This behaviour is controlled by
+no sense.  Setting this option to @code{'process} has then the same effect
+as leaving it unset (nil).  (This behaviour is controlled by
 @samp{@code{proof-no-fully-processed-buffer}}.)
 
 The default value is @code{nil}.
@@ -3776,8 +3800,8 @@ For example,
 @lisp
    ssh bigjobs
 @end lisp
-Would cause Proof General to issue the command @samp{ssh bigjobs isabelle}
-to start Isabelle remotely on our large compute server called @samp{bigjobs}.
+Would cause Proof General to issue the command @samp{ssh bigjobs coqtop}
+to start Coq remotely on our large compute server called @samp{bigjobs}.
 
 The protocol used should be configured so that no user interaction
 (passwords, or whatever) is required to get going.  For proper
@@ -3945,8 +3969,8 @@ and save these variables, saving them may have no practical effect
 because the default settings are mostly hard-wired into the proof
 assistant code.  Ones we expect may need changing appear as proof
 assistant specific configurations.  For example,
-@code{proof-assistant-home-page} is set in the LEGO code from the value
-of the customization setting @code{lego-www-home-page}.  At present
+@code{proof-assistant-home-page} is set in the Coq code from the value
+of the customization setting @code{coq-www-home-page}.  At present
 there is no easy way to save changes to other configuration variables
 across sessions, other than by editing the source code.  (In future
 versions of Proof General, we plan to make all configuration
@@ -4003,8 +4027,8 @@ code like this to your @file{.emacs} file:
 
 This lisp fragment adds bindings for every buffer in proof script
 mode (the Emacs keymap is called @code{proof-mode-map}).  To just
-affect one prover, use a keymap name like @code{isar-mode-map} and
-evaluate after the library @code{isar} has been loaded.
+affect one prover, use a keymap name like @code{coq-mode-map} and
+evaluate after the library @code{coq} has been loaded.
 
 To find the names of the functions you may want to bind, look in this
 manual, or query current bindings interactively with @kbd{C-h k}.  This
@@ -4057,72 +4081,53 @@ the file.
 @b{Remark 1:} The examples in the following are for Coq but the
 trick is applicable to other provers. 
 
-@b{Remark 2:} For Coq specifically, there is a recommended other way
-of configuring Coq options:
-project files (@ref{Using the Coq project file}).
-Actually, project files are intended to be included in the
-distribution of a library (and included in its repository), so the Coq
-options specified in project files are supposed to work for all users.
-In contrast, user-defined options such as @code{coq-prog-name} should
-preferably be specified in a directory-local-variables file (see below).
+@b{Remark 2:} For Coq specifically, there is a recommended other way of
+configuring Coq command-line options: project files (@ref{Using the Coq
+project file}). However file variables are useful to set a specific
+@code{coqtop} executable, or for defining file-specific command-line
+options. Actually, since project files are intended to be included in
+the distribution of a library (and included in its repository), the file
+variables can be used to set non versioned options like
+@code{coq-prog-name}.
 
-For example, in Coq projects involving multiple directories, it is necessary
-to set the variable @code{coq-load-path} 
-(@ref{Customizing Coq Multiple File Support}). 
-Here is an example:
-Assume the file @file{.../dir/bar/foo.v} depends on modules in
-@code{.../dir/theories/}. Then you can put the following at the
-end of @file{foo.v}:
+@b{Remark 3:} For obvious security reasons, when emacs reads file
+variables, it asks for permission to the user before applying the
+assignment. You should read carefully the content of the variable before
+accepting. You can hit @code{!} to accept definitely the exact values at
+hand.
 
-@lisp
-(* 
-*** Local Variables: ***
-*** coq-load-path: ("../theories") ***
-*** End: ***
-*)
-@end lisp
-
-This way, the right command line arguments are passed to the
-invocation of
-@code{coqtop} when scripting starts in
-@file{foo.v}. Note that the load path @code{"../theories"} is
-project or even file specific, and that therefore a global
-setting via the
-configuration tool would be inappropriate.
-With file variables, Emacs will set @code{coq-load-path}
-automatically when visiting @code{foo.v}. Moreover, the setting of
-@code{coq-load-path} in different files or buffers will not be
-affected. (File variables become buffer local.) 
-
-Extending the previous example, if the makefile for @file{foo.v} is
-located in directory @file{.../dir/}, you can add the right compile
-command. You can also specify a "-R" command. And if you want a non
-standard coq executable to be used, here is what you should put in
-variables:
+Let us take a concrete example: suppose the makefile for @file{foo.v} is
+located in directory @file{.../dir/}, you need the right compile command
+in the @code{compile-command} emacs variable. Moreover suppose that you
+want @code{coqtop} to be found in a non standard directory. To put these
+values in file variables, here is what you should put at the end of
+@file{foo.v}:
 
 @lisp
 (* 
 *** Local Variables: ***
 *** coq-prog-name: "../../coqsrc/bin/coqtop" ***
-*** coq-load-path: (("../util" "util") "../theories") ***
 *** compile-command: "make -C .. -k bar/foo.vo" ***
 *** End:***
 *)
 @end lisp
 
 And then the right call to make will be done if you use the @kbd{M-x
-compile} command. Note that the lines are commented in order to be
-ignored by the proof assistant. It is possible to use this mechanism for
-all variables, @inforef{File Variables, ,emacs}.
+compile} command, and the correct @code{coqtop} will be called by
+ProofGeneral. Note that the lines are commented in order to be ignored
+by the proof assistant. It is possible to use this mechanism for all
+variables, @inforef{File Variables, ,emacs}.
+
+@emph{NOTE:} @code{coq-prog-name} should contain only the @code{coqtop}
+executable, @emph{not the options}.
 
 One can also specify file variables on a per directory basis,
-@inforef{Directory Variables, ,emacs}. For instance,
-assume you have a Coq project with several subdirectories and you
-want to put each subdirectory into @code{coq-load-path} for every
-file in the project. You can achieve this by storing
+@inforef{Directory Variables, ,emacs}. You can achieve almost the same
+as above for all the files of a directory by storing
 
 @lisp
-((coq-mode . ((coq-load-path . (("../util" "util") "../theories")))))
+((coq-mode . ((coq-prog-name . "/home/xxx/yyy/coqsrc/bin/coqtop")
+              (compile-command . "make -C .. -k"))))
 @end lisp
 
 into the file @code{.dir-locals.el} in one of the parent directories.
@@ -4130,20 +4135,8 @@ The value in this file must be an alist that maps mode names to alists,
 where these latter alists map variables to values. You can aso put
 arbitrary code in this file @inforef{Directory Variables, ,emacs}.
 
-Regarding the configuration of the @code{coq-prog-name} variable, the
-@code{.dir-locals.el} file should contain something like:
-
-@lisp
-((coq-mode . ((coq-prog-name . ".../path/to/coqtop"))))
-@end lisp
-
 @emph{Note:} if you add such content to the @code{.dir-locals.el} file
-you should restart Emacs to take this change into account (or
-just run @kbd{M-x proof-shell-exit RET yes RET}
-and @kbd{M-x normal-mode RET} in the Coq buffer
-before restarting the Coq process).
-
-
+you should restart Emacs or revert your buffer.
 
 @node Using abbreviations
 @section Using abbreviations
@@ -4169,117 +4162,6 @@ minor mode, type @kbd{M-x abbrev-mode RET}. When you are not in Abbrev
 mode you can expand an abbreviation by pressing @kbd{C-x '}
 (@code{expand-abbrev}). See the Emacs manual for more details.
 
-Coq Proof General has a special experimental feature called "Holes"
-which makes use of the abbreviation mechanism and includes a large list
-of command abbreviations. @xref{Holes feature}, for details.  With other
-provers, you may use the standard Emacs commands above to set up your
-own abbreviation tables.
-
-
-
-
-
-
-@c =================================================================
-@c
-@c  CHAPTER: LEGO Proof General
-@c 
-@node LEGO Proof General
-@chapter LEGO Proof General
-@cindex LEGO Proof General
-
-LEGO proof script mode is a mode derived from proof script mode for
-editing LEGO scripts. An important convention is that proof script
-buffers @emph{must} start with a module declaration. If the proof script
-buffer's file name is @file{fermat.l}, then it must commence with a
-declaration of the form
-
-@lisp
-Module fermat;
-@end lisp
-
-If, in the development of the module @samp{fermat}, you require material
-from other module e.g., @samp{lib_nat} and @samp{galois}, you need to
-specify this dependency as part of the module declaration:
-
-@lisp
-Module fermat Import lib_nat galois;
-@end lisp
-
-No need to worry too much about efficiency. When you retract back to a
-module declaration to add a new import item, LEGO does not actually
-retract the previously imported modules. Therefore, reasserting the
-extended module declaration really only processes the newly imported
-modules.
-
-Using the LEGO Proof General, you never ever need to use administrative
-LEGO commands such as @samp{Forget}, @samp{ForgetMark}, @samp{KillRef},
-@samp{Load}, @samp{Make}, @samp{Reload} and @samp{Undo} again
-@footnote{And please, don't even think of including those in your LEGO
-proof script!}. 
-
-@menu
-* LEGO specific commands::      
-* LEGO tags::                   
-* LEGO customizations::         
-@end menu
-
-
-@node LEGO specific commands
-@section LEGO specific commands
-
-In addition to the commands provided by the generic Proof General (as
-discussed in the previous sections) the LEGO Proof General provides a
-few extensions. In proof scripts, there are some abbreviations for
-common commands:
-
-@kindex C-c C-a C-i
-@kindex C-c C-a C-I
-@kindex C-c C-a C-R
-@table @kbd
-@item C-c C-a C-i   
-intros
-@item C-c C-a C-I   
-Intros
-@item C-c C-a C-R   
-Refine
-@end table
-
-@node LEGO tags
-@section LEGO tags
-
-You
-might want to ask your local system administrator to tag the directories
-@file{lib_Prop}, @file{lib_Type} and @file{lib_TYPE} of the LEGO
-library. See @ref{Support for tags}, for further details on tags.
-
-
-
-@node LEGO customizations
-@section LEGO customizations
-
-We refer to chapter @ref{Customizing Proof General}, for an introduction
-to the customisation mechanism. In addition to customizations at the
-generic level, for LEGO you can also customize:
-
-@defopt lego-tags 
-The directory of the @var{tags} table for the @var{lego} library
-
-The default value is @code{"/usr/lib/lego/lib_Type/"}.
-@end defopt
-
-@defvar lego-www-home-page 
-Lego home page URL.
-@end defvar
-
-@c We don't worry about the following for now. These are too obscure.
-@c lego-indent
-@c lego-test-all-name
-
-@c We also don't document any of the internal variables which have been
-@c set to configure the generic Proof General and which the user should
-@c not tamper with
-
 
 @c =================================================================
 @c
@@ -4287,6 +4169,10 @@ Lego home page URL.
 @c
 @node Coq Proof General
 @chapter Coq Proof General
+
+@macro coqrefman {sectionurl,txt}
+@uref{https://coq.inria.fr/distrib/current/refman/\sectionurl\,\txt\}
+@end macro
 
 Coq Proof General is an instantiation of Proof General for the Coq proof
 assistant.  It supports most of the generic features of Proof General.
@@ -4296,6 +4182,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Using the Coq project file::
 * Proof using annotations::
 * Multiple File Support::
+* Omitting proofs for speed::
 * Editing multiple proofs::
 * User-loaded tactics::
 * Indentation tweaking::
@@ -4355,14 +4242,19 @@ Inserts ``End <section-name>.'' (this should work well with nested sections).
 
 The Coq project file is the recommended way to configure the Coq
 load path and the mapping of logical module names to physical
-file path'. The project file is typically named
+file path (-R,-Q,-I options). The project file is typically named
 @code{_CoqProject} and must be located at the directory root of
 your Coq project. Proof General searches for the Coq project file
 starting at the current directory and walking the directory
 structure upwards. The Coq project file contains the common
 options (especially @code{-R}) and a list of the files of the
-project, see the Coq reference manual, Section 15.3, ``Creating a
-Makefile for Coq modules''.
+project, see the Coq reference manual, Section
+@coqrefman{practical-tools/utilities.html#building-a-coq-project,
+``Building a Coq project''}.
+
+
+@c @uref{https://coq.inria.fr/distrib/current/refman/practical-tools/utilities.html#building-a-coq-project,
+@c ``Building a Coq project''}.
 
 The Coq project file should contain something like:
 
@@ -4380,15 +4272,22 @@ project file and uses them for @code{coqtop} background
 processes as well as for @code{coqdep} and @code{coqc} when you use
 the auto compilation feature, @ref{Automatic Compilation in
 Detail}. For the example above, Proof General will start
-@code{coqtop -foo3 -R foo bar -I foo2}.
+@code{coqtop -emacs -foo3 -R foo bar -I foo2} (remark:
+@code{-emacs} is always added to the options).
 
-@emph{Remarque:} @code{-arg} must be followed by one and only one option
+@emph{NOTE:} @code{-arg} must be followed by one and only one option
 to pass to coqtop/coqc, use several @code{-arg} to issue several
 options. One per line (limitation of Proof General).
 
 For backward compatibility, one can also configure the load path
 with the option @code{coq-load-path}, but this is not compatible
 with @code{CoqIde} or @code{coq_makefile}.
+
+@emph{NOTE:} the Coq project file cannot define which version of
+@code{coqtop} is launched. You need either to launch emacs with the
+right executable in the path or use @inforef{File Variables, ,emacs} or
+@inforef{Directory Variables, ,emacs}. See @ref{Using file variables}
+below.
 
 @menu
 * Changing the name of the coq project file::
@@ -4427,17 +4326,16 @@ Documentation of the user option @code{coq-project-filename}:
 @c TEXI DOCSTRING MAGIC: coq-project-filename
 @defvar coq-project-filename 
 The name of coq project file.@*
-The coq project file of a coq development (Cf Coq documentation
-on "makefile generation") should contain the arguments given to
+The coq project file of a coq development (cf. Coq documentation on
+"makefile generation") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
-options (preferably one per line). If @samp{coq-use-coqproject} is
-t (default) the content of this file will be used by Proof General
-to infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables
-that set the coqtop invocation by Proof General. This is now the
-recommended way of configuring the coqtop invocation. Local file
-variables may still be used to override the coq project file's
-configuration. .dir-locals.el files also work and override
-project file settings.
+options (preferably one per line).  If @samp{coq-use-coqproject} is
+t (default) the content of this file will be used by Proof General to
+infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables that set
+the coqtop invocation by Proof General.  This is now the recommended
+way of configuring the coqtop invocation.  Local file variables may
+still be used to override the coq project file's configuration.
+.dir-locals.el files also work and override project file settings.
 @end defvar
 
 
@@ -4451,8 +4349,8 @@ down to ``Coq Use Project File'').
 
 @c TEXI DOCSTRING MAGIC: coq-use-project-file
 @defvar coq-use-project-file 
-If t, when opening a coq file read the dominating _CoqProject.@*
-If t, when a coq file is opened, Proof General will look for a
+If t, when opening a Coq file read the dominating _CoqProject.@*
+If t, when a Coq file is opened, Proof General will look for a
 project file (see @samp{@code{coq-project-filename}}) somewhere in the
 current directory or its parent directories.  If there is one,
 its contents are read and used to determine the arguments that
@@ -4601,9 +4499,9 @@ compilation has finished.
 and dependencies on ML Modules reported by @code{coqdep} are
 ignored.
 
-Proof General uses @code{coqdep} in order to translate the
-qualified identifiers in @code{Require} commands to coq library
-file names and to determine library dependencies. Because Proof
+Proof General uses @code{coqdep} to determine which libraries a
+@code{Require} command will load and which files must be
+up-to-date. Because Proof
 General cannot know whether files are updated outside of Emacs,
 it checks for every @code{Require} command the complete
 dependency tree and recompiles files as necessary.
@@ -4629,10 +4527,9 @@ and via menu entries in @code{Coq -> Auto Compilation},
 Similar to @code{make -k}, background compilation can be
 configured to continue as far as possible after the first error,
 see option @code{coq-compile-keep-going} (menu @code{Coq -> Auto
-Compilation -> Keep going}). The keep-going option only applies
-to errors from @code{coqdep} and @code{coqc}. For all other
-errors (for instance when the translation from logical module
-names to physical files fails or when starting @code{coqc} or
+Compilation -> Keep going}). The keep-going option applies
+to errors from @code{coqdep} and @code{coqc}. However, when
+starting @code{coqc} or
 @code{coqdep} fails), the compilation is immediately aborted.
 
 When a @code{Require} command causes a compilation of some files,
@@ -4683,14 +4580,6 @@ compilation jobs.
 Parallel asynchronous compilation supports both vos and quick/vio
 compilation, but exclusively, depending on the Coq version,
 @ref{Quick and inconsistent compilation}. 
-
-Actually, even with parallel asynchronous compilation, not everything runs
-asynchronously. To translate module identifiers from the Coq
-sources into file names, Proof General runs coqdep on an
-automatically generated, one-line file. These coqdep jobs run
-synchronously while the Require commands are parsed. The coqdep
-jobs on the real source files do run asynchronously in the
-background. 
 @end table
 
 
@@ -4751,22 +4640,38 @@ detection of Proof General or by the setting
 @code{coq-pinned-version}) required modules are either compiled
 to @code{.vo} or @code{.vos} files, depending on the setting
 @code{coq-compile-vos}, which can also be set on menu @code{Coq
--> Auto Compilation -> vos compilation}. There are three choices:
+-> Auto Compilation -> vos compilation}. There are four choices:
 
 @table @asis
-@item @code{use-vos}
-Compile with @code{-vos}. Noticeably faster, but proofs are
-skipped during compilation and some universe constraints might be
-missing.
+@item @code{vos-and-vok}
+First compile using @code{-vos}, skipping proofs. When
+compilation finished, run @code{coqc -vok} in a second stage to
+check proofs on all files that require it. Some universe
+constraints might be missed, rendering this method possibly
+inconsistent.
+@item @code{vos}
+Only compile using @code{-vos}, skipping proofs. No @code{coqc
+-vok} run to check proofs. Obviously inconsistent.
 @item @code{ensure-vo}
 Compile without @code{-vos} to @code{.vo} files, checking all
-proofs and universe constraints.
+proofs and universe constraints. Only consistent choice.
 @item unset (@code{nil})
 Compile with @code{-vos} if @code{coq-compile-quick} (see below)
 equals @code{quick-no-vio2vo}. Otherwise compile without
 @code{-vos} to @code{.vo}. This value provides an upgrade path
 for users that configured @code{coq-compile-quick} in the past.
 @end table
+
+For @code{vos-and-vok} the second @code{-vok} stage runs
+asynchronously @code{coq-compile-second-stage-delay} seconds
+after the last @code{Require} command has been processed. Errors
+might pop up later and interrupt your normal interaction with
+Coq. Because the second stage is not time critical, it runs on
+@code{coq-max-background-second-stage-percentage} per cent of the
+cores configured for the first stage. When
+@code{coq-compile-keep-going} is configured and an error occurs,
+the second @code{-vok} stage is run on those dependencies not
+affected by the error.
 
 For Coq version 8.5 until before 8.11, Proof General supports
 quick or vio compilation with parallel asynchronous compilation.
@@ -4781,10 +4686,10 @@ that have not switched there development to
 @code{Proof using}. Use @code{quick-no-vio2vo}, if you want quick
 recompilation without producing .vo files. Option
 @code{quick-and-vio2vo} recompiles with @code{-quick}/@code{-vio} as
-@code{quick-no-vio2vo} does, but schedules a vio2vo compilation
-for missing @code{.vo} files after a certain delay. Finally, use
+@code{quick-no-vio2vo} does, but schedules a second vio2vo stage
+for missing @code{.vo} files. Finally, use
 @code{ensure-vo} for only importing @code{.vo} files with
-complete universe checks.
+complete universe checks. 
 
 Note that with all of @code{no-quick}, @code{quick-no-vio2vo} and
 @code{quick-and-vio2vo} your development might be unsound because
@@ -4841,16 +4746,9 @@ files, but don't compile prerequisites for which an up-to-date
 @code{.vo} file exists. Delete or overwrite outdated @code{.vio} files.
 
 @item quick-and-vio2vo
-Same as @code{quick-no-vio2vo}, but start vio2vo processes for
-missing @code{.vo} files after a certain delay when library
-compilation for the current queue region has finished. With this
-mode you might see asynchronous errors from vio2vo compilation
-while you are processing stuff far below the last require. vio2vo
-compilation is done on a subset of the available cores controlled
-by option @code{coq-compile-vio2vo-percentage}, @ref{Customizing
-Coq Multiple File Support}. When @code{coq-compile-keep-going} is
-set, vio2vo compilation is scheduled for those files for which
-@code{coqc} compilation was successful.
+Same as @code{quick-no-vio2vo}, but start a second vio2vo stage for
+missing @code{.vo} files. Everything described previously for the
+second @code{-vok} stage applies here as well.
 
 @emph{Warning}: This mode does only work when you process require
 commands in batches. Slowly single-stepping through require's
@@ -4858,7 +4756,7 @@ might lead to inconsistency errors when loading some libraries,
 see Coq issue #5223. To mitigate this risk, vio2vo compilation
 only starts after a certain delay after the last require command
 of the current queue region has been processed. This is
-controlled by @code{coq-compile-vio2vo-delay}, @ref{Customizing
+controlled by @code{coq-compile-second-stage-delay}, @ref{Customizing
 Coq Multiple File Support}.
 
 @item ensure-vo
@@ -4891,7 +4789,7 @@ Coq Auto Compile -> Coq Auto Compile}.
 @defvar coq-compile-before-require 
 If non-nil, check dependencies of required modules and compile if necessary.@*
 If non-nil ProofGeneral intercepts "Require" commands and checks if the
-required library module and its dependencies are up-to-date. If not, they
+required library module and its dependencies are up-to-date.  If not, they
 are compiled from the sources before the "Require" command is processed.
 
 This option can be set/reset via menu
@@ -4904,7 +4802,7 @@ This option can be set/reset via menu
 Buffers to save before checking dependencies for compilation.@*
 There are two orthogonal choices: Firstly one can save all or only the coq
 buffers, where coq buffers means all buffers in coq mode except the current
-buffer. Secondly, Emacs can ask about each such buffer or save all of them
+buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
 This makes four permitted values: @code{'ask-coq} to confirm saving all
@@ -4924,12 +4822,12 @@ The following options configure parallel compilation.
 @defvar coq-compile-parallel-in-background 
 Choose the internal compilation method.@*
 When Proof General compiles itself, you have the choice between
-two implementations. If this setting is nil, then Proof General
+two implementations.  If this setting is nil, then Proof General
 uses the old implementation and compiles everything sequentially
-with synchronous job. With this old method Proof General is
-locked during compilation. If this setting is t, then the new
+with synchronous job.  With this old method Proof General is
+locked during compilation.  If this setting is t, then the new
 method is used and compilation jobs are dispatched in parallel in
-the background. The maximal number of parallel compilation jobs
+the background.  The maximal number of parallel compilation jobs
 is set with @samp{@code{coq-max-background-compilation-jobs}}.
 
 This option can be set/reset via menu
@@ -4959,28 +4857,38 @@ This option can be set/reset via menu
 @defvar coq-max-background-compilation-jobs 
 Maximal number of parallel jobs, if parallel compilation is enabled.@*
 Use the number of available CPU cores if this is set to
-@code{'all-cpus}. This variable is the user setting. The value that is
-really used is @samp{@code{coq--internal-max-jobs}}. Use @samp{@code{coq-max-jobs-setter}}
-or the customization system to change this variable. Otherwise
+@code{'all-cpus}.  This variable is the user setting.  The value that is
+really used is @samp{@code{coq--internal-max-jobs}}.  Use @samp{@code{coq-max-jobs-setter}}
+or the customization system to change this variable.  Otherwise
 your change will have no effect, because @samp{@code{coq--internal-max-jobs}}
 is not adapted.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-max-background-vio2vo-percentage
-@defvar coq-max-background-vio2vo-percentage 
-Percentage of @samp{@code{coq-max-background-vio2vo-percentage}} for vio2vo jobs.@*
-This setting configures the maximal number of vio2vo background
-jobs (if you set @samp{@code{coq-compile-quick}} to @code{'quick-and-vio2vo}) as
+@c TEXI DOCSTRING MAGIC: coq-max-background-second-stage-percentage
+@defvar coq-max-background-second-stage-percentage 
+Percentage of @samp{@code{coq-max-background-compilation-jobs}} for the second stage.@*
+This setting configures the maximal number of @samp{`-vok}' or vio2vo background
+jobs running in a second stage as
 percentage of @samp{@code{coq-max-background-compilation-jobs}}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-max-background-vio2vo-percentage}}.
 @end defvar
 
 
-@c TEXI DOCSTRING MAGIC: coq-compile-vio2vo-delay
-@defvar coq-compile-vio2vo-delay 
-Delay in seconds for the vio2vo compilation.@*
-This delay helps to avoid running into a library inconsistency
-with @code{'quick-and-vio2vo}, see Coq issue #@var{5223}.
+@c TEXI DOCSTRING MAGIC: coq-compile-second-stage-delay
+@defvar coq-compile-second-stage-delay 
+Delay in seconds before starting the second stage compilation.@*
+The delay is applied to both @samp{`-vok}' and vio2vo second stages.
+For Coq < 8.11 and vio2vo delay helps to avoid running into a
+library inconsistency with @code{'quick-and-vio2vo}, see Coq issue
+#@var{5223}.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+@samp{@code{coq-compile-vio2vo-delay}}.
 @end defvar
 
 Locking ancestors can be disabled with the following option.
@@ -4989,7 +4897,7 @@ Locking ancestors can be disabled with the following option.
 @defvar coq-lock-ancestors 
 If non-nil, lock ancestor module files.@*
 If external compilation is used (via @samp{@code{coq-compile-command}}) then
-only the direct ancestors are locked. Otherwise all ancestors are
+only the direct ancestors are locked.  Otherwise all ancestors are
 locked when the "Require" command is processed.
 
 This option can be set via menu
@@ -5005,13 +4913,13 @@ configure the compilation command in @code{coq-compile-command}.
 
 @c TEXI DOCSTRING MAGIC: coq-compile-command
 @defvar coq-compile-command 
-External compilation command. If empty ProofGeneral compiles itself.@*
+External compilation command.  If empty ProofGeneral compiles itself.@*
 If unset (the empty string) ProofGeneral computes the dependencies of
-required modules with coqdep and compiles as necessary. This internal
+required modules with coqdep and compiles as necessary.  This internal
 dependency checking does currently not handle ML modules.
 
 If a non-empty string, the denoted command is called to do the
-dependency checking and compilation. Before executing this
+dependency checking and compilation.  Before executing this
 command the following keys are substituted as follows:
 @lisp
   %p  the (physical) directory containing the source of
@@ -5050,12 +4958,12 @@ configure these things with the following options.
 @defvar coq-load-path 
 Non-standard coq library load path.@*
 This list specifies the LoadPath extension for coqdep, coqc and
-coqtop. Usually, the elements of this list are strings (for
+coqtop.  Usually, the elements of this list are strings (for
 "-I") or lists of two strings (for "-R" dir path and
 "-Q" dir path).
 
 The possible forms of elements of this list correspond to the 4
-forms of include options (@samp{-I} @samp{-Q} and @samp{-R}). An element can be
+forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
 @lisp
   - A list of the form @samp{(}ocamlimport dir)', specifying (in 8.5) a
     directory to be added to ocaml path (@samp{-I}).
@@ -5086,10 +4994,10 @@ not the same (-I is for coq path).
 
 @c TEXI DOCSTRING MAGIC: coq-load-path-include-current
 @defvar coq-load-path-include-current 
-If @samp{t} let coqdep search the current directory too.@*
-Should be @samp{t} for normal users. If @samp{t} pass -Q dir "" to coqdep when
-processing files in directory "dir" in addition to any entries
-in @samp{@code{coq-load-path}}.
+If t, let coqdep search the current directory too.@*
+Should be t for normal users.  If t, pass -Q dir "" to coqdep when
+processing files in directory "dir" in addition to any entries in
+@samp{@code{coq-load-path}}.
 
 This setting is only relevant with Coq < 8.5.
 @end defvar
@@ -5105,12 +5013,12 @@ libraries.
 @defvar coq-compile-ignored-directories 
 Directories in which ProofGeneral should not compile modules.@*
 List of regular expressions for directories in which ProofGeneral
-should not compile modules. If a library file name matches one
+should not compile modules.  If a library file name matches one
 of the regular expressions in this list then ProofGeneral does
 neither compile this file nor check its dependencies for
-compilation. It makes sense to include non-standard coq library
+compilation.  It makes sense to include non-standard coq library
 directories here if they are not changed and if they are so big
-that dependency checking takes noticeable time. The regular
+that dependency checking takes noticeable time.  The regular
 expressions in here are always matched against the .vo file name,
 regardless whether @samp{`-quick}' would be used to compile the file
 or not.
@@ -5125,10 +5033,6 @@ or not.
 No support for @code{Declare ML Module} commands and files
 depending on an ML module.
 @item
-Comments inside require commands should be avoided, see Proof
-General issue #352. The regular expression to extract module
-names does not skip over comments.
-@item
 When a compiled library has the same time stamp as the source
 file, it is considered outdated. Some old file systems (for
 instance ext3) or Emacs before version 24.3 support only time
@@ -5136,6 +5040,51 @@ stamps with one second granularity. On such configurations Proof
 General will perform some unnecessary compilations.
 @end itemize
 
+
+@node Omitting proofs for speed
+@section Omitting proofs for speed
+
+To speed up asserting larger chunks, Proof General can omit
+complete opaque proofs by silently replacing the whole proof
+script with @code{Admitted}, @ref{Script processing commands}.
+This works when
+@itemize
+@item
+proofs are not nested
+@item
+opaque and non-opaque proofs start with @code{Proof.} or
+@code{Proof using}
+@item
+opaque proofs end with @code{Qed} or @code{Admitted}
+@item
+non-opaque proofs or definition end with @code{Defined}
+@end itemize
+Aborted proofs can be present if they start with a variant of
+@code{Proof} and end with @code{Abort}. They are handled like
+non-opaque proofs (i.e., not omitted).
+
+To enable omitting proofs, configure
+@code{proof-omit-proofs-option} or select @code{Proof-General ->
+Quick Options -> Processing -> Omit Proofs}.
+
+With a prefix argument, both @code{proof-goto-point} and
+@code{proof-process-buffer} will temporarily disable the omit
+proofs feature and send the full proof script to Coq.
+
+If a nested proof is detected while searching for opaque proofs
+to omit, a warning is displayed and the complete remainder of the
+asserted region is sent unmodified to Coq. 
+
+If the proof script relies on sections, it is highly recommended to use
+a @code{Proof using} annotation for all lemmas contained in a Section,
+otherwise @code{Coq} will compute a wrong type for these lemmas when
+this omitting-proofs feature is enabled.
+
+To automate this, we recall that ProofGeneral provides a dedicated
+feature to generate these @code{Proof using} annotations (a defective
+form being e.g. @code{Proof using Type} if no section hypothesis is
+used), see the menu command @code{Coq > "Proof using" mode} and
+@ref{Proof using annotations} for details.
 
 @node Editing multiple proofs
 @section Editing multiple proofs
@@ -5282,9 +5231,9 @@ and
 @end verbatim
 @end itemize
 
-NOTE: This feature is experimental.
+@emph{NOTE:} This feature is experimental.
 
-NOTE: the ``pg tokens'' are actually the ones PG generates internally by
+@emph{NOTE:} the ``pg tokens'' are actually the ones PG generates internally by
 exploring the file around the indentation point. Consequently this
 refers to internals of PoofGeneral. Contact the Proof General team if you
 need help.
@@ -5339,8 +5288,7 @@ several layers.
 
 Coq 8.10 supports automatically highlighting the differences
 between successive proof steps in Proof General.  The feature is described in the
-@uref{https://coq.inria.fr/distrib/current/refman/proof-engine/proof-handling.html#showing-differences-between-proof-steps,
-Coq Documentation}.
+Coq Documentation, section @coqrefman{proofs/writing-proofs/proof-mode.html#showing-differences-between-proof-steps, Showing differences between proof steps}.
 
 The Coq proof diff does more than a basic "diff" operation.  For example:
 
@@ -5373,323 +5321,6 @@ The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
 have added or removed tokens are shown with the entire line highlighted with
 a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
 with non-@code{Bg} faces.
-
-@c =================================================================
-@c
-@c  CHAPTER: Isabelle Proof General
-@c
-@node Isabelle Proof General
-@chapter Isabelle Proof General
-@cindex Isabelle Proof General
-
-Isabelle Proof General supports major generic features of Proof General,
-including integration with Isabelle's theory loader for proper automatic
-multiple file handling.  
-@comment Support for tags and proof-by-pointing is missing.
-
-Isabelle provides its own way to invoke Proof General via the
-@code{isabelle} command.  Running @code{isabelle emacs} starts an Emacs
-session with Isabelle Proof General.  The defaults may be changed by
-editing the Isabelle settings, see the Isabelle documentation for
-details.
-
-Proof General for Isabelle manages Isar @file{.thy} files.  Proof
-General provides reliable control over incremental execution of the
-text.
-
-@menu
-* Choosing logic and starting isabelle::
-* Isabelle commands::
-* Isabelle settings::
-* Isabelle customizations::
-@end menu
-
-@node Choosing logic and starting isabelle
-@section Choosing logic and starting isabelle
-@cindex Isabelle logic
-
-When you load an Isabelle theory file into Proof General, you may be
-prompted for the path to the program @code{isabelle} if it is not on the
-system @code{PATH} already.  This is used to generate further
-information for invoking Isabelle, in particular, the list of available
-logics.
-
-The Isabelle menu offers an easy way to select the invoked object logic.
-If you look at the menu:
-@lisp
-        Isabelle -> Logics -> 
-@end lisp 
-you should see the list of logics available to Isabelle.  This menu is
-generated from the output of the command @code{isabelle findlogics}.
-(Similarly, the documentation menu is partly generated from
-@code{isabelle doc}).  Instead of the menu, you can use the
-keyboard command @code{isabelle-chose-logic} to choose from the list.
-
-The logics list is refreshed dynamically so you can select any newly
-built heap images in the same Emacs session.  However, notice that the
-choices are greyed out while Isabelle is actually running --- you can
-only switch to a new logic if you first exit Isabelle (similarly to
-Proof General, Isabelle operates with only one logic at a time).
-
-Another way to set the logic before Isabelle is launched is using an
-Emacs local variable setting inside a comment at the top of the file,
-see the documentation of @code{isabelle-chosen-logic} below.
-
-In case you do not have the @code{isabelle} program available or want to
-override its behaviour, you may set the variable
-@code{isabelle-program-name-override} to define the name of the
-executable used to start Isabelle.  The standard options are and 
-logic name are still appended.  
-@c in fact, we also have ISABELLE_OPTIONS and PROOFGENERAL_LOGIC,
-@c but lets not mention these.
-
-
-@c TEXI DOCSTRING MAGIC: isabelle-program-name-override
-@defopt isabelle-program-name-override 
-Name of executable program to run Isabelle.
-
-You can set customize this in case the automatic settings
-mechanism does not work for you, perhaps because isabelle
-is not on your path, or you are running it remotely.
-
-The logic image name is tagged onto the end.
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-chosen-logic
-@defopt isabelle-chosen-logic 
-Choice of logic to use with Isabelle.@*
-If non-nil, added onto the Isabelle command line for invoking Isabelle.
-
-You can set this as a file local variable, using a special comment
-at the top of your theory file, like this:
-@lisp
-   (* -*- @code{isabelle-chosen-logic}: "ZF" -*- *)
-@end lisp
-
-The default value is @code{nil}.
-@end defopt
-@c TEXI DOCSTRING MAGIC: isabelle-choose-logic
-@deffn Command isabelle-choose-logic logic
-Adjust isabelle-prog-name and @code{proof-prog-name} for running @var{logic}.
-@end deffn
-@node Isabelle commands
-@section Isabelle commands
-@cindex Isabelle commands
-
-
-@kindex C-c C-a r
-@kindex C-c C-a C-q
-@kindex C-c C-a C-d
-@kindex C-c C-a C-p
-@kindex C-c C-a h A
-@kindex C-c C-a h C
-@kindex C-c C-a h I
-@kindex C-c C-a h S
-@kindex C-c C-a h T
-@kindex C-c C-a h a
-@kindex C-c C-a h b
-@kindex C-c C-a h c
-@kindex C-c C-a h f
-@kindex C-c C-a h i
-@kindex C-c C-a h m
-@kindex C-c C-a h o
-@kindex C-c C-a h t
-@kindex C-c C-a C-s
-@kindex C-c C-a C-m
-@kindex C-c C-a C-f
-@kindex C-c C-f
-
-The Isabelle instance of Proof General supplies several specific
-help key bindings; these functions are offered within the prover help
-menu as well.
-
-@table @kbd
-@item C-c C-a r
-Invokes Isar command @code{refute} on the current subgoal.  Only available in HOL
-and derived logics.
-@item C-c C-a C-q
-Invokes Isar command @code{quickcheck} on the current subgoal.
-@item C-c C-a C-d
-Displays a draft document of the current theory.
-@item C-c C-a C-p
-Prints a draft document of the current theory.
-@item C-c C-a h A
-Shows available antiquotation commands and options.
-@item C-c C-a h C
-Shows the current Classical Reasoner context.
-@item C-c C-a h I
-Shows the current set of induct/cases rules.
-@item C-c C-a h S
-Shows the current Simplifier context.
-@item C-c C-a h T
-Shows the current set of transitivity rules (for calculational reasoning).
-@item C-c C-a h a
-Shows attributes available in current theory context.
-@item C-c C-a h b
-Shows all local term bindings.
-@item C-c C-a h c
-Shows all named local contexts (cases).
-@item C-c C-a h f
-Shows all local facts.
-@item C-c C-a h i
-Shows inner syntax of the current theory context (for types and terms).
-@item C-c C-a h m
-Shows proof methods available in current theory context.
-@item C-c C-a h o
-Shows all available commands of Isabelle's outer syntax.
-@item C-c C-a h t
-Shows theorems stored in the current theory node.
-@item C-c C-a C-s
-Invoke sledgehammer on first subgoal.
-@item C-c C-a C-m 
-Find theorems containing given arguments (prompt in minibuffer).
-Invokes the @code{thms_containing} command.  Arguments are
-separated by white space as usual in Isar.
-@item C-c C-a C-f 
-Find theorems containing (argument in form)
-@item C-c C-f
-Find theorems: either of the above.  
-@end table
-
-@comment da: this isn't a very good way!!
-@comment it may override settings for other provers, or have no effect, I think!
-@comment we should introduce specific Isar setting.
-@c You can customize the default behaviour of the toolbar or
-@c menu item for find theorems by
-@c setting @code{proof-find-theorems-command} 
-@c to 
-@c @code{isar-find-theorems-minibuffer} or
-@c @code{isar-find-theorems-form}.  The setting
-@c can be customized on the menu:
-@c @example
-@c  Proof-General -> Advanced -> Internals -> Prover Config
-@c @end example
-
-
-@kindex C-c C-a b
-@kindex C-c C-a C-b
-@kindex C-c C-a C-u
-@kindex C-c C-a C-l
-@kindex C-c C-a u
-@kindex C-c C-a l
-@kindex C-c C-a C-i
-@kindex C-c C-a C-r
-@kindex C-c C-a C-a
-
-The following shortcuts insert control sequences into the text,
-modifying the appearance of individual symbols (single letters,
-mathematical entities etc.); the Tokens package will provide immediate
-visual feedback.
-
-@table @kbd
-@item C-c C-a C-b
-Inserts "\<^bold>" (bold character)
-@item C-c C-a C-c
-Inserts "\<^loc>" (``local'' control)
-@item C-c C-a C-u
-Inserts "\<^sup>"  (superscript character)
-@item C-c C-a C-l
-Inserts "\<^sub>" (subscript character)
-@item C-c C-a u
-Inserts "\<^bsup> \<^esup>"  (superscript string)
-@item C-c C-a l
-Inserts "\<^bsub> \<^esub>"  (subscript string)
-@item C-c C-a C-i
-Inserts "\<^isub>"  (identifier subscript letter)
-@item C-c C-a C-r
-Inserts "\<^raw:>"  (raw LaTeX text)
-@item C-c C-a C-a
-Inserts "@@@{text ""@}"  (anti-quotation).
-@item C-c C-a C-x
-Inserts "ML @{* *@}"  (inline ML code).
-@end table
-
-Command termination via `@code{;}' is an optional feature of Isar
-syntax.  Neither Isabelle nor Proof General require semicolons to
-do their job.  The following command allows to get rid of command
-terminators in existing texts.
-
-@c TEXI DOCSTRING MAGIC: isar-strip-terminators
-@deffn Command isar-strip-terminators 
-Remove explicit Isabelle/Isar command terminators @samp{;} from the buffer.
-@end deffn
-
-
-@node Isabelle settings
-@section Isabelle settings
-
-The Isabelle menu also contains a @code{Settings} submenu, which
-allows you to configure things such as the behaviour of Isabelle's term
-pretty printer (display of types, sorts, etc).  Note that you won't
-see this sub-menu until Isabelle has been started, because it is
-generated by Isabelle itself.  Proof General, on the other hand, is
-responsible for recording any settings that are configured when you
-select @code{Isabelle -> Settings -> Save Settings}.  They are stored
-along with the other Emacs customization settings.
-
-
-
-@node Isabelle customizations
-@section Isabelle customizations
-@cindex Isabelle customizations
-
-Here are some of the other user options specific to Isabelle.  You can
-set these as usual with the customization mechanism.
-
-@c TEXI DOCSTRING MAGIC: isabelle-web-page
-@defvar isabelle-web-page 
-URL of web page for Isabelle.
-@end defvar
-
-
-
-
-
-@c FIXME todo: theorem dependencies
-
-
-@c =================================================================
-@c
-@c  CHAPTER: HOL Light Proof General
-@c
-@node HOL Light Proof General
-@chapter HOL Light Proof General
-@cindex HOL Light Proof General
-
-HOL Light Proof General is a "technology demonstration" of Proof General
-for HOL Light.  This means that only a basic instantiation has been
-provided, and that it is not yet supported as a maintained instantiation
-of Proof General.
-
-HOL Light Proof General has basic script management support, with a
-little bit of decoration of scripts and output.  It does not rely on a
-modified version of HOL Light, so the pattern matching may be fragile in
-certain cases.  
-
-@c Support for multiple files deduces dependencies
-@c automatically, so there is no interaction with the HOL make system yet.
-
-See the @file{example.ml} file for a demonstration proof script
-which works with Proof General.
-
-Note that HOL Light Proof Script proof scripts often use batch-oriented
-single step tactic proofs, but Proof General does not (yet) offer an
-easy way to edit these kind of proofs.  They will replay simply as a
-single step proof and you will need to convert from the interactive to
-batch form as usual if you wish to obtain batch proofs.  Also note that
-Proof General does not contain an SML parser, so there can be problems
-if you write complex ML in proof scripts.
-@c Old section was helpful on this: @xref{ML files}, for the same issue with Isabelle.
-
-HOL Light is the most recently tested version of HOL with Proof General,
-but the Proof General distribution also contains experimental support
-for HOL 4 (aka HOL 98).  To improve this older version, or to support a
-new HOL variant, a few of the settings probably need to be tweaked to
-cope with small differences in output between the systems.  Please let
-us know if you try this out and want help.  We welcome any interested
-collaborators from the HOL communities to help improve Proof General as
-an interface for HOL provers.
 
 @c =================================================================
 @c
@@ -5737,18 +5368,21 @@ Here are some of the other user options specific to EasyCrypt.  You can
 set these as usual with the customization mechanism.
 
 @c TEXI DOCSTRING MAGIC: easycrypt-prog-name
-@defvar easycrypt-prog-name
+@defopt easycrypt-prog-name 
 Name of program to run EasyCrypt.
-@end defvar
+
+The default value is @code{"easycrypt"}.
+@end defopt
 
 @c TEXI DOCSTRING MAGIC: easycrypt-load-path
-@defvar easycrypt-load-path
-Non-standard EasyCrypt library load path. This list specifies the
-include path for EasyCrypt.
+@defvar easycrypt-load-path 
+Non-standard EasyCrypt library load path.@*
+This list specifies the include path for EasyCrypt.  The elements of
+this list are strings.
 @end defvar
 
 @c TEXI DOCSTRING MAGIC: easycrypt-web-page
-@defvar easycrypt-web-page
+@defvar easycrypt-web-page 
 URL of web page for EasyCrypt.
 @end defvar
 
@@ -5820,8 +5454,8 @@ The distribution is available in the master branch of the repository.
 Tagged versions of the sources may be redistributed by third party
 packagers in other forms.
 
-The sources includes the generic elisp code, and code for Coq, LEGO,
-Isabelle, and other provers.  Also included are installation
+The sources includes the generic elisp code, and code for Coq, EasyCrypt,
+and other provers.  Also included are installation
 instructions (reproduced in brief below) and this documentation.
 
 @node Installing Proof General from sources
@@ -5871,7 +5505,7 @@ General is loaded.  To load it manually, type
 
 If you do not want to use customize, simply add a line like this:
 @lisp
-  (setq coq-prog-name "/usr/bin/coqtop -emacs")
+  (setq coq-prog-name "/usr/bin/coqtop")
 @end lisp
 to your @file{.emacs} file.
 For more advice on how to customize the @code{coq-prog-name} variable,
@@ -5908,7 +5542,7 @@ providing the variables in @file{proof-site.el} are adjusted
 accordingly (see @i{Proof General site configuration} in
 @i{Adapting Proof General} for more details).  Make sure that
 the @file{generic/} and assistant-specific elisp files are kept in
-subdirectories (@file{coq/}, @file{isa/}, @file{lego/}) of
+subdirectories (@file{coq/}, @file{phox/}, @file{easycrypt/}, ...) of
 @code{proof-home-directory} so that the autoload directory calculations
 are correct.
 
@@ -5920,7 +5554,7 @@ details if you don't know where to find this file.
 @unnumberedsubsec Removing support for unwanted provers
 
 You cannot run more than one instance of Proof General at a time: so if
-you're using Coq, visiting an @file{.ML} file will not load Isabelle
+you're using Coq, visiting an @file{.ec} file will not load EasyCrypt
 Proof General, and the buffer remains in fundamental mode.  If there are
 some assistants supported that you never want to use, you can adjust the
 variable @code{proof-assistants} in @file{proof-site.el} to remove the
@@ -6017,7 +5651,6 @@ l'INRIA Sophia Antipolis RR-3286
 @c
 @node History of Proof General
 @unnumbered History of Proof General
-@cindex @code{lego-mode}
 @cindex history
 
 It all started some time in 1994. There was no Emacs interface for LEGO.
@@ -6304,8 +5937,7 @@ Public License (GPL).  Compared with the previous more restrictive
 license, this means the program can now be redistributed by third
 parties, and used in any context without applying for a special
 license.  Despite these legal changes, we would still appreciate if
-you send us back any useful improvements you make to Proof General,
-and register your use of Proof General on the web site.
+you send us back any useful improvements you make to Proof General.
 
 @node Old News for 3.5
 @unnumberedsec Old News for 3.5

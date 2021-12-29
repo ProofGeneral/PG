@@ -12,7 +12,7 @@
 ;; Authors: Healfdene Goguen, Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -154,13 +154,20 @@
        :active (and coq-compile-before-require
 		    coq-compile-parallel-in-background)
        :help "Derive behavior from Quick compilation setting above"]
-      ["use -vos"
+      ["use -vos and -vok"
+       (customize-set-variable 'coq-compile-vos 'vos-and-vok)
+       :style radio
+       :selected (eq coq-compile-vos 'vos-and-vok)
+       :active (and coq-compile-before-require
+		    coq-compile-parallel-in-background)
+       :help "Speedup with -vos, check proofs later, possibly inconsistent"]
+      ["use -vos, no -vok"
        (customize-set-variable 'coq-compile-vos 'vos)
        :style radio
        :selected (eq coq-compile-vos 'vos)
        :active (and coq-compile-before-require
 		    coq-compile-parallel-in-background)
-       :help "Speedup with -vos, possibly inconsistent"]
+       :help "Speedup with -vos, don't check proofs, possibly inconsistent"]
       ["ensure vo"
        (customize-set-variable 'coq-compile-vos 'ensure-vo)
        :style radio
@@ -313,6 +320,7 @@
      ["Search..." coq-Search t]
      ["SearchRewrite..." coq-SearchRewrite t]
      ["SearchPattern..." coq-SearchIsos t]
+     ["Search Blacklist..." coq-change-search-blacklist-interactive t]
      ["Locate constant..." coq-LocateConstant t]
      ["Locate Library..." coq-LocateLibrary t]
      ["Pwd" coq-Pwd t]

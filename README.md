@@ -27,6 +27,13 @@ Two editions of Proof General are currently available:
 
 ## Installing Proof General
 
+Proof General requires GNU Emacs `25.1` or later.
+
+The current policy aims at supporting multiple Emacs versions,
+including those available in [Debian Stable](https://packages.debian.org/stable/emacs)
+as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs) distributions
+until their [End-Of-Support](https://wiki.ubuntu.com/Releases).
+
 ### Using MELPA (recommended procedure)
 
 [MELPA](https://melpa.org/) is a repository of Emacs packages. Skip
@@ -43,7 +50,7 @@ your `.emacs` and restart Emacs:
 **Remark:** If you have Emacs 26.1 (which is precisely
 [the packaged version in Debian 10](https://packages.debian.org/emacs)),
 you may get the error message `Failed to download 'melpa' archive`
-during the package refresh step. This is a know bug
+during the package refresh step. This is a known bug
 ([debbug #34341](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34341))
 which has been fixed in Emacs 26.3 and 27.1, while a simple workaround
 consists in uncommenting the line
@@ -119,7 +126,6 @@ See:
 Links:
 
 * [https://proofgeneral.github.io/doc](https://proofgeneral.github.io/doc) for online documentation of Proof General
-* [http://proofgeneral.inf.ed.ac.uk/mailinglist](http://proofgeneral.inf.ed.ac.uk/mailinglist) for mailing list information
 
 Supported proof assistants:
 
@@ -130,19 +136,10 @@ Supported proof assistants:
 Proof General used to support other proof assistants, but those
 instances are no longer maintained nor available in the MELPA package:
 
-* Legacy support of
-  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/) and
-  [LEGO](http://www.dcs.ed.ac.uk/home/lego)
-* Experimental support of: CCC, ACL2, HOL98, Hol-Light, Lambda-Clam, Shell, Twelf
-* Obsolete instances: Demoisa, Lambda-Clam, Plastic
+* Experimental support of: Shell
+* Obsolete instances: Demoisa
+* Removed instances: Twelf, CCC, Hol-Light, ACL2, Plastic, Lambda-Clam, HOL98,
+  [LEGO](http://www.dcs.ed.ac.uk/home/lego),
+  [Isabelle](https://www.cl.cam.ac.uk/research/hvg/Isabelle/)
 
 A few example proofs are included in each prover subdirectory.
-
-## Contributing
-
-Contributions to this repository are placed under the BSD-3 license.
-As BSD-3 is compatible with both GPLv2 and GPLv3+, this means that
-we can merge them in both `master` and `async` branches if need be,
-using the same license as the rest of the codebase, while you keep
-all the rights on your code.
-For more info, see <https://opensource.org/licenses/BSD-3-Clause>.

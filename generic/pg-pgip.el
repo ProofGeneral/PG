@@ -11,7 +11,7 @@
 
 ;; Author:   David Aspinall <David.Aspinall@ed.ac.uk>
 
-;; License:  GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -281,7 +281,7 @@ Return a symbol representing the PGIP command processed, or nil."
     ;; TODO: display and cache the value in a dedicated buffer
     ;; FIXME: should idvalue have a context?
     (pg-response-message text)))
-    
+
 ;;
 ;; Menu configuration [TODO]
 ;;
@@ -583,7 +583,10 @@ See `pg-pgip-assemble-packet' "
 (defconst pg-pgip-id
   ;; Identifier based on hostname, user, time, and (FIXME: possible?) ppid
   (concat (getenv "HOSTNAME") "/" (getenv "USER") "/"
-	  (let ((tm (current-time))) (format "%d.%d" (car tm) (cadr tm))))
+	  (let ((tm (if (fboundp 'time-convert)
+			(time-convert nil 'list)
+		      (current-time))))
+	    (format "%d.%d" (car tm) (cadr tm))))
   "PGIP Identifier for this Emacs Proof General component.")
 
 (defvar pg-pgip-refseq nil

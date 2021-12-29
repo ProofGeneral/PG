@@ -1,18 +1,18 @@
-;;; coq-compile-common.el --- common part of compilation feature
+;;; coq-compile-common.el --- common part of compilation feature  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
-;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
+;; Portions © Copyright 2011-2013, 2016-2017, 2019-2021  Hendrik Tews
 ;; Portions © Copyright 2015-2017  Clément Pit-Claudel
 
 ;; Authors: Hendrik Tews
 ;; Maintainer: Hendrik Tews <hendrik@askra.de>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -47,33 +47,33 @@
   "Enable parallel compilation.
 Must be used together with `coq-seq-disable'."
   (add-hook 'proof-shell-extend-queue-hook
-	    'coq-par-preprocess-require-commands)
+	    #'coq-par-preprocess-require-commands)
   (add-hook 'proof-shell-signal-interrupt-hook
-	    'coq-par-user-interrupt)
+	    #'coq-par-user-interrupt)
   (add-hook 'proof-shell-handle-error-or-interrupt-hook
-	    'coq-par-user-interrupt))
+	    #'coq-par-user-interrupt))
 
 (defun coq-par-disable ()
   "Disable parallel compilation.
 Must be used together with `coq-seq-enable'."
   (remove-hook 'proof-shell-extend-queue-hook
-	       'coq-par-preprocess-require-commands)
+	       #'coq-par-preprocess-require-commands)
   (remove-hook 'proof-shell-signal-interrupt-hook
-	       'coq-par-user-interrupt)
+	       #'coq-par-user-interrupt)
   (remove-hook 'proof-shell-handle-error-or-interrupt-hook
-	       'coq-par-user-interrupt))
+	       #'coq-par-user-interrupt))
 
 (defun coq-seq-enable ()
   "Enable sequential synchronous compilation.
 Must be used together with `coq-par-disable'."
   (add-hook 'proof-shell-extend-queue-hook
-	    'coq-seq-preprocess-require-commands))
+	    #'coq-seq-preprocess-require-commands))
 
 (defun coq-seq-disable ()
   "Disable sequential synchronous compilation.
 Must be used together with `coq-par-enable'."
   (remove-hook 'proof-shell-extend-queue-hook
-	       'coq-seq-preprocess-require-commands))
+	       #'coq-seq-preprocess-require-commands))
 
 
 
@@ -100,40 +100,40 @@ Must be used together with `coq-par-enable'."
 	ncpus
       nil)))
 
-(defvar coq--max-background-vio2vo-percentage-shadow 40
-  "Internal shadow value of `coq-max-background-vio2vo-percentage'.
+(defvar coq--max-background-second-stage-percentage-shadow 40
+  "Internal shadow value of `coq-max-background-second-stage-percentage'.
 This variable does always contain the same value as
-`coq-max-background-vio2vo-percentage'.  It is used only to break
-the dependency cycle between `coq-set-max-vio2vo-jobs' and
-`coq-max-background-vio2vo-percentage'.")
+`coq-max-background-second-stage-percentage'.  It is used only to break
+the dependency cycle between `coq-set-max-second-stage-jobs' and
+`coq-max-background-second-stage-percentage'.")
 
-(defvar coq--internal-max-vio2vo-jobs 1
-  "Internal number of vio2vo jobs.
+(defvar coq--internal-max-second-stage-jobs 1
+  "Internal number of second-stage background jobs (vok or vio2vo).
 This is the internal value, use
-`coq-max-background-vio2vo-percentage' to configure.")
+`coq-max-background-second-stage-percentage' to configure.")
 
 (defvar coq--internal-max-jobs 1
   "Value of `coq-max-background-compilation-jobs' translated to a number.")
 
-(defun coq-set-max-vio2vo-jobs ()
-  "Set `coq--internal-max-vio2vo-jobs'."
-  (setq coq--internal-max-vio2vo-jobs
+(defun coq-set-max-second-stage-jobs ()
+  "Set `coq--internal-max-second-stage-jobs'."
+  (setq coq--internal-max-second-stage-jobs
 	(max 1
 	     (round (* coq--internal-max-jobs
-		       coq--max-background-vio2vo-percentage-shadow
+		       coq--max-background-second-stage-percentage-shadow
 		       0.01)))))
 
-(defun coq-max-vio2vo-setter (symbol new-value)
-  ":set function for `coq-max-background-vio2vo-percentage'.
-SYMBOL should be 'coq-max-background-vio2vo-percentage"
-  (set symbol new-value)
-  (setq coq--max-background-vio2vo-percentage-shadow new-value)
-  (coq-set-max-vio2vo-jobs))
+(defun coq-max-second-stage-setter (symbol new-value)
+  ":set function for `coq-max-background-second-stage-percentage'.
+SYMBOL should be 'coq-max-background-second-stage-percentage"
+  (set-default symbol new-value)
+  (setq coq--max-background-second-stage-percentage-shadow new-value)
+  (coq-set-max-second-stage-jobs))
 
 (defun coq-max-jobs-setter (symbol new-value)
   ":set function for `coq-max-background-compilation-jobs'.
 SYMBOL should be 'coq-max-background-compilation-jobs"
-  (set symbol new-value)
+  (set-default symbol new-value)
   (cond
    ((eq new-value 'all-cpus)
     (setq new-value (number-of-cpus))
@@ -142,7 +142,7 @@ SYMBOL should be 'coq-max-background-compilation-jobs"
    ((and (integerp new-value) (> new-value 0)) t)
    (t (setq new-value 1)))
   (setq coq--internal-max-jobs new-value)
-  (coq-set-max-vio2vo-jobs))
+  (coq-set-max-second-stage-jobs))
 
 (defun coq-compile-quick-setter (symbol new-value)
   ":set function for `coq-compile-quick' for pre 8.5 compatibility.
@@ -154,7 +154,7 @@ Ignore any quick setting for Coq versions before 8.5."
     (message "Ignore coq-compile-quick setting %s for Coq before 8.5"
 	     new-value)
     (setq new-value 'no-quick)))
-  (set symbol new-value))
+  (set-default symbol new-value))
 
 
 ;;; user options and variables
@@ -173,8 +173,7 @@ are compiled from the sources before the \"Require\" command is processed.
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Compile Before Require'."
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 (proof-deftoggle coq-compile-before-require)
 
@@ -192,8 +191,7 @@ is set with `coq-max-background-compilation-jobs'.
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Compile Parallel In Background'."
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 (proof-deftoggle coq-compile-parallel-in-background)
 
@@ -272,10 +270,9 @@ This option can be set via menu
     (const :tag "use -quick, don't do vio2vo" quick-no-vio2vo)
     (const :tag "use -quick and do vio2vo" quick-and-vio2vo)
     (const :tag "ensure vo compilation, delete vio files" ensure-vo))
-  :safe (lambda (v) (member v '(no-quick quick-no-vio2vo
-					 quick-and-vio2vo ensure-vo)))
-  :set 'coq-compile-quick-setter
-  :group 'coq-auto-compile)
+  :safe (lambda (v)
+	  (member v '(no-quick quick-no-vio2vo quick-and-vio2vo ensure-vo)))
+  :set #'coq-compile-quick-setter)
 
 (defun coq-compile-prefer-quick ()
   "Return t if a .vio file would be prefered."
@@ -284,15 +281,25 @@ This option can be set via menu
    (eq coq-compile-quick 'quick-and-vio2vo)))
 
 (defcustom coq-compile-vos nil
-  "Control fast compilation, skipping opaque proofs with ``-vos''.
+  "Control fast compilation, skipping opaque proofs with ``-vos'' and ``-vok''.
 When using coq >= 8.11, this option controls whether parallel
 background compilation is done with ``-vos'', skipping opaque
 proofs, thus being considerably faster and inconsistent.
 
 Set this option to `vos' if you want fast background compilation
-and don't care if all proofs are correct. Set this option to
-`ensure-vo' if you want all proof and universe constraints
+without a second stage ``-vok'' run to check all proofs.  Set this
+option to `vos-and-vok' if you want fast background compilation
+but also want to check all proofs in a second stage with
+``-vok''.  Option `vos-and-vok' does not guarantee consistency,
+because not all universe constraints are checked.  Set this option
+to `ensure-vo' if you want all proofs and universe constraints
 checked carefully.
+
+The second stage ``-vok'' run starts in the background after
+`coq-compile-second-stage-delay' seconds on
+`coq-max-background-second-stage-percentage' per cent of the
+cores used for the first run (configured in
+`coq-max-background-compilation-jobs').
 
 For upgrading, if this option is `nil' (i.e., not configured),
 then the value of `coq-compile-quick' is considered and vos
@@ -303,10 +310,10 @@ For coq < 8.11 this option is ignored."
   :type
   '(radio
     (const :tag "unset, derive behavior from `coq-compile-quick'" nil)
-    (const :tag "use -vos" vos)
+    (const :tag "use -vos, don't do -vok" vos)
+    (const :tag "use -vos and do -vok" vos-and-vok)
     (const :tag "ensure vo compilation" ensure-vo))
-  :safe (lambda (v) (member v '(nil vos ensure-vo)))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (member v '(nil vos vos-and-vok ensure-vo))))
 
 (defun coq-compile-prefer-vos ()
   "Decide whether ``-vos'' should be used.
@@ -315,6 +322,7 @@ by checking the value of `coq-compile-quick' if `coq-compile-vos'
 is nil."
   (or
    (eq coq-compile-vos 'vos)
+   (eq coq-compile-vos 'vos-and-vok)
    (and (not coq-compile-vos)
         (eq coq-compile-quick 'quick-no-vio2vo))))
 
@@ -342,26 +350,59 @@ is not adapted."
   :type '(choice (const :tag "use all CPU cores" all-cpus)
 		 (integer :tag "fixed number" :value 1))
   :safe (lambda (v) (or (eq v 'all-cpus) (and (integerp v) (> v 0))))
-  :set 'coq-max-jobs-setter
-  :group 'coq-auto-compile)
+  :set #'coq-max-jobs-setter)
 
-(defcustom coq-max-background-vio2vo-percentage 40
-  "Percentage of `coq-max-background-vio2vo-percentage' for vio2vo jobs.
-This setting configures the maximal number of vio2vo background
-jobs (if you set `coq-compile-quick' to 'quick-and-vio2vo) as
-percentage of `coq-max-background-compilation-jobs'."
+(defcustom coq-max-background-second-stage-percentage
+  (or (and (boundp 'coq-max-background-vio2vo-percentage)
+           coq-max-background-vio2vo-percentage)
+      (and (get 'coq-max-background-vio2vo-percentage 'saved-value)
+           (eval (car (get 'coq-max-background-vio2vo-percentage 'saved-value))))
+      40)
+  ;; XXX change in ProofGeneral.texi
+  "Percentage of `coq-max-background-compilation-jobs' for the second stage.
+This setting configures the maximal number of ``-vok'' or vio2vo background
+jobs running in a second stage as
+percentage of `coq-max-background-compilation-jobs'.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+`coq-max-background-vio2vo-percentage'."
   :type 'number
   :safe 'numberp
-  :set 'coq-max-vio2vo-setter
-  :group 'coq-auto-compile)
+  :set #'coq-max-second-stage-setter)
 
-(defcustom coq-compile-vio2vo-delay 2.5
-  "Delay in seconds for the vio2vo compilation.
-This delay helps to avoid running into a library inconsistency
-with 'quick-and-vio2vo, see Coq issue #5223."
+(defcustom coq-max-background-vio2vo-percentage nil
+  "Deprecated. Please configure `coq-max-background-second-stage-percentage'.
+This is the old configuration option for Coq < 8.11, used before
+the ``-vok'' second stage was implemented."
   :type 'number
-  :safe 'numberp
-  :group 'coq-auto-compile)
+  :safe 'numberp)
+
+
+(defcustom coq-compile-second-stage-delay
+  (or (and (boundp 'coq-compile-vio2vo-delay) coq-compile-vio2vo-delay)
+      (and (get 'coq-compile-vio2vo-delay 'saved-value)
+           (eval (car (get 'coq-compile-vio2vo-delay 'saved-value))))
+      2.5)
+  "Delay in seconds before starting the second stage compilation.
+The delay is applied to both ``-vok'' and vio2vo second stages.
+For Coq < 8.11 and vio2vo delay helps to avoid running into a
+library inconsistency with 'quick-and-vio2vo, see Coq issue
+#5223.
+
+For backward compatibility, if this option is not customized, it
+is initialized from the now deprecated option
+`coq-compile-vio2vo-delay'."
+  :type 'number
+  :safe 'numberp)
+
+(defcustom coq-compile-vio2vo-delay nil
+  ;; XXX replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
+  "Deprecated. Please configure `coq-compile-second-stage-delay'.
+This is the old configuration option for Coq < 8.11, used before
+the ``-vok'' second stage was implemented."
+  :type 'number
+  :safe 'numberp)
 
 (defcustom coq-compile-command ""
   "External compilation command.  If empty ProofGeneral compiles itself.
@@ -390,8 +431,7 @@ minibuffer if `coq-confirm-external-compilation' is t."
   :safe (lambda (v)
           (and (stringp v)
                (or (not (boundp 'coq-confirm-external-compilation))
-                   coq-confirm-external-compilation)))
-  :group 'coq-auto-compile)
+                   coq-confirm-external-compilation))))
 
 (defconst coq-compile-substitution-list
   '(("%p" physical-dir)
@@ -404,9 +444,9 @@ Value must be a list of substitutions, where each substitution is
 a 2-element list.  The first element of a substitution is the
 regexp to substitute, the second the replacement.  The replacement
 is evaluated before passing it to `replace-regexp-in-string', so
-it might be a string, or one of the symbols 'physical-dir,
-'module-object, 'module-source, 'qualified-id and
-'requiring-file, which are bound to, respectively, the physical
+it might be a string, or one of the symbols `physical-dir',
+`module-object', `module-source', `qualified-id' and
+`requiring-file', which are bound to, respectively, the physical
 directory containing the source file, the Coq object file in
 'physical-dir that will be loaded, the Coq source file in
 'physical-dir whose object will be loaded, the qualified module
@@ -439,8 +479,7 @@ This option can be set via menu
      "save all coq-mode buffers except the current buffer without confirmation"
      save-coq)
     (const :tag "save all buffers without confirmation" save-all))
-  :safe (lambda (v) (member v '(ask-coq ask-all save-coq save-all)))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (member v '(ask-coq ask-all save-coq save-all))))
 
 (defcustom coq-lock-ancestors t
   "If non-nil, lock ancestor module files.
@@ -452,8 +491,7 @@ This option can be set via menu
 `Coq -> Auto Compilation -> Lock Ancestors'."
 
   :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
+  :safe 'booleanp)
 
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
@@ -466,8 +504,7 @@ Otherwise start the external compilation without confirmation.
 
 This option can be set/reset via menu
 `Coq -> Auto Compilation -> Confirm External Compilation'."
-  :type 'boolean
-  :group 'coq-auto-compile)
+  :type 'boolean)
 
 
 (defcustom coq-compile-ignored-directories nil
@@ -483,8 +520,7 @@ expressions in here are always matched against the .vo file name,
 regardless whether ``-quick'' would be used to compile the file
 or not."
   :type '(repeat regexp)
-  :safe (lambda (v) (cl-every #'stringp v))
-  :group 'coq-auto-compile)
+  :safe (lambda (v) (cl-every #'stringp v)))
 
 (defcustom coq-coqdep-error-regexp
   (concat "^\\*\\*\\* Warning: in file .*, library .* is required "
@@ -500,8 +536,7 @@ library at multiple places in the load path.  If you want to turn
 the latter condition into an error, then set this variable to
 \"^\\*\\*\\* Warning\"."
   :type 'string
-  :safe 'stringp
-  :group 'coq-auto-compile)
+  :safe 'stringp)
 
 
 (defconst coq-require-id-regexp
@@ -604,6 +639,11 @@ Changes the suffix from .vo to .vio.  VO-OBJ-FILE must have a .vo suffix."
 Changes the suffix from .vo to .vos.  VO-OBJ-FILE must have a .vo suffix."
   (concat vo-obj-file "s"))
 
+(defun coq-library-vok-of-vo-file (vo-obj-file)
+  "Return .vok file name for VO-OBJ-FILE.
+Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
+  (concat vo-obj-file "k"))
+
 
 ;;; ancestor unlocking
 ;;; (locking is different for sequential and parallel compilation)
@@ -620,7 +660,7 @@ Changes the suffix from .vo to .vos.  VO-OBJ-FILE must have a .vo suffix."
 
 (defun coq-unlock-all-ancestors-of-span (span)
   "Unlock all ancestors that have been locked when SPAN was asserted."
-  (mapc 'coq-unlock-ancestor (span-property span 'coq-locked-ancestors))
+  (mapc #'coq-unlock-ancestor (span-property span 'coq-locked-ancestors))
   (span-set-property span 'coq-locked-ancestors ()))
 
 
@@ -677,7 +717,9 @@ the command whose output will appear in the buffer."
   (with-current-buffer coq--compile-response-buffer
     ;; fontification enables the error messages
     (let ((font-lock-verbose nil)) ; shut up font-lock messages
-      (font-lock-fontify-buffer)))
+      (if (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+        (with-no-warnings (font-lock-fontify-buffer)))))
   ;; Make it so the next C-x ` will use this buffer.
   (setq next-error-last-buffer (get-buffer coq--compile-response-buffer))
   (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)

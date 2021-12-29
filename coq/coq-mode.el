@@ -12,7 +12,7 @@
 ;; Authors: Healfdene Goguen, Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -75,14 +75,15 @@ See also `coq-prog-env' to adjust the environment."
 (defvar prettify-symbols-alist)
 
 (defconst coq-prettify-symbols-alist
-  '(("not"	. ?¬)
-    ;; ("/\\"	. ?∧)
-    ("/\\"	. ?⋀)
-    ;; ("\\/"	. ?∨)
-    ("\\/"	. ?⋁)
-    ;;("forall"	. ?∀)
-    ("forall"	. ?Π)
+  '(;;("not"	. ?¬)
+    ("/\\"	. ?∧)
+    ;; ("/\\"	. ?⋀)
+    ("\\/"	. ?∨)
+    ;; ("\\/"	. ?⋁)
+    ("forall"	. ?∀)
+    ;; ("forall"	. ?Π)
     ("fun"	. ?λ)
+    ("exists"	. ?∃)
     ("->"	. ?→)
     ("<-"	. ?←)
     ("=>"	. ?⇒)

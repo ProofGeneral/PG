@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003, 2012, 2014  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -11,7 +11,7 @@
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -446,10 +446,10 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-goal-with-hole-result 2
-  "How to get theorem name after ‘proof-goal-with-hole-regexp’ match.
+  "How to get theorem name after `proof-goal-with-hole-regexp' match.
 String or Int.
-If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
-If a string, use ‘replace-match’.  In this case, ‘proof-goal-with-hole-regexp’
+If an int N, use `match-string' to get the value of the Nth parenthesis matched.
+If a string, use `replace-match'.  In this case, `proof-goal-with-hole-regexp'
 should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
@@ -696,19 +696,69 @@ needed for Coq."
   :type 'boolean
   :group 'proof-script)
 
-(defcustom proof-script-evaluate-elisp-comment-regexp "ELISP: -- \\(.*\\) --"
-  "Matches text within a comment telling Proof General to evaluate some code.
-This allows Emacs Lisp to be executed during scripting.
-\(It's also a fantastic backdoor security risk).
+(defcustom proof-omit-proofs-configured nil
+  "t if the omit proofs feature has been configured by the proof assitant.
+See also `proof-omit-proofs-option' or the Proof General manual
+for a description of the feature. This option can only be set, if
+all of `proof-script-proof-start-regexp',
+`proof-script-proof-end-regexp',
+`proof-script-definition-end-regexp' and
+`proof-script-proof-admit-command' have been configured.
 
-If the regexp matches text inside a comment, there should be
-one subexpression match string, which will contain elisp code
-to be evaluated.
+The omit proofs feature skips over opaque proofs in the source
+code, admitting the theorems, to speed up processing.
 
-Elisp errors will be trapped when evaluating; set
-`proof-general-debug' to be informed when this happens."
+If `proof-omit-proofs-option' is set by the user, all proof
+commands in the source following a match of
+`proof-script-proof-start-regexp' up to and including the next
+match of `proof-script-proof-end-regexp', are omitted (not send
+to the proof assistant) and replaced by
+`proof-script-proof-admit-command'. If a match for
+`proof-script-definition-end-regexp' is found while searching
+forward for the proof end, the current proof (up to and including
+the match of `proof-script-definition-end-regexp') is considered
+to be not opaque and not omitted, thus all these proof commands
+_are_ sent to the proof assistant.
+
+The feature does not work for nested proofs. If a match for
+`proof-script-proof-start-regexp' is found before the next match
+for `proof-script-proof-end-regexp' or
+`proof-script-definition-end-regexp', the search for opaque
+proofs immediately stops and all commands following the previous
+match of `proof-script-proof-start-regexp' are sent verbatim to
+the proof assistant.
+
+All the regular expressions for this feature are matched against
+the commands inside proof action items, that is as strings,
+without surrounding space."
+  :type 'boolean
+  :group 'proof-script)
+
+;; proof-omit-proofs-option is in proof-useropts as user option
+
+(defcustom proof-script-proof-start-regexp nil
+  "Regular expression for the start of a proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
   :type 'regexp
   :group 'proof-script)
+
+(defcustom proof-script-proof-end-regexp nil
+  "Regular expression for the end of an opaque proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
+  :type 'regexp
+  :group 'proof-script)
+
+(defcustom proof-script-definition-end-regexp nil
+  "Regexp for the end of a non-opaque proof for the omit proofs feature.
+See `proof-omit-proofs-configured'."
+  :type 'regexp
+  :group 'proof-script)
+  
+(defcustom proof-script-proof-admit-command nil
+  "Proof command to be inserted instead of omitted proofs."
+  :type 'string
+  :group 'proof-script)
+
 
 ;;
 ;; Proof script indentation
@@ -1345,44 +1395,6 @@ match data triggered by `proof-shell-retract-files-regexp'."
   :type 'string
   :group 'proof-shell)
 
-(defcustom proof-shell-set-elisp-variable-regexp nil
-  "Matches output telling Proof General to set some variable.
-This allows the proof assistant to configure Proof General directly
-and dynamically.   (It's also a fantastic backdoor security risk).
-
-More precisely, this should match a string which is bounded by
-matches on `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-If the regexp matches output from the proof assistant, there should be
-two match strings: (match-string 1) should be the name of the elisp
-variable to be set, and (match-string 2) should be the value of the
-variable (which will be evaluated as a Lisp expression).
-
-A good markup for the second string is to delimit with #'s, since
-these are not valid syntax for elisp evaluation.
-
-Elisp errors will be trapped when evaluating; set
-`proof-general-debug' to be informed when this happens.
-
-Example uses are to adjust PG's internal copies of proof assistant's
-settings, or to make automatic dynamic syntax adjustments in Emacs to
-match changes in theory, etc.
-
-If you pick a dummy variable name (e.g. `proof-dummy-setting') you
-can just evaluation arbitrary elisp expressions for their side
-effects, to adjust menu entries, or even launch auxiliary programs.
-But use with care -- there is no protection against catastrophic elisp!
-
-This setting could also be used to move some configuration settings
-from PG to the prover, but this is not really supported (most settings
-must be made before this mechanism will work).  In future, the PG
-standard protocol, PGIP, will use this mechanism for making all
-settings."
-  :type '(choice (const nil) regexp)
-  :group 'proof-shell)
-
-
 (defcustom proof-shell-match-pgip-cmd nil
   "Regexp used to match PGIP command from proof assistant.
 
@@ -1437,8 +1449,7 @@ This is an experimental feature, currently work-in-progress."
   "Splits strings which match `proof-shell-theorem-dependency-list-regexp'.
 Used as an argument to `split-string'; nil defaults to whitespace.
 \(This setting is necessary for provers which allow whitespace in
-the names of theorems/definitions/constants), see setting for
-Isabelle in isa/isa.el and isar/isar.el."
+the names of theorems/definitions/constants)."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
@@ -1569,9 +1580,7 @@ they appear inside ML strings and the backslash character and
 quote characters must be escaped.  The setting
   '((\"\\\\\\\\\" . \"\\\\\\\\\")
     (\"\\\"\" . \"\\\\\\\"\"))
-achieves this.   This does not apply to LEGO, which does not
-need backslash escapes and does not allow filenames with
-quote characters.
+achieves this.
 
 This setting is used inside the function `proof-format-filename'."
   :type '(list (cons string string))
@@ -1617,7 +1626,7 @@ bound to `queueitems'."
   :group 'proof-shell)
 
 (defcustom proof-shell-insert-hook nil
-  "Hooks run by `proof-shell-insert' before inserting a command.
+  "Hook run by `proof-shell-insert' before inserting a command.
 Can be used to configure the proof assistant to the interface in
 various ways -- for example, to observe or alter the commands sent to
 the prover, or to sneak in extra commands to configure the prover.
@@ -1650,12 +1659,15 @@ prompts than expected, things will break!  Extending the variable
 stripped of carriage returns before being sent.
 
 Example uses:
-LEGO uses this hook for setting the pretty printer width if
+Lego used this hook for setting the pretty printer width if
 the window width has changed;
-Plastic uses it to remove literate-style markup from `string'.
+Plastic used it to remove literate-style markup from `string'.
 
 See also `proof-script-preprocess' which can munge text when
 it is added to the queue of commands."
+  ;; FIXME: The docstring suggests this is used by the backend code (e.g. LEGO
+  ;; support) rather than by the end user, so maybe it shouldn't be
+  ;; a `defcustom'?
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1667,10 +1679,9 @@ by the user.  It is run by `proof-assert-until-point'.
 WARNING: don't call `proof-assert-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width.  Note
-that `proof-shell-insert-hook' may be use instead (see lego mode)
-if no more prompt will be displayed (see
-`proof-shell-insert-hook' for details)."
+Example of use: Insert a command to adapt printing width.
+Note that `proof-shell-insert-hook' (which see) may be use instead
+if no more prompt will be displayed."
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1682,10 +1693,9 @@ Can be used to insert commands.  It is run by
 WARNING: don't call `proof-retract-until-point' in this hook, you
 would loop forever.
 
-Example of use: Insert a command to adapt printing width.  Note
-that `proof-shell-insert-hook' may be use instead (see lego mode)
-if no more prompt will be displayed (see
-`proof-shell-insert-hook' for details)."
+Example of use: Insert a command to adapt printing width.
+Note that `proof-shell-insert-hook' (which see) may be use instead
+if no more prompt will be displayed."
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -1843,11 +1853,12 @@ Leave unset if no special characters are being used."
   :group 'proof-goals)
 
 (defcustom pg-subterm-anns-use-stack nil
+  ;; FIXME: The docstring suggest we should use t!?
   "Choice of syntax tree encoding for terms.
 
 If nil, prover is expected to make no optimisations.
 If non-nil, the pretty printer of the prover only reports local changes.
-For LEGO 1.3.1 use nil, for Coq 6.2, use t."
+For Coq 6.2, use t."
   :type 'boolean
   :group 'proof-goals)
 

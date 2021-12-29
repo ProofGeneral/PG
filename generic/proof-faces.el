@@ -11,7 +11,7 @@
 
 ;; Author:      David Aspinall <David.Aspinall@ed.ac.uk> and others
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -218,6 +218,13 @@ Warning messages can come from proof assistant or from Proof General itself."
   "Proof General face for highlighting an error in the proof script. "
   :group 'proof-faces)
 
+(defface proof-omitted-proof-face
+  (proof-face-specs
+   (:background "#EAEFFF" :extend t)
+   (:background "#9C4A90" :extend t)
+   (:foreground "white" :background "black" :extend t))
+  "*Face for background of omitted proofs"
+  :group 'proof-faces)
 
 
 ;;; Compatibility: these are required for use in GNU Emacs/font-lock-keywords

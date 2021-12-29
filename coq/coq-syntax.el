@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -12,7 +12,7 @@
 ;; Authors: Thomas Kleymann, Healfdene Goguen, Pierre Courtieu
 ;; Maintainer: Pierre Courtieu <Pierre.Courtieu@cnam.fr>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -205,7 +205,7 @@ so for the following reasons:
      ("exfalso" "exf" "exfalso" t "exfalso")
      ("exists" "ex" "exists #" t "exists")
      ;;     ("fail" "fa" "fail" nil)
-     ;;     ("field" "field" "field" t "field")
+     ("field" "field" "field" t "field")
      ("false_hyp" nil "false_hyp @{H} @{G}" t "false_hyp")
      ("firstorder" "fsto" "firstorder" t "firstorder")
      ("firstorder with" "fsto" "firstorder with #" t)
@@ -236,14 +236,16 @@ so for the following reasons:
      ("inversion_clear" "invcl" "inversion_clear" t "inversion_clear")
      ("lapply" "lap" "lapply" t "lapply")
      ("lazy" "lazy" "lazy beta delta [#] iota zeta" t "lazy")
-     ("lazymatch with" "m" "lazymatch # with\n| # => #\nend")
+     ("lazymatch with" "lazym" "lazymatch # with\n| # => #\nend")
+     ("lazy_match! with" "lazy_m" "lazy_match! # with\n| # => #\nend")
      ("left" "left" "left" t "left")
      ("lia" nil "lia" t "lia")
      ("linear" "lin" "linear" t "linear")
      ("load" "load" "load" t "load")
      ("lra" nil "lra" t "lra")
      ("move after" "mov" "move # after #" t "move")
-     ("multimatch with" "m" "multimatch # with\n| # => #\nend")
+     ("multimatch with" "mm" "multimatch # with\n| # => #\nend")
+     ("multi_match! with" "multi_m" "multi_match! # with\n| # => #\nend")
      ("nia" nil "nia" t "nia")
      ("now_show" nil "now_show" t "now_show")
      ("nra" nil "nra" t "nra")
@@ -350,7 +352,6 @@ so for the following reasons:
      ("exact" "exa" "exact" t "exact")
      ("fourier" "four" "fourier" t "fourier")
      ("fail" "fa" "fail" nil)
-     ("field" "field" "field" t "field")
      ("gfail" "gfa" "gfail" nil "gfail")
      ("lia" nil "lia" t "lia")
      ("lra" nil "lra" t "lra")
@@ -374,7 +375,8 @@ so for the following reasons:
 (defvar coq-solve-cheat-tactics-db
   (append
    '(("admit" nil "admit" t "admit")
-     ("Admitted" nil "Admitted" t "Admitted"))
+     ("Admitted" nil "Admitted" t "Admitted")
+     ("Abort" nil "Abort" t "Abort"))
    coq-user-cheat-tactics-db)
   "Coq tactic(al)s that solve a subgoal."
   )
@@ -453,6 +455,7 @@ so for the following reasons:
 
 (defvar coq-defn-db
   '(
+    ("Canonical Structure" nil "Canonical Structure #." t "Canonical\\s-+Structure")
     ("CoFixpoint" "cfix" "CoFixpoint # (#:#) : # :=\n#." t "CoFixpoint")
     ("CoInductive" "coindv" "CoInductive # : # :=\n|# : #." t "CoInductive")
     ("Class" "class" "Class [ # ] := \n# : #;\n# : #." t "Class")
@@ -587,8 +590,8 @@ so for the following reasons:
      ("Test" nil "Test" nil "Test" nil t) ; let us not highlight all possible options for Test
      ("Timeout" nil "Timeout" nil "Timeout")
      )
-   "Coq queries command, that deserve a separate menu for sending them to coq without insertion."
-   )
+   "Coq queries command.
+They deserve a separate menu for sending them to Coq without insertion.")
 
 ;; command that are not declarations, definition or goal starters
 (defvar coq-other-commands-db
@@ -614,7 +617,7 @@ so for the following reasons:
     ("Local Arguments" nil "Local Arguments @{id} : @{rule}" t "Local\\s-+Arguments")
     ("Arguments" "args" "Arguments @{id} : @{rule}" t "Arguments")
     ("Bind Scope" "bndsc" "Bind Scope @{scope} with @{type}" t "Bind\\s-+Scope")
-    ("Canonical Structure" nil "Canonical Structure #." t "Canonical\\s-+Structure")
+    ("Canonical" nil "Canonical #." t "Canonical")
     ("Cd" nil "Cd #." nil "Cd")
     ("Local Close Scope" "lclsc" "Local Close Scope #" t "Local\\s-+Close\\s-+Scope")
     ("Close Scope" "clsc" "Close Scope #" t "Close\\s-+Scope")
@@ -633,6 +636,7 @@ so for the following reasons:
     ("Extraction Library" "extrl" "Extraction Library @{id}." nil "Extraction\\s-+Library")
     ("Extraction" "extr" "Extraction @{id}." nil "Extraction")
     ("Focus" nil "Focus #." nil "Focus")
+    ("From" nil "From #." nil "From")
     ("Generalizable Variables" nil "Generalizable Variables #." t "Generalizable\\s-+Variables")
     ("Generalizable All Variables" nil "Generalizable All Variables." t "Generalizable\\s-+All\\s-+Variables")
     ("Identity Coercion" nil "Identity Coercion #." t "Identity\\s-+Coercion")
@@ -736,7 +740,7 @@ so for the following reasons:
     ("Set Primitive Projections" nil "Set Primitive Projections" t "Set Primitive\\s-+Projections")
     ("Set Printing All" nil "Set Printing All" t "Set\\s-+Printing\\s-+All")
     ("Set Printing Coercions" nil "Set Printing Coercions" t "Set\\s-+Printing\\s-+Coercions")
-    ("Set Printing Compact Contexts" nil "Set Printing Compact Contexts" t "Set\\s-+Printing\\s-+Compact\\s-+Contexts")
+    ("Set Printing Compact Contexts" nil "set Printing Compact Contexts" t "set\\s-+Printing\\s-+Compact\\s-+Contexts")
     ("Set Printing Depth" nil "Set Printing Depth" t "Set\\s-+Printing\\s-+Depth")
     ("Set Printing Existential Instances" nil "Set Printing Existential Instances" t "Set\\s-+Printing\\s-+Existential\\s-+Instances")
     ("Set Printing Goal Tags" nil "Set Printing Goal Tags" t "Set\\s-+Printing\\s-+Goal\\s-+Tags")
@@ -864,7 +868,8 @@ so for the following reasons:
     ("Unset Parsing Explicit" nil "Unset Parsing Explicit" t "Unset Parsing\\s-+Explicit")
     ("Unset Primitive Projections" nil "Unset Primitive Projections" t "Unset Primitive\\s-+Projections")
     ("Unset Printing All" nil "Unset Printing All" t "Unset Printing\\s-+All")
-    ("Unset Printing Coercions" nil "Unset Printing Coercions" t "Unset Printing\\s-+Coercions")
+    ("Unset Printing Coercions" nil "Unset Printing Coercions" t "Unset\\s-+Printing\\s-+Coercions")
+    ("Unset Printing Compact Contexts" nil "Unset Printing Compact Contexts" t "Unset\\s-+Printing\\s-+Compact\\s-+Contexts")
     ("Unset Printing Depth" nil "Unset Printing Depth" t "Unset Printing\\s-+Depth")
     ("Unset Printing Existential Instances" nil "Unset Printing Existential Instances" t "Unset Printing\\s-+Existential\\s-+Instances")
     ("Unset Printing Implicit" nil "Unset Printing Implicit" t "Unset Printing\\s-+Implicit")
@@ -955,7 +960,7 @@ so for the following reasons:
     ("forall (4 args)" "fo4" "forall (#:#) (#:#) (#:#) (#:#), #")
     ("if" "if" "if # then # else #" nil "if")
     ("let in" "li" "let # := # in #" nil "let")
-    ("match! (from type)" nil "" nil "match" coq-insert-match)
+    ("match?" nil "" nil "match" coq-insert-match)
     ("match with" "m" "match # with\n| # => #\nend")
     ("match with 2" "m2" "match # with\n| # => #\n| # => #\nend")
     ("match with 3" "m3" "match # with\n| # => #\n| # => #\n| # => #\nend")
@@ -1105,6 +1110,31 @@ It is used:
              (not (string-match "\\`Proof\\s-*\\(\\.\\|\\_<with\\_>\\|\\_<using\\_>\\)" str))))))
 
 
+;; ----- regular expressions for the proof omit feature
+;; see `proof-omit-proofs-configured' in generic/proof-config
+
+(defcustom coq-proof-start-regexp "^Proof\\(\\.\\| \\)"
+  "Value for `proof-script-proof-start-regexp'."
+  :type 'regexp
+  :group 'coq)
+
+(defcustom coq-proof-end-regexp "^\\(Qed\\|Admitted\\)\\."
+  "Value for `proof-script-proof-end-regexp'.
+This is similar to `coq-save-command-regexp-strict' but slightly
+different."
+  :type 'regexp
+  :group 'coq)
+
+(defcustom coq-definition-end-regexp "^\\(Defined\\|Abort\\)\\(\\.\\| \\)"
+  "Value for `proof-script-definition-end-regexp'."
+  :type 'regexp
+  :group 'coq)
+  
+(defcustom coq-omit-proof-admit-command "Admitted."
+  "Value for `proof-script-proof-admit-command'."
+  :type 'string
+  :group 'coq)
+
 ;; ----- keywords for font-lock.
 
 (defvar coq-keywords-kill-goal
@@ -1172,7 +1202,7 @@ It is used:
   (append
    '(
      "False" "True" "after" "as" "cofix" "fix" "forall" "fun" "match"
-     "lazymatch" "multimatch"
+     "lazymatch" "multimatch" "lazy_match" "multi_match"
      "return" "struct" "else" "end" "if" "in" "into" "let" "then"
      "using" "with" "beta" "delta" "iota" "zeta" "after" "until"
      "at" "Sort" "Time" "dest" "where"
@@ -1219,6 +1249,9 @@ It is used:
 (defun coq--regexp-alt-list-symb (args)
   (concat "\\_<\\(?:" (mapconcat #'identity args "\\|") "\\)\\_>"))
 
+(defun coq--regexp-alt-list (args)
+  (concat "\\(?:" (mapconcat #'identity args "\\|") "\\)"))
+
 (defvar coq-keywords-regexp (coq--regexp-alt-list-symb coq-keywords))
 
 
@@ -1251,8 +1284,37 @@ It is used:
 
 (defvar coq-symbols-regexp (regexp-opt coq-symbols))
 
+;; HACKISH: This string matches standard error regexp UNLESS there is
+;; the standard header of the "Fail" command (which is "The command
+;; blah has indeed failed with message:\n"). The case where the error
+;; header has nothing before it is treated using "empty string at
+;; start" regexp. BUT coq-error-regexp (and hence
+;; proof-shell-error-regexp) must be correct either when searching in
+;; a string or when searching in the proof-shell-buffer when point is
+;; at the start of the last output. Hence when we use \\` (empty
+;; string at start of the string) we should also accept \\= (empty
+;; string at point).
+(defvar coq--prefix-not-regexp "\\(\\(\\`\\|\\=\\)\n?\\)\\|\\(?:\\(?:[^:]\\|[^e]:\\|[^g]e:\\|[^a]ge:\\|[^s]age:\\|[^s]sage:\\|[^e]ssage:\\|[^m]essage:\\)\n\\)"
+  "A regexp matching allowed text before coq error.")
+
+(defvar coq--error-header-re-list
+  '("In nested Ltac call"
+    "Discarding pattern"
+    "Syntax error:"
+    "System Error:"
+    "User Error:"
+    "User error:"
+    "Anomaly[:.]"
+    "Toplevel input"
+    "\\<Error:")
+  "A list of regexps matching coq error headers.")
+
+(defvar coq--raw-error-regexp (coq--regexp-alt-list coq--error-header-re-list))
+
 ;; ----- regular expressions
-(defvar coq-error-regexp "^\\(In nested Ltac call\\|Error:\\|Discarding pattern\\|Syntax error:\\|System Error:\\|User Error:\\|User error:\\|Anomaly[:.]\\|Toplevel input[,]\\)"
+;; ignore "Error:" if preceded by \n[ ^]+\n
+(defvar coq-error-regexp
+  (concat "\\(?:" coq--prefix-not-regexp "\\)" coq--raw-error-regexp)
   "A regexp indicating that the Coq process has identified an error.")
 
 ;; april2017: coq-8.7 removes special chars definitely and puts
@@ -1272,6 +1334,10 @@ It is used:
 
 (defun coq-first-abstr-regexp (paren end)
   (concat paren "\\s-*\\(" coq-ids "\\)\\s-*" end))
+
+(defun coq-first-abstr-without-space-regexp (paren end)
+  "Variant of `coq-first-abstr-regexp' without space between PAREN & `coq-ids'."
+  (concat paren "\\(" coq-ids "\\)\\s-*" end))
 
 (defcustom coq-variable-highlight-enable t
   "Activates partial bound variable highlighting."
@@ -1307,7 +1373,10 @@ It is used:
       ;;               (list 0 font-lock-variable-name-face)))
       ;; parenthesized binders
       (list (coq-first-abstr-regexp "(" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
-      (list (coq-first-abstr-regexp "{" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
+      ;; Don't use coq-first-abstr-regexp here, see ProofGeneral/PG#581:
+      (list (coq-first-abstr-without-space-regexp "{" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
+      ;; Likewise, for https://coq.github.io/doc/V8.12.0/refman/language/extensions/implicit-arguments.html#implicit-argument-binders :
+      (list (coq-first-abstr-without-space-regexp "\\[" ":[ a-zA-Z]") 1 'font-lock-variable-name-face)
       )))
   "*Font-lock table for Coq terms.")
 
@@ -1343,6 +1412,15 @@ It is used:
 (defconst coq-defn-with-hole-regexp
   (concat "\\(" (mapconcat #'identity coq-keywords-defn "\\|")
           "\\)\\s-+\\(" coq-id "\\)"))
+
+;; Any command can be prefixed with Local, Global of #[anyhting,anything,...]
+(defconst coq-command-prefix-regexp "\\(Local\\s-\\|Global\\s-\\|#[[][^]]*[]]\\)")
+;; FIXME: incomplete
+
+(defun coq-add-command-prefix (reg) (concat "\\(" coq-command-prefix-regexp "\\)?" (mapconcat #'identity reg "\\|")))
+
+(defconst coq-command-decl-regexp (coq-add-command-prefix coq-keywords-decl))
+(defconst coq-command-defn-regexp (coq-add-command-prefix coq-keywords-defn))
 
 ;; must match:
 ;; "with f x y :" (followed by = or not)

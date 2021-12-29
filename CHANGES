@@ -2,11 +2,27 @@
 
 This is a summary of main changes.  For details, please see
 the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
-and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 * Changes of Proof General 4.5 from Proof General 4.4
 
 ** Generic changes
+*** License changed to GPLv3+
+*** Remove support for the following systems:
+Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam, Isabelle, HOL98.
+
+*** require GNU Emacs 25.1 or later
+
+The current policy aims at supporting multiple Emacs versions,
+including those available in distributions Debian Stable
+(https://packages.debian.org/stable/emacs) and Ubuntu LTS
+(https://packages.ubuntu.com/emacs), until their End-Of-Support (see
+also https://wiki.ubuntu.com/Releases).
+
+
+*** new command and menu item to easily upgrade all packages
+    - To upgrade all ELPA packages (including ProofGeneral if it was
+      installed via MELPA), do "M-x proof-upgrade-elpa-packages RET"
+      or use the "Proof-General > Upgrade ELPA packages..." menu item
 
 *** bug fixes
     - Using query-replace (or replace-string) in the processed region
@@ -27,9 +43,18 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
 
 ** Coq changes
 
+*** fix highlighting issues for ssr tactics ending with colon
+
+    Now, { exact: term. } will always be correctly highlighted.
+
+    However, only (forall {T: Type}, Type) will be highlighted,
+    unlike term (forall { T: Type }, Type) that has a spurious space.
+
+    Also in (forall [T: Type], Type), variable T is now highlighted.
+
 *** new menu Coq -> Auto Compilation for all background compilation options
 
-*** support for 8.11 vos compilation
+*** support for 8.11 vos and vok compilation
 
     See menu Coq -> Auto Compilation -> vos compilation, option
     coq-compile-vos and subsection "11.3.3 Quick and inconsistent
@@ -137,6 +162,26 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     file contains "Require ... ssreflect" on the same line; otherwise
     PG inserts "intros ..." as before.
 
+*** Customizing Search Blacklist (command created and menu entry moved)
+    To change the list of blacklisted string for Search commands
+    during development, use now
+    coq-change-search-blacklist-interactive. The menu for this has
+    moved, it is now in Coq/Other Queries/Search Blacklist.
+
+    To change the default blacklist, set variable
+    coq-search-blacklist-string (unchanged).
+
+*** Proof General can omit complete opaque proofs
+    This speeds up asserting of larger chunks at the price of
+    letting errors in these proofs go unnoticed. Configure
+    `proof-omit-proofs-option' or select "Proof-General -> Quick
+    Options -> Processing -> Omit Proofs". See also section
+    "11.5 Omitting proofs for speed" in the manual.
+
+    Beware that if lemmas are proved in a section, these lemmas should
+    start with a "Proof using" annotation, otherwise Coq would compute
+    a wrong type for them when this omitting-proofs feature is enabled.
+
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
     - 123: Parallel background compliation fails to execute some
@@ -150,14 +195,23 @@ and the PG Trac http://proofgeneral.inf.ed.ac.uk/trac
     - 92: Compile before require from current directory failing
       with 8.5
 
+*** indentation code refactored
+
+    A big refactoring of the code for indentation has been done. You
+    may experience a few changes in indentation results. Mostly small
+    shifts to the right.
+
+    Variable `coq-indent-box-style' only affects indentation after
+    quantifiers (used to affect script braces "{").
+
+
 * Changes of Proof General 4.4 from Proof General 4.3
 
 ** ProofGeneral has moved to GitHub!
 
    https://github.com/ProofGeneral/PG
 
-   Please submit new bugs there, old bugs may stay in good old PG trac
-   for a while though: http://proofgeneral.inf.ed.ac.uk/trac
+   Please submit new bugs there.
 
 ** Coq changes
 

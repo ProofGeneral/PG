@@ -11,7 +11,7 @@
 
 ;; Author:     David Aspinall and others
 
-;; License:    GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -165,19 +165,24 @@ If called interactively, NUM is given by the prefix argument."
 ;;
 
 ;;;###autoload
-(defun proof-goto-point ()
+(defun proof-goto-point (&optional raw)
   "Assert or retract to the command at current position.
 Calls `proof-assert-until-point' or `proof-retract-until-point' as
-appropriate."
-  (interactive)
-  (save-excursion
-    (if (> (proof-queue-or-locked-end) (point))
-	(proof-retract-until-point)
-      (if (proof-only-whitespace-to-locked-region-p)
-	  (progn
-	    (skip-chars-forward " \t\n")
-	    (forward-char 1)))
-      (proof-assert-until-point))))
+appropriate. With prefix argument RAW the omit proofs feature
+(`proof-omit-proofs-option') is temporaily disabled to check all
+proofs in the asserted region."
+  (interactive "P")
+  (let ((proof-omit-proofs-option proof-omit-proofs-option))
+    (when raw
+      (setq proof-omit-proofs-option nil))
+    (save-excursion
+      (if (> (proof-queue-or-locked-end) (point))
+	  (proof-retract-until-point)
+        (if (proof-only-whitespace-to-locked-region-p)
+	    (progn
+	      (skip-chars-forward " \t\n")
+	      (forward-char 1)))
+        (proof-assert-until-point)))))
 
 (defun proof-assert-next-command-interactive ()
   "Process until the end of the next unprocessed command after point.
@@ -198,18 +203,23 @@ If inside a comment, just process until the start of the comment."
   (proof-assert-until-point))
 
 ;;;###autoload
-(defun proof-process-buffer ()
-  "Process the current (or script) buffer, and maybe move point to the end."
-  (interactive)
-  (proof-with-script-buffer
-   (save-excursion
-     (goto-char (point-max))
-     (proof-assert-until-point-interactive))
-   (proof-maybe-follow-locked-end))
-  (when proof-fast-process-buffer
-    (message "Processing buffer...")
-    (proof-shell-wait)
-    (message "Processing buffer...done")))
+(defun proof-process-buffer (&optional raw)
+  "Process the current (or script) buffer, and maybe move point to the end.
+With prefix argument RAW the omit proofs feature (`proof-omit-proofs-option')
+is temporaily disabled to check all proofs in the asserted region."
+  (interactive "P")
+  (let ((proof-omit-proofs-option proof-omit-proofs-option))
+    (when raw
+      (setq proof-omit-proofs-option nil))
+    (proof-with-script-buffer
+     (save-excursion
+       (goto-char (point-max))
+       (proof-assert-until-point-interactive))
+     (proof-maybe-follow-locked-end))
+    (when proof-fast-process-buffer
+      (message "Processing buffer...")
+      (proof-shell-wait)
+      (message "Processing buffer...done"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

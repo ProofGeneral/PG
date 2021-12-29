@@ -117,8 +117,8 @@ preserved on all copies.
 This manual documents Proof General, Version @value{version}, for use
 GNU Emacs @value{emacsversion} or (as far as possible) later versions.
 Proof General is distributed under the terms of the GNU General Public
-License (GPL); please check the accompanying file @file{COPYING} for
-more details.
+License (GPL), version 3 or later;
+please check the accompanying file @file{COPYING} for more details.
 
 @sp 1
 
@@ -139,7 +139,7 @@ of @b{Proof General}, a generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion}.  It is supplied ready customized for the proof
-assistants Coq, Lego, Isabelle, and HOL.
+assistants Coq, EasyCrypt, and PhoX.
 
 This manual contains information for customizing to new proof
 assistants; see the user manual for details about how to use
@@ -335,7 +335,7 @@ more details.
 @c Internals.
 
 @c TEXI DOCSTRING MAGIC: proof-assistant-table
-@defopt proof-assistant-table 
+@defvar proof-assistant-table 
 Proof General's table of supported proof assistants.@*
 This is copied from @samp{@code{proof-assistant-table-default}} at load time,
 removing any entries that do not have a corresponding directory
@@ -348,10 +348,10 @@ Each entry is a list of the form
 The @var{name} is a string, naming the proof assistant.
 The @var{symbol} is used to form the name of the mode for the
 assistant, @samp{SYMBOL-mode}, run when files with @var{automode-regexp}
-(or with extension @var{file-extension}) are visited. If present,
+(or with extension @var{file-extension}) are visited.  If present,
 @var{ignored-extensions-list} is a list of file-name extensions to be
 ignored when doing file-name completion (@var{ignored-extensions-list}
-is added to @code{completion-ignored-extensions}).
+is added to @samp{@code{completion-ignored-extensions}}).
 
 @var{symbol} is also used to form the name of the directory and elisp
 file for the mode, which will be
@@ -360,9 +360,7 @@ file for the mode, which will be
 @end lisp
 where @var{proof-home-directory} is the value of the
 variable @samp{@code{proof-home-directory}}.
-
-The default value is @code{((isar "Isabelle" "thy") (coq "Coq" "v" nil (".vo" ".glob")) (easycrypt "EasyCrypt" "ec" ".*\\.eca?") (pgshell "PG-Shell" "pgsh") (pgocaml "PG-OCaml" "pgml") (pghaskell "PG-Haskell" "pghci"))}.
-@end defopt
+@end defvar
 
 
 The final step of the description above is where the work lies.  There
@@ -648,6 +646,7 @@ the behaviour of script management.
 * Recognizing other elements::
 * Configuring undo behaviour::
 * Nested proofs::
+* Omitting proofs for speed::
 * Safe (state-preserving) commands::
 * Activate scripting hook::
 * Automatic multiple files::
@@ -689,7 +688,7 @@ If non-nil, electric terminator does not actually insert a terminator.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-script-sexp-commands
 @defvar proof-script-sexp-commands 
-Non-nil if script has LISP-like syntax: commands are @code{top-level} sexps.@*
+Non-nil if script has Lisp-like syntax: commands are @code{top-level} sexps.@*
 You should set this variable in script mode configuration.
 
 To configure command recognition properly, you must set at least one
@@ -842,9 +841,9 @@ It's safe to leave this setting as nil.
 @defvar proof-goal-with-hole-result 
 How to get theorem name after @samp{@code{proof-goal-with-hole-regexp}} match.@*
 String or Int.
-If an int N use @code{match-string} to recover the value of the Nth parenthesis matched.
-If it is a string use @code{replace-match}. In this case, @code{proof-save-with-hole-regexp}
-should match the entire command
+If an int N, use @samp{@code{match-string}} to get the value of the Nth parenthesis matched.
+If a string, use @samp{@code{replace-match}}.  In this case, @samp{@code{proof-goal-with-hole-regexp}}
+should match the entire command.
 @end defvar
 
 @c TEXI DOCSTRING MAGIC: proof-save-command-regexp
@@ -1137,6 +1136,97 @@ history.
 @end defvar
 
 
+@node Omitting proofs for speed
+@section Omitting proofs for speed
+
+In normal operation, the commands in an asserted region are sent
+successively to the proof assistant. When the proof assistant
+reports an error, processing stops. This ensures the consistency
+of the development. Proof General supports omitting portions of
+the asserted region to speed processing up at the cost of
+consistency. Portions that can be potentially omitted are called
+@emph{opaque proofs} in Proof General, because usually only
+opaque proofs (in the sense of Coq) can be omitted without
+risking to break the following code. This feature is also
+described in the Proof General manual, @inforef{Script processing
+commands, ,ProofGeneral} and @inforef{Omitting proofs for speed,
+,ProofGeneral}.
+
+The omit proofs feature works in a simple, straightforward way:
+After parsing the asserted region, Proof General uses regular
+expressions to search for commands that start
+(@code{proof-script-proof-start-regexp}) and end
+(@code{proof-script-proof-end-regexp}) an opaque proof. If one is
+found, the opaque proof is replaced with a cheating command
+(@code{proof-script-proof-admit-command}). From this description
+it is immediate, that the omit proof feature does only work if
+proofs are not nested. If a nested proof is found, a warning is
+displayed and omitting proofs stops at that location for the
+currently asserted region.
+
+To enable the omit proofs feature, the following settings must be
+configured.
+
+@c TEXI DOCSTRING MAGIC: proof-omit-proofs-configured
+@defvar proof-omit-proofs-configured 
+t if the omit proofs feature has been configured by the proof assitant.@*
+See also @samp{@code{proof-omit-proofs-option}} or the Proof General manual
+for a description of the feature. This option can only be set, if
+all of @samp{@code{proof-script-proof-start-regexp}},
+@samp{@code{proof-script-proof-end-regexp}},
+@samp{@code{proof-script-definition-end-regexp}} and
+@samp{@code{proof-script-proof-admit-command}} have been configured.
+
+The omit proofs feature skips over opaque proofs in the source
+code, admitting the theorems, to speed up processing.
+
+If @samp{@code{proof-omit-proofs-option}} is set by the user, all proof
+commands in the source following a match of
+@samp{@code{proof-script-proof-start-regexp}} up to and including the next
+match of @samp{@code{proof-script-proof-end-regexp}}, are omitted (not send
+to the proof assistant) and replaced by
+@samp{@code{proof-script-proof-admit-command}}. If a match for
+@samp{@code{proof-script-definition-end-regexp}} is found while searching
+forward for the proof end, the current proof (up to and including
+the match of @samp{@code{proof-script-definition-end-regexp}}) is considered
+to be not opaque and not omitted, thus all these proof commands
+_are_ sent to the proof assistant.
+
+The feature does not work for nested proofs. If a match for
+@samp{@code{proof-script-proof-start-regexp}} is found before the next match
+for @samp{@code{proof-script-proof-end-regexp}} or
+@samp{@code{proof-script-definition-end-regexp}}, the search for opaque
+proofs immediately stops and all commands following the previous
+match of @samp{@code{proof-script-proof-start-regexp}} are sent verbatim to
+the proof assistant.
+
+All the regular expressions for this feature are matched against
+the commands inside proof action items, that is as strings,
+without surrounding space.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-start-regexp
+@defvar proof-script-proof-start-regexp 
+Regular expression for the start of a proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-end-regexp
+@defvar proof-script-proof-end-regexp 
+Regular expression for the end of an opaque proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-definition-end-regexp
+@defvar proof-script-definition-end-regexp 
+Regexp for the end of a non-opaque proof for the omit proofs feature.@*
+See @samp{@code{proof-omit-proofs-configured}}.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-proof-admit-command
+@defvar proof-script-proof-admit-command 
+Proof command to be inserted instead of omitted proofs.
+@end defvar
 @node Safe (state-preserving) commands
 @section Safe (state-preserving) commands
 
@@ -1229,10 +1319,10 @@ switching to B.
 @defvar proof-no-fully-processed-buffer 
 Set to t if buffers should always retract before scripting elsewhere.@*
 Leave at nil if fully processed buffers make sense for the current
-proof assistant. If nil the user can choose to fully assert a
-buffer when starting scripting in a different buffer. If t there
+proof assistant.  If nil the user can choose to fully assert a
+buffer when starting scripting in a different buffer.  If t there
 is only the choice to fully retract the active buffer before
-starting scripting in a different buffer. This last behavior is
+starting scripting in a different buffer.  This last behavior is
 needed for Coq.
 @end defvar
 
@@ -1511,7 +1601,7 @@ input, then newlines can be retained in the input.
 
 @c TEXI DOCSTRING MAGIC: proof-shell-insert-hook
 @defvar proof-shell-insert-hook 
-Hooks run by @samp{@code{proof-shell-insert}} before inserting a command.@*
+Hook run by @samp{@code{proof-shell-insert}} before inserting a command.@*
 Can be used to configure the proof assistant to the interface in
 various ways -- for example, to observe or alter the commands sent to
 the prover, or to sneak in extra commands to configure the prover.
@@ -1544,9 +1634,9 @@ prompts than expected, things will break!  Extending the variable
 stripped of carriage returns before being sent.
 
 Example uses:
-@var{lego} uses this hook for setting the pretty printer width if
+Lego used this hook for setting the pretty printer width if
 the window width has changed;
-Plastic uses it to remove literate-style markup from @samp{string}.
+Plastic used it to remove literate-style markup from @samp{string}.
 
 See also @samp{@code{proof-script-preprocess}} which can munge text when
 it is added to the queue of commands.
@@ -1814,43 +1904,6 @@ on @samp{@code{proof-shell-eager-annotation-start}} and
 Set to nil to disable.
 @end defvar
 
-@c TEXI DOCSTRING MAGIC: proof-shell-set-elisp-variable-regexp
-@defvar proof-shell-set-elisp-variable-regexp 
-Matches output telling Proof General to set some variable.@*
-This allows the proof assistant to configure Proof General directly
-and dynamically.   (It's also a fantastic backdoor security risk).
-
-More precisely, this should match a string which is bounded by
-matches on @samp{@code{proof-shell-eager-annotation-start}} and
-@samp{@code{proof-shell-eager-annotation-end}}.
-
-If the regexp matches output from the proof assistant, there should be
-two match strings: (@code{match-string} 1) should be the name of the elisp
-variable to be set, and (@code{match-string} 2) should be the value of the
-variable (which will be evaluated as a Lisp expression).
-
-A good markup for the second string is to delimit with #'s, since
-these are not valid syntax for elisp evaluation.
-
-Elisp errors will be trapped when evaluating; set
-@samp{@code{proof-general-debug}} to be informed when this happens.
-
-Example uses are to adjust PG's internal copies of proof assistant's
-settings, or to make automatic dynamic syntax adjustments in Emacs to
-match changes in theory, etc.
-
-If you pick a dummy variable name (e.g. @samp{proof-dummy-setting}) you
-can just evaluation arbitrary elisp expressions for their side
-effects, to adjust menu entries, or even launch auxiliary programs.
-But use with care -- there is no protection against catastrophic elisp!
-
-This setting could also be used to move some configuration settings
-from PG to the prover, but this is not really supported (most settings
-must be made before this mechanism will work).  In future, the PG
-standard protocol, @var{pgip}, will use this mechanism for making all
-settings.
-@end defvar
-
 @c TEXI DOCSTRING MAGIC: proof-shell-theorem-dependency-list-regexp
 @defvar proof-shell-theorem-dependency-list-regexp 
 Matches output telling Proof General about dependencies.@*
@@ -1959,9 +2012,7 @@ quote characters must be escaped.  The setting
   '(("@var{\\\\}" . "@var{\\\\}")
     ("\"" . "\\\""))
 @end lisp
-achieves this.   This does not apply to @var{lego}, which does not
-need backslash escapes and does not allow filenames with
-quote characters.
+achieves this.
 
 This setting is used inside the function @samp{@code{proof-format-filename}}.
 @end defvar
@@ -1971,7 +2022,7 @@ This setting is used inside the function @samp{@code{proof-format-filename}}.
 The value of @samp{@code{process-connection-type}} for the proof shell.@*
 Set non-nil for ptys, nil for pipes.
 
-@var{note}: In emacs >= 24 (checked for 24 and 25.0.50.1), t is not a
+@var{note}: In Emacs >= 24 (checked for 24 and 25.0.50.1), t is not a
 good choice: input is cut after @var{4095} chars, which hangs pg.
 @end defvar
 
@@ -2547,7 +2598,7 @@ commands that add new goals to a proof.
 @defvar proof-tree-new-layer-command-regexp 
 Regexp to match proof commands that add new goals to a proof.@*
 This regexp must match the command that turns the proof assistant
-into prover mode, which adds the initial goal to the proof. It
+into prover mode, which adds the initial goal to the proof.  It
 must further match commands that add additional goals after all
 previous goals have been proved.
 @end defvar
@@ -2673,13 +2724,13 @@ Elisp code maintains the following two state variables.
 Hash table to remember sequent ID's.@*
 Needed because some proof assistants do not distinguish between
 new subgoals, which have been created by the last proof command,
-and older, currently unfocussed subgoals. If Proof General meets
+and older, currently unfocussed subgoals.  If Proof General meets
 a goal, it is treated as new subgoal if it is not in this hash yet.
 
-The hash is mostly used as a set of sequent ID's. However, for
+The hash is mostly used as a set of sequent ID's.  However, for
 undo operations it is necessary to delete all those sequents from
 the hash that have been created in a state later than the undo
-state. For this purpose this hash maps sequent ID's to the state
+state.  For this purpose this hash maps sequent ID's to the state
 number in which the sequent has been created.
 
 The hash table is initialized in @samp{@code{proof-tree-start-process}}.
@@ -2690,9 +2741,9 @@ The hash table is initialized in @samp{@code{proof-tree-start-process}}.
 @defvar proof-tree-existentials-alist 
 Alist mapping existential variables to sequent ID's.@*
 Used to remember which goals need a refresh when an existential
-variable gets instantiated. To support undo commands the old
+variable gets instantiated.  To support undo commands the old
 contents of this list must be stored in
-@samp{@code{proof-tree-existentials-alist-history}}. To ensure undo is
+@samp{@code{proof-tree-existentials-alist-history}}.  To ensure undo is
 properly working, this variable should only be changed by using
 @samp{@code{proof-tree-delete-existential-assoc}},
 @samp{@code{proof-tree-add-existential-assoc}} or
@@ -2776,10 +2827,10 @@ that starts external proof-tree display.
 @defvar proof-tree-external-display 
 Display proof trees in external prooftree windows if t.@*
 Actually, if this variable is t then the user requested an
-external proof-tree display. If there was no unfinished proof
+external proof-tree display.  If there was no unfinished proof
 when proof-tree display was requested and if no proof has been
 started since then, then there is obviously no proof-tree
-display. In this case, this variable stays t and the proof-tree
+display.  In this case, this variable stays t and the proof-tree
 display will be started for the next proof.
 
 Controlled by @samp{@code{proof-tree-external-display-toggle}}.
@@ -2805,10 +2856,10 @@ message.
 @deffn Command proof-tree-external-display-toggle 
 Toggle the external proof-tree display.@*
 When called outside a proof the external proof-tree display will
-be enabled for the next proof. When called inside a proof the
-proof display will be created for the current proof. If the
+be enabled for the next proof.  When called inside a proof the
+proof display will be created for the current proof.  If the
 external proof-tree display is currently on, then this toggle
-will switch it off. At the end of the proof the proof-tree
+will switch it off.  At the end of the proof the proof-tree
 display is switched off.
 @end deffn
 
@@ -2835,7 +2886,7 @@ the current output does not come from a command (with the
 
 Urgent actions are only needed if the external proof display is
 currently running. Therefore this function should not be called
-when @samp{@code{proof-tree-external-display}} is nil. 
+when @samp{@code{proof-tree-external-display}} is nil.
 
 This function assumes that the prover output is not suppressed.
 Therefore, @samp{@code{proof-tree-external-display}} being t is actually a
@@ -2859,10 +2910,10 @@ assistant is already busy with the next item from
 @code{proof-action-list}. 
 
 @c TEXI DOCSTRING MAGIC: proof-tree-handle-delayed-output
-@defun proof-tree-handle-delayed-output old-proof-marker cmd flags span
+@defun proof-tree-handle-delayed-output old-proof-marker cmd flags _span
 Process delayed output for prooftree.@*
 This function is the main entry point of the Proof General
-prooftree support. It examines the delayed output in order to
+prooftree support.  It examines the delayed output in order to
 take appropriate actions and maintains the internal state.
 
 The delayed output to handle is in the region
@@ -2872,7 +2923,7 @@ which contains the position of @samp{@code{proof-marker}}, before the next
 command was sent to the proof assistant.
 
 All other arguments are (former) fields of the @samp{@code{proof-action-list}}
-entry that is now finally retired. @var{cmd} is the command, @var{flags} are
+entry that is now finally retired.  @var{cmd} is the command, @var{flags} are
 the flags and @var{span} is the span.
 @end defun
 
@@ -3046,11 +3097,6 @@ and operating systems.  They are referred to mainly in
 @file{proof-compat} (which helps to keep the architecture and version
 dependent code in one place).
 
-@c TEXI DOCSTRING MAGIC: proof-running-on-win32
-@defvar proof-running-on-win32 
-Non-nil if Proof General is running on a windows variant system.
-@end defvar
-
 
 @node Useful functions and macros
 @section Useful functions and macros
@@ -3107,8 +3153,7 @@ before and after sending the command.
 In case @var{cmd} is (or yields) nil, do nothing.
 
 @var{invisiblecallback} will be invoked after the command has finished,
-if it is set. It should probably run the hook variables
-@samp{@code{proof-state-change-pre-hook}} and
+if it is set.  It should probably run the hook variables
 @samp{@code{proof-state-change-hook}}.
 
 @var{flags} are additional flags to put onto the @samp{@code{proof-action-list}}.
@@ -3129,13 +3174,14 @@ KEY is added onto proof assistant map.
 
 @c TEXI DOCSTRING MAGIC: proof-define-assistant-command
 @deffn Macro proof-define-assistant-command 
-Define FN (docstring DOC) to send @var{body} to prover, based on @var{cmdvar}.@*
+Define FN (docstring DOC): check if @var{cmdvar} is set, then send @var{body} to prover.@*
 @var{body} defaults to @var{cmdvar}, a variable.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-define-assistant-command-witharg
 @deffn Macro proof-define-assistant-command-witharg 
-Define command FN to prompt for string @var{cmdvar} to proof assistant.@*
+Define FN (arg) with DOC: check @var{cmdvar} is set, @var{prompt} a string and eval @var{body}.@*
+The @var{body} can contain occurrences of arg.
 @var{cmdvar} is a variable holding a function or string.  Automatically has history.
 @end deffn
 
@@ -3223,10 +3269,10 @@ is located in, or to the variable of the environment variable
 
 @c TEXI DOCSTRING MAGIC: proof-home-directory
 @defvar proof-home-directory 
-Directory where Proof General is installed.  Ends with slash.@*
-Default value taken from environment variable @samp{PROOFGENERAL_HOME} if set,
-otherwise based on where the file @samp{proof-site.el} was loaded from.
-You can use customize to set this variable.
+Directory where Proof General is installed.@*
+Based on where the file @samp{proof-site.el} was loaded from.
+Falls back to consulting the environment variable @samp{PROOFGENERAL_HOME} if
+proof-site.el couldn't know where it was executed from.
 @end defvar
 
 @c They're no longer options.
@@ -3257,9 +3303,9 @@ extension.  The proof assistants enabled are the ones listed
 in the @code{proof-assistants} setting.
 
 @c TEXI DOCSTRING MAGIC: proof-assistants
-@defopt proof-assistants 
+@defvar proof-assistants 
 Choice of proof assistants to use with Proof General.@*
-A list of symbols chosen from: @code{'isar} @code{'coq} @code{'easycrypt} @code{'pgshell} @code{'pgocaml} @code{'pghaskell}.
+A list of symbols chosen from: @samp{coq} @samp{easycrypt} @samp{phox} @samp{pgshell} @samp{pgocaml} @samp{pghaskell}.
 If nil, the default will be ALL available proof assistants.
 
 Each proof assistant defines its own instance of Proof General,
@@ -3271,13 +3317,11 @@ only select the proof assistants you (or your site) may need.
 You can select which proof assistants you want by setting this
 variable before @samp{proof-site.el} is loaded, or by setting
 the environment variable @samp{PROOFGENERAL_ASSISTANTS} to the
-symbols you want, for example "lego isa".  Or you can
+symbols you want, for example "coq easycrypt".  Or you can
 edit the file @samp{proof-site.el} itself.
 
 Note: to change proof assistant, you must start a new Emacs session.
-
-The default value is @code{nil}.
-@end defopt
+@end defvar
 
 The file @file{proof-site.el} also defines a version variable.
 
@@ -3324,7 +3368,7 @@ but which the user may require different values of across provers.
 The function proof-assistant-<SYM> is also defined, which can be used in the
 generic portion of Proof General to access the value for the current prover.
 
-Arguments are as for @samp{defcustom}, which see.  If a :group argument is
+Arguments @var{args} are as for @samp{defcustom}, which see.  If a :group argument is
 not supplied, the setting will be added to the internal settings for the
 current prover (named <PA>-config).
 @end deffn
@@ -3619,7 +3663,7 @@ retract or assert, or automatically take the action indicated in the
 user option @samp{@code{proof-auto-action-when-deactivating-scripting}}.
 
 If @samp{@code{proof-no-fully-processed-buffer}} is t there is only the choice
-to fully retract the active scripting buffer. In this case the
+to fully retract the active scripting buffer.  In this case the
 active scripting buffer is retracted even if it was fully processed.
 Setting @samp{@code{proof-auto-action-when-deactivating-scripting}} to @code{'process}
 is ignored in this case.
@@ -3713,8 +3757,8 @@ the locked region.  If invoked outside the locked region, undo
 the last successfully processed command.  See @samp{@code{proof-retract-target}}.
 
 After retraction has succeeded in the prover, the filter will call
-@samp{@code{proof-done-retracting}}.  If @var{undo-action} is non-nil, it will 
-then be invoked on the region in the proof script corresponding to 
+@samp{@code{proof-done-retracting}}.  If @var{undo-action} is non-nil, it will
+then be invoked on the region in the proof script corresponding to
 the proof command sequence.
 @var{displayflags} control output shown to user, see @samp{@code{proof-action-list}}.
 
@@ -3726,7 +3770,7 @@ of effects:
 for scripting again which may involve retracting
 other (dependent) files.
 
-2. We may query the user whether to save some buffers.  
+2. We may query the user whether to save some buffers.
 
 Step 2 may seem odd -- we're undoing (in) the buffer, after all
 -- but what may happen is that when scripting starts going
@@ -3745,8 +3789,8 @@ proof assistant exits, we use the functions
 @defun proof-restart-buffers buffers
 Remove all extents in @var{buffers} and maybe reset @samp{@code{proof-script-buffer}}.@*
 The high-level effect is that all members of @var{buffers} are
-completely unlocked, including all the necessary cleanup. No
-effect on a buffer which is nil or killed. If one of the buffers
+completely unlocked, including all the necessary cleanup.  No
+effect on a buffer which is nil or killed.  If one of the buffers
 is the current scripting buffer, then @samp{@code{proof-script-buffer}} will
 deactivated.
 @end defun
@@ -3822,12 +3866,12 @@ The value is a list of lists of the form
 @end lisp
 which is the queue of things to do.
 
-@var{span} is a region in the sources, where @var{commands} come from. Often,
+@var{span} is a region in the sources, where @var{commands} come from.  Often,
 additional properties are recorded as properties of @var{span}.
 
 @var{commands} is a list of strings, holding the text to be send to the
-prover. It might be the empty list if nothing needs to be sent to
-the prover, such as, for comments. Usually @var{commands}
+prover.  It might be the empty list if nothing needs to be sent to
+the prover, such as, for comments.  Usually @var{commands}
 contains just 1 string, but it might also contains more elements.
 The text should be obtained with
 @samp{(mapconcat }identity @var{commands} " ")', where the last argument
@@ -3849,6 +3893,7 @@ bother the user.  They may include
   @code{'no-error-display}         do not display errors/take error action
   @code{'no-goals-display}         do not goals in @strong{goals} buffer
   @code{'proof-tree-show-subgoal}  item inserted by the proof-tree package
+  @code{'priority-action}          item added via @code{proof-add-to-priority-queue}
 @end lisp
 Note that @code{'invisible} does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -3875,14 +3920,13 @@ until the asynchronous background compilation finishes.
 Signals that some items are waiting outside of @samp{@code{proof-action-list}}.@*
 If this is t it means that some items from the queue region are
 waiting for being processed in a place different from
-@samp{@code{proof-action-list}}. In this case Proof General must behave as if
-@samp{@code{proof-action-list}} would be non-empty, when it is, in fact,
-empty.
+@samp{@code{proof-action-list}}.  In this case Proof General must behave as if
+@samp{@code{proof-action-list}} would be non-empty, when it is, in fact, empty.
 
 This is used, for instance, for parallel background compilation
 for Coq: The Require command and the following items are not put
 into @samp{@code{proof-action-list}} and are stored somewhere else until the
-background compilation finishes. Then those items are put into
+background compilation finishes.  Then those items are put into
 @samp{@code{proof-action-list}} for getting processed.
 @end defvar
 
@@ -3892,7 +3936,7 @@ Choice of syntax tree encoding for terms.
 
 If nil, prover is expected to make no optimisations.
 If non-nil, the pretty printer of the prover only reports local changes.
-For @var{lego} 1.3.1 use nil, for Coq 6.2, use t.
+For Coq 6.2, use t.
 @end defvar
 
 
@@ -3932,7 +3976,7 @@ Query the user and exit the proof process.
 
 This simply kills the @samp{@code{proof-shell-buffer}} relying on the hook function
 
-@samp{@code{proof-shell-kill-function}} to do the hard work. If optional
+@samp{@code{proof-shell-kill-function}} to do the hard work.  If optional
 argument @var{dont-ask} is non-nil, the proof process is terminated
 without confirmation.
 
@@ -3970,7 +4014,7 @@ It is up to the proof assistant how much context is cleared: for
 example, theories already loaded may be "cached" in some way,
 so that loading them the next time round only performs a re-linking
 operation, not full re-processing.  (One way of caching is via
-object files, used by Lego and Coq).
+object files, used by Coq).
 @end deffn
 
 @c
@@ -4031,9 +4075,9 @@ single string.
 The @var{action} argument is a symbol which is typically the name of a
 callback for when each string has been processed.
 
-This calls @samp{@code{proof-shell-insert-hook}}.  The arguments @samp{action} and
-@samp{scriptspan} may be examined by the hook to determine how to modify
-the @samp{string} variable (exploiting dynamic scoping) which will be
+This calls @samp{@code{proof-shell-insert-hook}}.  The arguments @var{action} and
+@var{scriptspan} may be examined by the hook to determine how to modify
+the string variable (exploiting dynamic scoping) which will be
 the command actually sent to the shell.
 
 Note that the hook is not called for the empty (null) string
@@ -4057,9 +4101,8 @@ not need to use these directly.
 @c TEXI DOCSTRING MAGIC: proof-grab-lock
 @defun proof-grab-lock &optional queuemode
 Grab the proof shell lock, starting the proof assistant if need be.@*
-Runs @samp{@code{proof-state-change-pre-hook}} and
-@samp{@code{proof-state-change-hook}} to notify state change. If
-@var{queuemode} is supplied, set the lock to that value.
+Runs @samp{@code{proof-state-change-hook}} to notify state change.
+If @var{queuemode} is supplied, set the lock to that value.
 @end defun
 
 @c TEXI DOCSTRING MAGIC: proof-release-lock
@@ -4261,8 +4304,8 @@ Marker in proof shell buffer pointing to end of last urgent message.
 @defun proof-shell-process-urgent-message start end
 Analyse urgent message between @var{start} and @var{end} for various cases.
 
-Cases are: @strong{trace} output, included/retracted files, cleared 
-goals/response buffer, variable setting, xml-encoded @var{pgip} response, 
+Cases are: @strong{trace} output, included/retracted files, cleared
+goals/response buffer, variable setting, xml-encoded @var{pgip} response,
 theorem dependency message or interactive output indicator.
 
 If none of these apply, display the text between @var{start} and @var{end}.
@@ -4284,13 +4327,13 @@ library that is distributed with Proof General (in
 Master filter for the proof assistant shell-process.@*
 A function for @samp{@code{scomint-output-filter-functions}}.
 
-Deal with output and issue new input from the queue. This is an
-important internal function. The output must be collected from
-@samp{@code{proof-shell-buffer}} for the following reason. This function
+Deal with output and issue new input from the queue.  This is an
+important internal function.  The output must be collected from
+@samp{@code{proof-shell-buffer}} for the following reason.  This function
 might block inside @samp{@code{process-send-string}} when sending input to
-the proof assistant or to prooftree. In this case Emacs might
+the proof assistant or to prooftree.  In this case Emacs might
 call the process filter again while the previous instance is
-still running. @samp{@code{proof-shell-filter-wrapper}} detects and delays
+still running.  @samp{@code{proof-shell-filter-wrapper}} detects and delays
 such calls but does not buffer the output.
 
 Handle urgent messages first.  As many as possible are processed,
@@ -4354,7 +4397,7 @@ by the filter is to send the next command from the queue.
 Wrapper for @samp{@code{proof-shell-filter}}, protecting against parallel calls.@*
 In Emacs a process filter function can be called while the same
 filter is currently running for the same process, for instance,
-when the filter bocks on I/O. This wrapper protects the main
+when the filter blocks on I/O. This wrapper protects the main
 entry point, @samp{@code{proof-shell-filter}} against such parallel,
 overlapping calls.
 
@@ -4443,7 +4486,7 @@ This is a note by David Aspinall about proof by pointing and similar
 features.
 
 Proof General already supports proof by pointing, and experimental
-support is provided in LEGO.  We would like to extend this support to
+support was provided in LEGO.  We would like to extend this support to
 other proof assistants.  Unfortunately, proof by pointing requires
 rather heavy support from the proof assistant.  There are two aspects to
 the support:

@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -12,7 +12,7 @@
 ;; Authors: Hendrik Tews, Pierre Courtieu
 ;; Maintainer: Pierre.Courtieu<Pierre.Courtieu@cnam.fr>
 
-;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;;
@@ -123,7 +123,6 @@ This function supports calling coqtop via tramp."
           (if (or (not expectedretv) (equal retv expectedretv))
               (buffer-string)))
       (error nil))))
-        
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
@@ -131,16 +130,17 @@ Interactively (with INTERACTIVE-P), show that number."
   (interactive '(t))
   (setq coq-autodetected-version nil)
   (let* ((str (coq-callcoq "-v" 0))
-         (mtch (and str (string-match "version \\([^ ]+\\)" str))))
+         (mtch (and str (string-match "version \\([^ \n]+\\)" str))))
     (when mtch
       (setq coq-autodetected-version (match-string 1 str))))
   (when interactive-p (coq-show-version))
   coq-autodetected-version)
 
-(defun coq-autodetect-help (&optional interactive-p)
-  "Record the output of coqotp -help in `coq-autodetected-help'."
+(defun coq-autodetect-help (&optional _interactive-p)
+  "Record the output of coqtop -help in `coq-autodetected-help'."
   (interactive '(t))
-  (setq coq-autodetected-help (coq-callcoq "-help")))
+  (let ((coq-output (coq-callcoq "-help")))
+    (setq coq-autodetected-help (or coq-output ""))))
 
 
 (defun coq--version< (v1 v2)
@@ -485,13 +485,13 @@ path (including the -R lib options) (see `coq-load-path')."
 
 (defcustom coq-project-filename "_CoqProject"
   "The name of coq project file.
-The coq project file of a coq developpement (cf. Coq documentation on
+The coq project file of a coq development (cf. Coq documentation on
 \"makefile generation\") should contain the arguments given to
 coq_makefile. In particular it contains the -I and -R
 options (preferably one per line).  If `coq-use-coqproject' is
-t (default) the content of this file will be used by proofgeneral to
+t (default) the content of this file will be used by Proof General to
 infer the `coq-load-path' and the `coq-prog-args' variables that set
-the coqtop invocation by proofgeneral.  This is now the recommended
+the coqtop invocation by Proof General.  This is now the recommended
 way of configuring the coqtop invocation.  Local file variables may
 still be used to override the coq project file's configuration.
 .dir-locals.el files also work and override project file settings."
@@ -649,27 +649,27 @@ Does nothing if `coq-use-project-file' is nil."
 ;; need to make this hook local.
 ;; hack-local-variables-hook seems to hack local and dir local vars.
 (add-hook 'coq-mode-hook
-          '(lambda ()
-             (add-hook 'hack-local-variables-hook
-                       'coq-load-project-file
-                       nil t)))
+          (lambda ()
+            (add-hook 'hack-local-variables-hook
+                      #'coq-load-project-file
+                      nil t)))
 
 ; detecting coqtop args should happen at the last moment before
 ; calling the process. In particular it should ahppen after that
 ; proof-prog-name-ask is performed, this hook is at the right place.
 (add-hook 'proof-shell-before-process-hook
-          '(lambda ()
-             ;; It seems coq-prog-name and proof-prog-name are not correctly linked
-             ;; so let us make sure they are the same before computing options
-             (setq coq-prog-name proof-prog-name)
-             (setq coq-prog-args (coq-prog-args))))
+          (lambda ()
+            ;; It seems coq-prog-name and proof-prog-name are not correctly linked
+            ;; so let us make sure they are the same before computing options
+            (setq coq-prog-name proof-prog-name)
+            (setq coq-prog-args (coq-prog-args))))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook
-          '(lambda ()
-             (when (and (fboundp 'show-paren--default)
-                        (boundp 'show-paren-data-function))
-               (setq show-paren-data-function 'show-paren--default))))
+          (lambda ()
+            (when (and (fboundp 'show-paren--default)
+                       (boundp 'show-paren-data-function))
+              (setq show-paren-data-function #'show-paren--default))))
 
 
 
