@@ -1,5 +1,7 @@
 ;; Author: Dominique Unruh
 
+(require 'proof)
+
 (load-library "qrhl-input")
 
 (defun qrhl-find-and-forget (span)
