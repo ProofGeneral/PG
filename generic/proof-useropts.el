@@ -230,6 +230,17 @@ selected frame will be automatically deleted."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-shell-kill-function-also-kills-associated-buffers t
+  "*If non-nil, when `proof-shell-kill-function' is called, clean up buffers.
+For example, `proof-shell-kill-function' is called when buffers
+are retracted when switching between proof script files. It may
+make sense to set this to `nil' when
+`proof-multiple-frames-enable' is set to prevent proof general
+from killing frames that you want to be managed by a window
+manager instead of within emacs."
+  :type 'boolean
+  :group 'proof-user-options)
+
 (defcustom proof-shrink-windows-tofit nil
   "*If non-nil, automatically shrink output windows to fit contents.
 In single-frame mode, this option will reduce the size of the
