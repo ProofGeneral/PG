@@ -130,7 +130,7 @@ Interactively (with INTERACTIVE-P), show that number."
   (interactive '(t))
   (setq coq-autodetected-version nil)
   (let* ((str (coq-callcoq "-v" 0))
-         (mtch (and str (string-match "version \\([^ \n]+\\)" str))))
+         (mtch (and str (string-match "version \\([^ \r\n]+\\)" str))))
     (when mtch
       (setq coq-autodetected-version (match-string 1 str))))
   (when interactive-p (coq-show-version))
