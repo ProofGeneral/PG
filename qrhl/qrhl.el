@@ -99,6 +99,7 @@
 		   proof-script-font-lock-keywords qrhl-font-lock-keywords
 		   proof-goals-font-lock-keywords qrhl-font-lock-keywords
 		   proof-response-font-lock-keywords qrhl-font-lock-keywords
+		   proof-shell-unicode t
 		   )
 
 ; buttoning functions follow https://superuser.com/a/331896/748969
@@ -121,7 +122,6 @@
 (add-hook 'qrhl-mode-hook
 	  (lambda ()
 	    (set-input-method qrhl-input-method)
-	    (set-language-environment "UTF-8")
 	    (set-variable 'electric-indent-mode nil t)
 	    (qrhl-buttonize-buffer)))
 
