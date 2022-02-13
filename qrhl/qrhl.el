@@ -74,9 +74,6 @@
 		   proof-save-command-regexp "^adfuaisdfaoidsfasd" ; ProofGeneral produces warning when this is not set. But we don't want goal/save commands to be recognized because that makes ProofGeneral do an atomic undo.
 		   )
 
-
-
-
 ; buttoning functions follow https://superuser.com/a/331896/748969
 (define-button-type 'qrhl-find-file-button
   'follow-link t
@@ -94,22 +91,18 @@
   (while (re-search-forward "include\s*\"\\([^\"]+\\)\"\s*\\." nil t)
    (make-button (match-beginning 1) (match-end 1) :type 'qrhl-find-file-button))))
 
+;;;###autoload
+(defgroup qrhl nil "qRHL prover settings")
 
-
+;;;###autoload
+(defcustom qrhl-input-method "qrhl" "Input method to use when editing qRHL proof scripts"
+  :type '(string) :group 'qrhl)
 
 (add-hook 'qrhl-mode-hook
 	  (lambda ()
-	    (set-input-method "qrhl")
+	    (set-input-method qrhl-input-method)
 	    (set-language-environment "UTF-8")
-	    (set-variable 'indent-tabs-mode nil)
 	    (set-variable 'electric-indent-mode nil)
 	    (qrhl-buttonize-buffer)))
-
-(defun qr () ; Just for testing
-  "Restarts the prover and then processes the buffer to the current position"
-  (interactive)
-  (proof-shell-exit t)
-  (proof-goto-point))
-
 
 (provide 'qrhl)
