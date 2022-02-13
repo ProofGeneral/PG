@@ -2,10 +2,21 @@
 
 (require 'qrhl-input)
 
+;;;###autoload
+(defgroup qrhl nil "qRHL prover settings")
+
+;;;###autoload
+(defcustom qrhl-input-method "qrhl" "Input method to use when editing qRHL proof scripts"
+  :type '(string) :group 'qrhl)
+
+;;;###autoload
+(defcustom qrhl-prog-name "qrhl" "Name/path of the qrhl-prover command"
+  :type '(string) :group 'qrhl)
+
 (defun qrhl-find-and-forget (span)
   (proof-generic-count-undos span))
   
-(defvar qrhl-home (file-name-directory (directory-file-name (file-name-directory (directory-file-name (file-name-directory load-file-name))))))
+;(defvar qrhl-home (file-name-directory (directory-file-name (file-name-directory (directory-file-name (file-name-directory load-file-name))))))
 
 (defvar qrhl-focus-cmd-regexp
       (let* ((number "[0-9]+")
@@ -49,7 +60,7 @@
       (and (qrhl-parse-regular-command) 'cmd)))
 
 (proof-easy-config 'qrhl "qRHL"
-		   proof-prog-name (concat qrhl-home "bin/qrhl")
+		   proof-prog-name qrhl-prog-name
 		   ; We need to give some option here, otherwise proof-prog-name is interpreted
 		   ; as a shell command which leads to problems if the path contains spaces
 		   ; (see the documentation for proof-prog-name)
@@ -89,13 +100,6 @@
   (goto-char (point-min))
   (while (re-search-forward "include\s*\"\\([^\"]+\\)\"\s*\\." nil t)
    (make-button (match-beginning 1) (match-end 1) :type 'qrhl-find-file-button))))
-
-;;;###autoload
-(defgroup qrhl nil "qRHL prover settings")
-
-;;;###autoload
-(defcustom qrhl-input-method "qrhl" "Input method to use when editing qRHL proof scripts"
-  :type '(string) :group 'qrhl)
 
 (add-hook 'qrhl-mode-hook
 	  (lambda ()
