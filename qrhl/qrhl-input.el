@@ -762,5 +762,6 @@
  ("\\qeq" ["≡𝔮"])
  )
 
+(provide 'qrhl-input)
 
 ;;; qrhl-input.el ends here

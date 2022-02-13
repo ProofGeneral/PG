@@ -1,8 +1,6 @@
 ;; Author: Dominique Unruh
 
-(require 'proof)
-
-(load-library "qrhl-input")
+(require 'qrhl-input)
 
 (defun qrhl-find-and-forget (span)
   (proof-generic-count-undos span))
@@ -72,6 +70,7 @@
 		   proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\"" . "\\\""))
 		   proof-shell-cd-cmd "changeDirectory \"%s\"."
 		   proof-save-command-regexp "^adfuaisdfaoidsfasd" ; ProofGeneral produces warning when this is not set. But we don't want goal/save commands to be recognized because that makes ProofGeneral do an atomic undo.
+		   proof-tree-external-display nil
 		   )
 
 ; buttoning functions follow https://superuser.com/a/331896/748969
