@@ -105,7 +105,7 @@
 	  (lambda ()
 	    (set-input-method qrhl-input-method)
 	    (set-language-environment "UTF-8")
-	    (set-variable 'electric-indent-mode nil)
+	    (set-variable 'electric-indent-mode nil t)
 	    (qrhl-buttonize-buffer)))
 
 (provide 'qrhl)
