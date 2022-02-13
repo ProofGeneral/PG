@@ -16,8 +16,6 @@
 (defun qrhl-find-and-forget (span)
   (proof-generic-count-undos span))
   
-;(defvar qrhl-home (file-name-directory (directory-file-name (file-name-directory (directory-file-name (file-name-directory load-file-name))))))
-
 (defvar qrhl-focus-cmd-regexp
       (let* ((number "[0-9]+")
 	     (white "[[:blank:]]*")
@@ -59,6 +57,22 @@
       (and (qrhl-parse-focus-command) 'cmd)
       (and (qrhl-parse-regular-command) 'cmd)))
 
+(defvar qrhl-font-lock-subsuperscript
+  '(("\\(⇩\\)\\([^[:space:]]\\)" .
+     ((2 '(face subscript display (raise -0.3)))
+      (1 '(face nil display ""))))
+    ("\\(⇧\\)\\([^[:space:]]\\)" .
+     ((2 '(face superscript display (raise 0.3)))
+      (1 '(face nil display "")))))
+  "Font-lock configuration for displaying sub/superscripts that are prefixed by ⇩/⇧")
+
+(defvar qrhl-font-lock-keywords
+  ; Very simple configuration of keywords: highlights all occurrences, even if they are not actually keywords (e.g., when they are part of a term)
+  (append  qrhl-font-lock-subsuperscript
+	   '("lemma" "qrhl" "include" "quantum" "program" "equal" "simp" "isabelle" "isa" "var" "qed"
+	     "skip"))
+  "Font-lock configuration for qRHL proof scripts")
+
 (proof-easy-config 'qrhl "qRHL"
 		   proof-prog-name qrhl-prog-name
 		   ; We need to give some option here, otherwise proof-prog-name is interpreted
@@ -82,6 +96,9 @@
 		   proof-shell-cd-cmd "changeDirectory \"%s\"."
 		   proof-save-command-regexp "^adfuaisdfaoidsfasd" ; ProofGeneral produces warning when this is not set. But we don't want goal/save commands to be recognized because that makes ProofGeneral do an atomic undo.
 		   proof-tree-external-display nil
+		   proof-script-font-lock-keywords qrhl-font-lock-keywords
+		   proof-goals-font-lock-keywords qrhl-font-lock-keywords
+		   proof-response-font-lock-keywords qrhl-font-lock-keywords
 		   )
 
 ; buttoning functions follow https://superuser.com/a/331896/748969
@@ -93,7 +110,7 @@
   (find-file (buffer-substring (button-start button) (button-end button))))
 
 (defun qrhl-buttonize-buffer ()
- "turn all include's into clickable buttons"
+ "Turn all include commands in a qRHL proof script into clickable buttons"
  (interactive)
  (remove-overlays)
  (save-excursion
