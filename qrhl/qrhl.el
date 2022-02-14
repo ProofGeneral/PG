@@ -1,6 +1,9 @@
 ;; Author: Dominique Unruh
 
-(require 'qrhl-input)
+(if (version< emacs-version "26")
+    (require 'qrhl-input-25)
+  (require 'qrhl-input))
+
 
 ;;;###autoload
 (defgroup qrhl nil "qRHL prover settings")
