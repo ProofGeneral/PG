@@ -1,4 +1,18 @@
+;;; qrhl.el --- Mode for qrhl-tool theorem prover -*- lexical-binding: t -*-
+
+;; This file is part of Proof General.
+
+;; Copyright © 2017–2022  Dominique Unruh
+
 ;; Author: Dominique Unruh
+
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+;;; Commentary:
+
+;; See also https://dominique-unruh.github.io/qrhl-tool/
+
+;;; Code:
 
 (if (version< emacs-version "26")
     (require 'qrhl-input-25)

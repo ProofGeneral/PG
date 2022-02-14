@@ -8,9 +8,11 @@
 
 ;; Author: TAKAHASHI Naoto <ntakahas@m17n.org>
 ;;         Dave Love <fx@gnu.org>
-;; Keywords: multilingual, input, Greek, i18n
+;;         Dominique Unruh <unruh@ut.ee>
 
-;; Author: Dominique Unruh <unruh@ut.ee>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+;;; Commentary:
 
 ;; Modified by Dominique Unruh to adapt to the specific requirements of qrhl-tool (https://dominique-unruh.github.io/qrhl-tool/).
 ;; Based on latin-ltx.el from Emacs 26.3 (https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/leim/quail/latin-ltx.el?h=emacs-26.3)
@@ -21,6 +23,9 @@
 ;; - Changed unicode symbol for \cdot, \llbracket, \rrbracket
 ;; - Disabled sequences starting with _
 ;; - Appended extra input sequences in the end
+;; - Changed to lexical binding
+
+;;; Code:
 
 (if (version< emacs-version "26")
     (error "Emacs version >= 26 required"))

@@ -1,4 +1,4 @@
-;;; qrhl-input.el --- Quail package for TeX-style input -*-coding: utf-8;-*-
+;;; qrhl-input.el --- Quail package for TeX-style input for qrhl-tool in ProofGeneral -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2001-2017 Free Software Foundation, Inc.
 ;; Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
@@ -8,9 +8,11 @@
 
 ;; Author: TAKAHASHI Naoto <ntakahas@m17n.org>
 ;;         Dave Love <fx@gnu.org>
-;; Keywords: multilingual, input, Greek, i18n
+;;         Dominique Unruh <unruh@ut.ee>
 
-;; Author: Dominique Unruh <unruh@ut.ee>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+;;; Commentary:
 
 ;; Modified by Dominique Unruh to adapt to the specific requirements of qrhl-tool (https://dominique-unruh.github.io/qrhl-tool/).
 ;; Based on latin-ltx.el from Emacs 25.3 (https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/leim/quail/latin-ltx.el?h=emacs-25.3)
@@ -21,8 +23,11 @@
 ;; - Changed unicode symbol for \cdot, \llbracket, \rrbracket
 ;; - Disabled sequences starting with _
 ;; - Appended extra input sequences in the end
+;; - Changed to lexical binding
 
 ;; This version is for Emacs 25 since 'qrhl-input.el' is incompatible with Emacs 25.
+
+;;; Code:
 
 (if (not (version< emacs-version "26"))
     (error "Emacs version <= 25 required"))
