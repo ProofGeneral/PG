@@ -10,26 +10,17 @@
 ;;         Dave Love <fx@gnu.org>
 ;; Keywords: multilingual, input, Greek, i18n
 
-;; This file is part of GNU Emacs.
+;; Author: Dominique Unruh <unruh@ut.ee>
 
-;; GNU Emacs is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
-
-;;; Commentary:
-
-;; Modified by Dominique Unruh to adapt to qrhl-tool (original was latin-ltx.el)
-
-;;; Code:
+;; Modified by Dominique Unruh to adapt to the specific requirements of qrhl-tool (https://dominique-unruh.github.io/qrhl-tool/).
+;; Based on latin-ltx.el from Emacs 26.3 (https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/leim/quail/latin-ltx.el?h=emacs-26.3)
+;; Main changes:
+;; - Added version check (to fail with emacs <26)
+;; - Changed input method name to "qrhl"
+;; - Changed prefix from latin-ltx to qrhl-input
+;; - Changed unicode symbol for \cdot, \llbracket, \rrbracket
+;; - Disabled sequences starting with _
+;; - Appended extra input sequences in the end
 
 (if (version< emacs-version "26")
     (error "Emacs version >= 26 required"))
@@ -532,8 +523,7 @@
  ("\\oplus" ?⊕)
  ("\\oslash" ?⊘)
  ("\\otimes" ?⊗)
- ("\\par" ?  
-)
+ ("\\par" ? )
  ("\\parallel" ?∥)
  ("\\partial" ?∂)
  ("\\perp" ?⊥)
