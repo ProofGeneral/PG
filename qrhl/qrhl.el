@@ -2,7 +2,7 @@
 
 ;; This file is part of Proof General.
 
-;; Copyright © 2017–2022  Dominique Unruh
+;; Copyright © 2017–2022  University of Tartu
 
 ;; Author: Dominique Unruh
 

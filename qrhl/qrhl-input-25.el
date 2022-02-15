@@ -5,6 +5,7 @@
 ;;   2010, 2011
 ;;   National Institute of Advanced Industrial Science and Technology (AIST)
 ;;   Registration Number H14PRO021
+;; Copyright (C) 2017-2022 University of Tartu
 
 ;; Author: TAKAHASHI Naoto <ntakahas@m17n.org>
 ;;         Dave Love <fx@gnu.org>
