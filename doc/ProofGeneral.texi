@@ -2706,8 +2706,6 @@ Show a buffer of all the shortcuts available.
 Insert each Unicode character into a buffer.@*
 Lets you see which characters are available for literal display
 in your Emacs font.
-
-(fn)
 @end deffn
 @node Selecting suitable fonts
 @section Selecting suitable fonts
