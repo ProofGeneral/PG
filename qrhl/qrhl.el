@@ -74,19 +74,32 @@
       (and (qrhl-parse-regular-command) 'cmd)))
 
 (defvar qrhl-font-lock-subsuperscript
-  '(("\\(⇩\\)\\([^[:space:]]\\)" .
+  '(("\\(⇩\\)\\([^⇩⇧[:space:]]\\)" .
      ((2 '(face subscript display (raise -0.3)))
       (1 '(face nil display ""))))
-    ("\\(⇧\\)\\([^[:space:]]\\)" .
+    ("\\(⇧\\)\\([^⇩⇧[:space:]]\\)" .
      ((2 '(face superscript display (raise 0.3)))
       (1 '(face nil display "")))))
   "Font-lock configuration for displaying sub/superscripts that are prefixed by ⇩/⇧")
 
 (defvar qrhl-font-lock-keywords
-  ; Very simple configuration of keywords: highlights all occurrences, even if they are not actually keywords (e.g., when they are part of a term)
-  (append  qrhl-font-lock-subsuperscript
-	   '("lemma" "qrhl" "include" "quantum" "program" "equal" "simp" "isabelle" "isa" "var" "qed"
-	     "skip"))
+  ; Regexp explanation: match the keyword/tactic after another command, and also if there are {}+*- in between (focusing commands)
+  (cl-flet ((mk-regexp (word) (concat "\\(?:^\\|\\.[ \t]\\)[ \t{}+*-]*\\b\\(" word "\\)\\b")))
+    (append qrhl-font-lock-subsuperscript
+	    (mapcar (lambda (keyword) `(,(mk-regexp keyword) . (1 'font-lock-keyword-face)))
+		    '("debug:" "isabelle" "quantum\\s +var" "classical\\s +var" "ambient\\s +var"
+		      "program" "adversary" "qrhl" "lemma" "include" "qed" "cheat" "print"))
+
+	    (mapcar (lambda (tactic) `(,(mk-regexp tactic) . (1 'font-lock-function-name-face)))
+		    '("admit" "wp" "swap" "simp" "rule" "clear" "skip" "inline" "seq" "conseq\\s +pre"
+		      "conseq\\s +post" "conseq\\s +qrhl" "equal" "rnd"
+		      "byqrhl" "casesplit" "case" "fix" "squash" "frame" "measure" "o2h" "semiclassical"
+		      "sym" "local\\s +remove" "local\\s +up" "rename" "if" "isa"
+		      ))
+
+	    ; Regexp explanation: Match comment after
+	    '(("\\(?:^\\|[ \t]\\)[ \t]*\\(#.*\\)" . (1 'font-lock-comment-face)))
+	    ))
   "Font-lock configuration for qRHL proof scripts")
 
 (proof-easy-config 'qrhl "qRHL"
@@ -116,8 +129,9 @@
   proof-save-command-regexp "\\`a\\`"   ;AKA `regexp-unmatchable' in Emacs-27
   proof-tree-external-display nil
   proof-script-font-lock-keywords qrhl-font-lock-keywords
-  proof-goals-font-lock-keywords qrhl-font-lock-keywords
+  proof-goals-font-lock-keywords qrhl-font-lock-subsuperscript
   proof-response-font-lock-keywords qrhl-font-lock-keywords
+  font-lock-extra-managed-props '(display)
   proof-shell-unicode t
   )
 
