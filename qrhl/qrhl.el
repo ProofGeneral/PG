@@ -90,12 +90,12 @@ Returns t if this worked."
   (cl-flet ((mk-regexp (word) (concat "\\(?:^\\|\\.[ \t]\\)[ \t{}+*-]*\\b\\(" word "\\)\\b")))
     (append qrhl-font-lock-subsuperscript
 	    (mapcar (lambda (keyword) `(,(mk-regexp keyword) . (1 'font-lock-keyword-face)))
-		    '("debug:" "isabelle" "quantum\\s +var" "classical\\s +var" "ambient\\s +var"
-		      "program" "adversary" "qrhl" "lemma" "include" "qed" "cheat" "print"))
+		    '("isabelle_cmd" "debug:" "isabelle" "quantum\\s +var" "classical\\s +var" "ambient\\s +var"
+		      "program" "adversary" "qrhl" "lemma" "include" "qed" "cheat" "print\\s +goal" "print"))
 
 	    (mapcar (lambda (tactic) `(,(mk-regexp tactic) . (1 'font-lock-function-name-face)))
-		    '("admit" "wp" "swap" "simp" "rule" "clear" "skip" "inline" "seq" "conseq\\s +pre"
-		      "conseq\\s +post" "conseq\\s +qrhl" "equal" "rnd"
+		    '("admit" "wp" "sp" "swap" "simp" "rule" "clear" "skip" "inline" "seq" "conseq\\s +pre"
+		      "conseq\\s +post" "conseq\\s +qrhl" "equal" "rnd" "rewrite"
 		      "byqrhl" "casesplit" "case" "fix" "squash" "frame" "measure" "o2h" "semiclassical"
 		      "sym" "local\\s +remove" "local\\s +up" "rename" "if" "isa"
 		      ))
