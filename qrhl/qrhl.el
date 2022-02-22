@@ -60,7 +60,6 @@
 		    ))
 	    (and (qrhl-forward-regex "\\.") (point))
 	    ))))
-    (princ pos)
     (and pos (goto-char pos) t)))
 
 (defun qrhl-parse-focus-command ()
