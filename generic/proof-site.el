@@ -47,6 +47,7 @@
       (coq "Coq" "v" nil (".vo" ".glob"))
       (easycrypt "EasyCrypt" "ec" "\\.eca?\\'")
       (phox "PhoX" "phx" nil (".phi" ".pho"))
+      (qrhl "qRHL" "qrhl")
 
       ;; Cut-and-paste management only
 

@@ -17,30 +17,72 @@
 (provide 'proof-autoloads)
 
 
-;;;### (autoloads nil "../coq/coq" "../coq/coq.el" (24631 49612 444031
-;;;;;;  796000))
+;;;### (autoloads nil "../coq/coq" "../coq/coq.el" (0 0 0 0))
 ;;; Generated autoloads from ../coq/coq.el
 
-(autoload 'coq-pg-setup "../coq/coq" "\
+(autoload 'coq-pg-setup "../coq/coq" nil nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq" '("auto-adapt-printing-width" "build-list-id-from-string" "coq-" "count-not-intersection" "hide-additional-subgoals" "is-not-split-vertic" "last-coq-error-location" "mod" "notation-print-kinds-table" "printing-depth" "proof-" "reqkinds-kinds-table" "time-commands")))
 
-\(fn)" nil nil)
+;;;***
+
+;;;### (autoloads nil "../coq/coq-abbrev" "../coq/coq-abbrev.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-abbrev.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-abbrev" '("coq-" "holes-show-doc")))
 
 ;;;***
 
 ;;;### (autoloads nil "../coq/coq-autotest" "../coq/coq-autotest.el"
-;;;;;;  (24208 57600 771957 35000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../coq/coq-autotest.el
 
-(autoload 'coq-autotest "../coq/coq-autotest" "\
-
-
-\(fn)" t nil)
+(autoload 'coq-autotest "../coq/coq-autotest" nil t nil)
 
 ;;;***
 
-;;;### (autoloads nil "../coq/coq-mode" "../coq/coq-mode.el" (24208
-;;;;;;  57600 775957 25000))
+;;;### (autoloads nil "../coq/coq-compile-common" "../coq/coq-compile-common.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-compile-common.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-compile-common" '("coq-" "number-of-cpus" "time-less-or-equal")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-db" "../coq/coq-db.el" (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-db.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-db" '("coq-" "filter-state-" "max-length-db")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-diffs" "../coq/coq-diffs.el" (0
+;;;;;;  0 0 0))
+;;; Generated autoloads from ../coq/coq-diffs.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-diffs" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-indent" "../coq/coq-indent.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-indent.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-indent" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-local-vars" "../coq/coq-local-vars.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-local-vars.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-local-vars" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-mode" "../coq/coq-mode.el" (0 0
+;;;;;;  0 0))
 ;;; Generated autoloads from ../coq/coq-mode.el
 
 (add-to-list 'auto-mode-alist '("\\.v\\'" . coq-mode))
@@ -52,16 +94,71 @@ Major mode for Coq scripts.
 
 \(fn)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-mode" '("coq-" "get-coq-library-directory")))
+
 ;;;***
 
-;;;### (autoloads nil "../lib/bufhist" "../lib/bufhist.el" (24208
-;;;;;;  57600 787956 998000))
+;;;### (autoloads nil "../coq/coq-par-compile" "../coq/coq-par-compile.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-par-compile.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-par-compile" '("coq-" "split-list-at-predicate")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-seq-compile" "../coq/coq-seq-compile.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-seq-compile.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-seq-compile" '("coq-seq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-smie" "../coq/coq-smie.el" (0 0
+;;;;;;  0 0))
+;;; Generated autoloads from ../coq/coq-smie.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-smie" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-syntax" "../coq/coq-syntax.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-syntax.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-syntax" '("coq-" "develock-coq-font-lock-keywords")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-system" "../coq/coq-system.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-system.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-system" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../coq/coq-unicode-tokens" "../coq/coq-unicode-tokens.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../coq/coq-unicode-tokens.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-unicode-tokens" '("coq-")))
+
+;;;***
+
+;;;### (autoloads nil "../lib/bufhist" "../lib/bufhist.el" (0 0 0
+;;;;;;  0))
 ;;; Generated autoloads from ../lib/bufhist.el
 
 (autoload 'bufhist-mode "../lib/bufhist" "\
 Minor mode retaining an in-memory history of the buffer contents.
 
-Commands:\\<bufhist-minor-mode-map>
+If called interactively, enable Bufhist mode if ARG is positive,
+and disable it if ARG is zero or negative.  If called from Lisp,
+also enable the mode if ARG is omitted or nil, and toggle it if
+ARG is `toggle'; disable the mode otherwise.
+
+Commands:\\<bufhist-mode-map>
 \\[bufhist-prev]    bufhist-prev    go back in history
 \\[bufhist-next]    bufhist-next    go forward in history
 \\[bufhist-first]   bufhist-first   go to first item in history
@@ -80,14 +177,13 @@ If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’.
 \(fn &optional READWRITE RINGSIZE)" t nil)
 
 (autoload 'bufhist-exit "../lib/bufhist" "\
-Stop keeping ring history for current buffer.
+Stop keeping ring history for current buffer." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/bufhist" '("bufhist-")))
 
 ;;;***
 
-;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (24208 57600
-;;;;;;  787956 998000))
+;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (0 0 0 0))
 ;;; Generated autoloads from ../lib/holes.el
 
 (autoload 'holes-set-make-active-hole "../lib/holes" "\
@@ -189,19 +285,27 @@ undoing on holes cannot make holes re-appear.
 Complete abbrev by putting holes and indenting.
 Moves point at beginning of expanded text.  Put this function as
 call-back for your abbrevs, and just expanded \"#\" and \"@{..}\" will
-become holes.
-
-\(fn)" nil nil)
+become holes." nil nil)
 
 (autoload 'holes-insert-and-expand "../lib/holes" "\
 Insert S, expand it and replace #s and @{]s by holes.
 
 \(fn S)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/holes" '("hole")))
+
+;;;***
+
+;;;### (autoloads nil "../lib/local-vars-list" "../lib/local-vars-list.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../lib/local-vars-list.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/local-vars-list" '("local-vars-list-")))
+
 ;;;***
 
 ;;;### (autoloads nil "../lib/maths-menu" "../lib/maths-menu.el"
-;;;;;;  (24208 57600 787956 998000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../lib/maths-menu.el
 
 (autoload 'maths-menu-mode "../lib/maths-menu" "\
@@ -210,19 +314,60 @@ Uses window system menus only when they can display multilingual text.
 Otherwise the menu-bar item activates the text-mode menu system.
 This mode is only useful with a font which can display the maths repertoire.
 
+If called interactively, enable Maths-Menu mode if ARG is
+positive, and disable it if ARG is zero or negative.  If called
+from Lisp, also enable the mode if ARG is omitted or nil, and
+toggle it if ARG is `toggle'; disable the mode otherwise.
+
 \(fn &optional ARG)" t nil)
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/maths-menu" '("maths-menu-")))
 
 ;;;***
 
-;;;### (autoloads nil "pg-assoc" "pg-assoc.el" (24208 57600 779957
-;;;;;;  17000))
+;;;### (autoloads nil "../lib/pg-fontsets" "../lib/pg-fontsets.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../lib/pg-fontsets.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/pg-fontsets" '("pg-fontsets-")))
+
+;;;***
+
+;;;### (autoloads nil "../lib/proof-compat" "../lib/proof-compat.el"
+;;;;;;  (0 0 0 0))
+;;; Generated autoloads from ../lib/proof-compat.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/proof-compat" '("pg-custom-undeclare-variable")))
+
+;;;***
+
+;;;### (autoloads nil "../lib/span" "../lib/span.el" (0 0 0 0))
+;;; Generated autoloads from ../lib/span.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/span" '("fold-spans" "next-span" "prev-span" "set-span-" "span")))
+
+;;;***
+
+;;;### (autoloads nil "../qrhl/qrhl" "../qrhl/qrhl.el" (0 0 0 0))
+;;; Generated autoloads from ../qrhl/qrhl.el
+
+(let ((loads (get 'qrhl 'custom-loads))) (if (member '"../qrhl/qrhl" loads) nil (put 'qrhl 'custom-loads (cons '"../qrhl/qrhl" loads))))
+
+(defvar qrhl-input-method "qrhl" "\
+Input method to use when editing qRHL proof scripts")
+
+(custom-autoload 'qrhl-input-method "../qrhl/qrhl" t)
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../qrhl/qrhl" '("qrhl-")))
+
+;;;***
+
+;;;### (autoloads nil "pg-assoc" "pg-assoc.el" (0 0 0 0))
 ;;; Generated autoloads from pg-assoc.el
 
 (autoload 'proof-associated-buffers "pg-assoc" "\
 Return a list of the associated buffers.
-Some may be dead/nil.
-
-\(fn)" nil nil)
+Some may be dead/nil." nil nil)
 
 (autoload 'proof-associated-windows "pg-assoc" "\
 Return a list of the associated buffers windows.
@@ -233,36 +378,47 @@ argument ALL-FRAMES has the same meaning than for
 \(fn &optional ALL-FRAMES)" nil nil)
 
 (autoload 'proof-associated-frames "pg-assoc" "\
-Return the list of frames displaying at least one associated buffer.
+Return the list of frames displaying at least one associated buffer." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-assoc" '("proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (24208 57600
-;;;;;;  787956 998000))
+;;;### (autoloads nil "../lib/pg-dev" "../lib/pg-dev.el" (0 0 0 0))
 ;;; Generated autoloads from ../lib/pg-dev.el
 
 (autoload 'profile-pg "../lib/pg-dev" "\
-Configure Proof General for profiling.  Use \\[elp-results] to see results.
+Configure Proof General for profiling.  Use \\[elp-results] to see results." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/pg-dev" '("elp-pack-number" "pg-" "unload-pg")))
 
 ;;;***
 
-;;;### (autoloads nil "pg-goals" "pg-goals.el" (24208 57600 779957
-;;;;;;  17000))
+;;;### (autoloads nil "pg-autotest" "pg-autotest.el" (0 0 0 0))
+;;; Generated autoloads from pg-autotest.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-autotest" '("pg-autotest")))
+
+;;;***
+
+;;;### (autoloads nil "pg-custom" "pg-custom.el" (0 0 0 0))
+;;; Generated autoloads from pg-custom.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-custom" '("completion-table" "favourites" "help-menu-entries" "keymap" "maths-menu-enable" "menu-entries" "one-command-per-line" "pro" "quit-timeout" "script-indent" "tags-program" "toolbar-entries" "unicode-tokens-enable" "use-holes")))
+
+;;;***
+
+;;;### (autoloads nil "pg-goals" "pg-goals.el" (0 0 0 0))
 ;;; Generated autoloads from pg-goals.el
 
 (autoload 'proof-goals-config-done "pg-goals" "\
-Initialise the goals buffer after the child has been configured.
+Initialise the goals buffer after the child has been configured." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-goals" '("pg-goals-" "proof-goals-mode")))
 
 ;;;***
 
-;;;### (autoloads nil "pg-movie" "pg-movie.el" (24208 57600 779957
-;;;;;;  17000))
+;;;### (autoloads nil "pg-movie" "pg-movie.el" (0 0 0 0))
 ;;; Generated autoloads from pg-movie.el
 
 (autoload 'pg-movie-export "pg-movie" "\
@@ -282,10 +438,11 @@ Existing XML files are overwritten.
 
 \(fn DIR EXTN)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-movie" '("pg-movie-")))
+
 ;;;***
 
-;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (24217 47839 196027
-;;;;;;  466000))
+;;;### (autoloads nil "pg-pamacs" "pg-pamacs.el" (0 0 0 0))
 ;;; Generated autoloads from pg-pamacs.el
 
 (autoload 'proof-defpacustom-fn "pg-pamacs" "\
@@ -333,10 +490,18 @@ This macro also extends the `proof-assistant-settings' list.
 
 \(fn NAME VAL &rest ARGS)" nil t)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-pamacs" '("deflocal" "defpg" "proof-" "undefpgcustom")))
+
 ;;;***
 
-;;;### (autoloads nil "pg-pgip" "pg-pgip.el" (24208 57600 779957
-;;;;;;  17000))
+;;;### (autoloads nil "pg-pbrpm" "pg-pbrpm.el" (0 0 0 0))
+;;; Generated autoloads from pg-pbrpm.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-pbrpm" '("pbrpm-menu-desc" "pg-pbrpm-")))
+
+;;;***
+
+;;;### (autoloads nil "pg-pgip" "pg-pgip.el" (0 0 0 0))
 ;;; Generated autoloads from pg-pgip.el
 
 (autoload 'pg-pgip-process-packet "pg-pgip" "\
@@ -346,19 +511,16 @@ The list PGIPS may contain one or more PGIP packets, whose contents are processe
 \(fn PGIPS)" nil nil)
 
 (autoload 'pg-pgip-maybe-askpgip "pg-pgip" "\
-Send an <askpgip> message to the prover if PGIP is supported.
-
-\(fn)" nil nil)
+Send an <askpgip> message to the prover if PGIP is supported." nil nil)
 
 (autoload 'pg-pgip-askprefs "pg-pgip" "\
-Send an <askprefs> message to the prover.
+Send an <askprefs> message to the prover." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-pgip" '("pg-" "proof-assistant-idtables")))
 
 ;;;***
 
-;;;### (autoloads nil "pg-response" "pg-response.el" (24208 57600
-;;;;;;  783957 8000))
+;;;### (autoloads nil "pg-response" "pg-response.el" (0 0 0 0))
 ;;; Generated autoloads from pg-response.el
 
 (autoload 'proof-response-mode "pg-response" "\
@@ -367,9 +529,7 @@ Responses from Proof Assistant
 \(fn)" t nil)
 
 (autoload 'proof-response-config-done "pg-response" "\
-Complete initialisation of a response-mode derived buffer.
-
-\(fn)" nil nil)
+Complete initialisation of a response-mode derived buffer." nil nil)
 
 (autoload 'pg-response-maybe-erase "pg-response" "\
 Erase the response buffer, according to confusing flag combinations.
@@ -421,33 +581,35 @@ and start at the first error.
 
 (autoload 'pg-response-has-error-location "pg-response" "\
 Return non-nil if the response buffer has an error location.
-See `pg-next-error-regexp'.
+See `pg-next-error-regexp'." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-response" '("pg-" "proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "pg-user" "pg-user.el" (24230 6619 211624 483000))
+;;;### (autoloads nil "pg-user" "pg-user.el" (0 0 0 0))
 ;;; Generated autoloads from pg-user.el
 
 (autoload 'proof-script-new-command-advance "pg-user" "\
 Move point to a nice position for a new command, possibly inserting spaces.
 Assumes that point is at the end of a command.
-No effect if `proof-next-command-insert-space' is nil.
-
-\(fn)" t nil)
+No effect if `proof-next-command-insert-space' is nil." t nil)
 
 (autoload 'proof-goto-point "pg-user" "\
 Assert or retract to the command at current position.
 Calls `proof-assert-until-point' or `proof-retract-until-point' as
-appropriate.
+appropriate. With prefix argument RAW the omit proofs feature
+\(`proof-omit-proofs-option') is temporaily disabled to check all
+proofs in the asserted region.
 
-\(fn)" t nil)
+\(fn &optional RAW)" t nil)
 
 (autoload 'proof-process-buffer "pg-user" "\
 Process the current (or script) buffer, and maybe move point to the end.
+With prefix argument RAW the omit proofs feature (`proof-omit-proofs-option')
+is temporaily disabled to check all proofs in the asserted region.
 
-\(fn)" t nil)
+\(fn &optional RAW)" t nil)
 
 (autoload 'proof-define-assistant-command "pg-user" "\
 Define FN (docstring DOC): check if CMDVAR is set, then send BODY to prover.
@@ -469,30 +631,20 @@ It can also be used as a minor mode function: with ARG, turn on iff ARG>0
 
 \(fn &optional ARG)" nil nil)
 
-(autoload 'pg-slow-fontify-tracing-hint "pg-user" "\
-
-
-\(fn)" nil nil)
+(autoload 'pg-slow-fontify-tracing-hint "pg-user" nil nil nil)
 
 (autoload 'pg-response-buffers-hint "pg-user" "\
 
 
 \(fn &optional NEXTBUF)" nil nil)
 
-(autoload 'pg-jump-to-end-hint "pg-user" "\
-
-
-\(fn)" nil nil)
+(autoload 'pg-jump-to-end-hint "pg-user" nil nil nil)
 
 (autoload 'pg-processing-complete-hint "pg-user" "\
-Display hint for showing end of locked region or processing complete.
-
-\(fn)" nil nil)
+Display hint for showing end of locked region or processing complete." nil nil)
 
 (autoload 'pg-next-error-hint "pg-user" "\
-Display hint for locating error.
-
-\(fn)" nil nil)
+Display hint for locating error." nil nil)
 
 (autoload 'pg-hint "pg-user" "\
 Display a hint HINTMSG in the minibuffer, if `pg-show-hints' is non-nil.
@@ -503,14 +655,10 @@ The function `substitute-command-keys' is called on the argument.
 (autoload 'pg-identifier-near-point-query "pg-user" "\
 Query the prover about the identifier near point.
 If the result is successful, we add a span to the buffer which has
-a popup with the information in it.
-
-\(fn)" t nil)
+a popup with the information in it." t nil)
 
 (autoload 'proof-imenu-enable "pg-user" "\
-Add or remove index menu.
-
-\(fn)" nil nil)
+Add or remove index menu." nil nil)
 
 (autoload 'pg-previous-matching-input-from-input "pg-user" "\
 Search backwards through input history for match for current input.
@@ -542,19 +690,25 @@ removed if it matches the last item in the ring.
 
 \(fn CMD)" nil nil)
 
-(autoload 'pg-clear-input-ring "pg-user" "\
-
-
-\(fn)" nil nil)
+(autoload 'pg-clear-input-ring "pg-user" nil nil nil)
 
 (autoload 'proof-autosend-enable "pg-user" "\
 Enable or disable autosend behaviour.
 
 \(fn &optional NOMSG)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-user" '("next-undo-elt" "pg-" "proof-")))
+
 ;;;***
 
-;;;### (autoloads nil "pg-xml" "pg-xml.el" (24208 57600 783957 8000))
+;;;### (autoloads nil "pg-vars" "pg-vars.el" (0 0 0 0))
+;;; Generated autoloads from pg-vars.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-vars" '("pg-" "proof-")))
+
+;;;***
+
+;;;### (autoloads nil "pg-xml" "pg-xml.el" (0 0 0 0))
 ;;; Generated autoloads from pg-xml.el
 
 (autoload 'pg-xml-parse-string "pg-xml" "\
@@ -562,10 +716,26 @@ Parse string in ARG, same as pg-xml-parse-buffer.
 
 \(fn ARG)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-xml" '("pg-")))
+
 ;;;***
 
-;;;### (autoloads nil "proof-depends" "proof-depends.el" (24230 6619
-;;;;;;  211624 483000))
+;;;### (autoloads nil "proof-auxmodes" "proof-auxmodes.el" (0 0 0
+;;;;;;  0))
+;;; Generated autoloads from proof-auxmodes.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-auxmodes" '("proof-")))
+
+;;;***
+
+;;;### (autoloads nil "proof-config" "proof-config.el" (0 0 0 0))
+;;; Generated autoloads from proof-config.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-config" '("pbp-" "pg-" "proof-")))
+
+;;;***
+
+;;;### (autoloads nil "proof-depends" "proof-depends.el" (0 0 0 0))
 ;;; Generated autoloads from proof-depends.el
 
 (autoload 'proof-depends-process-dependencies "proof-depends" "\
@@ -582,10 +752,12 @@ specific entries.
 
 \(fn SPAN)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-depends" '("pg-" "proof-")))
+
 ;;;***
 
 ;;;### (autoloads nil "proof-easy-config" "proof-easy-config.el"
-;;;;;;  (24208 57600 783957 8000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from proof-easy-config.el
 
 (autoload 'proof-easy-config "proof-easy-config" "\
@@ -596,21 +768,29 @@ Additional arguments are taken into account as a setq BODY.
 
 \(fn SYM NAME &rest BODY)" nil t)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-easy-config" '("proof-easy-config-")))
+
 ;;;***
 
-;;;### (autoloads nil "proof-indent" "proof-indent.el" (24208 57600
-;;;;;;  783957 8000))
+;;;### (autoloads nil "proof-faces" "proof-faces.el" (0 0 0 0))
+;;; Generated autoloads from proof-faces.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-faces" '("pg-defface-window-systems" "proof-")))
+
+;;;***
+
+;;;### (autoloads nil "proof-indent" "proof-indent.el" (0 0 0 0))
 ;;; Generated autoloads from proof-indent.el
 
 (autoload 'proof-indent-line "proof-indent" "\
-Indent current line of proof script, if indentation enabled.
+Indent current line of proof script, if indentation enabled." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-indent" '("proof-indent-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (24208
-;;;;;;  57600 783957 8000))
+;;;### (autoloads nil "proof-maths-menu" "proof-maths-menu.el" (0
+;;;;;;  0 0 0))
 ;;; Generated autoloads from proof-maths-menu.el
 
 (autoload 'proof-maths-menu-set-global "proof-maths-menu" "\
@@ -624,14 +804,11 @@ Turn on or off maths-menu mode in Proof General script buffer.
 This invokes `maths-menu-mode' to toggle the setting for the current
 buffer, and then sets PG's option for default to match.
 Also we arrange to have maths menu mode turn itself on automatically
-in future if we have just activated it for this buffer.
-
-\(fn)" t nil)
+in future if we have just activated it for this buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads nil "proof-menu" "proof-menu.el" (24631 53911 652410
-;;;;;;  737000))
+;;;### (autoloads nil "proof-menu" "proof-menu.el" (0 0 0 0))
 ;;; Generated autoloads from proof-menu.el
 
 (autoload 'proof-menu-define-keys "proof-menu" "\
@@ -639,25 +816,18 @@ Prover specific keymap under C-c C-a.
 
 \(fn MAP)" nil nil)
 
-(autoload 'proof-menu-define-main "proof-menu" "\
+(autoload 'proof-menu-define-main "proof-menu" nil nil nil)
 
-
-\(fn)" nil nil)
-
-(autoload 'proof-menu-define-specific "proof-menu" "\
-
-
-\(fn)" nil nil)
+(autoload 'proof-menu-define-specific "proof-menu" nil nil nil)
 
 (autoload 'proof-aux-menu "proof-menu" "\
-Construct and return PG auxiliary menu used in non-scripting buffers.
+Construct and return PG auxiliary menu used in non-scripting buffers." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-menu" '("proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-script" "proof-script.el" (24631 49612
-;;;;;;  448031 792000))
+;;;### (autoloads nil "proof-script" "proof-script.el" (0 0 0 0))
 ;;; Generated autoloads from proof-script.el
 
 (autoload 'proof-ready-for-assistant "proof-script" "\
@@ -667,26 +837,18 @@ If ASSISTANT-NAME is omitted, look up in `proof-assistant-table'.
 \(fn ASSISTANTSYM &optional ASSISTANT-NAME)" nil nil)
 
 (autoload 'proof-colour-locked "proof-script" "\
-Alter the colour of all locked regions according to variable `proof-colour-locked'.
-
-\(fn)" t nil)
+Alter the colour of all locked regions according to variable `proof-colour-locked'." t nil)
 
 (autoload 'proof-unprocessed-begin "proof-script" "\
 Return end of locked region in current buffer or (point-min) otherwise.
-The position is actually one beyond the last locked character.
-
-\(fn)" nil nil)
+The position is actually one beyond the last locked character." nil nil)
 
 (autoload 'proof-locked-region-full-p "proof-script" "\
 Non-nil if the locked region covers all the buffer's non-whitespace.
-Works on any buffer.
-
-\(fn)" nil nil)
+Works on any buffer." nil nil)
 
 (autoload 'proof-locked-region-empty-p "proof-script" "\
-Non-nil if the locked region is empty.  Works on any buffer.
-
-\(fn)" nil nil)
+Non-nil if the locked region is empty.  Works on any buffer." nil nil)
 
 (autoload 'proof-register-possibly-new-processed-file "proof-script" "\
 Register a possibly new FILE as having been processed by the prover.
@@ -713,14 +875,13 @@ Proof General major mode class for proof scripts.
 (autoload 'proof-config-done "proof-script" "\
 Finish setup of Proof General scripting mode.
 Call this function in the derived mode for the proof assistant to
-finish setup which depends on specific proof assistant configuration.
+finish setup which depends on specific proof assistant configuration." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-script" '("pg-" "proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-shell" "proof-shell.el" (24631 49612
-;;;;;;  448031 792000))
+;;;### (autoloads nil "proof-shell" "proof-shell.el" (0 0 0 0))
 ;;; Generated autoloads from proof-shell.el
 
 (autoload 'proof-shell-ready-prover "proof-shell" "\
@@ -733,15 +894,11 @@ No change to current buffer or point.
 \(fn &optional QUEUEMODE)" nil nil)
 
 (autoload 'proof-shell-live-buffer "proof-shell" "\
-Return non-nil if ‘proof-shell-buffer’ is live.
-
-\(fn)" nil nil)
+Return non-nil if ‘proof-shell-buffer’ is live." nil nil)
 
 (autoload 'proof-shell-available-p "proof-shell" "\
 Return non-nil if there is a proof shell active and available.
-No error messages.  Useful as menu or toolbar enabler.
-
-\(fn)" nil nil)
+No error messages.  Useful as menu or toolbar enabler." nil nil)
 
 (autoload 'proof-shell-insert "proof-shell" "\
 Insert STRINGS at the end of the proof shell, call `scomint-send-input'.
@@ -849,14 +1006,20 @@ Proof General shell mode class for proof assistant processes
 (autoload 'proof-shell-config-done "proof-shell" "\
 Initialise the specific prover after the child has been configured.
 Every derived shell mode should call this function at the end of
-processing.
+processing." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-shell" '("pg-" "proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-splash" "proof-splash.el" (24208 57600
-;;;;;;  783957 8000))
+;;;### (autoloads nil "proof-site" "proof-site.el" (0 0 0 0))
+;;; Generated autoloads from proof-site.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-site" '("proof")))
+
+;;;***
+
+;;;### (autoloads nil "proof-splash" "proof-splash.el" (0 0 0 0))
 ;;; Generated autoloads from proof-splash.el
 
 (autoload 'proof-splash-display-screen "proof-splash" "\
@@ -868,14 +1031,13 @@ binding to remove this buffer.
 \(fn &optional TIMEOUT)" t nil)
 
 (autoload 'proof-splash-message "proof-splash" "\
-Make sure the user gets welcomed one way or another.
+Make sure the user gets welcomed one way or another." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-splash" '("pg-about" "proof-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-syntax" "proof-syntax.el" (24208 57600
-;;;;;;  783957 8000))
+;;;### (autoloads nil "proof-syntax" "proof-syntax.el" (0 0 0 0))
 ;;; Generated autoloads from proof-syntax.el
 
 (autoload 'proof-replace-regexp-in-string "proof-syntax" "\
@@ -890,35 +1052,39 @@ may be a string or sexp evaluated to get a string.
 
 \(fn ALIST STRING)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-syntax" '("proof-")))
+
 ;;;***
 
-;;;### (autoloads nil "proof-toolbar" "proof-toolbar.el" (24208 57600
-;;;;;;  783957 8000))
+;;;### (autoloads nil "proof-toolbar" "proof-toolbar.el" (0 0 0 0))
 ;;; Generated autoloads from proof-toolbar.el
 
 (autoload 'proof-toolbar-setup "proof-toolbar" "\
 Initialize Proof General toolbar and enable it for all PG buffers.
 If `proof-toolbar-enable' is nil, change the buffer toolbars
-back the default toolbar.
-
-\(fn)" t nil)
+back the default toolbar." t nil)
  (autoload 'proof-toolbar-toggle "proof-toolbar")
 
 (autoload 'proof-toolbar-scripting-menu "proof-toolbar" "\
-Menu made from the Proof General toolbar commands.
+Menu made from the Proof General toolbar commands." nil nil)
 
-\(fn)" nil nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-toolbar" '("proof-toolbar-")))
+
+;;;***
+
+;;;### (autoloads nil "proof-tree" "proof-tree.el" (0 0 0 0))
+;;; Generated autoloads from proof-tree.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-tree" '("proof-tree-")))
 
 ;;;***
 
 ;;;### (autoloads nil "proof-unicode-tokens" "proof-unicode-tokens.el"
-;;;;;;  (24631 49612 448031 792000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from proof-unicode-tokens.el
 
 (autoload 'proof-unicode-tokens-mode-if-enabled "proof-unicode-tokens" "\
-Turn on or off the Unicode Tokens minor mode in this buffer.
-
-\(fn)" nil nil)
+Turn on or off the Unicode Tokens minor mode in this buffer." nil nil)
 
 (autoload 'proof-unicode-tokens-set-global "proof-unicode-tokens" "\
 Set global status of unicode tokens mode for PG buffers to be FLAG.
@@ -933,20 +1099,25 @@ buffer, and then sets PG's option for default to match.
 Also we arrange to have unicode tokens mode turn itself on automatically
 in future if we have just activated it for this buffer.
 Note: this function is called when the customize setting for the prover
-is changed.
+is changed." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-unicode-tokens" '("proof-unicode-tokens-")))
 
 ;;;***
 
-;;;### (autoloads nil "proof-utils" "proof-utils.el" (24631 64200
-;;;;;;  229975 917000))
+;;;### (autoloads nil "proof-useropts" "proof-useropts.el" (0 0 0
+;;;;;;  0))
+;;; Generated autoloads from proof-useropts.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-useropts" '("pg-" "proof-")))
+
+;;;***
+
+;;;### (autoloads nil "proof-utils" "proof-utils.el" (0 0 0 0))
 ;;; Generated autoloads from proof-utils.el
 
 (autoload 'proof-upgrade-elpa-packages "proof-utils" "\
-Upgrade all ELPA packages (using package.el).
-
-\(fn)" t nil)
+Upgrade all ELPA packages (using package.el)." t nil)
 
 (autoload 'proof-debug "proof-utils" "\
 Issue the debugging message (format MSG ARGS) in the *PG Debug* buffer.
@@ -954,10 +1125,12 @@ If flag `proof-general-debug' is nil, do nothing.
 
 \(fn MSG &rest ARGS)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "proof-utils" '("pg-" "proof-")))
+
 ;;;***
 
-;;;### (autoloads nil "../lib/scomint" "../lib/scomint.el" (24208
-;;;;;;  57600 787956 998000))
+;;;### (autoloads nil "../lib/scomint" "../lib/scomint.el" (0 0 0
+;;;;;;  0))
 ;;; Generated autoloads from ../lib/scomint.el
 
 (autoload 'scomint-make-in-buffer "../lib/scomint" "\
@@ -986,10 +1159,12 @@ If PROGRAM is a string, the remaining SWITCHES are arguments to PROGRAM.
 
 \(fn NAME PROGRAM &optional STARTFILE &rest SWITCHES)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/scomint" '("scomint-")))
+
 ;;;***
 
 ;;;### (autoloads nil "../lib/texi-docstring-magic" "../lib/texi-docstring-magic.el"
-;;;;;;  (24631 49612 448031 792000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../lib/texi-docstring-magic.el
 
 (autoload 'texi-docstring-magic "../lib/texi-docstring-magic" "\
@@ -999,23 +1174,25 @@ With prefix arg, no errors on unknown symbols.  (This results in
 
 \(fn &optional NOERROR)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/texi-docstring-magic" '("texi-docstring-")))
+
 ;;;***
 
 ;;;### (autoloads nil "../lib/unicode-chars" "../lib/unicode-chars.el"
-;;;;;;  (24208 57600 791956 991000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../lib/unicode-chars.el
 
 (autoload 'unicode-chars-list-chars "../lib/unicode-chars" "\
 Insert each Unicode character into a buffer.
 Lets you see which characters are available for literal display
-in your Emacs font.
+in your Emacs font." t nil)
 
-\(fn)" t nil)
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/unicode-chars" '("unicode-chars-alist")))
 
 ;;;***
 
 ;;;### (autoloads nil "../lib/unicode-tokens" "../lib/unicode-tokens.el"
-;;;;;;  (24208 57600 791956 991000))
+;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../lib/unicode-tokens.el
 
 (autoload 'unicode-tokens-encode-str "../lib/unicode-tokens" "\
@@ -1023,18 +1200,12 @@ Return a unicode encoded version presentation of STR.
 
 \(fn STR)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/unicode-tokens" '("unicode-tokens-")))
+
 ;;;***
 
-;;;### (autoloads nil nil ("../coq/coq-abbrev.el" "../coq/coq-compile-common.el"
-;;;;;;  "../coq/coq-db.el" "../coq/coq-diffs.el" "../coq/coq-indent.el"
-;;;;;;  "../coq/coq-local-vars.el" "../coq/coq-par-compile.el" "../coq/coq-par-test.el"
-;;;;;;  "../coq/coq-seq-compile.el" "../coq/coq-smie.el" "../coq/coq-syntax.el"
-;;;;;;  "../coq/coq-system.el" "../coq/coq-unicode-tokens.el" "../lib/local-vars-list.el"
-;;;;;;  "../lib/pg-fontsets.el" "../lib/proof-compat.el" "../lib/span.el"
-;;;;;;  "pg-autotest.el" "pg-custom.el" "pg-pbrpm.el" "pg-vars.el"
-;;;;;;  "proof-auxmodes.el" "proof-config.el" "proof-faces.el" "proof-site.el"
-;;;;;;  "proof-tree.el" "proof-useropts.el" "proof.el") (24631 50949
-;;;;;;  251401 294000))
+;;;### (autoloads nil nil ("../qrhl/qrhl-input.el" "proof.el") (0
+;;;;;;  0 0 0))
 
 ;;;***
 

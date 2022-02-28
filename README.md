@@ -132,6 +132,7 @@ Supported proof assistants:
 * [Coq](https://coq.inria.fr/)
 * [EasyCrypt](https://www.easycrypt.info/)
 * [PhoX](https://raffalli.eu/phox/)
+* [qrhl-tool](https://github.com/dominique-unruh/qrhl-tool/#readme)
 
 Proof General used to support other proof assistants, but those
 instances are no longer maintained nor available in the MELPA package:
