@@ -14,6 +14,9 @@
 
 ;;; Code:
 
+(require 'proof)
+(require 'proof-easy-config)
+
 (if (version< emacs-version "26")
     (require 'qrhl-input-25)
   (require 'qrhl-input))
