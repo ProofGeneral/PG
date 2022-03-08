@@ -1,4 +1,4 @@
-;;; proof-general.el --- PG init file for package.el and ELPA compatibility -*- lexical-binding: t; -*-
+;;; proof-general.el --- A generic Emacs interface for proof assistants -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -28,12 +28,11 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;
 ;; Proof General is a generic Emacs interface for proof assistants
 ;; (also known as interactive theorem provers).
 ;;
 ;; It is supplied ready to use for the proof assistants Coq,
-;; EasyCrypt, and PhoX.
+;; EasyCrypt, qrhl, and PhoX.
 ;;
 ;; See https://proofgeneral.github.io/ for installation instructions
 ;; and online documentation.  Or browse the accompanying info manual:
