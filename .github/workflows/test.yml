@@ -252,3 +252,7 @@ jobs:
 
     - run: emacs --version
     - run: make -C ci/test-indent
+
+    # Testing this here because this job runs with all Emacs versions
+    - run: make -C ci/simple-tests test-qrhl.success
+      
