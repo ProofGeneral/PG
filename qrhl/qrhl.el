@@ -17,10 +17,7 @@
 (require 'proof)
 (require 'proof-easy-config)
 (require 'proof-script)                 ;For proof-generic-count-undos.
-
-(if (version< emacs-version "26")
-    (require 'qrhl-input-25)
-  (require 'qrhl-input))
+(require 'qrhl-input)
 
 
 (defcustom qrhl-input-method "qrhl"
