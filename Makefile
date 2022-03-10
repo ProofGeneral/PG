@@ -35,7 +35,7 @@ PREFIX=$(DESTDIR)/usr
 DEST_PREFIX=$(DESTDIR)/usr
 
 # subdirectories for provers: to be compiled and installed
-PROVERS=coq easycrypt pghaskell pgocaml pgshell phox
+PROVERS=coq easycrypt pghaskell pgocaml pgshell phox qrhl
 
 # generic lisp code: to be compiled and installed
 OTHER_ELISP=generic lib

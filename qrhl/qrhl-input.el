@@ -1,8 +1,7 @@
-;;; qrhl-input.el --- Quail package for TeX-style input for qrhl-tool in ProofGeneral -*-coding: utf-8;-*-
+;;; qrhl-input.el --- Quail package for TeX-style input for qrhl-tool in ProofGeneral -*- lexical-binding: t -*-
 
-;; Copyright (C) 2001-2018 Free Software Foundation, Inc.
-;; Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-;;   2010, 2011
+;; Copyright (C) 2001-2022 Free Software Foundation, Inc.
+;; Copyright (C) 2001-2011
 ;;   National Institute of Advanced Industrial Science and Technology (AIST)
 ;;   Registration Number H14PRO021
 ;; Copyright (C) 2017-2022 University of Tartu
@@ -18,18 +17,15 @@
 ;; Modified by Dominique Unruh to adapt to the specific requirements of qrhl-tool (https://dominique-unruh.github.io/qrhl-tool/).
 ;; Based on latin-ltx.el from Emacs 26.3 (https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/leim/quail/latin-ltx.el?h=emacs-26.3)
 ;; Main changes:
-;; - Added version check (to fail with emacs <26)
 ;; - Changed input method name to "qrhl"
 ;; - Changed prefix from latin-ltx to qrhl-input
 ;; - Changed unicode symbol for \cdot, \llbracket, \rrbracket
 ;; - Disabled sequences starting with _
 ;; - Appended extra input sequences in the end
 ;; - Changed to lexical binding
+;; - Made code compatible with Emacs 25 (@monnier)
 
 ;;; Code:
-
-(if (version< emacs-version "26")
-    (error "Emacs version >= 26 required"))
 
 (require 'quail)
 
@@ -71,22 +67,28 @@
         (pcase rule
           (`(,_ ,(pred characterp)) (push rule newrules)) ;; Normal quail rule.
           (`(,seq ,re)
-           (let ((count 0)
-                 (re (eval re t)))
-             (maphash
+           (let* ((count 0)
+                  (re (eval re t))
+                  (ucs-names (ucs-names))
+                  (process-one-entry
               (lambda (name char)
                 (when (and (characterp char) ;; Ignore char-ranges.
                            (string-match re name))
                   (let ((keys (if (stringp seq)
                                   (replace-match seq nil nil name)
-                                (funcall seq name char))))
+                                     (funcall (eval seq t) name char))))
                     (if (listp keys)
                         (dolist (x keys)
                           (setq count (1+ count))
                           (push (list x char) newrules))
                       (setq count (1+ count))
-                      (push (list keys char) newrules)))))
-               (ucs-names))
+                           (push (list keys char) newrules)))))))
+             ;; Emacs-25's `ucs-names' returned an alist rather than a hash
+             ;; table and that changed to a hash-table in Emacs-26.
+             (if (hash-table-p ucs-names)
+                 (maphash process-one-entry ucs-names)
+               (dolist (pair ucs-names)
+                 (funcall process-one-entry (car pair) (cdr pair))))
              ;; (message "qrhl-input: %d mappings for %S" count re)
 	     ))))
       (setq newrules (delete-dups newrules))

@@ -77,7 +77,7 @@
   ;; the corresponding file.
   (let ((byte-compile-directories
          '("generic" "lib"
-           "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox"
+           "coq" "easycrypt" "pghaskell" "pgocaml" "pgshell" "phox" "qrhl"
            )))
     (dolist (dir byte-compile-directories)
       (add-to-list 'load-path (expand-file-name dir pg-init--pg-root)))))

@@ -12,6 +12,8 @@ coq-par-job-needs-compilation-quick
   possible cases
 test-prelude-correct
 : test that the Proof General prelude is correct
+test-qrhl
+: tests relating to the qRHL prover
 
 
 # Important conventions
