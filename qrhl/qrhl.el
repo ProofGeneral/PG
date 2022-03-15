@@ -43,13 +43,13 @@
 
 (defun qrhl-forward-regex (regex)
   "If text starting at point matches REGEX, move to end of the match and return t. 
-   Otherwise return nil"
+Otherwise return nil"
   (and (looking-at regex) (goto-char (match-end 0)) t))
 
 (defun qrhl-parse-regular-command ()
   "Find the period-terminated command starting at point.
-   Moves to its end.
-   Returns t if this worked."
+Moves to its end.
+Returns t if this worked."
   (let ((pos
 	 (save-excursion
 	   (progn
@@ -101,6 +101,11 @@
 	    ))
   "Font-lock configuration for qRHL proof scripts")
 
+(defun qrhl-proof-script-preprocess (file start end cmd)
+  "Strips comments from the command CMD.
+Called before sending CMD to the prover."
+  (list (replace-regexp-in-string "\\(?:^\\|[ \t]\\)[ \t]*#.*$" "" cmd)))
+
 (proof-easy-config 'qrhl "qRHL"
   proof-prog-name qrhl-prog-name
   ;; We need to give some option here, otherwise `proof-prog-name' is
@@ -132,6 +137,7 @@
   proof-response-font-lock-keywords qrhl-font-lock-keywords
   font-lock-extra-managed-props '(display)
   proof-shell-unicode t
+  proof-script-preprocess #'qrhl-proof-script-preprocess
   )
 
 ; buttoning functions follow https://superuser.com/a/331896/748969
