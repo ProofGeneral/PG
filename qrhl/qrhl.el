@@ -28,6 +28,10 @@
   "Name/path of the qrhl-prover command. (Restart Emacs after changing this.)"
   :type '(string) :group 'qrhl)
 
+(defcustom qrhl-indentation-level 2
+  "Indentation level in qRHL scripts"
+  :group 'qrhl)
+
 (defun qrhl-find-and-forget (span)
   (proof-generic-count-undos span))
   
@@ -157,10 +161,74 @@ Called before sending CMD to the prover."
   (while (re-search-forward "include\s*\"\\([^\"]+\\)\"\s*\\." nil t)
    (make-button (match-beginning 1) (match-end 1) :type 'qrhl-find-file-button))))
 
+
+
+(defun qrhl-current-line-rel-indent ()
+  "Determins by how much to indent the current line relative to the previous
+   indentation level. (Taking into account only the current line.)"
+  (save-excursion
+    (let ((qrhl-qed-pattern "^[ \t]*qed\\b")
+	  (closing-brace-pattern "^[ \t]*}"))
+      (beginning-of-line)
+      ;; Analyse the current line and decide relative indentation accordingly
+      (cond
+       ;; qed - unindent by 2
+       ((looking-at qrhl-qed-pattern) (- qrhl-indentation-level))
+       ;; } - unindent by 2
+       ((looking-at closing-brace-pattern) (- qrhl-indentation-level))
+       ;; indent as previous
+       (t 0)))))
+
+(defun qrhl-indent-line ()
+  "Indent current line as qRHL proof script"
+  (interactive)
+  
+  (let ((not-found t) (previous-indent nil) (previous-offset 0) rel-indent
+	(lemma-pattern "^[ \t]*\\(lemma\\|qrhl\\)\\b")
+	(comment-pattern "^[ \t]*#")
+	(empty-line-pattern "^[ \t]*$")
+	(brace-pattern "^[ \t]*{")
+	(focus-pattern "^[ \t{}+*-]*[+*-][ \t]*"))
+
+    (beginning-of-line) ;; Throughout this function, we will always be at the beginning of a line
+
+    ;; Identify preceding indented line (relative to which we indent)
+    (save-excursion
+      (while (and not-found (not (bobp)))
+	(forward-line -1)
+	(cond
+	 ((and (not previous-indent) (looking-at comment-pattern))
+	  (setq previous-indent (current-indentation)))
+	 ((looking-at empty-line-pattern) ())
+	 (t
+	  (progn
+	   (setq previous-indent (current-indentation))
+	   (setq not-found nil)
+	   (cond
+	    ((looking-at lemma-pattern) (setq previous-offset qrhl-indentation-level))
+	    ((looking-at focus-pattern) (setq previous-offset (- (match-end 0) (point) previous-indent)))
+	    ((looking-at brace-pattern) (setq previous-offset qrhl-indentation-level)))
+	  )))))
+    (if (not previous-indent) (setq previous-indent 0))
+    
+    ;; Now previous-indent contains the indentation-level of the preceding non-comment non-blank line
+    ;; If there is such line, it contains the indentation-level of the preceding non-blank line
+    ;; If there is no such line, it contains 0
+
+    ;; And previous-offset contains the offset that that line adds to following lines
+    ;; (i.e., 0 for normal lines, positive for qed and {, negative for })
+
+    (setq rel-indent (qrhl-current-line-rel-indent))
+    
+    ;; Indent relative to previous-indent by rel-indent and previous-offset
+    (indent-line-to (max (+ previous-indent rel-indent previous-offset) 0))))
+
+
 (add-hook 'qrhl-mode-hook
 	  (lambda ()
 	    (set-input-method qrhl-input-method)
-	    (set-variable 'electric-indent-mode nil t)
+	    (setq electric-indent-inhibit t)  ;; Indentation is not reliable enough for electric indent
+	    (setq indent-line-function 'qrhl-indent-line)
 	    (qrhl-buttonize-buffer)))
 
 (provide 'qrhl)
