@@ -204,6 +204,19 @@ also https://wiki.ubuntu.com/Releases).
     Variable `coq-indent-box-style' only affects indentation after
     quantifiers (used to affect script braces "{").
 
+    Variable `coq-indent-align-with-first-arg` governs between these
+    two indentation behaviours:
+
+    (setq 'coq-indent-align-with-first-arg t) gives
+
+        somefunciton x y
+                     z t u
+                     v
+    (setq 'coq-indent-align-with-first-arg nil) give (default):
+
+        somefunciton x y
+          z t u
+          v
 
 * Changes of Proof General 4.4 from Proof General 4.3
 

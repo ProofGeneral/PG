@@ -10,6 +10,13 @@ Module Equations.
     neg true := false ;
     neg false := true.
 
+  Equations neg' (b : bool) : bool :=
+    neg' true
+    :=
+      false ;
+    neg' false :=
+      true.
+
   Lemma neg_inv : forall b, neg (neg b) = b.
   Proof.
     intros b.
@@ -41,6 +48,16 @@ Module Equations.
       | false := filter l p
       }.
 
+  Equations filter_ {A} (l : list A) (p : A -> bool) : list A :=
+    filter nil p := nil; 
+    filter (cons a l) p with p a => { 
+      | true :=
+          a :: filter l p ;
+      | false
+        :=
+          filter l p
+      }.
+
   Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
     filter' (cons a l) p with p a =>
       { 
@@ -52,8 +69,28 @@ Module Equations.
   Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
     filter' (cons a l) p with p a =>
       { 
+      | true :=
+          a :: filter' l p ;
+      | false
+        := filter' l p
+      };
+    filter' nil p := nil.
+
+  Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
+    filter' (cons a l) p with p a =>
+      { 
         true := a :: filter' l p ;
         false := filter' l p
+      };
+    filter' nil p := nil.
+
+  Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
+    filter' (cons a l) p with p a =>
+      { 
+        true :=
+          a :: filter' l p ;
+        false
+        := filter' l p
       };
     filter' nil p := nil.
 

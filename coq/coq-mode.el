@@ -214,6 +214,7 @@ Near here means PT is either inside or just aside of a comment."
   (smie-setup coq-smie-grammar #'coq-smie-rules
               :forward-token #'coq-smie-forward-token
               :backward-token #'coq-smie-backward-token)
+  (add-hook 'smie-indent-functions #'coq-smie--args nil t)
 
   ;; old indentation code.
   ;; (require 'coq-indent)
