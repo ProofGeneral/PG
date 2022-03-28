@@ -6,7 +6,7 @@ Require Export ArithRing.
 Require Export Compare_dec.
 Require Export Wf_nat.
 Require Export Arith.
-Require Export Omega.
+Require Export Lia.
 
 Theorem minus_minus : forall a b c : nat, a - b - c = a - (b + c).
 intros a; elim a; auto.
@@ -37,10 +37,10 @@ Theorem mult_lt : forall a b c : nat, c <> 0 -> a < b -> a * c < b * c.
 intros a b c; elim c.
 intros H; elim H; auto.
 intros c'; case c'.
-intros; omega.
+intros; lia.
 intros c'' Hrec Hneq Hlt;
  repeat rewrite <- (fun x : nat => mult_n_Sm x (S c'')).
-auto with *.
+lia.
 Qed.
 
 Remark add_sub_square_identity :
@@ -63,7 +63,7 @@ intros x; case x.
 intros y; case y; simpl in |- *; auto with *.
 intros x' y Hlt; apply lt_trans with (S x' * y).
 rewrite (mult_comm (S x') y); apply mult_lt; auto.
-apply mult_lt; omega.
+apply mult_lt; lia.
 Qed.
 
 Theorem root_monotonic : forall x y : nat, x * x < y * y -> x < y.
