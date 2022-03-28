@@ -343,6 +343,27 @@ In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.
 Tactic failure: Cannot solve this goal."))))
  
 
+(ert-deftest 100_coq-test-proof-using-proof ()
+  "Test for insertion of Proof using annotations"
+  (describe-function 'should)
+  (coq-fixture-on-file
+   (coq-test-full-path "test_proof_using.v")
+   (lambda ()
+     (coq-test-goto-after "(*qed*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (proof-assert-next-command-interactive)
+     (proof-shell-wait)
+     ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
+     ;(coq-should-buffer-string "\"Proof using\" not set. M-x coq-insert-suggested-dependency or right click to add it. See also \‘coq-accept-proof-using-suggestion\’.")
+     (save-excursion
+       (coq-test-goto-before "(*proof*)")
+       (backward-char 3)
+       (should (span-at (point) 'proofusing))))))
+ 
+
+
+
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here
