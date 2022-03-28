@@ -477,6 +477,7 @@ so for the following reasons:
     ("Derive Inversion" nil "Derive Inversion @{id} with # Sort #." t "Derive\\s-+Inversion")
     ("Derive Dependent Inversion" nil "Derive Dependent Inversion @{id} with # Sort #." t "Derive\\s-+Dependent\\s-+Inversion")
     ("Derive Inversion_clear" nil "Derive Inversion_clear @{id} with # Sort #." t)
+    ("Derive SuchThat" nil "Derive @[id] SuchThat # As @{id}." t "Derive")
     ("Example" "ex" "Example #:# := #." t "Example");; careful
     ("Equations" "eqs" "Equations #:# := #." t "Equations")
     ("Fixpoint" "fix" "Fixpoint # (#:#) {struct @{arg}} : # :=\n#." t "Fixpoint")
@@ -1207,7 +1208,12 @@ different."
      "using" "with" "beta" "delta" "iota" "zeta" "after" "until"
      "at" "Sort" "Time" "dest" "where"
      ;; SSReflect user reserved.
-     "is" "nosimpl" "of")
+     "is" "nosimpl" "of"
+     ;; Derive reserved
+     "SuchThat" "As" ;; I don't like these two: they start with
+                     ;; capitals but they are not at beginning of a
+                     ;; sentence
+     )
    coq-user-reserved-db)
   "Reserved keywords of Coq.")
 
