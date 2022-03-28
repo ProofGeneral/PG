@@ -1308,7 +1308,6 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
    ((member tk '("with" ":" "by" "in tactic" "as" ",")) "tactic infix")
    ((member tk '("<:" "<+" "with module")) "modulespec infix") ;;  ":= inductive" ":= module" and other ":= xxx"
    ((string-prefix-p ":= " tk) "after :=")
-   ((member tk '(". proofstart" ". modulestart")) "dot script parent open")
    ;; by default we pass the token name, but maybe it would be safer
    ;; to simply fail, so that we detect missing tokens in this function?
    (t tk)))
@@ -1376,6 +1375,8 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
         (`(:after . ,_) ;; indent relative to token (parent of token at point).
          (pcase (coq-indent-categorize-token-after token)
            ("} subproof" 0) ;;shouldn't be captured by (:elem . args)?
+           (". proofstart" coq-indent-proofstart)
+           (". modulestart" coq-indent-modulestart)
            ;; decrement indentation when hanging 
            ((and (or "tactic infix" "after :=") (guard (or (hang-p) (smie-rule-bolp)))) 0)
            ((and "->" (guard (hang-p))) 0) ((or ":=" "with inductive") 2)
