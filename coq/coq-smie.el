@@ -452,6 +452,12 @@ The point should be at the beginning of the command name."
 (defun coq-is-cmdend-token (tok)
   (or (coq-is-bullet-token tok) (coq-is-subproof-token tok) (coq-is-dot-token tok)))
 
+;; Standard synonyms are better here than in the coq-smie-xxxward-token-aux functions.
+(defconst coq-standard-token-synonyms
+  '(
+    ("SuchThat" . ":") ("As" . ":= def") ;; For "Derive foo SuchThat bar As oof".
+    ))
+
 (defun coq-smie-forward-token ()
   (let ((tok (coq-smie-forward-token-aux)))
     (cond
@@ -460,6 +466,9 @@ The point should be at the beginning of the command name."
         (cdr res)))
      ((assoc tok coq-smie-monadic-tokens)
       (let ((res (assoc tok coq-smie-monadic-tokens)))
+        (cdr res)))
+     ((assoc tok coq-standard-token-synonyms)
+      (let ((res (assoc tok coq-standard-token-synonyms)))
         (cdr res)))
      (tok))))
 
@@ -638,6 +647,9 @@ The point should be at the beginning of the command name."
         (cdr res)))
      ((assoc tok coq-smie-monadic-tokens)
       (let ((res (assoc tok coq-smie-monadic-tokens)))
+        (cdr res)))
+     ((assoc tok coq-standard-token-synonyms)
+      (let ((res (assoc tok coq-standard-token-synonyms)))
         (cdr res)))
      (tok))))
 
