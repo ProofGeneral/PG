@@ -1,9 +1,9 @@
 
 Require Export
-        Coq.Lists.List.
+  Coq.Lists.List.
 Require
   Export
-  Arith.
+    Arith.
 
 Module
   Mod.
@@ -38,7 +38,12 @@ Module
   Let x := 1.  Let y := 2.
 
   Notation "[ a ; .. ; b ]" := (a :: .. (b :: []) ..) : list_scope.
-  
+  Definition foo :=
+    foo x (y
+             a b)
+      z t  (* align with function foo + 2. *)
+      u v.  (* align with arg z on bol of previous line *)
+
   
   Inductive test
     : nat 
@@ -67,7 +72,7 @@ Module
 
   Lemma L4 : forall x:nat,
                Nat.iter x (A:=nat)
-                        (plus 2) 0 >= x.
+                 (plus 2) 0 >= x.
   Proof.
     idtac.
   Qed.
@@ -83,9 +88,9 @@ Module
   Qed.
 
   Lemma L1 : forall x:nat, Nat.iter x 
-                                    (A:=nat)
-                                    (plus 2)
-                                    0 >= x.
+                             (A:=nat)
+                             (plus 2)
+                             0 >= x.
   Proof.
     idtac.
   Qed.

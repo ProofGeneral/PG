@@ -280,16 +280,16 @@ Module GoalSelectors.
     [aa]:{ auto. }
     2:{  auto. }
     [ee]:auto.
-    {  auto.}
+    {  auto. }
   Qed.
   (* Same without space between "." and "}". *)
   Theorem lt_n_S2 : (True \/ True \/ True \/ True \/ True ) -> True.
   Proof.
     refine (or_ind ?[aa] (or_ind ?[bb] (or_ind ?[cc] (or_ind ?[dd] ?[ee])))).
-    [aa]:{ auto.}
-    2:{  auto.}
+    [aa]:{ auto. }
+    2:{  auto. }
     [ee]:auto.
-    {  auto.}
+    {  auto. }
   Qed.
 
 
@@ -399,6 +399,21 @@ Module X.
           fld1:=r.(fld2);
           fld2:=r.(fld1);
           fld3:=false
+        |}.
+      split.
+      {auto. }
+      {auto. }
+    }
+    intros r. {
+      exists
+        {|
+          fld1:=
+            r.(fld2);
+          fld2
+          :=r.(fld1);
+          fld3
+          :=
+            false
         |}.
       split.
       {auto. }

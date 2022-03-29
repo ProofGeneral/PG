@@ -1,9 +1,9 @@
 
 Require Export
-        Coq.Lists.List.
+  Coq.Lists.List.
 Require
   Export
-  Arith.
+    Arith.
 
 Module
   Mod.
@@ -35,6 +35,18 @@ Module
     :=
     1.
 
+  Definition arith1 a
+    (b:nat) c
+    d e
+    :=
+    1.
+  Definition
+    arith1
+      (b:nat) c
+      d e
+    :=
+    1.
+
   Let x := 1.  Let y := 2.
 
   Notation "[ a ; .. ; b ]" := (a :: .. (b :: []) ..) : list_scope.
@@ -56,7 +68,7 @@ Module
 
   Lemma L4 : forall x:nat,
       Nat.iter x (A:=nat)
-               (plus 2) 0 >= x.
+        (plus 2) 0 >= x.
   Proof.
     idtac.
   Qed.
@@ -72,9 +84,9 @@ Module
   Qed.
 
   Lemma L1 : forall x:nat, Nat.iter x 
-                                    (A:=nat)
-                                    (plus 2)
-                                    0 >= x.
+                             (A:=nat)
+                             (plus 2)
+                             0 >= x.
   Proof.
     idtac.
   Qed.
