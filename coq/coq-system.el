@@ -551,16 +551,18 @@ Returns a mixed list of option-value pairs and strings."
 OPTIONS is a list or conses (switch . argument) and strings.
 Note that the semantics of the -arg flags in coq project files
 are weird: -arg \"a b\" means pass a and b, separately, to
-coqtop."
+coqtop. But -arg \"'a b'\" means to pass a and b together."
   (let ((args nil))
     (dolist (opt options)
       (pcase opt
         ((or "-byte" "-op")
          (push opt args))
         (`("-arg" ,concatenated-args)
-         (setq args
-               (append args
-                       (split-string-and-unquote concatenated-args coq--project-file-separator))))))
+	 (if (and (string-prefix-p "'" concatenated-args) (string-suffix-p "'" concatenated-args))
+	     (setq args (append args (list (substring concatenated-args 1 -1))))
+           (setq args
+		 (append args
+			 (split-string-and-unquote concatenated-args coq--project-file-separator)))))))
     (cons "-emacs" args)))
 
 (defun coq--extract-load-path-1 (option base-directory)
