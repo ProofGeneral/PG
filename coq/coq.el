@@ -117,7 +117,7 @@ Namely, goals that do not fit in the goals window."
 
 (defcustom coq-goal-conclusion-marker "========"
   "Marks the part of interest in each goal to focus the goal buffer on"
-  :type regexp
+  :type 'regexp
   :group 'coq
   )
 
