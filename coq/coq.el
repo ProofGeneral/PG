@@ -3422,15 +3422,55 @@ priority to the former."
 
 (put 'coq-terminator-insert 'delete-selection t)
 
-;;;;;;;;;;;;;;
 
-;; This was done in coq-compile-common, but it is actually a good idea even
-;; when "compile when require" is off. When switching scripting buffer, let us
-;; restart the coq shell process, so that it applies local coqtop options.
-(add-hook 'proof-deactivate-scripting-hook
-          #'coq-switch-buffer-kill-proof-shell ;; this function is in coq-compile-common
-          t)
+;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;
 
+;; This originates from background compilation, but it is actually a good idea
+;; even when "compile when require" is off. When switching scripting buffer,
+;; let us restart the coq shell process, so that it applies local coqtop
+;; options.
+
+(defun coq-kill-proof-shell ()
+  "Kill the proof shell without asking the user.
+This function is for `proof-deactivate-scripting-hook'.  It kills
+the proof shell without asking the user for
+confirmation (assuming she agreed already on switching the active
+scripting buffer).  This is needed to ensure the load path is
+correct in the new scripting buffer."
+  (unless proof-shell-exit-in-progress
+    (proof-shell-exit t)))
+
+(add-hook 'proof-deactivate-scripting-hook #'coq-kill-proof-shell t)
+
+(defcustom coq-kill-coq-on-opam-switch t
+  "If t kill coq when the opam switch changes (requires `opam-switch-mode').
+When `opam-switch-mode' is loaded and the user changes the opam switch
+through `opam-switch-mode' then this option controls whether the coq
+background process (the proof shell) is killed such that the next
+assert command starts a new proof shell, probably using a
+different coq version from a different opam switch.
+
+See https://github.com/ProofGeneral/opam-switch-mode for `opam-switch-mode'"
+  :type 'boolean
+  :group 'coq)
+
+
+(defun coq-kill-proof-shell-on-opam-switch ()
+  "Kill proof shell when the opam switch changes (requires `opam-switch-mode').
+This function is for the `opam-switch-mode' hook
+`opam-switch-change-opam-switch-hook', which runs when the user
+changes the opam switch through `opam-switch-mode'. If
+`coq-kill-coq-on-opam-switch' is t, then the proof shell is
+killed such that the next assert starts a new proof shell, using
+coq from the new opam switch."
+  (when (and coq-kill-coq-on-opam-switch proof-script-buffer)
+    (coq-kill-proof-shell)))
+
+
+(add-hook 'opam-switch-change-opam-switch-hook
+          #'coq-kill-proof-shell-on-opam-switch t)
+
+;;;;;;;;;;;;;;;
 
 ;; overwriting the default behavior, this is an experiment, *frames* will be
 ;; deleted only if only displaying associated buffers. If this is OK the
