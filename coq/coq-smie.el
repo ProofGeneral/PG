@@ -1285,7 +1285,7 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
   (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
          (end (cadr parent))
          (regi (list (list beg end)))
-         (tok (caddr parent))
+         (tok (car (cddr parent)))
          (face (cond
                 ((equal num 1) 'hlt-regexp-level-1)
                 ((equal num 2) 'hlt-regexp-level-2)
@@ -1306,7 +1306,7 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
    (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
           (end (cadr parent))
           (regi (list (list beg end)))
-          ;; (tok (caddr parent))
+          ;; (tok (car (cddr parent)))
           (face (cond
                  ((equal num 2) 'hlt-regexp-level-2)
                  (t 'hlt-regexp-level-1))))
