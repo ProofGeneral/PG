@@ -2761,7 +2761,7 @@ SPAN is the span of the whole theorem (statement + proof)."
         (when lproof-info
           (let* ((proof-pos (car lproof-info)) ;(proof-pos (match-beginning 0))
                  (insert-point (cadr lproof-info)) ;(insert-point (match-beginning 1))
-                 (proof-end (caddr lproof-info))
+                 (proof-end (cl-caddr lproof-info))
                  (previous-string (buffer-substring insert-point proof-end))
                  (previous-content (split-string previous-string))
                  (suggested (span-property span 'dependencies))

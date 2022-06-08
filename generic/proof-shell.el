@@ -1111,8 +1111,8 @@ Argument QUEUEITEM must be an action item as documented for
 `proof-action-list'. Add flag 'priority-action to QUEUEITEM, such
 that priority items can be recognized and the order of added
 priority items can be preserved."
-  (let ((qi (list (car queueitem) (cadr queueitem) (caddr queueitem)
-                  (cons 'priority-action (cadddr queueitem)))))
+  (let ((qi (list (car queueitem) (cadr queueitem) (cl-caddr queueitem)
+                  (cons 'priority-action (cl-cadddr queueitem)))))
     (push qi proof-priority-action-list)
     (proof-start-prover-with-priority-items-maybe)))
 
