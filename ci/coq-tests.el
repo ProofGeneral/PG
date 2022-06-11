@@ -19,6 +19,10 @@
 ;;(require 'ert-async)
 ;;(setq ert-async-timeout 2)
 
+;; Load Coq instance of Proof General now.
+(proof-ready-for-assistant 'coq)
+(require 'coq)
+
 ;;; Code:
 
 ; Exemple de code Lisp qui lance des commandes au prouveur en arrière-plan
