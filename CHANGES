@@ -47,6 +47,14 @@ standard support.
     Similar to proof-action-list, but holding actions that need
     to go to the proof assistant at the next opportunity.
 
+** Qrhl-tool
+
+   Support for qrhl-tool theorem prover has been added by Dominique
+   Unruh.
+   References:
+   - Initial pull request: https://github.com/ProofGeneral/PG/pull/636
+   - Qrhl-tool web site: https://dominique-unruh.github.io/qrhl-tool
+
 ** EasyCrypt
 
    Support for EasyCrypt has been added.
