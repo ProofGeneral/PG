@@ -10,13 +10,15 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 *** Remove support for the following systems:
 Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam, Isabelle, HOL98.
 
-*** require GNU Emacs 25.1 or later
+*** require GNU Emacs 25.2 or later
 
 The current policy aims at supporting multiple Emacs versions,
 including those available in distributions Debian Stable
 (https://packages.debian.org/stable/emacs) and Ubuntu LTS
 (https://packages.ubuntu.com/emacs), until their End-Of-Support (see
-also https://wiki.ubuntu.com/Releases).
+also https://wiki.ubuntu.com/Releases). Support for Emacs 25 will
+be dropped in April 2023 when Ubuntu Bionic reaches end of
+standard support.
 
 
 *** new command and menu item to easily upgrade all packages
@@ -40,6 +42,14 @@ also https://wiki.ubuntu.com/Releases).
       was not available in TTYs. Now, this function can also be run
       with "C-c RET", which happens to be automatically trigerred if
       we type "C-c <C-return>" in a TTY.
+
+*** new proof-priority-action-list
+    Similar to proof-action-list, but holding actions that need
+    to go to the proof assistant at the next opportunity.
+
+** EasyCrypt
+
+   Support for EasyCrypt has been added.
 
 ** Coq changes
 
@@ -184,16 +194,34 @@ also https://wiki.ubuntu.com/Releases).
 
 *** bug fixes
     - avoid leaving partial files behind when compilation fails
-    - 123: Parallel background compliation fails to execute some
+    - 123: Parallel background compilation fails to execute some
       imports
     - fix error in process filter: Cannot resize window
     - 54 partially: Buffer coq-compile-response sometimes takes
       over the whole window
-    - 75: Library more.v is required
-    - 70: Coq trunk + compile before require => « Invalid version
+    - 75, superseded by 352: fix detection of imported libraries
+      for background compilation
+    - 70, 119: Coq trunk + compile before require => « Invalid version
       syntax: 'trunk' »
     - 92: Compile before require from current directory failing
       with 8.5
+    - fix background compilation for the case of identical time stamps
+    - improve background compilation when both .vio and .vo files
+      are up-to-date
+    - 33: cyclic dependencies
+    - 130: parallel build of Proof General
+    - Prevent non-existent directories from crashing PG
+    - 143: interrupt diverting tactics
+    - 142: Quick compilation mode is not saved
+    - 499: emacs eats up all my RAM while processing imports
+    - various compatibility fixes for various Emacs versions
+    - fix Proof General manual generation
+    - 551: fix Proof General when coqtop is absent
+    - background compilation may break when changing current buffer
+    - check for the case that coqdep does not report an error on unknown file
+    - 527: ProofGeneral freezes when there is a build error in a dependency file
+    - 563: Never send two commands at once
+    - 537: some test in ci/coq-tests.el fails sporadically
 
 *** indentation code refactored
 
@@ -217,6 +245,20 @@ also https://wiki.ubuntu.com/Releases).
         somefunciton x y
           z t u
           v
+
+*** using github CI with a large test body
+    Proof General uses now the continuous integration
+    infrastructure at github to execute quite a number of tests
+    on each pull request. The tests regularly find issues in
+    Proof General, but also in Coq or Emacs.
+
+*** various coqtags improvements
+
+*** redesign of automatic background compilation
+
+    The code for automatic background compilation has been
+    redesigned, the internal logic simplified and big portions
+    were rewritten.
 
 * Changes of Proof General 4.4 from Proof General 4.3
 

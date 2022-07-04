@@ -25,7 +25,7 @@ Two editions of Proof General are currently available:
 
 ## Installing Proof General
 
-Proof General requires GNU Emacs `25.1` or later.
+Proof General requires GNU Emacs `25.2` or later.
 
 The current policy aims at supporting multiple Emacs versions,
 including those available in [Debian Stable](https://packages.debian.org/stable/emacs)
