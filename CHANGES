@@ -108,6 +108,13 @@ standard support.
     documentation of this variable for an explanation of the different
     possible values and some more information.
 
+*** Make ProofGeneral/Coq `opam-switch-mode' aware
+
+    When opam-switch-mode is loaded, the Coq background process can be
+    killed when changing the opam switch through opam-switch-mode, see
+    `coq-kill-coq-on-opam-switch' and
+    https://github.com/ProofGeneral/opam-switch-mode
+
 *** Limited extensibility for indentation 
 
     Coq indentation mechanism is based on a fixed set of tokens and

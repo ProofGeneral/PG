@@ -4187,6 +4187,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Holes feature::
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
+* Opam-switch-mode support::
 @end menu
 
 
@@ -5319,6 +5320,41 @@ The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
 have added or removed tokens are shown with the entire line highlighted with
 a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
 with non-@code{Bg} faces.
+
+@node Opam-switch-mode support
+@section Opam-switch-mode support
+
+Coq can be installed using @code{opam} (the OCaml package manager),
+which makes it easy to manage several different switches, having each
+a different version of Coq.
+
+Instead of running a command like @code{opam switch ...} in a terminal
+and restarting emacs to benefit from a different switch, one can:
+
+@itemize @bullet
+@item
+@b{Install} the
+@uref{https://github.com/ProofGeneral/opam-switch-mode,
+opam-switch-mode} and use the dedicated mode bar menu @code{OPSW} it
+provides.
+@item
+@b{Configure} Proof General using the customization option
+@code{coq-kill-coq-on-opam-switch}, so that the Coq background process
+is killed when changing the opam switch through
+@code{opam-switch-mode}.
+@end itemize
+
+@c TEXI DOCSTRING MAGIC: coq-kill-coq-on-opam-switch
+@defvar coq-kill-coq-on-opam-switch 
+If t kill coq when the opam switch changes (requires @samp{opam-switch-mode}).@*
+When @samp{opam-switch-mode} is loaded and the user changes the opam switch
+through @samp{opam-switch-mode} then this option controls whether the coq
+background process (the proof shell) is killed such that the next
+assert command starts a new proof shell, probably using a
+different coq version from a different opam switch.
+
+See https://github.com/ProofGeneral/opam-switch-mode for @samp{opam-switch-mode}
+@end defvar
 
 @c =================================================================
 @c
