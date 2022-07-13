@@ -11,8 +11,8 @@
 
 ;; Authors: (see the AUTHORS file distributed along the sources)
 ;; URL: https://proofgeneral.github.io/
-;; Package-Requires: ((emacs "25.1"))
-;; Version: 4.5-git
+;; Package-Requires: ((emacs "25.2"))
+;; Version: 4.5
 
 ;; The software is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

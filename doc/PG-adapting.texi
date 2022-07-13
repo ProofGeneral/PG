@@ -51,9 +51,9 @@
 @c        @ref{node}                without "see". Careful for info.
 
 
-@set version 4.5-git
+@set version 4.5
 @set emacsversion 24.3
-@set last-update September 2016
+@set last-update July 2022
 @set rcsid $Id$
 
 @dircategory Theorem proving

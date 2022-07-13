@@ -57,9 +57,9 @@
 @c        @ref{node}                without "see". Careful for info.
 @c
 
-@set version 4.5-git
-@set emacsversion 25.1
-@set last-update February 2021
+@set version 4.5
+@set emacsversion 25.2
+@set last-update July 2022
 @set rcsid $Id$
 
 @dircategory Theorem proving
@@ -207,6 +207,12 @@ other documentation, system downloads, etc.
 @cindex news
 
 Proof-General is now distributed under the GPLv3+ license.
+
+This release contains several bugfixes and many new features (see the
+CHANGES file or the Git changelog for more details).
+
+The support of the following systems have been added: EasyCrypt,
+qrhl-tool.
 
 The old code for the support of the following systems have been
 removed: Twelf, CCC, Lego, Hol-Light, ACL2, Plastic, Lambda-Clam,
