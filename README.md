@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ProofGeneral/PG/workflows/CI/badge.svg?branch=master)](https://github.com/ProofGeneral/PG/actions?query=workflow%3ACI)
 [![MELPA](https://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
+[![MELPA Stable](https://stable.melpa.org/packages/proof-general-badge.svg)](https://stable.melpa.org/#/proof-general)
 
 ## Overview
 
