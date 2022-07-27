@@ -1,0 +1,88 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      # All these must be protected branches so $GHA_PG_DEPLOY_KEY is available
+      - 'master'
+      # Maybe add a similar trigger for tags (if repo secrets can be retrieved)
+
+jobs:
+  deploy-doc:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          # Update if need be:
+          - 27.1
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - run: emacs --version
+
+      - name: Install makeinfo
+        run: sudo apt-get update -y -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends texinfo texi2html
+
+      - name: Checkout PG
+        uses: actions/checkout@v3
+        with:
+          path: 'PG'
+          # Assuming this workflow is only triggerred for branches and tags
+          ref: ${{ github.ref_name }}
+
+      - name: Checkout proofgeneral.github.io
+        uses: actions/checkout@v3
+        with:
+          repository: 'ProofGeneral/proofgeneral.github.io'
+          ref: 'master'
+          path: 'gh-pages'
+
+      - name: Build doc
+        run: |
+          set -x
+          pushd PG
+          commit_PG=$(git rev-parse --verify HEAD)
+          echo "Commit ${commit_PG}:"
+          git describe --all --long --abbrev=40 --always --dirty
+          pushd ../gh-pages/doc
+          git config user.name "ProofGeneral Bot"
+          git config user.email "37002148+proofbot@users.noreply.github.com"
+          make BRANCH="${GITHUB_REF_NAME}"
+          git commit -m 'Auto-Update {userman, adaptingman}' \
+            -m "href: https://github.com/ProofGeneral/PG/commit/${commit_PG}"
+          popd
+          popd
+
+      - name: Disable Host key verification
+        # this workaround should ideally be replaced with a ssh-keyscan based solution
+        run: |
+          mkdir -p -m 700 ~/.ssh
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Push doc
+        env:
+          GHA_PG_DEPLOY_KEY: ${{ secrets.GHA_PG_DEPLOY_KEY }}
+        run: |
+          [ -n "$GHA_PG_DEPLOY_KEY" ]
+          eval $(ssh-agent -s)
+          mkdir -p -m 700 ~/.ssh
+          echo "$GHA_PG_DEPLOY_KEY" | ssh-add -
+          set -x
+          pushd gh-pages
+          export branch=master  # useful for debug purpose
+          if [ "$branch" != master ]; then git checkout -b "$branch"; fi
+          git remote add deploy git@github.com:ProofGeneral/proofgeneral.github.io.git
+          git remote -v
+          git describe --all --long --abbrev=40 --always --dirty
+          git branch -avv
+          git rev-parse --verify HEAD
+          git push deploy HEAD:"$branch"
+          popd
+          rm -fr ~/.ssh || :
+          ssh-add -D || :
