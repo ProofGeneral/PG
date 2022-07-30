@@ -1,6 +1,7 @@
 # Proof General — Organize your proofs! 
 
 [![CI](https://github.com/ProofGeneral/PG/workflows/CI/badge.svg?branch=master)](https://github.com/ProofGeneral/PG/actions?query=workflow%3ACI)
+[![NonGNU ELPA](https://elpa.nongnu.org/nongnu/proof-general.svg)](https://elpa.nongnu.org/nongnu/proof-general.html)
 [![MELPA](https://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
 [![MELPA Stable](https://stable.melpa.org/packages/proof-general-badge.svg)](https://stable.melpa.org/#/proof-general)
 
@@ -33,7 +34,14 @@ including those available in [Debian Stable](https://packages.debian.org/stable/
 as well as in [Ubuntu LTS](https://packages.ubuntu.com/emacs) distributions
 until their [End-Of-Support](https://wiki.ubuntu.com/Releases).
 
-### Using MELPA (recommended procedure)
+### Using NonGNU ELPA
+
+[NonGNU ELPA](https://elpa.nongnu.org/) is the sister repository of
+[GNU ELPA](https://elpa.gnu.org/) and enabled by default from Emacs 28
+onwards.   You can directly install Proof General from NonGNU ELPA if
+the repository is enabled.
+
+### Using MELPA
 
 [MELPA](https://melpa.org/) is a repository of Emacs packages. Skip
 this step if you already use MELPA. Otherwise, add the following to
