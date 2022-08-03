@@ -3,7 +3,9 @@
 [![CI](https://github.com/ProofGeneral/PG/workflows/CI/badge.svg?branch=master)](https://github.com/ProofGeneral/PG/actions?query=workflow%3ACI)
 [![NonGNU ELPA](https://elpa.nongnu.org/nongnu/proof-general.svg)](https://elpa.nongnu.org/nongnu/proof-general.html)
 [![MELPA](https://melpa.org/packages/proof-general-badge.svg)](https://melpa.org/#/proof-general)
-[![MELPA Stable](https://stable.melpa.org/packages/proof-general-badge.svg)](https://stable.melpa.org/#/proof-general)
+[![MELPA Stable](https://stable.melpa.org/packages/proof-general-badge.svg)](https://stable.melpa.org/#/proof-general)  
+[![ProofGeneral doc](https://img.shields.io/badge/doc-Proof%20General%20user%20manual-blue.svg)](https://proofgeneral.github.io/doc/master/userman/ "The ProofGeneral user manual")
+[![PG-adapting doc](https://img.shields.io/badge/doc-PG--adapting-blue.svg)](https://proofgeneral.github.io/doc/master/adaptingman/ "PG's adapting manual to add provers")
 
 ## Overview
 
