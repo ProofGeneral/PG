@@ -158,8 +158,8 @@ This file documents version @value{version} of @b{Proof General}, a
 generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
-@value{emacsversion} on Linux.  It is supplied ready to use for the proof
-assistants Coq, EasyCrypt, and PhoX.
+@value{emacsversion} on Linux.  It is supplied ready to use for the
+proof assistants Coq, EasyCrypt, qrhl-tool, and PhoX.
 
 @menu
 * Preface::                     

@@ -139,7 +139,7 @@ of @b{Proof General}, a generic Emacs interface for proof assistants.
 
 Proof General @value{version} has been tested with GNU Emacs
 @value{emacsversion}.  It is supplied ready customized for the proof
-assistants Coq, EasyCrypt, and PhoX.
+assistants Coq, EasyCrypt, qrhl-tool, and PhoX.
 
 This manual contains information for customizing to new proof
 assistants; see the user manual for details about how to use
