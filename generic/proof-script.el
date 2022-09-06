@@ -2814,10 +2814,6 @@ finish setup which depends on specific proof assistant configuration."
   (proof-setup-imenu)
   (proof-imenu-enable)
 
-  ;; Save file-less script mode buffers in case of accidental exit
-  (or (buffer-file-name)
-      (setq buffer-offer-save t))
-
   ;; Turn on autosend if enabled
   (proof-autosend-enable 'nomsg)
 
