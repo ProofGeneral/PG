@@ -1,4 +1,4 @@
-;;; pg-autotest.el --- Simple testing framework for Proof General
+;;; pg-autotest.el --- Simple testing framework for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -39,7 +39,7 @@
   "Flag indicating overall successful state of tests.")
 
 (defvar pg-autotest-log t
-  "Value for 'standard-output' during tests.")
+  "Value for `standard-output' during tests.")
 
 ;;; Some utilities
 
@@ -106,7 +106,7 @@
 
 (defun pg-autotest-message (msg &rest args)
   "Give message MSG (formatted using ARGS) in log file output and on display."
-  (let ((fmsg   (if args (apply 'format msg args) msg)))
+  (let ((fmsg   (if args (apply #'format msg args) msg)))
     (proof-with-current-buffer-if-exists
      pg-autotest-log
      (insert fmsg "\n"))
@@ -117,7 +117,7 @@
   (pg-autotest-message "\n\nREMARK: %s\n" msg))
 
 (defun pg-autotest-timestart (&optional clockname)
-  "Make a note of current time, named 'local or CLOCKNAME."
+  "Make a note of current time, named `local' or CLOCKNAME."
   (put 'pg-autotest-time (or clockname 'local)
        (current-time)))
 
@@ -208,7 +208,7 @@ completely processing the buffer as the last step."
   (pg-autotest-find-file-restart file)
   (while (> jumps 0)
     (let* ((random-point     (random (point-max)))
-	   (random-edit      nil) ; (< 20 (random 100)))
+	   ;; (random-edit      nil) ; (< 20 (random 100)))
 	   (random-thing     (random 10)))
       (cond
        ((and (eq random-thing 0)
@@ -277,7 +277,7 @@ completely processing the buffer as the last step."
 
 (defun pg-autotest-test-eval (body)
   "Evaluate given expression for side effect."
-  (eval body))
+  (eval body t))
 
 (defun pg-autotest-test-quit-prover ()
   "Exit prover process."

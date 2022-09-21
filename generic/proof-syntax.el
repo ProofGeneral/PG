@@ -1,4 +1,4 @@
-;;; proof-syntax.el --- Functions for dealing with syntax
+;;; proof-syntax.el --- Functions for dealing with syntax  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -66,22 +66,22 @@ nil if a region cannot be found."
 
 ;;;###autoload
 (defun proof-replace-regexp-in-string (regexp rep string)
-  "Like ‘replace-regexp-in-string’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
+  "‘replace-regexp-in-string’ obeying ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (replace-regexp-in-string regexp rep string)))
 
 (defsubst proof-re-search-forward (regexp &optional bound noerror count)
-  "Like ‘re-search-forward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
+  "‘re-search-forward’ obeying ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (re-search-forward regexp bound noerror count)))
 
 (defsubst proof-re-search-backward (regexp &optional bound noerror count)
-  "Like ‘re-search-backward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
+  "‘re-search-backward’ obeying ‘proof-case-fold-search’."
   (let ((case-fold-search proof-case-fold-search))
     (re-search-backward regexp bound noerror count)))
 
 (defsubst proof-re-search-forward-safe (regexp &optional bound noerror count)
-  "Like ‘re-search-forward’, but set ‘case-fold-search’ to ‘proof-case-fold-search’."
+  "‘re-search-forward’ obeying ‘proof-case-fold-search’."
   (and regexp
        (let ((case-fold-search proof-case-fold-search))
 	 (re-search-forward regexp bound noerror count))))
@@ -148,7 +148,7 @@ The returned value is one of the following symbols:
 
 (defun proof-looking-at-syntactic-context ()
   "Determine if current point is at beginning or within comment/string context.
-If so, return a symbol indicating this ('comment or 'string).
+If so, return a symbol indicating this (`comment' or `string').
 This function invokes <PA-syntactic-context> if that is defined, otherwise
 it calls `proof-looking-at-syntactic-context'."
   (if (fboundp (proof-ass-sym syntactic-context))
@@ -249,7 +249,7 @@ may be a string or sexp evaluated to get a string."
 		((stringp (cdr (car alist)))
 		 (cdr (car alist)))
 		(t
-		 (eval (cdr (car alist)))))))
+		 (eval (cdr (car alist)) t)))))
 	  (setq string
 		(concat (substring string 0 (match-beginning 0))
 			replacement
