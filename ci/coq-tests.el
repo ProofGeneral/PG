@@ -12,6 +12,8 @@
       (setq coq-test-dir (file-name-directory buffer-file-name))
     (error "You should set 'coq-test-dir, or run coq-test.el from a file buffer.")))
 
+;; FIXME: Merely loading a file should not have such side effects.
+;; We should move that code into a function.
 (setq debug-on-error t) ; open the debugger on error -- may be commented-out
 (setq ert-batch-backtrace-right-margin 79)
 
@@ -20,7 +22,7 @@
 ;;(setq ert-async-timeout 2)
 
 ;; Load Coq instance of Proof General now.
-(proof-ready-for-assistant 'coq)
+(eval-and-compile (proof-ready-for-assistant 'coq))
 (require 'coq)
 
 ;;; Code:
@@ -155,7 +157,7 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
               (coq-mock body))))
       (coq-test-exit)
       (coq-set-flags nil flags)
-      (not-modified nil) ; Clear modification  
+      (set-buffer-modified-p nil) ; Clear modification
       (kill-buffer buffer) 
       (when rmfile (message "Removing file %s ..." rmfile))
       (ignore-errors (delete-file rmfile)))))

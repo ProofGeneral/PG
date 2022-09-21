@@ -7,6 +7,9 @@
 
 ;;; Code:
 
+;; FIXME: Merely loading a file should not have such side effects.
+;; We should move all of that code into a function.
+
 ;; Setup MELPA
 (require 'package)
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
@@ -24,7 +27,10 @@
 (unless (package-installed-p 'ert-async)
   (package-refresh-contents)
   (package-install 'ert-async))
+
 (eval-when-compile
-  (require 'ert-async))
+  ;; FIXME: Why do we have this `require' and why is it within
+  ;; an `eval-when-compile'?
+  (require 'ert-async nil t))
 
 ;;; init-tests.el ends here

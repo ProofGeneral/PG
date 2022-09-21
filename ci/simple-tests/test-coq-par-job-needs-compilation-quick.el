@@ -1,9 +1,9 @@
-;;; test-coq-par-job-needs-compilation-quick.el --- test compilation internals
+;;; test-coq-par-job-needs-compilation-quick.el --- test compilation internals  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017 2021 Hendrik Tews
@@ -33,7 +33,7 @@
 ;;; Code:
 
 (require 'proof-site)
-(proof-ready-for-assistant 'coq)
+(eval-and-compile (proof-ready-for-assistant 'coq))
 (require 'coq-par-compile)
 (eval-when-compile (require 'cl-lib))
 
@@ -756,7 +756,7 @@ relative ages.")
   "Wellformedness check for the test specifications."
   (mapc
    (lambda (test)
-     (let ((test-id (format "%s" (car test))))
+     ;; (let ((test-id (format "%s" (car test))))
        ;; a test is a list of 4 elements and the first element is a list itself
        (should
 	(and
@@ -770,7 +770,8 @@ relative ages.")
 		(quick-mode (car variant))
 		(compilation-result (nth 1 variant))
 		(delete-result (nth 2 variant))
-		(req-obj-result (nth 3 variant)))
+		;; (req-obj-result (nth 3 variant))
+		)
 	    ;; the delete field, when set, must be a member of the files list
 	    (should (or (not delete-result)
 			(member delete-result files)))
@@ -780,7 +781,7 @@ relative ages.")
 	      (should (not delete-result))
 	      (should (eq compilation-result
 			  (not (eq (car (last (car test))) 'vo)))))))
-	  (cdr test))))
+	  (cdr test))) ;; )
    coq--par-job-needs-compilation-tests))
 
 (defun test-coq-par-sym-to-file (dir sym)

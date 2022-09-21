@@ -1,4 +1,4 @@
-;; This file is part of Proof General.
+;; This file is part of Proof General.  -*- lexical-binding: t; -*-
 ;; 
 ;; © Copyright 2021  Hendrik Tews
 ;; 
@@ -21,7 +21,7 @@
 ;;
 ;; Load stuff for `coq--version<'
 (require 'proof-site)
-(proof-ready-for-assistant 'coq)
+(eval-and-compile (proof-ready-for-assistant 'coq))
 (require 'coq-system)
 
 (defconst coq--post-v810 (coq--post-v810)
