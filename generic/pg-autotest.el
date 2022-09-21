@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -141,10 +141,11 @@
     (setq debug-on-error t) 		; enable in case a test goes wrong
     (setq proof-general-debug t)	; debug messages from PG
 
-    (defadvice proof-debug (before proof-debug-to-log (msg &rest args))
-      "Output the debug message to the test log."
-      (apply 'pg-autotest-message msg args))
-    (ad-activate 'proof-debug)))
+    (advice-add 'proof-debug :before #'proof--debug-to-log)))
+
+(defun proof--debug-to-log (msg &rest args)
+  "Output the debug message to the test log."
+  (apply #'pg-autotest-message msg args))
 
 (defun pg-autotest-exit ()
   "Exit Emacs returning Unix success 0 if all tests succeeded."

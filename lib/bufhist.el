@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -327,11 +327,11 @@ If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."
       (progn
 	(setq before-change-functions
 	      (remq 'bufhist-before-change-function before-change-functions)))
-;	    (ad-disable-advice 'erase-buffer 'before 'bufhist-last-advice)))
+;	    (advice-remove 'erase-buffer #'bufhist--last)))
     ;; readonly history: switch to latest contents
     (setq before-change-functions
 	  (cons 'bufhist-before-change-function before-change-functions))))
-;	    (ad-enable-advice 'erase-buffer 'before 'bufhist-last-advice))))
+;	    (advice-add 'erase-buffer :before #'bufhist--last))))
 
 ;; Restore the latest buffer contents before changes from elsewhere.
 
@@ -340,10 +340,10 @@ If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."
   (bufhist-switch-to-index 0))
 
 ;; Unfortunately, erase-buffer does not call before-change-function
-;      (defadvice erase-buffer (before bufhist-last-advice activate)
-;	(if (and bufhist-mode bufhist-read-only-history)
-;	    (bufhist-last)))
-;      (ad-activate-on 'erase-buffer)))
+;;      (advice-add 'erase-buffer :before #'bufhist--last)
+;;	(defun bufhist--last (&rest _)
+;;        (if (and bufhist-mode bufhist-read-only-history)
+;;	      (bufhist-last)))
 
 ;;;
 ;;; Buttons

@@ -1,9 +1,9 @@
-;;; coq.el --- Major mode for Coq proof assistant  -*- coding: utf-8; lexical-binding: t; -*-
+;;; coq.el --- Major mode for Coq proof assistant  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -3363,14 +3363,15 @@ This function is called by `proof-set-value' on `coq-double-hit-enable'."
 
 (proof-deftoggle coq-double-hit-enable coq-double-hit-toggle)
 
-(defadvice proof-electric-terminator-enable (after coq-unset-double-hit-advice)
+(defun coq--unset-double-hit-advice (&rest _)
   "Disable double hit terminator since electric terminator is a replacement.
 This is an advice to pg `proof-electric-terminator-enable' function."
   (when (and coq-double-hit-enable proof-electric-terminator-enable)
     (coq-double-hit-toggle 0)
     (message "Hit M-1 . to enter a real \".\".")))
 
-(ad-activate 'proof-electric-terminator-enable)
+(advice-add 'proof-electric-terminator-enable
+            :after #'coq--unset-double-hit-advice)
 
 (defvar coq-double-hit-delay 0.25
   "The maximum delay between the two hit of a double hit in coq/proofgeneral.")

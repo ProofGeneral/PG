@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2018  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -221,15 +221,15 @@ this were even more bogus...."
 ;; fontification function.
 ;;
 
-;; (defadvice font-lock-fontify-keywords-region
-;;   (before font-lock-fontify-keywords-advice (beg end &optional loudly))
+;; (advice-add 'font-lock-fontify-keywords-region :before
+;;             #'proof--font-lock-fontify-keywords-region)
+;; (defun proof--font-lock-fontify-keywords-region (beg end &optional loudly)
 ;;   "Call proof assistant specific syntactic region fontify.
 ;; If it's bound, we call <PA>-font-lock-fontify-syntactically-region."
 ;;   (when (and proof-buffer-type
 ;; 	     (fboundp (proof-ass-sym font-lock-fontify-syntactically-region)))
 ;;     (funcall (proof-ass-sym font-lock-fontify-syntactically-region)
 ;; 	     beg end loudly)))
-;; (ad-activate 'font-lock-fontify-keywords-region)
 
 ;;
 ;; Functions for doing something like "format" but with customizable
