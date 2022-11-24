@@ -139,7 +139,6 @@ Called before sending CMD to the prover."
   proof-script-font-lock-keywords qrhl-font-lock-keywords
   proof-goals-font-lock-keywords qrhl-font-lock-subsuperscript
   proof-response-font-lock-keywords qrhl-font-lock-keywords
-  font-lock-extra-managed-props '(display)
   proof-shell-unicode t
   proof-script-preprocess #'qrhl-proof-script-preprocess
   )
@@ -229,6 +228,12 @@ Called before sending CMD to the prover."
 	    (set-input-method qrhl-input-method)
 	    (setq electric-indent-inhibit t)  ;; Indentation is not reliable enough for electric indent
 	    (setq indent-line-function 'qrhl-indent-line)
+	    ;; This ensures that the fontification from qrhl-font-lock-subsuperscript is updated correctly
+	    ;; when editing text (when re-fontifying).
+	    ;; We only add it in qrhl-mode, not qrhl-response-mode or qrhl-goals-mode because in the latter two,
+	    ;; text is never edited, only replaced as a while, so refontification doesn't happen there and
+	    ;; is not needed.
+	    (setq-local font-lock-extra-managed-props '(display))
 	    (qrhl-buttonize-buffer)))
 
 (provide 'qrhl)
