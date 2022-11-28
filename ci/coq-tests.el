@@ -6,14 +6,15 @@
 ;;;  Eval this to run the tests interactively <C-x C-e>
 ;;
 ;; (progn (load-file "coq-tests.el") (call-interactively #'ert))
+;;
+;; Note that loading this file triggers some side effects, such as:
+;; (setq debug-on-error t)
 
 (unless (and (boundp 'coq-test-dir) coq-test-dir) ; if set by ./test.sh
   (if buffer-file-name
       (setq coq-test-dir (file-name-directory buffer-file-name))
     (error "You should set 'coq-test-dir, or run coq-test.el from a file buffer.")))
 
-;; FIXME: Merely loading a file should not have such side effects.
-;; We should move that code into a function.
 (setq debug-on-error t) ; open the debugger on error -- may be commented-out
 (setq ert-batch-backtrace-right-margin 79)
 
@@ -366,10 +367,5 @@ Tactic failure: Cannot solve this goal."))))
        (coq-test-goto-before "(*proof*)")
        (backward-char 3)
        (should (span-at (point) 'proofusing))))))
- 
-
-
-
-(provide 'coq-tests)
 
 ;;; coq-tests.el ends here
