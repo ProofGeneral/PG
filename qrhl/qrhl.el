@@ -28,6 +28,10 @@
   "Name/path of the qrhl-prover command. (Restart Emacs after changing this.)"
   :type '(string) :group 'qrhl)
 
+(defcustom qrhl-indentation-level 2
+  "Indentation level in qRHL scripts"
+  :group 'qrhl)
+
 (defun qrhl-find-and-forget (span)
   (proof-generic-count-undos span))
   
@@ -43,13 +47,13 @@
 
 (defun qrhl-forward-regex (regex)
   "If text starting at point matches REGEX, move to end of the match and return t. 
-   Otherwise return nil"
+Otherwise return nil"
   (and (looking-at regex) (goto-char (match-end 0)) t))
 
 (defun qrhl-parse-regular-command ()
   "Find the period-terminated command starting at point.
-   Moves to its end.
-   Returns t if this worked."
+Moves to its end.
+Returns t if this worked."
   (let ((pos
 	 (save-excursion
 	   (progn
@@ -60,7 +64,6 @@
 		    ))
 	    (and (qrhl-forward-regex "\\.") (point))
 	    ))))
-    (princ pos)
     (and pos (goto-char pos) t)))
 
 (defun qrhl-parse-focus-command ()
@@ -74,20 +77,38 @@
       (and (qrhl-parse-regular-command) 'cmd)))
 
 (defvar qrhl-font-lock-subsuperscript
-  '(("\\(⇩\\)\\([^[:space:]]\\)" .
+  '(("\\(⇩\\)\\([^⇩⇧[:space:]]\\)" .
      ((2 '(face subscript display (raise -0.3)))
       (1 '(face nil display ""))))
-    ("\\(⇧\\)\\([^[:space:]]\\)" .
+    ("\\(⇧\\)\\([^⇩⇧[:space:]]\\)" .
      ((2 '(face superscript display (raise 0.3)))
       (1 '(face nil display "")))))
   "Font-lock configuration for displaying sub/superscripts that are prefixed by ⇩/⇧")
 
 (defvar qrhl-font-lock-keywords
-  ; Very simple configuration of keywords: highlights all occurrences, even if they are not actually keywords (e.g., when they are part of a term)
-  (append  qrhl-font-lock-subsuperscript
-	   '("lemma" "qrhl" "include" "quantum" "program" "equal" "simp" "isabelle" "isa" "var" "qed"
-	     "skip"))
+  ; Regexp explanation: match the keyword/tactic after another command, and also if there are {}+*- in between (focusing commands)
+  (cl-flet ((mk-regexp (word) (concat "\\(?:^\\|\\.[ \t]\\)[ \t{}+*-]*\\b\\(" word "\\)\\b")))
+    (append qrhl-font-lock-subsuperscript
+	    (mapcar (lambda (keyword) `(,(mk-regexp keyword) . (1 'font-lock-keyword-face)))
+		    '("isabelle_cmd" "debug:" "isabelle" "quantum\\s +var" "classical\\s +var" "ambient\\s +var"
+		      "program" "adversary" "qrhl" "lemma" "include" "qed" "cheat" "print\\s +goal" "print"))
+
+	    (mapcar (lambda (tactic) `(,(mk-regexp tactic) . (1 'font-lock-function-name-face)))
+		    '("admit" "wp" "sp" "swap" "simp" "rule" "clear" "skip" "inline" "seq" "conseq\\s +pre"
+		      "conseq\\s +post" "conseq\\s +qrhl" "equal" "rnd" "rewrite"
+		      "byqrhl" "casesplit" "case" "fix" "squash" "frame" "measure" "o2h" "semiclassical"
+		      "sym" "local\\s +remove" "local\\s +up" "rename" "if" "isa"
+		      ))
+
+	    ; Regexp explanation: Match comment after
+	    '(("\\(?:^\\|[ \t]\\)[ \t]*\\(#.*\\)" . (1 'font-lock-comment-face)))
+	    ))
   "Font-lock configuration for qRHL proof scripts")
+
+(defun qrhl-proof-script-preprocess (file start end cmd)
+  "Strips comments from the command CMD.
+Called before sending CMD to the prover."
+  (list (replace-regexp-in-string "\\(?:^\\|[ \t]\\)[ \t]*#.*$" "" cmd)))
 
 (proof-easy-config 'qrhl "qRHL"
   proof-prog-name qrhl-prog-name
@@ -116,9 +137,10 @@
   proof-save-command-regexp "\\`a\\`"   ;AKA `regexp-unmatchable' in Emacs-27
   proof-tree-external-display nil
   proof-script-font-lock-keywords qrhl-font-lock-keywords
-  proof-goals-font-lock-keywords qrhl-font-lock-keywords
+  proof-goals-font-lock-keywords qrhl-font-lock-subsuperscript
   proof-response-font-lock-keywords qrhl-font-lock-keywords
   proof-shell-unicode t
+  proof-script-preprocess #'qrhl-proof-script-preprocess
   )
 
 ; buttoning functions follow https://superuser.com/a/331896/748969
@@ -138,10 +160,80 @@
   (while (re-search-forward "include\s*\"\\([^\"]+\\)\"\s*\\." nil t)
    (make-button (match-beginning 1) (match-end 1) :type 'qrhl-find-file-button))))
 
+
+
+(defun qrhl-current-line-rel-indent ()
+  "Determins by how much to indent the current line relative to the previous
+   indentation level. (Taking into account only the current line.)"
+  (save-excursion
+    (let ((qrhl-qed-pattern "^[ \t]*qed\\b")
+	  (closing-brace-pattern "^[ \t]*}"))
+      (beginning-of-line)
+      ;; Analyse the current line and decide relative indentation accordingly
+      (cond
+       ;; qed - unindent by 2
+       ((looking-at qrhl-qed-pattern) (- qrhl-indentation-level))
+       ;; } - unindent by 2
+       ((looking-at closing-brace-pattern) (- qrhl-indentation-level))
+       ;; indent as previous
+       (t 0)))))
+
+(defun qrhl-indent-line ()
+  "Indent current line as qRHL proof script"
+  (interactive)
+  
+  (let ((not-found t) (previous-indent nil) (previous-offset 0) rel-indent
+	(lemma-pattern "^[ \t]*\\(lemma\\|qrhl\\)\\b")
+	(comment-pattern "^[ \t]*#")
+	(empty-line-pattern "^[ \t]*$")
+	(brace-pattern "^[ \t]*{")
+	(focus-pattern "^[ \t{}+*-]*[+*-][ \t]*"))
+
+    (beginning-of-line) ;; Throughout this function, we will always be at the beginning of a line
+
+    ;; Identify preceding indented line (relative to which we indent)
+    (save-excursion
+      (while (and not-found (not (bobp)))
+	(forward-line -1)
+	(cond
+	 ((and (not previous-indent) (looking-at comment-pattern))
+	  (setq previous-indent (current-indentation)))
+	 ((looking-at empty-line-pattern) ())
+	 (t
+	  (progn
+	   (setq previous-indent (current-indentation))
+	   (setq not-found nil)
+	   (cond
+	    ((looking-at lemma-pattern) (setq previous-offset qrhl-indentation-level))
+	    ((looking-at focus-pattern) (setq previous-offset (- (match-end 0) (point) previous-indent)))
+	    ((looking-at brace-pattern) (setq previous-offset qrhl-indentation-level)))
+	  )))))
+    (if (not previous-indent) (setq previous-indent 0))
+    
+    ;; Now previous-indent contains the indentation-level of the preceding non-comment non-blank line
+    ;; If there is such line, it contains the indentation-level of the preceding non-blank line
+    ;; If there is no such line, it contains 0
+
+    ;; And previous-offset contains the offset that that line adds to following lines
+    ;; (i.e., 0 for normal lines, positive for qed and {, negative for })
+
+    (setq rel-indent (qrhl-current-line-rel-indent))
+    
+    ;; Indent relative to previous-indent by rel-indent and previous-offset
+    (indent-line-to (max (+ previous-indent rel-indent previous-offset) 0))))
+
+
 (add-hook 'qrhl-mode-hook
 	  (lambda ()
 	    (set-input-method qrhl-input-method)
-	    (set-variable 'electric-indent-mode nil t)
+	    (setq electric-indent-inhibit t)  ;; Indentation is not reliable enough for electric indent
+	    (setq indent-line-function 'qrhl-indent-line)
+	    ;; This ensures that the fontification from qrhl-font-lock-subsuperscript is updated correctly
+	    ;; when editing text (when re-fontifying).
+	    ;; We only add it in qrhl-mode, not qrhl-response-mode or qrhl-goals-mode because in the latter two,
+	    ;; text is never edited, only replaced as a while, so refontification doesn't happen there and
+	    ;; is not needed.
+	    (setq-local font-lock-extra-managed-props '(display))
 	    (qrhl-buttonize-buffer)))
 
 (provide 'qrhl)
