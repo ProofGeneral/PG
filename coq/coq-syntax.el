@@ -246,6 +246,7 @@ so for the following reasons:
      ("move after" "mov" "move # after #" t "move")
      ("multimatch with" "mm" "multimatch # with\n| # => #\nend")
      ("multi_match! with" "multi_m" "multi_match! # with\n| # => #\nend")
+     ("native_compute" "nac" "native_compute." t "native_compute")
      ("nia" nil "nia" t "nia")
      ("now_show" nil "now_show" t "now_show")
      ("nra" nil "nra" t "nra")
@@ -506,7 +507,7 @@ so for the following reasons:
     ("Ltac2" "lt2m" "Ltac2 mutable # := #." t "Ltac2 mutable")
     ("Ltac2" "lt2r" "Ltac2 rec # := #." t "Ltac2 rec")
     ("Ltac2" "lt2s" "Ltac2 Set # := #." t "Ltac2 Set")
-    ("Ltac2" "lt2" "Ltac2 # := #." t "Ltac2") 
+    ("Ltac2" "lt2" "Ltac2 # := #." t "Ltac2")
     ("Local Ltac" nil "Local Ltac # := #." t "Local\\s-+Ltac")
     ("Ltac" "ltac" "Ltac # := #." t "Ltac")
     ("Module :=" "mo" "Module # : # := #." t ) ; careful
@@ -1130,7 +1131,7 @@ different."
   "Value for `proof-script-definition-end-regexp'."
   :type 'regexp
   :group 'coq)
-  
+
 (defcustom coq-omit-proof-admit-command "Admitted."
   "Value for `proof-script-proof-admit-command'."
   :type 'string
