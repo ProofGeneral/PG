@@ -168,13 +168,15 @@ If called interactively, NUM is given by the prefix argument."
 (defun proof-goto-point (&optional raw)
   "Assert or retract to the command at current position.
 Calls `proof-assert-until-point' or `proof-retract-until-point' as
-appropriate. With prefix argument RAW the omit proofs feature
-(`proof-omit-proofs-option') is temporaily disabled to check all
-proofs in the asserted region."
+appropriate.
+With prefix argument RAW, the activation of the omit proofs feature
+(`proof-omit-proofs-option') is temporarily toggled,
+so we can chose whether to check all proofs in the asserted region,
+or to merely assume them and save time."
   (interactive "P")
   (let ((proof-omit-proofs-option proof-omit-proofs-option))
     (when raw
-      (setq proof-omit-proofs-option nil))
+      (setq proof-omit-proofs-option (not proof-omit-proofs-option)))
     (save-excursion
       (if (> (proof-queue-or-locked-end) (point))
 	  (proof-retract-until-point)
@@ -205,12 +207,14 @@ If inside a comment, just process until the start of the comment."
 ;;;###autoload
 (defun proof-process-buffer (&optional raw)
   "Process the current (or script) buffer, and maybe move point to the end.
-With prefix argument RAW the omit proofs feature (`proof-omit-proofs-option')
-is temporaily disabled to check all proofs in the asserted region."
+With prefix argument RAW, the activation of the omit proofs feature
+(`proof-omit-proofs-option') is temporarily toggled,
+so we can chose whether to check all proofs in the asserted region,
+or to merely assume them and save time."
   (interactive "P")
   (let ((proof-omit-proofs-option proof-omit-proofs-option))
     (when raw
-      (setq proof-omit-proofs-option nil))
+      (setq proof-omit-proofs-option (not proof-omit-proofs-option)))
     (proof-with-script-buffer
      (save-excursion
        (goto-char (point-max))
