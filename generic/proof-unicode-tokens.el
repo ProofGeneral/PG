@@ -30,6 +30,7 @@
   ;; (require 'proof-auxmodes)	 ; loaded by proof.el, autoloads us
   (require 'unicode-tokens))	 ; it will be loaded by proof-auxmodes
 
+(eval-when-compile (require 'proof-utils))	; import macros
 (require 'proof-config)			; config variables
 
 (defvar proof-unicode-tokens-initialised nil
