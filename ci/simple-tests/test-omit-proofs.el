@@ -42,6 +42,17 @@ If so, return the first non-nil value returned by PRED."
     ;; to process.
     (accept-process-output nil 0.1)))
   
+(defun reset-coq ()
+  "Reset Coq and Proof General.
+Do `proof-shell-exit' to kill Coq and reset the locked region and
+a lot of other internal state of Proof General. Used at the
+beginning of the test when several tests work on the same Coq
+source file."
+  (when (and (boundp 'proof-shell-buffer)
+             (buffer-live-p proof-shell-buffer))
+    (proof-shell-exit t)
+    (message "Coq and Proof General reseted")))
+
 (defun overlay-less (a b)
   "Compare two overlays.
 Return t if overlay A has smaller size than overlay B and should
@@ -76,7 +87,9 @@ In particular, test that with proof-omit-proofs-option configured:
 - stuff before the proof still has normal color "
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
+  (reset-coq)
   (find-file "omit_test.v")
+  (goto-char (point-min))
 
   ;; Check 1: check that the proof is valid and omit can be disabled
   (message "1: check that the proof is valid and omit can be disabled")
@@ -151,4 +164,43 @@ In particular, test that with proof-omit-proofs-option configured:
   (should (search-backward "automatic test marker 1" nil t))
   (should (eq (first-overlay-face) 'proof-locked-face))
   (should (search-forward "automatic test marker 2" nil t))
+  (should (eq (first-overlay-face) 'proof-locked-face)))
+
+(ert-deftest omit-proofs-never-omit-hints ()
+  :expected-result :failed
+  "Test that proofs containing Hint are never omitted.
+This test only checks that the face in the middle of the proof is
+the normal `proof-locked-face'."
+  (setq proof-omit-proofs-option t
+        proof-three-window-enable nil)
+  (reset-coq)
+  (find-file "omit_test.v")
+  (goto-char (point-min))
+  ;; Check that proofs with Hint commands are never omitted
+  (message "Check that proofs with Hint commands are never omitted")
+  (should (search-forward "automatic test marker 6" nil t))
+  (forward-line -1)
+  (proof-goto-point)
+  (wait-for-coq)
+  (should (search-backward "automatic test marker 5" nil t))
+  (should (eq (first-overlay-face) 'proof-locked-face)))
+
+
+(ert-deftest omit-proofs-never-omit-lets ()
+  :expected-result :failed
+  "Test that proofs for Let local declarations are never omitted.
+This test only checks that the face in the middle of the proof is
+the normal `proof-locked-face'."
+  (setq proof-omit-proofs-option t
+        proof-three-window-enable nil)
+  (reset-coq)
+  (find-file "omit_test.v")
+  (goto-char (point-min))
+  ;; Check that proofs for Let local declarations are never omitted.
+  (message "Check that proofs for Let local declarations are never omitted.")
+  (should (search-forward "automatic test marker 8" nil t))
+  (forward-line -1)
+  (proof-goto-point)
+  (wait-for-coq)
+  (should (search-backward "automatic test marker 7" nil t))
   (should (eq (first-overlay-face) 'proof-locked-face)))
