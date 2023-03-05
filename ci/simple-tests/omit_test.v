@@ -1,3 +1,20 @@
+(*
+ * Coq sources for test-omit-proofs.el
+ * 
+ * Up to test marker 4 the sources are used for
+ * omit-proofs-omit-and-not-omit: The proof of the first lemma
+ * classic_excluded_middle should not be omitted, while the proof of the
+ * second classic_excluded_middle is.
+ *
+ * Lemma never_omit_hints is for test omit-proofs-never-omit-hints: Proofs
+ * containing commands should never be skipped (except for a few white-listed
+ * commands.
+ *
+ * Lemma never_omit_let is for test omit-proofs-never-omit-lets: Proofs of
+ * let-theorems should never be omitted.
+ * 
+ *)
+
 
 Definition classical_logic : Prop := forall(P : Prop), ~~P -> P.
 
@@ -23,3 +40,24 @@ Proof using.
 Qed.
 
 (* automatic test marker 4 *)
+
+Lemma never_omit_hints : 1 + 1 = 2.
+Proof using.
+  #[local] Hint Resolve classic_excluded_middle : core.
+  (* automatic test marker 5 *)
+  auto.
+Qed.
+
+(* automatic test marker 6 *)
+
+Section let_test.
+
+  Let never_omit_let : 1 + 1 = 2.
+  Proof using.
+    (* automatic test marker 7 *)
+    auto.
+  Qed.
+
+End let_test.
+
+(* automatic test marker 8 *)
