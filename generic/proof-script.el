@@ -2022,23 +2022,32 @@ start is found inside a proof."
         proof-script-proof-admit-command)
    nil
    "proof-script omit proof feature not properly configured")
-  (let (result maybe-result inside-proof
+  (let (;; result vanillas with omitted proofs in reverse order
+        result
+        ;; commands of current proof before deciding opaqueness in reverse order
+        maybe-result
+        inside-proof
         proof-start-span-start proof-start-span-end
-        item cmd)
+        ;; the current vanilla item
+        item
+        ;; the command of the current item
+        cmd)
     (while vanillas
       (setq item (car vanillas))
       ;; cdr vanillas is at the end of the loop
       (setq cmd (mapconcat #'identity (nth 1 item) " "))
+
       (if inside-proof
           (progn
             (if (string-match proof-script-proof-start-regexp cmd)
-                ;; found another proof start inside a proof
-                ;; stop omitting and pass the remainder unmodified
-                ;; the result in `result' is aggregated in reverse
-                ;; order, need to reverse vanillas
+                ;; Found another proof start inside a proof.
+                ;; Stop omitting and pass the remainder unmodified.
+                ;; The result in `result' is aggregated in reverse
+                ;; order, need to reverse vanillas.
                 (progn
                   (setq result (nconc (nreverse vanillas) maybe-result result))
                   (setq maybe-result nil)
+                  ;; terminate the while loop
                   (setq vanillas nil)
                   ;; for Coq nobody will notice the warning, because
                   ;; the error about nested proofs will pop up shortly
@@ -2050,6 +2059,8 @@ start is found inside a proof."
                    (format (concat "found second proof start at line %d"
                                    " - are there nested proofs?")
                            (line-number-at-pos (span-end (car item))))))
+
+              ;; else - no nested proof, but still inside-proof
               (if (string-match proof-script-proof-end-regexp cmd)
                   (let
                       ;; Reuse the Qed span for the whole proof,
@@ -2089,6 +2100,8 @@ start is found inside a proof."
                                 'proof-done-advancing nil)
                           result)
                     (setq inside-proof nil))
+
+                ;; else - no nested proof, no opaque proof, but still inside
                 (if (string-match proof-script-definition-end-regexp cmd)
                     ;; A proof ending in Defined or something similar.
                     ;; Need to keep all commands from the start of the proof.
@@ -2099,7 +2112,8 @@ start is found inside a proof."
                   ;; normal proof command - maybe it belongs to a
                   ;; Defined, keep it separate, until we know.
                   (push item maybe-result)))))
-        ;; outside proof
+
+        ;; else - outside proof
         (if (string-match proof-script-proof-start-regexp cmd)
             (progn
               (setq maybe-result nil)
@@ -2111,6 +2125,8 @@ start is found inside a proof."
           ;; outside, no proof start - keep it unmodified
           (push item result)))
       (setq vanillas (cdr vanillas)))
+
+    ;; end of loop - return filtered vanillas
     (nreverse (nconc maybe-result result))))
 
 
