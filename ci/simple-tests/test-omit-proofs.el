@@ -13,7 +13,7 @@
 ;;
 ;; Test that with proof-omit-proofs-option
 ;; - the proof _is_ processed when using a prefix argument
-;; - in this case the proof as normal locked color
+;; - in this case the proof has normal locked color
 ;; - without prefix arg, the proof is omitted
 ;; - the proof has omitted color then
 ;; - stuff before the proof still has normal color
@@ -52,7 +52,7 @@ therefore have a higher priority."
 
 (defun overlays-at-point-sorted ()
   "Return overlays at point in decreasing order of priority.
-Works only if no overlays has a priority property. Same
+Works only if no overlay has a priority property. Same
 '(overlays-at (point) t)', except that it also works on Emacs <= 25."
   (sort (overlays-at (point) t) 'overlay-less))
 
