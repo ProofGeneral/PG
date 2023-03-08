@@ -246,7 +246,7 @@ so for the following reasons:
      ("move after" "mov" "move # after #" t "move")
      ("multimatch with" "mm" "multimatch # with\n| # => #\nend")
      ("multi_match! with" "multi_m" "multi_match! # with\n| # => #\nend")
-     ("native_compute" "nac" "native_compute." t "native_compute")
+     ("native_compute" "nac" "native_compute" t "native_compute")
      ("nia" nil "nia" t "nia")
      ("now_show" nil "now_show" t "now_show")
      ("nra" nil "nra" t "nra")
