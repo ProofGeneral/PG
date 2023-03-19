@@ -41,15 +41,6 @@ Qed.
 
 (* automatic test marker 4 *)
 
-Lemma never_omit_hints : 1 + 1 = 2.
-Proof using.
-  #[local] Hint Resolve classic_excluded_middle : core.
-  (* automatic test marker 5 *)
-  auto.
-Qed.
-
-(* automatic test marker 6 *)
-
 Section let_test.
 
   Let never_omit_let : 1 + 1 = 2.
@@ -61,3 +52,13 @@ Section let_test.
 End let_test.
 
 (* automatic test marker 8 *)
+
+Lemma never_omit_hints : 1 + 1 = 2.
+Proof using.
+  (* Note that attributes such as #[local] were only introduced in Coq 8.9. *)
+  #[local] Hint Resolve classic_excluded_middle : core.
+  (* automatic test marker 5 *)
+  auto.
+Qed.
+
+(* automatic test marker 6 *)

@@ -18,6 +18,17 @@
 ;; - the proof has omitted color then
 ;; - stuff before the proof still has normal color
 
+;; Load stuff for `coq--version<'
+(require 'proof-site)
+(proof-ready-for-assistant 'coq)
+(require 'coq-system)
+
+(defconst coq--post-v809 (coq--post-v809)
+  "t if Coq is more recent than 8.8")
+
+(message "omit tests run with Coq version %s; post-v809: %s"
+         (coq-version t) coq--post-v809)
+
 ;; reimplement seq-some from the seq package
 ;; seq-some not present in emacs 24
 ;; XXX consider to switch to seq-some when support for emacs 24 is dropped
@@ -170,7 +181,11 @@ In particular, test that with proof-omit-proofs-option configured:
   :expected-result :failed
   "Test that proofs containing Hint are never omitted.
 This test only checks that the face in the middle of the proof is
-the normal `proof-locked-face'."
+the normal `proof-locked-face'.
+
+The sources for the test contain a local attribute in form of
+'#[local]', which has been introduced only in Coq version 8.9."
+  (skip-unless coq--post-v809)
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
   (reset-coq)
