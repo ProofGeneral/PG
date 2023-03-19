@@ -178,7 +178,6 @@ In particular, test that with proof-omit-proofs-option configured:
   (should (eq (first-overlay-face) 'proof-locked-face)))
 
 (ert-deftest omit-proofs-never-omit-hints ()
-  :expected-result :failed
   "Test that proofs containing Hint are never omitted.
 This test only checks that the face in the middle of the proof is
 the normal `proof-locked-face'.
