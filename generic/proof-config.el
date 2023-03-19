@@ -715,10 +715,14 @@ match of `proof-script-proof-end-regexp', are omitted (not send
 to the proof assistant) and replaced by
 `proof-script-proof-admit-command'. If a match for
 `proof-script-definition-end-regexp' is found while searching
-forward for the proof end, the current proof (up to and including
-the match of `proof-script-definition-end-regexp') is considered
-to be not opaque and not omitted, thus all these proof commands
-_are_ sent to the proof assistant.
+forward for the proof end or if
+`proof-script-cmd-prevents-proof-omission' recognizes a proof
+command that prevents proof omission then the current proof (up
+to and including the match of
+`proof-script-definition-end-regexp' or
+`proof-script-proof-end-regexp') is considered to be not opaque
+and not omitted, thus all these proof commands _are_ sent to the
+proof assistant.
 
 The feature does not work for nested proofs. If a match for
 `proof-script-proof-start-regexp' is found before the next match
@@ -757,6 +761,18 @@ See `proof-omit-proofs-configured'."
 (defcustom proof-script-proof-admit-command nil
   "Proof command to be inserted instead of omitted proofs."
   :type 'string
+  :group 'proof-script)
+
+(defcustom proof-script-cmd-prevents-proof-omission nil
+  "Optional predicate recognizing proof commands that prevent proof omission.
+If set, this option should contain a function that takes a proof
+command (as string) as argument and returns t or nil. If set, the
+function is called on every proof command inside a proof while
+scanning for proofs to omit. The predicate should return t if the
+command has effects ouside the proof, potentially breaking the
+script if the current proof is omitted. If the predicate returns
+t, the proof is considered to be not opaque and thus not omitted."
+  :type 'function
   :group 'proof-script)
 
 

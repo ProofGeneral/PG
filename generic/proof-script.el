@@ -2028,6 +2028,8 @@ start is found inside a proof."
         maybe-result
         inside-proof
         proof-start-span-start proof-start-span-end
+        ;; t if the proof contains state changing commands and must be kept
+        proof-must-be-kept
         ;; the current vanilla item
         item
         ;; the command of the current item
@@ -2061,7 +2063,12 @@ start is found inside a proof."
                            (line-number-at-pos (span-end (car item))))))
 
               ;; else - no nested proof, but still inside-proof
-              (if (string-match proof-script-proof-end-regexp cmd)
+              (if (and (string-match proof-script-proof-end-regexp cmd)
+                       (not proof-must-be-kept))
+                  ;; End of opaque proof recognized and we didn't
+                  ;; recognize a state changing command inside the
+                  ;; proof that would prohibit throwing the proof
+                  ;; away.
                   (let
                       ;; Reuse the Qed span for the whole proof,
                       ;; including the faked Admitted command.
@@ -2102,15 +2109,27 @@ start is found inside a proof."
                     (setq inside-proof nil))
 
                 ;; else - no nested proof, no opaque proof, but still inside
-                (if (string-match proof-script-definition-end-regexp cmd)
+                (if (or (string-match proof-script-definition-end-regexp cmd)
+                        (and (string-match proof-script-proof-end-regexp cmd)
+                             proof-must-be-kept))
                     ;; A proof ending in Defined or something similar.
+                    ;; Or a proof containing a state changing command
+                    ;; such that the proof-must-be-kept.
                     ;; Need to keep all commands from the start of the proof.
                     (progn
                       (setq result (cons item (nconc maybe-result result)))
                       (setq maybe-result nil)
                       (setq inside-proof nil))
-                  ;; normal proof command - maybe it belongs to a
+
+                  ;; else - inside proof, no proof termination recognized
+                  ;; Normal proof command - maybe it belongs to a
                   ;; Defined, keep it separate, until we know.
+                  (when (and proof-script-cmd-prevents-proof-omission
+                             (not (eq (span-property (car item) 'type) 'comment))
+                             (not proof-must-be-kept)
+                             (funcall proof-script-cmd-prevents-proof-omission
+                                      cmd))
+                    (setq proof-must-be-kept t))
                   (push item maybe-result)))))
 
         ;; else - outside proof
@@ -2121,7 +2140,8 @@ start is found inside a proof."
               (push item result)
               (setq proof-start-span-start (span-start (car item)))
               (setq proof-start-span-end (span-end (car item)))
-              (setq inside-proof t))
+              (setq inside-proof t)
+              (setq proof-must-be-kept nil))
           ;; outside, no proof start - keep it unmodified
           (push item result)))
       (setq vanillas (cdr vanillas)))

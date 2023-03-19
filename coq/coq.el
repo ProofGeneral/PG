@@ -745,6 +745,18 @@ If locked span already has a state number, then do nothing. Also updates
   ;;   (message "Unknown command, hopes this won't desynchronize ProofGeneral")
   ;;   t))))
 
+(defun coq-cmd-prevents-proof-omission (cmd)
+  "Instanciation for `proof-script-cmd-prevents-proof-omission'.
+This predicate decides whether a command inside a proof might
+have effects outside the proof, which would prohibit omitting the
+proof, see `proof-script-omit-proofs'.
+
+Commands starting lower case are deemed as tactics that have
+proof local effect only. Everything else is checked against the
+STATECH field in the coq syntax data base, see coq-db.el."
+  (if (proof-string-match coq-lowercase-command-regexp cmd)
+      nil
+    (not (coq-state-preserving-p cmd))))
 
 (defun coq-hide-additional-subgoals-switch ()
   "Function invoked when the user switches option `coq-hide-additional-subgoals'."
@@ -1954,7 +1966,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-script-proof-start-regexp coq-proof-start-regexp
    proof-script-proof-end-regexp coq-proof-end-regexp
    proof-script-definition-end-regexp coq-definition-end-regexp
-   proof-script-proof-admit-command coq-omit-proof-admit-command)
+   proof-script-proof-admit-command coq-omit-proof-admit-command
+   proof-script-cmd-prevents-proof-omission #'coq-cmd-prevents-proof-omission)
 
   (setq proof-cannot-reopen-processed-files nil)
 

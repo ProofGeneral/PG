@@ -1428,6 +1428,11 @@ different."
 (defconst coq-command-decl-regexp (coq-add-command-prefix coq-keywords-decl))
 (defconst coq-command-defn-regexp (coq-add-command-prefix coq-keywords-defn))
 
+(defconst coq-lowercase-command-regexp "^[a-z]"
+  "Regular expression matching commands starting with a lowercase letter.
+Used in `coq-cmd-prevents-proof-omission' to identify tactics
+that only have proof-local effects.")
+
 ;; must match:
 ;; "with f x y :" (followed by = or not)
 ;; "with f x y (z:" (not followed by =)

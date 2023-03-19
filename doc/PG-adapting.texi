@@ -1187,10 +1187,14 @@ match of @samp{@code{proof-script-proof-end-regexp}}, are omitted (not send
 to the proof assistant) and replaced by
 @samp{@code{proof-script-proof-admit-command}}. If a match for
 @samp{@code{proof-script-definition-end-regexp}} is found while searching
-forward for the proof end, the current proof (up to and including
-the match of @samp{@code{proof-script-definition-end-regexp}}) is considered
-to be not opaque and not omitted, thus all these proof commands
-_are_ sent to the proof assistant.
+forward for the proof end or if
+@samp{@code{proof-script-cmd-prevents-proof-omission}} recognizes a proof
+command that prevents proof omission then the current proof (up
+to and including the match of
+@samp{@code{proof-script-definition-end-regexp}} or
+@samp{@code{proof-script-proof-end-regexp}}) is considered to be not opaque
+and not omitted, thus all these proof commands _are_ sent to the
+proof assistant.
 
 The feature does not work for nested proofs. If a match for
 @samp{@code{proof-script-proof-start-regexp}} is found before the next match
