@@ -722,6 +722,7 @@ If locked span already has a state number, then do nothing. Also updates
   "Last goal that Emacs looked at.")
 
 (defun coq-goal-hyp ()
+  "Instanciation for `pg-topterm-goalhyplit-fn', see there."
   (cond
    ((looking-at "============================\n")
     (goto-char (match-end 0))
@@ -735,6 +736,7 @@ If locked span already has a state number, then do nothing. Also updates
    (t nil)))
 
 (defun coq-state-preserving-p (cmd)
+  "Instanciation for `proof-state-preserving-p', see there."
   ;; (or
    (proof-string-match coq-non-retractable-instruct-regexp cmd))
   ;; (and
