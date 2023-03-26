@@ -201,10 +201,11 @@ The sources for the test contain a local attribute in form of
 
 
 (ert-deftest omit-proofs-never-omit-lets ()
-  :expected-result :failed
-  "Test that proofs for Let local declarations are never omitted.
-This test only checks that the face in the middle of the proof is
-the normal `proof-locked-face'."
+  "Test for Let and proof omission.
+Test that proofs for Let local declarations are never omitted and
+that proofs of theorems following a Let definition are omitted.
+
+This test only checks the faces in the middle of the proof."
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
   (reset-coq)
@@ -216,5 +217,10 @@ the normal `proof-locked-face'."
   (forward-line -1)
   (proof-goto-point)
   (wait-for-coq)
-  (should (search-backward "automatic test marker 7" nil t))
-  (should (eq (first-overlay-face) 'proof-locked-face)))
+  (should (search-backward "automatic test marker 7-1" nil t))
+  (should (eq (first-overlay-face) 'proof-locked-face))
+
+  ;; Check that theorems behind Let definitions are omitted.
+  (message "Check that theorems behind Let definitions are omitted.")
+  (should (search-forward "automatic test marker 7-2" nil t))
+  (should (eq (first-overlay-face) 'proof-omitted-proof-face)))

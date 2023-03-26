@@ -44,8 +44,16 @@ Qed.
 Section let_test.
 
   Let never_omit_let : 1 + 1 = 2.
+  (* some comment between let and proof start *)
   Proof.
-    (* automatic test marker 7 *)
+    (* automatic test marker 7-1 *)
+    auto.
+  Qed.
+
+  Let two : nat := 2.
+  Lemma behind_let : 1 + 1 = 2.
+  Proof using.
+    (* automatic test marker 7-2 *)
     auto.
   Qed.
 

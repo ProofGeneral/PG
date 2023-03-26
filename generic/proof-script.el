@@ -2030,6 +2030,8 @@ start is found inside a proof."
         proof-start-span-start proof-start-span-end
         ;; t if the proof contains state changing commands and must be kept
         proof-must-be-kept
+        ;; t if there was a command forcing the next proof to be kept
+        next-proof-must-be-kept
         ;; the current vanilla item
         item
         ;; the command of the current item
@@ -2122,14 +2124,16 @@ start is found inside a proof."
                       (setq inside-proof nil))
 
                   ;; else - inside proof, no proof termination recognized
-                  ;; Normal proof command - maybe it belongs to a
-                  ;; Defined, keep it separate, until we know.
+                  ;; Check if current command prevents this proof to
+                  ;; be omitted.
                   (when (and proof-script-cmd-prevents-proof-omission
                              (not (eq (span-property (car item) 'type) 'comment))
                              (not proof-must-be-kept)
                              (funcall proof-script-cmd-prevents-proof-omission
                                       cmd))
                     (setq proof-must-be-kept t))
+                  ;; Normal proof command - maybe it belongs to a
+                  ;; Defined, keep it separate, until we know.
                   (push item maybe-result)))))
 
         ;; else - outside proof
@@ -2141,8 +2145,18 @@ start is found inside a proof."
               (setq proof-start-span-start (span-start (car item)))
               (setq proof-start-span-end (span-end (car item)))
               (setq inside-proof t)
-              (setq proof-must-be-kept nil))
-          ;; outside, no proof start - keep it unmodified
+              (setq proof-must-be-kept next-proof-must-be-kept)
+              (setq next-proof-must-be-kept nil))
+
+          ;; outside, no proof start
+          ;; check if current item prevents omitting the next proof
+          (when (and proof-script-cmd-force-next-proof-kept
+                     (not (eq (span-property (car item) 'type) 'comment)))
+            (if (proof-string-match proof-script-cmd-force-next-proof-kept cmd)
+                (setq next-proof-must-be-kept t)
+              (setq next-proof-must-be-kept nil)))
+
+          ;; keep current item unmodified
           (push item result)))
       (setq vanillas (cdr vanillas)))
 

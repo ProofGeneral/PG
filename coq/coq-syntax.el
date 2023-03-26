@@ -1433,6 +1433,15 @@ different."
 Used in `coq-cmd-prevents-proof-omission' to identify tactics
 that only have proof-local effects.")
 
+(defcustom coq-cmd-force-next-proof-kept "Let"
+  "Instantiating for `proof-script-cmd-force-next-proof-kept'.
+Regular expression for commands that prevent omitting the next
+proof. A Let declaration with an admitted proof yields a warning,
+see Proof General issue #687 and Coq issue #17199. Therefore,
+proofs for a Let declaration should not be omitted."
+  :type 'regexp
+  :group 'coq)
+
 ;; must match:
 ;; "with f x y :" (followed by = or not)
 ;; "with f x y (z:" (not followed by =)
