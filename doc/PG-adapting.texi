@@ -1164,6 +1164,21 @@ proofs are not nested. If a nested proof is found, a warning is
 displayed and omitting proofs stops at that location for the
 currently asserted region.
 
+In Coq, commands with non-local effects, such as @code{Hint}, may
+appear inside proofs. Additionally, admitting a proof of a @code{Let}
+declaration causes a warning in Coq. To treat such cases, the
+predicate @code{proof-script-cmd-prevents-proof-omission} is applied
+to all commands inside proofs and the regular expression
+@code{proof-script-cmd-force-next-proof-kept} is matched against all
+commands outside proofs. In case of a hit, the current or,
+respectively, the next proof is treated as non-opaque and is not
+omitted. Note that a match of
+@code{proof-script-cmd-force-next-proof-kept} is only handled if the
+matching command and the following proof appear in the same asserted
+region. If the proof is asserted separately, the information about the
+match in the previously asserted region is lost and the proof may thus
+be omitted.
+
 To enable the omit proofs feature, the following settings must be
 configured.
 
@@ -1231,6 +1246,35 @@ See @samp{@code{proof-omit-proofs-configured}}.
 @defvar proof-script-proof-admit-command 
 Proof command to be inserted instead of omitted proofs.
 @end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-cmd-prevents-proof-omission
+@defvar proof-script-cmd-prevents-proof-omission 
+Optional predicate to match commands that prevent omitting the current proof.@*
+If set, this option should contain a function that takes a proof
+command (as string) as argument and returns t or nil. If set, the
+function is called on every proof command inside a proof while
+scanning for proofs to omit. The predicate should return t if the
+command has effects ouside the proof, potentially breaking the
+script if the current proof is omitted. If the predicate returns
+t, the proof is considered to be not opaque and thus not omitted.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-script-cmd-force-next-proof-kept
+@defvar proof-script-cmd-force-next-proof-kept 
+Optional regexp for commands that prevent omitting the next proof.@*
+If set, this option should contain a regular expression that
+matches proof-script commands that prevent the omission of proofs
+dirctly following this command. When scanning the newly asserted
+region for proofs to omit, every proof-script command outside
+proofs is matched against this regexp. If it matches and the next
+command matches @samp{@code{proof-script-proof-start-regexp}} this following
+proof will not be omitted.
+
+Note that recognition of commands with this regular expression
+does only work if the command and the following proof are
+asserted together.
+@end defvar
+
 @node Safe (state-preserving) commands
 @section Safe (state-preserving) commands
 

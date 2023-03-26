@@ -5,6 +5,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 
 * Changes of Proof General 4.6 from Proof General 4.5
 
+** Generic changes
+*** Improve the omit-proofs feature to handle a number of cases where
+    proofs must not be omitted.
+
 ** Coq changes
 
 *** support Coq 8.19
@@ -13,6 +17,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
      command line argument (-w) of coqdep. The default of this option
      is +module-not-found to let Proof General reliably detect missing
      modules as coqdep error.
+
+**** Fix issues #687 and #688 where the omit-proofs feature causes
+     errors on correct code.
+
 
 * Changes of Proof General 4.5 from Proof General 4.4
 
