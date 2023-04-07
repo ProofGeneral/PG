@@ -20,7 +20,6 @@ jobs:
     strategy:
       matrix:
         emacs_version:
-          - 25.1
           - 25.2
           - 25.3
           - 26.1
@@ -29,6 +28,7 @@ jobs:
           - 27.1
           - 27.2
           - 28.1
+          - 28.2
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 4
@@ -68,9 +68,8 @@ jobs:
           # I don't think we need to check with all emacs
           # versions. The latest two should be enough, maybe even
           # only the latest one.
-          - 26.3
           - 27.2
-          - 28.1
+          - 28.2
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -94,48 +93,44 @@ jobs:
       matrix:
         coq_emacs_version:
           - coq-8.6-emacs-25.2
-          - coq-8.6-emacs-27.2
-          - coq-8.6-emacs-28.1
+          - coq-8.6-emacs-28.2
           - coq-8.7-emacs-25.3
-          - coq-8.7-emacs-27.2
-          - coq-8.7-emacs-28.1
+          - coq-8.7-emacs-28.2
           - coq-8.8-emacs-26.1
-          - coq-8.8-emacs-27.2
-          - coq-8.8-emacs-28.1
+          - coq-8.8-emacs-28.2
           - coq-8.9-emacs-26.2
-          - coq-8.9-emacs-27.2
-          - coq-8.9-emacs-28.1
-          - coq-8.10-emacs-27.2
-          - coq-8.10-emacs-28.1
+          - coq-8.9-emacs-28.2
+          - coq-8.10-emacs-26.3
+          - coq-8.10-emacs-28.2
           - coq-8.11-emacs-26.3
-          - coq-8.11-emacs-27.2
-          - coq-8.11-emacs-28.1
-          - coq-8.12-emacs-25.2
-          - coq-8.12-emacs-26.2
-          - coq-8.12-emacs-26.3
+          - coq-8.11-emacs-28.2
           - coq-8.12-emacs-27.1
-          - coq-8.12-emacs-27.2
-          - coq-8.12-emacs-28.1
-          - coq-8.13-emacs-25.2
-          - coq-8.13-emacs-26.2
-          - coq-8.13-emacs-26.3
-          - coq-8.13-emacs-27.1
+          - coq-8.12-emacs-28.2
           - coq-8.13-emacs-27.2
-          - coq-8.13-emacs-28.1
+          - coq-8.13-emacs-28.2
           - coq-8.14-emacs-25.2
-          - coq-8.14-emacs-26.2
           - coq-8.14-emacs-26.3
           - coq-8.14-emacs-27.1
           - coq-8.14-emacs-27.2
-          - coq-8.14-emacs-28.1
+          - coq-8.14-emacs-28.2
           - coq-8.15-emacs-25.2
-          - coq-8.15-emacs-25.3
-          - coq-8.15-emacs-26.1
-          - coq-8.15-emacs-26.2
           - coq-8.15-emacs-26.3
           - coq-8.15-emacs-27.1
-          - coq-8.15-emacs-27.2
           - coq-8.15-emacs-28.1
+          - coq-8.15-emacs-28.2
+          - coq-8.16-emacs-25.2
+          - coq-8.16-emacs-26.3
+          - coq-8.16-emacs-27.1
+          - coq-8.16-emacs-28.2
+          - coq-8.17-emacs-25.2
+          - coq-8.17-emacs-25.3
+          - coq-8.17-emacs-26.1
+          - coq-8.17-emacs-26.2
+          - coq-8.17-emacs-26.3
+          - coq-8.17-emacs-27.1
+          - coq-8.17-emacs-27.2
+          - coq-8.17-emacs-28.1
+          - coq-8.17-emacs-28.2
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
       max-parallel: 6
@@ -177,48 +172,44 @@ jobs:
       matrix:
         coq_emacs_version:
           - coq-8.6-emacs-25.2
-          - coq-8.6-emacs-27.2
-          - coq-8.6-emacs-28.1
+          - coq-8.6-emacs-28.2
           - coq-8.7-emacs-25.3
-          - coq-8.7-emacs-27.2
-          - coq-8.7-emacs-28.1
+          - coq-8.7-emacs-28.2
           - coq-8.8-emacs-26.1
-          - coq-8.8-emacs-27.2
-          - coq-8.8-emacs-28.1
+          - coq-8.8-emacs-28.2
           - coq-8.9-emacs-26.2
-          - coq-8.9-emacs-27.2
-          - coq-8.9-emacs-28.1
-          - coq-8.10-emacs-27.2
-          - coq-8.10-emacs-28.1
+          - coq-8.9-emacs-28.2
+          - coq-8.10-emacs-26.3
+          - coq-8.10-emacs-28.2
           - coq-8.11-emacs-26.3
-          - coq-8.11-emacs-27.2
-          - coq-8.11-emacs-28.1
-          - coq-8.12-emacs-25.2
-          - coq-8.12-emacs-26.2
-          - coq-8.12-emacs-26.3
+          - coq-8.11-emacs-28.2
           - coq-8.12-emacs-27.1
-          - coq-8.12-emacs-27.2
-          - coq-8.12-emacs-28.1
-          - coq-8.13-emacs-25.2
-          - coq-8.13-emacs-26.2
-          - coq-8.13-emacs-26.3
-          - coq-8.13-emacs-27.1
+          - coq-8.12-emacs-28.2
           - coq-8.13-emacs-27.2
-          - coq-8.13-emacs-28.1
+          - coq-8.13-emacs-28.2
           - coq-8.14-emacs-25.2
-          - coq-8.14-emacs-26.2
           - coq-8.14-emacs-26.3
           - coq-8.14-emacs-27.1
           - coq-8.14-emacs-27.2
-          - coq-8.14-emacs-28.1
+          - coq-8.14-emacs-28.2
           - coq-8.15-emacs-25.2
-          - coq-8.15-emacs-25.3
-          - coq-8.15-emacs-26.1
-          - coq-8.15-emacs-26.2
           - coq-8.15-emacs-26.3
           - coq-8.15-emacs-27.1
-          - coq-8.15-emacs-27.2
           - coq-8.15-emacs-28.1
+          - coq-8.15-emacs-28.2
+          - coq-8.16-emacs-25.2
+          - coq-8.16-emacs-26.3
+          - coq-8.16-emacs-27.1
+          - coq-8.16-emacs-28.2
+          - coq-8.17-emacs-25.2
+          - coq-8.17-emacs-25.3
+          - coq-8.17-emacs-26.1
+          - coq-8.17-emacs-26.2
+          - coq-8.17-emacs-26.3
+          - coq-8.17-emacs-27.1
+          - coq-8.17-emacs-27.2
+          - coq-8.17-emacs-28.1
+          - coq-8.17-emacs-28.2
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
     steps:
@@ -253,48 +244,44 @@ jobs:
       matrix:
         coq_emacs_version:
           - coq-8.6-emacs-25.2
-          - coq-8.6-emacs-27.2
-          - coq-8.6-emacs-28.1
+          - coq-8.6-emacs-28.2
           - coq-8.7-emacs-25.3
-          - coq-8.7-emacs-27.2
-          - coq-8.7-emacs-28.1
+          - coq-8.7-emacs-28.2
           - coq-8.8-emacs-26.1
-          - coq-8.8-emacs-27.2
-          - coq-8.8-emacs-28.1
+          - coq-8.8-emacs-28.2
           - coq-8.9-emacs-26.2
-          - coq-8.9-emacs-27.2
-          - coq-8.9-emacs-28.1
-          - coq-8.10-emacs-27.2
-          - coq-8.10-emacs-28.1
+          - coq-8.9-emacs-28.2
+          - coq-8.10-emacs-26.3
+          - coq-8.10-emacs-28.2
           - coq-8.11-emacs-26.3
-          - coq-8.11-emacs-27.2
-          - coq-8.11-emacs-28.1
-          - coq-8.12-emacs-25.2
-          - coq-8.12-emacs-26.2
-          - coq-8.12-emacs-26.3
+          - coq-8.11-emacs-28.2
           - coq-8.12-emacs-27.1
-          - coq-8.12-emacs-27.2
-          - coq-8.12-emacs-28.1
-          - coq-8.13-emacs-25.2
-          - coq-8.13-emacs-26.2
-          - coq-8.13-emacs-26.3
-          - coq-8.13-emacs-27.1
+          - coq-8.12-emacs-28.2
           - coq-8.13-emacs-27.2
-          - coq-8.13-emacs-28.1
+          - coq-8.13-emacs-28.2
           - coq-8.14-emacs-25.2
-          - coq-8.14-emacs-26.2
           - coq-8.14-emacs-26.3
           - coq-8.14-emacs-27.1
           - coq-8.14-emacs-27.2
-          - coq-8.14-emacs-28.1
+          - coq-8.14-emacs-28.2
           - coq-8.15-emacs-25.2
-          - coq-8.15-emacs-25.3
-          - coq-8.15-emacs-26.1
-          - coq-8.15-emacs-26.2
           - coq-8.15-emacs-26.3
           - coq-8.15-emacs-27.1
-          - coq-8.15-emacs-27.2
           - coq-8.15-emacs-28.1
+          - coq-8.15-emacs-28.2
+          - coq-8.16-emacs-25.2
+          - coq-8.16-emacs-26.3
+          - coq-8.16-emacs-27.1
+          - coq-8.16-emacs-28.2
+          - coq-8.17-emacs-25.2
+          - coq-8.17-emacs-25.3
+          - coq-8.17-emacs-26.1
+          - coq-8.17-emacs-26.2
+          - coq-8.17-emacs-26.3
+          - coq-8.17-emacs-27.1
+          - coq-8.17-emacs-27.2
+          - coq-8.17-emacs-28.1
+          - coq-8.17-emacs-28.2
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -340,6 +327,7 @@ jobs:
           - 27.1
           - 27.2
           - 28.1
+          - 28.2
       max-parallel: 4
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
