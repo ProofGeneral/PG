@@ -260,7 +260,7 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 060_coq-test-wholefile ()
   ;; test_wholefile.v triggers a fatal warning in 8.17, see also #698
-  :expected-result (if (coq--post-v817) :failed :passed)
+  :expected-result (if (coq--is-v817) :failed :passed)
   "Test `proof-process-buffer'."
   (coq-fixture-on-file
    (coq-test-full-path "test_wholefile.v")
