@@ -553,7 +553,7 @@ If ARITY is nil, return SWITCH."
   (cond
    ((not arity) switch)
    ((< (length raw-args) arity)
-    (warn "Invalid _CoqProject: not enough arguments for %S" switch)
+    (message "Invalid _CoqProject: not enough arguments for %S" switch)
     switch)
    (t
     (let ((arguments (cl-subseq raw-args 0 arity)))
