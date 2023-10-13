@@ -1,9 +1,9 @@
-;;; coq.el --- Major mode for Coq proof assistant  -*- coding: utf-8; lexical-binding: t; -*-
+;;; coq.el --- Major mode for Coq proof assistant  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2022  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -32,15 +32,17 @@
 (require 'cl-lib)
 
 (require 'span)
+(require 'proof-syntax)
+(require 'proof-useropts)
+(require 'proof-utils)
 (eval-when-compile
   (require 'proof-utils)
   (require 'span)
   (require 'outline)
   (require 'newcomment)
   (require 'etags))
+
 (defvar proof-info)       ; dynamic scope in proof-tree-urgent-action
-(defvar action)       ; dynamic scope in coq-insert-as stuff
-(defvar string)       ; dynamic scope in coq-insert-as stuff
 (defvar old-proof-marker)
 (defvar coq-keymap)
 (defvar coq-one-command-per-line)
@@ -177,7 +179,7 @@ It is mostly useful in three window mode, see also
 `proof-three-window-mode-policy' for details."
 
   :type 'boolean
-  :safe 'booleanp
+  :safe #'booleanp
   :group 'coq-auto-compile)
 
 ;;
@@ -591,11 +593,11 @@ and read by function `coq-empty-action-list-command'.")
   (span-set-property span 'statenum val))
 
 (defsubst coq-get-span-goalcmd (span)
-  "Return the 'goalcmd flag of the SPAN."
+  "Return the `goalcmd' flag of the SPAN."
   (span-property span 'goalcmd))
 
 (defsubst coq-set-span-goalcmd (span val)
-  "Set the 'goalcmd flag of the SPAN to VAL."
+  "Set the `goalcmd' flag of the SPAN to VAL."
   (span-set-property span 'goalcmd val))
 
 (defsubst coq-set-span-proofnum (span val)
@@ -625,7 +627,7 @@ and read by function `coq-empty-action-list-command'.")
 
 (defun coq-set-state-infos ()
   "Set the last locked span's state number to the number found last time.
-This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
+This number is in the *last but one* prompt (var `coq-last-but-one-statenum').
 If locked span already has a state number, then do nothing. Also updates
 `coq-last-but-one-statenum' to the last state number for next time."
   (if proof-shell-last-prompt
@@ -817,7 +819,7 @@ If C is nil, return nil."
     (or (equal (char-syntax c) ?\.) (equal (char-syntax c) ?\_))))
 
 (defun coq-grab-punctuation-left (pos)
-  "Return a string made of punctuations chars found immediately before position POS."
+  "Return the punctuation chars found immediately before position POS."
   (let ((res nil)
         (currpos pos))
     (while (coq-is-symbol-or-punct (char-before currpos))
@@ -933,7 +935,7 @@ Otherwise propose identifier at point if any."
 
 (defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd testcmd)
   "Play commands SETCMD then CMD and then silently UNSETCMD.
-The last UNSETCMD is performed with tag 'empty-action-list so that it
+The last UNSETCMD is performed with tag `empty-action-list' so that it
 does not trigger ‘proof-shell-empty-action’ (which does \"Show\" at
 the time of writing this documentation)."
   (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
@@ -1121,7 +1123,7 @@ With flag Printing All if some prefix arg is given (C-u)."
   (coq-ask-do-show-all "Check" "Check"))
 
 (defun coq-get-response-string-at (&optional pt)
-  "Go forward from PT until reaching a 'response property, and return it.
+  "Go forward from PT until reaching a `response' property, and return it.
 Response span only starts at first non space character of a
 command, so we may have to go forward to find it.  Starts
 from (point) if pt is nil.  Precondition: pt (or point if nil)
@@ -1185,6 +1187,27 @@ Printing All set."
 (add-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
 (add-hook 'proof-retract-command-hook #'coq-reset-printing-width)
 
+(defun coq-diffs--setter (symbol new-value)
+  ":set function fo `coq-diffs'.
+Set Diffs setting if Coq is running and has a version >= 8.10."
+  (set symbol new-value)
+  (if (proof-shell-available-p)
+      (let ((cmd (coq-diffs)))
+        (if (equal cmd "")
+            (message "Ignore coq-diffs setting %s for Coq before 8.10"
+                 (symbol-name coq-diffs))
+          (proof-shell-invisible-command cmd)))))
+
+(defcustom coq-diffs 'off
+  "Controls Coq Diffs option"
+  :type '(radio
+    (const :tag "Don't show diffs" off)
+    (const :tag "Show diffs: only added" on)
+    (const :tag "Show diffs: added and removed" removed))
+  :safe (lambda (v) (member v '(off on removed)))
+  :set #'coq-diffs--setter
+  :group 'coq)
+
 (defun coq--show-proof-stepwise-cmds ()
   (when coq-show-proof-stepwise
     (if (coq--post-v811)
@@ -1204,7 +1227,7 @@ Printing All set."
 (defun coq-empty-action-list-command (cmd)
   "Return the list of commands to send to Coq after CMD
 if it is the last command of the action list.
-If CMD is tagged with 'empty-action-list then this function won't
+If CMD is tagged with `empty-action-list' then this function won't
 be called and no command will be sent to Coq.
 Note: the last command added if `coq-show-proof-stepwise' is set
 should match the `coq-show-proof-diffs-regexp'."
@@ -1961,6 +1984,41 @@ at `proof-assistant-settings-cmds' evaluation time.")
   (proof-config-done)
   )
 
+;; This variable is used by generic pg code. Every time this is detected in the
+;; output, it sets the `proof-last-theorem-dependencies' variable. Substring 1
+;; should contain the name of the theorem, and substring 2 should contain its
+;; dependencies. The content of `proof-last-theorem-dependencies' is then used
+;; by pg generic code to trigger `proof-depends-process-dependencies', which
+;; itself sets the 'dependencies property of the span, and calls
+;; `proof-dependencies-system-specific'. The latter is bound to
+;; `coq-dependencies-system-specific' below.
+(defconst coq-shell-theorem-dependency-list-regexp
+  "<infomsg>\n?The proof of \\(?1:[^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\(?2:[^.]*\\)\\.")
+
+
+;; the additional menu for "proof using". highlights the "Proof." command, and
+;; have a entry to insert the annotation and remove the highlight.
+(defvar coq-dependency-menu-system-specific
+  (lambda (span)
+    (let* ((deps (span-property-safe span 'dependencies))
+           (specialspans (spans-at-region-prop (span-start span) (span-end span) 'proofusing))
+           (specialspan (and specialspans (not (cdr specialspans)) (car specialspans)))
+           (suggested (mapconcat #'identity deps " "))
+           (suggested (coq-hack-proofusing-suggestion suggested))
+           (name (concat " insert \"proof using " suggested "\""))
+           (fn (lambda (sp)
+                 (coq-insert-proof-using-suggestion sp t)
+                 (and specialspan (span-delete specialspan)))))
+      (list "-------------" (vector name `(,fn ,span) t))))
+  "Coq specific additional menu entry for \"Proof using\".
+annotation. See `proof-dependency-menu-system-specific'." )
+
+(defvar coq-dependencies-system-specific
+  (lambda (span)
+    (coq-insert-proof-using-suggestion span))
+  "Coq specific dependency mechanism.
+Used for automatic insertion of \"Proof using\" annotations.")
+
 (defun coq-shell-mode-config ()
   (setq
    proof-shell-cd-cmd coq-shell-cd
@@ -2115,27 +2173,6 @@ Return the empty string if the version of Coq < 8.10."
       (format "Set Diffs \"%s\". " (symbol-name coq-diffs))
     ""))
 
-(defun coq-diffs--setter (symbol new-value)
-  ":set function fo `coq-diffs'.
-Set Diffs setting if Coq is running and has a version >= 8.10."
-  (set symbol new-value)
-  (if (proof-shell-available-p)
-      (let ((cmd (coq-diffs)))
-        (if (equal cmd "")
-            (message "Ignore coq-diffs setting %s for Coq before 8.10"
-                 (symbol-name coq-diffs))
-          (proof-shell-invisible-command cmd)))))
-
-(defcustom coq-diffs 'off
-  "Controls Coq Diffs option"
-  :type '(radio
-    (const :tag "Don't show diffs" off)
-    (const :tag "Show diffs: only added" on)
-    (const :tag "Show diffs: added and removed" removed))
-  :safe (lambda (v) (member v '(off on removed)))
-  :set #'coq-diffs--setter
-  :group 'coq)
-
 ;; Obsolete:
 ;;(defpacustom undo-depth coq-default-undo-limit
 ;;  "Depth of undo history.  Undo behaviour will break beyond this size."
@@ -2219,7 +2256,7 @@ Show commands before the next real proof command.
 The ID's of the open goals are checked with
 `proof-tree-sequent-hash' in order to find out if they are new.
 For any new goal an appropriate Show Goal command with a
-'proof-tree-show-subgoal flag is inserted into
+`proof-tree-show-subgoal' flag is inserted into
 `proof-action-list'.  Then, in the normal delayed output
 processing, the sequent text is send to prooftree as a sequent
 update (see `proof-tree-update-sequent') and the ID of the
@@ -2338,7 +2375,7 @@ fact in `coq--proof-tree-must-disable-evars'."
   "Insert an evar printing command at the head of `proof-action-list'."
   (push (proof-shell-action-list-item
          (concat cmd " Printing Dependent Evars Line.")
-         (if callback callback 'proof-done-invisible)
+         (or callback #'proof-done-invisible)
          (list 'invisible))
         proof-action-list))
 
@@ -2408,8 +2445,10 @@ result of `coq-proof-tree-get-proof-info'."
 (defun coq-bullet-p (s)
   (string-match coq-bullet-regexp-nospace s))
 
-;; Remark: `action' and `string' are known by `proof-shell-insert-hook'
 (defun coq-preprocessing ()
+  ;; Remark: `action' and `string' are known by `proof-shell-insert-hook'
+  (defvar action)       ; dynamic scope in coq-insert-as stuff
+  (defvar string)       ; dynamic scope in coq-insert-as stuff
   (when coq-time-commands
     (with-no-warnings  ;; NB: dynamic scoping of `string' and `action'
       ;; Don't add the prefix if this is a command sent internally
@@ -2622,17 +2661,6 @@ Warning: this makes the error messages (and location) wrong.")
 ;; already performed.).
 
 
-;; This variable is used by generic pg code. Every time this is detected in the
-;; output, it sets the `proof-last-theorem-dependencies' variable. Substring 1
-;; should contain the name of the theorem, and substring 2 should contain its
-;; dependencies. The content of `proof-last-theorem-dependencies' is then used
-;; by pg generic code to trigger `proof-depends-process-dependencies', which
-;; itself sets the 'dependencies property of the span, and calls
-;; `proof-dependencies-system-specific'. The latter is bound to
-;; `coq-dependencies-system-specific' below.
-(defconst coq-shell-theorem-dependency-list-regexp
-  "<infomsg>\n?The proof of \\(?1:[^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\(?2:[^.]*\\)\\.")
-
 (defcustom coq-accept-proof-using-suggestion 'highlight
   "Whether and how proofgeneral should insert \"Proof using\" suggestions.
 Suggestions are emitted by Coq at Qed time. The possible values
@@ -2676,23 +2704,6 @@ Remarks and limitations:
 (defun coq-hack-proofusing-suggestion (suggested)
   (if (string-equal "" suggested) "Type" suggested))
 
-;; the additional menu for "proof using". highlights the "Proof." command, and
-;; have a entry to insert the annotation and remove the highlight.
-(defvar coq-dependency-menu-system-specific
-  (lambda (span)
-    (let* ((deps (span-property-safe span 'dependencies))
-           (specialspans (spans-at-region-prop (span-start span) (span-end span) 'proofusing))
-           (specialspan (and specialspans (not (cdr specialspans)) (car specialspans)))
-           (suggested (mapconcat #'identity deps " "))
-           (suggested (coq-hack-proofusing-suggestion suggested))
-           (name (concat " insert \"proof using " suggested "\""))
-           (fn (lambda (sp)
-                 (coq-insert-proof-using-suggestion sp t)
-                 (and specialspan (span-delete specialspan)))))
-      (list "-------------" (vector name `(,fn ,span) t))))
-  "Coq specific additional menu entry for \"Proof using\".
-annotation. See `proof-dependency-menu-system-specific'." )
-
 (defconst coq-proof-using-regexp "\\_<Proof\\(?1:[^.]*\\)\\."
   "Regexp matching Coq \"Proof ....\" annotation (with no \"using\" annotation).
 We suppose there is no \"using\" annotation, since Coq will fail
@@ -2708,7 +2719,7 @@ insertion point for the \"using\" annotation. ")
 (defun coq-highlight-span-dependencies (start end _suggested)
   (goto-char start)
   ; Search for the "Proof" command and build a hilighted span on it
-  (let* ((proof-pos (match-beginning 0))
+  (let* (;; (proof-pos (match-beginning 0))
          (newspan (span-make start end)))
     (span-set-property newspan 'face 'proof-warning-face)
     (span-set-property newspan 'help-echo "Right click to insert \"proof using\"")
@@ -2784,12 +2795,6 @@ SPAN is the span of the whole theorem (statement + proof)."
                 (when (member coq-accept-proof-using-suggestion '(highlight ask))
                   (coq-highlight-span-dependencies proof-pos proof-end string-suggested)
                   (message "\"Proof using\" not set. M-x coq-insert-suggested-dependency or right click to add it. See also `coq-accept-proof-using-suggestion'."))))))))))
-
-(defvar coq-dependencies-system-specific
-  (lambda (span)
-    (coq-insert-proof-using-suggestion span))
-  "Coq specific dependency mechanism.
-Used for automatic insertion of \"Proof using\" annotations.")
 
 
 (defun coq-insert-as-in-next-command ()
@@ -3365,14 +3370,15 @@ This function is called by `proof-set-value' on `coq-double-hit-enable'."
 
 (proof-deftoggle coq-double-hit-enable coq-double-hit-toggle)
 
-(defadvice proof-electric-terminator-enable (after coq-unset-double-hit-advice)
+(defun coq--unset-double-hit-advice (&rest _)
   "Disable double hit terminator since electric terminator is a replacement.
 This is an advice to pg `proof-electric-terminator-enable' function."
   (when (and coq-double-hit-enable proof-electric-terminator-enable)
     (coq-double-hit-toggle 0)
     (message "Hit M-1 . to enter a real \".\".")))
 
-(ad-activate 'proof-electric-terminator-enable)
+(advice-add 'proof-electric-terminator-enable
+            :after #'coq--unset-double-hit-advice)
 
 (defvar coq-double-hit-delay 0.25
   "The maximum delay between the two hit of a double hit in coq/proofgeneral.")
@@ -3484,7 +3490,6 @@ coq from the new opam switch."
 ;;   Local Variables: ***
 ;;   fill-column: 79 ***
 ;;   indent-tabs-mode: nil ***
-;;   coding: utf-8 ***
 ;;   End: ***
 
 ;;; coq.el ends here

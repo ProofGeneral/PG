@@ -6,6 +6,9 @@
 ;;;  Eval this to run the tests interactively <C-x C-e>
 ;;
 ;; (progn (load-file "coq-tests.el") (call-interactively #'ert))
+;;
+;; Note that loading this file triggers some side effects, such as:
+;; (setq debug-on-error t)
 
 (unless (and (boundp 'coq-test-dir) coq-test-dir) ; if set by ./test.sh
   (if buffer-file-name
@@ -20,7 +23,7 @@
 ;;(setq ert-async-timeout 2)
 
 ;; Load Coq instance of Proof General now.
-(proof-ready-for-assistant 'coq)
+(eval-and-compile (proof-ready-for-assistant 'coq))
 (require 'coq)
 
 ;;; Code:
@@ -155,7 +158,7 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
               (coq-mock body))))
       (coq-test-exit)
       (coq-set-flags nil flags)
-      (not-modified nil) ; Clear modification  
+      (set-buffer-modified-p nil) ; Clear modification
       (kill-buffer buffer) 
       (when rmfile (message "Removing file %s ..." rmfile))
       (ignore-errors (delete-file rmfile)))))
@@ -366,10 +369,5 @@ Tactic failure: Cannot solve this goal."))))
        (coq-test-goto-before "(*proof*)")
        (backward-char 3)
        (should (span-at (point) 'proofusing))))))
- 
-
-
-
-(provide 'coq-tests)
 
 ;;; coq-tests.el ends here

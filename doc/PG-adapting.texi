@@ -788,7 +788,7 @@ override this with a system-specific function.
 @c TEXI DOCSTRING MAGIC: proof-looking-at-syntactic-context
 @defun proof-looking-at-syntactic-context 
 Determine if current point is at beginning or within comment/string context.@*
-If so, return a symbol indicating this ('comment or @code{'string}).
+If so, return a symbol indicating this (@samp{comment} or @samp{string}).
 This function invokes <PA-syntactic-context> if that is defined, otherwise
 it calls @samp{@code{proof-looking-at-syntactic-context}}.
 @end defun
@@ -3665,7 +3665,7 @@ user option @samp{@code{proof-auto-action-when-deactivating-scripting}}.
 If @samp{@code{proof-no-fully-processed-buffer}} is t there is only the choice
 to fully retract the active scripting buffer.  In this case the
 active scripting buffer is retracted even if it was fully processed.
-Setting @samp{@code{proof-auto-action-when-deactivating-scripting}} to @code{'process}
+Setting @samp{@code{proof-auto-action-when-deactivating-scripting}} to @samp{process}
 is ignored in this case.
 
 If the scripting buffer is (or has become) fully processed, and it is

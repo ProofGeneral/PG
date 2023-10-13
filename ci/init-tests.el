@@ -24,7 +24,9 @@
 (unless (package-installed-p 'ert-async)
   (package-refresh-contents)
   (package-install 'ert-async))
+
 (eval-when-compile
+  ;; This `require' command is just an "installation unit test".
   (require 'ert-async))
 
 ;;; init-tests.el ends here

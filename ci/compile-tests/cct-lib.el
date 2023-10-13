@@ -1,4 +1,4 @@
-;; This file is part of Proof General.
+;; This file is part of Proof General.  -*- lexical-binding: t; -*-
 ;; 
 ;; © Copyright 2020 - 2021  Hendrik Tews
 ;; 
@@ -30,7 +30,7 @@
 ;; require proof-site, otherwise proof-ready-for-assistant won't be
 ;; defined.
 (require 'proof-site)
-(proof-ready-for-assistant 'coq)
+(eval-and-compile (proof-ready-for-assistant 'coq))
 (require 'coq-compile-common)
 (require 'ert)
 
@@ -90,7 +90,7 @@ cannot be accessed."
   "Return an assoc list of FILES with their modification times.
 The modification time is an emacs time value, it's nil if file
 cannot be accessed."
-  (mapcar 'cct-record-change-time files))
+  (mapcar #'cct-record-change-time files))
 
 (defun cct-split-change-times (file-change-times files)
   "Split assoc list FILE-CHANGE-TIMES.
@@ -162,7 +162,7 @@ Runs `cct-before-busy-waiting-hook' and
 PG uses a number of overlapping and non-overlapping spans (read
 overlays) in the asserted and queue region of the proof buffer,
 see the comments in generic/proof-script.el. Spans of type
-vanilla (stored at 'type in the span property list) are created
+vanilla (stored at `type' in the span property list) are created
 for real commands (not for comments). They hold various
 information that is used, among others, for backtracking.
 
@@ -185,7 +185,7 @@ and `current-message' does not return anything."
 
 (defun cct-check-locked (line locked-state)
   "Check that line LINE has locked state LOCKED-STATE
-LOCKED-STATE must be 'locked or 'unlocked. This function checks
+LOCKED-STATE must be `locked' or `unlocked'. This function checks
 whether line LINE is inside or outside the asserted (locked)
 region of the buffer and signals a test failure if not."
   (let ((locked (eq locked-state 'locked)))
@@ -216,7 +216,7 @@ region of the buffer and signals a test failure if not."
 
 (defun cct-check-files-locked (line lock-state files)
   "Check that all FILES at line number LINE have lock state LOCK-STATE.
-LOCK-STATE must be either 'locked or 'unlocked. FILES must be
+LOCK-STATE must be either `locked' or `unlocked'. FILES must be
 list of file names."
   (when cct--debug-tests
     (message "check files %s at line %d: %s"
@@ -233,7 +233,7 @@ list of file names."
 The comparison treats ANCESTORS as set but the file names must
 be `equal' as strings.
 
-Ancestors are recoreded in the 'coq-locked-ancestors property of
+Ancestors are recoreded in the `coq-locked-ancestors' property of
 the vanilla spans of require commands, see the in-file
 documentation of coq/coq-par-compile.el."
   (let ((locked-ancestors
