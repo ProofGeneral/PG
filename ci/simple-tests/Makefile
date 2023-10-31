@@ -8,12 +8,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-TESTS:=$(wildcard test-*.el)
-SUCCESS:=$(TESTS:.el=.success)
+COQ_TESTS:=$(wildcard coq-test-*.el)
+QRHL_TESTS:=$(wildcard qrhl-test-*.el)
 
-all: $(SUCCESS)
+COQ_SUCCESS:=$(COQ_TESTS:.el=.success)
+QRHL_SUCCESS:=$(QRHL_TESTS:.el=.success)
 
-test-%.success: test-%.el
+.PHONY: coq-all
+coq-all: $(COQ_SUCCESS)
+
+.PHONY: qrhl-all
+qrhl-all: $(QRHL_SUCCESS)
+
+%.success: %.el
 	emacs -batch -l ../../generic/proof-site.el -l $< \
 		-f ert-run-tests-batch-and-exit \
 	&& touch $@

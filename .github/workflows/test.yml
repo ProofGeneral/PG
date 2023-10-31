@@ -209,7 +209,7 @@ jobs:
           endGroup
 
   ###########################################################################
-  ####### Additional tests in ci/simple-tests
+  ####### Additional tests in ci/simple-tests for Coq
   ###########################################################################
   simple-tests:
     runs-on: ubuntu-latest
@@ -266,7 +266,7 @@ jobs:
           endGroup
           startGroup Run tests
             sudo chown -R coq:coq ./ci
-            make -C ci/simple-tests all
+            make -C ci/simple-tests coq-all
           endGroup
 
   ###########################################################################
@@ -299,7 +299,34 @@ jobs:
 
     - run: emacs --version
     - run: make -C ci/test-indent
-
-    # Testing this here because this job runs with all Emacs versions
-    - run: make -C ci/simple-tests test-qrhl.success
       
+  ###########################################################################
+  ####### Additional tests in ci/simple-tests for qRHL
+  ###########################################################################
+  # Run qRHL tests in ci/simple-tests on all supported emacs versions
+  # without qRHL installed.
+  test-qrhl:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        emacs_version:
+          - 26.3
+          - 27.1
+          - 27.2
+          - 28.1
+          - 28.2
+          - 29.1
+      max-parallel: 4
+      # don't cancel all in-progress jobs if one matrix job fails:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - run: emacs --version
+    - run: make -C ci/simple-tests qrhl-all
