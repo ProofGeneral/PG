@@ -18,7 +18,12 @@
 
   (message "load-qrhl-input test: Check loading of qRHL input method")
   (find-file "test.qrhl")
-  ;; Ideally we would do some simulated keypresses and check whether they
-  ;; are translated correctly. But I don't know how. (Dominique)
   (should (string= current-input-method "qrhl"))
-  )
+
+  ;; To simulate typing, we put the keys into `unread-command-events'.
+  ;; To process them normally, we enter a recursive edit. To abort the
+  ;; recursive edit, we add \C-\M-c, the binding of
+  ;; `exit-recursive-edit' to the simulated keys.
+  (setq unread-command-events (listify-key-sequence "*\\subC\C-\M-c"))
+  (recursive-edit)
+  (should (equal "*⇩C" (buffer-substring 1 (point)))))
