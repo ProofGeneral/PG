@@ -1,25 +1,29 @@
 This directory contains a number of more simple tests, that can
 all run in the same directory.
 
-# Overview of existing tests
+# Overview of existing tests for Coq
 
-test-coqtop-unavailable
+coq-test-coqtop-unavailable
 : open a file with PG when no coqtop is available
-test-omit-proofs
+coq-test-omit-proofs
 : test the omit proofs feature
-coq-par-job-needs-compilation-quick
+coq-test-par-job-needs-compilation-quick
 : test coq-par-job-needs-compilation-quick by enumerating all
   possible cases
-test-prelude-correct
+coq-test-prelude-correct
 : test that the Proof General prelude is correct
-test-qrhl
+
+# Overview of existing tests for qRHL
+
+qrhl-test-input
 : tests relating to the qRHL prover
 
 
 # Important conventions
 
-The Makefile runs all ERT tests in all `test-*.el` files.
-Therefore, the test should be written in a file matching this
-pattern.
+The Makefile runs all ERT tests in all `coq-test-*.el` and
+`qrhl-test-*.el` files for, respectively, the goals `coq-all` and
+`qrhl-all`. Therefore, new tests should be written in a file matching
+these patterns.
 
-To run all tests in a single file, do `make test-*.success`.
+To run all tests in a single file `file.el`, do `make file.success`.
