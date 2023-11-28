@@ -551,13 +551,14 @@ alreadyopen is t if buffer already existed."
 (defun coq--read-one-option-from-project-file (switch arity raw-args)
   "Cons SWITCH with ARITY arguments from RAW-ARGS.
 If ARITY is nil, return SWITCH."
-  (if arity
-      (let ((arguments
-             (condition-case-unless-debug nil
-                 (cl-subseq raw-args 0 arity)
-               (warn "Invalid _CoqProject: not enough arguments for %S" switch))))
-        (cons switch arguments))
-    switch))
+  (cond
+   ((not arity) switch)
+   ((< (length raw-args) arity)
+    (message "Invalid _CoqProject: not enough arguments for %S" switch)
+    switch)
+   (t
+    (let ((arguments (cl-subseq raw-args 0 arity)))
+      (cons switch arguments)))))
 
 (defun coq--read-options-from-project-file (contents)
   "Read options from CONTENTS of _CoqProject.
