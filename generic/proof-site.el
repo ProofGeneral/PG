@@ -241,8 +241,8 @@ Note: to change proof assistant, you must start a new Emacs session.")
       proof-assistants
       (mapcar #'car proof-assistant-table))
   "A list of the configured proof assistants.
-Set on startup to contents of environment variable PROOFGENERAL_ASSISTANTS,
-the Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
+Set on startup to contents of environment variable PROOFGENERAL_ASSISTANTS, the
+Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
 
 ;; Add auto-loads and load-path elements to support the
 ;; proof assistants selected, and define stub major mode functions
