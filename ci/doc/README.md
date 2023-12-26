@@ -10,7 +10,7 @@ linkcolor: blue
 This document describes the general strategy for testing Proof General
 with GitHub actions and for building the necessary containers.
 
-The file `.github/workflows/test.yml` defines 5 jobs.
+The file `.github/workflows/test.yml` defines 6 jobs.
 
 build
  : compile Proof General sources to bytecode and build documentation
@@ -26,25 +26,28 @@ compile-tests
  : run the auto-compilation tests in `ci/compile-tests`
  
 simple-tests
- : run the tests in `ci/simple-tests`
+ : run the Coq tests in `ci/simple-tests`
  
 test-indent
  : run Coq source code indentation tests
- 
-The jobs build, check-doc-magic and test-indent run on different Emacs
-versions but they do not need Coq. They therefore use the GitHub
-hosted ubuntu-latest runner together with the `purcell/setup-emacs`
-action to install Emacs.
+
+test-qrhl
+ : run the qRHL tests in `ci/simple-tests`
+
+The jobs build, check-doc-magic, test-indent and test-qrhl run on
+different Emacs versions but they do not need Coq. They therefore use
+the GitHub hosted ubuntu-latest runner together with the
+`purcell/setup-emacs` action to install Emacs.
 
 The jobs test, compile-tests and simple-tests need Coq and Emacs in
 different version pairs. They therefore use the
-`proofgeneral/coq-emacs` containers build specifically for various
-Coq/Emacs version pairs for this purpose. This is achieved by
-installing Nix on specific containers from `coqorg/coq`, see
-`proofgeneral/coq-nix`, and then installing Emacs via Nix. There
-are GitLab and GitHub projects for building these containers in GitLab
-pipelines. However, currently this does not work and the containers
-are therefore build manually.
+`proofgeneral/coq-emacs` docker containers build specifically for
+various Coq/Emacs version pairs for this purpose. This is achieved by
+installing Nix on specific containers from `coqorg/coq`, see the
+`proofgeneral/coq-nix` docker repository, and then installing Emacs
+via Nix. There are GitLab and GitHub projects for building these
+containers in GitLab pipelines. However, currently this does not work
+and the containers are therefore build manually.
 
 This document ignores Coq point releases (e.g., 8.13.2). For one
 reason we trust the Coq development team to not introduce changes in
@@ -108,7 +111,7 @@ of the following points is true for *cv* and *ev*.
 
 #. The Coq version *cv* has been released within the last two years.
 
-   This point is motivated by the ability to reproduce Problems for
+   This point is motivated by the ability to reproduce problems for
    recent Coq versions.
    
 #. The pair (*cv*, *ev*) is an historic pair, in the sense that both
@@ -179,10 +182,10 @@ RC
 Currently only actively supported versions are tested via GitHub
 actions.
 
-## Compilation and indentation
+## Compilation, indentation and qRHL 
 
-The tests defined for the build and test-indent jobs run for all
-actively supported Emacs versions.
+The tests defined for the build, test-indent and test-qrhl jobs run
+for all actively supported Emacs versions.
 
 ## Up-to-date documentation strings in the manuals
 
@@ -190,7 +193,7 @@ The error scenario here is that a documentation string that is
 magically included in the manuals has been updated without updating
 the manuals via `make magic`. It is therefore sufficient to run the
 test whether the manuals are up-to-date with only the latest two Emacs
-versions.
+major versions.
 
 ## Proof General interaction tests with Coq {#coq-ci}
 
