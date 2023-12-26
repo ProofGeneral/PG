@@ -258,31 +258,36 @@ For example, COMMENT could be (*test-definition*)"
      (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
-(ert-deftest 060_coq-test-wholefile ()
-  ;; test_wholefile.v triggers a fatal warning in 8.17, see also #698
-  :expected-result (if (coq--is-v817) :failed :passed)
-  "Test `proof-process-buffer'."
-  (coq-fixture-on-file
-   (coq-test-full-path "test_wholefile.v")
-   (lambda ()
-     (let ((proof-point (save-excursion
-			  (coq-test-goto-before "Theorem")
-			  (search-forward "Qed."))))
-     (proof-process-buffer)
-     (proof-shell-wait)
-     (should (equal (proof-queue-or-locked-end) proof-point))))))
-
-
-(ert-deftest 070_coq-test-regression-wholefile-no-proof ()
-  "Regression test for no proof bug"
-  (coq-fixture-on-file
-   (coq-test-full-path "test_wholefile.v")
-   (lambda ()
-     (proof-process-buffer)
-     (proof-shell-wait)
-     (goto-char (point-min))
-     (insert "(*.*)")
-     (should (equal (proof-queue-or-locked-end) (point-min))))))
+;; Disable tests that use test_wholefile.v. The file is outdated, uses
+;; deprecated features, is prone to caues Coq errors and therefore
+;; causes the tests to fail. See #698 and commit
+;; bd3615b442974f1e1c3fca0252e081a05525d26b.
+;; 
+;; (ert-deftest 060_coq-test-wholefile ()
+;;   ;; test_wholefile.v triggers a fatal warning in 8.17, see also #698
+;;   :expected-result (if (coq--is-v817) :failed :passed)
+;;   "Test `proof-process-buffer'."
+;;   (coq-fixture-on-file
+;;    (coq-test-full-path "test_wholefile.v")
+;;    (lambda ()
+;;      (let ((proof-point (save-excursion
+;; 			  (coq-test-goto-before "Theorem")
+;; 			  (search-forward "Qed."))))
+;;      (proof-process-buffer)
+;;      (proof-shell-wait)
+;;      (should (equal (proof-queue-or-locked-end) proof-point))))))
+;; 
+;; 
+;; (ert-deftest 070_coq-test-regression-wholefile-no-proof ()
+;;   "Regression test for no proof bug"
+;;   (coq-fixture-on-file
+;;    (coq-test-full-path "test_wholefile.v")
+;;    (lambda ()
+;;      (proof-process-buffer)
+;;      (proof-shell-wait)
+;;      (goto-char (point-min))
+;;      (insert "(*.*)")
+;;      (should (equal (proof-queue-or-locked-end) (point-min))))))
 
 (ert-deftest 080_coq-test-regression-show-proof-stepwise()
   "Regression test for the \"Show Proof\" option"
