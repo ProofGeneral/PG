@@ -137,22 +137,22 @@ we build containers for the historic pairs of the last 6 years as
 passively supported versions.
   
 
-This results in 43 containers.
+This results in 48 containers.
 
-|         | 25.3 | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
-|---------+------+------+------+------+------+------+------+------+------|
-|     8.7 |   H  |      |      |      |      |      |      |      |      |
-|     8.8 |      |   H  |      |      |      |      |      |      |      |
-|     8.9 |      |      |   H  |      |      |      |      |      |      |
-|    8.10 |      |      |      |   H  |      |      |      |      |      |
-|    8.11 |      |      |      |  SUP |      |      |      |      |   N  |
-|    8.12 |      |      |      |  SUP |  SUP |      |      |      |   N  |
-|    8.13 |      |      |      |  SUP |  SUP |   H  |      |      |   N  |
-|    8.14 |      |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.15 |      |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.16 |      |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.17 |      |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.18 |      |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
+|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
+|---------+------+------+------+------+------+------+------+------|
+|     8.8 |   H  |      |      |      |      |      |      |      |
+|     8.9 |      |   H  |      |      |      |      |      |      |
+|    8.10 |      |      |   H  |      |      |      |      |      |
+|    8.11 |      |      |  SUP |      |      |      |      |   N  |
+|    8.12 |      |      |  SUP |  SUP |      |      |      |   N  |
+|    8.13 |      |      |  SUP |  SUP |   H  |      |      |   N  |
+|    8.14 |      |      |  SUP |  SUP |   H  |      |      |   N  |
+|    8.15 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.16 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
+| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 
 In the table above,
 
@@ -245,23 +245,23 @@ following points is true for *cv* and *ev*.
 Running Proof General interaction tests with Coq for passively
 supported versions is work in progress.
 
-This results in 26 version pairs for the Proof General interaction
+This results in 33 version pairs for the Proof General interaction
 tests with Coq.
 
-|         | 25.3 | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
-|---------+------+------+------+------+------+------+------+------+------|
-|     8.7 |      |      |      |      |      |      |      |      |      |
-|     8.8 |      |      |      |      |      |      |      |      |      |
-|     8.9 |      |      |      |      |      |      |      |      |      |
-|    8.10 |      |      |      |      |      |      |      |      |      |
-|    8.11 |      |      |      |  SUP |      |      |      |      |   N  |
-|    8.12 |      |      |      |      |  SUP |      |      |      |   N  |
-|    8.13 |      |      |      |      |      |   H  |      |      |   N  |
-|    8.14 |      |      |      |      |      |   H  |      |      |   N  |
-|    8.15 |      |      |      |   X  |   X  |      |   H  |      |   N  |
-|    8.16 |      |      |      |   X  |   X  |      |      |  SUP |   N  |
-|    8.17 |      |      |      |   X  |   X  |      |      |   X  |  SUP |
-|    8.18 |      |      |      |   X  |   X  |   N  |   N  |   X  |   X  |
+|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
+|---------+------+------+------+------+------+------+------+------|
+|     8.8 |      |      |      |      |      |      |      |      |
+|     8.9 |      |      |      |      |      |      |      |      |
+|    8.10 |      |      |      |      |      |      |      |      |
+|    8.11 |      |      |  SUP |      |      |      |      |   N  |
+|    8.12 |      |      |      |  SUP |      |      |      |   N  |
+|    8.13 |      |      |      |      |   H  |      |      |   N  |
+|    8.14 |      |      |      |      |   H  |      |      |   N  |
+|    8.15 |      |      |      |  SUP |      |   H  |      |   N  |
+|    8.16 |      |      |   X  |   X  |      |      |   X  |   N  |
+|    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |
+|    8.18 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |
+| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 
 See [Container build strategy](#contbuild) for an explanation of the
 symbols in the table.
@@ -363,6 +363,6 @@ that `cipg` can process it.
 
 <!--
  !-- Local Variables:
- !-- compile-command: "pandoc -N README.md -o README.pdf"
+ !-- compile-command: "pandoc -N --pdf-engine=lualatex README.md -o README.pdf"
  !-- End:
  -->
