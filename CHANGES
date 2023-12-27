@@ -44,7 +44,7 @@ standard support.
 *** add another (fallback) key-binding for proof-goto-point
     - The default key-binding for proof-goto-point (C-c <C-return>)
       was not available in TTYs. Now, this function can also be run
-      with "C-c RET", which happens to be automatically trigerred if
+      with "C-c RET", which happens to be automatically triggered if
       we type "C-c <C-return>" in a TTY.
 
 *** new proof-priority-action-list
@@ -376,7 +376,7 @@ standard support.
     | S n => ...
     end
     do this: (setq coq-match-indent 4) to get back the
-    previous indetation style:
+    previous indentation style:
     match n with
         O => ...
       | S n => ...
