@@ -628,7 +628,7 @@ and @ref{Advanced Script Management and Editing}.
 
 @item @i{Script editing mode}@*
 Proof General provides useful facilities for editing proof scripts,
-including syntax hilighting and a menu to jump to particular goals,
+including syntax highlighting and a menu to jump to particular goals,
 definitions, or declarations.
 Special editing functions send lines of proof script to the proof
 assistant, or undo previous proof steps.
@@ -2755,7 +2755,7 @@ text in the buffer.    This is the font that is configured by the menu
 @end example
 its customization name is @code{unicode-tokens-symbol-font-face}, but
 notice that only the font family aspect of the face is used.  Similarly,
-other fonts can be configured for controling different font families
+other fonts can be configured for controlling different font families
 (script, fraktur, etc).
 
 For symbols, good results are possible by using a proportional font for
