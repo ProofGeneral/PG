@@ -10,6 +10,11 @@ linkcolor: blue
 This document describes the general strategy for testing Proof General
 with GitHub actions and for building the necessary containers.
 
+**Note:** The portions in this file between the CIPG markers (which
+are invisible in the PDF version) are now and then automatically
+updated by the `cipg` program. Please consider this when changing this
+file.
+
 The file `.github/workflows/test.yml` defines 6 jobs.
 
 build
@@ -78,9 +83,13 @@ standard support date is in the future.
 
 Currently, the first actively supported versions are
 
-| Coq   | 8.11 |
-|-------+------|
-| Emacs | 26.3 |
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: coq-emacs-versions -->
+| Coq   |  8.11 |
+|-------+-------|
+| Emacs |  26.3 |
+<!-- CIPG change marker end -->
 
 The set of passively supported Coq/Emacs version pairs is work in
 progress.
@@ -140,8 +149,17 @@ we build containers for the historic pairs of the last 6 years as
 passively supported versions.
   
 
-This results in 48 containers.
+This results in
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: container-number -->
+48
+<!-- CIPG change marker end -->
+containers.
 
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: container-table -->
 |         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
 |---------+------+------+------+------+------+------+------+------|
 |     8.8 |   H  |      |      |      |      |      |      |      |
@@ -156,6 +174,7 @@ This results in 48 containers.
 |    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
 |    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
 | 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+<!-- CIPG change marker end -->
 
 In the table above,
 
@@ -248,9 +267,17 @@ following points is true for *cv* and *ev*.
 Running Proof General interaction tests with Coq for passively
 supported versions is work in progress.
 
-This results in 33 version pairs for the Proof General interaction
-tests with Coq.
+This results in 
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: testrun-number -->
+33
+<!-- CIPG change marker end -->
+version pairs for the Proof General interaction tests with Coq.
 
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: testrun-table -->
 |         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
 |---------+------+------+------+------+------+------+------+------|
 |     8.8 |      |      |      |      |      |      |      |      |
@@ -265,6 +292,7 @@ tests with Coq.
 |    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |
 |    8.18 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |
 | 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+<!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
 symbols in the table.
