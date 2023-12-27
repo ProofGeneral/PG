@@ -127,7 +127,7 @@ A. This can happen if you enabled "Use Three Panes" and then change
    * In single window mode, `C-c C-l` (proof-layout-windows) refreshes
      the display
 
-   * In multiple window mode, if you have accidently deleted the main
+   * In multiple window mode, if you have accidentally deleted the main
      window, get a new one with `M-x new-frame RET`
 
 -----------------------------------------------------------------
