@@ -522,6 +522,18 @@ or not."
   :type '(repeat regexp)
   :safe (lambda (v) (cl-every #'stringp v)))
 
+(defcustom coq-compile-coqdep-warnings '("+module-not-found")
+  "List of warning options passed to coqdep via `-w` for Coq 8.19 or later.
+List of warning options to be passed to coqdep via command line
+switch `-w`, which is supported from Coq 8.19 onwards. This
+option is ignored for a detected Coq version earlier than 8.19. A
+minus in front of a warning disables the warning, a plus turns
+the warning into an error. This option should contain
+'+module-not-found' to let Proof General reliably detect missing
+modules via an coqdep error."
+  :type '(repeat string)
+  :safe (lambda (v) (cl-every #'stringp v)))
+
 (defcustom coq-coqdep-error-regexp
   (concat "^\\(\\*\\*\\* \\)?Warning: in file .*, library[ \n].* is required "
           "and has not been found")

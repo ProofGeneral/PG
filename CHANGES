@@ -9,6 +9,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 
 *** support Coq 8.19
 
+**** New option coq-compile-coqdep-warnings to configure the warning
+     command line argument (-w) of coqdep. The default of this option
+     is +module-not-found to let Proof General reliably detect missing
+     modules as coqdep error.
+
 * Changes of Proof General 4.5 from Proof General 4.4
 
 ** Generic changes
