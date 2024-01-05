@@ -666,6 +666,9 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 
 ;;; manage coq--compile-response-buffer
 
+(defconst coq--compile-response-initial-content "-*- mode: compilation; -*-\n\n"
+  "Content of `coq--compile-response-buffer' after initialization")
+
 ;; XXX apparently nobody calls this with display equal to nil
 (defun coq-compile-display-error (command error-message display)
   "Display COMMAND and ERROR-MESSAGE in `coq--compile-response-buffer'.
@@ -708,7 +711,7 @@ the command whose output will appear in the buffer."
     ;; the first line are not found for some reason ...
     (let ((inhibit-read-only t))
       (with-current-buffer buffer-object
-        (insert "-*- mode: compilation; -*-\n\n")
+        (insert coq--compile-response-initial-content)
 	(when command
 	  (insert command "\n"))))))
 

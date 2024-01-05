@@ -37,6 +37,8 @@ All tests are for parallel background compilation.
   coq-compile-keep-going; test also the case, where the last
   (failed) require job must be delayed, because some queue
   dependee is still processing
+010-coqdep-errors
+: check that coqdep errors are reliably detected
 
 # Tests currently missing
 
