@@ -768,7 +768,7 @@ load-path options to coqdep."
 (defun coq-par-analyse-coq-dep-exit (status output command)
   "Analyse output OUTPUT of coqdep command COMMAND with exit status STATUS.
 Returns the list of .vo dependencies if there is no error. Otherwise,
-writes an error message into `coq-compile-response-buffer', makes
+writes an error message into `coq--compile-response-buffer', makes
 this buffer visible and returns a string.
 
 This function does always return .vo dependencies, regardless of the
