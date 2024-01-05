@@ -34,7 +34,6 @@
 ;;; Define the tests
 
 (ert-deftest cct-coqdep-fail-on-require ()
-  :expected-result (if (coq--post-v818) :failed :passed)
   "coqdep error on missing library in a require command is detected."
   ;; (setq cct--debug-tests t)
   ;; (setq coq--debug-auto-compilation t)
@@ -97,7 +96,6 @@
 
 
 (ert-deftest cct-coqdep-fail-on-require-in-dependency ()
-  :expected-result (if (coq--post-v818) :failed :passed)
   "coqdep error because of a missing library in a dependency is detected."
   (let (coqdep-errror-in-response
         missing-module-in-response

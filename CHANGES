@@ -5,7 +5,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 
 * Changes of Proof General 4.6 from Proof General 4.5
 
-N/A
+** Coq changes
+
+*** support Coq 8.19
 
 * Changes of Proof General 4.5 from Proof General 4.4
 

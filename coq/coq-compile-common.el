@@ -523,7 +523,7 @@ or not."
   :safe (lambda (v) (cl-every #'stringp v)))
 
 (defcustom coq-coqdep-error-regexp
-  (concat "^\\*\\*\\* Warning: in file .*, library .* is required "
+  (concat "^\\(\\*\\*\\* \\)?Warning: in file .*, library[ \n].* is required "
           "and has not been found")
   "Regexp to match errors in the output of coqdep.
 coqdep indicates errors not always via a non-zero exit status,
