@@ -3172,12 +3172,14 @@ Query the prover about the identifier near mouse click @var{event}.
 @chapter Graphical Proof-Tree Visualization
 @cindex proof-tree visualization
 
-Since version 4.2, Proof General supports proof-tree
+Since version 4.5, Proof General (again) supports proof-tree
 visualization on graphical desktops via the additional program
-Prooftree. Currently, proof-tree visualization is only supported
-for the Coq proof assistant. 
+Prooftree. Currently, proof-tree visualization is only supported for
+the Coq proof assistant. (Proof-tree visualization was already
+supported in version 4.2 but then discontinued in 2017 when Coq 8.7
+dropped the variant of @code{Show Goal} that prooftree relied on.)
 
-This version of Proof General requires Prooftree version 0.11.
+This version of Proof General requires Prooftree version 0.14.
 Check the @uref{http://askra.de/software/prooftree/, Prooftree website},
 to see if some later versions are also compatible. (Because of
 the communication protocol, Proof General is always only
@@ -5349,8 +5351,8 @@ you want to save abbrevs; answer yes.
 @section Proof-Tree Visualization
 @cindex Proof-Tree visualization
 
-Starting with Proof General version 4.2 and Coq version 8.4, Coq
-Proof General has full support for proof-tree visualization, 
+Starting with Proof General version 4.5 and Coq version 8.11, Coq
+Proof General has (again) full support for proof-tree visualization, 
 @pxref{Graphical Proof-Tree Visualization}. To find out which
 versions of Prooftree are compatible with this version of Proof
 General, @pxref{Graphical Proof-Tree Visualization} or the 

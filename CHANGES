@@ -8,15 +8,22 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 ** Generic changes
 *** Improve the omit-proofs feature to handle a number of cases where
     proofs must not be omitted.
+*** Renew support for proof-tree visualization via the external command
+    prooftree, see http://askra.de/software/prooftree and Section 7
+    "Graphical Proof-Tree Visualization" in the Proof General manual.
+    Proof-tree visualization is currently only supported for Coq. The
+    prooftree support has been substantially rewritten, making use of
+    the much better support since Coq version 8.11.
 
 ** Coq changes
-
 *** support Coq 8.19
-
 **** New option coq-compile-coqdep-warnings to configure the warning
      command line argument (-w) of coqdep. The default of this option
      is +module-not-found to let Proof General reliably detect missing
      modules as coqdep error.
+*** Renew support for proof-tree visualization, see description in
+    generic changes above.
+
 
 **** Fix issues #687 and #688 where the omit-proofs feature causes
      errors on correct code.
