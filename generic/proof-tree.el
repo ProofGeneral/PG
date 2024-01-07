@@ -338,8 +338,13 @@ instantiated. When a proof finishes with proof-tree display,
 prooftree may request a number of show goal commands after the
 proof has been finished in the proof assistant. This function
 must return an action item that can be inserted as last command
-in `proof-action-list' after all these show goal commands. An
-action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
+in `proof-action-list' after all these show goal commands.
+
+For Coq this is used to disable the dependent evar line. But also
+other proof assistants that enable the proof tree display must
+set this function.
+
+An action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
 see `proof-action-list'. The action item must not be recognized
 as comment by `proof-shell-slurp-comments', that is COMMANDS must
 be a nonempty list of strings. The generic prooftree glue code
@@ -516,7 +521,6 @@ Add command `proof-tree-display-stop-command' with
 `proof-tree-check-proof-finish' eventually sees this last command
 and switches the proof-tree display processing off."
   (if (string-match proof-tree--confirm-complete-regexp data)
-      ;; XXX assert proof-tree-display-stop-command when proof-tree is started
       (let ((stop-cmd (funcall proof-tree-display-stop-command)))
         ;; an action list item is a list (span commands action [displayflags])
         (proof-add-to-priority-queue
@@ -1174,8 +1178,9 @@ external proof-tree display is currently on, then this toggle
 will switch it off.  At the end of the proof the proof-tree
 display is switched off."
   (interactive)
-  (unless proof-tree-configured
-    (error "External proof-tree display not configured for %s" proof-assistant))
+  (unless (and proof-tree-configured proof-tree-display-stop-command)
+    (error "External proof-tree display not or not correctly configured for %s"
+           proof-assistant))
   (cond
    (proof-tree-external-display
     ;; Currently on -> switch off

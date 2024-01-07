@@ -1364,10 +1364,6 @@ ends with text matching `proof-shell-eager-annotation-end'."
    ((proof-looking-at-safe proof-shell-theorem-dependency-list-regexp)
     (proof-shell-process-urgent-message-thmdeps))
 
-   ;;XXX duplication?
-   ((proof-looking-at-safe proof-shell-theorem-dependency-list-regexp)
-    (proof-shell-process-urgent-message-thmdeps))
-
    ((proof-looking-at-safe proof-shell-interactive-prompt-regexp)
     (proof-shell-process-interactive-prompt-regexp))
 

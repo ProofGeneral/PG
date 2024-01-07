@@ -1942,7 +1942,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
   ;; prooftree config
   (setq
-   proof-tree-configured t
+   proof-tree-configured (coq--post-v810)
    proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
    proof-tree-find-begin-of-unfinished-proof
      'coq-find-begin-of-unfinished-proof)
@@ -2251,7 +2251,9 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
    (list 'invisible 'no-response-display)))
 
 (defun coq-proof-tree-enable-evars ()
-  "Enable the evar status line for Coq >= 8.6."
+  "Enable the evar status line."
+  ;; The evar status can be switched on and off since 8.6. However, prooftree
+  ;; is only supported for 8.10 or later.
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (proof-shell-ready-prover)
     (proof-add-to-priority-queue (coq-proof-tree-evar-command "Set"))))
@@ -2261,7 +2263,8 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 (defun coq-proof-tree-disable-evars ()
   "Return action list item to disable evar printing.
 Function for `proof-tree-display-stop-command'."
-  ;; XXX disable proof tree completely for < 8.10
+  ;; The evar status can be switched on and off since 8.6. However, prooftree
+  ;; is only supported for 8.10 or later.
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (coq-proof-tree-evar-command "Unset")))
 
