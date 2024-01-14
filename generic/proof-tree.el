@@ -1026,7 +1026,7 @@ The delayed output of the navigation command is in the region
     ;; send undo
     (if (proof-tree-is-running)
 	(proof-tree-send-undo proof-state))
-    (setq proof-tree-last-state (- proof-state 1))))
+    (setq proof-tree-last-state proof-state)))
 
 
 (defun proof-tree-update-sequent (proof-name)
