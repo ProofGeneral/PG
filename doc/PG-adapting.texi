@@ -270,7 +270,7 @@ prototype is about 25 simple settings.
 For more advanced features you may need (or want) to write some Emacs
 Lisp.  If you're adding new functionality please consider making it
 generic for different proof assistants, if appropriate.  When writing
-your modes, please follow the Emacs Lisp conventions, @inforef{Tips, ,Elisp}.
+your modes, please follow the Emacs Lisp conventions, @pxref{Tips,,,Elisp}.
 
 The configuration variables are declared in the file
 @file{generic/proof-config.el}.  The details in the central part of this
@@ -667,7 +667,7 @@ Note that for the generic functions to work properly, it is
 @strong{essential} that you set the syntax table for your mode properly,
 so that comments and strings are recognized.  See the Emacs
 documentation to discover how to do this (particularly for the function
-@code{modify-syntax-entry}, (@inforef{Syntax Tables, ,Elisp}).
+@code{modify-syntax-entry}, (@pxref{Syntax Tables,,,Elisp}).
 
 @xref{Proof script mode}, for more details of the parsing
 functions.
@@ -730,7 +730,7 @@ or @samp{@code{proof-script-parse-function}}.
 The next four settings configure the comment syntax.  Notice that to get
 reliable behaviour of the parsing functions, you may need to modify the
 syntax table for your prover's mode.  
-Read the Elisp manual (@inforef{Syntax Tables, ,Elisp}) for details about that.
+Read the Elisp manual (@pxref{Syntax Tables,,,Elisp}) for details about that.
 
 @c TEXI DOCSTRING MAGIC: proof-script-comment-start
 @defvar proof-script-comment-start 
@@ -1148,9 +1148,9 @@ consistency. Portions that can be potentially omitted are called
 @emph{opaque proofs} in Proof General, because usually only
 opaque proofs (in the sense of Coq) can be omitted without
 risking to break the following code. This feature is also
-described in the Proof General manual, @inforef{Script processing
-commands, ,ProofGeneral} and @inforef{Omitting proofs for speed,
-,ProofGeneral}.
+described in the Proof General manual, @pxref{Script processing
+commands,,,ProofGeneral} and
+@pxref{Omitting proofs for speed,,,ProofGeneral}.
 
 The omit proofs feature works in a simple, straightforward way:
 After parsing the asserted region, Proof General uses regular
@@ -2519,7 +2519,8 @@ advantage of not requiring the underlying text to be changed to display
 symbols.  
 
 Usage of the Unicode Tokens package is described in the Proof General
-user manual, @inforef{Unicode support, ,ProofGeneral}.
+user manual, @pxref{Unicode symbols and special layout
+support,,,ProofGeneral}.
 
 @c FIXME TODO: add documentation here to explain config of Unicode Tokens
 
