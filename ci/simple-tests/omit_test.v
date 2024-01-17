@@ -44,7 +44,7 @@ Qed.
 Section let_test.
 
   Let never_omit_let : 1 + 1 = 2.
-  Proof using.
+  Proof.
     (* automatic test marker 7 *)
     auto.
   Qed.
