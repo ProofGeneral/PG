@@ -179,8 +179,8 @@ Near here means PT is either inside or just aside of a comment."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.v\\'" . coq-mode))
 
-(defun coq--parent-mode ()
-  (if coq-use-pg (proof-mode) (prog-mode)))
+(defalias 'coq--parent-mode
+  (if coq-use-pg 'proof-mode 'prog-mode))
 
 ;;;###autoload
 (define-derived-mode coq-mode coq--parent-mode "Coq"
