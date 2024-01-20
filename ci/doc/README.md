@@ -1,3 +1,12 @@
+<!--
+ !-- This file is part of Proof General.
+ !-- 
+ !-- Copyright 2024  Hendrik Tews
+ !-- 
+ !-- Authors:   Hendrik Tews
+ !-- 
+ !-- SPDX-License-Identifier: GPL-3.0-or-later
+  -->
 ---
 title:  'Continuous integration and testing for Proof General'
 toc: true
@@ -303,7 +312,8 @@ symbols in the table.
 Obviously, after each Coq or Emacs release and additionally every few
 month the rules in the preceding sections for building containers and
 for testing must be re-evaluated and the workflow file
-`.github/workflows/test.yml` must be updated.
+`.github/workflows/test.yml` and the tables in this document must be
+updated.
 
 Large portions of this process have been automated. Coq, Emacs, Debian
 and Ubuntu releases must be manually added into an Org mode table in
@@ -316,9 +326,10 @@ file `coq-emacs-releases.org`. This table is read by the OCaml program
   Coq](#coq-ci) in this document.
 - It determines missing docker images and generates command lines for
   building them.
-- It determines superfluous docker images and deletes them.
+- It determines superfluous docker images and offers to delete them.
 - It generates the lines that are needed to update
   `.github/workflows/test.yml`.
+- It can update this document and `test.yml` in place.
   
   
 ## Release table
@@ -390,6 +401,132 @@ that `cipg` can process it.
    `cipg` is not able to recognize outdated release candidates. The
    release candidate must therefore be deleted when the release
    happens.
+
+
+## `cipg`
+
+`cipg` is the OCaml program `ci/tools/cipg.ml` in the Proof General
+repository that automates many tasks for keeping the Proof General
+GitHub action up-to-date. `cipg` can be compiled with `ocamlopt.opt -g
+-o cipg unix.cmxa cipg.ml`, see also the `compile-command` in
+`cipg.ml`. By default, `cipg` assumes that `../..` is the root
+directory of the PG repository, which is right, if `cipg` runs in
+`ci/tools`. Use option `-pg-repo` to specify a different directory as
+Proof-General repository.
+
+### Dependencies and credentials
+
+`cipg` runs `curl` and `jq` as subcommands. They must be located
+somewhere on `PATH`.
+
+The deletion of docker images (via option `-delete`) requires
+credentials for `hub.docker.com`. Currently, `cipg` can only use
+credentials specified in `~/.authinfo`. If `-delete` is used, this
+file must contain a simple 6-element entry for host `hub.docker.com`
+without quotes of the form
+```
+machine hub.docker.com login <user> password <passwd>
+```
+The restriction of a simple line without quotes means that usernames
+or passwords containing spaces are currently not supported.
+
+
+### Obtaining information
+
+Without any options, `cipg` reads the release table in
+`coq-emacs-releases.org` and outputs the relevant information for
+Proof General continuous integration and testing on the current date.
+In particular, `cipg` prints the table of containers to build and the
+table of Coq/Emacs version pairs selected for those jobs that test Coq
+and Emacs in different version pairs.
+
+With option `-check`, `cipg` additionally checks if all needed docker
+images exist in the docker registry and if there are any superfluous
+images. For missing docker images `cipg` prints docker build commands
+that work with the dockerfiles in the `coq-nix-docker` and
+`coq-emacs-docker` repositories. For these commands, `cipg` emits
+`pushd` commands to change into directories inside the respective
+repositories. The directory where the two repositories are checked out
+can be set with command line option `-src-dir`, the default is
+`~/src`.
+
+With option `-ci-print`, `cipg` additionally prints the lines with the
+versions for the matrix version variables of all jobs in `test.yml`.
+These lines can be copied into `test.yml`, but see option `-ci-change`
+below.
+
+
+### Updating the CI configuration
+
+The options described in this subsection perform destructive updates
+or removals. Use them with care.
+
+The option `ci-change` updates `README.md` (this file) and `test.yml`
+in the Proof-General repository identified by `cipg` with the new
+configuration. See option `-pg-repo` to change the Proof General
+repository. The updates are done in place, without taking backups,
+which is not a problem, if there are no unstaged changes. In
+particular, the option `ci-change` changes
+
+- the three tables in the Sections [Generic strategy](#generic),
+  [Container build strategy](#contbuild), and [Proof General
+  interaction tests with Coq](#coq-ci) in this document, including the
+  numbers of containers and Coq/Emacs version pairs in front of the
+  last two tables, and
+- the versions for the matrix version variables of all jobs in
+  `test.yml`.
+
+To facilitate these automatic updates `README.md` and `test.yml`
+contain “CIPG change markers” in comments before and after the to be
+replaced portions.
+
+With option `-delete`, `cipg` offers to delete superfluous containers.
+For each superfluous container, `cipg` asks, whether to really delete
+it.
+
+
+### Accessing `hub.docker.com`
+
+This subsection documents how `cipg` accesses `hub.docker.com`. The
+information here is not relevant for using `cipg`. For easy
+copy/paste, the commands in this section are on one line in the
+markdown sources, which may result in overly long lines and
+incorrectly inserted line breaks in the PDF version.
+
+To list all tags of the `proofgeneral/coq-emacs` image use
+```
+curl -L -s 'https://registry.hub.docker.com/v2/repositories/proofgeneral/coq-emacs/tags?page_size=1024' | jq '."results"[]["name"]'
+```
+If the `page_size` number is too small only some first portion is
+printed.
+
+The shell commands for deleting a docker image are taken from the
+folling stackoverflow article.
+```
+https://stackoverflow.com/questions/44209644/how-do-i-delete-a-docker-image-from-docker-hub-via-command-line
+```
+In order to delete an image, one first needs get an access token,
+which is a string more than 2500 characters long. To save a new access
+token in variable `XX` do
+```
+XX=$(curl -s -H "Content-Type: application/json" -X POST -d "{\"username\": \"<user>\", \"password\": \"<passwd>\"}" https://hub.docker.com/v2/users/login/ | jq -r .token)
+```
+In this line, `<user>` and `<passwd>` must be replaced with some valid
+credentials.
+
+To delete tag `coq-8.18-rc-emacs-27.1` of the `proofgeneral/coq-emacs`
+docker images use
+```
+curl -i -X DELETE -H "Accept: application/json" -H "Authorization: JWT $XX" https://hub.docker.com/v2/namespaces/proofgeneral/repositories/coq-emacs/tags/coq-8.18-rc-emacs-27.1
+```
+Note the use of `XX` in this line.
+
+Alternatively, the command
+```
+curl -i -X DELETE -H "Accept: application/json" -H "Authorization: JWT $XX" https://hub.docker.com/v2/repositories/proofgeneral/coq-emacs/tags/coq-8.18-rc-emacs-26.3/
+```
+does also delete a tag. However, the first deletion command is said to
+be preferred in the cited stackoverflow article.
 
 
 <!--
