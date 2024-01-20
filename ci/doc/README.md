@@ -162,27 +162,27 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-48
+53
 <!-- CIPG change marker end -->
 containers.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-table -->
-|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
-|---------+------+------+------+------+------+------+------+------|
-|     8.8 |   H  |      |      |      |      |      |      |      |
-|     8.9 |      |   H  |      |      |      |      |      |      |
-|    8.10 |      |      |   H  |      |      |      |      |      |
-|    8.11 |      |      |  SUP |      |      |      |      |   N  |
-|    8.12 |      |      |  SUP |  SUP |      |      |      |   N  |
-|    8.13 |      |      |  SUP |  SUP |   H  |      |      |   N  |
-|    8.14 |      |      |  SUP |  SUP |   H  |      |      |   N  |
-|    8.15 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.16 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |
-| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 |
+|---------+------+------+------+------+------+------+------+------+------|
+|     8.8 |   H  |      |      |      |      |      |      |      |      |
+|     8.9 |      |   H  |      |      |      |      |      |      |      |
+|    8.10 |      |      |   H  |      |      |      |      |      |      |
+|    8.11 |      |      |  SUP |      |      |      |      |      |   N  |
+|    8.12 |      |      |  SUP |  SUP |      |      |      |      |   N  |
+|    8.13 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
+|    8.14 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
+|    8.15 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.16 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -280,27 +280,27 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-33
+36
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-table -->
-|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 |
-|---------+------+------+------+------+------+------+------+------|
-|     8.8 |      |      |      |      |      |      |      |      |
-|     8.9 |      |      |      |      |      |      |      |      |
-|    8.10 |      |      |      |      |      |      |      |      |
-|    8.11 |      |      |  SUP |      |      |      |      |   N  |
-|    8.12 |      |      |      |  SUP |      |      |      |   N  |
-|    8.13 |      |      |      |      |   H  |      |      |   N  |
-|    8.14 |      |      |      |      |   H  |      |      |   N  |
-|    8.15 |      |      |      |  SUP |      |   H  |      |   N  |
-|    8.16 |      |      |   X  |   X  |      |      |   X  |   N  |
-|    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |
-|    8.18 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |
-| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 |
+|---------+------+------+------+------+------+------+------+------+------|
+|     8.8 |      |      |      |      |      |      |      |      |      |
+|     8.9 |      |      |      |      |      |      |      |      |      |
+|    8.10 |      |      |      |      |      |      |      |      |      |
+|    8.11 |      |      |  SUP |      |      |      |      |      |   N  |
+|    8.12 |      |      |      |  SUP |      |      |      |      |   N  |
+|    8.13 |      |      |      |      |   H  |      |      |      |   N  |
+|    8.14 |      |      |      |      |   H  |      |      |      |   N  |
+|    8.15 |      |      |      |  SUP |      |   H  |      |      |   N  |
+|    8.16 |      |      |   X  |   X  |      |      |   X  |      |   N  |
+|    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |   N  |
+|    8.18 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |
+| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
