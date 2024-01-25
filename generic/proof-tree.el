@@ -184,15 +184,6 @@ Coq.  Leave at nil if there are no cheating commands."
   :type '(choice regexp (const nil))
   :group 'proof-tree-internals)
 
-(defcustom proof-tree-new-layer-command-regexp nil
-  "Regexp to match proof commands that add new goals to a proof.
-This regexp must match the command that turns the proof assistant
-into prover mode, which adds the initial goal to the proof.  It
-must further match commands that add additional goals after all
-previous goals have been proved."
-  :type 'regexp
-  :group 'proof-tree-internals)
-
 (defcustom proof-tree-current-goal-regexp nil
   "Regexp to match the current goal and its ID.
 The regexp is matched against the output of the proof assistant
@@ -713,7 +704,7 @@ DATA as data sections to Prooftree."
    ()))
 
 (defun proof-tree-send-goal-state (state proof-name command-string cheated-flag
-				   layer-flag current-sequent-id
+				   current-sequent-id
 				   current-sequent-text additional-sequent-ids
 				   existential-info)
   "Send the current goal state to prooftree."
@@ -723,14 +714,13 @@ DATA as data sections to Prooftree."
   (let* ((add-id-string (mapconcat #'identity additional-sequent-ids " "))
 	 (second-line
 	  (format
-	   (concat "current-goals state %d current-sequent %s %s %s "
+	   (concat "current-goals state %d current-sequent %s %s "
 		   "proof-name-bytes %d "
 		   "command-bytes %d sequent-text-bytes %d "
 		   "additional-id-bytes %d existential-bytes %d")
 	   state
 	   current-sequent-id
 	   (if cheated-flag "cheated" "not-cheated")
-	   (if layer-flag "new-layer" "current-layer")
 	   (1+ (string-bytes proof-name))
 	   (1+ (string-bytes command-string))
 	   (1+ (string-bytes current-sequent-text))
@@ -931,7 +921,9 @@ regexp is nil, the match expands to the end of the prover output."
 This function is called if there is some real progress in a
 proof. This function sends the current state, the current goal
 and the list of additional open subgoals to Prooftree. Prooftree
-will sort out the rest.
+will sort out the rest. In particular, Prooftree determines
+without input from this function, whether or not a new layer in
+the proof tree must be started.
 
 The delayed output is in the region
 \[proof-shell-delayed-output-start, proof-shell-delayed-output-end].
@@ -962,16 +954,12 @@ command was sent to the proof assistant."
       (setq current-goals (proof-tree-extract-goals start end))
       (when current-goals
 	(let ((current-sequent-id (car current-goals))
-	      (current-sequent-text (nth 1 current-goals))
-	      ;; nth 2 current-goals  contains the  additional ID's
-	      (layer-flag
-	       (and proof-tree-new-layer-command-regexp
-		    (proof-string-match proof-tree-new-layer-command-regexp
-					cmd-string))))
-	  ;; send all to prooftree
+	      (current-sequent-text (nth 1 current-goals)))
+	  ;; Note that (nth 2 current-goals) contains the  additional ID's.
+	  ;; Now send all to prooftree.
 	  (proof-tree-send-goal-state
 	   proof-state proof-name cmd-string
-	   cheated-flag layer-flag
+	   cheated-flag
 	   current-sequent-id
 	   current-sequent-text
 	   (nth 2 current-goals)
