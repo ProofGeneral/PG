@@ -208,12 +208,6 @@ It is mostly useful in three window mode, see also
   :type 'regexp
   :group 'coq-proof-tree)
 
-(defcustom coq-proof-tree-new-layer-command-regexp
-  "^\\(\\(Proof\\)\\|\\(Grab Existential Variables\\)\\)"
-  "Regexp for `proof-tree-new-layer-command-regexp'."
-  :type 'regexp
-  :group 'coq-proof-tree)
-
 (defcustom coq-proof-tree-current-goal-regexp
   (concat "^[0-9]+ \\(?:focused \\)?\\(?:sub\\)?goal\\(?:s\\)?\\s-*"
           "\\(?:(\\(?:unfocused: [-0-9]+\\)?,?"
@@ -2022,7 +2016,6 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-tree-ignored-commands-regexp coq-proof-tree-ignored-commands-regexp
    proof-tree-navigation-command-regexp coq-navigation-command-regexp
    proof-tree-cheating-regexp coq-proof-tree-cheating-regexp
-   proof-tree-new-layer-command-regexp coq-proof-tree-new-layer-command-regexp
    proof-tree-current-goal-regexp coq-proof-tree-current-goal-regexp
    proof-tree-update-goal-regexp coq-proof-tree-update-goal-regexp
    proof-tree-existentials-state-start-regexp

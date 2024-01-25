@@ -2644,17 +2644,8 @@ proof goal. The second layer contains proof trees for goals that
 have been added to the proof after the first proof tree was
 completed. And so on.
 
-To organize the layers, Prooftree must identify those proof
-commands that add new goals to a proof.
-
-@c TEXI DOCSTRING MAGIC: proof-tree-new-layer-command-regexp
-@defvar proof-tree-new-layer-command-regexp 
-Regexp to match proof commands that add new goals to a proof.@*
-This regexp must match the command that turns the proof assistant
-into prover mode, which adds the initial goal to the proof.  It
-must further match commands that add additional goals after all
-previous goals have been proved.
-@end defvar
+Prooftree assumes a new layer when it receives new goals in a state
+where the number of open goals is zero.
 
 
 @node Prerequisites
