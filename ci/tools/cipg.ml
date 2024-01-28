@@ -604,13 +604,15 @@ let select_newest first_emacs first_coq coqs emacses conts =
  * version lists coqs and emacses are sorted with oldest version first,
  * if there is an rc version, it's the last one
  *)
-let select_coq_rc_version coqs emacses conts =
+let select_coq_rc_version first_emacs coqs emacses conts =
+  let first_emacs = get_version_index first_emacs emacses in
+  let newest_emacs = snd (list_last emacses) in
   let (coq_v, coq_i) = list_last coqs in
   if coq_v.release_candidate
   then
-    List.iter
-      (fun (em_v, em_i) -> conts.(coq_i).(em_i) <- RC)
-      emacses
+    for em_i = first_emacs to newest_emacs do
+      conts.(coq_i).(em_i) <- RC
+    done
   else
     ()
 
@@ -622,7 +624,7 @@ let select_containers first_full_range_coq first_active_emacs
   select_lts_versions lts coqs emacses conts true;
   select_all_latest_versions
     first_full_range_coq first_active_emacs coqs emacses conts;
-  select_coq_rc_version coqs emacses conts;
+  select_coq_rc_version first_active_emacs coqs emacses conts;
   ()
 
 (* Select version pairs to be tested in github CI and mark those as
@@ -634,7 +636,7 @@ let select_ci_pairs first_partial_range_coq first_active_emacs
   select_newest first_active_emacs first_active_coq coqs emacses ci_pairs;
   select_lts_versions lts coqs emacses ci_pairs false;
   select_lts_latest_versions first_partial_range_coq lts coqs emacses ci_pairs;
-  select_coq_rc_version coqs emacses ci_pairs;
+  select_coq_rc_version first_active_emacs coqs emacses ci_pairs;
   ()
 
 
