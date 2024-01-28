@@ -162,7 +162,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-53
+51
 <!-- CIPG change marker end -->
 containers.
 
@@ -182,7 +182,7 @@ containers.
 |    8.16 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|    8.19 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -280,7 +280,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-36
+32
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
@@ -299,8 +299,8 @@ version pairs for the Proof General interaction tests with Coq.
 |    8.15 |      |      |      |  SUP |      |   H  |      |      |   N  |
 |    8.16 |      |      |   X  |   X  |      |      |   X  |      |   N  |
 |    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |   N  |
-|    8.18 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |
-| 8.19-rc |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|    8.18 |      |      |   X  |   X  |      |      |   X  |   X  |   N  |
+|    8.19 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the

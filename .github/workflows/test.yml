@@ -131,20 +131,16 @@ jobs:
           - coq-8.17-emacs-29.2
           - coq-8.18-emacs-26.3
           - coq-8.18-emacs-27.1
-          - coq-8.18-emacs-27.2
-          - coq-8.18-emacs-28.1
           - coq-8.18-emacs-28.2
           - coq-8.18-emacs-29.1
           - coq-8.18-emacs-29.2
-          - coq-8.19-rc-emacs-26.1
-          - coq-8.19-rc-emacs-26.2
-          - coq-8.19-rc-emacs-26.3
-          - coq-8.19-rc-emacs-27.1
-          - coq-8.19-rc-emacs-27.2
-          - coq-8.19-rc-emacs-28.1
-          - coq-8.19-rc-emacs-28.2
-          - coq-8.19-rc-emacs-29.1
-          - coq-8.19-rc-emacs-29.2
+          - coq-8.19-emacs-26.3
+          - coq-8.19-emacs-27.1
+          - coq-8.19-emacs-27.2
+          - coq-8.19-emacs-28.1
+          - coq-8.19-emacs-28.2
+          - coq-8.19-emacs-29.1
+          - coq-8.19-emacs-29.2
           # CIPG change marker end
       # at most 20 concurrent jobs per free account
       # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
@@ -211,20 +207,16 @@ jobs:
           - coq-8.17-emacs-29.2
           - coq-8.18-emacs-26.3
           - coq-8.18-emacs-27.1
-          - coq-8.18-emacs-27.2
-          - coq-8.18-emacs-28.1
           - coq-8.18-emacs-28.2
           - coq-8.18-emacs-29.1
           - coq-8.18-emacs-29.2
-          - coq-8.19-rc-emacs-26.1
-          - coq-8.19-rc-emacs-26.2
-          - coq-8.19-rc-emacs-26.3
-          - coq-8.19-rc-emacs-27.1
-          - coq-8.19-rc-emacs-27.2
-          - coq-8.19-rc-emacs-28.1
-          - coq-8.19-rc-emacs-28.2
-          - coq-8.19-rc-emacs-29.1
-          - coq-8.19-rc-emacs-29.2
+          - coq-8.19-emacs-26.3
+          - coq-8.19-emacs-27.1
+          - coq-8.19-emacs-27.2
+          - coq-8.19-emacs-28.1
+          - coq-8.19-emacs-28.2
+          - coq-8.19-emacs-29.1
+          - coq-8.19-emacs-29.2
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -284,20 +276,16 @@ jobs:
           - coq-8.17-emacs-29.2
           - coq-8.18-emacs-26.3
           - coq-8.18-emacs-27.1
-          - coq-8.18-emacs-27.2
-          - coq-8.18-emacs-28.1
           - coq-8.18-emacs-28.2
           - coq-8.18-emacs-29.1
           - coq-8.18-emacs-29.2
-          - coq-8.19-rc-emacs-26.1
-          - coq-8.19-rc-emacs-26.2
-          - coq-8.19-rc-emacs-26.3
-          - coq-8.19-rc-emacs-27.1
-          - coq-8.19-rc-emacs-27.2
-          - coq-8.19-rc-emacs-28.1
-          - coq-8.19-rc-emacs-28.2
-          - coq-8.19-rc-emacs-29.1
-          - coq-8.19-rc-emacs-29.2
+          - coq-8.19-emacs-26.3
+          - coq-8.19-emacs-27.1
+          - coq-8.19-emacs-27.2
+          - coq-8.19-emacs-28.1
+          - coq-8.19-emacs-28.2
+          - coq-8.19-emacs-29.1
+          - coq-8.19-emacs-29.2
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
