@@ -761,7 +761,8 @@ earlier than 8.19."
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-par-coqdep-warning-arguments)
+  (nconc (copy-sequence coq-compile-extra-coqdep-arguments) ; copy for nconc
+         (coq-par-coqdep-warning-arguments)
          (coq-coqdep-prog-args clpath
                                (file-name-directory lib-src-file)
                                (coq--pre-v85))
@@ -772,7 +773,10 @@ load-path options to coqdep."
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (coq-coqc-prog-args clpath (file-name-directory lib-src-file) (coq--pre-v85))
+  (nconc (copy-sequence coq-compile-extra-coqc-arguments) ; copy for nconc
+         (coq-coqc-prog-args clpath
+                             (file-name-directory lib-src-file)
+                             (coq--pre-v85))
          (list lib-src-file)))
 
 (defun coq-par-analyse-coq-dep-exit (status output command)

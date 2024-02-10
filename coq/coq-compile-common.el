@@ -404,6 +404,22 @@ the ``-vok'' second stage was implemented."
   :type 'number
   :safe 'numberp)
 
+(defcustom coq-compile-extra-coqdep-arguments nil
+  "Additional coqdep arguments for auto compilation as list of strings.
+These arguments are added to all coqdep invocations during
+automatic compilation in addition to the arguments computed
+automatically, for instance by parsing a _CoqProject file."
+  :type '(repeat string)
+  :safe (lambda (v) (cl-every #'stringp v)))
+
+(defcustom coq-compile-extra-coqc-arguments nil
+  "Additional coqc arguments for auto compilation as list of strings.
+These arguments are added to all coqc invocations during
+automatic compilation in addition to the arguments computed
+automatically, for instance by parsing a _CoqProject file."
+  :type '(repeat string)
+  :safe (lambda (v) (cl-every #'stringp v)))
+
 (defcustom coq-compile-command ""
   "External compilation command.  If empty ProofGeneral compiles itself.
 If unset (the empty string) ProofGeneral computes the dependencies of
