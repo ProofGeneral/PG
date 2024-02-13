@@ -223,12 +223,13 @@ if it is bound; it should be the name of a variable."
     (setq unicode-tokens-shortcut-replacement-alist
 	  unicode-tokens-shortcut-alist))
   (unless unicode-tokens-tokens-customizable-variables
+    (let ((f (lambda (sym) (when (boundp sym) (symbol-value sym)))))
     (setq unicode-tokens-tokens-customizable-variables
 	  (list
 	   (list "Token Map"
-		 (symbol-value (unicode-tokens-config-var 'token-symbol-map)))
+		 (funcall f (unicode-tokens-config-var 'token-symbol-map)))
 	   (list "Shortcut List"
-		 (symbol-value (unicode-tokens-config-var 'shortcut-alist)))))))
+		 (funcall f (unicode-tokens-config-var 'shortcut-alist))))))))
 
 ;;
 ;; Variables set in the mode
