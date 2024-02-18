@@ -19,6 +19,35 @@
 ;; Mode for buffer which interacts with proof assistant.
 ;; Includes management of a queue of commands waiting to be sent.
 ;;
+;; A big portion of the code in this file implements the callback
+;; function that Emacs calls when output arrives from the proof
+;; assistant. This callback implements a major feature of Proof
+;; General: Sending one command after the other to the proof assistant
+;; and processing/displaying the reply.
+;;
+;; The following documents the call graph of important functions that
+;; contribute to this callback. The entry point is
+;; `proof-shell-filter-wrapper', which is configured in
+;; `scomint-output-filter-functions'. Sending the next comand to the
+;; proof assistant and calling the callbacks of the spans happens in
+;; `proof-shell-exec-loop'.
+;;
+;;   proof-shell-filter-wrapper
+;;   -> proof-shell-filter
+;;      -> proof-shell-process-urgent-messages
+;;      -> proof-shell-filter-manage-output
+;;         -> proof-shell-handle-immediate-output
+;;         -> proof-shell-exec-loop
+;;            -> proof-tree-check-proof-finish
+;;            -> proof-shell-handle-error-or-interrupt
+;;            -> proof-shell-insert-action-item
+;;            -> proof-shell-invoke-callback
+;;            -> proof-release-lock
+;;         -> proof-shell-handle-delayed-output
+;;         -> proof-tree-handle-delayed-output
+;;      -> proof-release-lock
+;;   -> proof-start-prover-with-priority-items-maybe
+;;
 
 ;;; Code:
 
