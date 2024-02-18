@@ -1182,6 +1182,12 @@ display is switched off."
     (let ((proof-start (funcall proof-tree-find-begin-of-unfinished-proof)))
       ;; ensure internal variables are initialized, because otherwise
       ;; we cannot process undo's after this
+      (cl-assert (not proof-second-action-list-active) nil
+                 "second action list active on prooftree start")
+      (when proof-tree--delayed-actions
+        (lwarn '(proof-tree) :warning
+               "proof-tree--delayed-actions not empty on prooftree start"))
+      (setq proof-tree--delayed-actions nil)
       (proof-tree-ensure-running)
       (setq proof-tree-current-proof nil)
       (setq proof-tree-last-state (car (funcall proof-tree-get-proof-info)))
