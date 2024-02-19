@@ -25,6 +25,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     generic changes above.
 
 
+**** New options coq-compile-extra-coqc-arguments and
+     coq-compile-extra-coqdep-arguments to configure additional
+     command line arguments to calls of, respetively, coqc and coqdep
+     during auto compilation.
+
 **** Fix issues #687 and #688 where the omit-proofs feature causes
      errors on correct code.
 
