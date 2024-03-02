@@ -151,17 +151,14 @@ goals buffer is not empty afterwards."
 
 (ert-deftest goals-after-proof ()
   "Test goals are present after ``Proof''."
-  :expected-result (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-proof "Proof"))
 
 (ert-deftest goals-after-comment ()
   "Test goals are present after a comment."
-  :expected-result :failed
   (goals-after-test coq-src-comment "comment"))
 
 (ert-deftest goals-after-auto ()
   "Test goals are present after ``auto''."
-  :expected-result  (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-auto "auto"))
 
 (ert-deftest goals-after-simpl ()

@@ -115,6 +115,8 @@ bother the user.  They may include
   'no-goals-display         do not goals in *goals* buffer
   'proof-tree-show-subgoal  item inserted by the proof-tree package
   'priority-action          item added via proof-add-to-priority-queue
+  'empty-action-list        proof-shell-empty-action-list-command should not be
+                            called if this is the last item in the action list
 
 Note that 'invisible does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -1070,7 +1072,9 @@ being processed."
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
-	   (cl-assert (eq proof-shell-busy queuemode)))))
+	   (cl-assert
+            (eq proof-shell-busy queuemode) nil
+            "wrong queuemode in proof-add-to-queue: %s instead expected %s"))))
 
 
   (let ((nothingthere (null proof-action-list)))

@@ -122,8 +122,21 @@ Namely, goals that do not fit in the goals window."
      ;; should re-intialize to coq-search-blacklist-string instead of
      ;; keeping the current value (that may come from another file).
      ,(format "Add Search Blacklist %s. " coq-search-blacklist-current-string))
-   '("Set Suggest Proof Using. ") coq-user-init-cmd)
-  "Command to initialize the Coq Proof Assistant.")
+   '("Set Suggest Proof Using. "
+     "Set Silent. ")
+   coq-user-init-cmd)
+  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
+List of commands sent to the Coq background process just after it
+has been started. This happens inside `proof-shell-config-done',
+when the major mode `coq-shell-mode' is configured in the `*coq*'
+buffer.
+
+Sets silent mode.
+
+In normal interaction, the Coq is started because the user assert
+some commands. Therefore the commands here are followed by those
+inserted inside `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'.")
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
@@ -1207,12 +1220,18 @@ Printing All set."
 ;; command and *not* have the goal redisplayed, the command must be tagged with
 ;; 'empty-action-list.
 (defun coq-empty-action-list-command (cmd)
-  "Return the list of commands to send to Coq after CMD
-if it is the last command of the action list.
-If CMD is tagged with 'empty-action-list then this function won't
-be called and no command will be sent to Coq.
+  "Return the list of commands to send to Coq if CMD is last in the action list.
+Return the list of commands to be sent to Coq when
+`proof-action-list' is empty, CMD was the last command just sent
+to Coq and CMD was not tagged with `'empty-action-list'.
 Note: the last command added if `coq-show-proof-stepwise' is set
-should match the `coq-show-proof-diffs-regexp'."
+should match the `coq-show-proof-diffs-regexp'.
+
+When Coq runs silent, this function must return the necessary
+Show commands to fill the `*goals*' buffer inside a proof.
+
+This function is called from `proof-shell-exec-loop' via
+`proof-shell-empty-action-list-command'."
   (cond
    ((or
      ;; If closing a nested proof, Show the enclosing goal.
@@ -1221,32 +1240,39 @@ should match the `coq-show-proof-diffs-regexp'."
      ;; If user issued a printing option then t printing.
      (and (string-match-p "\\(S\\|Uns\\)et\\s-+Printing" cmd)
           (> (length coq-last-but-one-proofstack) 0)))
+    ;; (message "coq-empty-action-list case 1")
     `("Show."
       . ,(coq--show-proof-stepwise-cmds)))
    
    ((or
-     ;; If we go back in the buffer and the number of abort is less than
-     ;; the number of nested goals, then Unset Silent and Show the goal
+     ;; If we go back in the buffer and the number of abort is less than the
+     ;; number of nested goals, that is, if we are inside a proof, then Show
+     ;; the goal.
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
-    `("Unset Silent."
-      ,(if (coq--post-v810) (coq-diffs) "Show.")
-      . ,(coq--show-proof-stepwise-cmds)))
+    ;; (message "coq-empty-action-list case 2")
+    (append
+     (if (coq--post-v810) (list (coq-diffs)) ())
+     '("Show.")
+     (coq--show-proof-stepwise-cmds)))
 
    ((or
-     ;; If we go back in the buffer and not in the above case, then only Unset
-     ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
+     ;; If we go back in the buffer and not in the above case, i.e., outside a
+     ;; proof, then only set the Diffs option.
      (string-match-p "BackTo\\s-" cmd))
-    (if (coq--post-v810)
-        (list "Unset Silent." (coq-diffs) )
-      (list "Unset Silent.")))
+    ;; (message "coq-empty-action-list case 3")
+    (if (coq--post-v810) (list (coq-diffs)) ()))
+     
    ((or
      ;; If starting a proof, Show Proof if need be
      (coq-goal-command-str-p cmd)
      ;; If doing (not closing) a proof, Show Proof if need be
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)))
-    (coq--show-proof-stepwise-cmds))))
+    ;; (message "coq-empty-action-list case 4")
+    (append
+     '("Show.")
+     (coq--show-proof-stepwise-cmds)))))
 
 ;; This does not Set Printing Width, it rather tells pg to do that before each
 ;; command (if necessary)
@@ -1326,7 +1352,9 @@ redisplayed."
     (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
       ;; if no available width, or unchanged, do nothing
       (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-        (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
+        (proof-shell-invisible-command
+         (format "Set Printing Width %S." (- wdth 1))
+         t nil 'empty-action-list)
         (setq coq-shell-current-line-width wdth)
         ;; Show iff show non nil and some proof is under way
         (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
@@ -1943,8 +1971,11 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+  ;; When proof-shell-start-silent-cmd and proof-shell-stop-silent-cmd stay at
+  ;; their default value nil, the generic code won't switch Coq to silent and
+  ;; noisy at, respectively, the beginning and end of longer asserted regions.
+  ;; (setq proof-shell-start-silent-cmd "Set Silent. "
+  ;;       proof-shell-stop-silent-cmd "Unset Silent. ")
 
   ;; prooftree config
   (setq
@@ -1969,6 +2000,21 @@ at `proof-assistant-settings-cmds' evaluation time.")
   )
 
 (defun coq-shell-mode-config ()
+  "Initialization of `coq-shell-mode' that runs in the `*coq*' buffer.
+The interaction buffer with Coq, `*coq*', uses a major mode that
+is derived via `proof-shell-mode' from `scomint-mode'. This
+function runs as the body of `coq-shell-mode' when the `*coq*'
+buffer is initialized, which happens when the Coq background
+process is started. This function intitalizes the Coq
+personalization of Proof General in the interaction buffer with
+Coq. At the end, this function calls `proof-shell-config-done',
+which initializes the Coq session, e.g., by sending
+`proof-shell-init-cmd', respectively, `coq-shell-init-cmd' to Coq.
+
+In normal interaction, the proof assistant is started because the
+user assert some commands. Therefore this function runs only
+shortly before `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'."
   (setq
    proof-shell-cd-cmd coq-shell-cd
    proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\""   . "\\\""))
