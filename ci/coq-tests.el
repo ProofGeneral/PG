@@ -152,13 +152,13 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
               (setq proof-splash-enable nil)
               (normal-mode) ;; or (coq-mode)
 	      (coq-set-flags t flags)
-              (coq-mock body))))
-      (coq-test-exit)
-      (coq-set-flags nil flags)
-      (not-modified nil) ; Clear modification  
-      (kill-buffer buffer) 
-      (when rmfile (message "Removing file %s ..." rmfile))
-      (ignore-errors (delete-file rmfile)))))
+              (coq-mock body)))
+        (coq-test-exit)
+        (coq-set-flags nil flags)
+        (not-modified nil) ; Clear modification  
+        (kill-buffer buffer) 
+        (when rmfile (message "Removing file %s ..." rmfile))
+        (ignore-errors (delete-file rmfile))))))
 
 (defun coq-test-goto-before (comment)
   "Go just before COMMENT (a unique string in the .v file).
