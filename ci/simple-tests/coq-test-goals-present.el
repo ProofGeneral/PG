@@ -67,12 +67,32 @@ Proof using.
   "Coq source code for checking goals after an error.")
 
 (defconst coq-src-admitted
-  "Lemma a : forall(P27X : Prop), P27X.
+  "Lemma a : forall(P : Prop), P.
 Proof using.
-  intros P27X.
+  intros P.
   Admitted.
 "
   "Coq source for checking that the goals buffer is reset after Admitted.")
+
+(defconst coq-src-no-more-goals
+  "
+Lemma a : 1 + 1 = 2.
+Proof using.
+  simpl.
+  auto.
+"
+  "Coq source code for checking that the goals buffer is reset when
+no goals are left.")
+
+(defconst coq-src-qed
+  "
+Lemma a : 1 + 1 = 2.
+Proof using.
+  simpl.
+  auto.
+Qed.
+"
+  "Coq source code for checking that the goals buffer is reset after Qed.")
 
 (defconst coq-src-update-goal-after-error
   "
@@ -149,6 +169,61 @@ goals buffer is not empty afterwards."
           (set-buffer-modified-p nil))
         (kill-buffer buffer)))))
 
+(defun goals-buffer-should-be-empty (pos msg)
+  "Check that `*goals*' is empty after asserting/retracting to POS.
+MSG is only used in a message, it should tell after which action
+the goals buffer is expected to be empty."
+  (message "Check that goals buffer is empty after %s" msg)
+  (goto-char pos)
+  (proof-goto-point)
+  (wait-for-coq)
+  ;; (record-buffer-content "*coq*")
+  ;; (record-buffer-content "*goals*")
+
+  ;; check that the goals buffer is empty
+  (with-current-buffer "*goals*"
+    (should (equal (point-min) (point-max)))))
+
+(defun goals-buffer-should-get-reset (coq-src coq-stm msg)
+  "Check that the goals buffer is reset.
+Put the string COQ-SRC into a buffer and assert until the first
+occurrence of COQ-STM, which should be a regular expression. At
+this point the goals buffer needs to contain something. Then
+assert to the end of COQ-SRC and check that the goals buffer has
+been reset. MSG is used in messages only. It shouls say after
+which action the goals buffer should have been reset."
+  (message "Check that goals are reset after %s." msg)
+  (setq proof-three-window-enable nil)
+  (let (buffer)
+    (unwind-protect
+        (progn
+          (find-file "goals.v")
+          (setq buffer (current-buffer))
+          (insert coq-src)
+
+          ;; First fill the goals buffer by asserting until the line
+          ;; after the first occurrence of COQ-STM.
+
+          (goto-char (point-min))
+          (should (re-search-forward coq-stm nil t))
+          (forward-line 1)
+          (message "*goals* should be non-empty after asserting until after %s"
+                   coq-stm)
+          (proof-goto-point)
+          (wait-for-coq)
+          ;; there should be something in the goals buffer now
+          (with-current-buffer "*goals*"
+            (should (not (equal (point-min) (point-max)))))
+
+          (goals-buffer-should-be-empty (point-max) msg))
+
+      ;; clean up
+      (when buffer
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil))
+        (kill-buffer buffer)))))
+  
+
 (ert-deftest goals-after-proof ()
   "Test goals are present after ``Proof''."
   :expected-result (if coq--post-v87 :failed :passed)
@@ -175,40 +250,18 @@ goals buffer is not empty afterwards."
 
 (ert-deftest goals-reset-after-admitted ()
   "The goals buffer is reset after an Admitted."
-  (message
-   "goals-reset-after-admitted: Check that goals are reset after Admitted.")
-  (setq proof-three-window-enable nil)
-  (let (buffer)
-    (unwind-protect
-        (progn
-          (find-file "goals.v")
-          (setq buffer (current-buffer))
-          (insert coq-src-admitted)
+  (goals-buffer-should-get-reset coq-src-admitted "intros P" "Admitted"))
 
-          ;; Need to assert the Admitted alone, therefore first assert
-          ;; until before the Admitted.
-          (goto-char (point-min))
-          (should (re-search-forward "intros P27X" nil t))
-          (forward-line 1)
-          (proof-goto-point)
-          (wait-for-coq)
+(ert-deftest goals-reset-no-more-goals ()
+  "The goals buffer is reset when there are no more goals."
+  (goals-buffer-should-get-reset coq-src-no-more-goals
+                                 "Lemma a" "no more goals"))
 
-          (forward-line 1)
-          (proof-goto-point)
-          (wait-for-coq)
-          ;; (record-buffer-content "*coq*")
-          ;; (record-buffer-content "*goals*")
-
-          ;; check that the old goal is not present in the goals buffer
-          (with-current-buffer "*goals*"
-            (goto-char (point-min))
-            (should (not (re-search-forward "P27X" nil t)))))
-
-      ;; clean up
-      (when buffer
-        (with-current-buffer buffer
-          (set-buffer-modified-p nil))
-        (kill-buffer buffer)))))
+(ert-deftest goals-reset-qed ()
+  :expected-result :failed
+  "The goals buffer is reset after Qed."
+  (goals-buffer-should-get-reset coq-src-qed
+                                 "Proof using" "Qed"))
 
 (ert-deftest update-goals-after-error ()
   "Test goals are updated after an error."
