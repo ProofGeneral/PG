@@ -38,9 +38,6 @@ jobs:
           - 29.1
           - 29.2
           # CIPG change marker end
-      # at most 20 concurrent jobs per free account
-      # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
-      max-parallel: 4
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -142,9 +139,6 @@ jobs:
           - coq-8.19-emacs-29.1
           - coq-8.19-emacs-29.2
           # CIPG change marker end
-      # at most 20 concurrent jobs per free account
-      # cf. https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limit
-      max-parallel: 6
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -335,7 +329,6 @@ jobs:
           - 29.1
           - 29.2
           # CIPG change marker end
-      max-parallel: 4
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
@@ -371,7 +364,6 @@ jobs:
           - 29.1
           - 29.2
           # CIPG change marker end
-      max-parallel: 4
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
 
