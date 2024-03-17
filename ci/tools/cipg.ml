@@ -88,10 +88,12 @@ type date = float
 type version = {
     major : int;
     minor : int;
+    patch : int option;
     release_candidate : bool;
   }
 
-let null_version = {major = 0; minor = 0; release_candidate = false; }
+let null_version = {major = 0; minor = 0; patch = None;
+                    release_candidate = false; }
 
 (* record for lines of the Coq/Emacs/Debian/Ubuntu release table *)
 type release_record = {
@@ -205,20 +207,42 @@ let compare_versions a b =
   let x = compare a.major b.major in
   if x = 0
   then
-    begin
-      let x = compare a.minor b.minor in
-      if x = 0 then
+    let x = compare a.minor b.minor in
+    if x = 0 then
+      let x =
+        match (a.patch, b.patch) with
+          | (Some pa, Some pb) -> compare pa pb
+          | (None, None) -> 0
+          | (Some pa, None) -> compare pa 0
+          | (None, Some pb) -> compare 0 pb
+      in
+      if x = 0
+      then
         match (a.release_candidate, b.release_candidate) with
           | (true, false) -> -1
           | (false, true) -> 1
           | (true, true)
-          | (false, false) -> 0
+            | (false, false) -> 0
       else x
-    end
+    else x
   else x
 
 (* sort version records in ascending order *)
 let sort_versions = List.sort compare_versions
+
+let discard_outdated_patch_levels vl =
+  let vl = List.rev (sort_versions vl) in
+  let rec keep_last cur_major cur_minor res = function
+    | {major; minor} as v :: vl ->
+       if cur_major = major && cur_minor = minor
+       then keep_last cur_major cur_minor res vl
+       else keep_last major minor (v :: res) vl
+    | [] -> res
+  in
+  match vl with
+    | {major; minor} as v :: vl ->
+       keep_last major minor [v] vl
+    | [] -> []
 
 (* sort vl in ascending order and return a list of (version, index) pairs *)
 let sort_and_index_versions vl : (version * int) list =
@@ -270,22 +294,35 @@ let scan_year_month_date s =
   else
     Some (Scanf.sscanf s "%d/%d" norm_tm_date)
 
-(* Scan a version in string s in the form <major>.<minor>[rc] or
- * <major>.<minor>-[rc], where the [rc] is optional. Return a version
- * option, where None is used when s is empty.
- *)
+(* Scan a version in string s in the form <major>.<minor>[rc], where
+   the [rc] is optional, or <major>.<minor>[.<patch>], where the patch
+   level is optional. Return a version option, where None is used when
+   s is empty. Trailing characters after <minor> are ignored, but if
+   there is a dot, a patch level must follow <minor>. *)
 let scan_version s =
   if s = ""
   then None
   else
-    Scanf.sscanf s "%d.%d%n"
+    let s_ch = Scanf.Scanning.from_string s in
+    Scanf.bscanf s_ch "%d.%d%n"
       (fun ma mi i ->
+        let (rc, patch) =
+          if i + 1 < String.length s
+          then
+            if String.sub s i 2 = "rc"
+            then (true, None)
+            else
+              Scanf.bscanf s_ch "%c"
+                (function
+                 | '.' -> Scanf.bscanf s_ch "%d"
+                            (fun patch -> (false, Some patch))
+                 | _ -> (false, None)
+                )
+          else (false, None)
+        in
         Some {major = ma; minor = mi;
-              release_candidate =
-                if (i + 1 < String.length s && String.sub s i 2 = "rc")
-                   || (i + 2 < String.length s && String.sub s i 3 = "-rc")
-                then true
-                else false
+              patch = patch;
+              release_candidate = rc;
       })
 
 (* Parse table of Coq/Emacs/Debian/Ubuntu releases in file ic,
@@ -339,7 +376,7 @@ let parse_table () =
  *****************************************************************************)
 
 (* Process the remainder of the Coq/Emacs/Debian/Ubuntu release table
-   in form of release records. The arguments accumulate the found.
+   in form of release records. The arguments accumulate the information found.
    In particular
    - ltss: relevant Debian/Ubuntu releases
    - passive_hist: passively supported historic pairs
@@ -457,7 +494,9 @@ let rec extract_lts_versions last_coq last_emacs = function
      else extract_lts_versions last_coq last_emacs table
 
 
-(* Return the first actively supported Coq version. *)
+(* Return the first actively supported Coq version. Note that this
+ * might be a version with outdated patch level.
+ *)
 let get_first_active_supported_coq lts =
   let lts_coqs = List.map (fun lt -> lt.lts_coq) lts in
   List.hd (sort_versions lts_coqs)
@@ -467,8 +506,9 @@ let get_first_active_supported_emacs lts =
   let lts_emacses = List.map (fun lt -> lt.lts_emacs) lts in
   List.hd (sort_versions lts_emacses)
 
-(* Returns the first coq version in the pg.org release_record table
-   that was released on a date after range seconds before now
+(* Returns the first Coq version in the release table that was
+ * released on a date after range seconds before now. Note that this
+ * might be a Coq version with outdated patch level.
  *)
 let rec get_first_range_coq range = function
   | [] -> assert false
@@ -505,13 +545,27 @@ let get_latest_two_emacs_major emacses =
 let create_container_matrix coq_number emacs_number =
   Array.init coq_number (fun _ -> Array.make emacs_number Unused)
 
-(* return index for version *)
+(* Return index for version. If version is not in indexed_version_list
+ * (eg., because of discarting outdated patch levels) return index
+ * with same major and minor.
+ *)
 let get_version_index version indexed_version_list =
-  snd (List.find (fun v -> fst v = version) indexed_version_list)
+  match List.find_opt (fun v -> fst v = version) indexed_version_list with
+    | Some (_, i) -> i
+    | None ->
+       snd (List.find
+              (fun (v, _) -> v.major = version.major && v.minor = version.minor)
+              indexed_version_list)
 
 (* return version for index *)
 let get_index_version index indexed_version_list =
   fst (List.nth indexed_version_list index)
+
+(* Adjust version v to one in indexed version list vl. Used for Coq
+ * versions to move to the latest patch level.
+ *)
+let adjust_patch_level v vl =
+  get_index_version (get_version_index v vl) vl
 
 (* mark LTS emacs / coq pairs.
    With future = true additionally mark all coq versions released
@@ -773,9 +827,12 @@ let yml_file_change_wrapper file marker print_fn =
  *****************************************************************************)
 
 let version_to_string v =
-  Printf.sprintf "%d.%d%s"
+  Printf.sprintf "%d.%d%s%s"
     v.major v.minor
-    (if v.release_candidate then "-rc" else "")
+    (match v.patch with
+       | None -> ""
+       | Some p -> Printf.sprintf ".%d" p)
+    (if v.release_candidate then "rc" else "")
 
 (* convert version to string, ignoring the index *)
 let indexed_version_to_string (v, _i) = version_to_string v
@@ -930,14 +987,18 @@ let docker_tags_channel repo_name =
        repo_name)
 
 (* Read all coq-nix container tags from inc, accumulating the result
- * as Coq versions in nix_conts.
+ * as Coq versions in nix_conts. Ignore container tags without patch
+ * level.
  *)
 let rec read_nix_containers inc nix_conts =
   match input_line inc with
     | line ->
        (match scan_version (String.sub line 1 (String.length line - 2)) with
           | None -> assert false
-          | Some v -> read_nix_containers inc (v :: nix_conts)
+          | Some v ->
+             if v.patch <> None
+             then read_nix_containers inc (v :: nix_conts)
+             else read_nix_containers inc nix_conts
        )
     | exception End_of_file -> nix_conts
        
@@ -956,39 +1017,57 @@ let get_nix_containers () =
 (* Read an Coq/Emacs tag from line, return a corresponding Coq/Emacs
  * version pair. Release candidate versions are only recognized for
  * Coq. Recognized tags have the following form:
+ * "coq-8.16.1-emacs-25.2"
  * "coq-8.16-emacs-25.2"
  * "coq-8.16-rc1-emacs-26.1"
  *)
 let read_coq_emacs_tag line =
   (* Printf.printf "X %s\n%!" line; *)
   let sb = Scanf.Scanning.from_string line in
-  Scanf.bscanf sb "\"coq-%d.%d-%[^-]"
-    (fun coq_major coq_minor rc_emacs ->
-      let (emacs_major, emacs_minor) =
-        if rc_emacs = "emacs"
-        then
-          Scanf.bscanf sb "-%d.%d" (fun a b -> (a,b))
-        else
-          Scanf.bscanf sb "-emacs-%d.%d" (fun a b -> (a,b))
+  Scanf.bscanf sb "\"coq-%d.%d%c"
+    (fun coq_major coq_minor c ->
+      let coq_patch = match c with
+          | '.' -> Scanf.bscanf sb "%d-" (fun patch -> Some patch)
+          | '-' -> None
+          | _ -> raise (Scanf.Scan_failure ". or - expected after coq minor")
+      in
+      let (coq_rc, emacs_major, emacs_minor) =
+        Scanf.bscanf sb "%[^-]"
+          (function
+           | "emacs" -> Scanf.bscanf sb "-%d.%d" (fun a b -> (false, a, b))
+           | "rc"
+           | "rc1"
+           | "rc2" -> Scanf.bscanf sb "-emacs-%d.%d" (fun a b -> (true, a, b))
+           | _ -> raise (Scanf.Scan_failure "rc or emacs expected")
+          )
       in
       ({major = coq_major;
         minor = coq_minor;
-        release_candidate = String.starts_with ~prefix:"rc" rc_emacs;
+        patch = coq_patch;
+        release_candidate = coq_rc;
        },
        {major = emacs_major;
         minor = emacs_minor;
-        release_candidate = false
+        patch = None;
+        release_candidate = false;
        }
       )
     )
 
-(* read all coq-emacs tags from inc, accumulating read tags as
- * Coq/Emacs version pairs in coq_emacs.
+(* Read all coq-emacs tags from inc, accumulating read tags as
+ * Coq/Emacs version pairs in coq_emacs. Ignore those tags where the
+ * Coq version has no patch level.
  *)
 let rec read_all_coq_emacs_tags inc coq_emacs =
   match input_line inc with
     | line ->
-       read_all_coq_emacs_tags inc ((read_coq_emacs_tag line) :: coq_emacs)
+       let (coq_v, emacs_v) as vp = read_coq_emacs_tag line in
+       let coq_emacs =
+         if coq_v.patch <> None
+         then vp :: coq_emacs
+         else coq_emacs
+       in
+       read_all_coq_emacs_tags inc coq_emacs
     | exception End_of_file -> coq_emacs
   
 
@@ -1040,7 +1119,7 @@ let check_nix_containers coqs =
           Printf.printf
             ("docker image build -t proofgeneral/coq-nix:%s \\\n"
              ^^ "\t--build-arg COQV=%s \\\n"
-             ^^ "\t--build-arg OCAMLV=4.13-flambda .\n")
+             ^^ "\t--build-arg OCAMLV=4.13.1-flambda .\n")
             coq_version coq_version;
           Printf.printf "docker image push proofgeneral/coq-nix:%s\n\n"
             coq_version;
@@ -1384,19 +1463,23 @@ let main() =
   in
   (* sort LTS by ascending EOL dates *)
   let lts = sort_lts lts in
+  (* only keep latest patch level for each <major>.<minor> *)
+  let coqs = discard_outdated_patch_levels coqs in
   (* sorted coq versions with indices (version * int) list *)
   let coqs = sort_and_index_versions coqs in
   (* actively sorted emacs versions with indices *)
   let emacses = sort_and_index_versions emacses in
   (* oldest coq version for which to build containers for all
      actively supported emacs versions (first version with complete X line) *)
-  let first_full_range_coq = get_first_range_coq coq_full_range_secs table in
+  let first_full_range_coq =
+    adjust_patch_level (get_first_range_coq coq_full_range_secs table) coqs in
   (* oldest coq version which runs with all emacs LTS version in CI
      (first partial X line in CI matrix) *)
   let first_partial_range_coq =
-    get_first_range_coq coq_partial_range_secs table in
+    adjust_patch_level (get_first_range_coq coq_partial_range_secs table) coqs in
   let first_active_emacs = get_first_active_supported_emacs lts in
-  let first_active_coq = get_first_active_supported_coq lts in
+  let first_active_coq =
+    adjust_patch_level (get_first_active_supported_coq lts) coqs in
   (* latest two emacs major versions for magic test *)
   let latest_two_emacs_major = get_latest_two_emacs_major emacses in
   report_table_results first_active_emacs first_active_coq

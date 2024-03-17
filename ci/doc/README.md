@@ -95,7 +95,7 @@ Currently, the first actively supported versions are
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: coq-emacs-versions -->
-| Coq   |  8.11 |
+| Coq   | 8.11.2 |
 |-------+-------|
 | Emacs |  26.3 |
 <!-- CIPG change marker end -->
@@ -171,18 +171,18 @@ containers.
 <!-- CIPG change marker: container-table -->
 |         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 |
 |---------+------+------+------+------+------+------+------+------+------|
-|     8.8 |   H  |      |      |      |      |      |      |      |      |
-|     8.9 |      |   H  |      |      |      |      |      |      |      |
-|    8.10 |      |      |   H  |      |      |      |      |      |      |
-|    8.11 |      |      |  SUP |      |      |      |      |      |   N  |
-|    8.12 |      |      |  SUP |  SUP |      |      |      |      |   N  |
-|    8.13 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
-|    8.14 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
-|    8.15 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.16 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.17 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.18 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|    8.19 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|   8.8.2 |   H  |      |      |      |      |      |      |      |      |
+|   8.9.1 |      |   H  |      |      |      |      |      |      |      |
+|  8.10.2 |      |      |   H  |      |      |      |      |      |      |
+|  8.11.2 |      |      |  SUP |      |      |      |      |      |   N  |
+|  8.12.2 |      |      |  SUP |  SUP |      |      |      |      |   N  |
+|  8.13.2 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
+|  8.14.1 |      |      |  SUP |  SUP |   H  |      |      |      |   N  |
+|  8.15.2 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.16.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.17.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.18.0 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.19.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -289,18 +289,18 @@ version pairs for the Proof General interaction tests with Coq.
 <!-- CIPG change marker: testrun-table -->
 |         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 |
 |---------+------+------+------+------+------+------+------+------+------|
-|     8.8 |      |      |      |      |      |      |      |      |      |
-|     8.9 |      |      |      |      |      |      |      |      |      |
-|    8.10 |      |      |      |      |      |      |      |      |      |
-|    8.11 |      |      |  SUP |      |      |      |      |      |   N  |
-|    8.12 |      |      |      |  SUP |      |      |      |      |   N  |
-|    8.13 |      |      |      |      |   H  |      |      |      |   N  |
-|    8.14 |      |      |      |      |   H  |      |      |      |   N  |
-|    8.15 |      |      |      |  SUP |      |   H  |      |      |   N  |
-|    8.16 |      |      |   X  |   X  |      |      |   X  |      |   N  |
-|    8.17 |      |      |   X  |   X  |      |      |   X  |  SUP |   N  |
-|    8.18 |      |      |   X  |   X  |      |      |   X  |   X  |   N  |
-|    8.19 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |
+|   8.8.2 |      |      |      |      |      |      |      |      |      |
+|   8.9.1 |      |      |      |      |      |      |      |      |      |
+|  8.10.2 |      |      |      |      |      |      |      |      |      |
+|  8.11.2 |      |      |  SUP |      |      |      |      |      |   N  |
+|  8.12.2 |      |      |      |  SUP |      |      |      |      |   N  |
+|  8.13.2 |      |      |      |      |   H  |      |      |      |   N  |
+|  8.14.1 |      |      |      |      |   H  |      |      |      |   N  |
+|  8.15.2 |      |      |      |  SUP |      |   H  |      |      |   N  |
+|  8.16.1 |      |      |   X  |   X  |      |      |   X  |      |   N  |
+|  8.17.1 |      |      |   X  |   X  |      |      |   X  |  SUP |   N  |
+|  8.18.0 |      |      |   X  |   X  |      |      |   X  |   X  |   N  |
+|  8.19.1 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
