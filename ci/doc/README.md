@@ -495,7 +495,7 @@ incorrectly inserted line breaks in the PDF version.
 
 To list all tags of the `proofgeneral/coq-emacs` image use
 ```
-curl -L -s 'https://registry.hub.docker.com/v2/repositories/proofgeneral/coq-emacs/tags?page_size=1024' | jq '."results"[]["name"]'
+curl -L -s 'https://registry.hub.docker.com/v2/repositories/proofgeneral/coq-emacs/tags?page_size=1024' | jq -r '."results"[]["name"]'
 ```
 If the `page_size` number is too small only some first portion is
 printed.
