@@ -92,7 +92,7 @@ configured there may be taken from faces with less priority."
   "Test the omit proofs feature.
 In particular, test that with proof-omit-proofs-option configured:
 - the proof _is_ processed when using a prefix argument
-- in this case the proof as normal locked color
+- in this case the proof has normal locked color
 - without prefix arg, the proof is omitted
 - the proof has omitted color then
 - stuff before the proof still has normal color "
@@ -154,10 +154,15 @@ In particular, test that with proof-omit-proofs-option configured:
   (forward-line -1)
   (proof-goto-point)
   (wait-for-coq)
-  (with-current-buffer "*response*"
-    (goto-char (point-min))
-    ;; There should be a declared message.
-    (should (looking-at "classic_excluded_middle is declared")))
+  (with-current-buffer "*coq*"
+    ;; There should be an Admit at the second last prompt.
+    (goto-char (point-max))
+    (should (search-backward "</prompt>" nil t 2))
+    ;; move behind prompt
+    (forward-char 9)
+    ;; There should be a Qed with no error or message after it
+    (should
+     (looking-at "Admitted\\.\n\n<prompt>Coq <")))
 
   ;; Check 4: check proof-omitted-proof-face is active at marker 3
   (message "4: check proof-omitted-proof-face is active at marker 3")
