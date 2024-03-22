@@ -35,6 +35,7 @@
 ;;   proof-shell-filter-wrapper
 ;;   -> proof-shell-filter
 ;;      -> proof-shell-process-urgent-messages
+;;         -> proof-shell-process-urgent-message
 ;;      -> proof-shell-filter-manage-output
 ;;         -> proof-shell-handle-immediate-output
 ;;         -> proof-shell-exec-loop
