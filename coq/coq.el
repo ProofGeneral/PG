@@ -145,8 +145,20 @@ Namely, goals that do not fit in the goals window."
 ;;  "Add LoadPath \"%s\"." ;; fixes unadorned Require (if .vo exists).
   "*Command of the inferior process to change the directory.")
 
-(defvar coq-shell-proof-completed-regexp "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|Proof\\s-completed"; \\|This subproof is complete
-  "*Regular expression indicating that the proof has been completed.")
+(defvar coq-shell-proof-completed-regexp
+  (concat "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|"
+          "Proof\\s-completed\\|"
+          ;; if printing width is small, eg. when running in batch mode,
+          ;; there might be a line break after infomsg
+          "<infomsg>\n?.*\\s-is\\s-declared"
+          ;; \\|This subproof is complete
+          )
+  "*Regular expression indicating that the proof has been completed.
+Coq instance of `proof-shell-clear-goals-regexp'. Used in
+`proof-shell-process-urgent-message' to determine if the goals
+buffer shall be cleaned. Some of the messages recognized here are
+not printed by Coq in silent mode, such that Proof General might
+fail to delete the goals buffer.")
 
 (defvar coq-goal-regexp
   "\\(============================\\)\\|\\(\\(?:sub\\)?goal [0-9]+\\)\n")

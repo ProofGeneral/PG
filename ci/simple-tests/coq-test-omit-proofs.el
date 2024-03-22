@@ -92,10 +92,11 @@ configured there may be taken from faces with less priority."
   "Test the omit proofs feature.
 In particular, test that with proof-omit-proofs-option configured:
 - the proof _is_ processed when using a prefix argument
-- in this case the proof as normal locked color
+- in this case the proof has normal locked color
 - without prefix arg, the proof is omitted
 - the proof has omitted color then
 - stuff before the proof still has normal color "
+  (message "omit-proofs-omit-and-not-omit: Check several omit proofs features")
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
   (reset-coq)
@@ -154,10 +155,21 @@ In particular, test that with proof-omit-proofs-option configured:
   (forward-line -1)
   (proof-goto-point)
   (wait-for-coq)
-  (with-current-buffer "*response*"
-    (goto-char (point-min))
-    ;; There should be a declared message.
-    (should (looking-at "classic_excluded_middle is declared")))
+  (with-current-buffer "*coq*"
+    ;; There should be an Admit at the second last prompt without error.
+    (goto-char (point-max))
+    (should (search-backward "</prompt>" nil t 2))
+    ;; move behind prompt
+    (forward-char 9)
+    (should (looking-at "Admitted\\.\n"))
+    (forward-line 1)
+    ;; There may be an info message about the declaration. The message
+    ;; may be spread over several lines.
+    (when (looking-at "<infomsg>")
+      (should (search-forward "</infomsg>" nil t))
+      (forward-line 1))
+    ;; no other messages or errors before the next prompt
+    (should (looking-at "\n<prompt>Coq <")))
 
   ;; Check 4: check proof-omitted-proof-face is active at marker 3
   (message "4: check proof-omitted-proof-face is active at marker 3")
@@ -184,6 +196,7 @@ the normal `proof-locked-face'.
 
 The sources for the test contain a local attribute in form of
 '#[local]', which has been introduced only in Coq version 8.9."
+  (message "omit-proofs-never-omit-hints: Check omit proofs feature with Hint")
   (skip-unless coq--post-v809)
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
@@ -206,6 +219,7 @@ Test that proofs for Let local declarations are never omitted and
 that proofs of theorems following a Let definition are omitted.
 
 This test only checks the faces in the middle of the proof."
+  (message "omit-proofs-never-omit-lets: Check omit proofs feature with Let")
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
   (reset-coq)
