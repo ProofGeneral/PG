@@ -27,7 +27,7 @@
 (defconst coq--post-v810 (coq--post-v810)
   "t if Coq is more recent than 8.9")
 
-(message "goal present tests run with Coq version %s; post-v810: %s"
+(message "prelude tests run with Coq version %s; post-v810: %s"
          (coq-version t) coq--post-v810)
 
 
