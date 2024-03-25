@@ -95,7 +95,8 @@ In particular, test that with proof-omit-proofs-option configured:
 - in this case the proof has normal locked color
 - without prefix arg, the proof is omitted
 - the proof has omitted color then
-- stuff before the proof still has normal color "
+- stuff before the proof still has normal color
+- trailing incomplete proofs are not omitted"
   (message "omit-proofs-omit-and-not-omit: Check several omit proofs features")
   (setq proof-omit-proofs-option t
         proof-three-window-enable nil)
@@ -187,6 +188,23 @@ In particular, test that with proof-omit-proofs-option configured:
   (should (search-backward "automatic test marker 1" nil t))
   (should (eq (first-overlay-face) 'proof-locked-face))
   (should (search-forward "automatic test marker 2" nil t))
+  (should (eq (first-overlay-face) 'proof-locked-face))
+
+  ;; Check 6: check that a partial proof at the end is not omitted
+  (message "6: check that a partial proof at the end is not omitted")
+  (goto-char (point-min))
+  (proof-goto-point)
+  (wait-for-coq)
+  (should (search-forward "automatic test marker 3" nil t))
+  (forward-line 2)
+  (proof-goto-point)
+  (wait-for-coq)
+  ;; there are 2 goals
+  (with-current-buffer "*goals*"
+    (goto-char (point-min))
+    (should (looking-at "2 \\(?:sub\\)?goals")))
+  ;; the line before should be locked
+  (forward-line -1)
   (should (eq (first-overlay-face) 'proof-locked-face)))
 
 (ert-deftest omit-proofs-never-omit-hints ()
