@@ -1985,6 +1985,15 @@ Assumes that point is at the end of a command."
 ;; buffer content has been converted to vanilla spans,
 ;; `proof-script-omit-proofs' searches for complete opaque proofs in
 ;; there and replaces them with `proof-script-proof-admit-command'.
+;;
+;; The replacement works in two phases. First,
+;; `proof-script-omit-filter' transfers the list of vanilla spans into
+;; a list of lists of these spans, where each sublist is tagged with
+;; either `'proof' or `'no-proof'. Second, `proof-script-omit-proofs'
+;; replaces the proof parts with admit commands. Partitioning into two
+;; phases makes it possible to reuse the first phase for different
+;; features. See the documentation of `proof-script-omit-filter' for a
+;; specification of the list of lists result type.
 
 (defun proof-move-over-whitespace-to-next-line (pos)
   "Return position of next line if one needs only to jump over white space.
@@ -1999,33 +2008,78 @@ line, otherwise POS."
     (if (eolp)
         (1+ (point))
       pos)))
-  
-(defun proof-script-omit-proofs (vanillas)
-  "Return a copy of VANILLAS with complete opaque proofs omitted.
+
+(defun proof-script-omit-filter (vanillas)
+  "Classify VANILLAS into those which are inside and those outside of proofs.
+Classify the list of vanilla spans VANILLAS into those belonging
+to a proof script that can be omitted by the omit proofs feature
+and those which can not be omitted (either outside proofs or
+inside proofs that cannot be omitted).
+
 See `proof-omit-proofs-configured' for the description of the
 omit proofs feature. This function uses
 `proof-script-proof-start-regexp',
 `proof-script-proof-end-regexp' and
 `proof-script-definition-end-regexp' to search for complete
-opaque proofs in the action list VANILLAS. Complete opaque proofs
-are replaced by `proof-script-proof-admit-command'. The span of
-the admit command contains an 'omitted-proof-region property with
-the region of the omitted proof. This is used in
-`proof-done-advancing-save' to colour the omitted proof with
-`proof-omitted-proof-face'.
+opaque proofs in the action list VANILLAS. Additionally, it uses
+`proof-script-cmd-prevents-proof-omission' and
+`proof-script-cmd-force-next-proof-kept' to detect proofs that
+cannot be omitted.
 
-Report an error to the (probably surprised) user if another proof
-start is found inside a proof."
+The result is a list of chunks, where each chunk is a list that
+contains a type tag as first element. The chunk list is returned
+in reversed order, i.e., the first vanilla span in VANILLAS is
+inside the last chunk.
+
+There are three types of chunks: 'proof for commands inside a
+proof that can be omitted, 'no-proof for commands that are
+outside a proof or cannot be omitted, and 'nested for commands
+that contain a nested proof. Note that there may be several
+adjacent 'no-proof chunks, for instance for commands outside a
+proof followed by a proof that cannot be omitted.
+
+The 'proof chunk has 4 elements:
+
+('proof span-start-first-proof-cmd span-end-first-proof-cmd proof-cmds-reversed)
+
+The last, proof-cmds-reversed, contains the vanilla spans from
+VANILLAS corresponding to commands belonging to a proof,
+excluding the first that matched
+`proof-script-proof-start-regexp' and including the last that
+matched `proof-script-proof-end-regexp' in reversed order. The
+second element span-start-first-proof-cmd is the position of the
+start of the command that matched
+`proof-script-proof-start-regexp' and span-end-first-proof-cmd is
+the position of the end of that command.
+
+The 'no-proof chunk has 2 elements.
+
+('no-proof cmds-reversed)
+
+cmds-reversed contains the vanilla spans of VANILLAS in reversed
+order.
+
+The 'nested-proof chunk has 3 elements.
+
+('nested-proof line-number-nested-proof cmds-reversed)
+
+line-number-nested-proof is the line number where the nested
+proof was detected. cmds-reversed is the tail of VANILLAS,
+containing the start of the nested proof, in reversed order. If
+there is a 'nested-proof chunk in the result, it is the first
+chunk."
   (cl-assert
    (and proof-omit-proofs-configured proof-script-proof-start-regexp
         proof-script-proof-end-regexp proof-script-definition-end-regexp
         proof-script-proof-admit-command)
    nil
    "proof-script omit proof feature not properly configured")
-  (let (;; result vanillas with omitted proofs in reverse order
-        result
-        ;; commands of current proof before deciding opaqueness in reverse order
+  (let (;; result in reversed order
+        result-chunks
+        ;; accumulated commands in reversed order before they are put
+        ;; into a result chunk
         maybe-result
+        ;; flag: is the processing loop currently inside a proof or not?
         inside-proof
         proof-start-span-start proof-start-span-end
         ;; t if the proof contains state changing commands and must be kept
@@ -2045,25 +2099,18 @@ start is found inside a proof."
           (progn
             (if (string-match proof-script-proof-start-regexp cmd)
                 ;; Found another proof start inside a proof.
-                ;; Stop omitting and pass the remainder unmodified.
-                ;; The result in `result' is aggregated in reverse
-                ;; order, need to reverse vanillas.
+                ;; Stop classifying and return the remainder as
+                ;; 'no-proof chunk. The commands in `result-chunks'
+                ;; are in reverse order, need to reverse the remaining
+                ;; vanillas.
                 (progn
-                  (setq result (nconc (nreverse vanillas) maybe-result result))
+                  (push (list 'nested-proof
+                              (line-number-at-pos (span-end (car item)))
+                              (nconc (nreverse vanillas) maybe-result))
+                        result-chunks)
                   (setq maybe-result nil)
                   ;; terminate the while loop
-                  (setq vanillas nil)
-                  ;; for Coq nobody will notice the warning, because
-                  ;; the error about nested proofs will pop up shortly
-                  ;; afterwards
-                  (display-warning
-                   '(proof-script)
-                   ;; use the end of the span, because the start is
-                   ;; usually on the preceding  line
-                   (format (concat "found second proof start at line %d"
-                                   " - are there nested proofs?")
-                           (line-number-at-pos (span-end (car item))))))
-
+                  (setq vanillas nil))
               ;; else - no nested proof, but still inside-proof
               (if (and (string-match proof-script-proof-end-regexp cmd)
                        (not proof-must-be-kept))
@@ -2071,43 +2118,13 @@ start is found inside a proof."
                   ;; recognize a state changing command inside the
                   ;; proof that would prohibit throwing the proof
                   ;; away.
-                  (let
-                      ;; Reuse the Qed span for the whole proof,
-                      ;; including the faked Admitted command.
-                      ;; `proof-done-advancing' expects such a span.
-                      ((cmd-span (car item)))
-                    (span-set-property cmd-span 'type 'omitted-proof)
-                    (span-set-property cmd-span
-                                       'cmd proof-script-proof-admit-command)
-                    (span-set-endpoints cmd-span proof-start-span-end
-                                        (span-end (car item)))
-                    ;; Throw away all commands between start of proof
-                    ;; and the current point, in particular, delete
-                    ;; all the spans.
-                    (mapc
-                     (lambda (item) (span-detach (car item)))
-                     maybe-result)
+                  (progn
+                    (push (list 'proof
+                                proof-start-span-start
+                                proof-start-span-end
+                                (cons item maybe-result))
+                          result-chunks)
                     (setq maybe-result nil)
-                    ;; Record start and end point for the fancy
-                    ;; colored span that marks the skipped proof. The
-                    ;; span will be created in
-                    ;; `proof-done-advancing-save' when
-                    ;; `proof-script-proof-admit-command' is retired.
-                    (span-set-property
-                     cmd-span 'omitted-proof-region
-                     ;; for the start take proper line start if possible
-                     (list (proof-move-over-whitespace-to-next-line
-                            proof-start-span-start)
-                           ;; For the end, don't extend to the end of
-                           ;; the line, because then the fancy color
-                           ;; span is behind the end of the proof span
-                           ;; and will get deleted when undoing just
-                           ;; behind that proof.
-                           (span-end (car item))))
-                    (push (list cmd-span
-                                (list proof-script-proof-admit-command)
-                                'proof-done-advancing nil)
-                          result)
                     (setq inside-proof nil))
 
                 ;; else - no nested proof, no opaque proof, but still inside
@@ -2119,7 +2136,9 @@ start is found inside a proof."
                     ;; such that the proof-must-be-kept.
                     ;; Need to keep all commands from the start of the proof.
                     (progn
-                      (setq result (cons item (nconc maybe-result result)))
+                      (push (list 'no-proof
+                                  (cons item maybe-result))
+                            result-chunks)
                       (setq maybe-result nil)
                       (setq inside-proof nil))
 
@@ -2139,9 +2158,12 @@ start is found inside a proof."
         ;; else - outside proof
         (if (string-match proof-script-proof-start-regexp cmd)
             (progn
+              (push (list 'no-proof
+                          ;; Keep the Proof using command in the
+                          ;; 'no-proof chunk.
+                          (cons item maybe-result))
+                    result-chunks)
               (setq maybe-result nil)
-              ;; Keep the Proof using command in any case.
-              (push item result)
               (setq proof-start-span-start (span-start (car item)))
               (setq proof-start-span-end (span-end (car item)))
               (setq inside-proof t)
@@ -2157,12 +2179,104 @@ start is found inside a proof."
               (setq next-proof-must-be-kept nil)))
 
           ;; keep current item unmodified
-          (push item result)))
+          (push item maybe-result)))
       (setq vanillas (cdr vanillas)))
 
-    ;; end of loop - return filtered vanillas
-    (nreverse (nconc maybe-result result))))
+    ;; end of loop - keep remaining items
+    (when maybe-result
+      (push (list 'no-proof maybe-result) result-chunks))
+    result-chunks))
 
+(defun proof-script-omit-proofs (vanillas)
+  "Return a copy of VANILLAS with complete opaque proofs omitted.
+See `proof-omit-proofs-configured' for the description of the
+omit proofs feature. This function uses
+`proof-script-proof-start-regexp',
+`proof-script-proof-end-regexp' and
+`proof-script-definition-end-regexp' to search for complete
+opaque proofs in the action list VANILLAS. Additionally, it uses
+`proof-script-cmd-prevents-proof-omission' and
+`proof-script-cmd-force-next-proof-kept' to detect proofs that
+cannot be omitted. Complete opaque proofs are replaced by
+`proof-script-proof-admit-command'. The span of the admit command
+contains an 'omitted-proof-region property with the region of the
+omitted proof. This is used in `proof-done-advancing-save' to
+colour the omitted proof with `proof-omitted-proof-face'.
+
+Display a warning if another proof start is found inside a
+proof."
+  (let ((chunks (proof-script-omit-filter vanillas))
+        result)
+    (dolist (chunk chunks result)
+      (cond
+       ((eq (car chunk) 'nested-proof)
+        ;; chunk: ('nested-proof line-number-nested-proof cmds-reversed)
+        ;;
+        ;; A nested-proof chunk can only appear at the head when
+        ;; result is still empty.
+        (cl-assert (null result) nil
+                   "proof-script-omit internal error: nested-proof not at head")
+        ;; Display a warning and keep the commands unmodified.
+        ;;
+        ;; For Coq nobody will notice the warning, because the error
+        ;; about nested proofs will pop up shortly afterwards.
+        (display-warning
+         '(proof-script)
+         ;; use the end of the span, because the start is
+         ;; usually on the preceding  line
+         (format (concat "found second proof start at line %d"
+                         " - are there nested proofs?")
+                 (nth 1 chunk)))
+        (setq result (nreverse (nth 2 chunk))))
+
+       ((eq (car chunk) 'no-proof)
+        ;; chunk: ('no-proof cmds-reversed)
+        ;;
+        ;; keep all commands unmodified
+        (setq result (nconc (nreverse (nth 1 chunk)) result)))
+
+       ((eq (car chunk) 'proof)
+        ;; chunk: ('proof span-start-first-proof-cmd
+        ;;                span-end-first-proof-cmd
+        ;;                proof-cmds-reversed)
+        (let* ((proof-start-span-start (nth 1 chunk))
+               (proof-start-span-end (nth 2 chunk))
+               (cmds-rev (nth 3 chunk))
+               (last-cmd-span (caar cmds-rev)))
+          ;; Reuse the span of the last proof command (Qed) for the
+          ;; whole proof, including the faked Admitted.
+          (span-set-property last-cmd-span 'type 'omitted-proof)
+          (span-set-property last-cmd-span 'cmd proof-script-proof-admit-command)
+          (span-set-endpoints last-cmd-span
+                              proof-start-span-end
+                              (span-end last-cmd-span))
+          ;; Commands inside the proof are thrown away. Thererfore
+          ;; delete all their spans, except the span of the last proof
+          ;; command, which is reused here.
+          (mapc
+           (lambda (item) (span-detach (car item)))
+           (cdr cmds-rev))
+          ;; Record start and end point for the fancy colored span
+          ;; that marks the skipped proof. The span will be created in
+          ;; `proof-done-advancing-save' when
+          ;; `proof-script-proof-admit-command' is retired.
+          (span-set-property
+           last-cmd-span 'omitted-proof-region
+           (list
+            ;; for the start take proper line start if possible
+            (proof-move-over-whitespace-to-next-line proof-start-span-start)
+            ;; For the end, don't extend to the end of the line,
+            ;; because then the fancy color span is behind the end of
+            ;; the proof span and will get deleted when undoing just
+            ;; behind that proof.
+            (span-end last-cmd-span)))
+          ;; replace proof commands by admit
+          (push (list last-cmd-span (list proof-script-proof-admit-command)
+                      'proof-done-advancing nil)
+                result)))
+       (t
+        (cl-assert nil nil
+                   "proof-script-omit internal error: unknown chunk type"))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2697,6 +2811,163 @@ assistant."
 	      (regexp-quote "\n") ;; end-of-line terminated comments
 	    (regexp-quote proof-script-comment-end)))))
 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Check validity of proofs
+;;
+
+(defun proof-script-get-proof-name ()
+  "XXX"
+  (car coq-last-but-one-proofstack))
+
+(defun proof-script-get-state ()
+  "XXX"
+  coq-last-but-one-statenum)
+
+(defun proof-script-retract-command (state)
+  "XXX"
+  (format "BackTo %d." state))
+
+;; (defun proof-script-wait ()
+;;   "Wait until processing is complete."
+;;   (while (or ;(consp proof-action-list)
+;;              proof-shell-busy
+;;              ;proof-shell-filter-active
+;;              ;proof-second-action-list-active
+;;              )
+;;     ;; (message "wait for coq/compilation with %d items queued\n"
+;;     ;;          (length proof-action-list))
+;;     ;;
+;;     ;; accept-process-output without timeout returns rather quickly,
+;;     ;; apparently most times without process output or any other event
+;;     ;; to process.
+;;     (accept-process-output nil 0.1)
+;;     (redisplay t)))
+
+(defconst proof-script-check-report-buffer "*proof-check-report*"
+  "XXX")
+
+(defun proof-script-check-report (proof-results)
+  "XXX"
+  (let* ((src-file (buffer-file-name))
+         (ok-fail (seq-group-by #'car proof-results))
+         (frmt "  %-4s %s")
+         (frmt-face (propertize frmt 'face 'error)))
+    (with-current-buffer (get-buffer-create proof-script-check-report-buffer)
+      (erase-buffer)
+      (insert
+       (propertize (concat "Proof check results for " src-file) 'face 'bold)
+       "\n\n")
+      (insert
+       (format
+        (propertize "%d opaque proofs recognized: %d successful " 'face 'bold)
+        (length proof-results)
+        (length (cdr (assoc t ok-fail)))))
+      (insert (format (propertize "%d FAILING" 'face 'error 'face 'bold)
+                      (length (cdr (assoc nil ok-fail)))))
+      (insert "\n\n")
+      (dolist (pr proof-results)
+        (insert (format (if (car pr) frmt frmt-face)
+                        (if (car pr) "OK  " "FAIL")
+                        (cadr pr)))
+        (insert "\n"))
+      (goto-char (point-min))
+      (display-buffer (current-buffer)))))
+
+(defun proof-script-check-chunks (chunks)
+  "XXX"
+  (let (proof-results current-proof-name proof-start-state)
+    (while chunks
+      (let* ((chunk (car chunks))       ; cdr at end
+             (this-mode (car chunk))
+             (next-mode (car-safe (car-safe (cdr chunks))))
+             (vanillas-rev (cond
+                            ((eq this-mode 'proof) (nth 3 chunk))
+                            ((eq this-mode 'no-proof) (nth 1 chunk))))
+             ;; add 'empty-action-list flag to last item to avoid the
+             ;; call to `proof-shell-empty-action-list-command'
+             (litem (car vanillas-rev))
+             (lspan-end (span-end (car litem)))
+             (nlitem (list (nth 0 litem) (nth 1 litem) (nth 2 litem)
+                           (cons 'empty-action-list (nth 3 litem))))
+             (vanillas-rev-updated (cons nlitem (cdr vanillas-rev)))
+             error)
+        ;; XXX make queue region visible
+        ;; if this is a proof chunk the next must be no-proof or must not exist
+        (cl-assert (or (not (eq this-mode 'proof))
+                       (or (eq next-mode 'no-proof) (eq next-mode nil)))
+                   nil "proof-script-check: two adjacent proof chunks")
+        (proof-add-to-queue (nreverse vanillas-rev-updated) 'advancing)
+        (proof-shell-wait)
+        ;; (redisplay)
+        (unless (eq lspan-end
+                    (and proof-locked-span (span-end proof-locked-span)))
+          ;; not all the spans have been asserted - there was some error
+          (setq error t))
+        (when (and error (eq this-mode 'no-proof))
+          ;; all non-opaque stuff should be error free, abort and tell
+          ;; the user
+          (goto-char (proof-unprocessed-begin))
+          (when (looking-at "$")
+            (forward-line 1))
+          (error "Error encountered outside opaque proofs after line %d"
+                 (line-number-at-pos)))
+            
+        (cond
+         ((and (eq this-mode 'no-proof) (eq next-mode 'proof))
+          ;; non-opaque stuff has been processed error free, next
+          ;; chunk is an opaque proof - record information needed next
+          ;; round
+          (setq current-proof-name (proof-script-get-proof-name))
+          (setq proof-start-state (proof-script-get-state))
+          (cl-assert current-proof-name
+                     nil "proof-script-check: no proof name at proof start"))
+
+         ((eq this-mode 'proof)         ; implies next-mode is no-proof
+          ;; opaque proof chunk processed - with or without error
+          (if (not error)
+              (push (list t current-proof-name) proof-results)
+            ;; opaque proof failed, retract, admit, and record error
+            (proof-add-to-queue
+             (list
+              (list nil (list (proof-script-retract-command proof-start-state))
+                    'proof-done-invisible (list 'invisible))
+              (list nil (list proof-script-proof-admit-command)
+                    'proof-done-invisible (list 'invisible)))
+             'advancing)
+            (proof-shell-wait)
+            (proof-set-locked-end lspan-end)
+            (cl-assert (not (proof-script-get-proof-name))
+                       nil "proof-script-check: still in proof after admitting")
+            (push (list nil current-proof-name) proof-results))))
+        (setq chunks (cdr chunks))))
+    (nreverse proof-results)))
+    
+(defun proof-script-check-proofs ()
+  "XXX"
+  (interactive)
+  ;; kill proof assistant and retract completely
+  (when (buffer-live-p proof-shell-buffer)
+    (proof-shell-exit t))
+  ;; initialize scripting - taken from `proof-assert-until-point'
+  (proof-activate-scripting nil 'advancing)
+  (let* ((semis (proof-segment-up-to-using-cache (point-max)))
+    	 (vanillas (proof-semis-to-vanillas
+                    semis
+                    '(no-response-display no-goals-display)))
+         (chunks-rev (proof-script-omit-filter vanillas))
+         (last-chunk (car chunks-rev))
+         (chunks (nreverse chunks-rev))
+         proof-results)
+    ;; XXX error on nested proofs
+    (cl-assert (not (eq (caar chunks) 'proof))
+               nil "proof-script-check: first chunk cannot be a proof")
+    (setq proof-results (proof-script-check-chunks chunks))
+    (proof-shell-exit t)
+    (proof-script-check-report proof-results)))
 
 
 
