@@ -2816,6 +2816,163 @@ assistant."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; Check validity of proofs
+;;
+
+(defun proof-script-get-proof-name ()
+  "XXX"
+  (car coq-last-but-one-proofstack))
+
+(defun proof-script-get-state ()
+  "XXX"
+  coq-last-but-one-statenum)
+
+(defun proof-script-retract-command (state)
+  "XXX"
+  (format "BackTo %d." state))
+
+;; (defun proof-script-wait ()
+;;   "Wait until processing is complete."
+;;   (while (or ;(consp proof-action-list)
+;;              proof-shell-busy
+;;              ;proof-shell-filter-active
+;;              ;proof-second-action-list-active
+;;              )
+;;     ;; (message "wait for coq/compilation with %d items queued\n"
+;;     ;;          (length proof-action-list))
+;;     ;;
+;;     ;; accept-process-output without timeout returns rather quickly,
+;;     ;; apparently most times without process output or any other event
+;;     ;; to process.
+;;     (accept-process-output nil 0.1)
+;;     (redisplay t)))
+
+(defconst proof-script-check-report-buffer "*proof-check-report*"
+  "XXX")
+
+(defun proof-script-check-report (proof-results)
+  "XXX"
+  (let* ((src-file (buffer-file-name))
+         (ok-fail (seq-group-by #'car proof-results))
+         (frmt "  %-4s %s")
+         (frmt-face (propertize frmt 'face 'error)))
+    (with-current-buffer (get-buffer-create proof-script-check-report-buffer)
+      (erase-buffer)
+      (insert
+       (propertize (concat "Proof check results for " src-file) 'face 'bold)
+       "\n\n")
+      (insert
+       (format
+        (propertize "%d opaque proofs recognized: %d successful " 'face 'bold)
+        (length proof-results)
+        (length (cdr (assoc t ok-fail)))))
+      (insert (format (propertize "%d FAILING" 'face 'error 'face 'bold)
+                      (length (cdr (assoc nil ok-fail)))))
+      (insert "\n\n")
+      (dolist (pr proof-results)
+        (insert (format (if (car pr) frmt frmt-face)
+                        (if (car pr) "OK  " "FAIL")
+                        (cadr pr)))
+        (insert "\n"))
+      (goto-char (point-min))
+      (display-buffer (current-buffer)))))
+
+(defun proof-script-check-chunks (chunks)
+  "XXX"
+  (let (proof-results current-proof-name proof-start-state)
+    (while chunks
+      (let* ((chunk (car chunks))       ; cdr at end
+             (this-mode (car chunk))
+             (next-mode (car-safe (car-safe (cdr chunks))))
+             (vanillas-rev (cond
+                            ((eq this-mode 'proof) (nth 3 chunk))
+                            ((eq this-mode 'no-proof) (nth 1 chunk))))
+             ;; add 'empty-action-list flag to last item to avoid the
+             ;; call to `proof-shell-empty-action-list-command'
+             (litem (car vanillas-rev))
+             (lspan-end (span-end (car litem)))
+             (nlitem (list (nth 0 litem) (nth 1 litem) (nth 2 litem)
+                           (cons 'empty-action-list (nth 3 litem))))
+             (vanillas-rev-updated (cons nlitem (cdr vanillas-rev)))
+             error)
+        ;; XXX make queue region visible
+        ;; if this is a proof chunk the next must be no-proof or must not exist
+        (cl-assert (or (not (eq this-mode 'proof))
+                       (or (eq next-mode 'no-proof) (eq next-mode nil)))
+                   nil "proof-script-check: two adjacent proof chunks")
+        (proof-add-to-queue (nreverse vanillas-rev-updated) 'advancing)
+        (proof-shell-wait)
+        ;; (redisplay)
+        (unless (eq lspan-end
+                    (and proof-locked-span (span-end proof-locked-span)))
+          ;; not all the spans have been asserted - there was some error
+          (setq error t))
+        (when (and error (eq this-mode 'no-proof))
+          ;; all non-opaque stuff should be error free, abort and tell
+          ;; the user
+          (goto-char (proof-unprocessed-begin))
+          (when (looking-at "$")
+            (forward-line 1))
+          (error "Error encountered outside opaque proofs after line %d"
+                 (line-number-at-pos)))
+            
+        (cond
+         ((and (eq this-mode 'no-proof) (eq next-mode 'proof))
+          ;; non-opaque stuff has been processed error free, next
+          ;; chunk is an opaque proof - record information needed next
+          ;; round
+          (setq current-proof-name (proof-script-get-proof-name))
+          (setq proof-start-state (proof-script-get-state))
+          (cl-assert current-proof-name
+                     nil "proof-script-check: no proof name at proof start"))
+
+         ((eq this-mode 'proof)         ; implies next-mode is no-proof
+          ;; opaque proof chunk processed - with or without error
+          (if (not error)
+              (push (list t current-proof-name) proof-results)
+            ;; opaque proof failed, retract, admit, and record error
+            (proof-add-to-queue
+             (list
+              (list nil (list (proof-script-retract-command proof-start-state))
+                    'proof-done-invisible (list 'invisible))
+              (list nil (list proof-script-proof-admit-command)
+                    'proof-done-invisible (list 'invisible)))
+             'advancing)
+            (proof-shell-wait)
+            (proof-set-locked-end lspan-end)
+            (cl-assert (not (proof-script-get-proof-name))
+                       nil "proof-script-check: still in proof after admitting")
+            (push (list nil current-proof-name) proof-results))))
+        (setq chunks (cdr chunks))))
+    (nreverse proof-results)))
+    
+(defun proof-script-check-proofs ()
+  "XXX"
+  (interactive)
+  ;; kill proof assistant and retract completely
+  (when (buffer-live-p proof-shell-buffer)
+    (proof-shell-exit t))
+  ;; initialize scripting - taken from `proof-assert-until-point'
+  (proof-activate-scripting nil 'advancing)
+  (let* ((semis (proof-segment-up-to-using-cache (point-max)))
+    	 (vanillas (proof-semis-to-vanillas
+                    semis
+                    '(no-response-display no-goals-display)))
+         (chunks-rev (proof-script-omit-filter vanillas))
+         (last-chunk (car chunks-rev))
+         (chunks (nreverse chunks-rev))
+         proof-results)
+    ;; XXX error on nested proofs
+    (cl-assert (not (eq (caar chunks) 'proof))
+               nil "proof-script-check: first chunk cannot be a proof")
+    (setq proof-results (proof-script-check-chunks chunks))
+    (proof-shell-exit t)
+    (proof-script-check-report proof-results)))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; Generic defaults for hooks, based on regexps.
 ;;
 
