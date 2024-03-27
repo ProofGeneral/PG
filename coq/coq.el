@@ -1963,6 +1963,12 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-script-cmd-prevents-proof-omission #'coq-cmd-prevents-proof-omission
    proof-script-cmd-force-next-proof-kept coq-cmd-force-next-proof-kept)
 
+  ;; proof-check-proofs config
+  (setq
+   proof-get-proof-info-fn #'coq-get-proof-info-fn
+   proof-retract-command-fn #'coq-retract-command)
+
+
   (setq proof-cannot-reopen-processed-files nil)
 
   (proof-config-done)
@@ -2273,6 +2279,25 @@ Function for `proof-tree-display-stop-command'."
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (coq-proof-tree-evar-command "Unset")))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; proof-check-proofs support
+;;
+
+(defun coq-get-proof-info-fn ()
+  "Coq instance of `proof-get-proof-info-fn' for `proof-check-proofs'.
+Return state number followed by the name of the current proof of
+nil in a list."
+  (list
+   coq-last-but-one-statenum
+   (car coq-last-but-one-proofstack)))
+
+(defun coq-retract-command (state)
+  "Coq instance of `proof-retract-command-fn' for `proof-check-proofs'.
+Return command that undos to state."
+  (format "BackTo %d." state))
+   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
