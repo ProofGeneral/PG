@@ -792,6 +792,45 @@ asserted together."
   :group 'proof-script)
 
 
+;; proof-check-proofs configuration
+
+;; The omit-proofs feature must be fully configured for
+;; `proof-check-proofs', see `proof-omit-proofs-configured'.
+
+(defcustom proof-get-proof-info-fn nil
+  "Return proof name and state number for `proof-check-proofs'.
+Proof assistant specific function for `proof-check-proofs'. This
+function takes no arguments, it is called after completely
+processing the proof script up to a certain point (including all
+callbacks in spans). It must return a list, which contains, in
+the following order:
+
+* the current state number (as positive integer)
+* the name of the current proof (as string) or nil
+
+The proof assistant should return to the same state when the
+state number is supplied to `proof-retract-command-fn'.
+Processing the command returned by `proof-retract-command-fn'
+without processing any other command after calling this function
+should be a no-op.
+
+(This function has the same signature and specification as
+`proof-tree-get-proof-info'.)"
+  :type 'function
+  :group 'proof-script)
+
+(defcustom proof-retract-command-fn nil
+  "Function for retract command to a certain state.
+This function takes a state as argument as returned by
+`proof-get-proof-info-fn'. It should return a command that brings
+the proof assistant back to the same state."
+  :type 'function
+  :group 'proof-script)
+
+(defconst proof-check-report-buffer "*proof-check-report*"
+  "Buffer name for the report of `proof-check-proofs'.")
+
+
 ;;
 ;; Proof script indentation
 ;;
