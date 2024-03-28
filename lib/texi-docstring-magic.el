@@ -100,16 +100,6 @@ Compatibility between FSF Emacs and XEmacs."
   (or (facep face)
       (and (fboundp 'find-face) (find-face face))))
 
-(defun texi-docstring-magic-splice-sep (strings sep)
-  "Return concatenation of STRINGS spliced together with separator SEP."
-  (let (str)
-    (while strings
-      (setq str (concat str (car strings)))
-      (if (cdr strings)
-	  (setq str (concat str sep)))
-      (setq strings (cdr strings)))
-    str))
-
 (defvar texi-docstring--args)
 (defvar texi-docstring--in-quoted-region)
 
@@ -269,7 +259,7 @@ including any whitespace included to delimit matches.")
   "Make a texi def environment ENV for entity NAME with DOCSTRING."
   (concat "@def" env (if grp (concat " " grp) "") " " name
 	  " "
-	  (texi-docstring-magic-splice-sep args " ")
+	  (mapconcat #'identity args " ")
 	  ;; " "
 	  ;; (texi-docstring-magic-splice-sep extras " ")
 	  "\n"
@@ -301,7 +291,7 @@ Markup as @code{stuff} or @lisp stuff @end Lisp."
     (let*
 	((face	    symbol)
 	 (name      (symbol-name face))
-	 (docstring (or (face-doc-string face)
+	 (docstring (or (face-documentation face)
 			"Not documented."))
 	 (useropt   (eq ?* (string-to-char docstring))))
       ;; Chop off user option setting
@@ -334,7 +324,9 @@ Markup as @code{stuff} or @lisp stuff @end Lisp."
 	 (name	    (symbol-name function))
 	 (docstring (or (documentation function)
 			"Not documented."))
-	 (def	    (symbol-function function))
+	 (def	    (indirect-function function))
+	 (def       (if (not (autoloadp def)) def
+	              (autoload-do-load def function)))
 	 (macrop    (eq 'macro (car-safe def)))
 	 (argsyms   (help-function-arglist def 'preserve-names))
 	 (args	    (mapcar #'symbol-name argsyms)))
