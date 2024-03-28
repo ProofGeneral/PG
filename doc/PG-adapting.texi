@@ -3022,12 +3022,12 @@ To set the default value for these settings in prover-specific cases,
 you should use the special @code{defpgdefault} macro:
 
 @c TEXI DOCSTRING MAGIC: defpgdefault
-@deffn Macro defpgdefault sym value
+@deffn Macro defpgdefault 
 Set default for the proof assistant specific variable <PA>@var{-sym} to @var{value}.@*
 This should be used in prover-specific code to alter the default values
 for prover specific settings.
 
-Usage: (defpgdefault @var{sym} @var{value})
+Usage: (defpgdefault SYM @var{value})
 @end deffn
 
 In your prover-specific code you can simply use the setting
@@ -3121,11 +3121,11 @@ Any other %-prefixed character inserts itself.
 @end defun
 
 @c TEXI DOCSTRING MAGIC: proof-defshortcut
-@deffn Macro proof-defshortcut fn string &optional key
-Define shortcut function @var{fn} to insert @var{string}, optional keydef @var{key}.@*
+@deffn Macro proof-defshortcut 
+Define shortcut function FN to insert @var{string}, optional keydef KEY.@*
 This is intended for defining proof assistant specific functions.
 @var{string} is inserted using @samp{@code{proof-insert}}, which see.
-@var{key} is added onto proof assistant map.
+KEY is added onto proof assistant map.
 @end deffn
 The function @code{proof-shell-invisible-command} is a useful utility
 for sending a single command to the process.  You should use this to
@@ -3160,23 +3160,23 @@ There are several handy macros to help you define functions
 which invoke @code{proof-shell-invisible-command}.
 
 @c TEXI DOCSTRING MAGIC: proof-definvisible
-@deffn Macro proof-definvisible fn string &optional key
-Define function @var{fn} to send @var{string} to proof assistant, optional keydef @var{key}.@*
+@deffn Macro proof-definvisible 
+Define function FN to send @var{string} to proof assistant, optional keydef KEY.@*
 This is intended for defining proof assistant specific functions.
 @var{string} is sent using @samp{@code{proof-shell-invisible-command}}, which see.
 @var{string} may be a string or a function which returns a string.
-@var{key} is added onto proof assistant map.
+KEY is added onto proof assistant map.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-define-assistant-command
-@deffn Macro proof-define-assistant-command fn doc cmdvar &optional body
-Define @var{fn} (docstring @var{doc}): check if @var{cmdvar} is set, then send @var{body} to prover.@*
+@deffn Macro proof-define-assistant-command 
+Define FN (docstring DOC): check if @var{cmdvar} is set, then send @var{body} to prover.@*
 @var{body} defaults to @var{cmdvar}, a variable.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-define-assistant-command-witharg
-@deffn Macro proof-define-assistant-command-witharg fn doc cmdvar prompt &rest body
-Define @var{fn} (arg) with @var{doc}: check @var{cmdvar} is set, @var{prompt} a string and eval @var{body}.@*
+@deffn Macro proof-define-assistant-command-witharg 
+Define FN (arg) with DOC: check @var{cmdvar} is set, @var{prompt} a string and eval @var{body}.@*
 The @var{body} can contain occurrences of arg.
 @var{cmdvar} is a variable holding a function or string.  Automatically has history.
 @end deffn
@@ -3356,7 +3356,7 @@ same way as @code{defcustom}, except that the symbol declared will
 automatically be prefixed by the current proof assistant symbol.
 
 @c TEXI DOCSTRING MAGIC: defpgcustom
-@deffn Macro defpgcustom sym &rest args
+@deffn Macro defpgcustom 
 Define a new customization variable <PA>@var{-sym} for the current proof assistant.@*
 This is intended for defining settings which are useful for any prover,
 but which the user may require different values of across provers.
@@ -3373,12 +3373,12 @@ In specific instances of Proof General, the macro @code{defpgdefault}
 can be used to give a default value for a generic setting.
 
 @c TEXI DOCSTRING MAGIC: defpgdefault
-@deffn Macro defpgdefault sym value
+@deffn Macro defpgdefault 
 Set default for the proof assistant specific variable <PA>@var{-sym} to @var{value}.@*
 This should be used in prover-specific code to alter the default values
 for prover specific settings.
 
-Usage: (defpgdefault @var{sym} @var{value})
+Usage: (defpgdefault SYM @var{value})
 @end deffn
 
 All new instantiation variables are best declared using the
@@ -3392,18 +3392,18 @@ To access the generic settings, the following four functions and
 macros are useful.
 
 @c TEXI DOCSTRING MAGIC: proof-ass
-@deffn Macro proof-ass sym
-Return the value for @var{sym} for the current prover.@*
+@deffn Macro proof-ass 
+Return the value for SYM for the current prover.@*
 This macro should only be invoked once a specific prover is engaged.
 @end deffn
 @c TEXI DOCSTRING MAGIC: proof-ass-sym
-@deffn Macro proof-ass-sym sym
-Return the symbol for @var{sym} for the current prover.  @var{sym} not evaluated.@*
+@deffn Macro proof-ass-sym 
+Return the symbol for SYM for the current prover.  SYM not evaluated.@*
 This macro should only be called once a specific prover is known.
 @end deffn
 @c TEXI DOCSTRING MAGIC: proof-ass-symv
-@deffn Macro proof-ass-symv sym
-Return the symbol for @var{sym} for the current prover.  @var{sym} evaluated.@*
+@deffn Macro proof-ass-symv 
+Return the symbol for SYM for the current prover.  SYM evaluated.@*
 This macro should only be invoked once a specific prover is engaged.
 @end deffn
 
@@ -3450,8 +3450,8 @@ approximation we test whether proof-config is fully-loaded yet.
 @end defun
 
 @c TEXI DOCSTRING MAGIC: proof-deftoggle
-@deffn Macro proof-deftoggle var &optional othername
-Define a function VAR-toggle for toggling a boolean customize setting @var{var}.@*
+@deffn Macro proof-deftoggle 
+Define a function VAR-toggle for toggling a boolean customize setting VAR.@*
 The toggle function uses @samp{@code{customize-set-variable}} to change the variable.
 @var{othername} gives an alternative name than the default <VAR>-toggle.
 The name of the defined function is returned.
