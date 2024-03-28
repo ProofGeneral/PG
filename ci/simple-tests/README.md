@@ -15,9 +15,11 @@ coq-test-prelude-correct
 coq-test-goals-present
 : test that Proof General shows goals correctly in various
   situations
-coq-test-three-window.el
+coq-test-three-window
 : Test three-pane mode for different frame sizes, including ones that
   are too small for three windows.
+coq-test-proof-stat
+: test proof-check-proofs
 
 # Overview of existing tests for qRHL
 
