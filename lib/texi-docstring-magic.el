@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2024  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -328,7 +328,10 @@ Markup as @code{stuff} or @lisp stuff @end Lisp."
 	 (def       (if (not (autoloadp def)) def
 	              (autoload-do-load def function)))
 	 (macrop    (eq 'macro (car-safe def)))
-	 (argsyms   (help-function-arglist def 'preserve-names))
+	 (argsyms   (cond ((eq (car-safe def) 'lambda)
+			   (nth 1 def))
+                          ((eq (car-safe def) 'closure)
+                           (nth 2 def))))
 	 (args	    (mapcar #'symbol-name argsyms)))
       (cond
        ((commandp function)
