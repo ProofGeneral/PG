@@ -1588,7 +1588,6 @@ let main() =
             end
           else
             print_endline"\n\nno superfluous container to delete\n";
-          update_currently_used coqs (list_of_matrix coqs emacses conts);
         end;
     end;
   if !print_pg_ci_config then
@@ -1641,6 +1640,8 @@ let main() =
 
       yml_file_change_wrapper test_workflow_file "magic-emacs-version"
         (output_ci_magic_versions latest_two_emacs_major);
+
+      update_currently_used coqs (list_of_matrix coqs emacses conts);
     end;
   ()
   
