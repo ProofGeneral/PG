@@ -36,7 +36,7 @@ Test that the report buffer contains the expected output."
   (find-file "proof_stat.v")
 
   ;; run check on file where all errors are in opaque parts
-  (proof-check-proofs)
+  (proof-check-proofs nil)
 
   ;; the result buffer should exist
   (should (buffer-live-p (get-buffer "*proof-check-report*")))
@@ -74,7 +74,7 @@ Check that `proof-check-proofs' signals an error with the expected message."
           ;; proof-check-proofs should abort now with an error
           (condition-case err-desc
               (progn
-                (proof-check-proofs)
+                (proof-check-proofs nil)
                 ;; Still here? Make test fail!
                 (should nil))
             (error

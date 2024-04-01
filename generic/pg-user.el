@@ -603,14 +603,20 @@ last use time, to discourage saving these into the users database."
 ;; Check validity of proofs
 ;;
 
-(defun proof-check-report (proof-results)
+(defun proof-check-report (proof-results tap batch)
   "Report `proof-check-proofs' results in PROOF-RESULTS in special buffer.
 Report the results of `proof-check-proofs' in buffer
-`proof-check-report-buffer' in human readable form."
+`proof-check-report-buffer' in human readable form or, if TAP is
+not nil, in test anything protocol (TAP). If BATCH is not nil,
+report the results via message, such that they appear on stdout
+when Emacs runs in batch mode or, when BATCH is a string, append
+the results to the file denoted by BATCH."
   (let* ((ok-fail (seq-group-by #'car proof-results))
          (frmt "  %-4s %s")
          (frmt-face (propertize frmt 'face 'error))
+         (count 1)
          coq-proj-dir src-file)
+
     ;; determine a relative file name for current buffer
     (when buffer-file-name
       (setq coq-proj-dir (locate-dominating-file buffer-file-name
@@ -622,25 +628,43 @@ Report the results of `proof-check-proofs' in buffer
     ;; generate header
     (with-current-buffer (get-buffer-create proof-check-report-buffer)
       (erase-buffer)
-      (insert
-       (propertize (concat "Proof check results for " src-file) 'face 'bold)
-       "\n\n")
-      (insert
-       (format
-        (propertize "%d opaque proofs recognized: %d successful " 'face 'bold)
-        (length proof-results)
-        (length (cdr (assoc t ok-fail)))))
-      (insert (format (propertize "%d FAILING" 'face 'error 'face 'bold)
-                      (length (cdr (assoc nil ok-fail)))))
-      (insert "\n\n")
-      ;; generate actual proof results
+      (if tap
+          (insert (format "TAP version 13\n1..%d\n" (length proof-results)))
+        ;; human output
+        (insert
+         (propertize (concat "Proof check results for " src-file) 'face 'bold)
+         "\n\n")
+        (insert
+         (format
+          (propertize "%d opaque proofs recognized: %d successful " 'face 'bold)
+          (length proof-results)
+          (length (cdr (assoc t ok-fail)))))
+        (insert (format (propertize "%d FAILING" 'face 'error 'face 'bold)
+                        (length (cdr (assoc nil ok-fail)))))
+        (insert "\n\n"))
       (dolist (pr proof-results)
-        (insert (format (if (car pr) frmt frmt-face)
-                        (if (car pr) "OK  " "FAIL")
-                        (cadr pr)))
-        (insert "\n"))
-      (goto-char (point-min))
-      (display-buffer (current-buffer)))))
+        (if tap
+            (progn
+              (insert (format "%sok %d - %s\n"
+                              (if (car pr) "" "not ")
+                              count
+                              (cadr pr)))
+              (setq count (1+ count)))
+          ;; human readable
+          (insert (format (if (car pr) frmt frmt-face)
+                          (if (car pr) "OK  " "FAIL")
+                          (cadr pr)))
+          (insert "\n")))
+      (if batch
+          (progn
+            (insert "\n\n")
+            (if (stringp batch)
+                (append-to-file (point-min) (point-max) batch)
+              (message "%s"
+                       (buffer-substring-no-properties
+                        (point-min) (point-max)))))
+        (goto-char (point-min))
+        (display-buffer (current-buffer))))))
 
 (defun proof-check-chunks (chunks)
   "Worker function for `proof-check-proofs for processing CHUNKS.
@@ -727,18 +751,27 @@ as reported by `proof-get-proof-info-fn'."
         (setq chunks (cdr chunks))))
     (nreverse proof-results)))
     
-(defun proof-check-proofs ()
-  "Generate overview about valid and invalid proofs in current buffer.
+(defun proof-check-proofs (tap &optional batch)
+  "Generate an overview about valid and invalid proofs.
 This command completely processes the current buffer and
-generates an overview in the `proof-check-report-buffer' about
-all the opaque proofs in it and whether their proof scripts are
-valid or invalid.
+generates an overview about all the opaque proofs in it and
+whether their proof scripts are valid or invalid.
 
 This command makes sense for a development process where invalid
 proofs are permitted and vos compilation and the omit proofs
 feature (see `proof-omit-proofs-configured') are used to work at
 the most interesting or challenging point instead of on the first
 invalid proof.
+
+Argument TAP, which can be set by a prefix argument, controls the
+form of the generated overview. Nil, without prefix, gives an
+human readable overview, otherwise it's test anything
+protocol (TAP). Argument BATCH controls where the overview goes
+to. If nil, or in an interactive call, the overview appears in
+`proof-check-report-buffer'. If BATCH is a string, it should be a
+filename and the overview is appended there. Otherwise the
+overview is output via `message' such that it appears on stdout
+when this command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
 tolerates errors inside scripts of opaque proofs. Any other error
@@ -747,8 +780,12 @@ overview only contains those names of theorems whose proofs
 scripts are classified as opaque by the omit-proofs feature. For
 Coq for instance, among others, proof scripts terminated with
 'Defined' are not opaque and do not appear in the generated
-overview."
-  (interactive)
+overview.
+
+Note that this command does not (re-)compile required files.
+Files must be required before running this commands, for instance
+by asserting all require commands beforehand."
+  (interactive "P")
   (unless (and proof-omit-proofs-configured
                proof-get-proof-info-fn
                proof-retract-command-fn)
@@ -773,7 +810,7 @@ overview."
                nil "proof-check: first chunk cannot be a proof")
     (setq proof-results (proof-check-chunks chunks))
     (proof-shell-exit t)
-    (proof-check-report proof-results)))
+    (proof-check-report proof-results tap batch)))
 
 
 
