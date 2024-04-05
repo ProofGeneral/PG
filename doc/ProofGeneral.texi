@@ -1916,6 +1916,7 @@ General covered in this chapter.
 * View of processed files ::    
 * Retracting across files::     
 * Asserting across files::      
+* Proof status statistic::
 * Automatic multiple file handling::
 * Escaping script management::
 * Editing features::
@@ -2254,6 +2255,80 @@ command with the usual assertion commands, @pxref{Script processing
 commands}. Proof General reminds you that now is a good time to save any
 unmodified buffers.  This is particularly useful as assertion may cause
 the proof assistant to automatically process other files.
+
+
+@node Proof status statistic
+@section Proof status statistic
+@cindex Proof status statistic
+
+The command @code{proof-check-proofs} generates the proof status of
+all opaque proofs in the current buffer, i.e., it generates an
+overview that shows which of the opaque proofs in the current buffer
+are currently valid and which are failing. When used interactively,
+the proof status is shown in the buffer @code{*proof-check-report*}
+(as long as @code{proof-check-report-buffer} is not changed).
+
+Currently @code{proof-check-proofs} does only work for Coq.
+
+@c TEXI DOCSTRING MAGIC: proof-check-proofs
+@deffn Command proof-check-proofs tap &optional batch
+Generate an overview about valid and invalid proofs.@*
+This command completely processes the current buffer and
+generates an overview about all the opaque proofs in it and
+whether their proof scripts are valid or invalid.
+
+This command makes sense for a development process where invalid
+proofs are permitted and vos compilation and the omit proofs
+feature (see @samp{@code{proof-omit-proofs-configured}}) are used to work at
+the most interesting or challenging point instead of on the first
+invalid proof.
+
+Argument @var{tap}, which can be set by a prefix argument, controls the
+form of the generated overview. Nil, without prefix, gives an
+human readable overview, otherwise it's test anything
+protocol (@var{tap}). Argument @var{batch} controls where the overview goes
+to. If nil, or in an interactive call, the overview appears in
+@samp{@code{proof-check-report-buffer}}. If @var{batch} is a string, it should be a
+filename and the overview is appended there. Otherwise the
+overview is output via @samp{message} such that it appears on stdout
+when this command runs in batch mode.
+
+In the same way as the omit-proofs feature, this command only
+tolerates errors inside scripts of opaque proofs. Any other error
+is reported to the user without generating an overview. The
+overview only contains those names of theorems whose proofs
+scripts are classified as opaque by the omit-proofs feature. For
+Coq for instance, among others, proof scripts terminated with
+@code{'Defined'} are not opaque and do not appear in the generated
+overview.
+
+Note that this command does not (re-)compile required files.
+Files must be required before running this commands, for instance
+by asserting all require commands beforehand.
+@end deffn
+
+@xref{Quick and inconsistent compilation} for enabling vos compilation
+inside Proof General and see @xref{Omitting proofs for speed} for the
+omit-proofs feature.
+
+The interactive use of this commands is limited because it only works
+on the current buffer. However, this commands can also be run in batch
+mode in a script, for instance in a continuous integration
+environment. To run this command on a buffer in batch mode, use
+
+@verbatim
+emacs -batch -l <your-pg-dir>/generic/proof-site.el <file> \
+      --eval '(proof-check-proofs <tap> <output>)'
+@end verbatim
+
+where @code{<tap>} should be @code{nil} for human readable output and
+@code{t} for test anything protocol. If @code{<output>} is @code{t}
+the proof status appears in the standard output of the Emacs process.
+Otherwise @code{<output>} should be a filename as string in double
+quotes. Then the proof status is appended to this file. (If
+@code{output} is @code{nil} or omitted, the proof status is only put
+into the @code{*proof-check-report*} buffer, which does not make much
+sense in a batch command as the one above.)
 
 
 @node Automatic multiple file handling
@@ -4232,6 +4307,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Proof using annotations::
 * Multiple File Support::
 * Omitting proofs for speed::
+* Proof status statistic for Coq::
 * Editing multiple proofs::
 * User-loaded tactics::
 * Indentation tweaking::
@@ -5171,6 +5247,20 @@ All capitalized commands make Proof General believe the proof is
 non-opaque, even if they have proof-local effect only, such as
 @code{Focus} or @code{Unshelve}.
 @end itemize
+
+
+@node Proof status statistic for Coq
+@section Proof status statistic for Coq
+
+The command @code{proof-check-proofs} generates the proof status of
+all opaque proofs in the current buffer, i.e., it generates an
+overview that shows which of the opaque proofs in the current buffer
+are currently valid and which are failing. This command is useful for
+a development process where invalid proofs are permitted and vos
+compilation (@xref{Quick and inconsistent compilation}) and the omit
+proofs feature (@xref{Omitting proofs for speed}) are used to work at
+the most interesting or challenging point instead of on the first
+invalid proof. See @xref{Proof status statistic} for more details.
 
 
 @node Editing multiple proofs
