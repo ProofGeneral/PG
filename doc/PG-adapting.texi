@@ -647,6 +647,7 @@ the behaviour of script management.
 * Configuring undo behaviour::
 * Nested proofs::
 * Omitting proofs for speed::
+* Proof status statistic::
 * Safe (state-preserving) commands::
 * Activate scripting hook::
 * Automatic multiple files::
@@ -1274,6 +1275,58 @@ Note that recognition of commands with this regular expression
 does only work if the command and the following proof are
 asserted together.
 @end defvar
+
+
+@node Proof status statistic
+@section Proof status statistic
+
+The command @code{proof-check-proofs} builds on the omit-proofs
+feature. Using its machinery, it splits the current buffer into opaque
+proofs and all other material. The other material is asserted in the
+usual way and @code{proof-check-proofs} aborts if it detects an error
+in there. For opaque proofs the command first tries to assert them in
+the usual way too. If this succeeds the proof is considered valid.
+Otherwise the proof is replaced with
+@code{proof-script-proof-admit-command} and the proof is considered
+invalid. To associate theorem names with opaque proofs, the function
+@code{proof-get-proof-info-fn} is called, which is identical to
+@code{proof-tree-get-proof-info}, @xref{Proof Tree Elisp
+configuration}.
+
+To enable proof status statistics, the omit-proofs feature must be
+configured, @xref{Omitting proofs for speed}. Additionally, the
+following settings must be configured.
+
+@c TEXI DOCSTRING MAGIC: proof-get-proof-info-fn
+@defvar proof-get-proof-info-fn 
+Return proof name and state number for @samp{@code{proof-check-proofs}}.@*
+Proof assistant specific function for @samp{@code{proof-check-proofs}}. This
+function takes no arguments, it is called after completely
+processing the proof script up to a certain point (including all
+callbacks in spans). It must return a list, which contains, in
+the following order:
+
+* the current state number (as positive integer)
+* the name of the current proof (as string) or nil
+
+The proof assistant should return to the same state when the
+state number is supplied to @samp{@code{proof-retract-command-fn}}.
+Processing the command returned by @samp{@code{proof-retract-command-fn}}
+without processing any other command after calling this function
+should be a no-op.
+
+(This function has the same signature and specification as
+@samp{@code{proof-tree-get-proof-info}}.)
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-retract-command-fn
+@defvar proof-retract-command-fn 
+Function for retract command to a certain state.@*
+This function takes a state as argument as returned by
+@samp{@code{proof-get-proof-info-fn}}. It should return a command that brings
+the proof assistant back to the same state.
+@end defvar
+
 
 @node Safe (state-preserving) commands
 @section Safe (state-preserving) commands
