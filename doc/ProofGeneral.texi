@@ -2261,12 +2261,13 @@ the proof assistant to automatically process other files.
 @section Proof status statistic
 @cindex Proof status statistic
 
-The command @code{proof-check-proofs} generates the proof status of
-all opaque proofs in the current buffer, i.e., it generates an
-overview that shows which of the opaque proofs in the current buffer
-are currently valid and which are failing. When used interactively,
-the proof status is shown in the buffer @code{*proof-check-report*}
-(as long as @code{proof-check-report-buffer} is not changed).
+The command @code{proof-check-proofs} (menu @code{Proof-General ->
+Check Opaque Proofs}) generates the proof status of all opaque proofs
+in the current buffer, i.e., it generates an overview that shows which
+of the opaque proofs in the current buffer are currently valid and
+which are failing. When used interactively, the proof status is shown
+in the buffer @code{*proof-check-report*} (as long as
+@code{proof-check-report-buffer} is not changed).
 
 Currently @code{proof-check-proofs} does only work for Coq.
 
@@ -2314,7 +2315,7 @@ omit-proofs feature.
 The interactive use of this commands is limited because it only works
 on the current buffer. However, this commands can also be run in batch
 mode in a script, for instance in a continuous integration
-environment. To run this command on a buffer in batch mode, use
+environment. To run this command on a file in batch mode, use
 
 @verbatim
 emacs -batch -l <your-pg-dir>/generic/proof-site.el <file> \
@@ -5252,15 +5253,16 @@ non-opaque, even if they have proof-local effect only, such as
 @node Proof status statistic for Coq
 @section Proof status statistic for Coq
 
-The command @code{proof-check-proofs} generates the proof status of
-all opaque proofs in the current buffer, i.e., it generates an
-overview that shows which of the opaque proofs in the current buffer
-are currently valid and which are failing. This command is useful for
-a development process where invalid proofs are permitted and vos
-compilation (@xref{Quick and inconsistent compilation}) and the omit
-proofs feature (@xref{Omitting proofs for speed}) are used to work at
-the most interesting or challenging point instead of on the first
-invalid proof. See @xref{Proof status statistic} for more details.
+The command @code{proof-check-proofs} (menu @code{Proof-General ->
+Check Opaque Proofs}) generates the proof status of all opaque proofs
+in the current buffer, i.e., it generates an overview that shows which
+of the opaque proofs in the current buffer are currently valid and
+which are failing. This command is useful for a development process
+where invalid proofs are permitted and vos compilation (@xref{Quick
+and inconsistent compilation}) and the omit proofs feature
+(@xref{Omitting proofs for speed}) are used to work at the most
+interesting or challenging point instead of on the first invalid
+proof. See @xref{Proof status statistic} for more details.
 
 
 @node Editing multiple proofs
