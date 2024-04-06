@@ -702,7 +702,11 @@ without adjusting window layout."
      :active pg-next-error-regexp]
     ["Scripting Active" proof-toggle-active-scripting
      :style toggle
-     :selected (eq proof-script-buffer (current-buffer))])
+     :selected (eq proof-script-buffer (current-buffer))]
+    ["Check Opaque Proofs" proof-check-proofs
+     :active (and proof-omit-proofs-configured
+               proof-get-proof-info-fn
+               proof-retract-command-fn)])
   "The Proof General generic menu for scripting buffers.")
 
 
