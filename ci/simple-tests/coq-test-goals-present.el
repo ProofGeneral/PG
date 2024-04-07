@@ -141,10 +141,12 @@ BUF should be a string."
 
 ;;; define the tests
 
-(defun goals-after-test (coq-src msg)
+(defun goals-after-test (coq-src msg check-response-nonempty)
   "Test that Proof General shows goals after processing COQ-SRC.
 Process COQ-SRC in a new buffer in one step and check that the
-goals buffer is not empty afterwards."
+goals buffer is not empty afterwards. If CHECK-RESPONSE-NONEMPTY
+is non-nil, additionally check that the response buffer is
+non-empty, i.e., shows some error message."
   (message "goals-after-test: Check goals are present after %s." msg)
   (setq proof-three-window-enable nil)
   (let (buffer)
@@ -161,7 +163,14 @@ goals buffer is not empty afterwards."
           ;; check that there is a goal in the goals buffer
           (with-current-buffer "*goals*"
             (goto-char (point-min))
-            (should (looking-at "1 \\(sub\\)?goal (ID"))))
+            (should (looking-at "1 \\(sub\\)?goal (ID")))
+
+          (when check-response-nonempty
+            (message
+             "goals-after-test: Check response buffer is nonempty after %s."
+             msg)
+            (with-current-buffer "*response*"
+              (should (not (equal (point-min) (point-max)))))))
 
       ;; clean up
       (when buffer
@@ -226,24 +235,24 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-proof ()
   "Test goals are present after ``Proof''."
-  (goals-after-test coq-src-proof "Proof"))
+  (goals-after-test coq-src-proof "Proof" nil))
 
 (ert-deftest goals-after-comment ()
   "Test goals are present after a comment."
-  (goals-after-test coq-src-comment "comment"))
+  (goals-after-test coq-src-comment "comment" nil))
 
 (ert-deftest goals-after-auto ()
   "Test goals are present after ``auto''."
-  (goals-after-test coq-src-auto "auto"))
+  (goals-after-test coq-src-auto "auto" nil))
 
 (ert-deftest goals-after-simpl ()
   "Test goals are present after ``simpl''."
-  (goals-after-test coq-src-simpl "simpl"))
+  (goals-after-test coq-src-simpl "simpl" nil))
 
 (ert-deftest goals-after-error ()
   "Test goals are present after an error."
   :expected-result :failed
-  (goals-after-test coq-src-error "error"))
+  (goals-after-test coq-src-error "error" t))
 
 (ert-deftest goals-reset-after-admitted ()
   :expected-result :failed
@@ -281,6 +290,7 @@ which action the goals buffer should have been reset."
           ;; (record-buffer-content "*goals*")
 
           ;; the complete goal should be present
+          (message "Check that the complete goal is present in *goals*")
           (with-current-buffer "*goals*"
             (goto-char (point-min))
             (should (re-search-forward "(eq_one 1 -> False) -> False" nil t)))
@@ -293,9 +303,16 @@ which action the goals buffer should have been reset."
           ;; (record-buffer-content "*goals*")
 
           ;; the hypothesis H should be present
+          (message "Check that the goals buffer has been updated")
           (with-current-buffer "*goals*"
             (goto-char (point-min))
-            (should (re-search-forward "H : eq_one 1 -> False" nil t))))
+            (should (re-search-forward "H : eq_one 1 -> False" nil t)))
+
+          ;; some error should be in the response buffer
+          (message "Check that there is some error message present")
+          (with-current-buffer "*response*"
+            (should (not (equal (point-min) (point-max))))))
+
       (when buffer
         (with-current-buffer buffer
           (set-buffer-modified-p nil))
