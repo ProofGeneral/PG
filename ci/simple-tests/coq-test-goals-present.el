@@ -251,7 +251,6 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-error ()
   "Test goals are present after an error."
-  :expected-result :failed
   (goals-after-test coq-src-error "error" t))
 
 (ert-deftest goals-reset-after-admitted ()
@@ -272,7 +271,6 @@ which action the goals buffer should have been reset."
 
 (ert-deftest update-goals-after-error ()
   "Test goals are updated after an error."
-  :expected-result :failed
   (message "update-goals-after-error: Check goals are updated after error")
   (setq proof-three-window-enable nil)
   (let (buffer)

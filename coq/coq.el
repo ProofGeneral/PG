@@ -133,7 +133,7 @@ buffer.
 
 Sets silent mode.
 
-In normal interaction, the Coq is started because the user assert
+In normal interaction, Coq is started because the user assert
 some commands. Therefore the commands here are followed by those
 inserted inside `proof-assert-command-hook', respectively,
 `coq-adapt-printing-width'.")
@@ -1874,7 +1874,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
           (let ((pt2 (point)))
             (re-search-backward "Goal:\\|^TcDebug\\|^</prompt>" nil t)
             (when (looking-at "Goal")
-              (pg-goals-display (buffer-substring (point) pt2) nil))))))))
+              (pg-goals-display (buffer-substring (point) pt2) nil nil))))))))
 
 ;; overwrite the generic one, interactive prompt is Debug mode;; try to display
 ;; the debug goal in the goals buffer.
@@ -3062,6 +3062,26 @@ buffer."
 
 (add-hook 'proof-shell-handle-error-or-interrupt-hook #'coq-highlight-error-hook t)
 
+
+(defun coq-show-goals-on-error ()
+  "Update goals buffer on error if necessary.
+This function is intended for
+`proof-shell-handle-error-or-interrupt-hook'. When Coq reported
+an error, this function issues a Show command to update the goals
+buffer, in case we are inside a proof. The hook is processed deep
+inside `proof-shell-filter' after the action list has been reset
+and the proof shell lock `proof-shell-busy' has been released,
+all because of the error. The Show must therefore be added as
+priority action. The flags of the action item must contain
+`'keep-response', because in two-pane mode we want to show the
+response buffer to the user."
+  (when coq-last-but-one-proofstack
+    (proof-add-to-priority-queue
+     (proof-shell-action-list-item
+      "Show. " 'proof-done-invisible
+      (list 'keep-response 'invisible 'empty-action-list)))))
+
+(add-hook 'proof-shell-handle-error-or-interrupt-hook #'coq-show-goals-on-error)
 
 ;;
 ;; Scroll response buffer to maximize display of first goal

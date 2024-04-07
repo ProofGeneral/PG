@@ -38,6 +38,8 @@
 ;;         -> proof-shell-process-urgent-message
 ;;      -> proof-shell-filter-manage-output
 ;;         -> proof-shell-handle-immediate-output
+;;            -> proof-shell-handle-error-or-interrupt
+;;               -> proof-shell-error-or-interrupt-action
 ;;         -> proof-shell-exec-loop
 ;;            -> proof-tree-check-proof-finish
 ;;            -> proof-shell-handle-error-or-interrupt
@@ -113,6 +115,7 @@ bother the user.  They may include
   'no-response-display      do not display messages in *response* buffer
   'no-error-display         do not display errors/take error action
   'no-goals-display         do not goals in *goals* buffer
+  'keep-response            do not erase the response buffer when goals are shown
   'proof-tree-show-subgoal  item inserted by the proof-tree package
   'priority-action          item added via proof-add-to-priority-queue
   'empty-action-list        proof-shell-empty-action-list-command should not be
@@ -1818,7 +1821,9 @@ i.e., 'goals or 'response."
 	    (buffer-substring-no-properties rstart gmark)))
        ;; display goals output second so it persists in 2-pane mode
        (unless (memq 'no-goals-display flags)
-	 (pg-goals-display proof-shell-last-goals-output both))
+	 (pg-goals-display proof-shell-last-goals-output
+                           (or both (member 'keep-response flags))
+                           (member 'keep-response flags)))
        ;; indicate a goals output has been given
        'goals))
 
