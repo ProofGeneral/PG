@@ -117,6 +117,26 @@ Proof.
   "Coq source code for checking that goals are updated even in case of error.")
 
 
+(defconst coq-src-update-goal-after-search
+  "
+Lemma g : 1 + 1 = 2.
+Proof using.
+  simpl.
+  Search (0 + _).
+"
+  "Coq source code for checking that goals are up-to-date after Search.")
+
+
+(defconst coq-src-update-goal-after-check
+  "
+Lemma h : 1 + 2 = 3.
+Proof using.
+  simpl.
+  Check plus_O_n.
+"
+  "Coq source code for checking that goals are up-to-date after Check.")
+
+
 ;;; utility functions
 
 (defun record-buffer-content (buf)
@@ -146,7 +166,8 @@ BUF should be a string."
 Process COQ-SRC in a new buffer in one step and check that the
 goals buffer is not empty afterwards. If CHECK-RESPONSE-NONEMPTY
 is non-nil, additionally check that the response buffer is
-non-empty, i.e., shows some error message."
+non-empty, i.e., shows some message, and is visible in some
+window also in two-pane mode."
   (message "goals-after-test: Check goals are present after %s." msg)
   (setq proof-three-window-enable nil)
   (let (buffer)
@@ -161,7 +182,7 @@ non-empty, i.e., shows some error message."
           ;; (record-buffer-content "*goals*")
 
           ;; check that there is a goal in the goals buffer
-          (with-current-buffer "*goals*"
+          (with-current-buffer proof-goals-buffer
             (goto-char (point-min))
             (should (looking-at "1 \\(sub\\)?goal (ID")))
 
@@ -169,8 +190,12 @@ non-empty, i.e., shows some error message."
             (message
              "goals-after-test: Check response buffer is nonempty after %s."
              msg)
-            (with-current-buffer "*response*"
-              (should (not (equal (point-min) (point-max)))))))
+            (with-current-buffer proof-response-buffer
+              (should (not (equal (point-min) (point-max)))))
+            (message
+             "goals-after-test: Check response buffer is visible after %s."
+             msg)
+            (should (get-buffer-window proof-response-buffer))))
 
       ;; clean up
       (when buffer
@@ -190,7 +215,7 @@ the goals buffer is expected to be empty."
   ;; (record-buffer-content "*goals*")
 
   ;; check that the goals buffer is empty
-  (with-current-buffer "*goals*"
+  (with-current-buffer proof-goals-buffer
     (should (equal (point-min) (point-max)))))
 
 (defun goals-buffer-should-get-reset (coq-src coq-stm msg)
@@ -221,7 +246,7 @@ which action the goals buffer should have been reset."
           (proof-goto-point)
           (wait-for-coq)
           ;; there should be something in the goals buffer now
-          (with-current-buffer "*goals*"
+          (with-current-buffer proof-goals-buffer
             (should (not (equal (point-min) (point-max)))))
 
           (goals-buffer-should-be-empty (point-max) msg))
@@ -272,50 +297,116 @@ which action the goals buffer should have been reset."
   (goals-buffer-should-get-reset coq-src-qed
                                  "Proof using" "Qed"))
 
-(ert-deftest update-goals-after-error ()
-  "Test goals are updated after an error."
-  :expected-result :failed
-  (message "update-goals-after-error: Check goals are updated after error")
+(defun update-goals-when-response (coq-src first-pos goal-2nd msg)
+  "Test goals are up-to-date after an error or a command that produces response.
+Process COQ-SRC up to the line after the first match of regular
+expression FIRST-POS. At this point the goals buffer should not
+be empty. Process now COQ-SRC up to the end. If GOAL-2ND is a
+regular expression as a string, then check that the goals have
+been updated to contain a match for GOAL-2ND. If GOAL-2ND is no
+string, only check that the goals buffer is non-empty. In any
+case, check that the response buffer is not empty and visible in
+two-pane mode."
+  
+  (message "update-goals-when-response: Check goals are updated after %s" msg)
   (setq proof-three-window-enable nil)
   (let (buffer)
     (unwind-protect
         (progn
           (find-file "goals.v")
           (setq buffer (current-buffer))
-          (insert coq-src-update-goal-after-error)
+          (insert coq-src)
           (goto-char (point-min))
-          (should (re-search-forward "point A" nil t))
-          (beginning-of-line)
+          (should (re-search-forward first-pos nil t))
+          (forward-line 1)
           (proof-goto-point)
           (wait-for-coq)
           ;; (record-buffer-content "*coq*")
           ;; (record-buffer-content "*goals*")
 
-          ;; the complete goal should be present
-          (message "Check that the complete goal is present in *goals*")
-          (with-current-buffer "*goals*"
-            (goto-char (point-min))
-            (should (re-search-forward "(eq_one 1 -> False) -> False" nil t)))
+          ;; goals should be present
+          (message "Check that goals are present")
+          (with-current-buffer proof-goals-buffer
+            (should (not (equal (point-min) (point-max)))))
 
-          (should (re-search-forward "point B" nil t))
-          (beginning-of-line)
+          (goto-char (point-max))
           (proof-goto-point)
           (wait-for-coq)
           ;; (record-buffer-content "*coq*")
           ;; (record-buffer-content "*goals*")
 
-          ;; the hypothesis H should be present
-          (message "Check that the goals buffer has been updated")
-          (with-current-buffer "*goals*"
+          (with-current-buffer proof-goals-buffer
             (goto-char (point-min))
-            (should (re-search-forward "H : eq_one 1 -> False" nil t)))
+            (if (stringp goal-2nd)
+                (progn
+                  (message "Check that goals have been updated")
+                  (should (re-search-forward goal-2nd nil t)))
+              (message "Check that goals are still present")
+              (should (not (equal (point-min) (point-max))))))
 
-          ;; some error should be in the response buffer
-          (message "Check that there is some error message present")
-          (with-current-buffer "*response*"
-            (should (not (equal (point-min) (point-max))))))
+          ;; something should be in the response buffer
+          (message "Check that there is some response present")
+          (with-current-buffer proof-response-buffer
+            (should (not (equal (point-min) (point-max)))))
+
+          (message "Check that the response is visible in two-pane mode")
+          (should (get-buffer-window proof-response-buffer)))
 
       (when buffer
         (with-current-buffer buffer
           (set-buffer-modified-p nil))
         (kill-buffer buffer)))))
+
+(ert-deftest goals-up-to-date-at-error ()
+  "Check that goals are updated before showing the error."
+  :expected-result :failed
+  (update-goals-when-response coq-src-update-goal-after-error
+                              "Lemma foo"
+                              "H : eq_one 1 -> False"
+                              "error"))
+
+(ert-deftest goals-up-to-date-after-search-one-step ()
+  "Check that goals are still present before showing result of one search cmd.
+This test checks a single Search command inside a proof. After
+processing that Search command alone, the goals buffer should not
+be empty and the response buffer should contain something and be
+visible in two-pane mode."
+  (update-goals-when-response coq-src-update-goal-after-search
+                              "simpl"
+                              t
+                              "Search"))
+
+(ert-deftest goals-updated-after-search-many-steps ()
+  "Check that goals are updated before showing result of search cmd.
+This test checks several commands inside a proof with a final
+Search command. After processing these commands, the goals buffer
+should have been updated and the response buffer should contain
+something and be visible in two-pane mode."
+  :expected-result :failed
+  (update-goals-when-response coq-src-update-goal-after-search
+                              "Lemma g"
+                              "2 = 2"
+                              "Search"))
+
+(ert-deftest goals-up-to-date-after-check-one-step ()
+  "Check that goals are still present before showing result of one check cmd.
+This test checks a single Check command inside a proof. After
+processing that Check command alone, the goals buffer should not
+be empty and the response buffer should contain something and be
+visible in two-pane mode."
+  (update-goals-when-response coq-src-update-goal-after-check
+                              "simpl"
+                              t
+                              "Check"))
+
+(ert-deftest goals-updated-after-check-many-steps ()
+  "Check that goals are updated before showing result of check cmd.
+This test checks several commands inside a proof with a final
+Check command. After processing these commands, the goals buffer
+should have been updated and the response buffer should contain
+something and be visible in two-pane mode."
+  :expected-result :failed
+  (update-goals-when-response coq-src-update-goal-after-check
+                              "Lemma h"
+                              "3 = 3"
+                              "Check"))
