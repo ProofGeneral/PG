@@ -151,36 +151,36 @@ See ‘proof-layout-windows’ for more details about POLICY."
   (delete-other-windows)
   (switch-to-buffer b1)
   (let ((pol (proof-guess-3win-display-policy policy)))
-  (save-selected-window
-    (cond
-     ((eq pol 'hybrid)
-      (split-window-horizontally)
-      (other-window 1)
-      (switch-to-buffer b2)
-      (proof-safe-split-window-vertically) ; enlarge vertically if necessary
-      (set-window-dedicated-p (selected-window) proof-three-window-enable)
-      (other-window 1)
-      (switch-to-buffer b3)
-      (set-window-dedicated-p (selected-window) proof-three-window-enable))
-     ((eq pol 'vertical)
-      (split-window-vertically)
-      (other-window 1)
-      (switch-to-buffer b2)
-      (proof-safe-split-window-vertically) ; enlarge vertically if necessary
-      (set-window-dedicated-p (selected-window) proof-three-window-enable)
-      (other-window 1)
-      (switch-to-buffer b3)
-      (set-window-dedicated-p (selected-window) proof-three-window-enable))
-     ((eq pol 'horizontal)
-      (split-window-horizontally) ; horizontally again
-      (other-window 1)
-      (switch-to-buffer b2)
-      (enlarge-window (/ (frame-width) 6) t) ; take 2/3 of width before splitting again
-      (split-window-horizontally) ; horizontally again
-      (set-window-dedicated-p (selected-window) proof-three-window-enable)
-      (other-window 1)
-      (switch-to-buffer b3)
-      (set-window-dedicated-p (selected-window) proof-three-window-enable))))))
+    (save-selected-window
+      (cond
+       ((eq pol 'hybrid)
+        (split-window-horizontally)
+        (other-window 1)
+        (switch-to-buffer b2)
+        (proof-safe-split-window-vertically) ; enlarge vertically if necessary
+        (set-window-dedicated-p (selected-window) proof-three-window-enable)
+        (other-window 1)
+        (switch-to-buffer b3)
+        (set-window-dedicated-p (selected-window) proof-three-window-enable))
+       ((eq pol 'vertical)
+        (split-window-vertically)
+        (other-window 1)
+        (switch-to-buffer b2)
+        (proof-safe-split-window-vertically) ; enlarge vertically if necessary
+        (set-window-dedicated-p (selected-window) proof-three-window-enable)
+        (other-window 1)
+        (switch-to-buffer b3)
+        (set-window-dedicated-p (selected-window) proof-three-window-enable))
+       ((eq pol 'horizontal)
+        (split-window-horizontally) ; horizontally again
+        (other-window 1)
+        (switch-to-buffer b2)
+        (enlarge-window (/ (frame-width) 6) t) ; take 2/3 of width before splitting again
+        (split-window-horizontally) ; horizontally again
+        (set-window-dedicated-p (selected-window) proof-three-window-enable)
+        (other-window 1)
+        (switch-to-buffer b3)
+        (set-window-dedicated-p (selected-window) proof-three-window-enable))))))
 
 
 
