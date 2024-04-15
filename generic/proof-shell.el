@@ -1297,8 +1297,8 @@ contains only invisible elements for Prooftree synchronization."
 	 	    proof-action-list)
 	 	   ;; If the last command in proof-action-list is a "Show Proof" form then return t
 	 	   (when last-command
-             (proof-shell-string-match-safe
-              proof-show-proof-diffs-regexp last-command)))))))))
+                     (proof-shell-string-match-safe
+                      proof-show-proof-diffs-regexp last-command)))))))))
 
 
 (defun proof-shell-insert-loopback-cmd  (cmd)
@@ -1780,58 +1780,59 @@ i.e., 'goals or 'response."
   (let ((start proof-shell-delayed-output-start)
 	(end   proof-shell-delayed-output-end)
 	(flags proof-shell-delayed-output-flags))
-  (goto-char start)
-  (cond
-   ((and proof-shell-start-goals-regexp
-	 (proof-re-search-forward proof-shell-start-goals-regexp end t))
-     (let* ((gmark  (match-beginning 0)) ; start of goals message
-	    (gstart (or (match-end 1)    ; start of actual display
-			gmark))
-	    (rstart start)		 ; possible response before goals
-	    (gend   end)
-	    both)			 ; flag for response+goals
+    (goto-char start)
+    (cond
+     ((and proof-shell-start-goals-regexp
+	   (proof-re-search-forward proof-shell-start-goals-regexp end t))
+      (let* ((gmark  (match-beginning 0)) ; start of goals message
+	     (gstart (or (match-end 1)    ; start of actual display
+			 gmark))
+	     (rstart start)		 ; possible response before goals
+	     (gend   end)
+	     both)			 ; flag for response+goals
 
-       (goto-char gstart)
-       (while (re-search-forward proof-shell-start-goals-regexp end t)
-	 (setq gmark (match-beginning 0))
-	 (setq gstart (or (match-end 1) gmark))
-	 (setq gend
-	       (if (and proof-shell-end-goals-regexp
-			(re-search-forward proof-shell-end-goals-regexp end t))
-		   (progn
-		     (setq rstart (match-end 0))
-		     (match-beginning 0))
-		 end)))
-       (setq proof-shell-last-goals-output
-	     (buffer-substring-no-properties gstart gend))
+        (goto-char gstart)
+        (while (re-search-forward proof-shell-start-goals-regexp end t)
+	  (setq gmark (match-beginning 0))
+	  (setq gstart (or (match-end 1) gmark))
+	  (setq gend
+	        (if (and proof-shell-end-goals-regexp
+			 (re-search-forward proof-shell-end-goals-regexp end t))
+		    (progn
+		      (setq rstart (match-end 0))
+		      (match-beginning 0))
+		  end)))
+        (setq proof-shell-last-goals-output
+	      (buffer-substring-no-properties gstart gend))
 
-       ;; FIXME heuristic: 4 allows for annotation in end-goals-regexp [is it needed?]
-       (setq both
-	     (> (- gmark rstart) 4))
-       (if both
-	   (proof-shell-display-output-as-response
-	    flags
-	    (buffer-substring-no-properties rstart gmark)))
-       ;; display goals output second so it persists in 2-pane mode
-       (unless (memq 'no-goals-display flags)
-	 (pg-goals-display proof-shell-last-goals-output both))
-       ;; indicate a goals output has been given
-       'goals))
+        ;; FIXME heuristic: 4 allows for annotation in
+        ;; end-goals-regexp [is it needed?]
+        (setq both
+	      (> (- gmark rstart) 4))
+        (if both
+	    (proof-shell-display-output-as-response
+	     flags
+	     (buffer-substring-no-properties rstart gmark)))
+        ;; display goals output second so it persists in 2-pane mode
+        (unless (memq 'no-goals-display flags)
+	  (pg-goals-display proof-shell-last-goals-output both))
+        ;; indicate a goals output has been given
+        'goals))
 
-   (t
-    (proof-shell-display-output-as-response flags proof-shell-last-output)
-    ;; indicate that (only) a response output has been given
-    'response))
+     (t
+      (proof-shell-display-output-as-response flags proof-shell-last-output)
+      ;; indicate that (only) a response output has been given
+      'response))
   
-  ;; FIXME (CPC 2015-12-31): The documentation of this hook suggests that it
-  ;; only gets run after new output has been displayed, but this isn't true at
-  ;; the moment: indeed, it gets run even for invisible commands.
-  ;;
-  ;; This causes issues in company-coq, where completion uses invisible
-  ;; commands to display the types of completion candidates; this causes the
-  ;; goals and response buffers to scroll. I fixed it by adding checks to
-  ;; coq-mode's hooks, but maybe we should do more.
-  (run-hooks 'proof-shell-handle-delayed-output-hook)))
+    ;; FIXME (CPC 2015-12-31): The documentation of this hook suggests that it
+    ;; only gets run after new output has been displayed, but this isn't true at
+    ;; the moment: indeed, it gets run even for invisible commands.
+    ;;
+    ;; This causes issues in company-coq, where completion uses invisible
+    ;; commands to display the types of completion candidates; this causes the
+    ;; goals and response buffers to scroll. I fixed it by adding checks to
+    ;; coq-mode's hooks, but maybe we should do more.
+    (run-hooks 'proof-shell-handle-delayed-output-hook)))
 
 
 
