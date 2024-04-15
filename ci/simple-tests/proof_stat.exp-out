@@ -1,0 +1,16 @@
+Proof check results for proof_stat.v
+
+3 opaque proofs recognized: 1 successful 2 FAILING
+
+  FAIL a1_equal_4
+  OK   b_equal_6
+  FAIL b2_equal_6
+
+
+TAP version 13
+1..3
+not ok 1 - a1_equal_4
+ok 2 - b_equal_6
+not ok 3 - b2_equal_6
+
+

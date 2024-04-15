@@ -15,7 +15,7 @@ COQ_SUCCESS:=$(COQ_TESTS:.el=.success)
 QRHL_SUCCESS:=$(QRHL_TESTS:.el=.success)
 
 .PHONY: coq-all
-coq-all: $(COQ_SUCCESS)
+coq-all: $(COQ_SUCCESS) coq-proof-stat-batch-test
 
 .PHONY: qrhl-all
 qrhl-all: $(QRHL_SUCCESS)
@@ -25,6 +25,20 @@ qrhl-all: $(QRHL_SUCCESS)
 		-f ert-run-tests-batch-and-exit \
 	&& touch $@
 
+# The following tests the batch mode functionality of
+# proof-check-proofs. It generates human readable and TAP output for
+# proof_stat.v and compares it with the expected output in file
+# proof_stat.exp-out.
+coq-proof-stat-batch-test:
+	rm -rf proof_stat.gen-out
+	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
+	      --eval '(proof-check-proofs nil "proof_stat.gen-out")'
+	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
+	      --eval '(proof-check-proofs t "proof_stat.gen-out")'
+	cmp proof_stat.gen-out proof_stat.exp-out && \
+		touch coq-proof-stat-batch-test
+
 .PHONY: clean
 clean:
 	rm -f *.vo *.glob *.vio *.vos *.vok .*.aux *.success
+	rm -f coq-proof-stat-batch-test proof_stat.gen-out

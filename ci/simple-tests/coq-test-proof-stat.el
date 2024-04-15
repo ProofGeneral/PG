@@ -11,11 +11,6 @@
 ;;
 ;; Test proof-check-proofs.
 
-;; For seq-group-by inside `proof-check-report'. This is
-;; apparently not automatically loaded in Emacs 26.3. Though in a real
-;; PG session it is apparently present.
-(require 'seq)
-
 (defun reset-coq ()
   "Reset Coq and Proof General.
 Do `proof-shell-exit' to kill Coq and reset the locked region and

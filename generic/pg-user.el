@@ -26,6 +26,13 @@
 
 (require 'proof-script)	        ; we build on proof-script
 
+;; For seq-group-by inside `proof-check-report'. This is apparently
+;; not automatically loaded in Emacs 26.3. In a real PG session it is
+;; apparently present, but not if `proof-check-proof' is invoked from
+;; the shell as described in the user manual.
+;; XXX Delete this when support for Emacs 26 is dropped (hopefully in Q4/2025).
+(require 'seq)
+
 (eval-when-compile (require 'cl-lib))   ;cl-decf
 (defvar which-func-modes)               ; Defined by which-func.
 
@@ -615,6 +622,7 @@ the results to the file denoted by BATCH."
          (frmt "  %-4s %s")
          (frmt-face (propertize frmt 'face 'error))
          (count 1)
+         (inhibit-read-only t)          ; for the report buffer, below
          coq-proj-dir src-file)
 
     ;; determine a relative file name for current buffer
@@ -627,6 +635,8 @@ the results to the file denoted by BATCH."
 
     ;; generate header
     (with-current-buffer (get-buffer-create proof-check-report-buffer)
+      (read-only-mode)
+      (buffer-disable-undo)
       (erase-buffer)
       (if tap
           (insert (format "TAP version 13\n1..%d\n" (length proof-results)))
