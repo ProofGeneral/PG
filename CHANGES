@@ -57,7 +57,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     errors on correct code.
 *** Run Coq completely silent to fix #568. If you experience unexpected
     behavior, please report a bug and disable
-    `coq-run-completely-silent' to switch back to old behavior.
+    `coq-run-completely-silent' to switch back to old behavior. Note
+    that external proof tree display is only supported if Coq/Rocq
+    runs completely silent.
 
 
 * Changes of Proof General 4.5 from Proof General 4.4

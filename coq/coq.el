@@ -89,7 +89,8 @@ of commands and switched to verbose before the last command. A
 manual Show command (C-c C-p) is necessary if the last command
 fails to update the goals buffer (e.g., if it is a comment or it
 is not executed because some other command before failed, see
-also bug report #568)."
+also bug report #568). External proof tree display is only
+supported if this option is t."
   :type 'boolean
   :safe 'booleanp
   :group 'coq)
@@ -233,7 +234,7 @@ It is mostly useful in three window mode, see also
   :package-version '(ProofGeneral . "4.2"))
 
 (defcustom coq-proof-tree-ignored-commands-regexp
-  "^\\(\\(Show\\)\\|\\(Locate\\)\\)"
+  "^\\(\\(Show\\)\\|\\(Locate\\)\\|\\(Proof\\)\\)"
   "Regexp for `proof-tree-ignored-commands-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
@@ -1998,12 +1999,15 @@ at `proof-assistant-settings-cmds' evaluation time.")
     (setq proof-shell-start-silent-cmd "Set Silent."
           proof-shell-stop-silent-cmd "Unset Silent."))
 
-  ;; prooftree config
-  (setq
-   proof-tree-configured (coq--post-v810)
-   proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
-   proof-tree-find-begin-of-unfinished-proof
-     'coq-find-begin-of-unfinished-proof)
+  ;; prooftree config - prooftree is only supported for Coq/Rocq running silent
+  (when coq-run-completely-silent
+    (setq
+     proof-tree-configured (coq--post-v810)
+     proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
+     proof-tree-find-begin-of-unfinished-proof
+       'coq-find-begin-of-unfinished-proof
+     proof-tree-assistant-specific-urgent-action
+       'proof-tree-coq-urgent-action))
 
   ;; proof-omit-proofs config
   (setq
@@ -2330,11 +2334,16 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 ;; in the middle of a proof and then to undo a few tactics.
 
 (defun coq-proof-tree-evar-command (cmd)
-  "Return the evar printing command for CMD as action list item."
+  "Return the evar printing command for CMD as action list item.
+Adds, among others, `'empty-action-list' to flags to avoid that
+`coq-empty-action-list-command' adds a show command because it
+recognizes a change of a printing option. When the user quits the
+proof tree display inside prooftree, then the evar command likely
+runs as single command."
   (proof-shell-action-list-item
    (concat cmd " Printing Dependent Evars Line.")
    'proof-done-invisible
-   (list 'invisible 'no-response-display)))
+   (list 'invisible 'no-response-display 'empty-action-list)))
 
 (defun coq-proof-tree-enable-evars ()
   "Enable the evar status line."
@@ -2354,6 +2363,35 @@ Function for `proof-tree-display-stop-command'."
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (coq-proof-tree-evar-command "Unset")))
 
+(defun proof-tree-coq-urgent-action (last-item)
+  "Insert show-goal commands when running completely silent.
+Coq specific function for `proof-tree-assistant-specific-urgent-action'.
+When running completely silent, insert a show-goal command for commands
+comming from the user. Be careful to not insert show-goal commands for
+show-goal requests from prooftree or for the items inserted by this
+function. LAST-ITEM is the last proof-action item that has just been
+processed. This function is guaranteed to be called at a place where
+`proof-action-list' can be directly manipulated.
+
+When single stepping through a proof, this function inserts a second
+show command, which is inserted before the one from
+`coq-show-goals-inside-proof'. One would of course be enough, but fixing
+this would be difficult."
+  (let ((flags (nth 3 last-item)))
+    (unless (or (memq 'invisible flags)
+                (memq 'proof-tree-show-subgoal flags))
+      (let ((proof-info (coq-proof-tree-get-proof-info)))
+        ;; Ignore retractions, prooftree only needs fresh sequents.
+        (when (and (>= (car proof-info) proof-tree-last-state)
+                   (cadr proof-info))
+          (push
+           (proof-shell-action-list-item
+	    "Show."
+            (lambda (_span)
+              (proof-tree-display-goal-callback last-item proof-info))
+	    '(invisible no-goals-display no-response-display
+                        proof-tree-show-subgoal))
+           proof-action-list))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -3159,7 +3197,7 @@ Do nothing if `coq-run-completely-silent' is disabled."
     (let* ((flags-1 (list 'dont-show-when-silent 'invisible 'empty-action-list))
            (flags (if keep-response (cons 'keep-response flags-1) flags-1)))
       (proof-add-to-priority-queue
-       (proof-shell-action-list-item "Show. " 'proof-done-invisible flags)))))
+       (proof-shell-action-list-item "Show." 'proof-done-invisible flags)))))
 
 (defun coq-show-goals-on-error ()
   "Update goals after error.
