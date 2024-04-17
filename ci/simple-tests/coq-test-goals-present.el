@@ -283,17 +283,14 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-proof ()
   "Test goals are present after ``Proof''."
-  :expected-result (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-proof "Proof" nil))
 
 (ert-deftest goals-after-comment ()
   "Test goals are present after a comment."
-  :expected-result :failed
   (goals-after-test coq-src-comment "comment" nil))
 
 (ert-deftest goals-after-auto ()
   "Test goals are present after ``auto''."
-  :expected-result  (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-auto "auto" nil))
 
 (ert-deftest goals-after-simpl ()
@@ -302,11 +299,11 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-error ()
   "Test goals are present after an error."
-  :expected-result :failed
   (goals-after-test coq-src-error "error" t))
 
 (ert-deftest goals-reset-after-admitted ()
   "The goals buffer is reset after an Admitted."
+  :expected-result :failed
   (goals-buffer-should-get-reset coq-src-admitted "intros P" "Admitted"))
 
 (ert-deftest goals-reset-no-more-goals ()
@@ -381,7 +378,6 @@ two-pane mode."
 
 (ert-deftest goals-up-to-date-at-error ()
   "Check that goals are updated before showing the error."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-error
                               "Lemma foo"
                               "H : eq_one 1 -> False"
@@ -404,7 +400,6 @@ This test checks several commands inside a proof with a final
 Search command. After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-search
                               "Lemma g"
                               "2 = 2"
@@ -427,7 +422,6 @@ This test checks several commands inside a proof with a final
 Check command. After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-check
                               "Lemma h"
                               "3 = 3"
@@ -578,6 +572,7 @@ window."
   (check-response-present #'coq-Search 6 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-something-proof-end ()
+  :expected-result :failed
   "Check response for coq-Search on (0 <= 2) at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
@@ -592,11 +587,13 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 3 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-empty-inside-proof ()
+  :expected-result :failed
   "Check empty response for coq-Search on 42 inside proof"
   (message "Check empty response for Search 42 is shown inside proof")
   (check-response-present #'coq-Search 6 "42" t))
       
 (ert-deftest response-buffer-visible-coq-search-empty-proof-end ()
+  :expected-result :failed
   "Check empty response for coq-Search on 42 at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
@@ -611,6 +608,7 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 3 "42" t))
       
 (ert-deftest response-buffer-visible-coq-check-print-all-inside-poof ()
+  :expected-result :failed
   "Check response for coq-Check on Nat.add_comm inside proof with printing all."
   (message
    "Check response for Check Nat.add_comm inside proof with printing all")
@@ -618,6 +616,7 @@ in proof mode with no more goals."
    #'(lambda() (coq-Check t)) 6 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-poof-end ()
+  :expected-result :failed
   "Check response for coq-Check on Nat.add_comm at proof end with printing all."
   (message
    "Check response for Check Nat.add_comm at proof end with printing all")

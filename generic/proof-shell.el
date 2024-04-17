@@ -38,6 +38,8 @@
 ;;         -> proof-shell-process-urgent-message
 ;;      -> proof-shell-filter-manage-output
 ;;         -> proof-shell-handle-immediate-output
+;;            -> proof-shell-handle-error-or-interrupt
+;;               -> proof-shell-error-or-interrupt-action
 ;;         -> proof-shell-exec-loop
 ;;            -> proof-tree-check-proof-finish
 ;;            -> proof-shell-handle-error-or-interrupt
@@ -113,8 +115,13 @@ bother the user.  They may include
   'no-response-display      do not display messages in *response* buffer
   'no-error-display         do not display errors/take error action
   'no-goals-display         do not goals in *goals* buffer
+  'keep-response            do not erase the response buffer when goals are shown
   'proof-tree-show-subgoal  item inserted by the proof-tree package
   'priority-action          item added via proof-add-to-priority-queue
+  'empty-action-list        proof-shell-empty-action-list-command should not be
+                            called if this is the last item in the action list
+  'dont-show-when-silent    Used for commands that should not be followed by a
+                            show command when running silent.
 
 Note that 'invisible does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -1081,7 +1088,10 @@ being processed."
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
-	   (cl-assert (eq proof-shell-busy queuemode)))))
+	   (cl-assert
+            (eq proof-shell-busy queuemode) nil
+            "wrong queuemode in proof-add-to-queue: %s instead expected %s"
+            proof-shell-busy queuemode))))
 
 
   (let ((nothingthere (null proof-action-list)))
@@ -1727,10 +1737,9 @@ by the filter is to send the next command from the queue."
       (setq proof-shell-delayed-output-start start)
       (setq proof-shell-delayed-output-end end)
       (setq proof-shell-delayed-output-flags flags)
-      (if (proof-shell-exec-loop)
-	  (setq proof-shell-last-output-kind
-		;; only display result for last output
-		(proof-shell-handle-delayed-output)))
+      (when (proof-shell-exec-loop)
+	;; only display result for last output
+	(proof-shell-handle-delayed-output))
       ;; send output to the proof tree visualizer
       (if proof-tree-external-display
 	  (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))))
@@ -1826,14 +1835,18 @@ i.e., 'goals or 'response."
 	     (buffer-substring-no-properties rstart gmark)))
         ;; display goals output second so it persists in 2-pane mode
         (unless (memq 'no-goals-display flags)
-	  (pg-goals-display proof-shell-last-goals-output both))
+	  (pg-goals-display proof-shell-last-goals-output
+                            (or both (member 'keep-response flags))
+                            (member 'keep-response flags)))
         ;; indicate a goals output has been given
-        'goals))
+        (setq proof-shell-last-output-kind 'goals)))
 
      (t
       (proof-shell-display-output-as-response flags proof-shell-last-output)
       ;; indicate that (only) a response output has been given
-      'response))
+      (if (equal proof-shell-last-output "")
+          (setq proof-shell-last-output-kind nil)
+        (setq proof-shell-last-output-kind 'response))))
   
     ;; FIXME (CPC 2015-12-31): The documentation of this hook suggests that it
     ;; only gets run after new output has been displayed, but this isn't true at
@@ -2004,7 +2017,8 @@ Ordinary output (and error handling) is disabled, and the result
   (proof-shell-invisible-command cmd 'waitforit
 				 nil
 				 'no-response-display
-				 'no-error-display)
+				 'no-error-display
+                                 'dont-show-when-silent)
   proof-shell-last-output)
 
 ;;;###autoload

@@ -3956,8 +3956,13 @@ bother the user.  They may include
   @code{'no-response-display}      do not display messages in @strong{response} buffer
   @code{'no-error-display}         do not display errors/take error action
   @code{'no-goals-display}         do not goals in @strong{goals} buffer
+  @code{'keep-response}            do not erase the response buffer when goals are shown
   @code{'proof-tree-show-subgoal}  item inserted by the proof-tree package
   @code{'priority-action}          item added via @code{proof-add-to-priority-queue}
+  @code{'empty-action-list}        @code{proof-shell-empty-action-list-command} should not be
+                            called if this is the last item in the action list
+  @code{'dont-show-when-silent}    Used for commands that should not be followed by a
+                            show command when running silent.
 @end lisp
 Note that @code{'invisible} does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
