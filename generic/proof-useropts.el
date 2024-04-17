@@ -176,7 +176,11 @@ Emacs automatically resizing windows between proof steps.
 
 If you use several frames (the same Emacs in several windows on the
 screen), you can force a frame to stick to showing the goals or
-response buffer."
+response buffer.
+
+This option only takes effect if the frame height is bigger than
+4 times `window-min-height' (i.e., bigger than 16 with default
+values) because there must be enough space to create 3 windows."
   :type 'boolean
   :set 'proof-set-value
   :group 'proof-user-options)
