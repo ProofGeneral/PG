@@ -146,7 +146,10 @@ See ‘proof-layout-windows’ for more details about POLICY."
   "Put the three buffers B1, B2, and B3 into three windows.
 Following POLICY, which can be 'smart, 'horizontal, 'vertical, or 'hybrid.
 
-See ‘proof-layout-windows’ for more details about POLICY."
+See ‘proof-layout-windows’ for more details about POLICY.
+
+This function must not be called if the frame has not enough
+space for 3 windows (see `window-min-height')."
   (interactive "bBuffer1:\nbBuffer2:\nbBuffer3:")
   (delete-other-windows)
   (switch-to-buffer b1)
@@ -187,7 +190,10 @@ See ‘proof-layout-windows’ for more details about POLICY."
 
 (defun proof-display-three-b (&optional policy)
   "Layout three buffers in a single frame.  Only do this if buffers exist.
-In this case, call ‘proof-select-three-b’ with argument POLICY."
+In this case, call ‘proof-select-three-b’ with argument POLICY.
+
+This function must not be called if the frame has not enough
+space for 3 windows (see `window-min-height')."
   (interactive)
   (when (and (buffer-live-p proof-goals-buffer)
 	     (buffer-live-p proof-response-buffer))
@@ -272,7 +278,11 @@ dragging the separating bars.
     ;; Restore an existing frame configuration (seems buggy, typical)
     (if pg-frame-configuration
 	(set-frame-configuration pg-frame-configuration 'nodelete)))
-   (proof-three-window-enable ; single frame
+   ((and proof-three-window-enable ; single frame
+         ;; The minimal frame size for setting up 3 windows is 3 *
+         ;; window-min-height, obviously. Use a slightly bigger margin
+         ;; here.
+         (> (frame-height) (* 4 window-min-height)))
     ;; If we are coming from multiple frame mode, delete associated
     ;; frames (and only them).
     (proof-delete-all-associated-windows)
