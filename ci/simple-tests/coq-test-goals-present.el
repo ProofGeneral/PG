@@ -303,7 +303,6 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-reset-after-admitted ()
   "The goals buffer is reset after an Admitted."
-  :expected-result :failed
   (goals-buffer-should-get-reset coq-src-admitted "intros P" "Admitted"))
 
 (ert-deftest goals-reset-no-more-goals ()
@@ -312,7 +311,6 @@ which action the goals buffer should have been reset."
                                  "Lemma a" "no more goals"))
 
 (ert-deftest goals-reset-qed ()
-  :expected-result :failed
   "The goals buffer is reset after Qed."
   (goals-buffer-should-get-reset coq-src-qed
                                  "Proof using" "Qed"))

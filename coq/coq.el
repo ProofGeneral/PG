@@ -3246,8 +3246,15 @@ number of hypothesis displayed, without hiding the goal"
                                     (coq-build-subgoals-string nbgoals nbunfocused)))
                         minor-mode-alist)))))))
 
-
-
+(defun coq-clean-goals-outside-proof ()
+  "Clear goals buffer outside proofs.
+This function ensures that the goals buffer is reset after Qed or
+Admitted. This function is for
+`proof-shell-handle-delayed-output-hook'."
+  (when (or (not coq-last-but-one-proofstack)
+            (proof-string-match coq-shell-proof-completed-regexp
+                                proof-shell-last-output))
+    (proof-clean-buffer proof-goals-buffer)))
 
 
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
@@ -3257,10 +3264,7 @@ number of hypothesis displayed, without hiding the goal"
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  #'coq-update-minor-mode-alist)
 (add-hook 'proof-shell-handle-delayed-output-hook
-          (lambda ()
-            (if (proof-string-match coq-shell-proof-completed-regexp
-                                    proof-shell-last-output)
-                (proof-clean-buffer proof-goals-buffer))))
+          #'coq-clean-goals-outside-proof)
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda ()
