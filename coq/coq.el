@@ -1261,6 +1261,62 @@ width is synchronized by coq (?!)."
   :safe 'booleanp
   :group 'coq)
 
+;; update *goals* buffer modeline
+(defun coq-parse-goals-info (goals-output)
+  "Parse output to extract and update goals information in modeline."
+  (let ((goals-count-regexp "^\\([0-9]+\\) goals? (ID \\([0-9]+\\))")
+        (num-goals 0)
+        (current-goal-id nil))
+    (when (string-match goals-count-regexp goals-output)
+      (setq num-goals (string-to-number (match-string 1 goals-output)))
+      (setq current-goal-id (match-string 2 goals-output)))
+    (update-goals-modeline num-goals current-goal-id)
+    ; hide goals info on first line
+    (with-current-buffer proof-goals-buffer
+      (goto-char (point-min))
+      (let ((line-end (line-end-position)))
+        (let ((overlay (make-overlay (point-min) line-end)))
+          ; invisible line
+          (overlay-put overlay 'invisible t))))))
+
+(defun update-goals-modeline (goal id)
+  "Extracts proof state and updates the goals buffer modeline dynamically."
+  (with-current-buffer proof-goals-buffer
+    (let ((goal-str (if (> goal 1) "goals" "goal")))
+      (setq-local my-goals-info
+                  (format "%d %s, ID: %s" goal goal-str id)))
+      (let ((baseline-mode-line-format
+             '("%e"
+               mode-line-front-space
+               mode-line-mule-info
+               mode-line-client
+               mode-line-modified
+               mode-line-remote
+               mode-line-frame-identification
+               mode-line-buffer-identification
+               " "
+               mode-line-position
+               " "
+               mode-line-modes
+               mode-line-misc-info
+               mode-line-end-spaces)))
+
+        (setq-local mode-line-format
+                    (append baseline-mode-line-format
+                            `((" " (:eval my-goals-info))))) ; update
+
+        (force-mode-line-update))))
+
+(defun reset-goals-modeline ()
+  "Resets the *goals* buffer modeline to indicate no active proof."
+  (with-current-buffer proof-goals-buffer
+    (setq-local my-goals-info "")
+    (setq-local mode-line-format
+                (append
+                 '("%e" mode-line-front-space mode-line-mule-info mode-line-client mode-line-modified mode-line-remote mode-line-frame-identification mode-line-buffer-identification " " mode-line-position " " mode-line-modes mode-line-misc-info mode-line-end-spaces)
+                 `((" " (:eval my-goals-info)))))
+    (force-mode-line-update)))
+
 (defvar coq-shell-current-line-width nil
   "Current line width of the Coq printing width.
 Its value will be updated whenever a command is sent if

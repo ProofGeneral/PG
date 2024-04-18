@@ -1486,6 +1486,8 @@ Besides stuff that is not yet documented here, this function
   and sections.
 - enters some commands and their spans in some database (with for
   me unknown purpose)"
+  (when (string-equal proof-assistant "Coq")
+    (reset-goals-modeline)) ; Erase goal modeline when a proof is closed
   (unless (or (eq proof-shell-proof-completed 1)
 	      ;; (eq proof-assistant-symbol 'isar)
 	      )

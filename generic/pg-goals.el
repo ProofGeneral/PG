@@ -107,8 +107,10 @@ so the response buffer should not be cleared."
       (bufhist-checkpoint-and-erase))
 
     ;; Only display if string is non-empty.
-    (unless (string-equal string "")
-      (funcall pg-insert-text-function string))
+    (when (not (string-equal string ""))
+      (funcall pg-insert-text-function string)
+      (when (string-equal proof-assistant "Coq")
+        (coq-parse-goals-info string)))
 
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)
