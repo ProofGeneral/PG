@@ -44,7 +44,7 @@
     '(
       ;; Main instances of PG.
 
-      (coq "Coq" "v" nil (".vo" ".glob"))
+      (coq "Coq" "v" nil (".vo" ".glob" ".vok" ".vos"))
       (easycrypt "EasyCrypt" "ec" "\\.eca?\\'")
       (phox "PhoX" "phx" nil (".phi" ".pho"))
       (qrhl "qRHL" "qrhl")
@@ -303,7 +303,9 @@ Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
 	  (fset proofgen-mode mode-stub))
 
 	(dolist (ext (nth 4 tableentry))
-	  (add-to-list 'completion-ignored-extensions ext))
+	  (add-to-list 'completion-ignored-extensions ext)
+          (when (boundp 'dired-omit-extensions)
+	    (add-to-list 'dired-omit-extensions ext)))
 
 	(setq assistants (cdr assistants)))))
 
