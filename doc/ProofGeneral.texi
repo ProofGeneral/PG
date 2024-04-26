@@ -2290,9 +2290,9 @@ human readable overview, otherwise it's test anything
 protocol (@var{tap}). Argument @var{batch} controls where the overview goes
 to. If nil, or in an interactive call, the overview appears in
 @samp{@code{proof-check-report-buffer}}. If @var{batch} is a string, it should be a
-filename and the overview is appended there. Otherwise the
-overview is output via @samp{message} such that it appears on stdout
-when this command runs in batch mode.
+filename to write the overview to. Otherwise the overview is
+output via @samp{message} such that it appears on stdout when this
+command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
 tolerates errors inside scripts of opaque proofs. Any other error
@@ -2326,7 +2326,7 @@ where @code{<tap>} should be @code{nil} for human readable output and
 @code{t} for test anything protocol. If @code{<output>} is @code{t}
 the proof status appears in the standard output of the Emacs process.
 Otherwise @code{<output>} should be a filename as string in double
-quotes. Then the proof status is appended to this file. (If
+quotes. Then the proof status is written to this file. (If
 @code{output} is @code{nil} or omitted, the proof status is only put
 into the @code{*proof-check-report*} buffer, which does not make much
 sense in a batch command as the one above.)
