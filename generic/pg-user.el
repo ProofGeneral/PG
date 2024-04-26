@@ -616,7 +616,7 @@ Report the results of `proof-check-proofs' in buffer
 `proof-check-report-buffer' in human readable form or, if TAP is
 not nil, in test anything protocol (TAP). If BATCH is not nil,
 report the results via message, such that they appear on stdout
-when Emacs runs in batch mode or, when BATCH is a string, append
+when Emacs runs in batch mode or, when BATCH is a string, write
 the results to the file denoted by BATCH."
   (let* ((ok-fail (seq-group-by #'car proof-results))
          (frmt "  %-4s %s")
@@ -655,7 +655,7 @@ the results to the file denoted by BATCH."
       (dolist (pr proof-results)
         (if tap
             (progn
-              (insert (format "%sok %d - %s\n"
+              (insert (format "%sok %d %s\n"
                               (if (car pr) "" "not ")
                               count
                               (cadr pr)))
@@ -669,7 +669,7 @@ the results to the file denoted by BATCH."
           (progn
             (insert "\n\n")
             (if (stringp batch)
-                (append-to-file (point-min) (point-max) batch)
+                (write-region (point-min) (point-max) batch)
               (message "%s"
                        (buffer-substring-no-properties
                         (point-min) (point-max)))))
@@ -779,9 +779,9 @@ human readable overview, otherwise it's test anything
 protocol (TAP). Argument BATCH controls where the overview goes
 to. If nil, or in an interactive call, the overview appears in
 `proof-check-report-buffer'. If BATCH is a string, it should be a
-filename and the overview is appended there. Otherwise the
-overview is output via `message' such that it appears on stdout
-when this command runs in batch mode.
+filename to write the overview to. Otherwise the overview is
+output via `message' such that it appears on stdout when this
+command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
 tolerates errors inside scripts of opaque proofs. Any other error

@@ -1,1 +1,4 @@
 *.success
+proof_stat.human.gen-out
+proof_stat.tap.gen-out
+coq-proof-stat-batch-test

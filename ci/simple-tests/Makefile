@@ -30,12 +30,12 @@ qrhl-all: $(QRHL_SUCCESS)
 # proof_stat.v and compares it with the expected output in file
 # proof_stat.exp-out.
 coq-proof-stat-batch-test:
-	rm -rf proof_stat.gen-out
 	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
-	      --eval '(proof-check-proofs nil "proof_stat.gen-out")'
+	      --eval '(proof-check-proofs nil "proof_stat.human.gen-out")'
 	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
-	      --eval '(proof-check-proofs t "proof_stat.gen-out")'
-	cmp proof_stat.gen-out proof_stat.exp-out && \
+	      --eval '(proof-check-proofs t "proof_stat.tap.gen-out")'
+	cmp proof_stat.human.gen-out proof_stat.human.exp-out && \
+	        cmp proof_stat.tap.gen-out proof_stat.tap.exp-out && \
 		touch coq-proof-stat-batch-test
 
 .PHONY: clean
