@@ -37,6 +37,7 @@ jobs:
           - 28.2
           - 29.1
           - 29.2
+          - 29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -79,7 +80,7 @@ jobs:
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: magic-emacs-version
           - 28.2
-          - 29.2
+          - 29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -107,30 +108,30 @@ jobs:
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: test-coq-emacs-versions
           - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-29.2
+          - coq-8.11.2-emacs-29.3
           - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-29.2
+          - coq-8.12.2-emacs-29.3
           - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-29.2
+          - coq-8.13.2-emacs-29.3
           - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-29.2
+          - coq-8.14.1-emacs-29.3
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
-          - coq-8.15.2-emacs-29.2
+          - coq-8.15.2-emacs-29.3
           - coq-8.16.1-emacs-26.3
           - coq-8.16.1-emacs-27.1
           - coq-8.16.1-emacs-28.2
-          - coq-8.16.1-emacs-29.2
+          - coq-8.16.1-emacs-29.3
           - coq-8.17.1-emacs-26.3
           - coq-8.17.1-emacs-27.1
           - coq-8.17.1-emacs-28.2
           - coq-8.17.1-emacs-29.1
-          - coq-8.17.1-emacs-29.2
+          - coq-8.17.1-emacs-29.3
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
           - coq-8.18.0-emacs-29.1
-          - coq-8.18.0-emacs-29.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.19.1-emacs-26.3
           - coq-8.19.1-emacs-27.1
           - coq-8.19.1-emacs-27.2
@@ -138,6 +139,7 @@ jobs:
           - coq-8.19.1-emacs-28.2
           - coq-8.19.1-emacs-29.1
           - coq-8.19.1-emacs-29.2
+          - coq-8.19.1-emacs-29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -180,30 +182,30 @@ jobs:
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: compile-coq-emacs-versions
           - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-29.2
+          - coq-8.11.2-emacs-29.3
           - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-29.2
+          - coq-8.12.2-emacs-29.3
           - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-29.2
+          - coq-8.13.2-emacs-29.3
           - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-29.2
+          - coq-8.14.1-emacs-29.3
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
-          - coq-8.15.2-emacs-29.2
+          - coq-8.15.2-emacs-29.3
           - coq-8.16.1-emacs-26.3
           - coq-8.16.1-emacs-27.1
           - coq-8.16.1-emacs-28.2
-          - coq-8.16.1-emacs-29.2
+          - coq-8.16.1-emacs-29.3
           - coq-8.17.1-emacs-26.3
           - coq-8.17.1-emacs-27.1
           - coq-8.17.1-emacs-28.2
           - coq-8.17.1-emacs-29.1
-          - coq-8.17.1-emacs-29.2
+          - coq-8.17.1-emacs-29.3
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
           - coq-8.18.0-emacs-29.1
-          - coq-8.18.0-emacs-29.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.19.1-emacs-26.3
           - coq-8.19.1-emacs-27.1
           - coq-8.19.1-emacs-27.2
@@ -211,6 +213,7 @@ jobs:
           - coq-8.19.1-emacs-28.2
           - coq-8.19.1-emacs-29.1
           - coq-8.19.1-emacs-29.2
+          - coq-8.19.1-emacs-29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -249,30 +252,30 @@ jobs:
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: simple-coq-emacs-versions
           - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-29.2
+          - coq-8.11.2-emacs-29.3
           - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-29.2
+          - coq-8.12.2-emacs-29.3
           - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-29.2
+          - coq-8.13.2-emacs-29.3
           - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-29.2
+          - coq-8.14.1-emacs-29.3
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
-          - coq-8.15.2-emacs-29.2
+          - coq-8.15.2-emacs-29.3
           - coq-8.16.1-emacs-26.3
           - coq-8.16.1-emacs-27.1
           - coq-8.16.1-emacs-28.2
-          - coq-8.16.1-emacs-29.2
+          - coq-8.16.1-emacs-29.3
           - coq-8.17.1-emacs-26.3
           - coq-8.17.1-emacs-27.1
           - coq-8.17.1-emacs-28.2
           - coq-8.17.1-emacs-29.1
-          - coq-8.17.1-emacs-29.2
+          - coq-8.17.1-emacs-29.3
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
           - coq-8.18.0-emacs-29.1
-          - coq-8.18.0-emacs-29.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.19.1-emacs-26.3
           - coq-8.19.1-emacs-27.1
           - coq-8.19.1-emacs-27.2
@@ -280,6 +283,7 @@ jobs:
           - coq-8.19.1-emacs-28.2
           - coq-8.19.1-emacs-29.1
           - coq-8.19.1-emacs-29.2
+          - coq-8.19.1-emacs-29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -328,6 +332,7 @@ jobs:
           - 28.2
           - 29.1
           - 29.2
+          - 29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -363,6 +368,7 @@ jobs:
           - 28.2
           - 29.1
           - 29.2
+          - 29.3
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
