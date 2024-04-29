@@ -9,7 +9,7 @@
 
 ;;; Commentary:
 ;;
-;; Test proof-check-proofs.
+;; Tests for proof-check-report and proof-check-annotate.
 
 (defun reset-coq ()
   "Reset Coq and Proof General.
@@ -24,14 +24,14 @@ source file."
 
 
 (ert-deftest proof-check-correct-stat ()
-  "Test `proof-check-proofs' on a file that is correct in non-opaque parts.
+  "Test `proof-check-report' on a file that is correct in non-opaque parts.
 Test that the report buffer contains the expected output."
   (setq proof-three-window-enable nil)
   (reset-coq)
   (find-file "proof_stat.v")
 
   ;; run check on file where all errors are in opaque parts
-  (proof-check-proofs nil)
+  (proof-check-report nil)
 
   ;; the result buffer should exist
   (should (buffer-live-p (get-buffer "*proof-check-report*")))
@@ -50,8 +50,8 @@ Test that the report buffer contains the expected output."
 
 
 (ert-deftest proof-check-error-on-error ()
-  "Test `proof-check-proofs' with errors in non-opaque parts.
-Check that `proof-check-proofs' signals an error with the expected message."
+  "Test `proof-check-report' with errors in non-opaque parts.
+Check that `proof-check-report' signals an error with the expected message."
   (setq proof-three-window-enable nil)
   (reset-coq)
   (let (buffer)
@@ -66,10 +66,10 @@ Check that `proof-check-proofs' signals an error with the expected message."
           (end-of-line)
           (insert " X ")
 
-          ;; proof-check-proofs should abort now with an error
+          ;; proof-check-report should abort now with an error
           (condition-case err-desc
               (progn
-                (proof-check-proofs nil)
+                (proof-check-report nil)
                 ;; Still here? Make test fail!
                 (should nil))
             (error

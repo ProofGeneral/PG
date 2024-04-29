@@ -703,7 +703,11 @@ without adjusting window layout."
     ["Scripting Active" proof-toggle-active-scripting
      :style toggle
      :selected (eq proof-script-buffer (current-buffer))]
-    ["Check Opaque Proofs" proof-check-proofs
+    ["Check Opaque Proofs" proof-check-report
+     :active (and proof-omit-proofs-configured
+               proof-get-proof-info-fn
+               proof-retract-command-fn)]
+    ["Annotate Failing Proofs" proof-check-annotate
      :active (and proof-omit-proofs-configured
                proof-get-proof-info-fn
                proof-retract-command-fn)])

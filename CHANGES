@@ -14,9 +14,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     Proof-tree visualization is currently only supported for Coq. The
     prooftree support has been substantially rewritten, making use of
     the much better support since Coq version 8.11.
-*** New command `proof-check-proofs' to generates the proof status
+*** New command `proof-check-report' to generates the proof status
     of all opaque proofs. Currently only available for Coq, see Coq
     changes below for more details.
+*** New command `proof-check-annotate' to annotate all failing proofs
+    with FAIL comments.
 
 ** Coq changes
 *** support Coq 8.19
@@ -26,7 +28,7 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
      modules as coqdep error.
 *** Renew support for proof-tree visualization, see description in
     generic changes above.
-*** New command `proof-check-proofs' to generates the proof status
+*** New command `proof-check-report to generates the proof status
     of all opaque proofs. This command is useful for a development
     process where invalid proofs are permitted and vos compilation and
     the omit proofs feature are used to work at the most interesting
@@ -35,6 +37,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     buffer together with the information whether the proof script is
     currently valid or invalid. The command can also be run in batch
     mode, for instance in a continuous integration environment.
+*** New command `proof-check-annotate' to annotate all failing proofs
+    with FAIL comments. Useful in the development process as described
+    above to ensure all currently failing proofs are marked as such.
 *** New options coq-compile-extra-coqc-arguments and
     coq-compile-extra-coqdep-arguments to configure additional
     command line arguments to calls of, respetively, coqc and coqdep

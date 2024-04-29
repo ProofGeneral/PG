@@ -1963,7 +1963,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-script-cmd-prevents-proof-omission #'coq-cmd-prevents-proof-omission
    proof-script-cmd-force-next-proof-kept coq-cmd-force-next-proof-kept)
 
-  ;; proof-check-proofs config
+  ;; proof-check-report/proof-check-annotate config
   (setq
    proof-get-proof-info-fn #'coq-get-proof-info-fn
    proof-retract-command-fn #'coq-retract-command)
@@ -2282,7 +2282,7 @@ Function for `proof-tree-display-stop-command'."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; proof-check-proofs support
+;; proof-check-report/proof-check-annotate support
 ;;
 
 (defun coq-get-proof-info-fn ()
