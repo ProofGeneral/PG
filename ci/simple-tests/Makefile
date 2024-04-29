@@ -34,8 +34,11 @@ coq-proof-stat-batch-test:
 	      --eval '(proof-check-report nil "proof_stat.human.gen-out")'
 	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
 	      --eval '(proof-check-report t "proof_stat.tap.gen-out")'
+	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
+	      --eval '(proof-check-annotate nil t)'
 	cmp proof_stat.human.gen-out proof_stat.human.exp-out && \
 	        cmp proof_stat.tap.gen-out proof_stat.tap.exp-out && \
+		git diff --exit-code -- proof_stat.v && \
 		touch coq-proof-stat-batch-test
 
 .PHONY: clean
