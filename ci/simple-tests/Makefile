@@ -26,14 +26,14 @@ qrhl-all: $(QRHL_SUCCESS)
 	&& touch $@
 
 # The following tests the batch mode functionality of
-# proof-check-proofs. It generates human readable and TAP output for
+# proof-check-report. It generates human readable and TAP output for
 # proof_stat.v and compares it with the expected output in file
 # proof_stat.exp-out.
 coq-proof-stat-batch-test:
 	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
-	      --eval '(proof-check-proofs nil "proof_stat.human.gen-out")'
+	      --eval '(proof-check-report nil "proof_stat.human.gen-out")'
 	emacs -batch -l ../../generic/proof-site.el proof_stat.v \
-	      --eval '(proof-check-proofs t "proof_stat.tap.gen-out")'
+	      --eval '(proof-check-report t "proof_stat.tap.gen-out")'
 	cmp proof_stat.human.gen-out proof_stat.human.exp-out && \
 	        cmp proof_stat.tap.gen-out proof_stat.tap.exp-out && \
 		touch coq-proof-stat-batch-test

@@ -114,6 +114,32 @@ disables omitting proofs."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-check-annotate-position 'theorem
+  "Line for annotating proofs with \"PASS\" or \"FAIL\" comments.
+This option determines the line where `proof-check-annotate' puts
+comments with \"PASS\" and \"FAIL\". Value `'theoren' uses the
+first line of the second last statement before the start of the
+opaque proof, which corresponds to the line containing a Theorem
+keyword for Coq. Value `'proof-using' uses the first line of the
+last statement before the opaque proof, which corresponds to the
+Proof using line for Coq."
+  :type
+  '(radio
+    (const :tag "line of theorem statement" theorem)
+    (const :tag "line before the proof (Proof using for Coq)" proof-using))
+  :safe (lambda (v) (or (eq v 'theorem) (eq v 'proof-using))))
+
+(defcustom proof-check-annotate-right-margin nil
+  "Right margin for \"PASS\" and \"FAIL\" comments.
+This option determines the right margin to which
+`proof-check-annotate' right-aligns the comments with \"PASS\"
+and \"FAIL\". If nil, the value of `fill-column' is used."
+  :type
+  '(choice
+    (const :tag "use value of `fill-column'" nil)
+    (integer :tag "right margin"))
+  :safe (lambda (v) (or (eq v nil) (integerp v))))
+
 (defcustom pg-show-hints t
   "*Whether to display keyboard hints in the minibuffer."
   :type 'boolean

@@ -1280,17 +1280,18 @@ asserted together.
 @node Proof status statistic
 @section Proof status statistic
 
-The command @code{proof-check-proofs} builds on the omit-proofs
-feature. Using its machinery, it splits the current buffer into opaque
-proofs and all other material. The other material is asserted in the
-usual way and @code{proof-check-proofs} aborts if it detects an error
-in there. For opaque proofs the command first tries to assert them in
-the usual way too. If this succeeds the proof is considered valid.
-Otherwise the proof is replaced with
-@code{proof-script-proof-admit-command} and the proof is considered
-invalid. To associate theorem names with opaque proofs, the function
-@code{proof-get-proof-info-fn} is called, which is identical to
-@code{proof-tree-get-proof-info}, @xref{Proof Tree Elisp
+The commands @code{proof-check-report} and @code{proof-check-annotate}
+build on the omit-proofs feature. Using its machinery,
+@code{proof-check-proofs}, the inner working horse of both commands,
+splits the current buffer into opaque proofs and all other material.
+The other material is asserted in the usual way and
+@code{proof-check-proofs} aborts if it detects an error in there. For
+opaque proofs it first tries to assert them in the usual way too. If
+this succeeds the proof is considered valid. Otherwise the proof is
+replaced with @code{proof-script-proof-admit-command} and the proof is
+considered invalid. To associate theorem names with opaque proofs, the
+function @code{proof-get-proof-info-fn} is called, which is identical
+to @code{proof-tree-get-proof-info}, @xref{Proof Tree Elisp
 configuration}.
 
 To enable proof status statistics, the omit-proofs feature must be

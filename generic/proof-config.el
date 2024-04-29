@@ -792,10 +792,11 @@ asserted together."
   :group 'proof-script)
 
 
-;; proof-check-proofs configuration
+;; configuration for proof-check-report and proof-check-annotate
 
 ;; The omit-proofs feature must be fully configured for
-;; `proof-check-proofs', see `proof-omit-proofs-configured'.
+;; proof-check-report and proof-check-annotate, see
+;; `proof-omit-proofs-configured'.
 
 (defcustom proof-get-proof-info-fn nil
   "Return proof name and state number for `proof-check-proofs'.

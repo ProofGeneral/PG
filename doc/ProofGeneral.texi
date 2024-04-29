@@ -2261,7 +2261,7 @@ the proof assistant to automatically process other files.
 @section Proof status statistic
 @cindex Proof status statistic
 
-The command @code{proof-check-proofs} (menu @code{Proof-General ->
+The command @code{proof-check-report} (menu @code{Proof-General ->
 Check Opaque Proofs}) generates the proof status of all opaque proofs
 in the current buffer, i.e., it generates an overview that shows which
 of the opaque proofs in the current buffer are currently valid and
@@ -2269,10 +2269,19 @@ which are failing. When used interactively, the proof status is shown
 in the buffer @code{*proof-check-report*} (as long as
 @code{proof-check-report-buffer} is not changed).
 
-Currently @code{proof-check-proofs} does only work for Coq.
+The command @code{proof-check-annotate} (menu @code{Proof-General ->
+Annotate Failing Proofs}) modifies the current buffer and places
+comments containing @code{FAIL} on all failing opaque proofs. With
+prefix argument also the passing proofs are annotated with
+@code{PASS}. For configuring the position of these comments, see
+@code{proof-check-annotate-position} and
+@code{proof-check-annotate-right-margin}.
 
-@c TEXI DOCSTRING MAGIC: proof-check-proofs
-@deffn Command proof-check-proofs tap &optional batch
+Currently @code{proof-check-report} and @code{proof-check-annotate}
+only work for Coq.
+
+@c TEXI DOCSTRING MAGIC: proof-check-report
+@deffn Command proof-check-report tap &optional batch
 Generate an overview about valid and invalid proofs.@*
 This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
@@ -2297,29 +2306,76 @@ command runs in batch mode.
 In the same way as the omit-proofs feature, this command only
 tolerates errors inside scripts of opaque proofs. Any other error
 is reported to the user without generating an overview. The
-overview only contains those names of theorems whose proofs
+overview only contains those names of theorems whose proof
 scripts are classified as opaque by the omit-proofs feature. For
 Coq for instance, among others, proof scripts terminated with
 @code{'Defined'} are not opaque and do not appear in the generated
 overview.
 
 Note that this command does not (re-)compile required files.
-Files must be required before running this commands, for instance
-by asserting all require commands beforehand.
+Dependencies must be compiled before running this commands, for
+instance by asserting all require commands beforehand.
 @end deffn
+
+@c TEXI DOCSTRING MAGIC: proof-check-annotate
+@deffn Command proof-check-annotate annotate-passing &optional save-buffer
+Annotate failing proofs in current buffer with a "@var{fail}" comment.@*
+This function modifies the current buffer in place. Use with
+care!
+
+Similarly to @samp{@code{proof-check-report}}, check all opaque proofs in the
+current buffer. Instead of generating a report, failing proofs
+are annotated with "@var{fail}" in a comment. Existing "@var{pass}" or
+"@var{fail}" comments (e.g., from a previous run) are deleted
+together with the surrounding white space. With prefix argument
+(or when @var{annotate-passing} is non-nil) also passing proofs are
+annotated with a "@var{pass}" comment. Pass and fail comments can be
+placed at the last or second last statement before the opaque
+proof. For Coq this corresponds to the proof using and the
+theorem statement, respectively. In both cases the comment is
+placed at the right margin of the first line, see
+@samp{@code{proof-check-annotate-position}} and
+@samp{@code{proof-check-annotate-right-margin}}.
+
+Interactively, this command does not save the current buffer
+after placing the annotations. With @var{save-buffer} non-nil, the
+current buffer is saved if it has been modified.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: proof-check-annotate-position
+@defvar proof-check-annotate-position 
+Line for annotating proofs with "@var{pass}" or "@var{fail}" comments.@*
+This option determines the line where @samp{@code{proof-check-annotate}} puts
+comments with "@var{pass}" and "@var{fail}". Value `'theoren' uses the
+first line of the second last statement before the start of the
+opaque proof, which corresponds to the line containing a Theorem
+keyword for Coq. Value `'proof-using' uses the first line of the
+last statement before the opaque proof, which corresponds to the
+Proof using line for Coq.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: proof-check-annotate-right-margin
+@defvar proof-check-annotate-right-margin 
+Right margin for "@var{pass}" and "@var{fail}" comments.@*
+This option determines the right margin to which
+@samp{@code{proof-check-annotate}} right-aligns the comments with "@var{pass}"
+and "@var{fail}". If nil, the value of @samp{@code{fill-column}} is used.
+@end defvar
+
 
 @xref{Quick and inconsistent compilation} for enabling vos compilation
 inside Proof General and see @xref{Omitting proofs for speed} for the
 omit-proofs feature.
 
-The interactive use of this commands is limited because it only works
-on the current buffer. However, this commands can also be run in batch
-mode in a script, for instance in a continuous integration
-environment. To run this command on a file in batch mode, use
+The interactive use of @code{proof-check-report} and
+@code{proof-check-annotate} is limited because they only work on the
+current buffer. However, these commands can also be run in batch mode
+in a script, for instance in a continuous integration environment. To
+run @code{proof-check-report} on a file in batch mode, use
 
 @verbatim
 emacs -batch -l <your-pg-dir>/generic/proof-site.el <file> \
-      --eval '(proof-check-proofs <tap> <output>)'
+      --eval '(proof-check-report <tap> <output>)'
 @end verbatim
 
 where @code{<tap>} should be @code{nil} for human readable output and
@@ -2330,6 +2386,11 @@ quotes. Then the proof status is written to this file. (If
 @code{output} is @code{nil} or omitted, the proof status is only put
 into the @code{*proof-check-report*} buffer, which does not make much
 sense in a batch command as the one above.)
+
+Using a similar command also @code{proof-check-annotate} can run in
+batch mode in a continuous integration environment, for instance for
+checking that all failing proofs are annotated with @code{FAIL}
+via @code{git diff --exit-code}.
 
 
 @node Automatic multiple file handling
@@ -5253,7 +5314,7 @@ non-opaque, even if they have proof-local effect only, such as
 @node Proof status statistic for Coq
 @section Proof status statistic for Coq
 
-The command @code{proof-check-proofs} (menu @code{Proof-General ->
+The command @code{proof-check-report} (menu @code{Proof-General ->
 Check Opaque Proofs}) generates the proof status of all opaque proofs
 in the current buffer, i.e., it generates an overview that shows which
 of the opaque proofs in the current buffer are currently valid and
@@ -5262,7 +5323,14 @@ where invalid proofs are permitted and vos compilation (@xref{Quick
 and inconsistent compilation}) and the omit proofs feature
 (@xref{Omitting proofs for speed}) are used to work at the most
 interesting or challenging point instead of on the first invalid
-proof. See @xref{Proof status statistic} for more details.
+proof.
+
+The command @code{proof-check-annotate} (menu @code{Proof-General ->
+Annotate Failing Proofs}) can then be used to consistently annotate
+failing proofs with a @code{FAIL} comment or to check, e.g., in
+continuous integration, that such comments are present.
+
+See @xref{Proof status statistic} for more details.
 
 
 @node Editing multiple proofs
