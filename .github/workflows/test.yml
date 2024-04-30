@@ -166,7 +166,7 @@ jobs:
             ocamlc -v
           endGroup
           startGroup Run tests
-            sudo chown -R coq:coq ./ci
+            sudo chown -R coq:coq .
             make tests
           endGroup
 
@@ -236,7 +236,7 @@ jobs:
             ocamlc -v
           endGroup
           startGroup Run tests
-            sudo chown -R coq:coq ./ci
+            sudo chown -R coq:coq .
             make -C ci/compile-tests test
           endGroup
 
@@ -307,7 +307,7 @@ jobs:
             ocamlc -v
           endGroup
           startGroup Run tests
-            sudo chown -R coq:coq ./ci
+            sudo chown -R coq:coq .
             make -C ci/simple-tests coq-all
           endGroup
 
