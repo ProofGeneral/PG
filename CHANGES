@@ -55,6 +55,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     during auto compilation.
 *** Fix issues #687 and #688 where the omit-proofs feature causes
     errors on correct code.
+*** Run Coq completely silent to fix #568. If you experience unexpected
+    behavior, please report a bug and disable
+    `coq-run-completely-silent' to switch back to old behavior.
 
 
 * Changes of Proof General 4.5 from Proof General 4.4

@@ -76,6 +76,24 @@
 ;;  :type 'number
 ;;  :group 'coq)
 
+(defcustom coq-run-completely-silent t
+  "Run Coq completely silent if enabled.
+Please restart Proof General after changing this setting!
+
+If enabled, run Coq completely silent (Set Silent) and only issue
+a show command when necessary to update the goals buffer. This
+behavior is new. If you experience strange effects, please report
+a bug and switch this flag off to return to old behavior. When
+disabled, Coq is dynamically switched to silent for longer lists
+of commands and switched to verbose before the last command. A
+manual Show command (C-c C-p) is necessary if the last command
+fails to update the goals buffer (e.g., if it is a comment or it
+is not executed because some other command before failed, see
+also bug report #568)."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq)
+
 (defcustom coq-user-init-cmd nil
   "User defined init commands for Coq.
 These are appended at the end of `coq-shell-init-cmd'."
@@ -122,8 +140,8 @@ Namely, goals that do not fit in the goals window."
      ;; should re-intialize to coq-search-blacklist-string instead of
      ;; keeping the current value (that may come from another file).
      ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
-   '("Set Suggest Proof Using."
-     "Set Silent.")
+   '("Set Suggest Proof Using.")
+   (if coq-run-completely-silent '("Set Silent.") ())
    coq-user-init-cmd)
   "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
 List of commands sent to the Coq background process just after it
@@ -131,7 +149,8 @@ has been started. This happens inside `proof-shell-config-done',
 when the major mode `coq-shell-mode' is configured in the `*coq*'
 buffer.
 
-Sets silent mode.
+Sets silent mode if `coq-run-completely-silent' is set. Note that
+this constant is not updated when `coq-run-completely-silent' is changed.
 
 In normal interaction, Coq is started because the user asserts
 some commands. Therefore the commands here are followed by those
@@ -1246,15 +1265,17 @@ This function is called from `proof-shell-exec-loop' via
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     (append
+     (unless coq-run-completely-silent '("Unset Silent."))
      (if (coq--post-v810) (list (coq-diffs)) ())
-     ;; '("Show.")
      (coq--show-proof-stepwise-cmds)))
 
    ((or
      ;; If we go back in the buffer and not in the above case, i.e., outside a
      ;; proof, then only set the Diffs option.
      (string-match-p "BackTo\\s-" cmd))
-    (if (coq--post-v810) (list (coq-diffs)) ()))
+    (append
+     (unless coq-run-completely-silent '("Unset Silent."))
+     (if (coq--post-v810) (list (coq-diffs)) ())))
      
    ((or
      ;; If starting a proof, Show Proof if need be
@@ -1973,8 +1994,9 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; When proof-shell-start-silent-cmd and proof-shell-stop-silent-cmd stay at
   ;; their default value nil, the generic code won't switch Coq to silent and
   ;; noisy at, respectively, the beginning and end of longer asserted regions.
-  ;; (setq proof-shell-start-silent-cmd "Set Silent."
-  ;;       proof-shell-stop-silent-cmd "Unset Silent.")
+  (unless coq-run-completely-silent
+    (setq proof-shell-start-silent-cmd "Set Silent."
+          proof-shell-stop-silent-cmd "Unset Silent."))
 
   ;; prooftree config
   (setq
@@ -3113,13 +3135,13 @@ Important: Coq gives char positions in bytes instead of chars.
 
 
 (defun coq-show-goals-inside-proof (keep-response)
-  "Update goals buffer when action item list has been processed.
-Add a Show command as priority action, such that it will still be
-processed if the generic machinery inside `proof-shell-filter'
-believes it has processed the last item from the action list.
-When Coq runs in silent mode, we need to update the goals
-precisely when everything else from the action list has been
-processed.
+  "Update goals when action item list has been processed, if running silent.
+If `coq-run-completely-silent' is set, add a Show command as
+priority action, such that it will still be processed if the
+generic machinery inside `proof-shell-filter' believes it has
+processed the last item from the action list. When Coq runs in
+silent mode, we need to update the goals precisely when
+everything else from the action list has been processed.
 
 The Show command is only added inside proofs and only if the last
 processed command was not a show command from this function. The
@@ -3127,8 +3149,11 @@ action item flag `'dont-show-when-silent' is used for the latter.
 
 KEEP-RESPONSE should be set if the last command produced some
 error or response that should be kept and shown to the user. If
-set, the flag `'keep-response' is added to the action item."
-  (when (and coq-last-but-one-proofstack
+set, the flag `'keep-response' is added to the action item.
+
+Do nothing if `coq-run-completely-silent' is disabled."
+  (when (and coq-run-completely-silent
+             coq-last-but-one-proofstack
              (not (member 'dont-show-when-silent
                           proof-shell-delayed-output-flags)))
     (let* ((flags-1 (list 'dont-show-when-silent 'invisible 'empty-action-list))
