@@ -745,9 +745,12 @@ have effects outside the proof, which would prohibit omitting the
 proof, see `proof-script-omit-proofs'.
 
 Commands starting lower case are deemed as tactics that have
-proof local effect only. Everything else is checked against the
-STATECH field in the coq syntax data base, see coq-db.el."
-  (if (proof-string-match coq-lowercase-command-regexp cmd)
+proof local effect only and so are bullets and braces. Everything
+else is checked against the STATECH field in the coq syntax data
+base, see coq-db.el."
+  (if (or (proof-string-match coq-lowercase-command-regexp cmd)
+          (proof-string-match coq-bullet-regexp cmd)
+          (proof-string-match coq-braces-regexp cmd))
       nil
     (not (coq-state-preserving-p cmd))))
 
