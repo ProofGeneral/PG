@@ -1433,6 +1433,16 @@ different."
 Used in `coq-cmd-prevents-proof-omission' to identify tactics
 that only have proof-local effects.")
 
+(defconst coq-bullet-regexp "^\\(-+\\|\\++\\|\\*+\\)$"
+  "Regular expression matching bullets.
+Used in `coq-cmd-prevents-proof-omission' to identify tactics
+that only have proof-local effects.")
+
+(defconst coq-braces-regexp "^\\({\\|}\\)$"
+  "Regular expression matching braces used for focussing and unfocussing.
+Used in `coq-cmd-prevents-proof-omission' to identify tactics
+that only have proof-local effects.")
+
 (defcustom coq-cmd-force-next-proof-kept "Let"
   "Instantiating for `proof-script-cmd-force-next-proof-kept'.
 Regular expression for commands that prevent omitting the next

@@ -258,7 +258,6 @@ This test only checks the faces in the middle of the proof."
   (should (eq (first-overlay-face) 'proof-omitted-proof-face)))
 
 (ert-deftest omit-proofs-omit-bullets-and-braces ()
-  :expected-result :failed
   (let ((proof-omit-proofs-option t)
         pos-10)
     (message "omit-proofs-omit-bullets-and-braces: Check bullets and braces")
