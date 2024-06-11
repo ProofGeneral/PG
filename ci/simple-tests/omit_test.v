@@ -8,13 +8,16 @@
  *
  * Lemma never_omit_hints is for test omit-proofs-never-omit-hints: Proofs
  * containing commands should never be skipped (except for a few white-listed
- * commands.
+ * commands).
  *
- * Lemma never_omit_let is for test omit-proofs-never-omit-lets: Proofs of
- * let-theorems should never be omitted.
+ * Lemma never_omit_let and behind_let is for test
+ * omit-proofs-never-omit-lets: Proofs of let-theorems should never be
+ * omitted while proofs behind let declarations should.
  * 
+ * Lemma omit_bullets_and_braces is for test
+ * omit-proofs-omit-bullets-and-braces: Proofs with bullets and braces
+ * should be omitted.
  *)
-
 
 Definition classical_logic : Prop := forall(P : Prop), ~~P -> P.
 
@@ -70,3 +73,16 @@ Proof using.
 Qed.
 
 (* automatic test marker 6 *)
+
+Lemma omit_bullets_and_braces : True /\ (True /\ True).
+Proof using.
+  split.
+  - trivial.
+  - { split.
+      ++ trivial.
+      (* automatic test marker 9 *)
+      ++ trivial.
+    }
+Qed.
+
+(* automatic test marker 10 *)
