@@ -2267,7 +2267,8 @@ in the current buffer, i.e., it generates an overview that shows which
 of the opaque proofs in the current buffer are currently valid and
 which are failing. When used interactively, the proof status is shown
 in the buffer @code{*proof-check-report*} (as long as
-@code{proof-check-report-buffer} is not changed).
+@code{proof-check-report-buffer} is not changed). Note that incomplete
+proofs, i.e., Admitted proofs for Coq, count as invalid.
 
 The command @code{proof-check-annotate} (menu @code{Proof-General ->
 Annotate Failing Proofs}) modifies the current buffer and places
@@ -2285,7 +2286,10 @@ only work for Coq.
 Generate an overview about valid and invalid proofs.@*
 This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
-whether their proof scripts are valid or invalid.
+whether their proof scripts are valid or invalid. Note that
+proofs closed with a cheating command (see
+@samp{@code{proof-omit-cheating-regexp}}), i.e., Admitted for Coq, count as
+invalid.
 
 This command makes sense for a development process where invalid
 proofs are permitted and vos compilation and the omit proofs
@@ -5318,12 +5322,12 @@ The command @code{proof-check-report} (menu @code{Proof-General ->
 Check Opaque Proofs}) generates the proof status of all opaque proofs
 in the current buffer, i.e., it generates an overview that shows which
 of the opaque proofs in the current buffer are currently valid and
-which are failing. This command is useful for a development process
-where invalid proofs are permitted and vos compilation (@xref{Quick
-and inconsistent compilation}) and the omit proofs feature
-(@xref{Omitting proofs for speed}) are used to work at the most
-interesting or challenging point instead of on the first invalid
-proof.
+which are failing, where Admitted proofs count as failing. This
+command is useful for a development process where invalid proofs are
+permitted and vos compilation (@xref{Quick and inconsistent
+compilation}) and the omit proofs feature (@xref{Omitting proofs for
+speed}) are used to work at the most interesting or challenging point
+instead of on the first invalid proof.
 
 The command @code{proof-check-annotate} (menu @code{Proof-General ->
 Annotate Failing Proofs}) can then be used to consistently annotate

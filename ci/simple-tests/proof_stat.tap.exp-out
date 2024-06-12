@@ -3,6 +3,6 @@ TAP version 13
 not ok 1 a1_equal_4
 ok 2 b_equal_6
 not ok 3 b2_equal_6
-ok 4 use_admit
+not ok 4 use_admit
 
 

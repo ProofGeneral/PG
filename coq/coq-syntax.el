@@ -1136,6 +1136,12 @@ different."
   :type 'string
   :group 'coq)
 
+(defcustom coq-omit-cheating-regexp "Admitted"
+  "Value for `proof-omit-cheating-regexp'.
+Very similar to `coq-omit-proof-admit-command', but without the dot."
+  :type 'regexp
+  :group 'coq)
+
 ;; ----- keywords for font-lock.
 
 (defvar coq-keywords-kill-goal

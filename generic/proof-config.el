@@ -738,6 +738,17 @@ without surrounding space."
   :type 'boolean
   :group 'proof-script)
 
+(defcustom proof-omit-cheating-regexp nil
+  "Regular expression matching proof closing commands for incomplete proofs.
+If set, this regular expression is applied to the last command of
+opaque proofs. If it matches the proofs counts as invalid for the
+proof-status statistics and annotation feature. For Coq this is
+used to mark Admitted proofs as invalid.
+
+This option can be left at `nil'."
+  :type 'regexp
+  :group 'proof-script)
+
 ;; proof-omit-proofs-option is in proof-useropts as user option
 
 (defcustom proof-script-proof-start-regexp nil
