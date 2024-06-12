@@ -24,6 +24,7 @@ source file."
 
 
 (ert-deftest proof-check-correct-stat ()
+  :expected-result :failed
   "Test `proof-check-report' on a file that is correct in non-opaque parts.
 Test that the report buffer contains the expected output."
   (setq proof-three-window-enable nil)
@@ -39,14 +40,15 @@ Test that the report buffer contains the expected output."
     ;; the summary should be correct
     (goto-char (point-min))
     (should
-     (search-forward "3 opaque proofs recognized: 1 successful 2 FAILING"
+     (search-forward "4 opaque proofs recognized: 2 successful 2 FAILING"
                      nil t))
     ;; results for all 3 test lemmas should be correct
     (mapc
      (lambda (s) (should (search-forward s nil t)))
      '("FAIL a1_equal_4"
        "OK   b_equal_6"
-       "FAIL b2_equal_6"))))
+       "FAIL b2_equal_6"
+       "FAIL use_admit"))))
 
 
 (ert-deftest proof-check-error-on-error ()

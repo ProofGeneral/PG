@@ -22,3 +22,7 @@ Lemma b2_equal_6 : b = 2 * 3.                               (* FAIL *)
 Proof using.                    (* this proof should fail *)
 Qed.
 
+Lemma use_admit : 0 = 1.
+Proof using.               (* this proof succeeds but should count as failing *)
+  admit.
+Admitted.
