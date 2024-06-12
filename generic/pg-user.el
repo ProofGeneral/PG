@@ -735,7 +735,9 @@ errors are silently replaced by
 `proof-script-proof-admit-command'. The result is a list of proof
 status results, one for each 'proof chunk in the same order. Each
 proof-status result is a list of 4 elements as follows.
-- 1st: proof status as `t' or `nil'.
+- 1st: proof status as `t' or `nil'. Proofs closed with a match
+  of `proof-omit-cheating-regexp', if defined, count as failing,
+  i.e., their status is `nil'.
 - 2nd: the name of the proof as reported by
   `proof-get-proof-info-fn'.
 - 3rd: Position of the start of the span containing the theorem
@@ -762,7 +764,8 @@ proof-status result is a list of 4 elements as follows.
                                   (nth 2 last-item)
                                   (cons 'empty-action-list (nth 3 last-item))))
              (vanillas-rev-updated (cons new-last-item (cdr vanillas-rev)))
-             error)
+             error
+             cheated)
         ;; if this is a proof chunk the next must be no-proof or must not exist
         (cl-assert (or (not (eq this-mode 'proof))
                        (or (eq next-mode 'no-proof) (eq next-mode nil)))
@@ -813,8 +816,15 @@ proof-status result is a list of 4 elements as follows.
             (proof-set-locked-end last-span-end)
             (cl-assert (not (cadr (funcall proof-get-proof-info-fn)))
                        nil "proof-check: still in proof after admitting"))
+          (when (and proof-omit-cheating-regexp
+                     ;; check if somebody cheated - cheated proofs
+                     ;; should count as failing
+                     (proof-string-match
+                      proof-omit-cheating-regexp
+                      (mapconcat #'identity (nth 1 last-item) " ")))
+            (setq cheated t))
           (push
-           (cons (not error)
+           (cons (not (or error cheated))
                  (cons (cadr current-proof-state-and-name) proof-start-points))
            proof-results)))
         
@@ -863,7 +873,10 @@ This function does not (re-)compile required files."
   "Generate an overview about valid and invalid proofs.
 This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
-whether their proof scripts are valid or invalid.
+whether their proof scripts are valid or invalid. Note that
+proofs closed with a cheating command (see
+`proof-omit-cheating-regexp'), i.e., Admitted for Coq, count as
+invalid.
 
 This command makes sense for a development process where invalid
 proofs are permitted and vos compilation and the omit proofs

@@ -1964,7 +1964,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-script-definition-end-regexp coq-definition-end-regexp
    proof-script-proof-admit-command coq-omit-proof-admit-command
    proof-script-cmd-prevents-proof-omission #'coq-cmd-prevents-proof-omission
-   proof-script-cmd-force-next-proof-kept coq-cmd-force-next-proof-kept)
+   proof-script-cmd-force-next-proof-kept coq-cmd-force-next-proof-kept
+   proof-omit-cheating-regexp coq-omit-cheating-regexp)
 
   ;; proof-check-report/proof-check-annotate config
   (setq
