@@ -42,7 +42,7 @@
   :type 'boolean
   :group 'proof-user-options)
 
-(defcustom proof-splash-time 8
+(defcustom proof-splash-time 1
   "Minimum number of seconds to display splash screen for.
 The splash screen may be displayed for a wee while longer than
 this, depending on how long it takes the machine to initialise
