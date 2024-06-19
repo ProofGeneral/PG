@@ -1988,6 +1988,10 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-interrupt-regexp coq-interrupt-regexp
    proof-shell-assumption-regexp coq-id
    proof-shell-theorem-dependency-list-regexp coq-shell-theorem-dependency-list-regexp
+   ;; CRs now can and should be preserved (to support String-related theories),
+   ;; see also this GitHub issue: https://github.com/ProofGeneral/PG/issues/773
+   proof-shell-strip-crs-from-input nil
+
    pg-subterm-first-special-char ?\360
    ;; The next three represent path annotation information
    pg-subterm-start-char ?\372          ; not done
