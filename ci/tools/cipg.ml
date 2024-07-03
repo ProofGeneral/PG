@@ -1570,6 +1570,15 @@ let main() =
   print_matrix "CI pairs" coqs emacses ci_pairs;
   print_endline "";
   check_matrix_subset coqs emacses ci_pairs conts;
+  let total_test_runs =
+    3 * (count_filled_matrix_cells ci_pairs) +
+    3 * ((snd (list_last emacses))    (* index of last emacs version *)
+         -                            (* indes of first emacs version *)
+         (get_version_index first_active_emacs emacses)
+         + 1) +
+    2                                   (* doc magic *)
+  in
+  Printf.printf "\n%d github checks in total\n" total_test_runs;
   if !do_containers then
     begin
       print_endline "\n\nCHECK MISSING AND SUPERFLUOUS CONTAINERS\n";
@@ -1618,6 +1627,8 @@ let main() =
                      (count_filled_matrix_cells ci_pairs));
       md_file_change_wrapper readme_file "testrun-table"
         (output_matrix coqs emacses ci_pairs);
+      md_file_change_wrapper readme_file "total-checks-number"
+        (fun oc -> Printf.fprintf oc "%d\n" total_test_runs);
 
       (* In test.yml update the version numbers for all test jobs. *)
       List.iter

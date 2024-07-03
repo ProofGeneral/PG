@@ -24,7 +24,7 @@ are invisible in the PDF version) are now and then automatically
 updated by the `cipg` program. Please consider this when changing this
 file.
 
-The file `.github/workflows/test.yml` defines 6 jobs.
+The file `.github/workflows/test.yml` defines 7 jobs.
 
 build
  : compile Proof General sources to bytecode and build documentation
@@ -63,14 +63,19 @@ via Nix. There are GitLab and GitHub projects for building these
 containers in GitLab pipelines. However, currently this does not work
 and the containers are therefore build manually.
 
-This document ignores Coq point releases (e.g., 8.13.2). For one
-reason we trust the Coq development team to not introduce changes in
-point releases that Proof General should care about. Another reason is
-that the `coqorg/coq` docker images are only available for the latest
-point release of any minor version. Therefore, in this document, a Coq
-version number `<major>.<minor>` always stands for the latest point
-release of that minor release. E.g., 8.17 stands for 8.17.1 released
-in 2023/06.
+Coq minor releases (e.g., 8.19.0) are often followed by bug fix
+releases (e.g., 8.19.1 and 8.19.2). For testing Proof General we only
+use the latest bug fix release of certain Coq releases (e.g., we do
+test 8.19.2 but neither 8.19.0 nor 8.19.1). One reason is that testing
+original minor releases (e.g., 8.19.0) or outdated bug fix releases
+(e.g., 8.19.1) does not make much sense. Another reason is that
+`coqorg/coq` does only provide containers for the latest bug fix
+release of each minor release. Admittedly, the effects of only testing
+the latest bug fix release are not always optimal. For instance, in
+2024, Coq 8.11 is tested, because Ubuntu 20.04 Focal Fossa was
+released with Coq 8.11.0, however, Proof General testing uses Coq
+8.11.2.
+
 
 # Generic strategy {#generic}
 
@@ -112,6 +117,7 @@ To keep test runtime and space for containers reasonable, we build
 containers only for a subset of the actively supported version pairs
 and only a subset of these containers are used by the GitHub action
 jobs.
+
 
 # Container build strategy {#contbuild}
 
@@ -204,7 +210,6 @@ RC
  : denotes an release candidate according to point 5.
 
 
-
 # Testing strategy
 
 Currently only actively supported versions are tested via GitHub
@@ -250,13 +255,13 @@ following points is true for *cv* and *ev*.
    Debian or Ubuntu versions and now and then upgrade their Coq version
    via opam.
    
-   For example, in October 2023 the 18 month limit includes Coq 8.15
-   (last minor version released in 2022/05) but excludes 8.14 (last
-   minor version released in 2021/12). Therefore we do test the pair
-   (8.15, 27.1) but we don't test (8.14, 27.1). We neither test (8.15,
-   27.2), because there is no Debian or Ubuntu release containing
-   27.2. Further, we don't test (8.15, 28.2), because Ubuntu 23 and
-   Debian 12, which both contain Emacs 28.2, contain Coq 8.16.
+   For example, in October 2023 the 18 month limit includes Coq 8.15.2
+   (released in 2022/05) but excludes 8.14.1 (last minor 8.14 version,
+   released in 2021/12). Therefore we do test the pair (8.15.2, 27.1)
+   but we don't test (8.14.1, 27.1). We neither test (8.15.2, 27.2),
+   because there is no Debian or Ubuntu release containing 27.2.
+   Further, we don't test (8.15.2, 28.2), because Ubuntu 23 and Debian
+   12, which both contain Emacs 28.2, contain Coq 8.16.
 
 #. The pair (*cv*, *ev*) is an historic pair in the same sense as
    above.
@@ -306,6 +311,13 @@ version pairs for the Proof General interaction tests with Coq.
 See [Container build strategy](#contbuild) for an explanation of the
 symbols in the table.
 
+In summary, all Proof General testing jobs run
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: total-checks-number -->
+125
+<!-- CIPG change marker end -->
+github checks.
 
 # Keeping the GitHub action up-to-date
 
@@ -396,11 +408,10 @@ that `cipg` can process it.
    YYYY/MM. Trailing non-digit characters are ignored. I use `?` to
    indicate EOL dates that have not yet been fixed.
 
-#. In Coq version numbers the patch level is ignored. Versions of
-   release candidates must be of the form `8.10rc` or `8.10-rc`.
-   `cipg` is not able to recognize outdated release candidates. The
-   release candidate must therefore be deleted when the release
-   happens.
+#. Versions of release candidates must be of the form `8.10rc` or 
+   `8.10-rc`. `cipg` is not able to recognize outdated release
+   candidates. The release candidate must therefore be deleted when
+   the release happens.
 
 
 ## `cipg`
@@ -461,12 +472,12 @@ below.
 The options described in this subsection perform destructive updates
 or removals. Use them with care.
 
-The option `ci-change` updates `README.md` (this file) and `test.yml`
+The option `-ci-change` updates `README.md` (this file) and `test.yml`
 in the Proof-General repository identified by `cipg` with the new
 configuration. See option `-pg-repo` to change the Proof General
 repository. The updates are done in place, without taking backups,
 which is not a problem, if there are no unstaged changes. In
-particular, the option `ci-change` changes
+particular, the option `-ci-change` changes
 
 - the three tables in the Sections [Generic strategy](#generic),
   [Container build strategy](#contbuild), and [Proof General
