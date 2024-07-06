@@ -1008,7 +1008,7 @@ let rec read_nix_containers inc nix_conts =
        (match scan_version line with
           | None -> assert false
           | Some v ->
-             if v.patch <> None
+             if v.release_candidate || v.patch <> None
              then read_nix_containers inc (v :: nix_conts)
              else read_nix_containers inc nix_conts
        )
@@ -1076,7 +1076,7 @@ let rec read_all_coq_emacs_tags inc coq_emacs =
     | line ->
        let (coq_v, emacs_v) as vp = read_coq_emacs_tag line in
        let coq_emacs =
-         if coq_v.patch <> None
+         if coq_v.release_candidate || coq_v.patch <> None
          then vp :: coq_emacs
          else coq_emacs
        in
