@@ -1985,6 +1985,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-clear-goals-regexp coq-shell-proof-completed-regexp
    proof-shell-proof-completed-regexp coq-shell-proof-completed-regexp
    proof-shell-error-regexp coq-error-regexp
+   proof-shell-no-error-regexp coq-no-error-regexp
    proof-shell-interrupt-regexp coq-interrupt-regexp
    proof-shell-assumption-regexp coq-id
    proof-shell-theorem-dependency-list-regexp coq-shell-theorem-dependency-list-regexp

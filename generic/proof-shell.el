@@ -854,7 +854,10 @@ after a completed proof."
     (setq proof-shell-last-output-kind 'interrupt)
     (proof-shell-handle-error-or-interrupt 'interrupt flags))
    
-   ((proof-re-search-forward-safe proof-shell-error-regexp end t)
+   ((and (save-excursion
+           (proof-re-search-forward-safe proof-shell-error-regexp end t))
+         (not (proof-re-search-forward-safe proof-shell-no-error-regexp end t)))
+
     (setq proof-shell-last-output-kind 'error)
     (proof-shell-handle-error-or-interrupt 'error flags))
 
