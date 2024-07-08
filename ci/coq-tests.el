@@ -183,6 +183,10 @@ For example, COMMENT could be (*test-definition*)"
   "Particular case of `coq-should-buffer-regexp'."
   (coq-should-buffer-regexp (regexp-quote str) buffer-name))
 
+(defun coq-should-buffer-contain-string (str &optional buffer-name)
+  "Particular case of `coq-should-buffer-regexp'."
+  (coq-should-buffer-regexp (concat ".*\\(" (regexp-quote str) "\\).*") buffer-name))
+
 ;; TODO: Use https://github.com/rejeep/ert-async.el
 ;; and/or ERT https://www.gnu.org/software/emacs/manual/html_node/ert/index.html
 
@@ -327,12 +331,12 @@ For example, COMMENT could be (*test-definition*)"
      (proof-assert-next-command-interactive) ;; pas the comment
      (proof-assert-next-command-interactive)
      (proof-shell-wait)
+     ;; The order of these messages has changed btween 8.19 and 8.20
+     ;; so we check each part separatelty
+     (coq-should-buffer-contain-string "The command has indeed failed with message:")
+     (coq-should-buffer-contain-string "Tactic failure: Cannot solve this goal." "*coq*")
      (if (coq--version< (coq-version) "8.10.0")
-         (coq-should-buffer-string "The command has indeed failed with message:
-In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.
-Tactic failure: Cannot solve this goal.")
-       (coq-should-buffer-string "The command has indeed failed with message:
-Tactic failure: Cannot solve this goal." "*coq*")))))
+         (coq-should-buffer-contain-string "In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.")))))
 
 
 ;; (coq-should-buffer-regexp (regexp-quote "The command has indeed failed with message: Tactic failure: Cannot solve this goal.") "*response*")
@@ -348,11 +352,11 @@ Tactic failure: Cannot solve this goal." "*coq*")))))
      (proof-assert-next-command-interactive) ;; pas the comment
      (proof-assert-next-command-interactive)
      (proof-shell-wait)
-     ;; If coq--post-v811, it should be "Show Proof Diffs." otherwise "Show Proof."
-     (coq-should-buffer-string "The command has indeed failed with message:
-In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed.
-Tactic failure: Cannot solve this goal."))))
- 
+     ;; The order of these messages has changed btween 8.19 and 8.20
+     ;; so we check each part separatelty
+     (coq-should-buffer-contain-string "The command has indeed failed with message:")
+     (coq-should-buffer-contain-string "Tactic failure: Cannot solve this goal." "*coq*")
+     (coq-should-buffer-contain-string "In nested Ltac calls to \"now (tactic)\" and \"easy\", last call failed."))))
 
 (ert-deftest 100_coq-test-proof-using-proof ()
   "Test for insertion of Proof using annotations"

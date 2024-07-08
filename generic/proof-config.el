@@ -1194,6 +1194,19 @@ It is safe to leave this variable unset (as nil)."
   :type '(choice (const nil) regexp)
   :group 'proof-shell)
 
+(defcustom proof-shell-no-error-regexp nil
+  "Regexp matching a non-error from the proof assistant.
+
+Some commands of the proof assistant may display error message as
+information messages. E.g. in Coq: \"Fail <cmd>\" shows the error
+message thrown by <cmd> without failing itself.
+
+Matching this regexp disables error message detection.
+
+It is safe to leave this variable unset (as nil)."
+  :type '(choice (const nil) regexp)
+  :group 'proof-shell)
+
 (defcustom proof-shell-truncate-before-error t
   "Non-nil means truncate output that appears before error messages.
 If nil, the whole output that the prover generated before the last
