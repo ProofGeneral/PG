@@ -140,6 +140,15 @@ jobs:
           - coq-8.19.2-emacs-29.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
+          - coq-8.20-rc1-emacs-26.3
+          - coq-8.20-rc1-emacs-27.1
+          - coq-8.20-rc1-emacs-27.2
+          - coq-8.20-rc1-emacs-28.1
+          - coq-8.20-rc1-emacs-28.2
+          - coq-8.20-rc1-emacs-29.1
+          - coq-8.20-rc1-emacs-29.2
+          - coq-8.20-rc1-emacs-29.3
+          - coq-8.20-rc1-emacs-29.4
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -213,6 +222,15 @@ jobs:
           - coq-8.19.2-emacs-29.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
+          - coq-8.20-rc1-emacs-26.3
+          - coq-8.20-rc1-emacs-27.1
+          - coq-8.20-rc1-emacs-27.2
+          - coq-8.20-rc1-emacs-28.1
+          - coq-8.20-rc1-emacs-28.2
+          - coq-8.20-rc1-emacs-29.1
+          - coq-8.20-rc1-emacs-29.2
+          - coq-8.20-rc1-emacs-29.3
+          - coq-8.20-rc1-emacs-29.4
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -282,6 +300,15 @@ jobs:
           - coq-8.19.2-emacs-29.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
+          - coq-8.20-rc1-emacs-26.3
+          - coq-8.20-rc1-emacs-27.1
+          - coq-8.20-rc1-emacs-27.2
+          - coq-8.20-rc1-emacs-28.1
+          - coq-8.20-rc1-emacs-28.2
+          - coq-8.20-rc1-emacs-29.1
+          - coq-8.20-rc1-emacs-29.2
+          - coq-8.20-rc1-emacs-29.3
+          - coq-8.20-rc1-emacs-29.4
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
