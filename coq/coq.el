@@ -338,10 +338,6 @@ It is mostly useful in three window mode, see also
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
 
-(defun coq-remove-trailing-blanks (s)
-  (let ((pos (string-match "\\s-*\\'" s)))
-    (substring s 0 pos)))
-
 (defun coq-remove-starting-blanks (s)
   (string-match "\\`\\s-*" s)
   (substring s (match-end 0) (length s)))
@@ -454,7 +450,7 @@ This is a subroutine of `proof-shell-filter'."
          ;;         'proof-eager-annotation-face))
          (str (proof-shell-strip-eager-annotations start end))
          (strnotrailingspace
-          (coq-remove-starting-blanks (coq-remove-trailing-blanks str))))
+          (coq-remove-starting-blanks (proof-strip-whitespace-at-end str))))
     (pg-response-display-with-face strnotrailingspace))) ; face
 
 
@@ -1946,8 +1942,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+  (setq proof-shell-start-silent-cmd "Set Silent."
+        proof-shell-stop-silent-cmd "Unset Silent.")
 
   ;; prooftree config
   (setq
@@ -2327,7 +2323,8 @@ Return command that undos to state."
       ;; Don't add the prefix if this is a command sent internally
       (unless (or (eq action 'proof-done-invisible)
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
-        (setq string (concat coq--time-prefix string))))))
+        (setq string (concat coq--time-prefix string))
+        (setq string (proof-strip-whitespace-at-end string))))))
 
 (add-hook 'proof-shell-insert-hook #'coq-preprocessing)
 
@@ -2957,7 +2954,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
 
 (defvar coq--error-location-regexp
-  "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n"
+  "^Toplevel input, characters \\(?1:[0-9]+\\)-\\(?2:[0-9]+\\):\\(\n> [^\n]*\\)*\n"
   "A regexp to search the header of coq error locations.")
 
 ;; I don't use proof-shell-last-output here since it is not always set to the
@@ -2966,12 +2963,16 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; buffer (better to only scroll it?)
 (defun coq-get-last-error-location (&optional parseresp clean)
   "Return location information on last error sent by coq.
+
 Return a two elements list (POS LEN) if successful, nil otherwise.
-POS is the number of characters preceding the underlined expression,
-and LEN is its length.
-Coq error message must be like this:
+
+POS is the number of **bytes** preceding the error location in
+the current command, and LEN is its length (in bytes too).
+
+Coq error message is like this:
 
 \"
+Toplevel input, characters 22-26:
 > command with an error here ...
 >                       ^^^^
 \"
@@ -2983,45 +2984,33 @@ If PARSERESP is nil, don't really parse response buffer but take the value of
 If PARSERESP and CLEAN are non-nil, delete the error location from the response
 buffer."
   (if (not parseresp) last-coq-error-location
-    ;; proof-shell-handle-error-or-interrupt-hook is called from shell buffer
-    ;; then highlight the corresponding error location
     (proof-with-current-buffer-if-exists proof-response-buffer
-      (goto-char (point-max)) ;\nToplevel input, character[^:]:\n
-      (when (re-search-backward coq--error-location-regexp nil t)
-        (let ((text (match-string 1))
-              (pos (length (match-string 2)))
-              (len (length (match-string 3))))
+      (goto-char (point-max))
+      (if (not (re-search-backward coq--error-location-regexp nil t))
+          (setq last-coq-error-location (list 0 0))
+        (let ((pos (string-to-number (match-string 1)))
+              (end (string-to-number (match-string 2))))
+          (setq last-coq-error-location (list pos (- end pos)))
           ;; clean the response buffer from ultra-ugly underlined command line
-          ;; parsed above. Don't kill the first \n
+          ;; Don't kill the first \n
+          ;; TODO: make coq stop displaying it it?
           (let ((inhibit-read-only t))
-            (when clean (delete-region (match-beginning 0) (match-end 0))))
-          (when proof-shell-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
-            ;; `pos' and `len' are actually specified in bytes, apparently. So
-            ;; let's convert them, assuming the encoding used is utf-8.
-            ;; Presumably in Emacs-23 we could use `string-bytes' for that
-            ;; since the internal encoding happens to use utf-8 as well.
-            ;; Actually in coq-8.3 one utf8 char = one space so we do not need
-            ;; this at all
-            (let ((bytes text)) ;(encode-coding-string text 'utf-8-unix)
-              ;; Check that pos&len make sense in `bytes', if not give up.
-              (when (>= (length bytes) (+ pos len))
-                ;; We assume here that `text' is a single line and use \n as
-                ;; a marker so we can find it back after decoding.
-                (setq bytes (concat (substring bytes 0 pos)
-                                    "\n" (substring bytes pos (+ pos len))))
-                (let ((chars (decode-coding-string bytes 'utf-8-unix)))
-                  (setq pos (string-match "\n" chars))
-                  (setq len (- (length chars) pos 1))))))
-          (setq last-coq-error-location (list pos len)))))))
+            (when clean (delete-region (match-beginning 0) (match-end 0)))))
+        last-coq-error-location))))
 
+(defun point-add-bytes (nbytes)
+  "Return current point shifted by NBYTES bytes."
+  (byte-to-position (+ (position-bytes (point)) nbytes)))
 
 (defun coq-highlight-error (&optional parseresp clean)
-  "Parse the last Coq output looking at an error message.
+  "Return position and length of error in last message.
+
 Highlight the text pointed by it.
 Coq error message must be like this:
 
 \"
-> command with an error here ...
+Toplevel input, characters 60-66:
+> ...
 >                       ^^^^
 \"
 
@@ -3030,7 +3019,10 @@ If PARSERESP is nil, don't really parse response buffer but take the value of
 `last-coq-error-location'.
 
 If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
+buffer.
+
+Important: Coq gives char positions in bytes instead of chars.
+"
   (proof-with-current-buffer-if-exists proof-script-buffer
     (let ((mtch (coq-get-last-error-location parseresp clean)))
       (when mtch
@@ -3038,12 +3030,24 @@ buffer."
               (lgth (cadr mtch)))
           (goto-char (+ (proof-unprocessed-begin) 1))
           (coq-find-real-start)
-
-          ;; utf8 adaptation is made in coq-get-last-error-location above
-          (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
-            (goto-char (+ (point) pos))
-            (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
-                                          'face 'proof-warning-face)))))))
+          ;; locations are given in bytes. translate into valid positions
+          ;; + deal with coq bug #19355
+          (let* ((cmdstart (point))
+                 (next-cmd (progn (coq-script-parse-cmdend-forward) (point)))
+                 ;; test suspîcious location info from coq (coq#19355). coq <=
+                 ;; 8.20 on curly braces gives the global location instead of
+                 ;; the location inside the command. fallback: we locate the
+                 ;; error at the command start, with given length. we detect
+                 ;; the problem by testing if the location of the error is
+                 ;; greater than the end of the command itself.
+                 (bug19355 (> pos next-cmd)))
+            (goto-char cmdstart)
+              (let* ((pos (if bug19355 0 pos)) ;; 0 means start of command
+                     (beg (goto-char (point-add-bytes pos)))
+                     (end (goto-char (point-add-bytes lgth))))
+                (span-make-self-removing-span beg end 'face 'proof-warning-face)
+                ;; user usually expect the point to move to the error location
+                (goto-char beg))))))))
 
 (defun coq-highlight-error-hook ()
   (coq-highlight-error t t))

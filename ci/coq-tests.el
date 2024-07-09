@@ -255,12 +255,83 @@ For example, COMMENT could be (*test-definition*)"
    (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma2*)")
-     (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
-     (proof-goto-point)
-     (proof-shell-wait)
-     (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
-     (should (equal (proof-queue-or-locked-end) proof-point))))))
+     ;; redefining this function locally so that self removing spans
+     ;; remain longer. Cf span.el
+     (cl-letf (((symbol-function 'span-make-self-removing-span)
+                (lambda (beg end &rest props)
+                  (let ((ol (span-make beg end)))
+                    (while props
+                      (overlay-put ol (car props) (cadr props))
+                      (setq props (cddr props)))
+                    (add-timeout 10 'delete-overlay ol)
+                    ol))))
+       
+       (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)") (point)))
+             (proof-cmd-point (save-excursion
+                                (coq-test-goto-after "(*error*)")
+                                (re-search-forward "reflexivity")
+                                (re-search-backward "reflexivity")))) 
+         (proof-goto-point)
+         (proof-shell-wait)
+         (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
+         ;; checking that there is an overlay with warning face exactly
+         ;; on "reflexivity". WARNING: this overlat lasts only for 2
+         ;; secs, if this test is done in a (very) slow virtual machine
+         ;; this may fail.
+         (should (equal (point) proof-cmd-point))
+         (let ((sp (span-at proof-cmd-point 'face)))
+           (should sp)
+           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-start sp) proof-cmd-point))
+           ;; coq-8.11 used to hace ending ps shifted by one
+           (should (or (equal (span-end sp) (+ proof-cmd-point (length "reflexivity")))
+                       (equal (span-end sp) (+ 1 proof-cmd-point (length "reflexivity")))))
+           )
+         (should (equal (proof-queue-or-locked-end) proof-point)))))))
 
+
+;; Testing the error location for curly braces specifically. Coq bug
+;; #19355 (coq <= 8.20) needs to be worked around.
+(ert-deftest 51_coq-test-error-highlight ()
+  "Test error highlghting for curly brace."
+  (coq-fixture-on-file
+   (coq-test-full-path "test_error_loc_1.v")
+   (lambda ()
+     (coq-test-goto-before " (*test-lemma*)")
+     ;; redefining this function locally so that self removing spans
+     ;; remain longer. Cf span.el
+     (cl-letf (((symbol-function 'span-make-self-removing-span)
+                (lambda (beg end &rest props)
+                  (let ((ol (span-make beg end)))
+                    (while props
+                      (overlay-put ol (car props) (cadr props))
+                      (setq props (cddr props)))
+                    (add-timeout 10 'delete-overlay ol)
+                    ol))))
+       
+       (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)") (point)))
+             (proof-cmd-point (save-excursion
+                                (coq-test-goto-after "(*error*)")
+                                (re-search-forward "}")
+                                (re-search-backward "}")))) 
+         (coq-test-goto-before " (*test-lemma*)")
+         (proof-goto-point)
+         (proof-shell-wait)
+         (coq-should-buffer-string "Error: The proof is not focused")
+         ;; checking that there is an overlay with warning face exactly
+         ;; on "reflexivity". WARNING: this overlat lasts only for 2
+         ;; secs, if this test is done in a (very) slow virtual machine
+         ;; this may fail.
+         (should (equal (point) proof-cmd-point))
+         (let ((sp (span-at proof-cmd-point 'face)))
+           (should sp)
+           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-start sp) proof-cmd-point))
+           ;; coq-8.11 used to hace ending ps shifted by one
+           (should (or (equal (span-end sp) (+ proof-cmd-point (length "}")))
+                       (equal (span-end sp) (+ 1 proof-cmd-point (length "}")))))
+           )
+         (should (equal (proof-queue-or-locked-end) proof-point)))))))
 
 ;; Disable tests that use test_wholefile.v. The file is outdated, uses
 ;; deprecated features, is prone to caues Coq errors and therefore
@@ -376,9 +447,6 @@ For example, COMMENT could be (*test-definition*)"
        (backward-char 3)
        (should (span-at (point) 'proofusing))))))
  
-
-
-
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here
