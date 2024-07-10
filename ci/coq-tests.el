@@ -255,11 +255,25 @@ For example, COMMENT could be (*test-definition*)"
    (coq-test-full-path "test_stepwise.v")
    (lambda ()
      (coq-test-goto-before " (*test-lemma2*)")
-     (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))) 
-     (proof-goto-point)
-     (proof-shell-wait)
-     (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
-     (should (equal (proof-queue-or-locked-end) proof-point))))))
+     (let ((proof-point (save-excursion (coq-test-goto-after "(*error*)")))
+           (proof-cmd-point (save-excursion
+                              (coq-test-goto-after "(*error*)")
+                              (re-search-forward "reflexivity")
+                              (re-search-backward "reflexivity")))) 
+       (proof-goto-point)
+       (proof-shell-wait)
+       (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
+       ;; checking that there is an overlay with warning face exactly
+       ;; on "reflexivity". WARNING: this overlat lasts only for 2
+       ;; secs, if this test is done in a (very) slow virtual machine
+       ;; this may fail.
+       (should (equal (point) proof-cmd-point))
+       (should
+        (let ((sp (span-at (point) 'face)))
+          (and sp (equal (span-property sp 'face) 'proof-warning-face)
+               (equal (span-start sp) (point))
+               (equal (span-end sp) (+ (point) (length "reflexivity"))))))
+       (should (equal (proof-queue-or-locked-end) proof-point))))))
 
 
 ;; Disable tests that use test_wholefile.v. The file is outdated, uses

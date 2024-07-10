@@ -930,6 +930,10 @@ the prover command buffer (e.g., with Isabelle2009 press RET inside *isabelle*).
 ;;   Low-level commands for shell communication
 ;;
 
+(defun proof-remove-trailing-blanks (s)
+  (let ((pos (string-match "\\s-*\\'" s)))
+    (substring s 0 pos)))
+
 ;;;###autoload
 (defun proof-shell-insert (strings action &optional scriptspan)
   "Insert STRINGS at the end of the proof shell, call `scomint-send-input'.
@@ -969,8 +973,12 @@ used in `proof-add-to-queue' when we start processing a queue, and in
       (run-hooks 'proof-shell-insert-hook)
 
       ;; Replace CRs from string with spaces to avoid spurious prompts.
-      (if proof-shell-strip-crs-from-input
-	  (setq string (subst-char-in-string ?\n ?\  string)))
+      (when proof-shell-strip-crs-from-input
+	(setq string (subst-char-in-string ?\n ?\  string)))
+
+      ;; avoid feeding the proof assistant with blanks at the end that
+      ;; will mess with error locations
+      (setq string (proof-remove-trailing-blanks string))
 
       (insert string)
 
