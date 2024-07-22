@@ -150,6 +150,7 @@
   "sim"
   "skip"
   "call"
+  "ecall"
   "rcondt"
   "rcondf"
   "swap"
