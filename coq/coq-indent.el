@@ -264,11 +264,6 @@ if found, to (point-max) otherwise.  Return t if found, nil otherwise."
           (setq nbopen (- nbopen 1))))
       (= nbopen 0))))
 
-(defun coq-looking-at-comment ()
-  "Return non-nil if point is inside a comment."
-  (or (proof-inside-comment (point))
-      (proof-inside-comment (+ 1 (point)))))
-
 (defun coq-find-comment-start ()
   "Go to the current comment start.
 If inside nested comments, go to the start of the outer most comment.
