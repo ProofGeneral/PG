@@ -1771,6 +1771,10 @@ See  `coq-fold-hyp'."
 (proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
 (proof-definvisible coq-set-printing-all "Set Printing All.")
 (proof-definvisible coq-unset-printing-all "Unset Printing All.")
+(proof-definvisible coq-set-printing-parentheses "Set Printing Parentheses.")
+(proof-definvisible coq-unset-printing-parentheses "Unset Printing Parentheses.")
+(proof-definvisible coq-set-printing-notations "Set Printing Notations.")
+(proof-definvisible coq-unset-printing-notations "Unset Printing Notations.")
 (proof-definvisible coq-set-printing-synth "Set Printing Synth.")
 (proof-definvisible coq-unset-printing-synth "Unset Printing Synth.")
 (proof-definvisible coq-set-printing-coercions "Set Printing Coercions.")
@@ -2861,6 +2865,10 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?l)]  #'coq-LocateConstant)
 (define-key coq-keymap [(control ?n)]  #'coq-LocateNotation)
 (define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)
+(define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
+(define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
+(define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
+(define-key coq-keymap [(?n)]          #'coq-unset-printing-notations)
 
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
