@@ -121,8 +121,8 @@ Namely, goals that do not fit in the goals window."
      ;; Should this variable be buffer-local? No opinion on that but if yes we
      ;; should re-intialize to coq-search-blacklist-string instead of
      ;; keeping the current value (that may come from another file).
-     ,(format "Add Search Blacklist %s. " coq-search-blacklist-current-string))
-   '("Set Suggest Proof Using. ") coq-user-init-cmd)
+     ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
+   '("Set Suggest Proof Using.") coq-user-init-cmd)
   "Command to initialize the Coq Proof Assistant.")
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
@@ -704,7 +704,7 @@ If locked span already has a state number, then do nothing. Also updates
       (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
       (setq coq--retract-naborts naborts)
       (list
-       (format "BackTo %s . "
+       (format "BackTo %s ."
                (int-to-string span-staten))))))
 
 (defvar coq-current-goal 1
@@ -897,7 +897,7 @@ is nil (t by default)."
                       (if shft (if id "About" "Locate")
                         (if ctrl (if id "Print" "Locate")))))))
         (proof-shell-invisible-command
-         (format (concat  cmd " %s . ")
+         (format (concat  cmd " %s .")
                  ;; Notation need to be surrounded by ""
                  (if id id (concat "\"" notat "\""))))))))
 
@@ -925,7 +925,7 @@ Otherwise propose identifier at point if any."
     (proof-shell-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
     (proof-shell-invisible-command
-     (format (concat do " %s . ") (funcall postform cmd))
+     (format (concat do " %s .") (funcall postform cmd))
      wait)))
 
 
@@ -946,12 +946,12 @@ the time of writing this documentation)."
     ;; to trigger "Show" or anything that we usually insert after a group of
     ;; commands.
     (unless flag-is-on (proof-shell-invisible-command
-                        (format " %s . " (funcall postform setcmd))
+                        (format " %s ." (funcall postform setcmd))
                         nil nil 'no-response-display 'empty-action-list))
     (proof-shell-invisible-command
-     (format " %s . " (funcall postform cmd)) 'wait nil 'empty-action-list)
+     (format " %s ." (funcall postform cmd)) 'wait nil 'empty-action-list)
     (unless flag-is-on (proof-shell-invisible-command
-                        (format " %s . " (funcall postform unsetcmd))
+                        (format " %s ." (funcall postform unsetcmd))
                         'waitforit  nil 'no-response-display 'empty-action-list))))
 
 (defun coq-ask-do-set-unset (ask do setcmd unsetcmd
@@ -991,7 +991,7 @@ UNSETCMD.  See `coq-command-with-set-unset'."
   ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
   ;;   (coq-command-with-set-unset
   ;;    "Set Printing Implicit"
-  ;;    (format (concat do " %s . ") cmd)
+  ;;    (format (concat do " %s .") cmd)
   ;;    "Unset Printing Implicit" )
   ;;   ))
 
@@ -1086,7 +1086,7 @@ This is specific to `coq-mode'."
    ))
 
 (defun coq-set-undo-limit (undos)
-  (proof-shell-invisible-command (format "Set Undo %s . " undos)))
+  (proof-shell-invisible-command (format "Set Undo %s ." undos)))
 
 (defun coq-Pwd ()
   "Display the current Coq working directory."
@@ -1760,7 +1760,7 @@ See  `coq-fold-hyp'."
     (coq-fold-hyp h)))
 ;;;;;;;
 
-(proof-definvisible coq-PrintHint "Print Hint. ")
+(proof-definvisible coq-PrintHint "Print Hint.")
 
 ;; Items on show menu
 (proof-definvisible coq-show-tree "Show Tree.")
@@ -1784,8 +1784,8 @@ See  `coq-fold-hyp'."
 (proof-definvisible coq-set-printing-wildcards "Set Printing Wildcard.")
 (proof-definvisible coq-unset-printing-wildcards "Unset Printing Wildcard.")
 ; Takes an argument
-;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
-;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
+;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth .")
+;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth .")
 
 ;; Persistent setting, non-boolean, non cross-version compatible (Coq >= 8.10)
 (defconst coq-diffs--function #'coq-diffs
@@ -1903,11 +1903,11 @@ at `proof-assistant-settings-cmds' evaluation time.")
   (setq proof-query-file-save-when-activating-scripting nil)
 
   ;; Commands sent to proof engine
-  (setq proof-showproof-command "Show. "
-        proof-context-command "Print All. "
-        proof-goal-command "Goal %s. "
-        proof-save-command "Save %s. "
-        proof-find-theorems-command "Search %s. ")
+  (setq proof-showproof-command "Show."
+        proof-context-command "Print All."
+        proof-goal-command "Goal %s."
+        proof-save-command "Save %s."
+        proof-find-theorems-command "Search %s.")
 
   (setq proof-show-proof-diffs-regexp coq-show-proof-diffs-regexp)
 
@@ -2070,7 +2070,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
 
 (defun coq-goals-mode-config ()
-  (setq pg-goals-change-goal "Show %s . ")
+  (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
   (proof-goals-config-done))
@@ -2093,7 +2093,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 ;; (defpacustom print-only-first-subgoal  nil
 ;;  "Whether to just print the first subgoal in Coq."
 ;;  :type 'boolean
-;;  :setting ("Focus. " . "Unfocus. "))
+;;  :setting ("Focus." . "Unfocus."))
 
 
 (defpacustom hide-additional-subgoals nil
@@ -2114,20 +2114,20 @@ at `proof-assistant-settings-cmds' evaluation time.")
 ;(defpacustom print-fully-explicit nil
 ;  "Print fully explicit terms."
 ;  :type 'boolean
-;  :setting ("Set Printing All. " . "Unset Printing All. "))
+;  :setting ("Set Printing All." . "Unset Printing All."))
 ;
 
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which dots are displayed."
   :type 'integer
-  :setting "Set Printing Depth %i . ")
+  :setting "Set Printing Depth %i .")
 
 (defun coq-diffs ()
   "Return string for setting Coq Diffs.
 Return the empty string if the version of Coq < 8.10."
   (setq pg-insert-text-function #'coq-insert-tagged-text)
   (if (coq--post-v810)
-      (format "Set Diffs \"%s\". " (symbol-name coq-diffs))
+      (format "Set Diffs \"%s\"." (symbol-name coq-diffs))
     ""))
 
 (defun coq-diffs--setter (symbol new-value)
@@ -2155,7 +2155,7 @@ Set Diffs setting if Coq is running and has a version >= 8.10."
 ;;(defpacustom undo-depth coq-default-undo-limit
 ;;  "Depth of undo history.  Undo behaviour will break beyond this size."
 ;;  :type 'integer
-;;  :setting "Set Undo %i . ")
+;;  :setting "Set Undo %i .")
 
 ;; Problem if the Remove or Add fails we leave Coq's blacklist in a strange
 ;; state: unnoticed by the user, and desynched from
@@ -2324,6 +2324,8 @@ Return command that undos to state."
       (unless (or (eq action 'proof-done-invisible)
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
         (setq string (concat coq--time-prefix string))
+        ;; coqtop *really wants* a newline after a comand-ending dot.
+        ;; (error) locations are very wrong otherwise
         (setq string (proof-strip-whitespace-at-end string))))))
 
 (add-hook 'proof-shell-insert-hook #'coq-preprocessing)
