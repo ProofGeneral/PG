@@ -550,7 +550,7 @@ alreadyopen is t if buffer already existed."
 				  (find-file-noselect projectfile t t))))
 	  (list projectbuffer projectbufferalreadyopen))))))
 
-(defconst coq--project-file-separator "[\r\n[:space:]]+")
+(defconst coq--project-file-separator "[\r\t\n[:space:]]+")
 
 (defconst coq--makefile-switch-arities
   '(("-R" . 2)
