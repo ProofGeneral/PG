@@ -121,8 +121,8 @@ Namely, goals that do not fit in the goals window."
      ;; Should this variable be buffer-local? No opinion on that but if yes we
      ;; should re-intialize to coq-search-blacklist-string instead of
      ;; keeping the current value (that may come from another file).
-     ,(format "Add Search Blacklist %s. " coq-search-blacklist-current-string))
-   '("Set Suggest Proof Using. ") coq-user-init-cmd)
+     ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
+   '("Set Suggest Proof Using.") coq-user-init-cmd)
   "Command to initialize the Coq Proof Assistant.")
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
@@ -338,10 +338,6 @@ It is mostly useful in three window mode, see also
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
 
-(defun coq-remove-trailing-blanks (s)
-  (let ((pos (string-match "\\s-*\\'" s)))
-    (substring s 0 pos)))
-
 (defun coq-remove-starting-blanks (s)
   (string-match "\\`\\s-*" s)
   (substring s (match-end 0) (length s)))
@@ -454,7 +450,7 @@ This is a subroutine of `proof-shell-filter'."
          ;;         'proof-eager-annotation-face))
          (str (proof-shell-strip-eager-annotations start end))
          (strnotrailingspace
-          (coq-remove-starting-blanks (coq-remove-trailing-blanks str))))
+          (coq-remove-starting-blanks (proof-strip-whitespace-at-end str))))
     (pg-response-display-with-face strnotrailingspace))) ; face
 
 
@@ -708,7 +704,7 @@ If locked span already has a state number, then do nothing. Also updates
       (if (= proofdepth 0) (proof-clean-buffer proof-goals-buffer))
       (setq coq--retract-naborts naborts)
       (list
-       (format "BackTo %s . "
+       (format "BackTo %s ."
                (int-to-string span-staten))))))
 
 (defvar coq-current-goal 1
@@ -901,7 +897,7 @@ is nil (t by default)."
                       (if shft (if id "About" "Locate")
                         (if ctrl (if id "Print" "Locate")))))))
         (proof-shell-invisible-command
-         (format (concat  cmd " %s . ")
+         (format (concat  cmd " %s .")
                  ;; Notation need to be surrounded by ""
                  (if id id (concat "\"" notat "\""))))))))
 
@@ -929,7 +925,7 @@ Otherwise propose identifier at point if any."
     (proof-shell-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
     (proof-shell-invisible-command
-     (format (concat do " %s . ") (funcall postform cmd))
+     (format (concat do " %s .") (funcall postform cmd))
      wait)))
 
 
@@ -950,12 +946,12 @@ the time of writing this documentation)."
     ;; to trigger "Show" or anything that we usually insert after a group of
     ;; commands.
     (unless flag-is-on (proof-shell-invisible-command
-                        (format " %s . " (funcall postform setcmd))
+                        (format " %s ." (funcall postform setcmd))
                         nil nil 'no-response-display 'empty-action-list))
     (proof-shell-invisible-command
-     (format " %s . " (funcall postform cmd)) 'wait nil 'empty-action-list)
+     (format " %s ." (funcall postform cmd)) 'wait nil 'empty-action-list)
     (unless flag-is-on (proof-shell-invisible-command
-                        (format " %s . " (funcall postform unsetcmd))
+                        (format " %s ." (funcall postform unsetcmd))
                         'waitforit  nil 'no-response-display 'empty-action-list))))
 
 (defun coq-ask-do-set-unset (ask do setcmd unsetcmd
@@ -995,7 +991,7 @@ UNSETCMD.  See `coq-command-with-set-unset'."
   ;;   (setq cmd (coq-guess-or-ask-for-string ask dontguess))
   ;;   (coq-command-with-set-unset
   ;;    "Set Printing Implicit"
-  ;;    (format (concat do " %s . ") cmd)
+  ;;    (format (concat do " %s .") cmd)
   ;;    "Unset Printing Implicit" )
   ;;   ))
 
@@ -1090,7 +1086,7 @@ This is specific to `coq-mode'."
    ))
 
 (defun coq-set-undo-limit (undos)
-  (proof-shell-invisible-command (format "Set Undo %s . " undos)))
+  (proof-shell-invisible-command (format "Set Undo %s ." undos)))
 
 (defun coq-Pwd ()
   "Display the current Coq working directory."
@@ -1764,7 +1760,7 @@ See  `coq-fold-hyp'."
     (coq-fold-hyp h)))
 ;;;;;;;
 
-(proof-definvisible coq-PrintHint "Print Hint. ")
+(proof-definvisible coq-PrintHint "Print Hint.")
 
 ;; Items on show menu
 (proof-definvisible coq-show-tree "Show Tree.")
@@ -1788,8 +1784,8 @@ See  `coq-fold-hyp'."
 (proof-definvisible coq-set-printing-wildcards "Set Printing Wildcard.")
 (proof-definvisible coq-unset-printing-wildcards "Unset Printing Wildcard.")
 ; Takes an argument
-;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth . ")
-;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth . ")
+;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth .")
+;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth .")
 
 ;; Persistent setting, non-boolean, non cross-version compatible (Coq >= 8.10)
 (defconst coq-diffs--function #'coq-diffs
@@ -1907,11 +1903,11 @@ at `proof-assistant-settings-cmds' evaluation time.")
   (setq proof-query-file-save-when-activating-scripting nil)
 
   ;; Commands sent to proof engine
-  (setq proof-showproof-command "Show. "
-        proof-context-command "Print All. "
-        proof-goal-command "Goal %s. "
-        proof-save-command "Save %s. "
-        proof-find-theorems-command "Search %s. ")
+  (setq proof-showproof-command "Show."
+        proof-context-command "Print All."
+        proof-goal-command "Goal %s."
+        proof-save-command "Save %s."
+        proof-find-theorems-command "Search %s.")
 
   (setq proof-show-proof-diffs-regexp coq-show-proof-diffs-regexp)
 
@@ -1946,8 +1942,8 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent. "
-        proof-shell-stop-silent-cmd "Unset Silent. ")
+  (setq proof-shell-start-silent-cmd "Set Silent."
+        proof-shell-stop-silent-cmd "Unset Silent.")
 
   ;; prooftree config
   (setq
@@ -2074,7 +2070,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
 
 (defun coq-goals-mode-config ()
-  (setq pg-goals-change-goal "Show %s . ")
+  (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
   (proof-goals-config-done))
@@ -2097,7 +2093,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
 ;; (defpacustom print-only-first-subgoal  nil
 ;;  "Whether to just print the first subgoal in Coq."
 ;;  :type 'boolean
-;;  :setting ("Focus. " . "Unfocus. "))
+;;  :setting ("Focus." . "Unfocus."))
 
 
 (defpacustom hide-additional-subgoals nil
@@ -2118,20 +2114,20 @@ at `proof-assistant-settings-cmds' evaluation time.")
 ;(defpacustom print-fully-explicit nil
 ;  "Print fully explicit terms."
 ;  :type 'boolean
-;  :setting ("Set Printing All. " . "Unset Printing All. "))
+;  :setting ("Set Printing All." . "Unset Printing All."))
 ;
 
 (defpacustom printing-depth 50
   "Depth of pretty printer formatting, beyond which dots are displayed."
   :type 'integer
-  :setting "Set Printing Depth %i . ")
+  :setting "Set Printing Depth %i .")
 
 (defun coq-diffs ()
   "Return string for setting Coq Diffs.
 Return the empty string if the version of Coq < 8.10."
   (setq pg-insert-text-function #'coq-insert-tagged-text)
   (if (coq--post-v810)
-      (format "Set Diffs \"%s\". " (symbol-name coq-diffs))
+      (format "Set Diffs \"%s\"." (symbol-name coq-diffs))
     ""))
 
 (defun coq-diffs--setter (symbol new-value)
@@ -2159,7 +2155,7 @@ Set Diffs setting if Coq is running and has a version >= 8.10."
 ;;(defpacustom undo-depth coq-default-undo-limit
 ;;  "Depth of undo history.  Undo behaviour will break beyond this size."
 ;;  :type 'integer
-;;  :setting "Set Undo %i . ")
+;;  :setting "Set Undo %i .")
 
 ;; Problem if the Remove or Add fails we leave Coq's blacklist in a strange
 ;; state: unnoticed by the user, and desynched from
@@ -2327,7 +2323,10 @@ Return command that undos to state."
       ;; Don't add the prefix if this is a command sent internally
       (unless (or (eq action 'proof-done-invisible)
                   (coq-bullet-p string)) ;; coq does not accept "Time -".
-        (setq string (concat coq--time-prefix string))))))
+        (setq string (concat coq--time-prefix string))
+        ;; coqtop *really wants* a newline after a comand-ending dot.
+        ;; (error) locations are very wrong otherwise
+        (setq string (proof-strip-whitespace-at-end string))))))
 
 (add-hook 'proof-shell-insert-hook #'coq-preprocessing)
 
@@ -2957,7 +2956,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   "Last error from `coq-get-last-error-location' and `coq-highlight-error'.")
 
 (defvar coq--error-location-regexp
-  "^Toplevel input[^:]+:\n> \\(.*\\)\n> \\([^^]*\\)\\(\\^+\\)\n"
+  "^Toplevel input, characters \\(?1:[0-9]+\\)-\\(?2:[0-9]+\\):\\(\n> [^\n]*\\)*\n"
   "A regexp to search the header of coq error locations.")
 
 ;; I don't use proof-shell-last-output here since it is not always set to the
@@ -2966,12 +2965,16 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; buffer (better to only scroll it?)
 (defun coq-get-last-error-location (&optional parseresp clean)
   "Return location information on last error sent by coq.
+
 Return a two elements list (POS LEN) if successful, nil otherwise.
-POS is the number of characters preceding the underlined expression,
-and LEN is its length.
-Coq error message must be like this:
+
+POS is the number of **bytes** preceding the error location in
+the current command, and LEN is its length (in bytes too).
+
+Coq error message is like this:
 
 \"
+Toplevel input, characters 22-26:
 > command with an error here ...
 >                       ^^^^
 \"
@@ -2983,45 +2986,33 @@ If PARSERESP is nil, don't really parse response buffer but take the value of
 If PARSERESP and CLEAN are non-nil, delete the error location from the response
 buffer."
   (if (not parseresp) last-coq-error-location
-    ;; proof-shell-handle-error-or-interrupt-hook is called from shell buffer
-    ;; then highlight the corresponding error location
     (proof-with-current-buffer-if-exists proof-response-buffer
-      (goto-char (point-max)) ;\nToplevel input, character[^:]:\n
-      (when (re-search-backward coq--error-location-regexp nil t)
-        (let ((text (match-string 1))
-              (pos (length (match-string 2)))
-              (len (length (match-string 3))))
+      (goto-char (point-max))
+      (if (not (re-search-backward coq--error-location-regexp nil t))
+          (setq last-coq-error-location (list 0 0))
+        (let ((pos (string-to-number (match-string 1)))
+              (end (string-to-number (match-string 2))))
+          (setq last-coq-error-location (list pos (- end pos)))
           ;; clean the response buffer from ultra-ugly underlined command line
-          ;; parsed above. Don't kill the first \n
+          ;; Don't kill the first \n
+          ;; TODO: make coq stop displaying it it?
           (let ((inhibit-read-only t))
-            (when clean (delete-region (match-beginning 0) (match-end 0))))
-          (when proof-shell-unicode ;; TODO: remove this (when...) when coq-8.3 is out.
-            ;; `pos' and `len' are actually specified in bytes, apparently. So
-            ;; let's convert them, assuming the encoding used is utf-8.
-            ;; Presumably in Emacs-23 we could use `string-bytes' for that
-            ;; since the internal encoding happens to use utf-8 as well.
-            ;; Actually in coq-8.3 one utf8 char = one space so we do not need
-            ;; this at all
-            (let ((bytes text)) ;(encode-coding-string text 'utf-8-unix)
-              ;; Check that pos&len make sense in `bytes', if not give up.
-              (when (>= (length bytes) (+ pos len))
-                ;; We assume here that `text' is a single line and use \n as
-                ;; a marker so we can find it back after decoding.
-                (setq bytes (concat (substring bytes 0 pos)
-                                    "\n" (substring bytes pos (+ pos len))))
-                (let ((chars (decode-coding-string bytes 'utf-8-unix)))
-                  (setq pos (string-match "\n" chars))
-                  (setq len (- (length chars) pos 1))))))
-          (setq last-coq-error-location (list pos len)))))))
+            (when clean (delete-region (match-beginning 0) (match-end 0)))))
+        last-coq-error-location))))
 
+(defun point-add-bytes (nbytes)
+  "Return current point shifted by NBYTES bytes."
+  (byte-to-position (+ (position-bytes (point)) nbytes)))
 
 (defun coq-highlight-error (&optional parseresp clean)
-  "Parse the last Coq output looking at an error message.
+  "Return position and length of error in last message.
+
 Highlight the text pointed by it.
 Coq error message must be like this:
 
 \"
-> command with an error here ...
+Toplevel input, characters 60-66:
+> ...
 >                       ^^^^
 \"
 
@@ -3030,7 +3021,10 @@ If PARSERESP is nil, don't really parse response buffer but take the value of
 `last-coq-error-location'.
 
 If PARSERESP and CLEAN are non-nil, delete the error location from the response
-buffer."
+buffer.
+
+Important: Coq gives char positions in bytes instead of chars.
+"
   (proof-with-current-buffer-if-exists proof-script-buffer
     (let ((mtch (coq-get-last-error-location parseresp clean)))
       (when mtch
@@ -3038,12 +3032,24 @@ buffer."
               (lgth (cadr mtch)))
           (goto-char (+ (proof-unprocessed-begin) 1))
           (coq-find-real-start)
-
-          ;; utf8 adaptation is made in coq-get-last-error-location above
-          (let ((time-offset (if coq-time-commands (length coq--time-prefix) 0)))
-            (goto-char (+ (point) pos))
-            (span-make-self-removing-span (point) (+ (point) (- lgth time-offset))
-                                          'face 'proof-warning-face)))))))
+          ;; locations are given in bytes. translate into valid positions
+          ;; + deal with coq bug #19355
+          (let* ((cmdstart (point))
+                 (next-cmd (progn (coq-script-parse-cmdend-forward) (point)))
+                 ;; test suspîcious location info from coq (coq#19355). coq <=
+                 ;; 8.20 on curly braces gives the global location instead of
+                 ;; the location inside the command. fallback: we locate the
+                 ;; error at the command start, with given length. we detect
+                 ;; the problem by testing if the location of the error is
+                 ;; greater than the end of the command itself.
+                 (bug19355 (> pos next-cmd)))
+            (goto-char cmdstart)
+              (let* ((pos (if bug19355 0 pos)) ;; 0 means start of command
+                     (beg (goto-char (point-add-bytes pos)))
+                     (end (goto-char (point-add-bytes lgth))))
+                (span-make-self-removing-span beg end 'face 'proof-warning-face)
+                ;; user usually expect the point to move to the error location
+                (goto-char beg))))))))
 
 (defun coq-highlight-error-hook ()
   (coq-highlight-error t t))
