@@ -1837,23 +1837,29 @@ at `proof-assistant-settings-cmds' evaluation time.")
 (defun coq-display-debug-goal ()
   (interactive)
   (with-current-buffer proof-shell-buffer
-    (let ((pt (progn (save-excursion (forward-line -1) (point)))))
+    (goto-char (point-max))
+    (let ((pt (save-excursion (forward-line -1) (point)))
+          (last-prompt (save-excursion (forward-line -1)
+                                       (re-search-backward "</prompt>" nil t))))
       (save-excursion
-        (re-search-backward "^TcDebug" pt t)
-        (re-search-backward "<infomsg>\\|^TcDebug\\|^</prompt>" nil t)
-        (when (looking-at "<infomsg>")
-          (let ((pt2 (point)))
-            (re-search-backward "Goal:\\|^TcDebug\\|^</prompt>" nil t)
-            (when (looking-at "Goal")
-              (pg-goals-display (buffer-substring (point) pt2) nil))))))))
+        (when (and
+               (re-search-backward "^TcDebug" pt t) ;; current TcDebug
+               (re-search-backward "^TcDebug" last-prompt t)) ;; previous one
+               (re-search-forward "^Goal:" pt t))
+        (beginning-of-line)
+        (let ((pt2 (point)))
+          (re-search-forward "</prompt>\\|^Debug:\\|^Going to execute:\\|^TcDebug" nil t)
+          (goto-char (match-beginning 0))
+          (pg-goals-display (buffer-substring pt2 (point)) nil)
+          (beginning-of-line)
+          (pg-response-message (buffer-substring (point) (point-max)))
+          )))))
 
 ;; overwrite the generic one, interactive prompt is Debug mode;; try to display
 ;; the debug goal in the goals buffer.
 (defun proof-shell-process-interactive-prompt-regexp ()
   "Action taken when `proof-shell-interactive-prompt-regexp' is observed."
-  (when (and (proof-shell-live-buffer)
-	     ; not already visible
-	     t)
+  (when (proof-shell-live-buffer)
     (switch-to-buffer proof-shell-buffer)
     (coq-display-debug-goal)
     (message "Prover expects input in %s buffer (if debug mode: h<return> for help))" proof-shell-buffer)))
@@ -2001,7 +2007,9 @@ at `proof-assistant-settings-cmds' evaluation time.")
    proof-shell-eager-annotation-start coq-shell-eager-annotation-start
    proof-shell-eager-annotation-start-length 32
 
-   proof-shell-interactive-prompt-regexp "TcDebug "
+   ;; we need these two strings to be recognized so that the first appearing is
+   ;; analyzed
+   proof-shell-interactive-prompt-regexp "TcDebug ([0-9]+) >\\|Going to execute:"
 
    ;; ****** is added at the end of warnings in emacs mode, this is temporary I
    ;;        want xml like tags, and I want them removed before warning display.

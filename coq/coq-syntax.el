@@ -1316,8 +1316,9 @@ Very similar to `coq-omit-proof-admit-command', but without the dot."
 ;; april2017: coq-8.7 removes special chars definitely and puts
 ;; <infomsg> and <warning> around all messages except errors.
 ;; We let our legacy regexp for some years and remove them, say, in 2020.
+;; 09/2024: Adding more eager annotations to fix debug mode.
 (defvar coq-shell-eager-annotation-start
-   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<infomsg>\\|<warning>")
+   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<infomsg>\\|<warning>\\|Going to execute:")
 
 (defvar coq-shell-eager-annotation-end
   "\377\\|done\\]\\|</infomsg>\\|</warning>\\|\\*\\*\\*\\*\\*\\*\\|) >")
