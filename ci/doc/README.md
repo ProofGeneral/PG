@@ -168,7 +168,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-65
+63
 <!-- CIPG change marker end -->
 containers.
 
@@ -181,15 +181,15 @@ containers.
 |   8.9.1 |      |   H  |      |      |      |      |      |      |      |      |      |
 |  8.10.2 |      |      |   H  |      |      |      |      |      |      |      |      |
 |  8.11.2 |      |      |  SUP |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |      |  SUP |  SUP |      |      |      |      |      |      |   N  |
-|  8.13.2 |      |      |  SUP |  SUP |   H  |      |      |      |      |      |   N  |
-|  8.14.1 |      |      |  SUP |  SUP |   H  |      |      |      |      |      |   N  |
+|  8.12.2 |      |      |  SUP |   H  |      |      |      |      |      |      |   N  |
+|  8.13.2 |      |      |  SUP |      |   H  |      |      |      |      |      |   N  |
+|  8.14.1 |      |      |  SUP |      |   H  |      |      |      |      |      |   N  |
 |  8.15.2 |      |      |  SUP |  SUP |      |   H  |      |      |      |      |   N  |
 |  8.16.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.17.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.18.0 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.19.2 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.20rc |      |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|  8.20.0 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -286,7 +286,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-41
+35
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
@@ -299,15 +299,15 @@ version pairs for the Proof General interaction tests with Coq.
 |   8.9.1 |      |      |      |      |      |      |      |      |      |      |      |
 |  8.10.2 |      |      |      |      |      |      |      |      |      |      |      |
 |  8.11.2 |      |      |  SUP |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |      |      |  SUP |      |      |      |      |      |      |   N  |
+|  8.12.2 |      |      |      |   H  |      |      |      |      |      |      |   N  |
 |  8.13.2 |      |      |      |      |   H  |      |      |      |      |      |   N  |
 |  8.14.1 |      |      |      |      |   H  |      |      |      |      |      |   N  |
 |  8.15.2 |      |      |      |  SUP |      |   H  |      |      |      |      |   N  |
 |  8.16.1 |      |      |      |      |      |      |  SUP |      |      |      |   N  |
-|  8.17.1 |      |      |   X  |   X  |      |      |   X  |   X  |      |      |   N  |
-|  8.18.0 |      |      |   X  |   X  |      |      |   X  |   X  |      |      |   N  |
-|  8.19.2 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |   N  |   N  |
-|  8.20rc |      |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|  8.17.1 |      |      |   X  |   X  |      |      |   X  |   H  |      |      |   N  |
+|  8.18.0 |      |      |   X  |   X  |      |      |   X  |      |      |      |   N  |
+|  8.19.2 |      |      |   X  |   X  |      |      |   X  |      |      |      |   N  |
+|  8.20.0 |      |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   N  |   N  |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
@@ -317,7 +317,7 @@ In summary, all Proof General testing jobs run
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: total-checks-number -->
-152
+134
 <!-- CIPG change marker end -->
 github checks.
 
