@@ -40,6 +40,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 *** New command `proof-check-annotate' to annotate all failing proofs
     with FAIL comments. Useful in the development process as described
     above to ensure all currently failing proofs are marked as such.
+*** flag Printing Parentheses and Printing Notations can be set/unset
+    via menu and Coq keymap (C-c C-a C-9 and C-c C-a C-0 for
+    Parentheses (optimized for British and American keyboards); C-c
+    C-a n and C-c C-a N for Notations).
 *** New options coq-compile-extra-coqc-arguments and
     coq-compile-extra-coqdep-arguments to configure additional
     command line arguments to calls of, respetively, coqc and coqdep
