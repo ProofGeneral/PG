@@ -505,6 +505,13 @@ Mac OS X."
   :type 'boolean
   :group 'proof-user-options)
 
+(defcustom proof-splash-enable t
+  "*If non-nil, display a splash screen when Proof General is loaded.
+See `proof-splash-time' for configuring the time that the splash
+screen is shown."
+  :type 'boolean
+  :group 'proof-user-options)
+
 
 
 (provide 'proof-useropts)
