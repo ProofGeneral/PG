@@ -19,6 +19,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     changes below for more details.
 *** New command `proof-check-annotate' to annotate all failing proofs
     with FAIL comments.
+*** Improve splash screen, add menu entry to permanently disable it
+    (Proof-General -> Quick Options -> Display -> Disable Splash Screen),
+    reduce splash screen time to make it less annoying
+*** Don't ask about killing the proof assistant when quitting Emacs and
+    thereby the Proof General session.
 
 ** Coq changes
 *** support Coq 8.19

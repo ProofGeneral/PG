@@ -479,6 +479,12 @@ process command."
 	(erase-buffer)
 	(proof-shell-set-text-representation)
 
+        ;; If the user quits Emacs together with the Proof General
+        ;; session, it's clear that the proof assistant needs to be
+        ;; killed - don't ask.
+        (set-process-query-on-exit-flag
+         (get-buffer-process proof-shell-buffer) nil)
+
 	;; Initialise associated buffers
 	(with-current-buffer proof-response-buffer
 	  (erase-buffer)
