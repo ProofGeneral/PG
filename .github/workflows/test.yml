@@ -129,10 +129,12 @@ jobs:
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-29.4
           - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
+          - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.20.0-emacs-26.3
           - coq-8.20.0-emacs-27.1
@@ -205,10 +207,12 @@ jobs:
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-29.4
           - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
+          - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.20.0-emacs-26.3
           - coq-8.20.0-emacs-27.1
@@ -277,10 +281,12 @@ jobs:
           - coq-8.18.0-emacs-26.3
           - coq-8.18.0-emacs-27.1
           - coq-8.18.0-emacs-28.2
+          - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-29.4
           - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
+          - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.20.0-emacs-26.3
           - coq-8.20.0-emacs-27.1
