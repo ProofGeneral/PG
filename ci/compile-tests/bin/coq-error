@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# The purpose of this script is to always fail with a recognizable
+# error message. This is used in test ../011-current-buffer to check
+# that background compilation does not pick wrong values for
+# `coq-compiler' and `coq-dependency-analyzer' from local variables of
+# arbitrary files.
+
+echo "Error: coq-error has been executed" > /dev/stderr
+
+exit 1
