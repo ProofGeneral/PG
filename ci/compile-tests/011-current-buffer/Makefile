@@ -12,11 +12,23 @@
 # internal states. compile-test-start-delayed outputs diagnostics on
 # file descriptor 9, which bypasses emacs and is joined with stderr of
 # the current make. Open file descriptor 9 here.
+#
+# To run not all tests, replace line
+#
+# 		-f ert-run-tests-batch-and-exit \
+#
+# with
+#
+#		-eval '(ert-run-tests-batch-and-exit "pattern")' \
+#
+# where pattern should match the test names to run.
+
 .PHONY: test
 test:
 	$(MAKE) clean
 	emacs -batch -l ../../../generic/proof-site.el -l ../cct-lib.el \
-		-l runtest.el -f ert-run-tests-batch-and-exit \
+		-l runtest.el \
+		-f ert-run-tests-batch-and-exit \
 		9>&1
 
 .PHONY: clean

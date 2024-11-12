@@ -77,7 +77,6 @@ Hook function for `cct-after-busy-waiting-hook'. Switches back to
 ;;; The tests itself
 
 (ert-deftest test-current-buffer-vok ()
-  :expected-result :failed
   "Check that second stage compilation uses the right local variables.
 Second stage compilation (vok and vio2vo) should use the local
 variables from the original scripting buffer, see also PG issue
@@ -100,8 +99,9 @@ variables from the original scripting buffer, see also PG issue
         (setq cdv-buffer (current-buffer))
         (set-buffer av-buffer)
 
-        (message (concat "coqdep: %s\ncoqc: %s\nPATH %s\n"
-                         "exec-path: %s\ndetected coq version: %s")
+        (message (concat "Settings in a.v:\n"
+                         "  coqdep: %s\n  coqc: %s\n  PATH %s\n"
+                         "  exec-path: %s\n  detected coq version: %s")
          coq-dependency-analyzer
          coq-compiler
          (getenv "PATH")
@@ -121,7 +121,7 @@ variables from the original scripting buffer, see also PG issue
           (message
            (concat "\nWait for 2nd stage (vok/vio2vo) compilation "
                    "in buffer b.v with"
-                   "\ncoqdep: %s\ncoqc: %s")
+                   "\n  coqdep: %s\n  coqc: %s")
            coq-dependency-analyzer
            coq-compiler))
 
@@ -147,7 +147,6 @@ variables from the original scripting buffer, see also PG issue
     (setq switch-buffer-while-waiting nil)))
 
 (ert-deftest test-current-buffer-coqdep ()
-  :expected-result :failed
   "Check that dependency analysis uses the right local variables.
 Dependency analysis during parallel background compilation (i.e.,
 runing `coqdep` on dependencies) should use the local variables
@@ -165,8 +164,9 @@ from the original scripting buffer, see also PG issue #797."
         (setq cdv-buffer (current-buffer))
         (set-buffer av-buffer)
 
-        (message (concat "coqdep: %s\ncoqc: %s\nPATH %s\n"
-                         "exec-path: %s\ndetected coq version: %s")
+        (message (concat "Settings in a.v:\n"
+                         "  coqdep: %s\n  coqc: %s\n  PATH %s\n"
+                         "  exec-path: %s\n  detected coq version: %s")
          coq-dependency-analyzer
          coq-compiler
          (getenv "PATH")
@@ -176,7 +176,7 @@ from the original scripting buffer, see also PG issue #797."
         (with-current-buffer cdv-buffer
           (message
            (concat "\nProcess a.v to end while visiting d.v with"
-                   "\ncoqdep: %s\ncoqc: %s")
+                   "\n  coqdep: %s\n  coqc: %s")
            coq-dependency-analyzer
            coq-compiler))
 
@@ -201,7 +201,6 @@ from the original scripting buffer, see also PG issue #797."
     (setq switch-buffer-while-waiting nil)))
 
 (ert-deftest test-current-buffer-coqc ()
-  :expected-result :failed
   "Check that compilation of dependencies uses the right local variables.
 Compilation of dependencies during parallel background
 compilation (i.e., runing `coqc` on dependencies) should use the
@@ -224,8 +223,9 @@ switch to buffer c.v, which sets `coq-compiler' but leaves
         (setq cdv-buffer (current-buffer))
         (set-buffer av-buffer)
 
-        (message (concat "coqdep: %s\ncoqc: %s\nPATH %s\n"
-                         "exec-path: %s\ndetected coq version: %s")
+        (message (concat "Settings in a.v:\n"
+                         "  coqdep: %s\n  coqc: %s\n  PATH %s\n"
+                         "  exec-path: %s\n  detected coq version: %s")
          coq-dependency-analyzer
          coq-compiler
          (getenv "PATH")
@@ -235,8 +235,8 @@ switch to buffer c.v, which sets `coq-compiler' but leaves
         (with-current-buffer cdv-buffer
           (message (concat "\nProcess a.v to end, "
                            "including compilation of dependency b.v\n"
-                           "while temporarily visiting c.v with\n"
-                           "coqdep: %s\ncoqc: %s")
+                           "  while temporarily visiting c.v with\n"
+                           "  coqdep: %s\n  coqc: %s")
            coq-dependency-analyzer
            coq-compiler))
         
