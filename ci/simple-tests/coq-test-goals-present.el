@@ -260,17 +260,14 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-proof ()
   "Test goals are present after ``Proof''."
-  :expected-result (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-proof "Proof" nil))
 
 (ert-deftest goals-after-comment ()
   "Test goals are present after a comment."
-  :expected-result :failed
   (goals-after-test coq-src-comment "comment" nil))
 
 (ert-deftest goals-after-auto ()
   "Test goals are present after ``auto''."
-  :expected-result  (if coq--post-v87 :failed :passed)
   (goals-after-test coq-src-auto "auto" nil))
 
 (ert-deftest goals-after-simpl ()
@@ -279,7 +276,6 @@ which action the goals buffer should have been reset."
 
 (ert-deftest goals-after-error ()
   "Test goals are present after an error."
-  :expected-result :failed
   (goals-after-test coq-src-error "error" t))
 
 (ert-deftest goals-reset-after-admitted ()
@@ -292,7 +288,6 @@ which action the goals buffer should have been reset."
                                  "Lemma a" "no more goals"))
 
 (ert-deftest goals-reset-qed ()
-  :expected-result :failed
   "The goals buffer is reset after Qed."
   (goals-buffer-should-get-reset coq-src-qed
                                  "Proof using" "Qed"))
@@ -359,7 +354,6 @@ two-pane mode."
 
 (ert-deftest goals-up-to-date-at-error ()
   "Check that goals are updated before showing the error."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-error
                               "Lemma foo"
                               "H : eq_one 1 -> False"
@@ -382,7 +376,6 @@ This test checks several commands inside a proof with a final
 Search command. After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-search
                               "Lemma g"
                               "2 = 2"
@@ -405,7 +398,6 @@ This test checks several commands inside a proof with a final
 Check command. After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
-  :expected-result :failed
   (update-goals-when-response coq-src-update-goal-after-check
                               "Lemma h"
                               "3 = 3"
