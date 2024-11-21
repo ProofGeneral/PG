@@ -969,7 +969,8 @@ file to be deleted when the process does not finish successfully."
     (when coq--debug-auto-compilation
       (message "%s %s: start %s %s in %s"
 	       (get job 'name) process-name
-	       command (mapconcat #'identity arguments " ")
+	       command
+               (mapconcat (lambda (a) (concat "\"" a "\"")) arguments " ")
 	       default-directory))
     (condition-case err
 	;; If the command is wrong, start-process aborts with an
