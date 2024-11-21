@@ -116,7 +116,7 @@ backward. Replace the word there with WORD."
   (insert word))
 
 (defun cct-process-to-line (line)
-  "Assert/retract to line LINE and wait until processing completed.
+  "Assert/retract to start of line LINE and wait until processing completed.
 Runs `cct-before-busy-waiting-hook' and
 `cct-after-busy-waiting-hook' before and after busy waiting for
 the prover. In many tests these hooks are not used."

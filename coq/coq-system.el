@@ -49,6 +49,7 @@ On Windows you might need something like:
     (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin")))
   "Command to invoke coqdep."
   :type 'string
+  :safe 'stringp
   :group 'coq)
 
 (defcustom coq-compiler
@@ -56,6 +57,7 @@ On Windows you might need something like:
     (proof-locate-executable "coqc" t '("C:/Program Files/Coq/bin")))
   "Command to invoke the coq compiler."
   :type 'string
+  :safe 'stringp
   :group 'coq)
 
 (defcustom coq-pinned-version nil

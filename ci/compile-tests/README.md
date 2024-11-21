@@ -39,6 +39,9 @@ All tests are for parallel background compilation.
   dependee is still processing
 010-coqdep-errors
 : check that coqdep errors are reliably detected
+011-current-buffer
+: check that background compilation is not confused by local variables
+  in unrelated buffers
 
 # Tests currently missing
 

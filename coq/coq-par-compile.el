@@ -84,7 +84,7 @@
 ;; 4- using -quick and the handling of .vo/.vio prerequisites for Coq < 8.11
 ;; 5- using -vos for Coq >= 8.11
 ;; 6- running vio2vo or -vok to check proofs
-;; 7- default-directory / current directory
+;; 7- default-directory / current directory and buffer local variables
 ;;
 ;;
 ;; For 1- where to put the Require command and the items that follow it:
@@ -116,13 +116,15 @@
 ;; dependency). At that time the 'lock-state property of the job is
 ;; set to 'locked. When a require job is retired, all ancestors with
 ;; 'lock-state property 'locked are collected by following the
-;; downward links. When the require job was successful, the collected
-;; jobs are stored in the 'coq-locked-ancestors property of the span
-;; belonging to that require command (in the 'require-span property).
-;; Furhter, the 'lock-state is set to 'asserted, such that another
-;; collection from a following require job ignores these jobs. A span
-;; delete action will unlock all uncestors in the
-;; 'coq-locked-ancestors property.
+;; downward links in a depth-first recursion. (Previous versions that
+;; collected ancestors upwards during dependant kickoff suffered from
+;; exponential blowup, see issues #499 and #572.) When the require job
+;; was successful, the collected jobs are stored in the
+;; 'coq-locked-ancestors property of the span belonging to that
+;; require command (in the 'require-span property). Furhter, the
+;; 'lock-state is set to 'asserted, such that another collection from
+;; a following require job ignores these jobs. A span delete action
+;; will unlock all uncestors in the 'coq-locked-ancestors property.
 ;;
 ;; When the require job was unsuccessful, all collected jobs are
 ;; unlocked.
@@ -137,19 +139,20 @@
 ;; retracts the queue region and resets all internal data.
 ;;
 ;; For `coq-compile-keep-going', the failing job, all ordinary
-;; dependants and all queue dependants are marked with 'failed. All
-;; ancestors that have already been registered in such a failed job
-;; are treated in the following way: If the ancestor is (via a
-;; different dependency path) an ancestor of a job that is still being
-;; compiled, then the ancestor is kept locked. Otherwise the ancestor
-;; is unlocked. Failed jobs continue with their normal state
-;; transition, but omit certain steps (eg., running coqc). If a coqc
-;; compilation finishes and all dependants are marked as failed, the
-;; ancestors are also treated in the way described before. If a failed
-;; require job is retired, nothing is done (especially its span is not
-;; asserted), unless it is the last compilation job. If the last
-;; compilation job is marked as failed when it is retired, then the
-;; whole queue region is retracted.
+;; dependants and all queue dependants are marked with 'failed.
+;; Therefore, if any job failed, the last require job is also marked
+;; as failed. Ancestors of failing require jobs are unlocked only when
+;; this last require is retired. At that time any ancestors of any
+;; preceeding successful require jobs have already been asserted.
+;; Failed jobs continue with their normal state transition, but omit
+;; certain steps (eg., running coqc). If the last compilation job is
+;; marked as failed at the time it is retired, then the whole queue
+;; region is retracted and all ancestors of this and all preceeding
+;; failed require jobs are unlocked. The ancestors to unlock are those
+;; with 'lock-state 'asserted and they are collected from the
+;; dependency tree just before unlocking. (Previous versions that
+;; collected ancestors upwards during dependant kickoff suffered from
+;; exponential blowup, see issues #499 and #572.)
 ;;
 ;; When a failing require command follows a bunch of commands that
 ;; take a while to process, it may happen, that the last failing
@@ -231,19 +234,21 @@
 ;; current value when the callback is executed.
 ;;
 ;;
-;; For 7- default-directory / current directory
+;; For 7- default-directory / current directory and buffer local variables
 ;;
-;; `default-directory' determines the current directory for background
-;; processes. In a sentinel or process filter, default-directory is
-;; taken from the current buffer, which is basically random. Starting
-;; with a wrong current directory will cause compilation failures.
-;; Therefore all entry points of this library must set
-;; default-directory. Entry points are coq-par-process-sentinel, the
-;; functions started from timer and those started from an empty entry
-;; in `proof-action-list'. To set default-directory in these cases, I
-;; record default-directory in 'current-dir inside
-;; `coq-par-preprocess-require-commands' and then pass it on to all
-;; jobs created.
+;; Sentinels and timer functions inherit local variables and the
+;; current directory (`default-directory') from the basically random
+;; buffer that is current when they are invoked. Users may have
+;; configured `coq-compiler' or other variables that influence
+;; background compilation, see issue #797. Therefore all entry points
+;; of this library must temporarily switch to the scripting buffer
+;; that caused the compilation, thereby implicitely also setting
+;; `default-directory' to the correct value. Such entry points are
+;; coq-par-process-sentinel, the functions started from timer and
+;; those started from an empty entry in `proof-action-list'. To set
+;; the current buffer in these cases, I record it in 'script-buf inside
+;; `coq-par-handle-require-list' and then pass it on to all jobs
+;; created.
 ;; 
 ;; 
 ;; Properties of compilation jobs
@@ -315,11 +320,13 @@
 ;;   'failed          - t if coqdep or coqc for the job or one dependee failed.
 ;;   'visited         - used in the dependency cycle detection to mark
 ;;                      visited jobs
-;;   'current-dir     - current directory or default-directory of the buffer
-;;                      that contained the require command. Passed recursively
-;;                      to all jobs. Used to set default-directory in the
-;;                      sentinel and other functions, because it can otherwise
-;;                      be more or less random.
+;;   'script-buf      - Buffer that cause the background compilation, i.e.,
+;;                      that contained a require command. This buffer
+;;                      is propagate to all dependencies and used as
+;;                      current buffer in all asynchronous functions
+;;                      (sentinels, timer functions, etc). This
+;;                      ensures that local variables and
+;;                      `default-directory' have correct values.
 ;;   'temp-require-file  - temporary file name just containing the require
 ;;                         command of a require job for determining the files
 ;;                         needed for that require. Must be deleted after
@@ -999,15 +1006,17 @@ Runs when process PROCESS terminated because of EVENT. It
 determines the exit status and calls the continuation function
 that has been registered with that process. Normal compilation
 errors are reported with an error message inside the callback.
-Starts as many queued jobs as possible. Second stage compilation
-jobs that have been killed, possibly because the user triggered a
-next first stage compilation, are put back into
-`coq--par-second-stage-queue'. If, at the end, no job is
-running in the background but compilation has not been finished,
-then, either second stage compilation finished (which is reported),
-or there must be a cycle in the dependencies, which is found
-and reported here. The cycle detection is skipped, if the
-retirement of the last compilation job has been delayed per
+Starts as many queued jobs as possible. The callback and queued
+jobs are done with the 'script-buf as current buffer, such that
+local variables and `default-directory' have correct values.
+Second stage compilation jobs that have been killed, possibly
+because the user triggered a next first stage compilation, are
+put back into `coq--par-second-stage-queue'. If, at the end, no
+job is running in the background but compilation has not been
+finished, then, either second stage compilation finished (which
+is reported), or there must be a cycle in the dependencies, which
+is found and reported here. The cycle detection is skipped, if
+the retirement of the last compilation job has been delayed per
 `coq--par-delayed-last-job'. All signals are caught inside this
 function and reported appropriately."
   (condition-case err
@@ -1035,43 +1044,45 @@ function and reported appropriately."
 	      (coq-par-second-stage-enqueue
 	       (process-get process 'coq-compilation-job))))
         ;; process was not killed explicitly by us
-	(let (exit-status
-              (default-directory
-                (get (process-get process 'coq-compilation-job) 'current-dir)))
-	  (when coq--debug-auto-compilation
-	    (message
-             (concat "%s %s: TTT process status changed to %s  "
-                     "command: %s\n  default-dir: %s curr buf %s")
-	     (get (process-get process 'coq-compilation-job) 'name)
-	     (process-name process)
-	     event
-             (mapconcat 'identity (process-get process 'coq-process-command) " ")
-             default-directory
-             (buffer-name)))
-	  (cond
-	   ((eq (process-status process) 'exit)
-	    (setq exit-status (process-exit-status process)))
-	   (t (setq exit-status "abnormal termination")))
-	  (setq coq--current-background-jobs
-		(max 0 (1- coq--current-background-jobs)))
-	  (funcall (process-get process 'coq-process-continuation)
-		   process exit-status)
-	  (coq-par-start-jobs-until-full)
-	  (when (and coq--par-second-stage-in-progress
-		     (eq coq--current-background-jobs 0))
-	    (setq coq--par-second-stage-in-progress nil)
-            (if (coq--post-v811)
-                (message "vok compilation finished")
-	      (message "vio2vo compilation finished")))
-	  (when (and
-		 (not coq--par-delayed-last-job)
-		 (eq coq--current-background-jobs 0)
-		 coq--last-compilation-job)
-	    (let ((cycle (coq-par-find-dependency-circle)))
-	      (if cycle
-		  (signal 'coq-compile-error-circular-dep
-			  (mapconcat #'identity cycle " -> "))
-		(error "Deadlock in parallel compilation"))))))
+        (with-current-buffer
+            (get (process-get process 'coq-compilation-job) 'script-buf)
+	  (let (exit-status)
+	    (when coq--debug-auto-compilation
+	      (message
+               (concat "%s %s: TTT process status changed to %s  "
+                       "command: %s\n  default-dir: %s curr buf %s")
+	       (get (process-get process 'coq-compilation-job) 'name)
+	       (process-name process)
+	       event
+               (mapconcat 'identity
+                          (process-get process 'coq-process-command)
+                          " ")
+               default-directory
+               (buffer-name)))
+	    (cond
+	     ((eq (process-status process) 'exit)
+	      (setq exit-status (process-exit-status process)))
+	     (t (setq exit-status "abnormal termination")))
+	    (setq coq--current-background-jobs
+		  (max 0 (1- coq--current-background-jobs)))
+	    (funcall (process-get process 'coq-process-continuation)
+		     process exit-status)
+	    (coq-par-start-jobs-until-full)
+	    (when (and coq--par-second-stage-in-progress
+		       (eq coq--current-background-jobs 0))
+	      (setq coq--par-second-stage-in-progress nil)
+              (if (coq--post-v811)
+                  (message "vok compilation finished")
+	        (message "vio2vo compilation finished")))
+	    (when (and
+		   (not coq--par-delayed-last-job)
+		   (eq coq--current-background-jobs 0)
+		   coq--last-compilation-job)
+	      (let ((cycle (coq-par-find-dependency-circle)))
+	        (if cycle
+		    (signal 'coq-compile-error-circular-dep
+			    (mapconcat #'identity cycle " -> "))
+		  (error "Deadlock in parallel compilation")))))))
     ;; coq-compile-error-start can be signaled inside the continuation
     ;; function, if that tries to start new jobs
     ;; XXX catch this error also in coq-par-preprocess-require-commands
@@ -1094,9 +1105,9 @@ function and reported appropriately."
 
 (defun coq-par-run-second-stage-queue ()
   "Start delayed second stage compilation (vio2vo or vok).
-Set `default-directory' from the 'current-dir property of the
-head of the second stage queue, such that processes started here
-run with the right current directory."
+Use the buffer stored in the 'script-buf property as current
+buffer for starting processes, such that local variables and, in
+particular, `default-directory' have the correct values."
   ;; when the user starts another compilation, the timer for second
   ;; stage is canceled
   (cl-assert (not coq--last-compilation-job)
@@ -1105,12 +1116,11 @@ run with the right current directory."
   (when coq--debug-auto-compilation
     (message "Start second stage processing for %d jobs"
              (coq-par-second-stage-queue-length)))
-  (let ((head (coq-par-second-stage-head))
-        default-directory)
+  (let ((head (coq-par-second-stage-head)))
     (when head
-      (setq default-directory (get head 'current-dir))
-      (setq coq--par-second-stage-in-progress t)
-      (coq-par-start-jobs-until-full))))
+      (with-current-buffer (get head 'script-buf)
+        (setq coq--par-second-stage-in-progress t)
+        (coq-par-start-jobs-until-full)))))
 
 (defun coq-par-require-processed (race-counter)
   "Callback for `proof-action-list' to signal completion of the last Require.
@@ -1484,9 +1494,12 @@ should be cleared before the next collection run."
 Return all not yet asserted ancestors for successful jobs JOB as
 well as for failed jobs JOB. For successful jobs, the not yet
 asserted ancestors of preceeding require jobs have been collected
-in a previous collection run. For failed jobs, this is not the
-case, therefore, for failed jobs, this function recureses into
-the preceeding require job, if it exists."
+in a previous collection run and have been asserted back then.
+For failed jobs, this is not the case and, moreover, ancestor
+unlocking can only be done when the last failing reqire job is
+retired. Therefore, for failed jobs, this function recureses into
+the preceeding require job, if it exists and is also marked as
+failed."
   (let ((this-anc (coq-par-collect-locked-ancestors-dependees job))
         (q-dep (get job 'queue-dependee))
         prev-anc)
@@ -1497,12 +1510,14 @@ the preceeding require job, if it exists."
 (defun coq-par-collect-locked-require-ancestors (job)
   "Top-level ancestor collection function - collects not asserted ancestors.
 Return all not yet asserted ancestors for successful jobs JOB as
-well as for failed jobs JOB. For failed require jobs JOB, this
-entails visiting the preceeding require job. The recursion
-internally uses property 'collect-visited to mark already visited
-jobs in order to avoid an exponential blowup in graphs that are
-not trees. This property is reset here after collection, such
-that its use stays internal."
+well as for failed jobs JOB. For failed require jobs JOB,
+additionally collect all asserted ancestors of all preceeding
+failed require jobs. This is necessary, because for failed jobs,
+unlocking only happens when the last require job is retired. The
+recursion internally uses property 'collect-visited to mark
+already visited jobs in order to avoid an exponential blowup in
+graphs that are not trees. This property is reset here after
+collection, such that its use stays internal."
   (let ((ancs (coq-par-collect-locked-require-ancestors-rec job)))
     (mapc (lambda (job) (put job 'collect-visited nil)) ancs)
     (when coq--debug-auto-compilation
@@ -1570,10 +1585,12 @@ jobs when they transition from 'waiting-queue to 'ready:
 
 (defun coq-par-kickoff-queue-from-action-list (job)
   "Trigger `coq-par-kickoff-queue-maybe' from action list.
-Simple wrapper around `coq-par-kickoff-queue-maybe' to set
-`default-directory' when entering background compilation
-functions from `proof-action-list'."
-  (let ((default-directory (get job 'current-dir)))
+Simple wrapper around `coq-par-kickoff-queue-maybe' to ensure the
+right scripting buffer is the current buffer and local variables
+and `default-directory' are taken from there. This function is
+used to enter background compilation functions from
+`proof-action-list'."
+  (with-current-buffer (get job 'script-buf)
     (when coq--debug-auto-compilation
       (message "%s: TTT retry queue kickoff after processing action list"
                (get job 'name)))
@@ -1837,17 +1854,20 @@ This function may be called asynchronously, if the require job
 was queued."
   ;; get coq-load-path from job
   ;; check that this really includes the current dir in the arguments
-  (let ((load-path
-         ;; For coq < 8.5 coqdep needs the current working directory
-         ;; in the load path. This differs from the directory containing
-         ;; 'temp-require-file. Therefore we add it here and tweek
-         ;; coq-load-path-include-current such that coq-coqdep-prog-args
-         ;; does not add the directory containing 'temp-require-file to
-         ;; load-path.
-         (if (and coq-load-path-include-current (coq--pre-v85))
-             (cons (get job 'current-dir) (get job 'load-path))
-           (get job 'load-path)))
-        (coq-load-path-include-current nil)
+  (let (
+        ;; passively supported coq versions start now with >= 8.9.1 --
+        ;; do not maintain 8.4 compatibility
+        ;; (load-path
+        ;;  ;; For coq < 8.5 coqdep needs the current working directory
+        ;;  ;; in the load path. This differs from the directory containing
+        ;;  ;; 'temp-require-file. Therefore we add it here and tweek
+        ;;  ;; coq-load-path-include-current such that coq-coqdep-prog-args
+        ;;  ;; does not add the directory containing 'temp-require-file to
+        ;;  ;; load-path.
+        ;;  (if (and coq-load-path-include-current (coq--pre-v85))
+        ;;      (cons (get job 'current-dir) (get job 'load-path))
+        ;;    (get job 'load-path)))
+        ;; (coq-load-path-include-current nil)
         (require-command
          (mapconcat #'identity (nth 1 (car (get job 'queueitems))) " "))
         (temp-file (make-temp-file "ProofGeneral-coq" nil ".v")))
@@ -1859,7 +1879,7 @@ was queued."
 	       (get job 'temp-require-file)))
     (coq-par-start-process
      coq-dependency-analyzer
-     (coq-par-coqdep-arguments (get job 'temp-require-file) load-path)
+     (coq-par-coqdep-arguments (get job 'temp-require-file) (get job 'load-path))
      'coq-par-process-coqdep-result
      job
      (get job 'temp-require-file))))
@@ -1998,18 +2018,19 @@ synchronously or asynchronously."
       (coq-par-start-task new-job)
     (coq-par-job-enqueue new-job)))
 
-(defun coq-par-job-init-common (clpath type current-dir)
+(defun coq-par-job-init-common (clpath type script-buf)
   "Common initialization for 'require and 'file jobs.
 Create a new job of type TYPE and initialize all common fields of
 require and file jobs that need an initialization different from
-nil."
+nil. Argument SCRIPT-BUF must be the script buffer that caused
+the background compilation."
   (let ((new-job (make-symbol "coq-compile-job-symbol")))
     (put new-job 'name (format "job-%d" coq--par-next-id))
     (setq coq--par-next-id (1+ coq--par-next-id))
     (put new-job 'coqc-dependency-count 0)
     (put new-job 'type type)
     (put new-job 'state 'enqueued-coqdep)
-    (put new-job 'current-dir current-dir)
+    (put new-job 'script-buf script-buf)
     ;; The ancestor modification time is not really needed in require
     ;; jobs, however, if the field is present, we can treat require
     ;; and file jobs more uniformely.
@@ -2017,26 +2038,25 @@ nil."
     (put new-job 'load-path clpath)
     new-job))
 
-(defun coq-par-create-require-job (clpath require-items require-span
-                                          current-dir)
+(defun coq-par-create-require-job (clpath require-items require-span script-buf)
   "Create a new require job for REQUIRE-SPAN.
-Create a new require job and initialize its fields. CLPATH
-is the load path configured for the current scripting buffer,
-that is passed down to all dependencies and used in all
-compilations. REQUIRE-ITEMS are the non-require commands
-following the REQUIRE-SPAN, they are temporarily stored in the
-new require job outside of `proof-action-list'. 
-
-The current directory (from `default-directory') is stored in
-property 'current-dir and propagated to all dependend jobs. This
-is used to set `default-directory' when entering background
-compilation from a sentinel or elsewhere.
+Create a new require job and initialize its fields. CLPATH is the
+load path configured for the current scripting buffer, that is
+passed down to all dependencies and used in all compilations.
+REQUIRE-ITEMS are the non-require commands following the
+REQUIRE-SPAN, they are temporarily stored in the new require job
+outside of `proof-action-list'. SCRIPT-BUF must be the script
+buffer that caused the background compilation. It is stored in
+property 'script-buf and propagated to all dependent jobs. This
+buffer is made current in all sentinels and other asynchronously
+called functions to ensure local variables and, in particular,
+`default-directory' are correct.
 
 This function is called synchronously when asserting. The new
 require job is neither started nor enqueued here - the caller
 must do this."
   (let* ((coq-load-path clpath)
-         (new-job (coq-par-job-init-common clpath 'require current-dir)))
+         (new-job (coq-par-job-init-common clpath 'require script-buf)))
     (put new-job 'require-span require-span)
     (put new-job 'queueitems require-items)
     (when coq--debug-auto-compilation
@@ -2050,14 +2070,15 @@ must do this."
 ;; there was some error and it was not used anywhere back then, but
 ;; job is now needed as a dependency of some other file?
 ;; XXX what happens if the job exists and is failed?
-(defun coq-par-create-file-job (module-vo-file clpath dep-src-file
-                                               current-dir)
+(defun coq-par-create-file-job (module-vo-file clpath dep-src-file script-buf)
   "Create a new file job for MODULE-VO-FILE.
 DEP-SRC-FILE is the source file whose coqdep output we are just
 processing and which depends on MODULE-VO-FILE. This argument is
 only used in the error message, when MODULE-VO-FILE happens to
 coincide with the current scripting buffer (which means we
-detected a dependency cycle).
+detected a dependency cycle). SCRIPT-BUF must be the current
+scripting buffer and CLPATH must be the load path configured in
+there, see also `coq-par-create-require-job'.
 
 If there is a file job for MODULE-VO-FILE, just return this.
 Otherwise, create a new file job and initialize its fields. In
@@ -2069,7 +2090,7 @@ If a new job is created it is started or enqueued right away."
    ((gethash module-vo-file coq--compilation-object-hash))
    (t
     (let* ((coq-load-path clpath)
-           (new-job (coq-par-job-init-common clpath 'file current-dir)))
+           (new-job (coq-par-job-init-common clpath 'file script-buf)))
       ;; fields 'required-obj-file and obj-mod-time are implicitely set to nil
       (put new-job 'vo-file module-vo-file)
       (put new-job 'src-file (coq-library-src-of-vo-file module-vo-file))
@@ -2129,12 +2150,12 @@ error, the job is marked as failed or compilation is aborted via
 a signal (depending on `coq-compile-keep-going').  If there was no
 coqdep error, the following actions are taken.
 - temp-require-file for require jobs is deleted
-- the job that started PROCESS is put into sate 'waiting-dep
-- a new job is created for every dependency.  If this new job is
-  not immediately ready, a dependency is registered from the
-  new job to the current job.  For dependencies that are 'ready
+- the job that started PROCESS is put into state 'waiting-dep
+- a new job is created for every dependency and registered in the
+  dependency tree of all jobs. For dependencies that are 'ready
   already, the most recent ancestor modification time is
-  propagated.
+  propagated. If a dependency is marked as failed the current job
+  is also marked as failed.
 - if there are no dependencies (especially if coqdep failed) or
   all dependencies are ready already, the next transition is
   triggered. For file jobs the next transition goes to
@@ -2175,7 +2196,7 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 	  (let* ((dep-job (coq-par-create-file-job dep-vo-file
                                                    (get job 'load-path)
                                                    (get job 'src-file)
-                                                   (get job 'current-dir)))
+                                                   (get job 'script-buf)))
 		 (dep-time (get dep-job 'youngest-coqc-dependency)))
             (when (get dep-job 'failed)
               (setq dependee-failed t))
@@ -2291,19 +2312,24 @@ the compilation as current, otherwise a wrong `coq-load-path'
 might be used.
 
 This function is called synchronously when asserting."
+  ;; need a current proof script buffer where we can switch to in a
+  ;; sentinel or in a timer function
+  (cl-assert (bufferp proof-script-buffer) nil
+             "no current proof script buffer when handling require commands")
   (let ((span (caar require-items))
         new-job)
     (when coq--debug-auto-compilation
       (let* ((require-item (car require-items))
              (require-command (mapconcat 'identity (nth 1 require-item) " ")))
-        (message "handle require command \"%s\"" require-command)))
+        (message "handle require command \"%s\"\nin script buffer %s"
+                 require-command proof-script-buffer)))
     (span-add-delete-action
      span
      (lambda () (coq-unlock-all-ancestors-of-span span)))
     ;; create a new require job and maintain coq--last-compilation-job
     (setq new-job
           (coq-par-create-require-job coq-load-path require-items span
-                                      default-directory))
+                                      proof-script-buffer))
     (when coq--last-compilation-job
       (coq-par-add-queue-dependency coq--last-compilation-job new-job))
     (setq coq--last-compilation-job new-job)
