@@ -25,6 +25,7 @@
 (require 'proof-utils)    ; proof-deftoggle, proof-eval-when-ready-for-assistant
 (require 'proof-useropts)
 (require 'proof-config)
+(require 'proof-splash)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -151,11 +152,21 @@ without adjusting window layout."
 
 ;; The main Proof-General generic menu
 
+;; Show the generic menu in `proof-mode' and modes derived from that
+;; (e.g., `coq-mode'). Show the menu also in `proof-splash-mode', such
+;; that the menu entries that the splash screen describes are
+;; accessible when viewing the splash screen.
+
+;; IMPORTANT: In order to make the `proof-quick-opts-save' and menu
+;; Proof-General -> Quick Options -> Save Options work, user options
+;; accessible in the menu must be added to `proof-quick-opts-vars'
+;; further below.
+
 ;;;###autoload
 (defun proof-menu-define-main ()
   (easy-menu-define
    proof-mode-menu
-   proof-mode-map
+   (list proof-mode-map proof-splash-mode-map)
    "The main Proof General menu"
    (proof-main-menu)))
 
@@ -335,6 +346,7 @@ without adjusting window layout."
 (proof-deftoggle proof-imenu-enable proof-imenu-toggle)
 (proof-deftoggle proof-keep-response-history)
 (proof-deftoggle proof-omit-proofs-option)
+(proof-deftoggle proof-splash-enable)
 
 (proof-eval-when-ready-for-assistant
  ;; togglers for settings separately configurable per-prover
@@ -355,6 +367,11 @@ without adjusting window layout."
   (cons
    "Quick Options"
    `(
+
+;; IMPORTANT: In order to make the `proof-quick-opts-save' and menu
+;; Proof-General -> Quick Options -> Save Options work, user options
+;; accessible in the menu must be added to `proof-quick-opts-vars'
+;; further below.
 
 ;;; TODO: Add this in PG 4.0 once bufhist robust; see trac #169
 ;;;      ["Response history" proof-keep-response-history-toggle
@@ -469,6 +486,10 @@ without adjusting window layout."
        :style toggle
        :selected proof-disappearing-proofs
        :help "Hide proofs as they are completed"]
+      ["Disable Splash Screen" proof-splash-enable-toggle
+       :style toggle
+       :selected (not proof-splash-enable)
+       :help "Show splash screen when starting Proof General"]
       "----"
       ["Document Centred" proof-set-document-centred
        :help "Select options for document-centred working"]
@@ -579,6 +600,7 @@ without adjusting window layout."
 (defun proof-quick-opts-vars ()
   "Return a list of the quick option variables."
   (list
+   'proof-omit-proofs-option
    'proof-electric-terminator-enable
    'proof-autosend-enable
    'proof-fast-process-buffer
@@ -594,14 +616,16 @@ without adjusting window layout."
    'proof-shell-quiet-errors
    ;; Display sub-menu
    'proof-minibuffer-messages
+   'proof-output-tooltips
    'proof-auto-raise-buffers
    'proof-three-window-enable
+   'proof-layout-windows-on-visit-file
    'proof-delete-empty-windows
    'proof-multiple-frames-enable
    'proof-shrink-windows-tofit
-   'proof-multiple-frames-enable
    'proof-colour-locked
    'proof-sticky-errors
+   'proof-splash-enable
    ;; Follow mode sub-menu
    'proof-follow-mode
    ;; Deactivate scripting action
