@@ -2901,7 +2901,7 @@ with something different."
 	      (eq typ 'proverproc)
 	      (eq typ 'proof)
 	      (and proof-ignore-for-undo-count cmd
-		   (proof-string-match proof-ignore-for-undo-count cmd))))
+		   (proof-stringfn-match proof-ignore-for-undo-count cmd))))
 	 ;; some named element: use generic forget-id function; finish.
 	 ((setq name (span-property span 'name))
 	  (setq ans (format proof-forget-id-command name))
