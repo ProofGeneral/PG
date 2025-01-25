@@ -168,7 +168,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-62
+57
 <!-- CIPG change marker end -->
 containers.
 
@@ -184,11 +184,11 @@ containers.
 |  8.13.2 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
 |  8.14.1 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
 |  8.15.2 |      |  SUP |  SUP |      |   H  |      |      |      |      |   N  |
-|  8.16.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.16.1 |      |  SUP |  SUP |      |      |  SUP |      |      |      |   N  |
 |  8.17.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.18.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.19.2 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.20.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.20.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -285,7 +285,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-37
+34
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
@@ -302,10 +302,10 @@ version pairs for the Proof General interaction tests with Coq.
 |  8.14.1 |      |      |      |   H  |      |      |      |      |      |   N  |
 |  8.15.2 |      |      |  SUP |      |   H  |      |      |      |      |   N  |
 |  8.16.1 |      |      |      |      |      |  SUP |      |      |      |   N  |
-|  8.17.1 |      |   X  |   X  |      |      |   X  |   H  |      |      |   N  |
-|  8.18.0 |      |   X  |   X  |      |      |   X  |      |      |  SUP |   N  |
+|  8.17.1 |      |      |      |      |      |      |   H  |      |      |   N  |
+|  8.18.0 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
 |  8.19.2 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
-|  8.20.0 |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |
+|  8.20.1 |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
@@ -315,7 +315,7 @@ In summary, all Proof General testing jobs run
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: total-checks-number -->
-140
+131
 <!-- CIPG change marker end -->
 github checks.
 
