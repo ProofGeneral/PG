@@ -266,14 +266,18 @@ the token of \".\" is simply \".\"."
 
 
 ;; A variant of smie-default-backward-token that recognize "." and ";"
-;; as single token even if glued at the end of another symbols.
-
+;; as single token even if glued at the end of another symbols. We
+;; glue "\" in front of a word though, to follow ssreflects
+;; ocnvention.
 (defun coq-backward-token-fast-nogluing-dot-friends ()
   (forward-comment (- (point)))
   (let* ((pt (point))
          (tok-punc (skip-syntax-backward "."))
          (str-punc (buffer-substring-no-properties pt (point))))
-    (if (zerop tok-punc) (skip-syntax-backward "w_'"))
+    ;; skip a regular word + one backslash
+    (when (zerop tok-punc)
+      (skip-syntax-backward "w_'")
+      (if (looking-back "\\s-\\\\") (forward-char -1)))
     ;; Special case: if the symbols found end by "." or ";",
     ;; then consider this last letter alone as a token
     (when (and (not (zerop tok-punc)) (string-match "\\s.+[.;]" str-punc))
@@ -286,7 +290,9 @@ the token of \".\" is simply \".\"."
   (let* ((pt (point))
          (tok-punc (skip-syntax-forward "."))
          (str-punc (buffer-substring-no-properties pt (point))))
-    (if (zerop tok-punc) (skip-syntax-forward "w_'"))
+    (if (or (zerop tok-punc) (string-match "\\\\" str-punc)
+            )
+        (skip-syntax-forward "w_'"))
     ;; Special case: if the symbols found end by "." or ";",
     ;; then consider this last letter alone as a token
     (when (and (not (zerop tok-punc)) (string-match "\\s.+[.;]" str-punc))
@@ -652,6 +658,27 @@ The point should be at the beginning of the command name."
       (let ((res (assoc tok coq-standard-token-synonyms)))
         (cdr res)))
      (tok))))
+
+;; Modified from smie.el
+(defun smie-default-forward-token ()
+  (forward-comment (point-max))
+  (buffer-substring-no-properties
+   (point)
+   (let ((dist (skip-syntax-forward ".")))
+     
+     (when (or (zerop dist)
+               (and (= 1 dist) (looking-back "\\\\")))
+       (skip-syntax-forward "w_'"))
+     (point))))
+
+(defun smie-default-backward-token ()
+  (forward-comment (- (point)))
+  (buffer-substring-no-properties
+   (point)
+   (progn (when (zerop (skip-syntax-backward "."))
+            (skip-syntax-backward "w_'")
+            (if (looking-back "\\s-\\\\") (forward-char -1)))
+          (point))))
 
 (defun coq-smie-backward-token-aux ()
   (let* ((tok (smie-default-backward-token)))
