@@ -65,7 +65,7 @@ menu but only in interactive completions.
 Example of what could be in your emacs init file:
 
 \(defvar coq-user-tactics-db
-  '(
+  \\='(
     (\"mytac\" \"mt\" \"mytac # #\" t \"mytac\")
     (\"myassert by\" \"massb\" \"myassert ( # : # ) by #\" t \"assert\")
     ))
@@ -354,19 +354,19 @@ See `coq-syntax-db' for DB structure."
 
 (defconst coq-solve-tactics-face 'coq-solve-tactics-face
   "Expression that evaluates to a face.
-Required so that 'coq-solve-tactics-face is a proper facename")
+Required so that \\='coq-solve-tactics-face is a proper facename")
 
 (defconst coq-cheat-face 'coq-cheat-face
   "Expression that evaluates to a face.
-Required so that 'coq-cheat-face is a proper facename")
+Required so that \\='coq-cheat-face is a proper facename")
 
 (defconst coq-symbol-binder-face 'coq-symbol-binder-face
   "Expression that evaluates to a face.
-Required so that 'coq-symbol-binder-face is a proper facename")
+Required so that \\='coq-symbol-binder-face is a proper facename")
 
 (defconst coq-symbol-face 'coq-symbol-face
   "Expression that evaluates to a face.
-Required so that 'coq-symbol-binder-face is a proper facename")
+Required so that \\='coq-symbol-binder-face is a proper facename")
 
 (defconst coq-question-mark-face 'coq-question-mark-face)
 
