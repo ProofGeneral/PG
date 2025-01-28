@@ -169,7 +169,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-57
+66
 <!-- CIPG change marker end -->
 containers.
 
@@ -190,6 +190,7 @@ containers.
 |  8.18.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.19.2 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
 |  8.20.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+| 9.0-rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -287,7 +288,7 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-34
+43
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
@@ -308,6 +309,7 @@ version pairs for the Proof General interaction tests with Coq.
 |  8.18.0 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
 |  8.19.2 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
 |  8.20.1 |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |
+| 9.0-rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
@@ -317,7 +319,7 @@ In summary, all Proof General testing jobs run
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: total-checks-number -->
-131
+158
 <!-- CIPG change marker end -->
 github checks.
 
