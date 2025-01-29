@@ -141,7 +141,7 @@ Proof using.
 
 (defun record-buffer-content (buf)
   "Record buffer content of BUF via `message' for debugging.
-BUF should be a string."
+BUF should be a buffer as string or buffer object."
   (with-current-buffer buf
     (let ((content (buffer-substring-no-properties (point-min) (point-max))))
       (message "%s buffer contains %d chars: %s" buf (length content) content))))
