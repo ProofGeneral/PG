@@ -153,7 +153,8 @@ of the following points is true for *cv* and *ev*.
    
    This point is motivated by the compatibility of newest versions.
 
-#. The Coq version *cv* is a release candidate.
+#. The Coq version *cv* is a release candidate not superseded by a
+   later release candidate or a release.
 
    This point is motivated by the compatibility of release candidates.
 
@@ -274,7 +275,8 @@ following points is true for *cv* and *ev*.
    
    This point is motivated by the compatibility of newest versions.
 
-#. The Coq version *cv* is a release candidate.
+#. The Coq version *cv* is a release candidate not superseded by a
+   later release candidate or a release.
 
    This point is motivated by the compatibility of release candidates.
 
@@ -374,8 +376,13 @@ that `cipg` can process it.
    : are specified with a date and an Emacs version.
    
    Debian or Ubuntu releases
-   : are specified with a date, a distribution name and an EOL date.
+   : are specified with a date, a distribution name, and an EOL date.
    
+   One line can be of several kinds: If a date, a Coq version, an
+   Emacs version, a Debian distribution name, and an EOL date is
+   present in a certain line, then this line specifies a Coq release,
+   an Emacs release, and a Debian release all together.
+
 #. The Coq and Emacs versions of an Debian or Ubuntu release may be
    omitted. If they are not present, they are taken from the last
    preceding line containing the respective version (the table is
@@ -408,10 +415,9 @@ that `cipg` can process it.
    YYYY/MM. Trailing non-digit characters are ignored. I use `?` to
    indicate EOL dates that have not yet been fixed.
 
-#. Versions of release candidates must be of the form `8.10rc` or 
-   `8.10-rc`. `cipg` is not able to recognize outdated release
-   candidates. The release candidate must therefore be deleted when
-   the release happens.
+#. Versions of release candidates must be of the form 
+   `8.10-rc1`. Outdated release candidates may be deleted from the
+   table.
 
 
 ## `cipg`
