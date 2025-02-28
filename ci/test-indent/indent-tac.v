@@ -269,6 +269,19 @@ Module M1.
         { auto.
         }
       }
+      1:{
+        destruct n.
+        2:{ auto.
+        }
+        { auto. }
+      }
+      {
+        destruct n.
+        2:{
+          auto. }
+        { auto.
+        }
+      }
     Qed.
   End M2.
 End M1.

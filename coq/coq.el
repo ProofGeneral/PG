@@ -2500,13 +2500,15 @@ tacitcs like destruct and induction reuse hypothesis names by
 default, which makes the detection of new hypothesis incorrect.
 the hack consists in adding the \"!\" modifier on the argument
 destructed, so that it is left in the goal and the name cannot be
-reused.  We also had a \"clear\" at the end of the tactic so that
+reused.  We also add a \"clear\" at the end of the tactic so that
 the whole tactic behaves correctly.
 Warning: this makes the error messages (and location) wrong.")
 
 (defun coq-hack-cmd-for-infoH (s)
   "return the tactic S hacked with infoH tactical."
   (cond
+   ;; We cannot rebuild the sub-patterns from the final goal, so ';' is not
+   ;; supported. Only single tactics like destruct.
    ((string-match ";" s) s) ;; composed tactic cannot be treated
    ((string-match coq-auto-as-hack-hyp-name-regex s)
     (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
@@ -2707,6 +2709,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
   (interactive)
   (save-excursion
     (goto-char (proof-unprocessed-begin))
+    (forward-char 1)
     (coq-find-real-start)
     (let* ((pt (point))
            (_ (coq-script-parse-cmdend-forward))

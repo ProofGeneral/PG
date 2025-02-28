@@ -216,10 +216,10 @@ position."
     (coq-find-previous-endcmd)
     (while (not something-found)
       (forward-comment (point-max))
-      (if (and (looking-at "\\({\\|}\\|\\++\\|\\*+\\|-+\\)")
+      (if (and (looking-at "\\(?1:{\\|}\\|\\++\\|\\*+\\|-+\\|[0-9]+\\s-*:{\\)")
                (< (point) p) ;; if we are after the starting point then anything is the start of the current command, even "#" or ".".
                )
-          (forward-char 1)
+          (goto-char (match-end 1))
         (setq something-found t))))
   (point))
 
