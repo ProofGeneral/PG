@@ -1899,7 +1899,6 @@ at `proof-assistant-settings-cmds' evaluation time.")
   (setq proof-assistant-home-page coq-www-home-page)
 
   (setq proof-prog-name coq-prog-name)
-  (setq proof-guess-command-line #'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
   ;; We manage file saveing via coq-compile-auto-save and for coq
