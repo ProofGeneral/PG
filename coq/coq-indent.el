@@ -208,7 +208,8 @@ position."
   (while (coq-looking-at-comment) ;; we are looking for ". " so this is enough
     (re-search-backward (concat "\\(?2:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\.\\s-") (point-min) 'dummy))
   ;; unless we reached point-min, jump over the "."
-  (when (match-end 2) (goto-char (match-end 2)) (forward-char 1))
+  (when (and (not (eq (point) (point-min))) (match-end 2))
+    (goto-char (match-end 2)) (forward-char 1))
   (point))
 
 (defun coq-find-start-of-cmd ()
