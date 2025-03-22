@@ -446,7 +446,47 @@ For example, COMMENT could be (*test-definition*)"
        (coq-test-goto-before "(*proof*)")
        (backward-char 3)
        (should (span-at (point) 'proofusing))))))
- 
+
+
+
+(ert-deftest 110_coq-test-regression_error_on_fst_cmd ()
+  "Test error highlghting in the first line."
+  (coq-fixture-on-file
+   (coq-test-full-path "test_error_loc_fst_cmd.v")
+   (lambda ()
+     (coq-test-goto-before " (*after-error*)")
+     ;; redefining this function locally so that self removing spans
+     ;; remain longer. Cf span.el
+     (cl-letf (((symbol-function 'span-make-self-removing-span)
+                (lambda (beg end &rest props)
+                  (let ((ol (span-make beg end)))
+                    (while props
+                      (overlay-put ol (car props) (cadr props))
+                      (setq props (cddr props)))
+                    (add-timeout 10 'delete-overlay ol)
+                    ol))))
+       
+       (let ((proof-cmd-point (save-excursion
+                                (coq-test-goto-before "(*after-error*)")
+                                (re-search-backward "bar")))) 
+         (coq-test-goto-after " (*after-error*)")
+         (proof-goto-point)
+         (proof-shell-wait)
+         (coq-should-buffer-string "Error: The reference bar was not found in the current environment.")
+         ;; checking that there is an overlay with warning face
+         ;; exactly on "bar". WARNING: this overlay lasts only for 12
+         ;; secs (thx to the add-timeout above), if this test is done
+         ;; in a (very) slow virtual machine this may fail.
+         (should (equal (point) proof-cmd-point))
+         (let ((sp (span-at proof-cmd-point 'face)))
+           (should sp)
+           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-start sp) proof-cmd-point))
+           ;; coq-8.11 used to hace ending ps shifted by one
+           (should (or (equal (span-end sp) (+ proof-cmd-point (length "bar")))
+                       (equal (span-end sp) (+ 1 proof-cmd-point (length "bar")))))
+           )
+         (should (equal (proof-queue-or-locked-end) (point-min)))))))) 
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here
