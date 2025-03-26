@@ -4523,7 +4523,7 @@ Documentation of the user option @code{coq-project-filename}:
 @defvar coq-project-filename 
 Variable containing the function detecting a project file.
 
-See it default value @samp{@code{coq-default-project-find-file}} for an example.
+See its default value @samp{@code{coq--default-project-find-file}} for an example.
 
 The function takes one argument, the name of a directory, and returns
 the name of a coq/rocq project file it contains if there is one. Return

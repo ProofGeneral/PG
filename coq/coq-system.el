@@ -53,8 +53,21 @@ On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
-(defun coq-detect-coqdep () (coq-detect-prog-gen "coqdep" "rocq"))
-(defun coq-detect-coqc () (coq-detect-prog-gen "coqc" "rocq"))
+(defun coq-detect-rocq-cli ()
+  "Return non nil if the detected coq/rocq executable obeys the rocq CLI."
+  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname)))
+         (coq-args (list "c"))
+         (process-args (list coq-command nil t nil "c")))
+    (condition-case nil
+        (with-temp-buffer (equal (apply 'process-file process-args) 0))
+      (error nil))))
+
+(defun coq-detect-coqdep ()
+  (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
+    (coq-detect-prog-gen "coqdep")))
+(defun coq-detect-coqc ()
+  (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
+    (coq-detect-prog-gen "coqc")))
 
 ;; We return the executable coqtop or rocq. But not the rocq option
 ;; (dep, c, top)) triggering the particular tool.
@@ -127,8 +140,8 @@ fails.  Return also nil on other kinds of errors (e.g., `coq-prog-name'
 not found).
 This function supports calling coqtop via tramp.
 This function must not rely on coq-autodetect-version, it would be a cycle."
-  (let* ((coq-command (or coq-prog-name (coq-autodetect-progname)))
-         (coq-args (if (string-match "rocq" coq-command) (list "top" option) (list option)))
+  (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
+         (coq-args (if (coq-detect-rocq-cli) (list "top" option) (list option)))
          (process-args (append (list coq-command nil t nil) coq-args))
          retv)
     (condition-case nil
@@ -155,7 +168,6 @@ Interactively (with INTERACTIVE-P), show that number."
   (let ((coq-output (coq-callcoq "-help")))
     (setq coq-autodetected-help (or coq-output ""))))
 
-
 (defun coq--version< (v1 v2)
   "Compare Coq versions V1 and V2."
   ;; -snapshot is only supported by Emacs 24.5, not 24.3
@@ -177,18 +189,6 @@ Returns nil if the version can't be detected."
   (let ((coq-version-to-use (or (coq-version t) "8.5")))
     (condition-case err
 	(coq--version< coq-version-to-use "8.5snapshot")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
-
-(defun coq--post-v9 ()
-  "Return t if the auto-detected version of Coq (or rocs) is >= 9.
-Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.20")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "9"))
       (error
        (cond
 	((equal (substring (cadr err) 0 15) "Invalid version")
@@ -511,7 +511,7 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 (defun coq-coqdep-prog-args (loadpath &optional current-directory pre-v85)
   "Build a list of option for coqdep."
   (append
-   (if (coq--post-v9) (list "dep") nil)
+   (if (coq-detect-rocq-cli) (list "dep") nil)
    (coq-include-prog-args loadpath current-directory pre-v85)))
 
 (defun coq-coqc-prog-args (loadpath &optional current-directory pre-v85)
@@ -519,7 +519,7 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
-  (append (if (coq--post-v9) (list "c") nil)
+  (append (if (coq-detect-rocq-cli) (list "c") nil)
           (coq-common-prog-args loadpath current-directory pre-v85)))
 
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
@@ -532,7 +532,7 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (append
-   (if (coq--post-v9) (list "top") nil)
+   (if (coq-detect-rocq-cli) (list "top") nil)
    (list "-emacs")
    (coq-topfile-prog-arg)
    (coq-common-prog-args loadpath current-directory pre-v85)))
@@ -558,23 +558,29 @@ path (including the -R lib options) (see `coq-load-path')."
 
 ;; FIXME: should we add "Make" as a valid project name? Maybe only if
 ;; _xxProject is not present? And/Or if its content seems ok?
-(defun coq-default-project-find-file (dir)
+;; \\` and \\' avoid matching "_CoqProject~" and such
+(defcustom coq-project-file-regexp "\\`\\(_coqproject\\|_rocqproject\\)\\'"
+  "The regexp matching file names which PG detects as coq/rocq project files.
+
+It is used by `coq--default-project-find-file' in a case insensistive way."
+  :type 'string
+  :safe 'stringp
+  :group 'coq)
+
+
+(defun coq--default-project-find-file (dir)
   "Default function for `coq-project-filename'.
 
 If DIR contains an acceptable coq/rocq project file, return it. Return
-nil otherwise. See `coq-project-filename'.
-"
-  (let* ((case-fold-search t)
-         (files (directory-files dir)))
-    ;; \\` and \\' avoid matching "_CoqProject~" and such
-    (cl-find-if
-     (lambda (s) (string-match "\\`\\(_coqproject\\|_rocqproject\\)\\'" s nil t))
-     files)))
+nil otherwise. See `coq-project-filename'."
+  (when (file-directory-p dir)
+    (let* ((case-fold-search t) (files (directory-files dir)))
+      (cl-find-if (lambda (s) (string-match coq-project-file-regexp s nil)) files))))
 
-(defcustom coq-project-filename #'coq-default-project-file-p
+(defcustom coq-project-filename 'coq--default-project-find-file
   "Variable containing the function detecting a project file.
 
-See it default value `coq-default-project-find-file' for an example.
+See its default value `coq--default-project-find-file' for an example.
 
 The function takes one argument, the name of a directory, and returns
 the name of a coq/rocq project file it contains if there is one. Return
@@ -608,9 +614,13 @@ files also work and override project file settings.
   "Return '(buf alreadyopen) where buf is the buffer visiting coq project file.
 alreadyopen is t if buffer already existed."
   (when buffer-file-name
-    (let* ((projectfiledir (locate-dominating-file buffer-file-name #'coq-default-project-find-file)))
+    (let* ((projectfiledir
+            (locate-dominating-file
+             buffer-file-name
+             (lambda (f) (funcall coq-project-filename f)))))
       (when projectfiledir
-	(let* ((projectfile (expand-file-name (coq-default-project-find-file projectfiledir) projectfiledir))
+	(let* ((projectfilel (funcall coq-project-filename projectfiledir))
+               (projectfile (expand-file-name projectfilel projectfiledir))
 	       ;; we store this intermediate result to know if we have to kill
 	       ;; the coq project buffer at the end
 	       (projectbufferalreadyopen (find-buffer-visiting projectfile))
@@ -767,18 +777,38 @@ Does nothing if `coq-use-project-file' is nil."
                       #'coq-load-project-file
                       nil t)))
 
-; detecting coqtop args should happen at the last moment before
-; calling the process. In particular it should ahppen after that
-; proof-prog-name-ask is performed, this hook is at the right place.
+;; Detecting coqtop or rocq args should happen at the last moment
+;; before calling the process. In particular it should happen after
+;; that proof-prog-name-ask is performed. This hook is exactly called
+;; after querying proof-prog-name (if proof-prog-name-ask is t). This
+;; way the options can be elaborated correctly (coqtop and rocq have
+;; different options). We first detect executables (taking
+;; proof-prog-name-ask into account), then elaborate the
+;; proof-prog-args. Note: we don't support proof-prog-name-guess
 (add-hook 'proof-shell-before-process-hook
           (lambda ()
-            ;; It seems coq-prog-name and proof-prog-name are not correctly linked
-            ;; so let us make sure they are the same before computing options
-            ;; coq < 9 needs "coqtop", 
-            (setq proof-prog-name (coq-autodetect-progname))
-            (setq coq-compiler (coq-detect-coqc))
-            (setq coq-dependency-analyzer (coq-detect-coqdep))
+            ;; detect executables unless explicitely set by hand. In
+            ;; this case we try to find coqdep and coqc in the same
+            ;; directory
+            (if (and proof-prog-name-ask proof-prog-name)
+                ;; let us find other executables in the exact same
+                ;; place. TODO: go back to default exec-path if not found?
+                (let ((exec-path (list (file-name-directory proof-prog-name))))
+                  (setq coq-compiler (executable-find (coq-detect-coqc)))
+                  (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep))))
+              ;; default: detect everything from the current exec-path
+              (setq proof-prog-name (coq-autodetect-progname))
+              (setq coq-compiler (coq-detect-coqc))
+              (setq coq-dependency-analyzer (coq-detect-coqdep)))
+            (when coq-debug
+              (message "coq-proof-prog-name: %S" proof-prog-name)
+              (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
+              (message "coq-compiler: %S"  coq-compiler))
+            ;; in principe coq-prog-name is only used to set up
+            ;; proof-prog-name, but it may sometimes be used by itself
+            ;; so let us sync them
             (setq coq-prog-name proof-prog-name)
+            ;; now elaborate args
             (setq coq-prog-args (coq-prog-args))))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
