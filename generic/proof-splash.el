@@ -32,15 +32,13 @@
 ;;; Code:
 
 (require 'proof-site)
+(require 'proof-useropts)
 
 ;;
 ;; Customization of splash screen
 ;;
 
-(defcustom proof-splash-enable t
-  "*If non-nil, display a splash screen when Proof General is loaded."
-  :type 'boolean
-  :group 'proof-user-options)
+;; see proof-useropts for proof-splash-enable
 
 (defcustom proof-splash-time 1
   "Minimum number of seconds to display splash screen for.
@@ -82,7 +80,15 @@ Proof General."
     :link '("Find out about Emacs on the Help menu -- start with the "
             "Emacs Tutorial" (lambda (button) (help-with-tutorial)))
     nil
-    "See this screen again with Proof-General -> About"
+    "Type q to leave this screen"
+    nil
+    "See this screen again with Proof-General -> Help -> About PG"
+    "or M-x proof-splash-display-screen"
+    nil
+    "To disable this splash screen permanently select"
+    "Proof-General -> Quick Options -> Display -> Disable Splash Screen"
+    "and save via Proof-General -> Quick Options -> Save Options"
+    "or customize proof-splash-enable"
     )
   "Evaluated to configure splash screen displayed when entering Proof General.
 A list of the screen contents.  If an element is a string or an image

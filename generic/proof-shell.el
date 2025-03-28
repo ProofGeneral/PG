@@ -479,6 +479,11 @@ process command."
 	(erase-buffer)
 	(proof-shell-set-text-representation)
 
+        ;; If one quits Proof General, it's clear that the proof
+        ;; assistant needs to be killed - don't ask.
+        (set-process-query-on-exit-flag
+         (get-buffer-process proof-shell-buffer) nil)
+
 	;; Initialise associated buffers
 	(with-current-buffer proof-response-buffer
 	  (erase-buffer)
