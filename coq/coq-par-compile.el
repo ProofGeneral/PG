@@ -768,22 +768,21 @@ earlier than 8.19."
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (copy-sequence coq-compile-extra-coqdep-arguments) ; copy for nconc
-         (coq-par-coqdep-warning-arguments)
-         (coq-coqdep-prog-args clpath
-                               (file-name-directory lib-src-file)
-                               (coq--pre-v85))
-         (list lib-src-file)))
+  (nconc
+   (coq-coqdep-prog-args clpath (file-name-directory lib-src-file) (coq--pre-v85))
+   (copy-sequence coq-compile-extra-coqdep-arguments) ; copy for nconc
+   (coq-par-coqdep-warning-arguments)
+   (list lib-src-file)))
 
 (defun coq-par-coqc-arguments (lib-src-file clpath)
   "Compute the command line arguments for invoking coqc on LIB-SRC-FILE.
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
 load-path options to coqdep."
-  (nconc (copy-sequence coq-compile-extra-coqc-arguments) ; copy for nconc
-         (coq-coqc-prog-args clpath
+  (nconc (coq-coqc-prog-args clpath
                              (file-name-directory lib-src-file)
                              (coq--pre-v85))
+         (copy-sequence coq-compile-extra-coqc-arguments) ; copy for nconc
          (list lib-src-file)))
 
 (defun coq-par-analyse-coq-dep-exit (status output command)
@@ -1898,6 +1897,8 @@ Lock the source file and start the coqdep background process."
     (message "%s: TTT start coqdep for file job for file %s"
 	     (get job 'name)
 	     (get job 'src-file)))
+  (if coq--debug-auto-compilation
+      (message "%s: UUU start %s" (get job 'name) (cons coq-dependency-analyzer (coq-par-coqdep-arguments (get job 'src-file) (get job 'load-path)))))
   (coq-par-start-process
    coq-dependency-analyzer
    (coq-par-coqdep-arguments (get job 'src-file) (get job 'load-path))
@@ -1918,13 +1919,15 @@ used."
   (let ((arguments
          (coq-par-coqc-arguments (get job 'src-file) (get job 'load-path))))
     (cond
-     ((eq (get job 'use-quick) 'vos) (push "-vos" arguments))
-     ((eq (get job 'use-quick) 'vio) (push "-quick" arguments))
+     ((eq (get job 'use-quick) 'vos) (nconc arguments (list "-vos")))
+     ((eq (get job 'use-quick) 'vio) (nconc arguments (list "-quick")))
      (t t))
     (when coq--debug-auto-compilation
       (message "%s: TTT start coqc compile for file job for file %s"
 	       (get job 'name)
 	       (get job 'src-file)))
+    (if coq--debug-auto-compilation
+        (message "%s: VVV start %S %S" (get job 'name) coq-compiler arguments))
     (coq-par-start-process
      coq-compiler
      arguments
@@ -1945,7 +1948,9 @@ used."
 	     (get job 'src-file)))
   (let ((arguments
          (coq-par-coqc-arguments (get job 'src-file) (get job 'load-path))))
-    (push "-vok" arguments)
+    (nconc arguments (list "-vok"))
+    (if coq--debug-auto-compilation
+        (message "%s: WWW start %S %S" (get job 'name) coq-compiler arguments))
     (coq-par-start-process
      coq-compiler
      arguments

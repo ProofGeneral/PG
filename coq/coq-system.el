@@ -29,6 +29,14 @@
 (defvar coq-prog-args)
 (defvar coq-debug)
 
+;; Regular files should be of the form "valid_modulename.v" coq
+;; accepts lots of things as letter, this is probably much stricter.
+;; In practice it should be OK though, except maybe for non latin
+;; characters.
+(defun coq-regular-filename-p (s)
+  (let ((noext (file-name-base s)))
+    (string-match-p "\\`[[:alpha:]_][[:alnum:]_]*\\'" noext)))
+
 ;; Arbitrary arguments can already be passed through _CoqProject.
 ;; However this is not true for all assistants, so we don't modify the
 ;; (defpgcustom prog-args) declaration.
@@ -38,23 +46,41 @@
 
 (put 'coq-prog-args 'safe-local-variable #'coq--string-list-p)
 
+;; DEAD CODE?
 (defcustom coq-prog-env nil
   "List of environment settings to pass to Coq process.
 On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
-(defcustom coq-dependency-analyzer
-  (if (executable-find "coqdep") "coqdep"
-    (proof-locate-executable "coqdep" t '("C:/Program Files/Coq/bin")))
+;; We just call "rocq" and look the error message that should mention
+;; subcommands
+(defun coq-detect-rocq-cli ()
+  "return non nil if the detected coq/rocq executable obeys the rocq CLI."
+  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname))))
+    (condition-case nil
+        (with-temp-buffer
+          (apply 'process-file (list coq-command nil t))
+          (string-match "Supported subcommands:" (buffer-string)))
+      (error nil))))
+
+(defun coq-detect-coqdep ()
+  (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
+    (coq-detect-prog-gen "coqdep")))
+(defun coq-detect-coqc ()
+  (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
+    (coq-detect-prog-gen "coqc")))
+
+;; We return the executable coqtop or rocq. But not the rocq option
+;; (dep, c, top)) triggering the particular tool.
+(defcustom coq-dependency-analyzer (coq-detect-coqdep)
   "Command to invoke coqdep."
   :type 'string
   :safe 'stringp
   :group 'coq)
 
-(defcustom coq-compiler
-  (if (executable-find "coqc") "coqc"
-    (proof-locate-executable "coqc" t '("C:/Program Files/Coq/bin")))
+(defcustom coq-compiler (coq-detect-coqc)
+   ;FIXME
   "Command to invoke the coq compiler."
   :type 'string
   :safe 'stringp
@@ -114,16 +140,16 @@ The given option should make coqtop return immediately.
 Optionally check the return code and return nil if the check
 fails.  Return also nil on other kinds of errors (e.g., `coq-prog-name'
 not found).
-This function supports calling coqtop via tramp."
-  (let ((coq-command (or coq-prog-name "coqtop"))
-        retv)
+This function supports calling coqtop via tramp.
+This function must not rely on coq-autodetect-version, it would be a cycle."
+  (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
+         (coq-args (if (coq-detect-rocq-cli) (list "top" option) (list option)))
+         (process-args (append (list coq-command nil t nil) coq-args))
+         retv)
     (condition-case nil
         (with-temp-buffer
-          (setq retv (if option
-                         (process-file coq-command nil t nil option)
-                       (process-file coq-command nil t nil)))
-          (if (or (not expectedretv) (equal retv expectedretv))
-              (buffer-string)))
+          (setq retv (apply 'process-file process-args))
+          (if (or (not expectedretv) (equal retv expectedretv)) (buffer-string)))
       (error nil))))
 
 (defun coq-autodetect-version (&optional interactive-p)
@@ -143,7 +169,6 @@ Interactively (with INTERACTIVE-P), show that number."
   (interactive '(t))
   (let ((coq-output (coq-callcoq "-help")))
     (setq coq-autodetected-help (or coq-output ""))))
-
 
 (defun coq--version< (v1 v2)
   "Compare Coq versions V1 and V2."
@@ -443,65 +468,76 @@ options of a few coq-project files does the right thing."
     (coq--options-test-roundtrip "-R /test Test")
     (coq--options-test-roundtrip "-I /test")))
 
-(defun coq-coqdep-prog-args (loadpath &optional current-directory pre-v85)
+;; it is better to inform coqtop of the name of the current module
+;; using the -topfile option, so that coqtop understands references
+;; to it. But don't insist if this would fail (because of wrong
+;; file name): Some people want to script .v files without ever
+;; compiling them.
+(defun coq-topfile-prog-arg ()
+  (when (and (coq--supports-topfile) buffer-file-name)
+    (if (coq-regular-filename-p buffer-file-name)
+        (cons "-topfile" (cons buffer-file-name nil))
+      (message "Warning: buffer %s seems not compilable," buffer-file-name)
+      (message "probably because of its name, no -topfile option set.")
+      nil)))
+
+
+(defun coq-include-prog-args (loadpath &optional current-directory pre-v85)
   "Build a list of options for coqdep.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   (coq-include-options loadpath current-directory pre-v85))
 
 (defun coq--clean-prog-args (args)
-  "Return ARGS without the entries added by `coq-coqtop-prog-args'.
+  "Return ARGS without the entries added by `coq-coqtop-prog-args' and such.
 
 Such entries are currently -emacs and -topfile."
   (pcase args
-    ((or `("-emacs" . ,rest)
+    ((or `("-emacs" . ,rest) `("top" . ,rest) `("c" . ,rest) `("dep" . ,rest)
          `("-topfile" . (,(pred (apply-partially #'equal buffer-file-name)) . ,rest)))
      (coq--clean-prog-args rest))
     (`(,car . ,cdr)
      (cons car (coq--clean-prog-args cdr)))
     (_ args)))
 
+
+(defun coq-common-prog-args (loadpath &optional current-directory pre-v85)
+  "Build a list of options common for coqc and coqtop and coqdep.
+LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
+;; coqtop always adds the current directory to the LoadPath, so don't
+  ;; include it in the -Q options.
+  (append (coq--clean-prog-args coq-prog-args)
+          (let* ((coq-load-path-include-current nil)
+                 (cmd (coq-include-prog-args loadpath current-directory pre-v85)))
+            cmd)))
+
+(defun coq-coqdep-prog-args (loadpath &optional current-directory pre-v85)
+  "Build a list of option for coqdep."
+  (append
+   (if (coq-detect-rocq-cli) (list "dep") nil)
+   (coq-include-prog-args loadpath current-directory pre-v85)))
+
 (defun coq-coqc-prog-args (loadpath &optional current-directory pre-v85)
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-include-options'."
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options.
-  (append (coq--clean-prog-args coq-prog-args)
-          (let ((coq-load-path-include-current nil)) ; Not needed in >=8.5beta3
-            (coq-coqdep-prog-args loadpath current-directory pre-v85))))
+  (append (if (coq-detect-rocq-cli) (list "c") nil)
+          (coq-common-prog-args loadpath current-directory pre-v85)))
 
-;;XXXXXXXXXXXXXX
 ;; coq-coqtop-prog-args is the user-set list of arguments to pass to
 ;; Coq process, see 'defpacustom prog-args' in pg-custom.el for
 ;; documentation.
-
-;; Regular files should be of the form "valid_modulename.v" coq
-;; accepts lots of things as letter, this is probably much stricter.
-;; In practice it should be OK though, except maybe for non latin
-;; characters.
-(defun coq-regular-filename-p (s)
-  (let ((noext (file-name-base s)))
-    (string-match-p "\\`[[:alpha:]_][[:alnum:]_]*\\'" noext)))
 
 (defun coq-coqtop-prog-args (loadpath &optional current-directory pre-v85)
   ;; coqtop always adds the current directory to the LoadPath, so don't
   ;; include it in the -Q options. This is not true for coqdep.
   "Build a list of options for coqc.
 LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
-  (let ((topfile-supported (coq--supports-topfile)))
-    (append
-     ;; it is better to inform coqtop of the name of the current module
-     ;; using the -topfile option, so that coqtop understands references
-     ;; to it. But don't insist if this would fail (because of wrong
-     ;; file name): Some people want to script .v files without ever
-     ;; compiling them.
-     (if (and topfile-supported buffer-file-name
-              (coq-regular-filename-p buffer-file-name))
-         (cons "-topfile" (cons buffer-file-name nil))
-       (if (and topfile-supported buffer-file-name)
-           (message "Warning: this Coq buffer is probably not compilable \
-because of its name, no -topfile option set."))
-       nil)
-     (cons "-emacs" (coq-coqc-prog-args loadpath current-directory pre-v85)))))
+  (append
+   (if (coq-detect-rocq-cli) (list "top") nil)
+   (list "-emacs")
+   (coq-topfile-prog-arg)
+   (coq-common-prog-args loadpath current-directory pre-v85)))
 
 (defun coq-prog-args ()
   "Recompute `coq-load-path' before calling `coq-coqtop-prog-args'."
@@ -522,29 +558,71 @@ path (including the -R lib options) (see `coq-load-path')."
   :safe 'booleanp
   :group 'coq)
 
-(defcustom coq-project-filename "_CoqProject"
-  "The name of coq project file.
-The coq project file of a coq development (cf. Coq documentation on
-\"makefile generation\") should contain the arguments given to
-coq_makefile. In particular it contains the -I and -R
-options (preferably one per line).  If `coq-use-coqproject' is
-t (default) the content of this file will be used by Proof General to
-infer the `coq-load-path' and the `coq-prog-args' variables that set
-the coqtop invocation by Proof General.  This is now the recommended
-way of configuring the coqtop invocation.  Local file variables may
-still be used to override the coq project file's configuration.
-.dir-locals.el files also work and override project file settings."
+;; FIXME: should we add "Make" as a valid project name? Maybe only if
+;; _xxProject is not present? And/Or if its content seems ok?
+;; \\` and \\' avoid matching "_CoqProject~" and such
+(defcustom coq-project-file-regexp "\\`\\(_coqproject\\|_rocqproject\\)\\'"
+  "The regexp matching file names which PG detects as coq/rocq project files.
+
+It is used by `coq--default-project-find-file' in a case insensistive way."
   :type 'string
   :safe 'stringp
+  :group 'coq)
+
+
+(defun coq--default-project-find-file (dir)
+  "Default function for `coq-project-filename'.
+
+If DIR contains an acceptable coq/rocq project file, return it. Return
+nil otherwise. See `coq-project-filename'."
+  (when (file-directory-p dir)
+    (let* ((case-fold-search t) (files (directory-files dir)))
+      (cl-find-if (lambda (s) (string-match coq-project-file-regexp s nil)) files))))
+
+(defcustom coq-project-filename 'coq--default-project-find-file
+  "Variable containing the function detecting a project file.
+
+See its default value `coq--default-project-find-file' for an example.
+
+The function takes one argument, the name of a directory, and returns
+the name of a coq/rocq project file it contains if there is one. Return
+nil otherwise.
+
+This is used to detect the coq project file (using
+`locate-dominating-file'). By default we accept _CoqProject and
+_RocqProject (and any case-variant of these) without checking coq/rocq
+version. If you want something smarter please redefine
+`coq-project-filename' directly by using:
+
+(setq coq-project-filename #'my-own-predicate)
+
+About the coq/rocq project file (cf. Coq documentation on project files
+and \"makefile generation\"):
+
+The coq project file of a coq development should contain the arguments
+given to coq_makefile. In particular it contains the -I and -R
+options (preferably one per line). If `coq-use-coqproject' is
+t (default) the content of this file will be used by Proof General to
+infer the `coq-load-path' and the `coq-prog-args' variables that set the
+coqtop invocation by Proof General. This is now the recommended way of
+configuring the coqtop invocation. Local file variables may still be
+used to override the coq project file's configuration. .dir-locals.el
+files also work and override project file settings.
+"
+  :type 'function
   :group 'coq)
 
 (defun coq-find-project-file ()
   "Return '(buf alreadyopen) where buf is the buffer visiting coq project file.
 alreadyopen is t if buffer already existed."
   (when buffer-file-name
-    (let* ((projectfiledir (locate-dominating-file buffer-file-name coq-project-filename)))
+    (let* ((projectfiledir
+            (locate-dominating-file
+             buffer-file-name
+             (lambda (f) (funcall coq-project-filename f)))))
       (when projectfiledir
-	(let* ((projectfile (expand-file-name coq-project-filename projectfiledir))
+	(let* ((projectfilel (funcall coq-project-filename projectfiledir))
+               (projectfile (expand-file-name projectfilel projectfiledir))
 	       ;; we store this intermediate result to know if we have to kill
 	       ;; the coq project buffer at the end
 	       (projectbufferalreadyopen (find-buffer-visiting projectfile))
@@ -603,7 +681,7 @@ coqtop. But -arg \"'a b'\" means to pass a and b together."
            (setq args
 		 (append args
 			 (split-string-and-unquote concatenated-args coq--project-file-separator)))))))
-    (cons "-emacs" args)))
+    args))
 
 (defun coq--extract-load-path-1 (option base-directory)
   "Convert one _CoqProject OPTION, relative to BASE-DIRECTORY."
@@ -686,6 +764,11 @@ Does nothing if `coq-use-project-file' is nil."
 ;; avoid adding for other modes , the setting is performed inside
 ;; coq-mode-hook. This is described in www.emacswiki.org/emacs/LocalVariables
 
+;; NOTE: the coq-prog-arg variable is local to the buffer, and it is
+;; re-populated each time coq is launched on this buffer. In other
+;; words: this hook is useful for coq files on which coq will not be
+;; run.
+
 ;; TODO: also read COQBIN somewhere?
 ;; Note: this does not need to be at a particular place in the hook, but we
 ;; need to make this hook local.
@@ -696,14 +779,38 @@ Does nothing if `coq-use-project-file' is nil."
                       #'coq-load-project-file
                       nil t)))
 
-; detecting coqtop args should happen at the last moment before
-; calling the process. In particular it should ahppen after that
-; proof-prog-name-ask is performed, this hook is at the right place.
+;; Detecting coqtop or rocq args should happen at the last moment
+;; before calling the process. In particular it should happen after
+;; that proof-prog-name-ask is performed. This hook is exactly called
+;; after querying proof-prog-name (if proof-prog-name-ask is t). This
+;; way the options can be elaborated correctly (coqtop and rocq have
+;; different options). We first detect executables (taking
+;; proof-prog-name-ask into account), then elaborate the
+;; proof-prog-args. Note: we don't support proof-prog-name-guess
 (add-hook 'proof-shell-before-process-hook
           (lambda ()
-            ;; It seems coq-prog-name and proof-prog-name are not correctly linked
-            ;; so let us make sure they are the same before computing options
+            ;; detect executables unless explicitely set by hand. In
+            ;; this case we try to find coqdep and coqc in the same
+            ;; directory
+            (if (and proof-prog-name-ask proof-prog-name)
+                ;; let us find other executables in the exact same
+                ;; place. TODO: go back to default exec-path if not found?
+                (let ((exec-path (list (file-name-directory proof-prog-name))))
+                  (setq coq-compiler (executable-find (coq-detect-coqc)))
+                  (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep))))
+              ;; default: detect everything from the current exec-path
+              (setq proof-prog-name (coq-autodetect-progname))
+              (setq coq-compiler (coq-detect-coqc))
+              (setq coq-dependency-analyzer (coq-detect-coqdep)))
+            (when coq-debug
+              (message "coq-proof-prog-name: %S" proof-prog-name)
+              (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
+              (message "coq-compiler: %S"  coq-compiler))
+            ;; in principe coq-prog-name is only used to set up
+            ;; proof-prog-name, but it may sometimes be used by itself
+            ;; so let us sync them
             (setq coq-prog-name proof-prog-name)
+            ;; now elaborate args
             (setq coq-prog-args (coq-prog-args))))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
@@ -728,49 +835,5 @@ Does nothing if `coq-use-project-file' is nil."
 
 
 (provide 'coq-system)
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;    To guess the command line options   ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; OBSOLETE, should take _CoqProject into account.
-(defun coq-guess-command-line (filename)
-  "Guess the right command line options to compile FILENAME using `make -n'.
-This function is obsolete, the recommended way of setting the coqtop
-options is to use a _Coqproject file as described in coq
-documentation.  ProofGeneral reads this file and sets compilation
-options according to its contents.  See `coq-project-filename'.  Per
-file configuration may then be set using local file variables."
-  (if (local-variable-p 'coq-prog-name (current-buffer))
-      coq-prog-name
-    (let* ((dir (or (file-name-directory filename) "."))
-           (makedir
-            (cond
-             ((file-exists-p (concat dir "Makefile")) ".")
-             ;; ((file-exists-p (concat dir "../Makefile")) "..")
-             ;; ((file-exists-p (concat dir "../../Makefile")) "../..")
-             (t nil))))
-      (if (and coq-use-makefile makedir)
-          (let*
-              ;;TODO, add dir name when makefile is in .. or ../..
-              ;;
-              ;; da: FIXME: this code causes problems if the make
-              ;; command fails.  It should not be used by default
-              ;; and should be made more robust.
-              ;;
-              ((compiled-file (concat (substring
-                                       filename 0
-                                       (string-match ".v$" filename)) ".vo"))
-               (command (shell-command-to-string
-                         (concat  "cd " dir ";"
-                                  "make -n -W " filename " " compiled-file
-                                  "| sed s/coqc/coqtop/"))))
-            (message command)
-            (setq coq-prog-args nil)
-            (concat
-             (substring command 0 (string-match " [^ ]*$" command))
-             "-emacs"))
-        coq-prog-name))))
 
 ;;; coq-system.el ends here

@@ -36,18 +36,24 @@
 ;; FIXME: this should probably be done like for smie above.
 (defvar coq-may-use-prettify (fboundp 'prettify-symbols-mode))
 
-(defcustom coq-prog-name
-  (or (if (executable-find "coqtop") "coqtop")
+(defun coq-detect-prog-gen (default &rest others)
+  (or (cl-find-if #'executable-find (cons default others))
       (let ((exec-path (append exec-path '("C:/Program Files/Coq/bin"))))
-        (executable-find "coqtop"))
-      "coqtop")
+        (cl-find-if #'executable-find (cons default others)))
+      default))
+
+(defun coq-autodetect-progname ()
+  (coq-detect-prog-gen "coqtop" "rocq"))
+
+(defcustom coq-prog-name (coq-autodetect-progname)
   "Name of program to run as Coq.
 On Windows with latest Coq package you might need something like:
    C:/Program Files/Coq/bin/coqtop.opt.exe
 instead of just \"coqtop\".
 This must be a single program name with no arguments.  See option
 `coq-prog-args' to manually adjust the arguments to the Coq process.
-See also `coq-prog-env' to adjust the environment."
+See also `coq-prog-env' to adjust the environment.
+With then 2025 new CLI 'rocq', this command only return 'rocq'."
   :type 'string
   :group 'coq
   :group 'coq-mode)

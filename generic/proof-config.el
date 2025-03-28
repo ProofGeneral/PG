@@ -107,7 +107,7 @@
 The function could take a filename as argument, run `make -n' to see
 how to compile the file non-interactively, then translate the result
 into an interactive invocation of the proof assistant with the same
-command line options.  For an example, see coq/coq.el."
+command line options."
   :type 'function
   :group 'prover-config)
 
