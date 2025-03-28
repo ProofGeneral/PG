@@ -33,6 +33,8 @@
 
 ;;; Define the tests
 
+(defvar cct-coqdep-error-prefix "^coqdep \\|^rocq dep ")
+
 (ert-deftest cct-coqdep-fail-on-require ()
   "coqdep error on missing library in a require command is detected."
   ;; (setq cct--debug-tests t)
@@ -47,7 +49,7 @@
     (with-current-buffer coq--compile-response-buffer
       ;; (message "|%s|" (buffer-string))
       (goto-char (1+ (length coq--compile-response-initial-content)))
-      (setq coqdep-errror-in-response (looking-at "^coqdep "))
+      (setq coqdep-errror-in-response (looking-at cct-coqdep-error-prefix))
       (setq missing-module-in-response (search-forward "X25XX" nil t)))
     (with-current-buffer proof-shell-buffer
       (goto-char (point-min))
@@ -78,7 +80,7 @@
     (with-current-buffer coq--compile-response-buffer
       ;; (message "|%s|" (buffer-string))
       (goto-char (1+ (length coq--compile-response-initial-content)))
-      (setq coqdep-errror-in-response (looking-at "^coqdep "))
+      (setq coqdep-errror-in-response (looking-at cct-coqdep-error-prefix))
       (setq syntax-error-in-response (search-forward "Syntax error" nil t)))
     (with-current-buffer proof-shell-buffer
       (goto-char (point-min))
@@ -90,6 +92,8 @@
      (if coqdep-errror-in-response "DOES" "DOES NOT")
      (if syntax-error-in-response "DOES" "DOES NOT")
      (if dependency-in-coq "IS" "IS NOT"))
+    (message "coqdep-errror-in-response: %S" coqdep-errror-in-response)
+    (message "*** syntax-error-in-response: %S" syntax-error-in-response)
     (should (and coqdep-errror-in-response
                  syntax-error-in-response
                  (not dependency-in-coq)))))
@@ -107,7 +111,7 @@
     (with-current-buffer coq--compile-response-buffer
       ;; (message "|%s|" (buffer-string))
       (goto-char (1+ (length coq--compile-response-initial-content)))
-      (setq coqdep-errror-in-response (looking-at "^coqdep "))
+      (setq coqdep-errror-in-response (looking-at cct-coqdep-error-prefix))
       (setq missing-module-in-response (search-forward "X25XX" nil t)))
     (with-current-buffer proof-shell-buffer
       (goto-char (point-min))

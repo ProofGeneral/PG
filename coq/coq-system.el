@@ -53,13 +53,15 @@ On Windows you might need something like:
   (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
+;; We just call "rocq" and look the error message that should mention
+;; subcommands
 (defun coq-detect-rocq-cli ()
-  "Return non nil if the detected coq/rocq executable obeys the rocq CLI."
-  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname)))
-         (coq-args (list "c"))
-         (process-args (list coq-command nil t nil "c")))
+  "return non nil if the detected coq/rocq executable obeys the rocq CLI."
+  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname))))
     (condition-case nil
-        (with-temp-buffer (equal (apply 'process-file process-args) 0))
+        (with-temp-buffer
+          (apply 'process-file (list coq-command nil t))
+          (string-match "Supported subcommands:" (buffer-string)))
       (error nil))))
 
 (defun coq-detect-coqdep ()
