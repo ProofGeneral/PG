@@ -95,11 +95,11 @@ type version = {
     major : int;
     minor : int;
     patch : int option;
-    release_candidate : bool;
+    release_candidate : int option;
   }
 
 let null_version = {major = 0; minor = 0; patch = None;
-                    release_candidate = false; }
+                    release_candidate = None; }
 
 (* record for lines of the Coq/Emacs/Debian/Ubuntu release table *)
 type release_record = {
@@ -214,7 +214,9 @@ let today = U.time()
 (* sort Debian/Ubuntu releases by their end-of-live date *)
 let sort_lts = List.sort (fun a b -> compare a.eol_date b.eol_date)
 
-(* compare version records, taking the release_candidate field into account *)
+(* Compare version records, taking the release_candidate field into
+   account. Must return -1 if [a < b], 0 if [a = b], and 1 if [a > b].
+ *)
 let compare_versions a b =
   let x = compare a.major b.major in
   if x = 0
@@ -225,16 +227,16 @@ let compare_versions a b =
         match (a.patch, b.patch) with
           | (Some pa, Some pb) -> compare pa pb
           | (None, None) -> 0
-          | (Some pa, None) -> compare pa 0
-          | (None, Some pb) -> compare 0 pb
+          | (Some pa, None) -> 1 (* some patch is bigger than no patch or RC *)
+          | (None, Some pb) -> -1 (* some patch is smaller than no patch or RC *)
       in
       if x = 0
       then
         match (a.release_candidate, b.release_candidate) with
-          | (true, false) -> -1
-          | (false, true) -> 1
-          | (true, true)
-            | (false, false) -> 0
+          | (Some rc1, Some rc2) -> compare rc1 rc2
+          | (None, None) -> 0
+          | (Some rc, None) -> -1
+          | (None, Some rc) -> 1
       else x
     else x
   else x
@@ -306,11 +308,13 @@ let scan_year_month_date s =
   else
     Some (Scanf.sscanf s "%d/%d" norm_tm_date)
 
-(* Scan a version in string s in the form <major>.<minor>[rc], where
-   the [rc] is optional, or <major>.<minor>[.<patch>], where the patch
-   level is optional. Return a version option, where None is used when
-   s is empty. Trailing characters after <minor> are ignored, but if
-   there is a dot, a patch level must follow <minor>. *)
+(* Scan a version in string s in the form <major>.<minor>,
+   <major>.<minor>.<patch>, or <major>.<minor>-rc<n>. Return a version
+   option, where None is used when s is empty. Trailing characters
+   after <minor> are ignored, but if there is a dot, a patch level
+   must follow <minor> and if there is a plus or minus an rc version
+   must follow.
+ *)
 let scan_version s =
   if s = ""
   then None
@@ -321,16 +325,16 @@ let scan_version s =
         let (rc, patch) =
           if i + 1 < String.length s
           then
-            if String.sub s i 2 = "rc"
-            then (true, None)
-            else
-              Scanf.bscanf s_ch "%c"
-                (function
-                 | '.' -> Scanf.bscanf s_ch "%d"
-                            (fun patch -> (false, Some patch))
-                 | _ -> (false, None)
-                )
-          else (false, None)
+            Scanf.bscanf s_ch "%c"
+              (function
+               | '.' -> Scanf.bscanf s_ch "%d"
+                          (fun patch -> (None, Some patch))
+               | '+'
+               | '-' -> Scanf.bscanf s_ch "rc%d"
+                          (fun rc -> (Some rc, None))
+               | _ -> (None, None)
+              )
+          else (None, None)
         in
         Some {major = ma; minor = mi;
               patch = patch;
@@ -658,7 +662,7 @@ let select_newest first_emacs first_coq coqs emacses conts =
   (* skip over coq RC versions *)
   let newest_non_rc_coq =
     snd (List.find
-           (fun (coq_v, coq_i) -> coq_v.release_candidate = false)
+           (fun (coq_v, coq_i) -> coq_v.release_candidate = None)
            (List.rev coqs))
   in
   for em_i = first_emacs to newest_emacs do
@@ -674,7 +678,7 @@ let select_coq_rc_version first_emacs coqs emacses conts =
   let first_emacs = get_version_index first_emacs emacses in
   let newest_emacs = snd (list_last emacses) in
   let (coq_v, coq_i) = list_last coqs in
-  if coq_v.release_candidate
+  if coq_v.release_candidate <> None
   then
     for em_i = first_emacs to newest_emacs do
       conts.(coq_i).(em_i) <- RC
@@ -844,7 +848,9 @@ let version_to_string v =
     (match v.patch with
        | None -> ""
        | Some p -> Printf.sprintf ".%d" p)
-    (if v.release_candidate then "rc" else "")
+    (match v.release_candidate with
+       | None -> ""
+       | Some rc -> Printf.sprintf "-rc%d" rc)
 
 (* convert version to string, ignoring the index *)
 let indexed_version_to_string (v, _i) = version_to_string v
@@ -1008,7 +1014,7 @@ let rec read_nix_containers inc nix_conts =
        (match scan_version line with
           | None -> assert false
           | Some v ->
-             if v.release_candidate || v.patch <> None
+             if v.release_candidate <> None || v.patch <> None
              then read_nix_containers inc (v :: nix_conts)
              else read_nix_containers inc nix_conts
        )
@@ -1019,6 +1025,7 @@ let rec read_nix_containers inc nix_conts =
  *)
 let get_nix_containers () =
   let inc = docker_tags_channel "coq-nix" in
+  (* let inc = U.open_process_in "cat coq-nix-tags-for-testing" in *)
   let nix_conts = read_nix_containers inc [] in
   (match U.close_process_in inc with
      | WEXITED(0) -> ()
@@ -1044,15 +1051,15 @@ let read_coq_emacs_tag line =
           | '-' -> None
           | _ -> raise (Scanf.Scan_failure ". or - expected after coq minor")
       in
-      let (coq_rc, emacs_major, emacs_minor) =
-        Scanf.bscanf sb "%[^-]"
+      let coq_rc =
+        Scanf.bscanf sb "%c"
           (function
-           | "emacs" -> Scanf.bscanf sb "-%d.%d" (fun a b -> (false, a, b))
-           | "rc"
-           | "rc1"
-           | "rc2" -> Scanf.bscanf sb "-emacs-%d.%d" (fun a b -> (true, a, b))
-           | _ -> raise (Scanf.Scan_failure "rc or emacs expected")
-          )
+           | 'e' -> None
+           | 'r' -> Scanf.bscanf sb "c%d-e" (fun rc -> Some rc)
+           | _ -> raise (Scanf.Scan_failure "rc or emacs expected"))
+      in
+      let (emacs_major, emacs_minor) =
+        Scanf.bscanf sb "macs-%d.%d" (fun a b -> (a, b))
       in
       ({major = coq_major;
         minor = coq_minor;
@@ -1062,7 +1069,7 @@ let read_coq_emacs_tag line =
        {major = emacs_major;
         minor = emacs_minor;
         patch = None;
-        release_candidate = false;
+        release_candidate = None;
        }
       )
     )
@@ -1076,7 +1083,7 @@ let rec read_all_coq_emacs_tags inc coq_emacs =
     | line ->
        let (coq_v, emacs_v) as vp = read_coq_emacs_tag line in
        let coq_emacs =
-         if coq_v.release_candidate || coq_v.patch <> None
+         if coq_v.release_candidate <> None || coq_v.patch <> None
          then vp :: coq_emacs
          else coq_emacs
        in
@@ -1089,6 +1096,7 @@ let rec read_all_coq_emacs_tags inc coq_emacs =
  *)
 let get_coq_emacs_containers () =
   let inc = docker_tags_channel "coq-emacs" in
+  (* let inc = U.open_process_in "cat coq-emacs-tags-for-testing" in *)
   let coq_emacs = read_all_coq_emacs_tags inc [] in
   (match U.close_process_in inc with
      | WEXITED(0) -> ()
