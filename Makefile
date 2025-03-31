@@ -21,7 +21,7 @@
 
 # Set this according to your version of Emacs.
 # NB: this is also used to set default install path names below.
-EMACS=$(shell if [ -z "`which emacs`" ]; then echo "Emacs executable not found"; exit 1; else echo emacs; fi)
+EMACS=$(shell if [ -z "`command -v emacs`" ]; then echo "Emacs executable not found"; exit 1; else echo emacs; fi)
 
 # We default to /usr rather than /usr/local because installs of
 # desktop and doc files under /usr/local are unlikely to work with
@@ -273,7 +273,7 @@ scripts: bashscripts perlscripts
 
 .PHONY: bashscripts
 bashscripts:
-	(bash="`which bash`";					    \
+	(bash="`command -v bash`";					    \
 	 if [ -z "$$bash" ]; then				    \
 	   echo "Could not find bash - bash paths not checked" >&2; \
 	   exit 0;						    \
@@ -281,7 +281,7 @@ bashscripts:
 
 .PHONY: perlscripts
 perlscripts:
-	(perl="`which perl`";					    \
+	(perl="`command -v perl`";					    \
 	 if [ -z "$$perl" ]; then				    \
 	   echo "Could not find perl - perl paths not checked" >&2; \
 	   exit 0;						    \
