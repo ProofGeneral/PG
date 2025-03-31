@@ -136,6 +136,8 @@ In particular, test that with proof-omit-proofs-option configured:
       (looking-at "Qed\\.\n\n<prompt>Rocq <")
       ;; for Coq 8.11 and later
       (looking-at "Qed\\.\n\n<prompt>Coq <")
+      ;; for Rocq 9 and later
+      (looking-at "Qed\\.\n\n<prompt>Rocq <")
       ;; for Coq 8.10 and earlier
       ;; in 8.9 the message is on 1 line, in 8.10 on 3
       (looking-at "Qed\\.\n<infomsg>\n?classic_excluded_middle is defined"))))
