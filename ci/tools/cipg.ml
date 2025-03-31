@@ -1,6 +1,6 @@
 (* This file is part of Proof General.
  *
- * Copyright 2024  Hendrik Tews
+ * Copyright 2024-2025  Hendrik Tews
  *
  * Authors:   Hendrik Tews
  *
@@ -22,11 +22,11 @@ let readme_file = "ci/doc/README.md"
 (* github yaml workflow file *)
 let test_workflow_file = ".github/workflows/test.yml"
 
-(* directory in which the coq-nix-docker and coq-emacs-docker repos are *)
-let src_dir = ref "~/src"
+(* directory in which the pg-ci-coq and pg-ci-emacs directories are *)
+let src_dir = ref "~/src/docker"
 
-(* file containing the currently needed coq-nix containers *)
-let currently_used_nix_file = "ci/doc/currently-used-coq-nix-versions"
+(* file containing the currently needed ci-coq containers *)
+let currently_used_coq_file = "ci/doc/currently-used-ci-coq-versions"
 
 (* file containing the currently used coq-emacs containers *)
 let currently_used_coq_emacs_file = "ci/doc/currently-used-coq-emacs-versions"
@@ -98,7 +98,16 @@ type version = {
     release_candidate : int option;
   }
 
+(* Some version smaller than everything encountered. Used as start
+   value in the extract_lts_versions iteration.
+ *)
 let null_version = {major = 0; minor = 0; patch = None;
+                    release_candidate = None; }
+
+(* Coq version 9 for deciding the name of the opam package coq or
+   rocq-prover
+ *)
+let coq_9_version = {major = 9; minor = 0; patch = Some 0;
                     release_candidate = None; }
 
 (* record for lines of the Coq/Emacs/Debian/Ubuntu release table *)
@@ -1004,34 +1013,38 @@ let docker_tags_channel repo_name =
         ^^ "/%s/tags?page_size=1024' | jq -r '.\"results\"[][\"name\"]'")
        repo_name)
 
-(* Read all coq-nix container tags from inc, accumulating the result
- * as Coq versions in nix_conts. Ignore container tags without patch
- * level.
+(* Read all ci-coq container tags from inc, accumulating the result
+ * as Coq versions in coq_conts. Ignore container tags without patch
+ * level. ci-coq tags look like coq-9.0.0.
  *)
-let rec read_nix_containers inc nix_conts =
+let rec read_coq_containers inc coq_conts =
   match input_line inc with
     | line ->
-       (match scan_version line with
-          | None -> assert false
-          | Some v ->
-             if v.release_candidate <> None || v.patch <> None
-             then read_nix_containers inc (v :: nix_conts)
-             else read_nix_containers inc nix_conts
-       )
-    | exception End_of_file -> nix_conts
+       if String.starts_with ~prefix:"coq-" line
+       then
+         (match scan_version (String.sub line 4 (String.length line - 4)) with
+            | None -> assert false
+            | Some v ->
+               if v.release_candidate <> None || v.patch <> None
+               then read_coq_containers inc (v :: coq_conts)
+               else read_coq_containers inc coq_conts
+         )
+       else
+         assert false
+    | exception End_of_file -> coq_conts
        
 (* Read all coq-nix container tags from the docker registry. Return
  * them as a sorted list of Coq versions.
  *)
-let get_nix_containers () =
-  let inc = docker_tags_channel "coq-nix" in
+let get_coq_containers () =
+  let inc = docker_tags_channel "ci-coq" in
   (* let inc = U.open_process_in "cat coq-nix-tags-for-testing" in *)
-  let nix_conts = read_nix_containers inc [] in
+  let coq_conts = read_coq_containers inc [] in
   (match U.close_process_in inc with
      | WEXITED(0) -> ()
      | _ -> assert false
   );
-  sort_versions nix_conts
+  sort_versions coq_conts
 
 
 (* Read an Coq/Emacs tag from line, return a corresponding Coq/Emacs
@@ -1112,14 +1125,17 @@ let get_coq_emacs_containers () =
  *****************************************************************************)
 
 (* Return the coq-emacs docker tag for version coq and emacs. *)
+let coq_tag coq = Printf.sprintf "coq-%s" (version_to_string coq)
+
+(* Return the coq-emacs docker tag for version coq and emacs. *)
 let coq_emacs_tag coq emacs =
   Printf.sprintf "coq-%s-emacs-%s"
     (version_to_string coq) (version_to_string emacs)
 
 (* Read currently needed coq-nix containers from doc subdir. *)
-let read_currently_used_nix_containers () =
-  let ic = open_in (Filename.concat !pg_repo currently_used_nix_file) in
-  let used = read_nix_containers ic [] in
+let read_currently_used_coq_containers () =
+  let ic = open_in (Filename.concat !pg_repo currently_used_coq_file) in
+  let used = read_coq_containers ic [] in
   close_in ic;
   used  
 
@@ -1130,15 +1146,15 @@ let read_currently_used_coq_emacs_containers () =
   close_in ic;
   used
 
-(* Write the currently used coq-nix and coq-emacs containers into
+(* Write the currently used ci-coq and coq-emacs containers into
  * their respective files in the doc subdir
  *)
 let update_currently_used coqs coq_emacs_used =
   print_endline"\nupdate files with currently used containers\n";
-  let oc = open_out_bin (Filename.concat !pg_repo currently_used_nix_file) in
+  let oc = open_out_bin (Filename.concat !pg_repo currently_used_coq_file) in
   List.iter
     (fun (coq_v, _) ->
-      output_string oc (version_to_string coq_v);
+      output_string oc (coq_tag coq_v);
       output_string oc "\n";
     )
     coqs;
@@ -1166,39 +1182,42 @@ let update_currently_used coqs coq_emacs_used =
  * docker build and push commands for missing containers. Return the
  * superfluous containers as list of Coq versions.
  *)
-let check_nix_containers coqs =
-  let nix_containers = get_nix_containers () in
-  Printf.printf "existing nix versions: %s\n"
-    (String.concat " " (List.map version_to_string nix_containers));
-  let missing = list_diff coqs nix_containers in
-  Printf.printf "missing nix versions: %s\n"
+let check_coq_containers coqs =
+  let coq_containers = get_coq_containers () in
+  Printf.printf "existing coq versions: %s\n"
+    (String.concat " " (List.map version_to_string coq_containers));
+  let missing = list_diff coqs coq_containers in
+  Printf.printf "missing coq versions: %s\n"
     (String.concat " " (List.map version_to_string missing));
-  let now_in_use = read_currently_used_nix_containers () in
-  let not_needed = list_diff nix_containers coqs in
+  let now_in_use = read_currently_used_coq_containers () in
+  let not_needed = list_diff coq_containers coqs in
   let del_now = list_diff not_needed now_in_use in
   let del_soon = list_intersection not_needed now_in_use in
-  Printf.printf "now superfluous nix versions: %s\n"
+  Printf.printf "now superfluous coq versions: %s\n"
     (String.concat " " (List.map version_to_string del_now));
-  Printf.printf "soon superfluous nix versions: %s\n\n"
+  Printf.printf "soon superfluous coq versions: %s\n\n"
     (String.concat " " (List.map version_to_string del_soon));
   if missing <> [] then
     begin
       print_endline
         "####################################################################";
-      Printf.printf "# built missing coq-nix containers\n";
+      Printf.printf "# build missing ci-coq containers\n";
       print_endline
         "####################################################################\n";
-      Printf.printf "pushd %s/coq-nix-docker/coq-nix\n" !src_dir;
+      Printf.printf "pushd %s/pg-ci-coq\n" !src_dir;
       List.iter
         (fun coqv ->
-          let coq_version = version_to_string coqv in
           Printf.printf
-            ("docker image build -t proofgeneral/coq-nix:%s \\\n"
-             ^^ "\t--build-arg COQV=%s \\\n"
-             ^^ "\t--build-arg OCAMLV=4.13.1-flambda .\n")
-            coq_version coq_version;
-          Printf.printf "docker image push proofgeneral/coq-nix:%s\n\n"
-            coq_version;
+            ("docker image build -t proofgeneral/ci-coq:%s \\\n"
+             ^^ "\t--build-arg COQ_NAME=%s \\\n"
+             ^^ "\t--build-arg COQ_VERSION=%s .\n")
+            (coq_tag coqv)
+            (if compare_versions coqv coq_9_version < 0
+             then "coq"
+             else "rocq-prover")
+            (version_to_string coqv);
+          Printf.printf "docker image push proofgeneral/ci-coq:%s\n\n"
+            (coq_tag coqv);
         )
         missing;
       print_endline "popd";
@@ -1209,29 +1228,26 @@ let check_nix_containers coqs =
 (* Print docker build and push commands for a keyed Coq/Emacs version
  * list of the form [(coq_v1, [emacs_v1; v2; ...]); (coq_v2, [...]); ...]
  *)
-let rec print_coq_emacs_build_commands = function
-  | [] -> ()
-  | (coq, emacses) :: l ->
-     let coq_version = version_to_string coq in
-     print_endline
-       "##############################################";
-     Printf.printf "# built Coq %s containers\n\n" coq_version;
-     List.iter
-       (fun emacs ->
-         let emacs_version = version_to_string emacs in
-         let coq_emacs_tag = coq_emacs_tag coq emacs in
-         Printf.printf
-           ("docker image build -t proofgeneral/coq-emacs:%s \\\n"
-            ^^ "\t--build-arg NIX_BASE_TAG=%s \\\n"
-            ^^ "\t--build-arg EMACS_VERSION=%s .\n")
-           coq_emacs_tag
-           coq_version
-           emacs_version;
-         Printf.printf
-           "docker image push proofgeneral/coq-emacs:%s\n\n" coq_emacs_tag;
-       )
-       emacses;
-     print_coq_emacs_build_commands l
+let print_coq_emacs_build_command (coq, emacses) =
+  let coq_version = version_to_string coq in
+  print_endline
+    "##############################################";
+  Printf.printf "# built Coq %s containers\n\n" coq_version;
+  List.iter
+    (fun emacs ->
+      let emacs_version = version_to_string emacs in
+      let coq_emacs_tag = coq_emacs_tag coq emacs in
+      Printf.printf
+        ("docker image build -t proofgeneral/coq-emacs:%s \\\n"
+         ^^ "\t--build-arg COQ_VERSION=%s \\\n"
+         ^^ "\t--build-arg EMACS_VERSION=%s .\n")
+        coq_emacs_tag
+        coq_version
+        emacs_version;
+      Printf.printf
+        "docker image push proofgeneral/coq-emacs:%s\n\n" coq_emacs_tag;
+    )
+    emacses
   
 (* Print Coq/Emacs version pairs with title. Outputs one line for each
  * Coq version with all Emacs versions for this Coq version.
@@ -1272,8 +1288,8 @@ let check_coq_emacs_containers coqs emacses conts =
       print_endline "# build coq-emacs containers";
       print_endline
         "####################################################################\n";
-      Printf.printf "pushd %s/coq-emacs-docker/coq-emacs\n\n" !src_dir;
-      print_coq_emacs_build_commands (pairs_to_keyed_list missing);
+      Printf.printf "pushd %s/pg-ci-emacs\n\n" !src_dir;
+      List.iter print_coq_emacs_build_command (pairs_to_keyed_list missing);
       print_endline "popd"
     end;
   del_now
@@ -1387,18 +1403,17 @@ let delete_coq_emacs_containers token coq_emacs_pairs =
   List.iter (delete_coq_emacs_container token) coq_emacs_pairs
 
 
-(* Delete the coq-nix containers for Coq versions coqv.
+(* Delete the ci-coq containers for Coq versions coqv.
  * Argument token must be a personal docker access token.
  *)
-let delete_nix_container token coqv =
-  let coq_version = version_to_string coqv in
-  delete_container token "coq-nix" coq_version
+let delete_coq_container token coqv =
+  delete_container token "ci-coq" (coq_tag coqv)
 
 (* Delete coq-nix containers for Coq versions in coqs.
  * Argument token must be a personal docker access token.
  *)
-let delete_nix_containers token coqs =
-  List.iter (delete_nix_container token) coqs
+let delete_coq_containers token coqs =
+  List.iter (delete_coq_container token) coqs
 
 
 (*****************************************************************************
@@ -1590,18 +1605,18 @@ let main() =
   if !do_containers then
     begin
       print_endline "\n\nCHECK MISSING AND SUPERFLUOUS CONTAINERS\n";
-      let not_needed_nix_versions = check_nix_containers (List.map fst coqs) in
+      let not_needed_coq_versions = check_coq_containers (List.map fst coqs) in
       let not_needed_ci_versions =
         check_coq_emacs_containers coqs emacses conts in
       if !do_delete_containers then
         begin
-          if not_needed_nix_versions <> [] || not_needed_ci_versions <> []
+          if not_needed_coq_versions <> [] || not_needed_ci_versions <> []
           then
             begin
               print_endline"\n\nDELETE SUPERFLUOUS CONTAINERS\n";
               let token = get_personal_access_token() in
               delete_coq_emacs_containers token not_needed_ci_versions;
-              delete_nix_containers token not_needed_nix_versions;
+              delete_coq_containers token not_needed_coq_versions;
             end
           else
             print_endline"\n\nno superfluous container to delete\n";
