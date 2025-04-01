@@ -132,8 +132,12 @@ In particular, test that with proof-omit-proofs-option configured:
     ;; There should be a Qed with no error or message after it
     (should
      (or
+      ;; for Rocq 9.0
+      (looking-at "Qed\\.\n\n<prompt>Rocq <")
       ;; for Coq 8.11 and later
       (looking-at "Qed\\.\n\n<prompt>Coq <")
+      ;; for Rocq 9 and later
+      (looking-at "Qed\\.\n\n<prompt>Rocq <")
       ;; for Coq 8.10 and earlier
       ;; in 8.9 the message is on 1 line, in 8.10 on 3
       (looking-at "Qed\\.\n<infomsg>\n?classic_excluded_middle is defined"))))
@@ -170,7 +174,11 @@ In particular, test that with proof-omit-proofs-option configured:
       (should (search-forward "</infomsg>" nil t))
       (forward-line 1))
     ;; no other messages or errors before the next prompt
-    (should (looking-at "\n<prompt>Coq <")))
+    (should (or
+             ;; for Rocq
+             (looking-at "\n<prompt>Rocq <")
+             ;; for Coq
+             (looking-at "\n<prompt>Coq <"))))
 
   ;; Check 4: check proof-omitted-proof-face is active at marker 3
   (message "4: check proof-omitted-proof-face is active at marker 3")

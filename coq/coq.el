@@ -1771,6 +1771,10 @@ See  `coq-fold-hyp'."
 (proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
 (proof-definvisible coq-set-printing-all "Set Printing All.")
 (proof-definvisible coq-unset-printing-all "Unset Printing All.")
+(proof-definvisible coq-set-printing-parentheses "Set Printing Parentheses.")
+(proof-definvisible coq-unset-printing-parentheses "Unset Printing Parentheses.")
+(proof-definvisible coq-set-printing-notations "Set Printing Notations.")
+(proof-definvisible coq-unset-printing-notations "Unset Printing Notations.")
 (proof-definvisible coq-set-printing-synth "Set Printing Synth.")
 (proof-definvisible coq-unset-printing-synth "Unset Printing Synth.")
 (proof-definvisible coq-set-printing-coercions "Set Printing Coercions.")
@@ -1901,7 +1905,6 @@ at `proof-assistant-settings-cmds' evaluation time.")
   (setq proof-assistant-home-page coq-www-home-page)
 
   (setq proof-prog-name coq-prog-name)
-  (setq proof-guess-command-line #'coq-guess-command-line)
   (setq proof-prog-name-guess t)
 
   ;; We manage file saveing via coq-compile-auto-save and for coq
@@ -2508,13 +2511,15 @@ tacitcs like destruct and induction reuse hypothesis names by
 default, which makes the detection of new hypothesis incorrect.
 the hack consists in adding the \"!\" modifier on the argument
 destructed, so that it is left in the goal and the name cannot be
-reused.  We also had a \"clear\" at the end of the tactic so that
+reused.  We also add a \"clear\" at the end of the tactic so that
 the whole tactic behaves correctly.
 Warning: this makes the error messages (and location) wrong.")
 
 (defun coq-hack-cmd-for-infoH (s)
   "return the tactic S hacked with infoH tactical."
   (cond
+   ;; We cannot rebuild the sub-patterns from the final goal, so ';' is not
+   ;; supported. Only single tactics like destruct.
    ((string-match ";" s) s) ;; composed tactic cannot be treated
    ((string-match coq-auto-as-hack-hyp-name-regex s)
     (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
@@ -2715,6 +2720,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
   (interactive)
   (save-excursion
     (goto-char (proof-unprocessed-begin))
+    (forward-char 1)
     (coq-find-real-start)
     (let* ((pt (point))
            (_ (coq-script-parse-cmdend-forward))
@@ -2869,6 +2875,10 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?l)]  #'coq-LocateConstant)
 (define-key coq-keymap [(control ?n)]  #'coq-LocateNotation)
 (define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)
+(define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
+(define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
+(define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
+(define-key coq-keymap [(?n)]          #'coq-unset-printing-notations)
 
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))

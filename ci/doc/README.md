@@ -153,7 +153,8 @@ of the following points is true for *cv* and *ev*.
    
    This point is motivated by the compatibility of newest versions.
 
-#. The Coq version *cv* is a release candidate.
+#. The Coq version *cv* is a release candidate not superseded by a
+   later release candidate or a release.
 
    This point is motivated by the compatibility of release candidates.
 
@@ -168,28 +169,28 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-65
+66
 <!-- CIPG change marker end -->
 containers.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-table -->
-|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 |
-|---------+------+------+------+------+------+------+------+------+------+------+------|
-|   8.8.2 |   H  |      |      |      |      |      |      |      |      |      |      |
-|   8.9.1 |      |   H  |      |      |      |      |      |      |      |      |      |
-|  8.10.2 |      |      |   H  |      |      |      |      |      |      |      |      |
-|  8.11.2 |      |      |  SUP |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |      |  SUP |  SUP |      |      |      |      |      |      |   N  |
-|  8.13.2 |      |      |  SUP |  SUP |   H  |      |      |      |      |      |   N  |
-|  8.14.1 |      |      |  SUP |  SUP |   H  |      |      |      |      |      |   N  |
-|  8.15.2 |      |      |  SUP |  SUP |      |   H  |      |      |      |      |   N  |
-|  8.16.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.17.1 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.18.0 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.19.2 |      |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.20rc |      |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|         | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 |
+|---------+------+------+------+------+------+------+------+------+------+------|
+|   8.9.1 |   H  |      |      |      |      |      |      |      |      |      |
+|  8.10.2 |      |   H  |      |      |      |      |      |      |      |      |
+|  8.11.2 |      |  SUP |      |      |      |      |      |      |      |   N  |
+|  8.12.2 |      |  SUP |   H  |      |      |      |      |      |      |   N  |
+|  8.13.2 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
+|  8.14.1 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
+|  8.15.2 |      |  SUP |  SUP |      |   H  |      |      |      |      |   N  |
+|  8.16.1 |      |  SUP |  SUP |      |      |  SUP |      |      |      |   N  |
+|  8.17.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.18.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.19.2 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.20.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+| 9.0-rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -275,7 +276,8 @@ following points is true for *cv* and *ev*.
    
    This point is motivated by the compatibility of newest versions.
 
-#. The Coq version *cv* is a release candidate.
+#. The Coq version *cv* is a release candidate not superseded by a
+   later release candidate or a release.
 
    This point is motivated by the compatibility of release candidates.
 
@@ -286,28 +288,28 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-41
+43
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-table -->
-|         | 26.1 | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 |
-|---------+------+------+------+------+------+------+------+------+------+------+------|
-|   8.8.2 |      |      |      |      |      |      |      |      |      |      |      |
-|   8.9.1 |      |      |      |      |      |      |      |      |      |      |      |
-|  8.10.2 |      |      |      |      |      |      |      |      |      |      |      |
-|  8.11.2 |      |      |  SUP |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |      |      |  SUP |      |      |      |      |      |      |   N  |
-|  8.13.2 |      |      |      |      |   H  |      |      |      |      |      |   N  |
-|  8.14.1 |      |      |      |      |   H  |      |      |      |      |      |   N  |
-|  8.15.2 |      |      |      |  SUP |      |   H  |      |      |      |      |   N  |
-|  8.16.1 |      |      |      |      |      |      |  SUP |      |      |      |   N  |
-|  8.17.1 |      |      |   X  |   X  |      |      |   X  |   X  |      |      |   N  |
-|  8.18.0 |      |      |   X  |   X  |      |      |   X  |   X  |      |      |   N  |
-|  8.19.2 |      |      |   X  |   X  |   N  |   N  |   X  |   X  |   N  |   N  |   N  |
-|  8.20rc |      |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
+|         | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 |
+|---------+------+------+------+------+------+------+------+------+------+------|
+|   8.9.1 |      |      |      |      |      |      |      |      |      |      |
+|  8.10.2 |      |      |      |      |      |      |      |      |      |      |
+|  8.11.2 |      |  SUP |      |      |      |      |      |      |      |   N  |
+|  8.12.2 |      |      |   H  |      |      |      |      |      |      |   N  |
+|  8.13.2 |      |      |      |   H  |      |      |      |      |      |   N  |
+|  8.14.1 |      |      |      |   H  |      |      |      |      |      |   N  |
+|  8.15.2 |      |      |  SUP |      |   H  |      |      |      |      |   N  |
+|  8.16.1 |      |      |      |      |      |  SUP |      |      |      |   N  |
+|  8.17.1 |      |      |      |      |      |      |   H  |      |      |   N  |
+|  8.18.0 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
+|  8.19.2 |      |   X  |   X  |      |      |   X  |      |      |   X  |   N  |
+|  8.20.1 |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |
+| 9.0-rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
@@ -317,7 +319,7 @@ In summary, all Proof General testing jobs run
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: total-checks-number -->
-152
+158
 <!-- CIPG change marker end -->
 github checks.
 
@@ -376,8 +378,13 @@ that `cipg` can process it.
    : are specified with a date and an Emacs version.
    
    Debian or Ubuntu releases
-   : are specified with a date, a distribution name and an EOL date.
+   : are specified with a date, a distribution name, and an EOL date.
    
+   One line can be of several kinds: If a date, a Coq version, an
+   Emacs version, a Debian distribution name, and an EOL date is
+   present in a certain line, then this line specifies a Coq release,
+   an Emacs release, and a Debian release all together.
+
 #. The Coq and Emacs versions of an Debian or Ubuntu release may be
    omitted. If they are not present, they are taken from the last
    preceding line containing the respective version (the table is
@@ -410,10 +417,9 @@ that `cipg` can process it.
    YYYY/MM. Trailing non-digit characters are ignored. I use `?` to
    indicate EOL dates that have not yet been fixed.
 
-#. Versions of release candidates must be of the form `8.10rc` or 
-   `8.10-rc`. `cipg` is not able to recognize outdated release
-   candidates. The release candidate must therefore be deleted when
-   the release happens.
+#. Versions of release candidates must be of the form 
+   `8.10-rc1`. Outdated release candidates may be deleted from the
+   table.
 
 
 ## `cipg`
