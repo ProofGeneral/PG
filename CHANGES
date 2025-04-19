@@ -21,6 +21,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     with FAIL comments.
 *** Don't ask about killing the proof assistant when quitting Emacs and
     thereby the Proof General session.
+*** Improve splash screen, add menu entry to permanently disable it
+    (Proof-General -> Quick Options -> Display -> Disable Splash Screen),
+    reduce splash screen time to make it less annoying
 
 ** Coq changes
 *** support Coq 8.19

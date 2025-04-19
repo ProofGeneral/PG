@@ -3567,6 +3567,18 @@ on the menu:
 @end lisp
 and you can save your preferred default. 
 
+The first option presented here is about the splash screen, which is
+shown by default on every launch of Proof General.
+
+@c TEXI DOCSTRING MAGIC: proof-splash-enable
+@defopt proof-splash-enable 
+If non-nil, display a splash screen when Proof General is loaded.@*
+See @samp{@code{proof-splash-time}} for configuring the time that the splash
+screen is shown.
+
+The default value is @code{t}.
+@end defopt
+
 If your screen is large enough, you may prefer to display all three of
 the interaction buffers at once.  This is useful, for example, to see
 output from the @code{proof-find-theorems} command at the same time as
@@ -3774,13 +3786,6 @@ strongly recommended.
 Unless mentioned, all of these settings can be changed dynamically,
 without needing to restart Emacs to see the effect.  But you must use
 customize to be sure that Proof General reconfigures itself properly.
-
-@c TEXI DOCSTRING MAGIC: proof-splash-enable
-@defopt proof-splash-enable 
-If non-nil, display a splash screen when Proof General is loaded.
-
-The default value is @code{t}.
-@end defopt
 
 @c TEXI DOCSTRING MAGIC: proof-electric-terminator-enable
 @defopt proof-electric-terminator-enable 
