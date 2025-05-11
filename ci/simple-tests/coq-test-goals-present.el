@@ -11,6 +11,15 @@
 ;;
 ;; Test that Proof General shows goals correctly in various situations.
 
+;; gloabal configuration for this file
+;; all tests in this file shall run in two-pane mode
+(setq proof-three-window-enable nil)
+;; Some Emacs versions run with a frame width of 10 in batch mode
+;; inside the container. The line breaks make some regular expressions
+;; fail, therfore disable printing width adapting.
+(setq coq-auto-adapt-printing-width nil)
+
+
 ;; Some tests show different behaviour in 8.7, load stuff for `coq--version<'
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
@@ -19,8 +28,12 @@
 (defconst coq--post-v87 (not (coq--version< (coq-version t) "8.8"))
   "t if Coq is more recent than 8.7")
 
-(message "goal present tests run with Coq version %s; post-v87: %s"
-         (coq-version t) coq--post-v87)
+(defconst coq--between-v814-v815 (and (coq--post-v814) (coq--pre-v816))
+  "t if Coq is either 8.14 or 8.15")
+
+(message (concat "goal/response present tests run with Coq version %s; \n\t"
+                 "post-v87: %s; between 8.14-8.15 %s")
+         (coq-version t) coq--post-v87 coq--between-v814-v815)
 
 
 ;;; Coq source code for tests 
@@ -136,6 +149,18 @@ Proof using.
 "
   "Coq source code for checking that goals are up-to-date after Check.")
 
+(defconst coq-src-report-response-check
+  "Require Import Arith.
+
+Lemma a : forall(a b : nat), a + b = b + a.
+Proof using.
+  intros a b.
+  apply Nat.add_comm.
+Qed.
+"
+  "Coq source code for response buffer visibility tests.
+Used in `check-response-present' for all `response-buffer-visible-*' tests.")
+
 
 ;;; utility functions
 
@@ -169,7 +194,6 @@ is non-nil, additionally check that the response buffer is
 non-empty, i.e., shows some message, and is visible in some
 window also in two-pane mode."
   (message "goals-after-test: Check goals are present after %s." msg)
-  (setq proof-three-window-enable nil)
   (let (buffer)
     (unwind-protect
         (progn
@@ -227,7 +251,6 @@ assert to the end of COQ-SRC and check that the goals buffer has
 been reset. MSG is used in messages only. It shouls say after
 which action the goals buffer should have been reset."
   (message "Check that goals are reset after %s." msg)
-  (setq proof-three-window-enable nil)
   (let (buffer)
     (unwind-protect
         (progn
@@ -309,7 +332,6 @@ case, check that the response buffer is not empty and visible in
 two-pane mode."
   
   (message "update-goals-when-response: Check goals are updated after %s" msg)
-  (setq proof-three-window-enable nil)
   (let (buffer)
     (unwind-protect
         (progn
@@ -410,3 +432,202 @@ something and be visible in two-pane mode."
                               "Lemma h"
                               "3 = 3"
                               "Check"))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; response buffer visibility tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The following tests check that commands such as coq-Search or
+;; coq-Check correctly show a response buffer in two-pane mode, even
+;; in corner cases such as at the end of the proof or when the
+;; response is empty. Many of these commands use the same internal
+;; functions such as `coq-ask-do'. Therefore it is sufficiant to test
+;; only very few of these functions.
+;;
+;; The following overview shows which command uses what internally.
+;;
+;;
+;; use only `coq-ask-do': read via `coq-guess-or-ask-for-string'
+;;
+;; (define-key coq-keymap [(control ?a)]  #'coq-Search)
+;; (define-key coq-keymap [(control ?l)]  #'coq-LocateConstant)
+;; (define-key coq-keymap [(control ?n)]  #'coq-LocateNotation)
+;; (define-key coq-keymap [(control ?o)]  #'coq-SearchIsos)
+;;
+;;
+;; without prefix use `coq-ask-do': read via `coq-guess-or-ask-for-string'
+;; with prefix (raw) use `coq-ask-do-show-all', which calls
+;; `coq-ask-do-set-unset', also using `coq-guess-or-ask-for-string',
+;; finally calling `coq-command-with-set-unset'
+;;
+;; (define-key coq-keymap [(control ?c)]  #'coq-Check)
+;; (define-key coq-keymap [(control ?p)]  #'coq-Print)
+;; (define-key coq-keymap [(control ?b)]  #'coq-About)
+;; (define-key coq-keymap [(control ?s)]  #'coq-Show)
+;;
+;;
+;; without prefix use `proof-shell-invisible-command'
+;; with prefix use `coq-command-with-set-unset' with test command
+;;
+;; (define-key coq-keymap [(control ?q)]  #'coq-query)
+;;
+;;
+;; via `proof-definvisible', simple `proof-shell-invisible-command'
+;;
+;; (define-key coq-keymap [?h]            #'coq-PrintHint)
+;; (define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
+;; (define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
+;; (define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
+;; (define-key coq-keymap [(?n)]          #'coq-unset-printing-notations)
+;;
+;;
+;; not analyzed or tested
+;;
+;; (define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)
+
+
+;; The functions such as `coq-Search' that are tested via
+;; `check-response-present' read user input themselves via the
+;; minibuffer by using `coq-guess-or-ask-for-string'. For the
+;; automated tests we use `advice-add' to replace this function by
+;; `replace-coq-guess-or-ask-for-string', which returns the content of
+;; `ask-for-string-answer' without reading from the minibuffer.
+;; `check-response-present' places the string that shall be returned
+;; into `ask-for-string-answer' before calling the function under test.
+
+(defvar ask-for-string-answer ""
+  "Place holder for return value of `coq-guess-or-ask-for-string'.
+Used inside `check-response-present', see comment above.")
+
+(defun replace-coq-guess-or-ask-for-string (_s &optional _dontguess)
+  "Replacement of `coq-guess-or-ask-for-string' for automated tests.
+Inside `check-response-present', this function is used as an :override
+advice for `coq-guess-or-ask-for-string', such that functions such as
+`coq-Search' can be tested without that they read from the minibuffer."
+  ask-for-string-answer)
+
+(defun check-response-present (query-fun line input-string response)
+  "Check response and visibility of the response buffer.
+This function checks that `coq-Search' and similar functions display
+their response correctly. QUERY-FUN is the command to be tested, for
+instance `coq-Search', or some closure, if the command needs arguments,
+such as `coq-Check'. LINE is the line number up to which
+`coq-src-report-response-check' is processed before QUERY-FUN is called.
+INPUT-STRING is the user input that QUERY-FUN shall receive from the
+adviced `coq-guess-or-ask-for-string'. RESPONSE is for the content check
+of the response buffer. If RESPONSE is a string, it must be a regular
+expression for which a match is searched in the response buffer. If
+RESPONSE is not a string the response buffer must be empty.
+
+Global configuration of this file ensures two-pane mode by setting
+`proof-three-window-enable' to `nil'. It inserts
+`coq-src-report-response-check' into some buffer, processes this up to
+line LINE, advices `coq-guess-or-ask-for-string' to return INPUT-STRING,
+and calls QUERY-FUN. It then checks, according to RESPONSE, that the
+response buffer is either empty or contains the expected result. The
+function further checks that the response buffer is visible in some
+window."
+  (let (buffer)
+    (unwind-protect
+        (progn
+          (find-file "goals.v")
+          (setq buffer (current-buffer))
+          (insert coq-src-report-response-check)
+          (goto-char (point-min))
+          (forward-line (1- line))
+          (proof-goto-point)
+          (wait-for-coq)
+
+          ;; (record-buffer-content "*coq*")
+          ;; (record-buffer-content "*goals*")
+
+          ;; modify `coq-guess-or-ask-for-string' to return
+          ;; `ask-for-string-answer' without reading from the minibuffer.
+          (setq ask-for-string-answer input-string)
+          (advice-add 'coq-guess-or-ask-for-string :override
+                      #'replace-coq-guess-or-ask-for-string)
+          (funcall query-fun)
+          (advice-remove 'coq-guess-or-ask-for-string
+                         #'replace-coq-guess-or-ask-for-string)
+          ;; Some tested functions, e.g., `coq-Search', wait for the
+          ;; response, others, e.g., `coq-Check', don't wait.
+          (wait-for-coq)
+
+          ;; (record-buffer-content "*coq*")
+          ;; (record-buffer-content proof-response-buffer)
+
+          (message "Check response buffer content")
+          (with-current-buffer proof-response-buffer
+            (if (stringp response)
+                (progn
+                  (goto-char (point-min))
+                  (should (re-search-forward response nil t)))
+              (should (equal (point-min) (point-max)))))
+
+          (message "Check that the response is visible in two-pane mode")
+          (should (get-buffer-window proof-response-buffer)))
+      (when buffer
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil))
+        (kill-buffer buffer)))))
+
+(ert-deftest response-buffer-visible-coq-search-something-inside-proof ()
+  "Check response for coq-Search on (0 <= 2) inside proof."
+  (message "Check response for Search (0 <= 2) is shown inside proof")
+  (check-response-present #'coq-Search 6 "(0 <= 2)" "Nat.le_0_2"))
+      
+(ert-deftest response-buffer-visible-coq-search-something-proof-end ()
+  "Check response for coq-Search on (0 <= 2) at proof end.
+Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
+in proof mode with no more goals."
+  (message "Check response for Search (0 <= 2) is shown at proof end")
+  ;; XXX change to skip-when when Emacs 29 is phased out
+  (skip-unless (not coq--between-v814-v815))
+  (check-response-present #'coq-Search 7 "(0 <= 2)" "Nat.le_0_2"))
+      
+(ert-deftest response-buffer-visible-coq-search-something-outside-proof ()
+  "Check response for coq-Search on (0 <= 2) outside any proof."
+  (message "Check response for Search (0 <= 2) is shown outside proofs")
+  (check-response-present #'coq-Search 3 "(0 <= 2)" "Nat.le_0_2"))
+      
+(ert-deftest response-buffer-visible-coq-search-empty-inside-proof ()
+  "Check empty response for coq-Search on 42 inside proof"
+  (message "Check empty response for Search 42 is shown inside proof")
+  (check-response-present #'coq-Search 6 "42" t))
+      
+(ert-deftest response-buffer-visible-coq-search-empty-proof-end ()
+  "Check empty response for coq-Search on 42 at proof end.
+Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
+in proof mode with no more goals."
+  (message "Check empty response for Search 42 at proof end")
+  ;; XXX change to skip-when when Emacs 29 is phased out
+  (skip-unless (not coq--between-v814-v815))
+  (check-response-present #'coq-Search 7 "42" t))
+
+(ert-deftest response-buffer-visible-coq-search-empty-outside-proof ()
+  "Check empty response for coq-Search on 42 outside proof"
+  (message "Check empty response for Search 42 is shown outside proof")
+  (check-response-present #'coq-Search 3 "42" t))
+      
+(ert-deftest response-buffer-visible-coq-check-print-all-inside-poof ()
+  "Check response for coq-Check on Nat.add_comm inside proof with printing all."
+  (message
+   "Check response for Check Nat.add_comm inside proof with printing all")
+  (check-response-present
+   #'(lambda() (coq-Check t)) 6 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+
+(ert-deftest response-buffer-visible-coq-check-print-all-poof-end ()
+  "Check response for coq-Check on Nat.add_comm at proof end with printing all."
+  (message
+   "Check response for Check Nat.add_comm at proof end with printing all")
+  (check-response-present
+   #'(lambda() (coq-Check t)) 7 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+
+(ert-deftest response-buffer-visible-coq-check-print-all-outside-poof ()
+  "Check response for coq-Check on Nat.add_comm outside proof with printing all."
+  (message
+   "Check response for Check Nat.add_comm outside proof with printing all")
+  (check-response-present
+   #'(lambda() (coq-Check t)) 3 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+

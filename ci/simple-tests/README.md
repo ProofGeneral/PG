@@ -39,3 +39,8 @@ The Makefile runs all ERT tests in all `coq-test-*.el` and
 these patterns.
 
 To run all tests in a single file `file.el`, do `make file.success`.
+
+To run a single test use 
+```
+emacs -batch -l ../../generic/proof-site.el -l <file.el> --eval '(ert-run-tests-batch-and-exit "<ert-test-name>")'
+```
