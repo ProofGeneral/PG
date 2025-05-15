@@ -953,13 +953,17 @@ Otherwise propose identifier at point if any."
 
 
 (defun coq-ask-do (ask do &optional dontguess postformatcmd wait)
-  "Ask for an ident and print the corresponding term."
+  "Ask for an ident and print the corresponding term.
+Add `'dont-show-when-silent' to supress show commands when running
+silent."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
     (proof-shell-ready-prover)
     (setq cmd (coq-guess-or-ask-for-string ask dontguess))
     (proof-shell-invisible-command
      (format (concat do " %s .") (funcall postform cmd))
-     wait)))
+     wait
+     nil
+     'dont-show-when-silent)))
 
 
 (defun coq-flag-is-on-p (testcmd)
@@ -968,11 +972,14 @@ Otherwise propose identifier at point if any."
   (let ((resp proof-shell-last-response-output))
     (string-match "is on\\>" resp)))
 
-(defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd testcmd)
+(defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd
+                                          testcmd)
   "Play commands SETCMD then CMD and then silently UNSETCMD.
 The last UNSETCMD is performed with tag 'empty-action-list so that it
 does not trigger ‘proof-shell-empty-action’ (which does \"Show\" at
-the time of writing this documentation)."
+the time of writing this documentation). Also add
+`'dont-show-when-silent' everywhere to suppress show commands when
+running silent."
   (let* ((postform (if (eq postformatcmd nil) 'identity postformatcmd))
          (flag-is-on (and testcmd (coq-flag-is-on-p testcmd))))
     ;; We put 'empty-action-list tags on all three commands since we don't want
@@ -980,12 +987,23 @@ the time of writing this documentation)."
     ;; commands.
     (unless flag-is-on (proof-shell-invisible-command
                         (format " %s ." (funcall postform setcmd))
-                        nil nil 'no-response-display 'empty-action-list))
+                        nil
+                        nil
+                        'no-response-display
+                        'empty-action-list
+                        'dont-show-when-silent))
     (proof-shell-invisible-command
-     (format " %s ." (funcall postform cmd)) 'wait nil 'empty-action-list)
+     (format " %s ." (funcall postform cmd))
+     'wait
+     nil
+     'empty-action-list 'dont-show-when-silent)
     (unless flag-is-on (proof-shell-invisible-command
                         (format " %s ." (funcall postform unsetcmd))
-                        'waitforit  nil 'no-response-display 'empty-action-list))))
+                        'waitforit
+                        nil
+                        'no-response-display
+                        'empty-action-list
+                        'dont-show-when-silent))))
 
 (defun coq-ask-do-set-unset (ask do setcmd unsetcmd
                                  &optional dontguess postformatcmd _tescmd)
@@ -3187,7 +3205,10 @@ action item flag `'dont-show-when-silent' is used for the latter.
 
 KEEP-RESPONSE should be set if the last command produced some
 error or response that should be kept and shown to the user. If
-set, the flag `'keep-response' is added to the action item.
+set, the flag `'keep-response' is added to the action item. When the
+show command is processed in `proof-shell-handle-delayed-output', the
+flag causes that the response buffer is not cleared and that in 2-pane
+mode the goals are not explicitely shown, see `pg-goals-display'.
 
 Do nothing if `coq-run-completely-silent' is disabled."
   (when (and coq-run-completely-silent

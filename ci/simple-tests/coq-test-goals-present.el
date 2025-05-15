@@ -570,7 +570,6 @@ window."
   (check-response-present #'coq-Search 6 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-something-proof-end ()
-  :expected-result :failed
   "Check response for coq-Search on (0 <= 2) at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
@@ -585,13 +584,11 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 3 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-empty-inside-proof ()
-  :expected-result :failed
   "Check empty response for coq-Search on 42 inside proof"
   (message "Check empty response for Search 42 is shown inside proof")
   (check-response-present #'coq-Search 6 "42" t))
       
 (ert-deftest response-buffer-visible-coq-search-empty-proof-end ()
-  :expected-result :failed
   "Check empty response for coq-Search on 42 at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
@@ -606,7 +603,6 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 3 "42" t))
       
 (ert-deftest response-buffer-visible-coq-check-print-all-inside-poof ()
-  :expected-result :failed
   "Check response for coq-Check on Nat.add_comm inside proof with printing all."
   (message
    "Check response for Check Nat.add_comm inside proof with printing all")
@@ -614,7 +610,6 @@ in proof mode with no more goals."
    #'(lambda() (coq-Check t)) 6 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-poof-end ()
-  :expected-result :failed
   "Check response for coq-Check on Nat.add_comm at proof end with printing all."
   (message
    "Check response for Check Nat.add_comm at proof end with printing all")
