@@ -38,8 +38,10 @@
 ;;         -> proof-shell-process-urgent-message
 ;;      -> proof-shell-filter-manage-output
 ;;         -> proof-shell-handle-immediate-output
+;;            -> proof-shell-handle-error-or-interrupt
+;;               -> proof-shell-error-or-interrupt-action
 ;;         -> proof-shell-exec-loop
-;;            -> proof-tree-check-proof-finish
+;;            -> proof-tree-urgent-action
 ;;            -> proof-shell-handle-error-or-interrupt
 ;;            -> proof-shell-insert-action-item
 ;;            -> proof-shell-invoke-callback
@@ -62,7 +64,7 @@
 ;; require proof-tree the compiler complains about a recusive
 ;; dependency.
 (declare-function proof-tree-handle-delayed-output "proof-tree"
-		  (old-proof-marker cmd flags span))
+		  (old-proof-marker cmd flags _span))
 ;; without the nil initialization the compiler still warns about this variable
 (defvar proof-tree-external-display)
 
@@ -77,7 +79,7 @@
 ;;
 
 (defvar proof-marker nil
-  "Marker in proof shell buffer pointing to previous command input.")
+  "Marker in proof shell buffer pointing to the end of previous command input.")
 
 (defvar proof-action-list nil
   "The main queue of things to do: spans, commands and actions.
@@ -113,8 +115,18 @@ bother the user.  They may include
   'no-response-display      do not display messages in *response* buffer
   'no-error-display         do not display errors/take error action
   'no-goals-display         do not goals in *goals* buffer
-  'proof-tree-show-subgoal  item inserted by the proof-tree package
+  'keep-response            do not erase the response buffer when goals are shown
+  'proof-tree-show-subgoal  item inserted by the proof-tree package to display
+                            the current or some other goal
+  'proof-tree-last-item     marks the item that follows the last show-goal
+                            request after a proof finished with proof-tree
+                            display, causes switch back to normal queue region
+                            processing
   'priority-action          item added via proof-add-to-priority-queue
+  'empty-action-list        proof-shell-empty-action-list-command should not be
+                            called if this is the last item in the action list
+  'dont-show-when-silent    Used for commands that should not be followed by a
+                            show command when running silent.
 
 Note that 'invisible does not imply any of the others. If flags
 are non-empty, interactive cues will be surpressed. (E.g.,
@@ -173,6 +185,15 @@ background compilation finishes.  Then those items are put into
 
 (defvar proof-shell-last-response-output ""
   "The last displayed response message.")
+
+(defvar proof-shell-old-proof-marker-position nil
+  "Position of end of second last input inside delayed callbacks.
+When callbacks of action items are processed, `proof-marker' has already
+been advanced to the end of the next input that the proof assistant
+processes in parallel with the callback. This variable permits the
+callback to access the end of the input belonging to its action-list
+item and then process the complete output that the proof assistant has
+sent.")
 
 (defvar proof-shell-delayed-output-start nil
   "A record of the start of the previous output in the shell buffer.
@@ -1081,7 +1102,10 @@ being processed."
 	 (unless (eq proof-shell-busy queuemode)
 	   (proof-debug
 	    "proof-append-alist: wrong queuemode detected for busy shell")
-	   (cl-assert (eq proof-shell-busy queuemode)))))
+	   (cl-assert
+            (eq proof-shell-busy queuemode) nil
+            "wrong queuemode in proof-add-to-queue: %s instead expected %s"
+            proof-shell-busy queuemode))))
 
 
   (let ((nothingthere (null proof-action-list)))
@@ -1226,6 +1250,17 @@ contains only invisible elements for Prooftree synchronization."
 	(setq cbitems (cons item
 			    (proof-shell-slurp-comments)))
 
+	;; This is the point where old items have been removed from
+	;; proof-action-list and where the next item has not yet been
+	;; sent to the proof assistant. This is therefore one of the
+	;; few points where it is safe to manipulate
+	;; proof-action-list.
+
+        ;; Call the urgent action of prooftree, if the display is on.
+        ;; This might add or remove stuff to/from `proof-action-list'.
+        (when proof-tree-external-display
+          (proof-tree-urgent-action item))
+
         ;; If proof-action-list is empty after removing the already
         ;; processed actions and the last action was not already
         ;; added by proof-shell-empty-action-list-command (prover
@@ -1242,17 +1277,6 @@ contains only invisible elements for Prooftree synchronization."
                                       extra-cmds)))
             ;; action-list should be empty at this point
             (setq proof-action-list (append extra-items proof-action-list))))
-
-	;; This is the point where old items have been removed from
-	;; proof-action-list and where the next item has not yet been
-	;; sent to the proof assistant. This is therefore one of the
-	;; few points where it is safe to manipulate
-	;; proof-action-list.
-
-        ;; Call the urgent action of prooftree, if the display is on.
-        ;; This might enqueue items in the priority action list.
-        (when proof-tree-external-display
-          (proof-tree-check-proof-finish item))
 
         ;; Add priority actions to the front of proof-action-list.
         ;; Delay adding of priority items until there is no priority
@@ -1713,8 +1737,12 @@ After processing the current output, the last step undertaken
 by the filter is to send the next command from the queue."
   (let ((span  (caar proof-action-list))
 	(cmd   (nth 1 (car proof-action-list)))
-	(flags (nth 3 (car proof-action-list)))
-	(old-proof-marker (marker-position proof-marker)))
+	(flags (nth 3 (car proof-action-list))))
+
+    ;; Save position of end of last input, such that callbacks called
+    ;; inside `proof-shell-exec-loop' and proof-tree delayed output
+    ;; handling can access it.
+    (setq proof-shell-old-proof-marker-position (marker-position proof-marker))
 
     ;; A copy of the last message, verbatim, never modified.
     (setq proof-shell-last-output
@@ -1727,13 +1755,13 @@ by the filter is to send the next command from the queue."
       (setq proof-shell-delayed-output-start start)
       (setq proof-shell-delayed-output-end end)
       (setq proof-shell-delayed-output-flags flags)
-      (if (proof-shell-exec-loop)
-	  (setq proof-shell-last-output-kind
-		;; only display result for last output
-		(proof-shell-handle-delayed-output)))
+      (when (proof-shell-exec-loop)
+	;; only display result for last output
+	(proof-shell-handle-delayed-output))
       ;; send output to the proof tree visualizer
       (if proof-tree-external-display
-	  (proof-tree-handle-delayed-output old-proof-marker cmd flags span)))))
+	  (proof-tree-handle-delayed-output
+           proof-shell-old-proof-marker-position cmd flags span)))))
 
 
 (defsubst proof-shell-display-output-as-response (flags str)
@@ -1826,14 +1854,18 @@ i.e., 'goals or 'response."
 	     (buffer-substring-no-properties rstart gmark)))
         ;; display goals output second so it persists in 2-pane mode
         (unless (memq 'no-goals-display flags)
-	  (pg-goals-display proof-shell-last-goals-output both))
+	  (pg-goals-display proof-shell-last-goals-output
+                            (or both (member 'keep-response flags))
+                            (member 'keep-response flags)))
         ;; indicate a goals output has been given
-        'goals))
+        (setq proof-shell-last-output-kind 'goals)))
 
      (t
       (proof-shell-display-output-as-response flags proof-shell-last-output)
       ;; indicate that (only) a response output has been given
-      'response))
+      (if (equal proof-shell-last-output "")
+          (setq proof-shell-last-output-kind nil)
+        (setq proof-shell-last-output-kind 'response))))
   
     ;; FIXME (CPC 2015-12-31): The documentation of this hook suggests that it
     ;; only gets run after new output has been displayed, but this isn't true at
@@ -2004,7 +2036,8 @@ Ordinary output (and error handling) is disabled, and the result
   (proof-shell-invisible-command cmd 'waitforit
 				 nil
 				 'no-response-display
-				 'no-error-display)
+				 'no-error-display
+                                 'dont-show-when-silent)
   proof-shell-last-output)
 
 ;;;###autoload

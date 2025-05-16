@@ -76,6 +76,25 @@
 ;;  :type 'number
 ;;  :group 'coq)
 
+(defcustom coq-run-completely-silent t
+  "Run Coq completely silent if enabled.
+Please restart Proof General after changing this setting!
+
+If enabled, run Coq completely silent (Set Silent) and only issue
+a show command when necessary to update the goals buffer. This
+behavior is new. If you experience strange effects, please report
+a bug and switch this flag off to return to old behavior. When
+disabled, Coq is dynamically switched to silent for longer lists
+of commands and switched to verbose before the last command. A
+manual Show command (C-c C-p) is necessary if the last command
+fails to update the goals buffer (e.g., if it is a comment or it
+is not executed because some other command before failed, see
+also bug report #568). External proof tree display is only
+supported if this option is t."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq)
+
 (defcustom coq-user-init-cmd nil
   "User defined init commands for Coq.
 These are appended at the end of `coq-shell-init-cmd'."
@@ -122,8 +141,22 @@ Namely, goals that do not fit in the goals window."
      ;; should re-intialize to coq-search-blacklist-string instead of
      ;; keeping the current value (that may come from another file).
      ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
-   '("Set Suggest Proof Using.") coq-user-init-cmd)
-  "Command to initialize the Coq Proof Assistant.")
+   '("Set Suggest Proof Using.")
+   (if coq-run-completely-silent '("Set Silent.") ())
+   coq-user-init-cmd)
+  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
+List of commands sent to the Coq background process just after it
+has been started. This happens inside `proof-shell-config-done',
+when the major mode `coq-shell-mode' is configured in the `*coq*'
+buffer.
+
+Sets silent mode if `coq-run-completely-silent' is set. Note that
+this constant is not updated when `coq-run-completely-silent' is changed.
+
+In normal interaction, Coq is started because the user asserts
+some commands. Therefore the commands here are followed by those
+inserted inside `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'.")
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
@@ -201,7 +234,7 @@ It is mostly useful in three window mode, see also
   :package-version '(ProofGeneral . "4.2"))
 
 (defcustom coq-proof-tree-ignored-commands-regexp
-  "^\\(\\(Show\\)\\|\\(Locate\\)\\)"
+  "^\\(\\(Show\\)\\|\\(Locate\\)\\|\\(Proof\\)\\)"
   "Regexp for `proof-tree-ignored-commands-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
@@ -1206,12 +1239,15 @@ Printing All set."
 ;; command and *not* have the goal redisplayed, the command must be tagged with
 ;; 'empty-action-list.
 (defun coq-empty-action-list-command (cmd)
-  "Return the list of commands to send to Coq after CMD
-if it is the last command of the action list.
-If CMD is tagged with 'empty-action-list then this function won't
-be called and no command will be sent to Coq.
+  "Return the list of commands to send to Coq if CMD is last in the action list.
+Return the list of commands to be sent to Coq when
+`proof-action-list' is empty, CMD was the last command just sent
+to Coq and CMD was not tagged with `'empty-action-list'.
 Note: the last command added if `coq-show-proof-stepwise' is set
-should match the `coq-show-proof-diffs-regexp'."
+should match the `coq-show-proof-diffs-regexp'.
+
+This function is called from `proof-shell-exec-loop' via
+`proof-shell-empty-action-list-command'."
   (cond
    ((or
      ;; If closing a nested proof, Show the enclosing goal.
@@ -1224,28 +1260,31 @@ should match the `coq-show-proof-diffs-regexp'."
       . ,(coq--show-proof-stepwise-cmds)))
    
    ((or
-     ;; If we go back in the buffer and the number of abort is less than
-     ;; the number of nested goals, then Unset Silent and Show the goal
+     ;; If we go back in the buffer and the number of abort is less than the
+     ;; number of nested goals, that is, if we are inside a proof, then Show
+     ;; the goal.
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
-    `("Unset Silent."
-      ,(if (coq--post-v810) (coq-diffs) "Show.")
-      . ,(coq--show-proof-stepwise-cmds)))
+    (append
+     (unless coq-run-completely-silent '("Unset Silent."))
+     (if (coq--post-v810) (list (coq-diffs)) ())
+     (coq--show-proof-stepwise-cmds)))
 
    ((or
-     ;; If we go back in the buffer and not in the above case, then only Unset
-     ;; silent (there is no goal to show). Still, we need to "Set Diffs" again
+     ;; If we go back in the buffer and not in the above case, i.e., outside a
+     ;; proof, then only set the Diffs option.
      (string-match-p "BackTo\\s-" cmd))
-    (if (coq--post-v810)
-        (list "Unset Silent." (coq-diffs) )
-      (list "Unset Silent.")))
+    (append
+     (unless coq-run-completely-silent '("Unset Silent."))
+     (if (coq--post-v810) (list (coq-diffs)) ())))
+     
    ((or
      ;; If starting a proof, Show Proof if need be
      (coq-goal-command-str-p cmd)
      ;; If doing (not closing) a proof, Show Proof if need be
      (and (not (string-match-p coq-save-command-regexp-strict cmd))
           (> (length coq-last-but-one-proofstack) 0)))
-    (coq--show-proof-stepwise-cmds))))
+     (coq--show-proof-stepwise-cmds))))
 
 ;; This does not Set Printing Width, it rather tells pg to do that before each
 ;; command (if necessary)
@@ -1325,7 +1364,9 @@ redisplayed."
     (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
       ;; if no available width, or unchanged, do nothing
       (when (and wdth (not (equal wdth coq-shell-current-line-width)))
-        (proof-shell-invisible-command (format "Set Printing Width %S." (- wdth 1)) t)
+        (proof-shell-invisible-command
+         (format "Set Printing Width %S." (- wdth 1))
+         t)
         (setq coq-shell-current-line-width wdth)
         ;; Show iff show non nil and some proof is under way
         (when (and show (not (null (cl-caddr (coq-last-prompt-info-safe)))))
@@ -1854,7 +1895,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
         (let ((pt2 (point)))
           (re-search-forward "</prompt>\\|^Debug:\\|^Going to execute:\\|^TcDebug" nil t)
           (goto-char (match-beginning 0))
-          (pg-goals-display (buffer-substring pt2 (point)) nil)
+          (pg-goals-display (buffer-substring pt2 (point)) nil nil)
           (beginning-of-line)
           (pg-response-message (buffer-substring (point) (point-max)))
           )))))
@@ -1951,15 +1992,22 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
-  (setq proof-shell-start-silent-cmd "Set Silent."
-        proof-shell-stop-silent-cmd "Unset Silent.")
+  ;; When proof-shell-start-silent-cmd and proof-shell-stop-silent-cmd stay at
+  ;; their default value nil, the generic code won't switch Coq to silent and
+  ;; noisy at, respectively, the beginning and end of longer asserted regions.
+  (unless coq-run-completely-silent
+    (setq proof-shell-start-silent-cmd "Set Silent."
+          proof-shell-stop-silent-cmd "Unset Silent."))
 
-  ;; prooftree config
-  (setq
-   proof-tree-configured (coq--post-v810)
-   proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
-   proof-tree-find-begin-of-unfinished-proof
-     'coq-find-begin-of-unfinished-proof)
+  ;; prooftree config - prooftree is only supported for Coq/Rocq running silent
+  (when coq-run-completely-silent
+    (setq
+     proof-tree-configured (coq--post-v810)
+     proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
+     proof-tree-find-begin-of-unfinished-proof
+       'coq-find-begin-of-unfinished-proof
+     proof-tree-assistant-specific-urgent-action
+       'proof-tree-coq-urgent-action))
 
   ;; proof-omit-proofs config
   (setq
@@ -1984,6 +2032,21 @@ at `proof-assistant-settings-cmds' evaluation time.")
   )
 
 (defun coq-shell-mode-config ()
+  "Initialization of `coq-shell-mode' that runs in the `*coq*' buffer.
+The interaction buffer with Coq, `*coq*', uses a major mode that
+is derived via `proof-shell-mode' from `scomint-mode'. This
+function runs as the body of `coq-shell-mode' when the `*coq*'
+buffer is initialized, which happens when the Coq background
+process is started. This function intitalizes the Coq
+personalization of Proof General in the interaction buffer with
+Coq. At the end, this function calls `proof-shell-config-done',
+which initializes the Coq session, e.g., by sending
+`proof-shell-init-cmd', respectively, `coq-shell-init-cmd' to Coq.
+
+In normal interaction, the proof assistant is started because the
+user assert some commands. Therefore this function runs only
+shortly before `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'."
   (setq
    proof-shell-cd-cmd coq-shell-cd
    proof-shell-filename-escapes '(("\\\\" . "\\\\") ("\""   . "\\\""))
@@ -2271,11 +2334,16 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
 ;; in the middle of a proof and then to undo a few tactics.
 
 (defun coq-proof-tree-evar-command (cmd)
-  "Return the evar printing command for CMD as action list item."
+  "Return the evar printing command for CMD as action list item.
+Adds, among others, `'empty-action-list' to flags to avoid that
+`coq-empty-action-list-command' adds a show command because it
+recognizes a change of a printing option. When the user quits the
+proof tree display inside prooftree, then the evar command likely
+runs as single command."
   (proof-shell-action-list-item
    (concat cmd " Printing Dependent Evars Line.")
    'proof-done-invisible
-   (list 'invisible 'no-response-display)))
+   (list 'invisible 'no-response-display 'empty-action-list)))
 
 (defun coq-proof-tree-enable-evars ()
   "Enable the evar status line."
@@ -2295,6 +2363,35 @@ Function for `proof-tree-display-stop-command'."
   (when (and (coq--post-v86) coq-proof-tree-manage-dependent-evar-line)
     (coq-proof-tree-evar-command "Unset")))
 
+(defun proof-tree-coq-urgent-action (last-item)
+  "Insert show-goal commands when running completely silent.
+Coq specific function for `proof-tree-assistant-specific-urgent-action'.
+When running completely silent, insert a show-goal command for commands
+comming from the user. Be careful to not insert show-goal commands for
+show-goal requests from prooftree or for the items inserted by this
+function. LAST-ITEM is the last proof-action item that has just been
+processed. This function is guaranteed to be called at a place where
+`proof-action-list' can be directly manipulated.
+
+When single stepping through a proof, this function inserts a second
+show command, which is inserted before the one from
+`coq-show-goals-inside-proof'. One would of course be enough, but fixing
+this would be difficult."
+  (let ((flags (nth 3 last-item)))
+    (unless (or (memq 'invisible flags)
+                (memq 'proof-tree-show-subgoal flags))
+      (let ((proof-info (coq-proof-tree-get-proof-info)))
+        ;; Ignore retractions, prooftree only needs fresh sequents.
+        (when (and (>= (car proof-info) proof-tree-last-state)
+                   (cadr proof-info))
+          (push
+           (proof-shell-action-list-item
+	    "Show."
+            (lambda (_span)
+              (proof-tree-display-goal-callback last-item proof-info))
+	    '(invisible no-goals-display no-response-display
+                        proof-tree-show-subgoal))
+           proof-action-list))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -3075,6 +3172,56 @@ Important: Coq gives char positions in bytes instead of chars.
 (add-hook 'proof-shell-handle-error-or-interrupt-hook #'coq-highlight-error-hook t)
 
 
+(defun coq-show-goals-inside-proof (keep-response)
+  "Update goals when action item list has been processed, if running silent.
+If `coq-run-completely-silent' is set, add a Show command as
+priority action, such that it will still be processed if the
+generic machinery inside `proof-shell-filter' believes it has
+processed the last item from the action list. When Coq runs in
+silent mode, we need to update the goals precisely when
+everything else from the action list has been processed.
+
+The Show command is only added inside proofs and only if the last
+processed command was not a show command from this function. The
+action item flag `'dont-show-when-silent' is used for the latter.
+
+KEEP-RESPONSE should be set if the last command produced some
+error or response that should be kept and shown to the user. If
+set, the flag `'keep-response' is added to the action item.
+
+Do nothing if `coq-run-completely-silent' is disabled."
+  (when (and coq-run-completely-silent
+             coq-last-but-one-proofstack
+             (not (member 'dont-show-when-silent
+                          proof-shell-delayed-output-flags)))
+    (let* ((flags-1 (list 'dont-show-when-silent 'invisible 'empty-action-list))
+           (flags (if keep-response (cons 'keep-response flags-1) flags-1)))
+      (proof-add-to-priority-queue
+       (proof-shell-action-list-item "Show." 'proof-done-invisible flags)))))
+
+(defun coq-show-goals-on-error ()
+  "Update goals after error.
+This function is intended for
+`proof-shell-handle-error-or-interrupt-hook' to update the goals
+buffer after an error has been detected. See also
+`coq-show-goals-inside-proof'."
+  (coq-show-goals-inside-proof t))
+
+(defun coq-show-goals-standard-case ()
+  "Update goals after last command when no error was detected.
+This function is intended for
+`proof-shell-handle-delayed-output-hook' to update the goals
+buffer after the last command has been processed and no error has
+been detected. Take care to keep the response buffer visible if
+the last command was a Search, a Check or something similar. See
+also `coq-show-goals-inside-proof'."
+  (coq-show-goals-inside-proof (eq proof-shell-last-output-kind 'response)))
+
+(add-hook 'proof-shell-handle-error-or-interrupt-hook
+          #'coq-show-goals-on-error)
+(add-hook 'proof-shell-handle-delayed-output-hook
+          #'coq-show-goals-standard-case)
+
 ;;
 ;; Scroll response buffer to maximize display of first goal
 ;;
@@ -3162,8 +3309,15 @@ number of hypothesis displayed, without hiding the goal"
                                     (coq-build-subgoals-string nbgoals nbunfocused)))
                         minor-mode-alist)))))))
 
-
-
+(defun coq-clean-goals-outside-proof ()
+  "Clear goals buffer outside proofs.
+This function ensures that the goals buffer is reset after Qed or
+Admitted. This function is for
+`proof-shell-handle-delayed-output-hook'."
+  (when (or (not coq-last-but-one-proofstack)
+            (proof-string-match coq-shell-proof-completed-regexp
+                                proof-shell-last-output))
+    (proof-clean-buffer proof-goals-buffer)))
 
 
 ;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
@@ -3173,10 +3327,7 @@ number of hypothesis displayed, without hiding the goal"
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  #'coq-update-minor-mode-alist)
 (add-hook 'proof-shell-handle-delayed-output-hook
-          (lambda ()
-            (if (proof-string-match coq-shell-proof-completed-regexp
-                                    proof-shell-last-output)
-                (proof-clean-buffer proof-goals-buffer))))
+          #'coq-clean-goals-outside-proof)
 
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  (lambda ()

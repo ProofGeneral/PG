@@ -79,7 +79,7 @@ May enable proof-by-pointing or similar features.
 ;;
 ;; Goals buffer processing
 ;;
-(defun pg-goals-display (string keepresponse)
+(defun pg-goals-display (string keepresponse nodisplay)
   "Display STRING in the `proof-goals-buffer', properly marked up.
 Converts term substructure markup into mouse-highlighted extents.
 
@@ -90,7 +90,13 @@ function tries to do that by calling `pg-response-maybe-erase'.
 If KEEPRESPONSE is non-nil, we assume that a response message
 corresponding to this goals message has already been displayed
 before this goals message (see `proof-shell-handle-delayed-output'),
-so the response buffer should not be cleared."
+so the response buffer should not be cleared.
+
+IF NODISPLAY is non-nil, do not display the goals buffer in some
+window (but the goals buffer is updated as described above and
+any window currently showing it will keep it). In two-pane mode,
+NODISPLAY has the effect that the goals are updated but the
+response buffer is displayed."
   ;; Response buffer may be out of date. It may contain (error)
   ;; messages relating to earlier proof states
 
@@ -114,8 +120,11 @@ so the response buffer should not be cleared."
     (set-buffer-modified-p nil)
     
     ;; Keep point at the start of the buffer.
-    (proof-display-and-keep-buffer
-     proof-goals-buffer (point-min))))
+    ;; (For Coq, somebody sets point to the conclusion in the goal, so the
+    ;; position argument in proof-display-and-keep-buffer has no effect.)
+    (unless nodisplay
+      (proof-display-and-keep-buffer
+       proof-goals-buffer (point-min)))))
 
 ;;
 ;; Actions in the goals buffer
