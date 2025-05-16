@@ -1844,6 +1844,12 @@ i.e., 'goals or 'response."
         (setq proof-shell-last-goals-output
 	      (buffer-substring-no-properties gstart gend))
 
+        ;; The intention of `both' in the following seems to be to
+        ;; detect a message before the goal that should go to the
+        ;; response buffer. I doubt this ever worked when
+        ;; `proof-shell-end-goals-regexp' is set, because in this case
+        ;; `rstart' will be greater than `gmark'.
+        ;; 
         ;; FIXME heuristic: 4 allows for annotation in
         ;; end-goals-regexp [is it needed?]
         (setq both
