@@ -4289,16 +4289,19 @@ to examine @samp{@code{proof-shell-last-output}}.
 @c TEXI DOCSTRING MAGIC: proof-shell-delayed-output-start
 @defvar proof-shell-delayed-output-start 
 A record of the start of the previous output in the shell buffer.@*
-The previous output is held back for processing at end of queue.
+The previous output is held back for processing at end of queue. Reset
+in @samp{@code{proof-shell-filter}}, i.e., when subsequent output arrives.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-shell-delayed-output-end
 @defvar proof-shell-delayed-output-end 
 A record of the start of the previous output in the shell buffer.@*
-The previous output is held back for processing at end of queue.
+The previous output is held back for processing at end of queue. Reset
+in @samp{@code{proof-shell-filter}}, i.e., when subsequent output arrives.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-shell-delayed-output-flags
 @defvar proof-shell-delayed-output-flags 
-A copy of the @samp{@code{proof-action-list}} flags for @samp{proof-shell-delayed-output}.
+A copy of the @samp{@code{proof-action-list}} flags for @samp{proof-shell-delayed-output}.@*
+Reset in @samp{@code{proof-shell-filter}}, i.e., when subsequent output arrives.
 @end defvar
 @vindex proof-action-list
 

@@ -174,7 +174,7 @@ Used in `check-response-present' for all `response-buffer-visible-*' tests.")
     (* marker A *)
   Qed.
 "
-  "Coq source for ert-deftest error-message-visible-at-proof-end")
+  "Coq source for ert-deftest's error-message-visible-at-qed-*")
 
 
 ;;; utility functions
@@ -490,7 +490,6 @@ variable and check that the error message is displayed."
         (kill-buffer buffer)))))
 
 (ert-deftest error-message-visible-at-qed-complete-script ()
-  :expected-result :failed
   "Check that the error message is present at the end of the proof.
 Run a complete script that provokes an error at Qed about a not declared
 section variable and check that the error message is displayed."
