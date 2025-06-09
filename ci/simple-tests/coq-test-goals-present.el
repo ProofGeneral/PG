@@ -9,7 +9,9 @@
 
 ;;; Commentary:
 ;;
-;; Test that Proof General shows goals correctly in various situations.
+;; Test that Proof General shows goals correctly in various
+;; situations. Test also that in other situations the response buffer
+;; contains the right output and is visible in two-pane mode.
 
 ;; gloabal configuration for this file
 ;; all tests in this file shall run in two-pane mode
@@ -160,6 +162,19 @@ Qed.
 "
   "Coq source code for response buffer visibility tests.
 Used in `check-response-present' for all `response-buffer-visible-*' tests.")
+
+(defconst coq-src-not-declared-section-variable
+  "Section A.
+  Variable P : Prop.
+  Hypothesis p_true : P.
+
+  Lemma a : P.
+  Proof using.
+    trivial.
+    (* marker A *)
+  Qed.
+"
+  "Coq source for ert-deftest error-message-visible-at-proof-end")
 
 
 ;;; utility functions
@@ -424,6 +439,70 @@ something and be visible in two-pane mode."
                               "Lemma h"
                               "3 = 3"
                               "Check"))
+
+(defun check-error-at-qed (intermediate-pos)
+  "Check that Qed correctly shows an error.
+Run a script that provokes an error at Qed about a not declared section
+variable and check that the error message is displayed."
+  (let (buffer
+        (proof-omit-proofs-option nil))
+    (unwind-protect
+        (progn
+          (find-file "goals.v")
+          (setq buffer (current-buffer))
+          (insert coq-src-not-declared-section-variable)
+          (goto-char (point-min))
+
+          (if intermediate-pos
+              (progn
+                (message "process up to %s" intermediate-pos)
+                (should (re-search-forward intermediate-pos nil t))
+                (beginning-of-line)
+                (forward-line 1)
+                (proof-goto-point)
+                (wait-for-coq)
+                ;; (record-buffer-content "*coq*")
+                )
+            (message "process complete script in one step"))
+
+          (goto-char (point-max))
+          (message "process complete script to end")
+          (proof-goto-point)
+          (wait-for-coq)
+          ;; (record-buffer-content "*coq*")
+          ;; (record-buffer-content "*response*")
+
+          ;; check that the goals buffer is empty
+          (with-current-buffer proof-goals-buffer
+            (should (equal (point-min) (point-max))))
+
+          (with-current-buffer proof-response-buffer
+            (goto-char (point-min))
+            (should
+             (re-search-forward
+              "The following section variable is used but not declared:"
+              nil t))))
+
+      ;; clean up
+      (when buffer
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil))
+        (kill-buffer buffer)))))
+
+(ert-deftest error-message-visible-at-qed-complete-script ()
+  :expected-result :failed
+  "Check that the error message is present at the end of the proof.
+Run a complete script that provokes an error at Qed about a not declared
+section variable and check that the error message is displayed."
+  (message "Check that the error message is present at Qed for complete script.")
+  (check-error-at-qed nil))
+
+(ert-deftest error-message-visible-at-qed-one-step ()
+  "Check that the error message is present for Qed.
+Run a proof that uses an undeclared section variable. Check that the
+error message is displayed when running Qed alone as single step."
+  (message "Check that the error message is present at Qed for single step.")
+  (check-error-at-qed "marker A"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

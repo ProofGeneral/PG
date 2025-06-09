@@ -13,8 +13,9 @@ coq-test-par-job-needs-compilation-quick
 coq-test-prelude-correct
 : test that the Proof General prelude is correct
 coq-test-goals-present
-: test that Proof General shows goals correctly in various
-  situations
+: Test that Proof General shows goals correctly in various situations.
+  Test also that in other situations the response buffer contains the
+  right output and is visible in two-pane mode.
 coq-test-three-window
 : Test three-pane mode for different frame sizes, including ones that
   are too small for three windows.
