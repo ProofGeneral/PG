@@ -125,14 +125,14 @@ This is the internal value, use
 
 (defun coq-max-second-stage-setter (symbol new-value)
   ":set function for `coq-max-background-second-stage-percentage'.
-SYMBOL should be 'coq-max-background-second-stage-percentage"
+SYMBOL should be \\='coq-max-background-second-stage-percentage"
   (set-default symbol new-value)
   (setq coq--max-background-second-stage-percentage-shadow new-value)
   (coq-set-max-second-stage-jobs))
 
 (defun coq-max-jobs-setter (symbol new-value)
   ":set function for `coq-max-background-compilation-jobs'.
-SYMBOL should be 'coq-max-background-compilation-jobs"
+SYMBOL should be \\='coq-max-background-compilation-jobs"
   (set-default symbol new-value)
   (cond
    ((eq new-value 'all-cpus)
@@ -160,7 +160,7 @@ Ignore any quick setting for Coq versions before 8.5."
 ;;; user options and variables
 
 (defgroup coq-auto-compile ()
-  "Customization for automatic compilation of required files"
+  "Customization for automatic compilation of required files."
   :group 'coq
   :package-version '(ProofGeneral . "4.1"))
 
@@ -203,16 +203,16 @@ This option can be set/reset via menu
 
 (defcustom coq-compile-quick 'quick-and-vio2vo
   "Control quick compilation, vio2vo and vio/vo files auto compilation.
-When using coq < 8.11,
+When using Coq < 8.11,
 this option controls whether ``-quick'' is used for parallel
 background compilation and whether up-date .vo or .vio files are
 used or deleted.  Please use the customization system to change
 this option to ensure that any ``-quick'' setting is ignored for
 Coq before 8.5.
 
-Please customize `coq-compile-vos' for coq >= 8.11.
+Please customize `coq-compile-vos' for Coq >= 8.11.
 
-Note that ``-quick'' can be noticebly slower when your sources do
+Note that ``-quick'' can be noticeably slower when your sources do
 not declare section variables with ``Proof using''.  Note that
 even if you do declare section variables, ``-quick'' is typically
 slower on small files.
@@ -221,7 +221,7 @@ Use `no-quick', if you have not yet switched to
 ``Proof using''.  Use `quick-no-vio2vo', if you want quick
 recompilation without producing .vo files.  Value
 `quick-and-vio2vo' updates missing prerequisites with ``-quick''
-and starts vio2vo conversion on a subset of the availables
+and starts vio2vo conversion on a subset of the available
 cores (see `coq-compile-vio2vo-percentage') when the quick
 recompilation finished (but see below for a .vio .vo
 incompatibility caveat).  Note that all the previously described
@@ -275,14 +275,14 @@ This option can be set via menu
   :set #'coq-compile-quick-setter)
 
 (defun coq-compile-prefer-quick ()
-  "Return t if a .vio file would be prefered."
+  "Return t if a .vio file would be preferred."
   (or
    (eq coq-compile-quick 'quick-no-vio2vo)
    (eq coq-compile-quick 'quick-and-vio2vo)))
 
 (defcustom coq-compile-vos nil
   "Control fast compilation, skipping opaque proofs with ``-vos'' and ``-vok''.
-When using coq >= 8.11, this option controls whether parallel
+When using Coq >= 8.11, this option controls whether parallel
 background compilation is done with ``-vos'', skipping opaque
 proofs, thus being considerably faster and inconsistent.
 
@@ -301,12 +301,12 @@ The second stage ``-vok'' run starts in the background after
 cores used for the first run (configured in
 `coq-max-background-compilation-jobs').
 
-For upgrading, if this option is `nil' (i.e., not configured),
+For upgrading, if this option is nil (i.e., not configured),
 then the value of `coq-compile-quick' is considered and vos
 compilation is used when `coq-compile-quick' equals
 `'quick-no-vio2vo'.
 
-For coq < 8.11 this option is ignored."
+For Coq < 8.11 this option is ignored."
   :type
   '(radio
     (const :tag "unset, derive behavior from `coq-compile-quick'" nil)
@@ -342,7 +342,7 @@ This option can be set/reset via menu
 (defcustom coq-max-background-compilation-jobs 'all-cpus
   "Maximal number of parallel jobs, if parallel compilation is enabled.
 Use the number of available CPU cores if this is set to
-'all-cpus.  This variable is the user setting.  The value that is
+\\='all-cpus.  This variable is the user setting.  The value that is
 really used is `coq--internal-max-jobs'.  Use `coq-max-jobs-setter'
 or the customization system to change this variable.  Otherwise
 your change will have no effect, because `coq--internal-max-jobs'
@@ -372,7 +372,7 @@ is initialized from the now deprecated option
   :set #'coq-max-second-stage-setter)
 
 (defcustom coq-max-background-vio2vo-percentage nil
-  "Deprecated. Please configure `coq-max-background-second-stage-percentage'.
+  "Deprecated.  Please configure `coq-max-background-second-stage-percentage'.
 This is the old configuration option for Coq < 8.11, used before
 the ``-vok'' second stage was implemented."
   :type 'number
@@ -387,7 +387,7 @@ the ``-vok'' second stage was implemented."
   "Delay in seconds before starting the second stage compilation.
 The delay is applied to both ``-vok'' and vio2vo second stages.
 For Coq < 8.11 and vio2vo delay helps to avoid running into a
-library inconsistency with 'quick-and-vio2vo, see Coq issue
+library inconsistency with \\='quick-and-vio2vo, see Coq issue
 #5223.
 
 For backward compatibility, if this option is not customized, it
@@ -398,7 +398,7 @@ is initialized from the now deprecated option
 
 (defcustom coq-compile-vio2vo-delay nil
   ;; XXX replace coq-compile-vio2vo-delay in ../doc/ProofGeneral.texi
-  "Deprecated. Please configure `coq-compile-second-stage-delay'.
+  "Deprecated.  Please configure `coq-compile-second-stage-delay'.
 This is the old configuration option for Coq < 8.11, used before
 the ``-vok'' second stage was implemented."
   :type 'number
@@ -464,23 +464,23 @@ it might be a string, or one of the symbols `physical-dir',
 `module-object', `module-source', `qualified-id' and
 `requiring-file', which are bound to, respectively, the physical
 directory containing the source file, the Coq object file in
-'physical-dir that will be loaded, the Coq source file in
-'physical-dir whose object will be loaded, the qualified module
+\\='physical-dir that will be loaded, the Coq source file in
+\\='physical-dir whose object will be loaded, the qualified module
 identifier that occurs in the \"Require\" command, and the file
 that contains the \"Require\".")
 
 
 (defcustom coq-compile-auto-save 'ask-coq
   "Buffers to save before checking dependencies for compilation.
-There are two orthogonal choices: Firstly one can save all or only the coq
-buffers, where coq buffers means all buffers in coq mode except the current
+There are two orthogonal choices: Firstly one can save all or only the Coq
+buffers, where Coq buffers means all buffers in Coq mode except the current
 buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
-This makes four permitted values: 'ask-coq to confirm saving all
-modified Coq buffers, 'ask-all to confirm saving all modified
-buffers, 'save-coq to save all modified Coq buffers without
-confirmation and 'save-all to save all modified buffers without
+This makes four permitted values: \\='ask-coq to confirm saving all
+modified Coq buffers, \\='ask-all to confirm saving all modified
+buffers, \\='save-coq to save all modified Coq buffers without
+confirmation and \\='save-all to save all modified buffers without
 confirmation.
 
 This option can be set via menu
@@ -529,7 +529,7 @@ List of regular expressions for directories in which ProofGeneral
 should not compile modules.  If a library file name matches one
 of the regular expressions in this list then ProofGeneral does
 neither compile this file nor check its dependencies for
-compilation.  It makes sense to include non-standard coq library
+compilation.  It makes sense to include non-standard Coq library
 directories here if they are not changed and if they are so big
 that dependency checking takes noticeable time.  The regular
 expressions in here are always matched against the .vo file name,
@@ -541,10 +541,10 @@ or not."
 (defcustom coq-compile-coqdep-warnings '("+module-not-found")
   "List of warning options passed to coqdep via `-w` for Coq 8.19 or later.
 List of warning options to be passed to coqdep via command line
-switch `-w`, which is supported from Coq 8.19 onwards. This
+switch `-w`, which is supported from Coq 8.19 onward.  This
 option is ignored for a detected Coq version earlier than 8.19. A
 minus in front of a warning disables the warning, a plus turns
-the warning into an error. This option should contain
+the warning into an error.  This option should contain
 '+module-not-found' to let Proof General reliably detect missing
 modules via an coqdep error."
   :type '(repeat string)
@@ -600,16 +600,16 @@ modules are matched separately with `coq-require-id-regexp'")
   "Return t if time value TIME-1 is earlier or equal to TIME-2.
 A time value is a list of two, three or four integers of the
 form (high low micro pico) as returned by `file-attributes' or
-'current-time'.  First element high contains the upper 16 bits and
+`current-time'.  First element high contains the upper 16 bits and
 the second low the lower 16 bits of the time."
   (not (time-less-p time-2 time-1)))
 
 (defun coq-max-dep-mod-time (dep-mod-times)
   "Return the maximum in DEP-MOD-TIMES.
 Argument DEP-MOD-TIMES is a list where each element is either a
-time value (see `time-less-or-equal') or 'just-compiled.  The
+time value (see `time-less-or-equal') or \\='just-compiled.  The
 function returns the maximum of the elements in DEP-MOD-TIMES,
-where 'just-compiled is considered the greatest time value.  If
+where \\='just-compiled is considered the greatest time value.  If
 DEP-MOD-TIMES is empty it returns nil."
   (let ((max nil))
     (while dep-mod-times
@@ -631,7 +631,7 @@ DEP-MOD-TIMES is empty it returns nil."
   "Check whether ProofGeneral should handle compilation of LIB-OBJ-FILE.
 Return t if ProofGeneral should skip LIB-OBJ-FILE and nil if
 ProofGeneral should handle the file.  For normal users it does,
-for instance, not make sense to let ProofGeneral check if the coq
+for instance, not make sense to let ProofGeneral check if the Coq
 standard library is up-to-date.  This function is always invoked
 on the .vo file name, regardless whether the file would be
 compiled with ``-quick'' or not."
@@ -695,7 +695,7 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 ;;; manage coq--compile-response-buffer
 
 (defconst coq--compile-response-initial-content "-*- mode: compilation; -*-\n\n"
-  "Content of `coq--compile-response-buffer' after initialization")
+  "Content of `coq--compile-response-buffer' after initialization.")
 
 ;; XXX apparently nobody calls this with display equal to nil
 (defun coq-compile-display-error (command error-message display)
@@ -795,10 +795,10 @@ from `coq-compile-save-some-buffers' to
 (defun coq-compile-save-buffer-filter ()
   "Filter predicate for `coq-compile-save-some-buffers'.
 See also `save-some-buffers'.  Return t for buffers with major
-mode 'coq-mode' different from
+mode `coq-mode' different from
 `coq-compile-buffer-with-current-require' and nil for all other
-buffers. We will also return nil if the buffer is ephemeral, or
-not backed by a file. The buffer to test must be current."
+buffers.  We will also return nil if the buffer is ephemeral, or
+not backed by a file.  The buffer to test must be current."
   (and
    (eq major-mode 'coq-mode)
    (not (string-prefix-p " " (buffer-name)))

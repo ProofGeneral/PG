@@ -41,7 +41,7 @@
 ;;
 ;; -- insert tokens via numeric code (extra format string), cf HTML
 ;; -- simplify: unify region and control settings?
-;; -- simplify/optimise property handling
+;; -- simplify/optimize property handling
 ;; -- support multiple modes with mode-local configs at once
 
 ;;; Code:
@@ -123,10 +123,10 @@ the longer text, if any.
 If set, this variable is used instead of `unicode-tokens-token-format'.")
 
 (defvar unicode-tokens-shortcut-alist nil
-  "An alist of keyboard shortcuts to unicode strings.
+  "An alist of keyboard shortcuts to Unicode strings.
 The alist is added to the input mode for tokens.
 The shortcuts are only used for input convenience; no reverse
-mapping back to shortucts is performed.  Behaviour is like abbrev.")
+mapping back to shortcuts is performed.  Behaviour is like abbrev.")
 
 (defvar unicode-tokens-shortcut-replacement-alist nil
   "Overrides `unicode-tokens-shortcut-alist'.
@@ -139,14 +139,14 @@ Used for `unicode-tokens-replace-shortcuts'.")
 
 (defvar unicode-tokens-control-region-format-regexp nil
   "A regexp for control regions, with up to two %s placeholders.
-When fomatted with arguments START END, results in a regexp
+When formatted with arguments START END, results in a regexp
 that matches a control region.  There should be three delimited
 subexpressions: (match-string 1) and (match-string 3) are hidden,
 and (match-string 2) has the display control applied.")
 
 (defvar unicode-tokens-control-char-format-regexp nil
   "A format string for control characters, possibly with a %s placeholder.
-When fomatted with arguments STRING, results in a regexp
+When formatted with arguments STRING, results in a regexp
 that matches a control character sequence.   There should be two
 delimited subexpressions: (match-string 1) is hidden
 and (match-string 2) has the display control applied.")
@@ -161,7 +161,7 @@ and (match-string 2) has the display control applied.")
   "A format string for inserting a control character sequence.")
 
 (defvar unicode-tokens-control-region-format-start nil
-  "A format string for begining a control region sequence.")
+  "A format string for beginning a control region sequence.")
 
 (defvar unicode-tokens-control-region-format-end nil
   "A format string for ending a control region sequence.")
@@ -247,7 +247,7 @@ span the token name, if that is shorter.
 The value is calculated by `unicode-tokens-calculate-token-match'.")
 
 (defvar unicode-tokens-uchar-hash-table nil
-  "Hash table mapping unicode strings to symbolic token names.
+  "Hash table mapping Unicode strings to symbolic token names.
 This is used for an approximate reverse mapping, see `unicode-tokens-paste'.")
 
 (defvar unicode-tokens-uchar-regexp nil
@@ -505,7 +505,7 @@ The check is with `char-displayable-p'."
 Regexp match data number MATCH selects the token name, while match
 number 1 matches the text to be replaced.
 Token name from MATCH is searched for in `unicode-tokens-hash-table'.
-The face property is set to the :family and :slant attriubutes taken from
+The face property is set to the :family and :slant attributes taken from
 `unicode-tokens-symbol-font-face'."
   (let* ((start     (match-beginning 0))
 	 (end       (match-end 0))
@@ -608,7 +608,7 @@ Optional argument FACENIL means set the face property to nil, unless 'face is in
 ;;
 
 (defvar unicode-tokens-show-controls nil
-  "Non-nil supresses hiding of control tokens.")
+  "Non-nil suppresses hiding of control tokens.")
 
 (defun unicode-tokens-show-controls (&optional arg)
   "Toggle variable `unicode-tokens-show-controls'.  With ARG, turn on iff positive."
@@ -888,7 +888,7 @@ Starts from point."
 	       (format unicode-tokens-token-format token)))))
 
 (defun unicode-tokens-replace-unicode ()
-  "Query-replace unicode seq. in the buffer with tokens having same appearance.
+  "Query-replace Unicode seq.  in the buffer with tokens having same appearance.
 Starts from point."
   (interactive)
   (let ((uchar-regexp unicode-tokens-uchar-regexp))
@@ -995,13 +995,13 @@ Starts from point."
     (funcall fn (point-min) (point-max))))
 
 (defun unicode-tokens-encode (beg end)
-  "Return a unicode encoded version of the presentation in region BEG..END."
+  "Return a Unicode encoded version of the presentation in region BEG..END."
   (unicode-tokens-encode-in-temp-buffer
    (buffer-substring-no-properties beg end) 'buffer-substring))
 
 ;;;###autoload
 (defun unicode-tokens-encode-str (str)
-  "Return a unicode encoded version presentation of STR."
+  "Return a Unicode encoded version presentation of STR."
   (unicode-tokens-encode-in-temp-buffer str 'buffer-substring))
 
 (defun unicode-tokens-copy (beg end)
@@ -1040,7 +1040,7 @@ of symbol compositions, and will lose layout information."
   "Font lock patterns for highlighting Unicode tokens.")
 
 (defun unicode-tokens-highlight-unicode ()
-  "Hilight Unicode characters in the buffer.
+  "Highlight Unicode characters in the buffer.
 Toggles highlighting of Unicode characters used in the
 buffer beyond the legacy 8-bit character set codes.  This is
 useful to manually determine if a buffer contains Unicode or
@@ -1066,7 +1066,7 @@ tokenised symbols."
 ;;
 
 (defun unicode-tokens-initialise ()
-  "Perform initialisation for Unicode Tokens minor mode.
+  "Perform initialization for Unicode Tokens minor mode.
 This function calculates `font-lock-keywords' and other configuration
 variables."
   (interactive)
@@ -1102,7 +1102,7 @@ positive, otherwise turn it off.
 
 In Unicode Tokens mode (Utoks appears in the modeline), a
 sequence of characters in the buffer (a token) may be presented
-instead as a Unicode character. The underlying buffer contents is
+instead as a Unicode character.  The underlying buffer contents is
 not changed, only what is presented on the display.  Other tokens
 may be used to control layout, for example, enabling sub/super
 scripts, bold and italic fonts, etc.  Keyboard shortcut sequences
