@@ -19,10 +19,10 @@
 
 ;; Lexer.
 
-;; Due to the verycomplex grammar of Coq, and to the architecture of
-;; smie, we deambiguate all kinds of tokens during lexing.  This is a
+;; Due to the very complex grammar of Coq, and to the architecture of
+;; smie, we disambiguate all kinds of tokens during lexing.  This is a
 ;; complex piece of code but it allows for all smie goodies.
-;; Some examples of deambigations:
+;; Some examples of disambiguation:
 ;; - We distinguish ":=" from ":= inductive" to avoid the circular precedence
 ;;   constraint ":= < | < ; < :=" where ":= < |" is due to Inductive
 ;;   definitions, "| < ;" is due to tactics precedence, "; < :=" is due to
@@ -53,7 +53,7 @@
 
 (defcustom coq-smie-monadic-tokens '((";;" . ";; monadic")("do" . "let monadic")("<-" . "<- monadic")(";" . "in monadic"));
   "This contains specific indentation token pairs, similar to
-`coq-smie-user-tokens' but dedicated to monadic operators. These
+`coq-smie-user-tokens' but dedicated to monadic operators.  These
 tokens have no builtin syntax except the one defined by this
 variable so that users can change the syntax at will.
 
@@ -75,22 +75,22 @@ Th goal of this variable is to give concrete syntax to these
   :group 'coq)
 
 (defcustom coq-smie-user-tokens nil
-  "Alist of (syntax . token) pairs to extend the coq smie parser.
+  "Alist of (syntax . token) pairs to extend the Coq smie parser.
 These are user configurable additional syntax for smie tokens.  It
 allows to define alternative syntax for smie token.  Typical
 example: if you define a infix operator \"xor\" you may want to
 define it as a new syntax for token \"or\" in order to have the
-indentation rules of or applied to xor.  Other exemple: if you
+indentation rules of or applied to xor.  Other example: if you
 want to define a new notation \"ifb\" ... \"then\" \"else\" then
 you need to declare \"ifb\" as a new syntax for \"if\" to make
 indentation work well.
 
-An example of cofiguration is:
+An example of configuration is:
 
   (setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
 
 to have token \"xor\" and \"ifb\" be considered as having
-repectively same priority and associativity as \"or\" and \"if\".
+respectively same priority and associativity as \"or\" and \"if\".
 
 For monadic notations, see `coq-smie-monadic-tokens' instead."
   :type '(alist :key-type string :value-type string)
@@ -567,7 +567,7 @@ The point should be at the beginning of the command name."
 
      ;; Com start is a token for the first word of a command (provided it is a word)
      ((save-excursion
-        (and (smie-default-backward-token) 
+        (and (smie-default-backward-token)
              (coq-is-at-command-real-start)
              (> (length tok) 0)
              (or (string= "Lu" (get-char-code-property (aref tok 0) 'general-category))
@@ -932,7 +932,7 @@ The point should be at the beginning of the command name."
       ;; qualifier.
       (let ((nxtnxt (char-after (+ (point) (length tok)))))
 	(if (eq nxtnxt ?\() ". selector"
-          (if (eq nxtnxt ?}) ;; dot immediately followed by closesubproof. 
+          (if (eq nxtnxt ?}) ;; dot immediately followed by closesubproof.
               "."
 	    (if (or (null nxtnxt) (eq (char-syntax nxtnxt) ?\ ))
 	        ;; command terminator: ". proofstart" et al
@@ -1044,7 +1044,7 @@ If it is set to 2 (default) it is as follows:
 (defcustom coq-match-indent 2
   "Number of space used to indent cases of a match expression.
 If the \"|\" separator is used, indentation will be reduced by 2.
-For example the default value 2 makes indetation like this:
+For example the default value 2 makes indentation like this:
 
 match n with
   O => ...
@@ -1419,7 +1419,7 @@ whereas with a nil value you get
 ;;     z t  (* align with function foo + 2. *)
 ;;     u v.  (* align with arg z on bol of previous line *)
 
-;; More complex: 
+;; More complex:
 ;; Definition foo :=
 ;;   foo x (y
 ;;            a b)
@@ -1479,8 +1479,8 @@ whereas with a nil value you get
                       ;; otherwise things like this:
                       ;; { tac1. }
                       ;; { tac2. }
-                      ;; would be detected as function applications. 
-                      (>= (point) limit) 
+                      ;; would be detected as function applications.
+                      (>= (point) limit)
                       (push (point) positions)
                       (not (smie-indent--bolp))))
           (save-excursion
@@ -1543,7 +1543,7 @@ KIND is the situation and TOKEN is the thing w.r.t which the rule applies."
            ("} subproof" 0) ;;shouldn't be captured by (:elem . args)?
            (". proofstart" coq-indent-proofstart)
            (". modulestart" coq-indent-modulestart)
-           ;; decrement indentation when hanging 
+           ;; decrement indentation when hanging
            ((and (or "tactic infix" "after :=") (guard (or (hang-p) (smie-rule-bolp)))) 0)
            ((and "->" (guard (hang-p))) 0) ((or ":=" "with inductive") 2)
            ((or "." "; equations" "in let" "in monadic" ";; monadic") 0)

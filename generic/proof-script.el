@@ -283,7 +283,7 @@ Otherwise set the locked region to be from (point-min) to END."
 ;; ** Initialise spans for a buffer
 
 (defun proof-init-segmentation ()
-  "Initialise the queue and locked spans in a proof script buffer.
+  "Initialize the queue and locked spans in a proof script buffer.
 Allocate spans if need be.  The spans are detached from the
 buffer, so the regions are made empty by this function.
 Also clear list of script portions."
@@ -715,7 +715,7 @@ This is based on its name and type.
 Each span has a 'type property, one of:
 
     'goalsave     A goal..savegoal region in the buffer, a completed proof.
-    'vanilla      Initialised in proof-semis-to-vanillas, for
+    'vanilla      Initialized in proof-semis-to-vanillas, for
     'comment      A comment outside a command.
     'proverproc   A region closed by the prover, processed outwith PG
     'pbp	  A PBP command inserted automatically into the script."
@@ -1045,7 +1045,7 @@ scripting buffer, according to ACTION.
 Retract buffer BUFFER if set, otherwise use the current buffer.
 Gives a message in the minibuffer and busy-waits for the retraction
 or processing to complete.  If it fails for some reason,
-an error is signalled here."
+an error is signaled here."
   (unless (or (eq action 'process) (eq action 'retract))
     (error "Invalid argument (in proof-protected-process-or-retract)"))
   (let ((buf (or buffer (current-buffer))))
@@ -1376,7 +1376,7 @@ With ARG, turn on scripting iff ARG is positive."
   "The callback function for `assert-until-point'.
 Argument SPAN has just been processed.
 
-This is the callback for all the normal commands. Besides stuff
+This is the callback for all the normal commands.  Besides stuff
 that is not yet documented here, this function
 - extends the locked region
 - creates additional spans (without 'type property) for help,
@@ -1997,9 +1997,9 @@ Assumes that point is at the end of a command."
 
 (defun proof-move-over-whitespace-to-next-line (pos)
   "Return position of next line if one needs only to jump over white space.
-Utility function. In the current buffer, check if beginning of
+Utility function.  In the current buffer, check if beginning of
 next line can be reached from POS by moving over white
-space (spaces, tabs) only. If yes return the beginning of next
+space (spaces, tabs) only.  If yes return the beginning of next
 line, otherwise POS."
   (save-excursion
     (goto-char pos)
@@ -2017,36 +2017,36 @@ and those which can not be omitted (either outside proofs or
 inside proofs that cannot be omitted).
 
 See `proof-omit-proofs-configured' for the description of the
-omit proofs feature. This function uses
+omit proofs feature.  This function uses
 `proof-script-proof-start-regexp',
 `proof-script-proof-end-regexp' and
 `proof-script-definition-end-regexp' to search for complete
-opaque proofs in the action list VANILLAS. Additionally, it uses
+opaque proofs in the action list VANILLAS.  Additionally, it uses
 `proof-script-cmd-prevents-proof-omission' and
 `proof-script-cmd-force-next-proof-kept' to detect proofs that
 cannot be omitted.
 
 The result is a list of chunks, where each chunk is a list that
-contains a type tag as first element. The chunk list is returned
+contains a type tag as first element.  The chunk list is returned
 in reversed order, i.e., the first vanilla span in VANILLAS is
 inside the last chunk.
 
 There are three types of chunks: 'proof for commands inside a
 proof that can be omitted, 'no-proof for commands that are
 outside a proof or cannot be omitted, and 'nested for commands
-that contain a nested proof. Note that there may be several
+that contain a nested proof.  Note that there may be several
 adjacent 'no-proof chunks, for instance for commands outside a
 proof followed by a proof that cannot be omitted.
 
 The 'proof chunk has 4 elements:
 
-('proof proof-cmds-reversed span-start-first-proof-cmd span-end-first-proof-cmd)
+\('proof proof-cmds-reversed span-start-first-proof-cmd span-end-first-proof-cmd)
 
 The second, proof-cmds-reversed, contains the vanilla spans from
 VANILLAS corresponding to commands belonging to a proof,
 excluding the first that matched
 `proof-script-proof-start-regexp' and including the last that
-matched `proof-script-proof-end-regexp' in reversed order. The
+matched `proof-script-proof-end-regexp' in reversed order.  The
 third element span-start-first-proof-cmd is the position of the
 start of the command that matched
 `proof-script-proof-start-regexp' and span-end-first-proof-cmd is
@@ -2054,18 +2054,18 @@ the position of the end of that command.
 
 The 'no-proof chunk has 2 elements.
 
-('no-proof cmds-reversed)
+\('no-proof cmds-reversed)
 
 cmds-reversed contains the vanilla spans of VANILLAS in reversed
 order.
 
 The 'nested-proof chunk has 3 elements.
 
-('nested-proof cmds-reversed line-number-nested-proof)
+\('nested-proof cmds-reversed line-number-nested-proof)
 
 line-number-nested-proof is the line number where the nested
-proof was detected. cmds-reversed is the tail of VANILLAS,
-containing the start of the nested proof, in reversed order. If
+proof was detected.  cmds-reversed is the tail of VANILLAS,
+containing the start of the nested proof, in reversed order.  If
 there is a 'nested-proof chunk in the result, it is the first
 chunk."
   (cl-assert
@@ -2190,17 +2190,17 @@ chunk."
 (defun proof-script-omit-proofs (vanillas)
   "Return a copy of VANILLAS with complete opaque proofs omitted.
 See `proof-omit-proofs-configured' for the description of the
-omit proofs feature. This function uses
+omit proofs feature.  This function uses
 `proof-script-proof-start-regexp',
 `proof-script-proof-end-regexp' and
 `proof-script-definition-end-regexp' to search for complete
-opaque proofs in the action list VANILLAS. Additionally, it uses
+opaque proofs in the action list VANILLAS.  Additionally, it uses
 `proof-script-cmd-prevents-proof-omission' and
 `proof-script-cmd-force-next-proof-kept' to detect proofs that
-cannot be omitted. Complete opaque proofs are replaced by
-`proof-script-proof-admit-command'. The span of the admit command
+cannot be omitted.  Complete opaque proofs are replaced by
+`proof-script-proof-admit-command'.  The span of the admit command
 contains an 'omitted-proof-region property with the region of the
-omitted proof. This is used in `proof-done-advancing-save' to
+omitted proof.  This is used in `proof-done-advancing-save' to
 colour the omitted proof with `proof-omitted-proof-face'.
 
 Display a warning if another proof start is found inside a

@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
 ;; 
@@ -14,11 +16,11 @@
 ;;
 ;; Test two require jobs with different delays such that
 ;; coq-par-retire-top-level-job happens when the other require job is
-;; in each possible state. For specifying the different delays there
-;; are 6 mini projects, one for each test in this file. Each project
+;; in each possible state.  For specifying the different delays there
+;; are 6 mini projects, one for each test in this file.  Each project
 ;; consists of four files, a1.v, b1.v, c1.v and d1.v for the first one
-;; and a6.v, b6.v, c6.v and d6.v for the sixth one. Each project is
-;; one ert test, described further below. In each project or test, the
+;; and a6.v, b6.v, c6.v and d6.v for the sixth one.  Each project is
+;; one ert test, described further below.  In each project or test, the
 ;; top level require commands are asserted and retracted several times
 ;; with changes in different files to test (almost) all possible
 ;; internal state combinations.
@@ -53,12 +55,14 @@
 ;; seconds, such that the dependency link d->c is created when d is in
 ;; state enqueued-coqc.
 
+;;; Code:
+
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
-(configure-delayed-coq)    
+(configure-delayed-coq)
 
 (defconst pre-b-ancestors '("./b" "./d")
     "Ancestors of b without suffixes.")
@@ -213,3 +217,7 @@ XXX Test a setting where the second require job is still in state
 (ert-deftest cct-slow-require-4 () (test-slow-require 4))
 (ert-deftest cct-slow-require-5 () (test-slow-require 5))
 (ert-deftest cct-slow-require-6 () (test-slow-require 6))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

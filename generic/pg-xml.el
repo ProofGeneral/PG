@@ -59,7 +59,7 @@
 
 
 (defun pg-xml-parse-buffer (&optional buffer nomsg start end)
-  "Parse an XML documment in BUFFER (defaulting to current buffer).
+  "Parse an XML document in BUFFER (defaulting to current buffer).
 Display progress message unless NOMSG is non-nil.
 Parsing according to `xml-parse-file' of xml.el.
 Optional START and END bound the parse."

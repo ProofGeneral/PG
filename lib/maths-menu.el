@@ -354,7 +354,7 @@
 (define-minor-mode maths-menu-mode
   "Install a menu for entering mathematical characters.
 Uses window system menus only when they can display multilingual text.
-Otherwise the menu-bar item activates the text-mode menu system.
+Otherwise the menu-bar item activates the `text-mode' menu system.
 This mode is only useful with a font which can display the maths repertoire."
   :lighter nil)
 
