@@ -32,7 +32,7 @@
 (require 'span)
 
 (defvar pg-insert-text-function #'insert
-  "hook for coq diffs highlighting routine")
+  "Hook for Coq diffs highlighting routine.")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -51,7 +51,7 @@
 
 ;;;###autoload
 (define-derived-mode proof-response-mode proof-universal-keys-only-mode
-  "PGResp" "Responses from Proof Assistant"
+  "PGResp" "Responses from Proof Assistant."
   (setq proof-buffer-type 'response)
   (add-hook 'kill-buffer-hook 'pg-save-from-death nil t)
   (easy-menu-add proof-response-mode-menu proof-response-mode-map)
@@ -84,7 +84,7 @@
 
 ;;;###autoload
 (defun proof-response-config-done ()
-  "Complete initialisation of a response-mode derived buffer."
+  "Complete initialization of a response-mode derived buffer."
   (setq font-lock-defaults '(proof-response-font-lock-keywords)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -249,7 +249,7 @@ dragging the separating bars.
   - horizontal: 3 columns mode, one for each buffer (script, goals,
     response).
 
-  By default, the display mode is 'smart which automatically choses
+  By default, the display mode is 'smart which automatically chooses
   between these 3 modes by considering the current Emacs frame width: if
   it is smaller than `split-width-threshold' then vertical mode is
   chosen, otherwise if it is smaller than 1.5 * `split-width-threshold'

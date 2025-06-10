@@ -1,3 +1,5 @@
+;;; coq-test-changes-in-comments.el --- Test changes inside comments
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2025  Hendrik Tews
@@ -13,7 +15,8 @@
 ;; to the next comment the buffer is correctly retracted.
 
 
-;;; Coq source code for tests 
+
+;;; Code:
 
 (defconst coq-src-comment
   "(*
@@ -402,7 +405,7 @@ process and undo. Requires `comment-style' to be set."
           (transient-mark-mode 1)
 
           ;; Insert `coq-src-comment' with many undo boundaries in
-          ;; between. 
+          ;; between.
           (mapc
            (lambda (s)
              (insert s)
@@ -516,3 +519,7 @@ definition aXXa is gone. Then process and undo. Requires
           (set-buffer-modified-p nil)
           (setq comment-style saved-comment-style))
         (kill-buffer buffer)))))
+
+(provide 'coq-test-changes-in-comments)
+
+;;; coq-test-changes-in-comments.el ends here

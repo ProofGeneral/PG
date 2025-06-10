@@ -28,7 +28,7 @@
 (defun coq-insert-tagged-text (str)
   "Insert text into the current buffer applying faces specified by tags.
 
-For example '<diff.added>foo</diff.added>' inserts 'foo' in the buffer
+For example \\='<diff.added>foo</diff.added>\\=' inserts \\='foo\\=' in the buffer
 and applies the appropriate face.
 
 `coq-tag-map' defines the mapping from tag name to face."

@@ -1,3 +1,4 @@
+;;; coq-test-three-window.el --- Test starting Proof General in three-pane mode
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2024  Hendrik Tews
@@ -13,27 +14,29 @@
 ;; (`proof-three-window-enable' is t and
 ;; `proof-three-window-mode-policy' is 'smart) used to fail with
 ;; "window ... too small for splitting" for frame heights less then
-;; three times `window-min-height' (which defaults to 4). The problem
+;; three times `window-min-height' (which defaults to 4).  The problem
 ;; was relevant for Emacs 26.3, 27.1, and 27.2 running in batch mode
 ;; in docker containers, because they set their frame height to 9 (and
-;; their width to 10) in such environments. For this reason most Proof
+;; their width to 10) in such environments.  For this reason most Proof
 ;; General CI tests disable three pane mode in one or the other way.
 ;;
 ;; This file tests that the internal function `proof-select-three-b'
-;; creates 3 windows if the frame height is big enough. Additionally,
+;; creates 3 windows if the frame height is big enough.  Additionally,
 ;; it is tested that one user command
 ;; (`proof-toggle-active-scripting') that used to be affected by the
-;; bug does not signal an error, regardless of the frame size. Both
+;; bug does not signal an error, regardless of the frame size.  Both
 ;; functions are tested with three different frame sizes: too small
 ;; for 3 windows, just big enough for 3 windows, and the default frame
 ;; size.
+
+;;; Code:
 
 (require 'pg-response)
 
 (defun reset-coq ()
   "Reset Coq and Proof General.
 Do `proof-shell-exit' to kill Coq and reset the locked region and
-a lot of other internal state of Proof General. Used at the
+a lot of other internal state of Proof General.  Used at the
 beginning of the test when several tests work on the same Coq
 source file."
   (when (and (boundp 'proof-shell-buffer)
@@ -45,9 +48,9 @@ source file."
 (defun test-proof-select-three-b-for-height (height expect-error)
   "Test `proof-select-three-b' in 3-pane mode for HEIGHT.
 EXPECT-ERROR must be non-nil precisely if the frame height is
-expected to be too small for 3 windows. In this case nothing is
+expected to be too small for 3 windows.  In this case nothing is
 done here, because `proof-select-three-b' must not be called in
-such situations. Otherwise the function should not signal an
+such situations.  Otherwise the function should not signal an
 error and set up 3 windows."
   (if expect-error
       (message "Skip test-proof-select-three-b for height %d" height)
@@ -98,7 +101,7 @@ height is 9 when running in a docker container."
   "Test `proof-toggle-active-scripting' in 3-pane mode for HEIGHT.
 The function should never signal an error and afterwards there
 should be 3 windows if the frame has enough space and 2
-otherwise. Argument NUM-WIN specifies the expected number of
+otherwise.  Argument NUM-WIN specifies the expected number of
 windows for HEIGHT."
   (let ((proof-three-window-enable t)
         (proof-three-window-mode-policy 'smart))
@@ -134,3 +137,7 @@ height is 9 when running in a docker container."
         (< emacs-major-version 28))
        2
      3)))
+
+(provide 'coq-test-three-window)
+
+;;; coq-test-three-window.el ends here

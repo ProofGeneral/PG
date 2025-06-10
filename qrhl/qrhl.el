@@ -21,15 +21,15 @@
 
 
 (defcustom qrhl-input-method "qrhl"
-  "Input method to use when editing qRHL proof scripts"
+  "Input method to use when editing qRHL proof scripts."
   :type '(string) :group 'qrhl)
 
 (defcustom qrhl-prog-name "qrhl"
-  "Name/path of the qrhl-prover command. (Restart Emacs after changing this.)"
+  "Name/path of the qrhl-prover command.  (Restart Emacs after changing this.)."
   :type '(string) :group 'qrhl)
 
 (defcustom qrhl-indentation-level 2
-  "Indentation level in qRHL scripts"
+  "Indentation level in qRHL scripts."
   :group 'qrhl)
 
 (defun qrhl-find-and-forget (span)
@@ -46,7 +46,7 @@
 	focus-cmd))
 
 (defun qrhl-forward-regex (regex)
-  "If text starting at point matches REGEX, move to end of the match and return t. 
+  "If text starting at point matches REGEX, move to end of the match and return t.
 Otherwise return nil"
   (and (looking-at regex) (goto-char (match-end 0)) t))
 
@@ -71,7 +71,7 @@ Returns t if this worked."
        (goto-char (match-end 0))))
 
 (defun qrhl-proof-script-parse-function ()
-  "Finds the command/comment starting at the point"
+  "Finds the command/comment starting at the point."
   (or (and (qrhl-forward-regex "#[^\n]*\n") 'comment)
       (and (qrhl-parse-focus-command) 'cmd)
       (and (qrhl-parse-regular-command) 'cmd)))
@@ -83,7 +83,7 @@ Returns t if this worked."
     ("\\(⇧\\)\\([^⇩⇧[:space:]]\\)" .
      ((2 '(face superscript display (raise 0.3)))
       (1 '(face nil display "")))))
-  "Font-lock configuration for displaying sub/superscripts that are prefixed by ⇩/⇧")
+  "Font-lock configuration for displaying sub/superscripts that are prefixed by ⇩/⇧.")
 
 (defvar qrhl-font-lock-keywords
   ; Regexp explanation: match the keyword/tactic after another command, and also if there are {}+*- in between (focusing commands)
@@ -103,7 +103,7 @@ Returns t if this worked."
 	    ; Regexp explanation: Match comment after
 	    '(("\\(?:^\\|[ \t]\\)[ \t]*\\(#.*\\)" . (1 'font-lock-comment-face)))
 	    ))
-  "Font-lock configuration for qRHL proof scripts")
+  "Font-lock configuration for qRHL proof scripts.")
 
 (defun qrhl-proof-script-preprocess (file start end cmd)
   "Strips comments from the command CMD.
@@ -152,7 +152,7 @@ Called before sending CMD to the prover."
   (find-file (buffer-substring (button-start button) (button-end button))))
 
 (defun qrhl-buttonize-buffer ()
- "Turn all include commands in a qRHL proof script into clickable buttons"
+ "Turn all include commands in a qRHL proof script into clickable buttons."
  (interactive)
  (remove-overlays)
  (save-excursion
@@ -163,8 +163,8 @@ Called before sending CMD to the prover."
 
 
 (defun qrhl-current-line-rel-indent ()
-  "Determins by how much to indent the current line relative to the previous
-   indentation level. (Taking into account only the current line.)"
+  "Determines by how much to indent the current line relative to the previous
+indentation level.  (Taking into account only the current line.)"
   (save-excursion
     (let ((qrhl-qed-pattern "^[ \t]*qed\\b")
 	  (closing-brace-pattern "^[ \t]*}"))
@@ -179,7 +179,7 @@ Called before sending CMD to the prover."
        (t 0)))))
 
 (defun qrhl-indent-line ()
-  "Indent current line as qRHL proof script"
+  "Indent current line as qRHL proof script."
   (interactive)
   
   (let ((not-found t) (previous-indent nil) (previous-offset 0) rel-indent
@@ -237,3 +237,5 @@ Called before sending CMD to the prover."
 	    (qrhl-buttonize-buffer)))
 
 (provide 'qrhl)
+
+;;; qrhl.el ends here

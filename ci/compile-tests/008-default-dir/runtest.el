@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
 ;; 
@@ -29,13 +31,14 @@
 ;;           c
 ;;
 
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
-(configure-delayed-coq)    
+(configure-delayed-coq)
 
 (defconst all-ancestors '("./b.v" "./c.v")
   "All ancestors.")
@@ -151,3 +154,7 @@ situations. See Coq issue 15773."
           (cct-unmodified-change-times vo-times))
       (cct-older-change-times vo-times))
     ))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

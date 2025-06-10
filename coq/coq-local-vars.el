@@ -29,11 +29,11 @@
 PROJECT FILE
 
 The recommended way of setting coqtop options (-I, -R and others)
-is to use a project file.  See the coq documentation (\"generating
+is to use a project file.  See the Coq documentation (\"generating
 makefile\") for details.  The default name of the project file is
 \"_CoqProject\" (can be configured via `coq-project-filename')
 and its content should be a list of options to be given to
-coq_makefile (one option per line).  Here is an example:
+Coq_makefile (one option per line).  Here is an example:
 
 -R foo bar
 -I foo2
@@ -58,12 +58,12 @@ end of the file.
 We provide the following feature to help you:
 
 \\[coq-ask-insert-coq-prog-name] builds a standard file variable
-list for a coq file by asking you some questions.  It is
+list for a Coq file by asking you some questions.  It is
 accessible in the menu
 `Coq' -> `COQ PROG (ARGS)' -> `Set coq prog *persistently*'.
 
 You should be able to use this feature without reading the rest
-of this documentation, which explains how it is used for coq.  For
+of this documentation, which explains how it is used for Coq.  For
 more precision, refer to the Emacs info manual at ((Emacs)File
 Variables).
 
@@ -89,7 +89,7 @@ Other buffers can have their own value of
 `coq-load-path' (probably coming from their own local variable
 lists).
 
-If you use `make' for the compilation of coq modules you can set
+If you use `make' for the compilation of Coq modules you can set
 `coq-compile-command' as local variable.  For instance, if the
 makefile is located in \".../dir\", you could set
 

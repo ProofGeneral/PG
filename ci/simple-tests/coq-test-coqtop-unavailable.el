@@ -1,3 +1,5 @@
+;;; coq-test-coqtop-unavailable.el --- Test for when coqtop is unavailable
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
@@ -13,6 +15,8 @@
 ;; unavailable.
 
 
+;;; Code:
+
 (ert-deftest coqtop-unavailable ()
   "Proof General can open Coq files even when coqtop is unavailable.."
   (setq coq-prog-name "unavailable-program")
@@ -22,3 +26,7 @@
 
   (find-file "simple.v")
   (coq-prog-args))
+
+(provide 'coq-test-coqtop-unavailable)
+
+;;; coq-test-coqtop-unavailable.el ends here

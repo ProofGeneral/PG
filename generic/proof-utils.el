@@ -189,7 +189,7 @@ Restrict to BUFLIST if it's set."
   "Prevent this associated buffer from being killed: merely erase it.
 A hook function for `kill-buffer-hook'.
 This is a fairly crude and not-entirely-robust way to prevent the
-user accidently killing an associated buffer."
+user accidentally killing an associated buffer."
   (if (and (proof-shell-live-buffer) proof-buffer-type)
       (progn
 	(let ((bufname (buffer-name)))

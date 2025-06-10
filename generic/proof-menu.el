@@ -167,7 +167,7 @@ without adjusting window layout."
   (easy-menu-define
    proof-mode-menu
    (list proof-mode-map proof-splash-mode-map)
-   "The main Proof General menu"
+   "The main Proof General menu."
    (proof-main-menu)))
 
 ;; The proof assistant specific menu
@@ -644,7 +644,7 @@ without adjusting window layout."
 ;;
 
 (defun proof-set-document-centred ()
-  "Select options for document-centred working."
+  "Select options for document-centered working."
   (interactive)
   (proof-full-annotation-toggle 1)
   (proof-auto-raise-toggle 0)
@@ -867,7 +867,7 @@ suitable for adding to the proof assistant menu."
 
 
 (defun proof-add-favourite (command inscript menuname &optional key)
-  "Define and add a \"favourite\" proof-assisant function to the menu bar.
+  "Define and add a \"favourite\" proof-assistant function to the menu bar.
 The favourite function will issue COMMAND to the proof assistant.
 COMMAND is inserted into script (not sent immediately) if INSCRIPT non-nil.
 MENUNAME is the name of the function for the menu.
