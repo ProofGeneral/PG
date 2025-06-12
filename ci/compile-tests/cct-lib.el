@@ -1,3 +1,4 @@
+;;; cct-lib.el --- Background compilation test helpers
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2020 - 2021  Hendrik Tews
@@ -16,17 +17,19 @@
 ;; This file contains common definitions for the automated tests of
 ;; parallel background compilation.
 
-;; Require some libraries for the elisp compilation. When compiling,
+;;; Code:
+
+;; Require some libraries for the elisp compilation.  When compiling,
 ;; nothing is loaded, but all Proof General directories are in the
-;; load path. When this file is loaded as part of a test, proof-site
+;; load path.  When this file is loaded as part of a test, proof-site
 ;; has been loaded but only the generic subdir is in the load path.
 ;; This file references variables from coq-compile-common and
 ;; functions from proof-shell, therefore coq-compile-common must be
-;; required for compilation. When running a test, these files would be
-;; loaded anyway when the test visits the first Coq file. For
-;; executing tests, the coq subdir will only be added to the load path
-;; when the first Coq file is visited. Therefore we have to add it
-;; here via proof-ready-for-assistant. For compilation, we have to
+;; required for compilation.  When running a test, these files would be
+;; loaded anyway when the test visits the first Coq file.  For
+;; executing tests, the Coq subdir will only be added to the load path
+;; when the first Coq file is visited.  Therefore we have to add it
+;; here via proof-ready-for-assistant.  For compilation, we have to
 ;; require proof-site, otherwise proof-ready-for-assistant won't be
 ;; defined.
 (require 'proof-site)
@@ -51,7 +54,7 @@ Evaluate Q only if P is non-nil."
   `(or (not ,p) ,q))
 
 (defun cct-list-subset (l1 l2)
-  "Return t if all elements of L1 are in L2 (compared by `equal')"
+  "Return t if all elements of L1 are in L2 (compared by `equal')."
   (let ((res t))
     (while (and l1 res)
       (unless (member (pop l1) l2)
@@ -62,7 +65,7 @@ Evaluate Q only if P is non-nil."
 ;; seq-set-equal-p is not present before emacs 26.
 ;; XXX consider seq-set-equal-p when emacs 25 support is dropped.
 (defun cct-list-set-equal (l1 l2)
-  "Return t if L1 and L2 contain the elements (compared by `equal')"
+  "Return t if L1 and L2 contain the elements (compared by `equal')."
   (and (cct-list-subset l1 l2)
        (cct-list-subset l2 l1)))
 
@@ -82,21 +85,21 @@ Changes the suffix from .v to .vo.  V-SRC-FILE must have a .v suffix."
 
 (defun cct-record-change-time (file)
   "Return cons of FILE and its modification time.
-The modification time is an emacs time value, it's nil if file
+The modification time is an Emacs time value, it's nil if file
 cannot be accessed."
   (cons file (nth 5 (file-attributes file))))
 
 (defun cct-record-change-times (files)
   "Return an assoc list of FILES with their modification times.
-The modification time is an emacs time value, it's nil if file
+The modification time is an Emacs time value, it's nil if file
 cannot be accessed."
   (mapcar 'cct-record-change-time files))
 
 (defun cct-split-change-times (file-change-times files)
   "Split assoc list FILE-CHANGE-TIMES.
 FILE-CHANGE-TIMES must be an assoc list and FILES must be a list
-of some of the keys of FILE-CHANGE-TIMES. This function returns
-two associations lists (as cons cell). The car contains those
+of some of the keys of FILE-CHANGE-TIMES.  This function returns
+two associations lists (as cons cell).  The car contains those
 associations in FILE-CHANGE-TIMES with keys not in FILES, the cdr
 contains those with keys in FILES."
   (let (out in)
@@ -108,7 +111,7 @@ contains those with keys in FILES."
 (defun cct-replace-last-word (line word)
   "Replace last word in line LINE with WORD.
 In current buffer, go to the end of line LINE and one word
-backward. Replace the word there with WORD."
+backward.  Replace the word there with WORD."
   (cct-goto-line line)
   (end-of-line)
   (backward-word)
@@ -119,7 +122,7 @@ backward. Replace the word there with WORD."
   "Assert/retract to start of line LINE and wait until processing completed.
 Runs `cct-before-busy-waiting-hook' and
 `cct-after-busy-waiting-hook' before and after busy waiting for
-the prover. In many tests these hooks are not used."
+the prover.  In many tests these hooks are not used."
   (when cct--debug-tests
     (message "assert/retrect to line %d in buffer %s" line (buffer-name)))
   (cct-goto-line line)
@@ -161,9 +164,9 @@ Runs `cct-before-busy-waiting-hook' and
   "Get THE vanilla span for line LINE, report an error if there is none.
 PG uses a number of overlapping and non-overlapping spans (read
 overlays) in the asserted and queue region of the proof buffer,
-see the comments in generic/proof-script.el. Spans of type
+see the comments in generic/proof-script.el.  Spans of type
 vanilla (stored at 'type in the span property list) are created
-for real commands (not for comments). They hold various
+for real commands (not for comments).  They hold various
 information that is used, among others, for backtracking.
 
 This function returns the vanilla span that covers line LINE and
@@ -184,8 +187,8 @@ and `current-message' does not return anything."
     (buffer-substring (point) (- (point-max) 1))))
 
 (defun cct-check-locked (line locked-state)
-  "Check that line LINE has locked state LOCKED-STATE
-LOCKED-STATE must be 'locked or 'unlocked. This function checks
+  "Check that line LINE has locked state LOCKED-STATE.
+LOCKED-STATE must be 'locked or 'unlocked.  This function checks
 whether line LINE is inside or outside the asserted (locked)
 region of the buffer and signals a test failure if not."
   (let ((locked (eq locked-state 'locked)))
@@ -216,7 +219,7 @@ region of the buffer and signals a test failure if not."
 
 (defun cct-check-files-locked (line lock-state files)
   "Check that all FILES at line number LINE have lock state LOCK-STATE.
-LOCK-STATE must be either 'locked or 'unlocked. FILES must be
+LOCK-STATE must be either 'locked or 'unlocked.  FILES must be
 list of file names."
   (when cct--debug-tests
     (message "check files %s at line %d: %s"
@@ -233,7 +236,7 @@ list of file names."
 The comparison treats ANCESTORS as set but the file names must
 be `equal' as strings.
 
-Ancestors are recoreded in the 'coq-locked-ancestors property of
+Ancestors are recorded in the 'coq-locked-ancestors property of
 the vanilla spans of require commands, see the in-file
 documentation of coq/coq-par-compile.el."
   (let ((locked-ancestors
@@ -256,9 +259,9 @@ recorded before."
 
 (defun cct-unmodified-change-times (file-time-assoc)
   "Check that files in FILE-TIME-ASSOC have not been changed.
-FILE-TIME-ASSOC must be an association list of files and emacs
+FILE-TIME-ASSOC must be an association list of files and Emacs
 times as returned by `cct-record-change-times' or
-`cct-split-change-times'. This function checks that the
+`cct-split-change-times'.  This function checks that the
 modification time of files in FILE-TIME-ASSOC equals the time
 recorded in FILE-TIME-ASSOC, i.e., that the file has not been
 changed since FILE-TIME-ASSOC has been recorded."
@@ -288,9 +291,9 @@ changed since FILE-TIME-ASSOC has been recorded."
 
 (defun cct-older-change-times (file-time-assoc)
   "Check that files exist and have been changed.
-FILE-TIME-ASSOC must be an association list of files and emacs
+FILE-TIME-ASSOC must be an association list of files and Emacs
 times as returned by `cct-record-change-times' or
-`cct-split-change-times'. This function checks that the files in
+`cct-split-change-times'.  This function checks that the files in
 FILE-TIME-ASSOC do exist and that their modification time is more
 recent than in the association list, i.e., they have been updated
 or changed since recording the time in the association."
@@ -323,14 +326,14 @@ or changed since recording the time in the association."
               other-locked-files other-locked-line)
   "Perform various checks for recompilation in MAIN-BUF.
 MAIN-BUF is a buffer, MAIN-LOCKED and MAIN-SUM-line are line
-numbers in that buffer. NEW-SUM is a number as string. VO-TIMES
-is an association list of files and emacs times as returned by
+numbers in that buffer.  NEW-SUM is a number as string.  VO-TIMES
+is an association list of files and Emacs times as returned by
 `cct-record-change-times' or `cct-split-change-times'.
 RECOMPILED-FILES is a list of some of the files in VO-TIMES.
 REQUIRE-ANCESTORS is a list of cons cells, each cons containing a
 line number in MAIN-BUF (which should contain a require) and a
 list of ancestor files that should get registered in the span of
-that require. OTHER-LOCKED-FILES is a list of buffers and
+that require.  OTHER-LOCKED-FILES is a list of buffers and
 OTHER-LOCKED-LINE is a common line number in those files.
 
 This function combines all the following tests in this order:
@@ -385,8 +388,8 @@ This function combines all the following tests in this order:
 (defun configure-delayed-coq ()
   "Configure PG to honor artificial delays in background compilation.
 Configure Proof General to use coqdep-delayed and coqc-delayed
-from directory ../bin. These scripts delay the start of the real
-coqdep and coqc as specified in the Coq soure file, see
+from directory ../bin.  These scripts delay the start of the real
+coqdep and coqc as specified in the Coq source file, see
 ../bin/compile-test-start-delayed.
 
 This function uses relative file names and must be called in a
@@ -399,3 +402,5 @@ test subdirectory parallel to the bin directory."
      '(coq-compiler "coqc-delayed"))))
 
 (provide 'cct-lib)
+
+;;; cct-lib.el ends here

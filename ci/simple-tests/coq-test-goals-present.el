@@ -1,3 +1,5 @@
+;;; coq-test-goals-present.el --- Test that Proof General shows goals correctly in various situations
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
@@ -10,11 +12,13 @@
 ;;; Commentary:
 ;;
 ;; Test that Proof General shows goals correctly in various
-;; situations. Test also that in other situations the response buffer
+;; situations.  Test also that in other situations the response buffer
 ;; contains the right output and is visible in two-pane mode.
 
-;; gloabal configuration for this file
+;; global configuration for this file
 ;; all tests in this file shall run in two-pane mode
+;;; Code:
+
 (setq proof-three-window-enable nil)
 ;; Some Emacs versions run with a frame width of 10 in batch mode
 ;; inside the container. The line breaks make some regular expressions
@@ -28,17 +32,17 @@
 (require 'coq-system)
 
 (defconst coq--post-v87 (not (coq--version< (coq-version t) "8.8"))
-  "t if Coq is more recent than 8.7")
+  "Non-nil if Coq is more recent than 8.7.")
 
 (defconst coq--between-v814-v815 (and (coq--post-v814) (coq--pre-v816))
-  "t if Coq is either 8.14 or 8.15")
+  "Non-nil if Coq is either 8.14 or 8.15.")
 
 (message (concat "goal/response present tests run with Coq version %s; \n\t"
                  "post-v87: %s; between 8.14-8.15 %s")
          (coq-version t) coq--post-v87 coq--between-v814-v815)
 
 
-;;; Coq source code for tests 
+;;; Coq source code for tests
 
 (defconst coq-src-proof
   "
@@ -122,7 +126,7 @@ Definition eq_one (i : nat) := i = 1.
 Lemma foo: (eq_one 1 -> False) -> False.
 (* point A: first process to this point *)
 Proof.
-  intros H. 
+  intros H.
   intro.
   (* point B: Then process the two intros - the second one
      triggers an error. The goals should be updated to show the
@@ -174,7 +178,7 @@ Used in `check-response-present' for all `response-buffer-visible-*' tests.")
     (* marker A *)
   Qed.
 "
-  "Coq source for ert-deftest error-message-visible-at-proof-end")
+  "Coq source for `ert-deftest' error-message-visible-at-proof-end.")
 
 
 ;;; utility functions
@@ -204,7 +208,7 @@ BUF should be a buffer as string or buffer object."
 (defun goals-after-test (coq-src msg check-response-nonempty)
   "Test that Proof General shows goals after processing COQ-SRC.
 Process COQ-SRC in a new buffer in one step and check that the
-goals buffer is not empty afterwards. If CHECK-RESPONSE-NONEMPTY
+goals buffer is not empty afterwards.  If CHECK-RESPONSE-NONEMPTY
 is non-nil, additionally check that the response buffer is
 non-empty, i.e., shows some message, and is visible in some
 window also in two-pane mode."
@@ -260,10 +264,10 @@ the goals buffer is expected to be empty."
 (defun goals-buffer-should-get-reset (coq-src coq-stm msg)
   "Check that the goals buffer is reset.
 Put the string COQ-SRC into a buffer and assert until the first
-occurrence of COQ-STM, which should be a regular expression. At
-this point the goals buffer needs to contain something. Then
+occurrence of COQ-STM, which should be a regular expression.  At
+this point the goals buffer needs to contain something.  Then
 assert to the end of COQ-SRC and check that the goals buffer has
-been reset. MSG is used in messages only. It shouls say after
+been reset.  MSG is used in messages only.  It should say after
 which action the goals buffer should have been reset."
   (message "Check that goals are reset after %s." msg)
   (let (buffer)
@@ -333,11 +337,11 @@ which action the goals buffer should have been reset."
 (defun update-goals-when-response (coq-src first-pos goal-2nd msg)
   "Test goals are up-to-date after an error or a command that produces response.
 Process COQ-SRC up to the line after the first match of regular
-expression FIRST-POS. At this point the goals buffer should not
-be empty. Process now COQ-SRC up to the end. If GOAL-2ND is a
+expression FIRST-POS.  At this point the goals buffer should not
+be empty.  Process now COQ-SRC up to the end.  If GOAL-2ND is a
 regular expression as a string, then check that the goals have
-been updated to contain a match for GOAL-2ND. If GOAL-2ND is no
-string, only check that the goals buffer is non-empty. In any
+been updated to contain a match for GOAL-2ND.  If GOAL-2ND is no
+string, only check that the goals buffer is non-empty.  In any
 case, check that the response buffer is not empty and visible in
 two-pane mode."
   
@@ -398,7 +402,7 @@ two-pane mode."
 
 (ert-deftest goals-up-to-date-after-search-one-step ()
   "Check that goals are still present before showing result of one search cmd.
-This test checks a single Search command inside a proof. After
+This test checks a single Search command inside a proof.  After
 processing that Search command alone, the goals buffer should not
 be empty and the response buffer should contain something and be
 visible in two-pane mode."
@@ -410,7 +414,7 @@ visible in two-pane mode."
 (ert-deftest goals-updated-after-search-many-steps ()
   "Check that goals are updated before showing result of search cmd.
 This test checks several commands inside a proof with a final
-Search command. After processing these commands, the goals buffer
+Search command.  After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
   (update-goals-when-response coq-src-update-goal-after-search
@@ -420,7 +424,7 @@ something and be visible in two-pane mode."
 
 (ert-deftest goals-up-to-date-after-check-one-step ()
   "Check that goals are still present before showing result of one check cmd.
-This test checks a single Check command inside a proof. After
+This test checks a single Check command inside a proof.  After
 processing that Check command alone, the goals buffer should not
 be empty and the response buffer should contain something and be
 visible in two-pane mode."
@@ -432,7 +436,7 @@ visible in two-pane mode."
 (ert-deftest goals-updated-after-check-many-steps ()
   "Check that goals are updated before showing result of check cmd.
 This test checks several commands inside a proof with a final
-Check command. After processing these commands, the goals buffer
+Check command.  After processing these commands, the goals buffer
 should have been updated and the response buffer should contain
 something and be visible in two-pane mode."
   (update-goals-when-response coq-src-update-goal-after-check
@@ -499,7 +503,7 @@ section variable and check that the error message is displayed."
 
 (ert-deftest error-message-visible-at-qed-one-step ()
   "Check that the error message is present for Qed.
-Run a proof that uses an undeclared section variable. Check that the
+Run a proof that uses an undeclared section variable.  Check that the
 error message is displayed when running Qed alone as single step."
   (message "Check that the error message is present at Qed for single step.")
   (check-error-at-qed "marker A"))
@@ -581,22 +585,22 @@ advice for `coq-guess-or-ask-for-string', such that functions such as
 (defun check-response-present (query-fun line input-string response)
   "Check response and visibility of the response buffer.
 This function checks that `coq-Search' and similar functions display
-their response correctly. QUERY-FUN is the command to be tested, for
+their response correctly.  QUERY-FUN is the command to be tested, for
 instance `coq-Search', or some closure, if the command needs arguments,
-such as `coq-Check'. LINE is the line number up to which
+such as `coq-Check'.  LINE is the line number up to which
 `coq-src-report-response-check' is processed before QUERY-FUN is called.
 INPUT-STRING is the user input that QUERY-FUN shall receive from the
-adviced `coq-guess-or-ask-for-string'. RESPONSE is for the content check
-of the response buffer. If RESPONSE is a string, it must be a regular
-expression for which a match is searched in the response buffer. If
+advised `coq-guess-or-ask-for-string'.  RESPONSE is for the content check
+of the response buffer.  If RESPONSE is a string, it must be a regular
+expression for which a match is searched in the response buffer.  If
 RESPONSE is not a string the response buffer must be empty.
 
 Global configuration of this file ensures two-pane mode by setting
-`proof-three-window-enable' to `nil'. It inserts
+`proof-three-window-enable' to nil.  It inserts
 `coq-src-report-response-check' into some buffer, processes this up to
-line LINE, advices `coq-guess-or-ask-for-string' to return INPUT-STRING,
-and calls QUERY-FUN. It then checks, according to RESPONSE, that the
-response buffer is either empty or contains the expected result. The
+line LINE, advises `coq-guess-or-ask-for-string' to return INPUT-STRING,
+and calls QUERY-FUN.  It then checks, according to RESPONSE, that the
+response buffer is either empty or contains the expected result.  The
 function further checks that the response buffer is visible in some
 window."
   (let (buffer)
@@ -644,12 +648,12 @@ window."
         (kill-buffer buffer)))))
 
 (ert-deftest response-buffer-visible-coq-search-something-inside-proof ()
-  "Check response for coq-Search on (0 <= 2) inside proof."
+  "Check response for `coq-Search' on (0 <= 2) inside proof."
   (message "Check response for Search (0 <= 2) is shown inside proof")
   (check-response-present #'coq-Search 6 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-something-proof-end ()
-  "Check response for coq-Search on (0 <= 2) at proof end.
+  "Check response for `coq-Search' on (0 <= 2) at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
   (message "Check response for Search (0 <= 2) is shown at proof end")
@@ -658,17 +662,17 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 7 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-something-outside-proof ()
-  "Check response for coq-Search on (0 <= 2) outside any proof."
+  "Check response for `coq-Search' on (0 <= 2) outside any proof."
   (message "Check response for Search (0 <= 2) is shown outside proofs")
   (check-response-present #'coq-Search 3 "(0 <= 2)" "Nat.le_0_2"))
       
 (ert-deftest response-buffer-visible-coq-search-empty-inside-proof ()
-  "Check empty response for coq-Search on 42 inside proof"
+  "Check empty response for `coq-Search' on 42 inside proof."
   (message "Check empty response for Search 42 is shown inside proof")
   (check-response-present #'coq-Search 6 "42" t))
       
 (ert-deftest response-buffer-visible-coq-search-empty-proof-end ()
-  "Check empty response for coq-Search on 42 at proof end.
+  "Check empty response for `coq-Search' on 42 at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
   (message "Check empty response for Search 42 at proof end")
@@ -677,28 +681,32 @@ in proof mode with no more goals."
   (check-response-present #'coq-Search 7 "42" t))
 
 (ert-deftest response-buffer-visible-coq-search-empty-outside-proof ()
-  "Check empty response for coq-Search on 42 outside proof"
+  "Check empty response for `coq-Search' on 42 outside proof."
   (message "Check empty response for Search 42 is shown outside proof")
   (check-response-present #'coq-Search 3 "42" t))
       
 (ert-deftest response-buffer-visible-coq-check-print-all-inside-poof ()
-  "Check response for coq-Check on Nat.add_comm inside proof with printing all."
+  "Check response for `coq-Check' on Nat.add_comm inside proof with printing all."
   (message
    "Check response for Check Nat.add_comm inside proof with printing all")
   (check-response-present
    #'(lambda() (coq-Check t)) 6 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-poof-end ()
-  "Check response for coq-Check on Nat.add_comm at proof end with printing all."
+  "Check response for `coq-Check' on Nat.add_comm at proof end with printing all."
   (message
    "Check response for Check Nat.add_comm at proof end with printing all")
   (check-response-present
    #'(lambda() (coq-Check t)) 7 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-outside-poof ()
-  "Check response for coq-Check on Nat.add_comm outside proof with printing all."
+  "Check response for `coq-Check' on Nat.add_comm outside proof with printing all."
   (message
    "Check response for Check Nat.add_comm outside proof with printing all")
   (check-response-present
    #'(lambda() (coq-Check t)) 3 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
+
+(provide 'coq-test-goals-present)
+
+;;; coq-test-goals-present.el ends here

@@ -1,3 +1,5 @@
+;;; coq-test-omit-proofs.el --- Test the omit proofs feature
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
@@ -18,13 +20,15 @@
 ;; - the proof has omitted color then
 ;; - stuff before the proof still has normal color
 
+;;; Code:
+
 ;; Load stuff for `coq--version<'
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
 
 (defconst coq--post-v809 (coq--post-v809)
-  "t if Coq is more recent than 8.8")
+  "Non-nil if Coq is more recent than 8.8.")
 
 (message "omit tests run with Coq version %s; post-v809: %s"
          (coq-version t) coq--post-v809)
@@ -56,7 +60,7 @@ If so, return the first non-nil value returned by PRED."
 (defun reset-coq ()
   "Reset Coq and Proof General.
 Do `proof-shell-exit' to kill Coq and reset the locked region and
-a lot of other internal state of Proof General. Used at the
+a lot of other internal state of Proof General.  Used at the
 beginning of the test when several tests work on the same Coq
 source file."
   (when (and (boundp 'proof-shell-buffer)
@@ -74,13 +78,13 @@ therefore have a higher priority."
 
 (defun overlays-at-point-sorted ()
   "Return overlays at point in decreasing order of priority.
-Works only if no overlay has a priority property. Same
+Works only if no overlay has a priority property.  Same
 '(overlays-at (point) t)', except that it also works on Emacs <= 25."
   (sort (overlays-at (point) t) 'overlay-less))
 
 (defun first-overlay-face ()
   "Return the face of the first overlay/span that has a face property.
-Properties configured in that face are in effect. Properties not
+Properties configured in that face are in effect.  Properties not
 configured there may be taken from faces with less priority."
   (list-some
    (lambda (ov) (overlay-get ov 'face))
@@ -90,7 +94,7 @@ configured there may be taken from faces with less priority."
 
 (ert-deftest omit-proofs-omit-and-not-omit ()
   "Test the omit proofs feature.
-In particular, test that with proof-omit-proofs-option configured:
+In particular, test that with `proof-omit-proofs-option' configured:
 - the proof _is_ processed when using a prefix argument
 - in this case the proof has normal locked color
 - without prefix arg, the proof is omitted
@@ -285,3 +289,7 @@ This test only checks the faces in the middle of the proof."
     ;; Proof with bullets and braces should be omitted
     (should (search-backward "automatic test marker 9 " nil t))
     (should (eq (first-overlay-face) 'proof-omitted-proof-face))))
+
+(provide 'coq-test-omit-proofs)
+
+;;; coq-test-omit-proofs.el ends here

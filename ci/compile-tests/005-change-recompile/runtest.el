@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;;
 ;; © Copyright 2020  Hendrik Tews
 ;;
@@ -34,6 +36,8 @@
 ;;
 ;;
 ;;
+
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
@@ -197,3 +201,7 @@ See `cct-generic-check-main-buffer'."
     (check-main-buffer vo-times "71" '("./b.vo" "./d.vo" "./g.vo")
                            other-locked-files)
   ))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

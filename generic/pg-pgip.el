@@ -27,7 +27,7 @@
 ;;
 ;; TODO NEXT:
 ;; -- completion command for completion tables
-;; -- parsescript input/outputs
+;; -- parse script input/outputs
 ;; -- guiconfig, some parts of
 ;; -- support fully native PGIP mode
 ;;
@@ -384,7 +384,7 @@ Return a symbol representing the PGIP command processed, or nil."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar pg-pgip-srcids nil
-  "Association list of srcrds to (buffer file) lists")
+  "Association list of srcrds to (buffer file) lists.")
 
 ;; FIXME: right action?
 (defun pg-pgip-process-newfile (node)
@@ -498,7 +498,7 @@ Also sets local proverid and srcid variables for buffer."
    ((eq (car-safe type) 'choice)
     (pg-pgip-default-for (car-safe (cdr-safe type))))
    (t
-    (pg-pgip-error "pg-pgip-default-for: unrecognized type passed in"))))
+    (pg-pgip-error "pg-pgip-default-for: Unrecognized type passed in"))))
 
 (defun pg-pgip-subst-for (type)
   "Return a substitution string for type TYPE."
@@ -530,7 +530,7 @@ Also sets local proverid and srcid variables for buffer."
    ((eq (car-safe type) 'choice)
     (pg-pgip-interpret-choice (cdr type) value))
    (t
-    (pg-pgip-error "pg-pgip-interpret-value: unkown type %s" type))))
+    (pg-pgip-error "pg-pgip-interpret-value: Unknown type %s" type))))
 
 (defun pg-pgip-interpret-choice (choices value)
   ;; Untagged union types: test for value in each type in turn.
@@ -555,7 +555,7 @@ Also sets local proverid and srcid variables for buffer."
       (setq choices (cdr choices)))
     (or res
 	(pg-pgip-error
-	 "pg-pgip-interpret-choice: mismatching value %s for choices %s"
+	 "pg-pgip-interpret-choice: Mismatching value %s for choices %s"
 	 value choices))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -566,7 +566,7 @@ Also sets local proverid and srcid variables for buffer."
 (defun pg-pgip-string-of-command (pgip &optional refseq refid otherclass)
   "Convert XML node PGIP or string into a command string to send to the prover.
 This wraps the node in a <pgip> packet with appropriate attributes.
-See `pg-pgip-assemble-packet' "
+See `pg-pgip-assemble-packet'"
   (let ((wrappedpgip
 	 (pg-xml-string-of
 	  (list (pg-pgip-assemble-packet (list pgip) refseq refid otherclass)))))
@@ -590,9 +590,9 @@ See `pg-pgip-assemble-packet' "
   "PGIP Identifier for this Emacs Proof General component.")
 
 (defvar pg-pgip-refseq nil
-  "The sequence number of the received message this reply refers to")
+  "The sequence number of the received message this reply refers to.")
 (defvar pg-pgip-refid nil
-  "The identity of the component this message is being sent to")
+  "The identity of the component this message is being sent to.")
 
 (defvar pg-pgip-seq 0 "Sequence number of messages sent out.")
 
@@ -655,7 +655,7 @@ the prover.  For remaining optional args, see doc of
 
 
 (defun pg-pgip-reset ()
-  "Reset state of the PGIP module"
+  "Reset state of the PGIP module."
   (setq pg-pgip-refseq nil
 	pg-pgip-refid  nil
 	pg-pgip-last-seen-id nil

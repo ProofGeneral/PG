@@ -102,7 +102,7 @@ be inserted as the user types commands to the prover."
 (defcustom proof-omit-proofs-option nil
   "Set to t to omit complete opaque proofs for speed reasons.
 When t, complete opaque proofs in the asserted region are not
-sent to the proof assistant (and thus not checked). For files
+sent to the proof assistant (and thus not checked).  For files
 with big proofs this can drastically reduce the processing time
 for the asserted region at the cost of not checking the proofs.
 For partial and non-opaque proofs in the asserted region all
@@ -263,11 +263,11 @@ selected frame will be automatically deleted."
 (defcustom proof-shell-kill-function-also-kills-associated-buffers t
   "*If non-nil, when `proof-shell-kill-function' is called, clean up buffers.
 For example, `proof-shell-kill-function' is called when buffers
-are retracted when switching between proof script files. It may
-make sense to set this to `nil' when
+are retracted when switching between proof script files.  It may
+make sense to set this to nil when
 `proof-multiple-frames-enable' is set to prevent proof general
 from killing frames that you want to be managed by a window
-manager instead of within emacs."
+manager instead of within Emacs."
   :type 'boolean
   :group 'proof-user-options)
 
@@ -381,7 +381,7 @@ One of the symbols: 'locked, 'follow, 'followdown, 'ignore.
 
 If 'locked, point sticks to the end of the locked region.
 If 'follow, point moves just when needed to display the locked region end.
-If 'followdown, point if necessary to stay in writeable region
+If 'followdown, point if necessary to stay in writable region
 If 'ignore, point is never moved after movement commands or on errors.
 
 If you choose 'ignore, you can find the end of the locked using
@@ -471,7 +471,7 @@ regions of the script."
 
 (defcustom proof-minibuffer-messages nil
   "*Non-nil causes Proof General to issue minibuffer messages.
-Minibuffer messages are issed when urgent messages are seen
+Minibuffer messages are issued when urgent messages are seen
 from the prover.  You can disable the display of these if they
 are distracting or too frequent."
   :type 'boolean

@@ -25,7 +25,7 @@
 (require 'proof-utils)
 
 (define-derived-mode proof-universal-keys-only-mode fundamental-mode
-  proof-general-name "Universal keymaps only"
+  proof-general-name "Universal keymaps only."
   ;; Doesn't seem to supress TAB, RET
   (suppress-keymap proof-universal-keys-only-mode-map 'all)
   (proof-define-keys proof-universal-keys-only-mode-map
