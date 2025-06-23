@@ -40,13 +40,19 @@
 ;;         -> proof-shell-handle-immediate-output
 ;;            -> proof-shell-handle-error-or-interrupt
 ;;               -> proof-shell-error-or-interrupt-action
+;;                  -> proof-shell-handle-error-or-interrupt-hook
 ;;         -> proof-shell-exec-loop
 ;;            -> proof-tree-urgent-action
 ;;            -> proof-shell-handle-error-or-interrupt
+;;               -> proof-shell-error-or-interrupt-action
+;;                  -> proof-shell-handle-error-or-interrupt-hook
 ;;            -> proof-shell-insert-action-item
 ;;            -> proof-shell-invoke-callback
 ;;            -> proof-release-lock
 ;;         -> proof-shell-handle-delayed-output
+;;            -> proof-shell-display-output-as-response
+;;            -> pg-goals-display
+;;            -> proof-shell-handle-delayed-output-hook
 ;;         -> proof-tree-handle-delayed-output
 ;;      -> proof-release-lock
 ;;   -> proof-start-prover-with-priority-items-maybe
@@ -197,14 +203,17 @@ sent.")
 
 (defvar proof-shell-delayed-output-start nil
   "A record of the start of the previous output in the shell buffer.
-The previous output is held back for processing at end of queue.")
+The previous output is held back for processing at end of queue. Reset
+in `proof-shell-filter', i.e., when subsequent output arrives.")
 
 (defvar proof-shell-delayed-output-end nil
   "A record of the start of the previous output in the shell buffer.
-The previous output is held back for processing at end of queue.")
+The previous output is held back for processing at end of queue. Reset
+in `proof-shell-filter', i.e., when subsequent output arrives.")
 
 (defvar proof-shell-delayed-output-flags nil
-  "A copy of the `proof-action-list' flags for `proof-shell-delayed-output'.")
+  "A copy of the `proof-action-list' flags for `proof-shell-delayed-output'.
+Reset in `proof-shell-filter', i.e., when subsequent output arrives.")
 
 (defvar proof-shell-interrupt-pending nil
   "A flag indicating an interrupt is pending.
@@ -787,6 +796,12 @@ didn't cause prover output."
      (t ; error
       (if proof-shell-delayed-output-start
 	  (save-excursion
+            ;; I don't understand these lines here.
+            ;; `proof-shell-handle-delayed-output' uses
+            ;; `proof-shell-delayed-output-start' and
+            ;; `proof-shell-delayed-output-end', however, I cannot
+            ;; find any code path arriving here where these variables
+            ;; are properly set.
 	    (proof-shell-handle-delayed-output)))
       (proof-shell-handle-error-output
        (if proof-shell-truncate-before-error proof-shell-error-regexp)
@@ -1606,6 +1621,12 @@ with initializing the process.  After that, `proof-marker'
 is only changed when input is sent in `proof-shell-insert'."
   (save-excursion
     
+    ;; Reset delayed output markers and flags. If we find output they
+    ;; will be set again inside `proof-shell-filter-manage-output'.
+    (setq proof-shell-delayed-output-start nil)
+    (setq proof-shell-delayed-output-end nil)
+    (setq proof-shell-delayed-output-flags nil)
+
     ;; Process urgent messages.
     (and proof-shell-eager-annotation-start
 	 (proof-shell-process-urgent-messages))

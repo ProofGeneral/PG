@@ -3190,7 +3190,7 @@ Important: Coq gives char positions in bytes instead of chars.
 (add-hook 'proof-shell-handle-error-or-interrupt-hook #'coq-highlight-error-hook t)
 
 
-(defun coq-show-goals-inside-proof (keep-response)
+(defun coq-show-goals-inside-proof (keep-response on-error)
   "Update goals when action item list has been processed, if running silent.
 If `coq-run-completely-silent' is set, add a Show command as
 priority action, such that it will still be processed if the
@@ -3203,12 +3203,16 @@ The Show command is only added inside proofs and only if the last
 processed command was not a show command from this function. The
 action item flag `'dont-show-when-silent' is used for the latter.
 
-KEEP-RESPONSE should be set if the last command produced some
-error or response that should be kept and shown to the user. If
-set, the flag `'keep-response' is added to the action item. When the
-show command is processed in `proof-shell-handle-delayed-output', the
-flag causes that the response buffer is not cleared and that in 2-pane
-mode the goals are not explicitely shown, see `pg-goals-display'.
+KEEP-RESPONSE should be set if the last command produced some error or
+response that should be kept and shown to the user. If set, the flag
+`'keep-response' is added to the action item. When the show command is
+processed in `proof-shell-handle-delayed-output', the flag causes that
+the response buffer is not cleared and that in 2-pane mode the goals are
+not explicitely shown, see `pg-goals-display'. ON-ERROR should be set
+when there is some important message in the response buffer. In this
+case `'no-response-display' is added to the flags such that a \"no more
+goals\" reply to the Show command does not overwrite the response
+buffer.
 
 Do nothing if `coq-run-completely-silent' is disabled."
   (when (and coq-run-completely-silent
@@ -3216,7 +3220,8 @@ Do nothing if `coq-run-completely-silent' is disabled."
              (not (member 'dont-show-when-silent
                           proof-shell-delayed-output-flags)))
     (let* ((flags-1 (list 'dont-show-when-silent 'invisible 'empty-action-list))
-           (flags (if keep-response (cons 'keep-response flags-1) flags-1)))
+           (flags-2 (if on-error (cons 'no-response-display flags-1) flags-1))
+           (flags (if keep-response (cons 'keep-response flags-2) flags-2)))
       (proof-add-to-priority-queue
        (proof-shell-action-list-item "Show." 'proof-done-invisible flags)))))
 
@@ -3226,7 +3231,7 @@ This function is intended for
 `proof-shell-handle-error-or-interrupt-hook' to update the goals
 buffer after an error has been detected. See also
 `coq-show-goals-inside-proof'."
-  (coq-show-goals-inside-proof t))
+  (coq-show-goals-inside-proof t t))
 
 (defun coq-show-goals-standard-case ()
   "Update goals after last command when no error was detected.
@@ -3236,7 +3241,7 @@ buffer after the last command has been processed and no error has
 been detected. Take care to keep the response buffer visible if
 the last command was a Search, a Check or something similar. See
 also `coq-show-goals-inside-proof'."
-  (coq-show-goals-inside-proof (eq proof-shell-last-output-kind 'response)))
+  (coq-show-goals-inside-proof (eq proof-shell-last-output-kind 'response) nil))
 
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
           #'coq-show-goals-on-error)
