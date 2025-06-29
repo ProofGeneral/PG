@@ -176,6 +176,35 @@ Used in `check-response-present' for all `response-buffer-visible-*' tests.")
 "
   "Coq source for ert-deftest's error-message-visible-at-qed-*")
 
+(defconst coq-src-queuemode-for-show
+  "Require Export Coq.Lists.List. 
+Export ListNotations.
+
+Inductive tree : Type :=
+  Subtrees : list tree -> tree.
+
+Fixpoint list_create(n : nat)(t : tree) : list tree :=
+  match n with
+  | 0 => []
+  | S n => t :: (list_create n t)
+  end.
+
+Fixpoint build_tree(n m : nat) : tree :=
+  match n with
+  | 0 => Subtrees []
+  | S n => Subtrees (list_create m (build_tree n m))
+  end.
+
+Lemma a :
+  build_tree 6 6 = Subtrees [].
+Proof using.    (* marker A *)
+  cbv.
+  trivial.
+"
+  "Coq source code for extend/retract tests during long running Show.
+When unfolded, the function build_tree generates big terms that take
+quite long to print.")
+
 
 ;;; utility functions
 
@@ -701,3 +730,92 @@ in proof mode with no more goals."
   (check-response-present
    #'(lambda() (coq-Check t)) 3 "Nat.add_comm" "@eq nat (Nat.add n m)"))
 
+
+(defun user-action-during-long-running-show (extend)
+  "Test to extend or retract during long running Show.
+The source code for this test generates a goal that takes about half a
+second to print. When running completely silent, this printing happens
+inside a Show command added as priority item. The user should be able to
+extend the queue region during this long running Show.
+
+This function can test both, extension (if EXTEND is not `nil') and
+retraction (if EXTEND is `nil') during a long running Show. Retraction
+should fail with the error message \"Proof process busy!\". Extending
+the queue should not fail.
+
+Process the source code just before the cbv command that produces the
+big term. Then process cbv alone but do not wait until Coq finished
+processing. Instead, extend or retract after a short delay. Catch
+potential errors with `condition-case' and test their error message.
+
+Need to clear `debug-on-error', which is set in ERT in Emacs 29 and
+earlier. `debug-on-error' changes `cl-assert' such that it's error is
+not handled by `unwind-protect'. Then the next test triggers the wrong
+queuemode assertion again, because Coq was not killed in the handler."
+  (let (buffer)
+    (unwind-protect
+        (progn
+          (find-file "goals.v")
+          (setq buffer (current-buffer))
+          (insert coq-src-queuemode-for-show)
+          (goto-char (point-min))
+          (should (re-search-forward "marker A" nil t))
+          (forward-line 1)
+          (proof-goto-point)
+          (wait-for-coq)
+
+          (message "Start command with long running Show")
+          (forward-line 1)
+          (proof-goto-point)
+          (accept-process-output nil 0.1)
+
+          ;;(record-buffer-content "*coq*")
+          
+          (if (consp proof-action-list)
+              (progn
+                (if extend
+                    (progn
+                      (message
+                       "Show still running, extend queue with next command")
+                      (forward-line 1))
+                  (message "%s%s"
+                           "Show still running, retract queue to line "
+                           "before previous command")
+                  (forward-line -1))
+                
+                (condition-case evar
+                    (let ((debug-on-error nil))
+                      (proof-goto-point))
+
+                  (error
+                   ;; If the just excuted proof-goto-point is an
+                   ;; retract, then eventually the check in
+                   ;; `proof-shell-ready-prover' will raise an error
+                   ;; "Proof process busy!". In other cases an
+                   ;; cl-assert might get hit, which usually also
+                   ;; results in a call to error - just with a
+                   ;; different message.
+                   (message "Error when extending queue: %s" (cdr evar))
+                   ;; Kill Coq here. Otherwise the next test might
+                   ;; still find the long running Show.
+                   (proof-shell-exit t)
+                   (should (equal (cadr evar) "Proof process busy!")))))
+            (message "Unexpected: Show not running any more")
+            (should nil)))
+
+      ;; clean up
+      (when buffer
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil))
+        (kill-buffer buffer)))))
+
+(ert-deftest extend-queue-during-long-running-show ()
+  "Test extending the queue region during a long running Show."
+  :expected-result :failed
+  (message "Extend queue during a long running Show of the previous command")
+  (user-action-during-long-running-show t))
+
+(ert-deftest retract-during-long-running-show ()
+  "Test retracting during a long running Show."
+  (message "Retract during a long running Show of the previous command")
+  (user-action-during-long-running-show nil))
