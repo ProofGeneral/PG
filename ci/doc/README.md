@@ -68,13 +68,12 @@ releases (e.g., 8.19.1 and 8.19.2). For testing Proof General we only
 use the latest bug fix release of certain Coq releases (e.g., we do
 test 8.19.2 but neither 8.19.0 nor 8.19.1). One reason is that testing
 original minor releases (e.g., 8.19.0) or outdated bug fix releases
-(e.g., 8.19.1) does not make much sense. Another reason is that
-`coqorg/coq` does only provide containers for the latest bug fix
-release of each minor release. Admittedly, the effects of only testing
-the latest bug fix release are not always optimal. For instance, in
-2024, Coq 8.11 is tested, because Ubuntu 20.04 Focal Fossa was
-released with Coq 8.11.0, however, Proof General testing uses Coq
-8.11.2.
+(e.g., 8.19.1) does not make much sense. Another reason is the number
+of needed containers and the space they occupy. Admittedly, the
+effects of only testing the latest bug fix release are not always
+optimal. For instance, in 2024, Coq 8.11 is tested, because Ubuntu
+20.04 Focal Fossa was released with Coq 8.11.0, however, Proof General
+testing uses Coq 8.11.2.
 
 
 # Generic strategy {#generic}
@@ -95,14 +94,28 @@ standard support. For Debian these are the releases whose end of live
 date is in the future. For Ubuntu these are the releases whose end of
 standard support date is in the future.
 
-Currently, the first actively supported versions are
+Currently, the relevant Debian and Ubuntu releases that still enjoy
+standard support are
+
+<!-- The content between the CIPG markers is automatically changed by
+ !-- the cipg program. Do not change these markers. -->
+<!-- CIPG change marker: lts-versions -->
+| release          | Coq     | Emacs | EOL     |
+|------------------|---------|-------|---------|
+| ubu 25 plucky    |  8.20.1 | 30.1  | 2026/01 |
+| deb 12 bookworm  |  8.16.1 | 28.2  | 2026/06 |
+| ubu 22 jammy jel |  8.15.0 | 27.1  | 2027/04 |
+| ubu 24 noble num |  8.18.0 | 29.3  | 2029/06 |
+<!-- CIPG change marker end -->
+
+The oldest actively supported versions therefore are
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: coq-emacs-versions -->
-| Coq   | 8.11.2 |
+| Coq   | 8.15.2 |
 |-------+-------|
-| Emacs |  26.3 |
+| Emacs |  27.1 |
 <!-- CIPG change marker end -->
 
 The set of passively supported Coq/Emacs version pairs is work in
@@ -169,28 +182,28 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-number -->
-71
+60
 <!-- CIPG change marker end -->
 containers.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: container-table -->
-|         | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 | 30.1 |
-|---------+------+------+------+------+------+------+------+------+------+------+------|
-|   8.9.1 |   H  |      |      |      |      |      |      |      |      |      |      |
-|  8.10.2 |      |   H  |      |      |      |      |      |      |      |      |      |
-|  8.11.2 |      |  SUP |      |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |  SUP |   H  |      |      |      |      |      |      |      |   N  |
-|  8.13.2 |      |  SUP |      |   H  |      |      |      |      |      |      |   N  |
-|  8.14.1 |      |  SUP |      |   H  |      |      |      |      |      |      |   N  |
-|  8.15.2 |      |  SUP |  SUP |      |   H  |      |      |      |      |      |   N  |
-|  8.16.1 |      |  SUP |  SUP |      |      |  SUP |      |      |      |      |   N  |
-|  8.17.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.18.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.19.2 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|  8.20.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
-|   9.0.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|         | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 | 30.1 |
+|---------+------+------+------+------+------+------+------+------+------+------|
+|  8.10.2 |   H  |      |      |      |      |      |      |      |      |      |
+|  8.11.2 |   H  |      |      |      |      |      |      |      |      |      |
+|  8.12.2 |      |   H  |      |      |      |      |      |      |      |      |
+|  8.13.2 |      |      |   H  |      |      |      |      |      |      |      |
+|  8.14.1 |      |      |   H  |      |      |      |      |      |      |      |
+|  8.15.2 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
+|  8.16.1 |      |  SUP |      |      |  SUP |      |      |      |      |   N  |
+|  8.17.1 |      |  SUP |      |      |  SUP |   H  |      |      |      |   N  |
+|  8.18.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.19.2 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|  8.20.1 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+|   9.0.0 |      |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |   X  |
+| 9.1+rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 In the table above,
@@ -288,28 +301,28 @@ This results in
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-number -->
-38
+37
 <!-- CIPG change marker end -->
 version pairs for the Proof General interaction tests with Coq.
 
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: testrun-table -->
-|         | 26.2 | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 | 30.1 |
-|---------+------+------+------+------+------+------+------+------+------+------+------|
-|   8.9.1 |      |      |      |      |      |      |      |      |      |      |      |
-|  8.10.2 |      |      |      |      |      |      |      |      |      |      |      |
-|  8.11.2 |      |  SUP |      |      |      |      |      |      |      |      |   N  |
-|  8.12.2 |      |      |   H  |      |      |      |      |      |      |      |   N  |
-|  8.13.2 |      |      |      |   H  |      |      |      |      |      |      |   N  |
-|  8.14.1 |      |      |      |   H  |      |      |      |      |      |      |   N  |
-|  8.15.2 |      |      |  SUP |      |   H  |      |      |      |      |      |   N  |
-|  8.16.1 |      |      |      |      |      |  SUP |      |      |      |      |   N  |
-|  8.17.1 |      |      |      |      |      |      |   H  |      |      |      |   N  |
-|  8.18.0 |      |      |      |      |      |      |      |      |  SUP |      |   N  |
-|  8.19.2 |      |   X  |   X  |      |      |   X  |      |      |   X  |   H  |   N  |
-|  8.20.1 |      |   X  |   X  |      |      |   X  |      |      |   X  |      |   N  |
-|   9.0.0 |      |   X  |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |   N  |
+|         | 26.3 | 27.1 | 27.2 | 28.1 | 28.2 | 29.1 | 29.2 | 29.3 | 29.4 | 30.1 |
+|---------+------+------+------+------+------+------+------+------+------+------|
+|  8.10.2 |      |      |      |      |      |      |      |      |      |      |
+|  8.11.2 |      |      |      |      |      |      |      |      |      |      |
+|  8.12.2 |      |      |      |      |      |      |      |      |      |      |
+|  8.13.2 |      |      |      |      |      |      |      |      |      |      |
+|  8.14.1 |      |      |      |      |      |      |      |      |      |      |
+|  8.15.2 |      |  SUP |      |   H  |      |      |      |      |      |   N  |
+|  8.16.1 |      |      |      |      |  SUP |      |      |      |      |   N  |
+|  8.17.1 |      |      |      |      |      |   H  |      |      |      |   N  |
+|  8.18.0 |      |      |      |      |      |      |      |  SUP |      |   N  |
+|  8.19.2 |      |   X  |      |      |   X  |      |      |   X  |   H  |   N  |
+|  8.20.1 |      |   X  |      |      |   X  |      |      |   X  |   H  |  SUP |
+|   9.0.0 |      |   X  |   N  |   N  |   X  |   N  |   N  |   X  |   N  |   X  |
+| 9.1+rc1 |      |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |   RC |
 <!-- CIPG change marker end -->
 
 See [Container build strategy](#contbuild) for an explanation of the
@@ -319,7 +332,7 @@ In summary, all Proof General testing jobs run
 <!-- The content between the CIPG markers is automatically changed by
  !-- the cipg program. Do not change these markers. -->
 <!-- CIPG change marker: total-checks-number -->
-146
+140
 <!-- CIPG change marker end -->
 github checks.
 

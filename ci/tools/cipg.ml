@@ -22,8 +22,10 @@ let readme_file = "ci/doc/README.md"
 (* github yaml workflow file *)
 let test_workflow_file = ".github/workflows/test.yml"
 
-(* directory in which the pg-ci-coq and pg-ci-emacs directories are *)
-let src_dir = ref "~/src/docker"
+(* directory in which the base, coq, and emacs directories containing
+   the Dockerfiles are
+ *)
+let src_dir = ref "~/src/docker/pg-ci"
 
 (* file containing the currently needed ci-coq containers *)
 let currently_used_coq_file = "ci/doc/currently-used-ci-coq-versions"
@@ -851,7 +853,27 @@ let yml_file_change_wrapper file marker print_fn =
  *
  *****************************************************************************)
 
+(* Convert [v] of type version to string. This uses "+" in RC
+   versions, which is an invalid character for docker tags.
+ *)
 let version_to_string v =
+  Printf.sprintf "%d.%d%s%s"
+    v.major v.minor
+    (match v.patch with
+       | None -> ""
+       | Some p -> Printf.sprintf ".%d" p)
+    (match v.release_candidate with
+       | None -> ""
+       | Some rc -> Printf.sprintf "+rc%d" rc)
+
+(* convert version to string, ignoring the index *)
+let indexed_version_to_string (v, _i) = version_to_string v
+
+(* Convert [v] of type version to string. This uses "-" in RC
+   versions, which makes the version wrong but can be used in docker
+   tags.
+ *)
+let version_to_tag_string v =
   Printf.sprintf "%d.%d%s%s"
     v.major v.minor
     (match v.patch with
@@ -861,21 +883,10 @@ let version_to_string v =
        | None -> ""
        | Some rc -> Printf.sprintf "-rc%d" rc)
 
-(* convert version to string, ignoring the index *)
-let indexed_version_to_string (v, _i) = version_to_string v
-
 (* print a float as time YYYY/mm *)
 let date_to_string d =
   let tm = Unix.localtime d in
   Printf.sprintf "%d/%02d" (tm.U.tm_year + 1900) (tm.U.tm_mon + 1)
-
-(* convert LTS record to string *)
-let lts_to_string {lts_coq; lts_emacs; lts_name; eol_date} =
-  Printf.sprintf "%s with Coq %s emacs %s end of live on %s"
-    lts_name
-    (version_to_string lts_coq)
-    (version_to_string lts_emacs)
-    (date_to_string eol_date)
 
 (* String of type matrix_element for matrix printing. *)
 let string_of_matrix_element = function
@@ -899,15 +910,40 @@ let report_historic_pairs kind pairs =
               (version_to_string em_v) (version_to_string coq_v))
           pairs))  
 
+(* Print LTS table of relevant Debian and Ubuntu releases to
+   outchannel oc. Uses for regular output as well as for README.md.
+ *)
+let print_debian_ubuntu_release_table lts_list oc =
+  (* get the longest LTS name for table formatting *)
+  let lts_name_cols =
+    List.fold_left
+      (fun max {lts_name; } ->
+        let len = String.length lts_name in
+        if len > max then len else max)
+      0 lts_list
+  in
+  Printf.fprintf oc "| %-*s | Coq     | Emacs | EOL     |\n"
+    lts_name_cols "release";
+  Printf.fprintf oc  "|-%s-|---------|-------|---------|\n"
+    (String.make lts_name_cols '-');
+  List.iter
+    (fun {lts_coq; lts_emacs; lts_name; eol_date} ->
+      Printf.fprintf oc "| %-*s | %7s | %4s  | %s |\n"
+        lts_name_cols lts_name
+        (version_to_string lts_coq)
+        (version_to_string lts_emacs)
+        (date_to_string eol_date))
+    lts_list
+
 (* Report all interesting and relevant information read from the
  * Coq/Emacs/Debian/Ubuntu relase table.
  *)
 let report_table_results first_emacs first_coq first_full_range_coq
       first_partial_range_coq lts passive_hist active_hist coqs emacses
       latest_two_emacs_major =
-  Printf.printf "LTS versions:\n  %s\n"
-    (String.concat "\n  " (List.map lts_to_string lts));
-  Printf.printf "Coq versions: %s\n"
+  Printf.printf "\nLTS versions which are still alive:\n";
+  print_debian_ubuntu_release_table lts stdout;
+  Printf.printf "\nCoq versions: %s\n"
     (String.concat ", " (List.map indexed_version_to_string coqs));
   Printf.printf "Emacs versions: %s\n"
     (String.concat ", " (List.map indexed_version_to_string emacses));
@@ -1124,13 +1160,13 @@ let get_coq_emacs_containers () =
  *
  *****************************************************************************)
 
-(* Return the coq-emacs docker tag for version coq and emacs. *)
-let coq_tag coq = Printf.sprintf "coq-%s" (version_to_string coq)
+(* Return the coq-emacs docker tag for a coq version. *)
+let coq_tag coq = Printf.sprintf "coq-%s" (version_to_tag_string coq)
 
 (* Return the coq-emacs docker tag for version coq and emacs. *)
 let coq_emacs_tag coq emacs =
   Printf.sprintf "coq-%s-emacs-%s"
-    (version_to_string coq) (version_to_string emacs)
+    (version_to_tag_string coq) (version_to_tag_string emacs)
 
 (* Read currently needed coq-nix containers from doc subdir. *)
 let read_currently_used_coq_containers () =
@@ -1193,6 +1229,7 @@ let check_coq_containers coqs =
   let not_needed = list_diff coq_containers coqs in
   let del_now = list_diff not_needed now_in_use in
   let del_soon = list_intersection not_needed now_in_use in
+  let pushdir_printed = ref `NO in
   Printf.printf "now superfluous coq versions: %s\n"
     (String.concat " " (List.map version_to_string del_now));
   Printf.printf "soon superfluous coq versions: %s\n\n"
@@ -1204,23 +1241,46 @@ let check_coq_containers coqs =
       Printf.printf "# build missing ci-coq containers\n";
       print_endline
         "####################################################################\n";
-      Printf.printf "pushd %s/pg-ci-coq\n" !src_dir;
       List.iter
         (fun coqv ->
+          if !pushdir_printed = `NO ||
+             (!pushdir_printed = `RC && coqv.release_candidate = None) ||
+             (!pushdir_printed = `REGULAR && coqv.release_candidate <> None)
+          then
+            begin
+              if !pushdir_printed <> `NO
+              then
+                print_endline "popd";
+              if coqv.release_candidate = None
+              then
+                begin
+                  Printf.printf "pushd %s/coq\n" !src_dir;
+                  pushdir_printed := `REGULAR;
+                end
+              else
+                begin
+                  Printf.printf "pushd %s/coq-rc\n" !src_dir;
+                  pushdir_printed := `RC;
+                end;
+            end;
           Printf.printf
             ("docker image build -t proofgeneral/ci-coq:%s \\\n"
+             (* XXX this should depend on the coq version *)
+             ^^ "\t--build-arg PGCI_BASE_TAG=debian-13-ocaml-5.3.0 \\\n"
              ^^ "\t--build-arg COQ_NAME=%s \\\n"
              ^^ "\t--build-arg COQ_VERSION=%s .\n")
             (coq_tag coqv)
             (if compare_versions coqv coq_9_version < 0
              then "coq"
-             else "rocq-prover")
+             else "rocq-core")
             (version_to_string coqv);
           Printf.printf "docker image push proofgeneral/ci-coq:%s\n\n"
             (coq_tag coqv);
         )
         missing;
-      print_endline "popd";
+      if !pushdir_printed <> `NO
+      then
+        print_endline "popd\n";
     end;
   del_now
   
@@ -1230,6 +1290,7 @@ let check_coq_containers coqs =
  *)
 let print_coq_emacs_build_command (coq, emacses) =
   let coq_version = version_to_string coq in
+  let coq_version_tag = version_to_tag_string coq in
   print_endline
     "##############################################";
   Printf.printf "# built Coq %s containers\n\n" coq_version;
@@ -1242,7 +1303,7 @@ let print_coq_emacs_build_command (coq, emacses) =
          ^^ "\t--build-arg COQ_VERSION=%s \\\n"
          ^^ "\t--build-arg EMACS_VERSION=%s .\n")
         coq_emacs_tag
-        coq_version
+        coq_version_tag
         emacs_version;
       Printf.printf
         "docker image push proofgeneral/coq-emacs:%s\n\n" coq_emacs_tag;
@@ -1288,7 +1349,7 @@ let check_coq_emacs_containers coqs emacses conts =
       print_endline "# build coq-emacs containers";
       print_endline
         "####################################################################\n";
-      Printf.printf "pushd %s/pg-ci-emacs\n\n" !src_dir;
+      Printf.printf "pushd %s/emacs\n\n" !src_dir;
       List.iter print_coq_emacs_build_command (pairs_to_keyed_list missing);
       print_endline "popd"
     end;
@@ -1425,18 +1486,19 @@ let delete_coq_containers token coqs =
 (* Output Coq/Emacs versions on channel oc for
  * .github/workflows/test.yml for those jobs that need Coq and Emacs.
  * ci_pairs is the matrix for CI and coqs and emacses are the indexed
- * version lists of Coq and Emacs.
+ * version lists of Coq and Emacs. Note that we need to output the
+ * docker tags, which substitude - for +.
  *)
 let output_ci_coq_emacs_versions coqs emacses ci_pairs oc =
   let last_coq_index = snd (list_last coqs) in
   let last_emacs_index = snd (list_last emacses) in
   for coq_i = 0 to last_coq_index do
-    let coq_version = version_to_string (get_index_version coq_i coqs) in
+    let coq_version = version_to_tag_string (get_index_version coq_i coqs) in
     for emacs_i = 0 to last_emacs_index do
       if ci_pairs.(coq_i).(emacs_i) <> Unused
       then
         let emacs_version =
-          version_to_string (get_index_version emacs_i emacses) in
+          version_to_tag_string (get_index_version emacs_i emacses) in
         Printf.fprintf oc "          - coq-%s-emacs-%s\n"
           coq_version emacs_version;
     done
@@ -1633,11 +1695,13 @@ let main() =
     end;  
   if !do_pg_ci_update then
     begin
-      (* In README.md: update Coq/Emacs oldest activley supported
-       * version, the number of containers, the container table, the
-       * number of tested version pairs, and the tested version pair
-       * table.
+      (* In README.md: update the LTS table, the Coq/Emacs oldest
+       * activley supported version, the number of containers, the
+       * container table, the number of tested version pairs, and the
+       * tested version pair table.
        *)
+      md_file_change_wrapper readme_file "lts-versions"
+        (print_debian_ubuntu_release_table lts);
       md_file_change_wrapper readme_file "coq-emacs-versions"
         (print_actively_supported_coq_emacs_table
            first_active_coq first_active_emacs);
