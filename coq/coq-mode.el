@@ -43,7 +43,7 @@
       default))
 
 (defun coq-autodetect-progname ()
-  (coq-detect-prog-gen "coqtop" "rocq"))
+  (coq-detect-prog-gen "rocq" "coqtop"))
 
 (defcustom coq-prog-name (coq-autodetect-progname)
   "Name of program to run as Coq.
