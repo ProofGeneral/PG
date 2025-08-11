@@ -19,6 +19,6 @@
 
 
 (* This is line 21 *)
-Require Coq.Bool.Bool.
+Require Init.Datatypes.
 Definition a : nat := 0.
 (* This is line 24 *)

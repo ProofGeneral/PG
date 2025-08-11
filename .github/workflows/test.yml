@@ -30,7 +30,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: build-emacs-versions
-          - 26.3
           - 27.1
           - 27.2
           - 28.1
@@ -109,14 +108,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: test-coq-emacs-versions
-          - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-30.1
-          - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-30.1
-          - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-30.1
-          - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-30.1
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
           - coq-8.15.2-emacs-30.1
@@ -126,18 +117,16 @@ jobs:
           - coq-8.17.1-emacs-30.1
           - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-30.1
-          - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.19.2-emacs-30.1
-          - coq-8.20.1-emacs-26.3
           - coq-8.20.1-emacs-27.1
           - coq-8.20.1-emacs-28.2
           - coq-8.20.1-emacs-29.3
+          - coq-8.20.1-emacs-29.4
           - coq-8.20.1-emacs-30.1
-          - coq-9.0.0-emacs-26.3
           - coq-9.0.0-emacs-27.1
           - coq-9.0.0-emacs-27.2
           - coq-9.0.0-emacs-28.1
@@ -147,6 +136,15 @@ jobs:
           - coq-9.0.0-emacs-29.3
           - coq-9.0.0-emacs-29.4
           - coq-9.0.0-emacs-30.1
+          - coq-9.1-rc1-emacs-27.1
+          - coq-9.1-rc1-emacs-27.2
+          - coq-9.1-rc1-emacs-28.1
+          - coq-9.1-rc1-emacs-28.2
+          - coq-9.1-rc1-emacs-29.1
+          - coq-9.1-rc1-emacs-29.2
+          - coq-9.1-rc1-emacs-29.3
+          - coq-9.1-rc1-emacs-29.4
+          - coq-9.1-rc1-emacs-30.1
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -188,14 +186,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: compile-coq-emacs-versions
-          - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-30.1
-          - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-30.1
-          - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-30.1
-          - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-30.1
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
           - coq-8.15.2-emacs-30.1
@@ -205,18 +195,16 @@ jobs:
           - coq-8.17.1-emacs-30.1
           - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-30.1
-          - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.19.2-emacs-30.1
-          - coq-8.20.1-emacs-26.3
           - coq-8.20.1-emacs-27.1
           - coq-8.20.1-emacs-28.2
           - coq-8.20.1-emacs-29.3
+          - coq-8.20.1-emacs-29.4
           - coq-8.20.1-emacs-30.1
-          - coq-9.0.0-emacs-26.3
           - coq-9.0.0-emacs-27.1
           - coq-9.0.0-emacs-27.2
           - coq-9.0.0-emacs-28.1
@@ -226,6 +214,15 @@ jobs:
           - coq-9.0.0-emacs-29.3
           - coq-9.0.0-emacs-29.4
           - coq-9.0.0-emacs-30.1
+          - coq-9.1-rc1-emacs-27.1
+          - coq-9.1-rc1-emacs-27.2
+          - coq-9.1-rc1-emacs-28.1
+          - coq-9.1-rc1-emacs-28.2
+          - coq-9.1-rc1-emacs-29.1
+          - coq-9.1-rc1-emacs-29.2
+          - coq-9.1-rc1-emacs-29.3
+          - coq-9.1-rc1-emacs-29.4
+          - coq-9.1-rc1-emacs-30.1
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -263,14 +260,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: simple-coq-emacs-versions
-          - coq-8.11.2-emacs-26.3
-          - coq-8.11.2-emacs-30.1
-          - coq-8.12.2-emacs-27.1
-          - coq-8.12.2-emacs-30.1
-          - coq-8.13.2-emacs-27.2
-          - coq-8.13.2-emacs-30.1
-          - coq-8.14.1-emacs-27.2
-          - coq-8.14.1-emacs-30.1
           - coq-8.15.2-emacs-27.1
           - coq-8.15.2-emacs-28.1
           - coq-8.15.2-emacs-30.1
@@ -280,18 +269,16 @@ jobs:
           - coq-8.17.1-emacs-30.1
           - coq-8.18.0-emacs-29.3
           - coq-8.18.0-emacs-30.1
-          - coq-8.19.2-emacs-26.3
           - coq-8.19.2-emacs-27.1
           - coq-8.19.2-emacs-28.2
           - coq-8.19.2-emacs-29.3
           - coq-8.19.2-emacs-29.4
           - coq-8.19.2-emacs-30.1
-          - coq-8.20.1-emacs-26.3
           - coq-8.20.1-emacs-27.1
           - coq-8.20.1-emacs-28.2
           - coq-8.20.1-emacs-29.3
+          - coq-8.20.1-emacs-29.4
           - coq-8.20.1-emacs-30.1
-          - coq-9.0.0-emacs-26.3
           - coq-9.0.0-emacs-27.1
           - coq-9.0.0-emacs-27.2
           - coq-9.0.0-emacs-28.1
@@ -301,6 +288,15 @@ jobs:
           - coq-9.0.0-emacs-29.3
           - coq-9.0.0-emacs-29.4
           - coq-9.0.0-emacs-30.1
+          - coq-9.1-rc1-emacs-27.1
+          - coq-9.1-rc1-emacs-27.2
+          - coq-9.1-rc1-emacs-28.1
+          - coq-9.1-rc1-emacs-28.2
+          - coq-9.1-rc1-emacs-29.1
+          - coq-9.1-rc1-emacs-29.2
+          - coq-9.1-rc1-emacs-29.3
+          - coq-9.1-rc1-emacs-29.4
+          - coq-9.1-rc1-emacs-30.1
           # CIPG change marker end
       # don't cancel all in-progress jobs if one matrix job fails:
       fail-fast: false
@@ -342,7 +338,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: indent-emacs-versions
-          - 26.3
           - 27.1
           - 27.2
           - 28.1
@@ -380,7 +375,6 @@ jobs:
           # The content between the CIPG markers is automatically
           # changed by the cipg program. Do not change these markers.
           # CIPG change marker: qrhl-emacs-versions
-          - 26.3
           - 27.1
           - 27.2
           - 28.1

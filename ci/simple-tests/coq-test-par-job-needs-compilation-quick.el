@@ -798,7 +798,7 @@ relative ages.")
 
 This function creates the files in DIR, sets up a job with the
 necessary fields, calls `coq--par-job-needs-compilation-tests' and
-test the result and side effects wth `assert'."
+test the result and side effects with `assert'."
   (let ((id (format "%s: %s %s%s" counter (car variant) file-descr
 		    (if dep-just-compiled " just" "")))
 	(job (make-symbol "coq-compile-job-symbol"))
@@ -842,12 +842,12 @@ test the result and side effects wth `assert'."
 	      (mapcar (lambda (sym) (test-coq-par-sym-to-file dir sym))
 		      same-descr))
 	;; (message "try %s files %s" same-descr file-list)
-	(setq same-counter 5)
+	(setq same-counter 8)
 	(setq same-not-ok t)
 	(while same-not-ok
 	  (setq same-counter (1- same-counter))
 	  (cl-assert (> same-counter 0)
-		  nil "create files with same time stamp filed")
+		  nil "create files with same time stamp failed")
 	  (dolist (file file-list)
 	    (with-temp-file file t))
 	  ;; check now that all the files in file-list have the same time stamp

@@ -27,15 +27,16 @@
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
 
-(defconst coq--post-v87 (not (coq--version< (coq-version t) "8.8"))
-  "t if Coq is more recent than 8.7")
-
 (defconst coq--between-v814-v815 (and (coq--post-v814) (coq--pre-v816))
   "t if Coq is either 8.14 or 8.15")
 
+(defconst coq--post-8-20 (not (coq--version< (coq-version t) "9.0alpha"))
+  "t if Coq is 9.0 or higher")
+
+
 (message (concat "goal/response present tests run with Coq version %s; \n\t"
-                 "post-v87: %s; between 8.14-8.15 %s")
-         (coq-version t) coq--post-v87 coq--between-v814-v815)
+                 "between 8.14-8.15 %s; post-8.20 %s")
+         (coq-version t) coq--between-v814-v815 coq--post-8-20)
 
 
 ;;; Coq source code for tests 
@@ -152,12 +153,12 @@ Proof using.
   "Coq source code for checking that goals are up-to-date after Check.")
 
 (defconst coq-src-report-response-check
-  "Require Import Arith.
+  "Definition x := 1.
 
-Lemma a : forall(a b : nat), a + b = b + a.
+Lemma y : forall(a b : nat), S (a + b) = a + S b.
 Proof using.
   intros a b.
-  apply Nat.add_comm.
+  apply plus_n_Sm.
 Qed.
 "
   "Coq source code for response buffer visibility tests.
@@ -176,34 +177,45 @@ Used in `check-response-present' for all `response-buffer-visible-*' tests.")
 "
   "Coq source for ert-deftest's error-message-visible-at-qed-*")
 
-(defconst coq-src-queuemode-for-show
-  "Require Export Coq.Lists.List. 
-Export ListNotations.
+(defconst coq-src-queuemode-for-show-require
+  (if coq--post-8-20
+      "Require Export Lists.ListDef.\n"
+    "Require Export Coq.Lists.List.\n")
+  "Require command to use lists.
+Starting in 9.0 the standard library containing Coq.Lists.List is in a
+separate opam package, which might not be installed in the testing
+container. There use only stuff from the prelude, which is contained in
+packate rocq-core.")
+
+(defconst coq-src-queuemode-for-show-remainder
+  "Open Scope list_scope.
 
 Inductive tree : Type :=
   Subtrees : list tree -> tree.
 
 Fixpoint list_create(n : nat)(t : tree) : list tree :=
   match n with
-  | 0 => []
+  | 0 => nil
   | S n => t :: (list_create n t)
   end.
 
 Fixpoint build_tree(n m : nat) : tree :=
   match n with
-  | 0 => Subtrees []
+  | 0 => Subtrees nil
   | S n => Subtrees (list_create m (build_tree n m))
   end.
 
 Lemma a :
-  build_tree 6 6 = Subtrees [].
+  build_tree 6 6 = Subtrees nil.
 Proof using.    (* marker A *)
   cbv.
   trivial.
 "
-  "Coq source code for extend/retract tests during long running Show.
-When unfolded, the function build_tree generates big terms that take
-quite long to print.")
+  "Main Coq source code for extend/retract tests during long running Show.
+Main parte of Coq source code for extend/retract tests during long
+running Show without the first Require command, which is in
+`coq-src-queuemode-for-show-require'. When unfolded, the function
+build_tree generates big terms that take quite long to print.")
 
 
 ;;; utility functions
@@ -627,7 +639,7 @@ and calls QUERY-FUN. It then checks, according to RESPONSE, that the
 response buffer is either empty or contains the expected result. The
 function further checks that the response buffer is visible in some
 window."
-  (let (buffer)
+  (let (buffer pos)
     (unwind-protect
         (progn
           (find-file "goals.v")
@@ -635,8 +647,18 @@ window."
           (insert coq-src-report-response-check)
           (goto-char (point-min))
           (forward-line (1- line))
+          (setq pos (point))
           (proof-goto-point)
           (wait-for-coq)
+          (message
+           "locked span: %s, locked until %s, point should be at %s, now at %s"
+           proof-locked-span
+           (and proof-locked-span (span-end proof-locked-span))
+           pos (point))
+          (should (eq pos (point)))
+          (should (and proof-locked-span
+                       (span-end proof-locked-span)
+                       (eq (1+ (span-end proof-locked-span)) (point))))
 
           ;; (record-buffer-content "*coq*")
           ;; (record-buffer-content "*goals*")
@@ -672,23 +694,23 @@ window."
         (kill-buffer buffer)))))
 
 (ert-deftest response-buffer-visible-coq-search-something-inside-proof ()
-  "Check response for coq-Search on (0 <= 2) inside proof."
-  (message "Check response for Search (0 <= 2) is shown inside proof")
-  (check-response-present #'coq-Search 6 "(0 <= 2)" "Nat.le_0_2"))
+  "Check response for coq-Search on (S (_ + _)) inside proof."
+  (message "Check response for Search (S (_ + _)) is shown inside proof")
+  (check-response-present #'coq-Search 6 "(S (_ + _))" "^plus_Sn_m: forall"))
       
 (ert-deftest response-buffer-visible-coq-search-something-proof-end ()
-  "Check response for coq-Search on (0 <= 2) at proof end.
+  "Check response for coq-Search on (S (_ + _)) at proof end.
 Skipped for 8.14 and 8.15, there Coq reacts with an error when searching
 in proof mode with no more goals."
-  (message "Check response for Search (0 <= 2) is shown at proof end")
+  (message "Check response for Search (S (_ + _)) is shown at proof end")
   ;; XXX change to skip-when when Emacs 29 is phased out
   (skip-unless (not coq--between-v814-v815))
-  (check-response-present #'coq-Search 7 "(0 <= 2)" "Nat.le_0_2"))
+  (check-response-present #'coq-Search 7 "(S (_ + _))" "^plus_Sn_m: forall"))
       
 (ert-deftest response-buffer-visible-coq-search-something-outside-proof ()
-  "Check response for coq-Search on (0 <= 2) outside any proof."
-  (message "Check response for Search (0 <= 2) is shown outside proofs")
-  (check-response-present #'coq-Search 3 "(0 <= 2)" "Nat.le_0_2"))
+  "Check response for coq-Search on (S (_ + _)) outside any proof."
+  (message "Check response for Search (S (_ + _)) is shown outside proofs")
+  (check-response-present #'coq-Search 2 "(S (_ + _))" "^plus_Sn_m: forall"))
       
 (ert-deftest response-buffer-visible-coq-search-empty-inside-proof ()
   "Check empty response for coq-Search on 42 inside proof"
@@ -707,28 +729,28 @@ in proof mode with no more goals."
 (ert-deftest response-buffer-visible-coq-search-empty-outside-proof ()
   "Check empty response for coq-Search on 42 outside proof"
   (message "Check empty response for Search 42 is shown outside proof")
-  (check-response-present #'coq-Search 3 "42" t))
+  (check-response-present #'coq-Search 2 "42" t))
       
 (ert-deftest response-buffer-visible-coq-check-print-all-inside-poof ()
-  "Check response for coq-Check on Nat.add_comm inside proof with printing all."
+  "Check response for coq-Check on plus_n_Sm inside proof with printing all."
   (message
-   "Check response for Check Nat.add_comm inside proof with printing all")
+   "Check response for Check plus_n_Sm proof with printing all")
   (check-response-present
-   #'(lambda() (coq-Check t)) 6 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+   #'(lambda() (coq-Check t)) 6 "plus_n_Sm" "@eq nat (S (Nat.add"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-poof-end ()
-  "Check response for coq-Check on Nat.add_comm at proof end with printing all."
+  "Check response for coq-Check on plus_n_Sm at proof end with printing all."
   (message
-   "Check response for Check Nat.add_comm at proof end with printing all")
+   "Check response for Check plus_n_Sm at proof end with printing all")
   (check-response-present
-   #'(lambda() (coq-Check t)) 7 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+   #'(lambda() (coq-Check t)) 7 "plus_n_Sm" "@eq nat (S (Nat.add"))
 
 (ert-deftest response-buffer-visible-coq-check-print-all-outside-poof ()
-  "Check response for coq-Check on Nat.add_comm outside proof with printing all."
+  "Check response for coq-Check on plus_n_Sm outside proof with printing all."
   (message
-   "Check response for Check Nat.add_comm outside proof with printing all")
+   "Check response for Check plus_n_Sm outside proof with printing all")
   (check-response-present
-   #'(lambda() (coq-Check t)) 3 "Nat.add_comm" "@eq nat (Nat.add n m)"))
+   #'(lambda() (coq-Check t)) 2 "plus_n_Sm" "@eq nat (S (Nat.add"))
 
 
 (defun user-action-during-long-running-show (extend)
@@ -752,24 +774,36 @@ Need to clear `debug-on-error', which is set in ERT in Emacs 29 and
 earlier. `debug-on-error' changes `cl-assert' such that it's error is
 not handled by `unwind-protect'. Then the next test triggers the wrong
 queuemode assertion again, because Coq was not killed in the handler."
-  (let (buffer)
+  (let (buffer pos)
     (unwind-protect
         (progn
           (find-file "goals.v")
           (setq buffer (current-buffer))
-          (insert coq-src-queuemode-for-show)
+          (insert coq-src-queuemode-for-show-require)
+          (insert coq-src-queuemode-for-show-remainder)
           (goto-char (point-min))
+          ;; (record-buffer-content (current-buffer))
           (should (re-search-forward "marker A" nil t))
           (forward-line 1)
+          (setq pos (point))
           (proof-goto-point)
           (wait-for-coq)
+          (message
+           "locked span: %s, locked until %s, point should be at %s, now at %s"
+           proof-locked-span
+           (and proof-locked-span (span-end proof-locked-span))
+           pos (point))
+          (should (eq pos (point)))
+          (should (and proof-locked-span
+                       (span-end proof-locked-span)
+                       (eq (1+ (span-end proof-locked-span)) (point))))
 
           (message "Start command with long running Show")
           (forward-line 1)
           (proof-goto-point)
           (accept-process-output nil 0.1)
 
-          ;;(record-buffer-content "*coq*")
+          ;; (record-buffer-content "*coq*")
           
           (if (consp proof-action-list)
               (progn
