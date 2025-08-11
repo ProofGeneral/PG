@@ -242,7 +242,9 @@ It is mostly useful in three window mode, see also
 (defcustom coq-navigation-command-regexp
   (concat "^\\(\\(Focus\\)\\|\\(Unfocus\\)\\|"
           "\\(all\\s-*:\\s-*\\(cycle\\|swap\\|revgoals\\)\\)\\|"
-          "\\(\\+\\)\\|\\(-\\)\\|\\(\\*\\)\\|\\({\\)\\|\\(}\\)\\)")
+          "\\(\\+\\)\\|\\(-\\)\\|\\(\\*\\)\\|"
+          "\\(\\([0-9]+\\s-*:\\s-*\\)?{\\)\\|"
+          "\\(}\\)\\)")
   "Regexp for `proof-tree-navigation-command-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
