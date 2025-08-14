@@ -177,7 +177,7 @@ If called interactively, NUM is given by the prefix argument."
 Calls `proof-assert-until-point' or `proof-retract-until-point' as
 appropriate.
 With prefix argument RAW, the activation of the omit proofs feature
-(`proof-omit-proofs-option') is temporarily toggled,
+\(`proof-omit-proofs-option') is temporarily toggled,
 so we can chose whether to check all proofs in the asserted region,
 or to merely assume them and save time."
   (interactive "P")
@@ -215,7 +215,7 @@ If inside a comment, just process until the start of the comment."
 (defun proof-process-buffer (&optional raw)
   "Process the current (or script) buffer, and maybe move point to the end.
 With prefix argument RAW, the activation of the omit proofs feature
-(`proof-omit-proofs-option') is temporarily toggled,
+\(`proof-omit-proofs-option') is temporarily toggled,
 so we can chose whether to check all proofs in the asserted region,
 or to merely assume them and save time."
   (interactive "P")
@@ -593,7 +593,7 @@ last use time, to discourage saving these into the users database."
   '(proof-add-completions))
 
 (defun proof-script-complete (&optional arg)
-  "Like `complete' but case-fold-search set to `proof-case-fold-search'."
+  "Like `complete' but `case-fold-search' set to `proof-case-fold-search'."
   (interactive "*p")
   ;; completion not autoloaded in GNU Emacs
   ;; FIXME: It's probably because we shouldn't use it ;-)
@@ -613,13 +613,13 @@ last use time, to discourage saving these into the users database."
 (defun proof-check-annotate-source (proof-results annotate-passing)
   "Annotate proofs in current buffer according to PROOF-RESULTS.
 PROOF-RESULTS must be the return value of `proof-check-proofs' or
-`proof-check-chunks' for the current buffer. This function
+`proof-check-chunks' for the current buffer.  This function
 annotates failing proofs with a comment containing \"FAIL\" and,
-if annotate-passing is non-nil, also passing proofs with
-\"PASS\". The annotation will be right aligned in the line
-according to `proof-check-annotate-position'. The position for
+if ANNOTATE-PASSING is non-nil, also passing proofs with
+\"PASS\".  The annotation will be right aligned in the line
+according to `proof-check-annotate-position'.  The position for
 right alignment is configured in
-`proof-check-annotate-right-margin'. Existing \"PASS\" or
+`proof-check-annotate-right-margin'.  Existing \"PASS\" or
 \"FAIL\" annotations are deleted together with the surrounding
 white space."
   (let ((goal-column (or proof-check-annotate-right-margin fill-column)))
@@ -658,7 +658,7 @@ white space."
   "Report `proof-check-proofs' results in PROOF-RESULTS in special buffer.
 Report the results of `proof-check-proofs' in buffer
 `proof-check-report-buffer' in human readable form or, if TAP is
-not nil, in test anything protocol (TAP). If BATCH is not nil,
+not nil, in test anything protocol (TAP).  If BATCH is not nil,
 report the results via message, such that they appear on stdout
 when Emacs runs in batch mode or, when BATCH is a string, write
 the results to the file denoted by BATCH."
@@ -723,27 +723,27 @@ the results to the file denoted by BATCH."
 (defun proof-check-chunks (chunks)
   "Worker function for `proof-check-proofs' for processing CHUNKS.
 CHUNKS must be the reversed result of `proof-script-omit-filter'
-for a whole buffer. (Only the top-level must be reversed, the
+for a whole buffer.  (Only the top-level must be reversed, the
 commands inside the chunks must be as returned by
 `proof-script-omit-filter', that is in reversed order.) CHUNKS
 must not contain any 'nested-proof chunk.
 
 This function processes the content of CHUNKS normally by
-asserting them one by one. Any error reported inside a 'no-proof
-chunk is reported as error to the user. 'proof chunks containing
+asserting them one by one.  Any error reported inside a 'no-proof
+chunk is reported as error to the user.  'proof chunks containing
 errors are silently replaced by
-`proof-script-proof-admit-command'. The result is a list of proof
-status results, one for each 'proof chunk in the same order. Each
+`proof-script-proof-admit-command'.  The result is a list of proof
+status results, one for each 'proof chunk in the same order.  Each
 proof-status result is a list of 4 elements as follows.
-- 1st: proof status as `t' or `nil'. Proofs closed with a match
+- 1st: proof status as t or nil.  Proofs closed with a match
   of `proof-omit-cheating-regexp', if defined, count as failing,
-  i.e., their status is `nil'.
+  i.e., their status is nil.
 - 2nd: the name of the proof as reported by
   `proof-get-proof-info-fn'.
 - 3rd: Position of the start of the span containing the theorem
-  to prove. More precisely, it is the second last span of the
-  'no-proof chunk before the 'proof chunk. Note that spans
-  usually contain preceeding white space. Therefore this position
+  to prove.  More precisely, it is the second last span of the
+  'no-proof chunk before the 'proof chunk.  Note that spans
+  usually contain preceding white space.  Therefore this position
   is not necessarily the first letter of the keyword introducing
   the theorem statement.
 - 4rd: Position of the start of the span containing \"Proof
@@ -834,7 +834,7 @@ proof-status result is a list of 4 elements as follows.
 (defun proof-check-proofs ()
   "Check proofs in current buffer and return a list of proof status results.
 This is the internal worker for `proof-check-report' and
-`proof-check-annotate'. 
+`proof-check-annotate'.
 
 Reset scripting and then check all opaque proof in the current
 buffer, relying on the omit-proofs feature, see
@@ -873,7 +873,7 @@ This function does not (re-)compile required files."
   "Generate an overview about valid and invalid proofs.
 This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
-whether their proof scripts are valid or invalid. Note that
+whether their proof scripts are valid or invalid.  Note that
 proofs closed with a cheating command (see
 `proof-omit-cheating-regexp'), i.e., Admitted for Coq, count as
 invalid.
@@ -885,20 +885,20 @@ the most interesting or challenging point instead of on the first
 invalid proof.
 
 Argument TAP, which can be set by a prefix argument, controls the
-form of the generated overview. Nil, without prefix, gives an
+form of the generated overview.  Nil, without prefix, gives an
 human readable overview, otherwise it's test anything
-protocol (TAP). Argument BATCH controls where the overview goes
-to. If nil, or in an interactive call, the overview appears in
-`proof-check-report-buffer'. If BATCH is a string, it should be a
-filename to write the overview to. Otherwise the overview is
+protocol (TAP).  Argument BATCH controls where the overview goes
+to.  If nil, or in an interactive call, the overview appears in
+`proof-check-report-buffer'.  If BATCH is a string, it should be a
+filename to write the overview to.  Otherwise the overview is
 output via `message' such that it appears on stdout when this
 command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
-tolerates errors inside scripts of opaque proofs. Any other error
-is reported to the user without generating an overview. The
+tolerates errors inside scripts of opaque proofs.  Any other error
+is reported to the user without generating an overview.  The
 overview only contains those names of theorems whose proof
-scripts are classified as opaque by the omit-proofs feature. For
+scripts are classified as opaque by the omit-proofs feature.  For
 Coq for instance, among others, proof scripts terminated with
 'Defined' are not opaque and do not appear in the generated
 overview.
@@ -911,15 +911,15 @@ instance by asserting all require commands beforehand."
 
 (defun proof-check-annotate (annotate-passing &optional save-buffer)
   "Annotate failing proofs in current buffer with a \"FAIL\" comment.
-This function modifies the current buffer in place. Use with
+This function modifies the current buffer in place.  Use with
 care!
 
 Similarly to `proof-check-report', check all opaque proofs in the
-current buffer. Instead of generating a report, failing proofs
-are annotated with \"FAIL\" in a comment. Existing \"PASS\" or
+current buffer.  Instead of generating a report, failing proofs
+are annotated with \"FAIL\" in a comment.  Existing \"PASS\" or
 \"FAIL\" comments (e.g., from a previous run) are deleted
-together with the surrounding white space. With prefix argument
-(or when ANNOTATE-PASSING is non-nil) also passing proofs are
+together with the surrounding white space.  With prefix argument
+\(or when ANNOTATE-PASSING is non-nil) also passing proofs are
 annotated with a \"PASS\" comment. Pass and fail comments can be
 placed at the last or second last statement before the opaque
 proof. For Coq this corresponds to the proof using and the
@@ -1266,7 +1266,7 @@ If called interactively, STRING defaults to the current word near point."
   (if string (pg-identifier-query string)))
 
 (defun pg-identifier-query (identifier &optional ctxt callback)
-  "Query the proof assisstant about the given IDENTIFIER.
+  "Query the proof assistant about the given IDENTIFIER.
 This uses `proof-query-identifier-command'.
 Parameter CTXT allows to give a context for the identifier (which
 allows for multiple name spaces).
@@ -1584,7 +1584,7 @@ If ARG is omitted, nil, or not numeric, it takes the value 1.
 
 It performs each of the desired undos checking that these operations will
 not affect the locked region, obeying `proof-strict-read-only' if required.
-If strict read only behaviour is enforced, the user is queried whether to
+If strict read only behavior is enforced, the user is queried whether to
 retract before the undo is allowed.  If automatic retraction is enabled,
 the retract and undo will go ahead without querying the user.
 
@@ -1613,7 +1613,7 @@ the locked region."
   "This function is intended to be called by `pg-protected-undo'.
 
 The flag ARG is passed to functions `undo' and `next-undo-elt'.
-It should be a non-numeric value saying whether an undo-in-region
+It should be a non-numeric value saying whether an `undo-in-region'
 behavior is expected."
 ;; Note that if ARG is non-nil, (> (region-end) (region-beginning)) must hold,
 ;; at least for the first call from the loop of `pg-protected-undo'.
@@ -1642,7 +1642,7 @@ behavior is expected."
 
 (defun next-undo-elt (arg)
   "Return the undo element that will be processed on next undo/redo.
-Assume the undo-in-region behavior will apply if ARG is non-nil."
+Assume the `undo-in-region' behavior will apply if ARG is non-nil."
   (let ((undo-list (if arg		; handle "undo in region"
 		       (undo-make-selective-list
 			(region-beginning) (region-end)) ; can be '(nil)
@@ -1678,7 +1678,7 @@ Assume the undo-in-region behavior will apply if ARG is non-nil."
 
 ;;;###autoload
 (defun proof-autosend-enable (&optional nomsg)
-  "Enable or disable autosend behaviour."
+  "Enable or disable autosend behavior."
   (if proof-autosend-timer
       (cancel-timer proof-autosend-timer))
   (when proof-autosend-enable

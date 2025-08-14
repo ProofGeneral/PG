@@ -46,7 +46,7 @@ No context checking.")
 ;; 2:
 ;; [goalname]:
 (defconst coq-goal-selector-regexp "\\(?:[0-9]+\\|\\[\\w+\\]\\)\\s-*:\\s-*"
-  "regexp of goal selector in coq.")
+  "Regexp of goal selector in Coq.")
 
 ;;;;;;;;;;;;;;; FORWARD / BACKWARD REGEXP ;;;;;;;;;;;;;;;;;
 ;; These regexp are used to split the buffer into commands. They make
@@ -62,10 +62,10 @@ No context checking.")
 ;; NOTE: \\= here allows to fail when the user types a "." just after
 ;; an already played command with no space.
 (defconst coq-simple-cmd-ender-prefix-regexp-forward "[^.]\\|\\=\\|\\.\\."
-  "Used internally.  Matches the allowed prefixes of coq \".\" command ending.")
+  "Used internally.  Matches the allowed prefixes of Coq \".\" command ending.")
 
 (defconst coq-simple-cmd-ender-prefix-regexp-backward "[^.]\\|\\.\\."
-  "Used internally.  Matches the allowed prefixes of coq \".\" command ending.")
+  "Used internally.  Matches the allowed prefixes of Coq \".\" command ending.")
 
 
 ;; bullets must appear after a command end. So when splitting a buffer
@@ -85,7 +85,7 @@ No context checking.")
 ;; proof-script-command-end-regexp in coq.el
 (defconst coq-period-end-command
   (concat "\\(?:\\(?2:" coq-simple-cmd-ender-prefix-regexp-forward "\\)\\(?1:\\.\\)\\(?3:\\s-\\|\\}\\|\\'\\)\\)")
-  "Matches coq regular syntax for ending a command (except bullets and curlies).
+  "Matches Coq regular syntax for ending a command (except bullets and curlies).
 
 This should match EXACTLY command ending syntax.  No false
 positive should be accepted.  \"...\" is matched as \".\" with a
@@ -161,7 +161,7 @@ There are 3 substrings (2 and 3 may be nil):
 WARNING: False positive.
 
 There are 3 substrings:
-* number 1 is the real coq ending string,
+* number 1 is the real Coq ending string,
 * number 2 is the left context matched that is not part of the ending string
 * number 3 is the right context matched that is not part of the ending string
 
@@ -184,7 +184,7 @@ precise regexp (but only when searching backward).")
   "Matches end of commands, including bullets and curlies.
 
 There are 3 substrings (2 and 3 may be nil):
-* number 1 is the real coq ending string,
+* number 1 is the real Coq ending string,
 * number 2 is the left context matched that is not part of the ending string
 * number 3 is the right context matched that is not part of the ending string
 
@@ -235,13 +235,13 @@ Return nil if not found."
 
 (defun coq-search-comment-delimiter-backward ()
   "Search backward for a comment start (return 1) or end (return -1).
- Return nil if not found."
+Return nil if not found."
   (when (re-search-backward coq-comment-start-or-end-regexp nil 'dummy)
       (if (looking-at coq-comment-start-regexp) 1 -1)))
 
 (defun coq-skip-until-one-comment-backward ()
   "Skips comments and normal text until finding an unclosed comment start.
- Return nil if not found.  Point is moved to the the unclosed comment start
+Return nil if not found.  Point is moved to the the unclosed comment start
 if found, to (point-max) otherwise.  Return t if found, nil otherwise."
   (if (= (point) (point-min)) nil
     (ignore-errors (backward-char 1))       ; if point is between '(' and '*'
@@ -366,7 +366,7 @@ Comments are ignored, of course."
   ;; with implicits --> this function is recursive
   (cond
    ;; "{" can be prefixed by a goal selector (coq-8.8).
-   ;; TODO: looking-back is supposed to be slow. Find something else? 
+   ;; TODO: looking-back is supposed to be slow. Find something else?
    ((or (and (looking-at "{")(looking-back "[0-9]+\\s-*:\\s-*" nil t))
         (and (looking-at ":\\s-*{")(looking-back "[0-9]+\\s-*" nil t))
         (and (looking-at "[0-9]+:\\s-*{") nil t))
@@ -396,8 +396,8 @@ Comments are ignored, of course."
   "Move to the first end of command found looking forward from point.
 Point is put exactly after the ending token (but before matching
 substring if present).  If no end command is found, go as far as
-possible and return nil. End of command appearing in comments are
-ignored. This function makes use of the substring 1 of the command end
+possible and return nil.  End of command appearing in comments are
+ignored.  This function makes use of the substring 1 of the command end
 regexp."
   (if (looking-at comment-start-skip)
       ;; Handle comments
@@ -534,12 +534,12 @@ The point is put exactly before first non comment letter of the command."
 ;;     (let ((initpoint (point))
 ;;           (forward-char (coq-is-on-ending-context))
 ;;           (command-found (coq-command-at-point nojumplines))
-;;           res 
+;;           res
 ;;           )
 ;;       (if command-found (coq-find-real-start))
-;;       (while (and command-found 
+;;       (while (and command-found
 ;;                   ;; need this second test even with nojumplines:
-;;                   (same-line (point) initpoint)) 
+;;                   (same-line (point) initpoint))
 ;;         (setq res (cons command-found res))
 ;;         (if (and (coq-script-parse-cmdend-forward)
 ;;                  ;(ignore-errors (forward-char 1) t);to fit in the "and"
@@ -779,7 +779,7 @@ The point is put exactly before first non comment letter of the command."
 ;; (defun coq-goal-count (l) (coq-add-iter l 'coq-indent-goal-command-p))
 
 ;; (defun coq-save-count (l)
-;;   (coq-add-iter l (lambda (x) 
+;;   (coq-add-iter l (lambda (x)
 ;;                     (or (coq-save-command-p nil x)
 ;;                         (eq (proof-string-match "\\<\\(?:EndSubproof\\)\\>\\|}" x) 0)))))
 
@@ -788,7 +788,7 @@ The point is put exactly before first non comment letter of the command."
 ;;                     (eq (proof-string-match "\\<\\(?:Proof\\|BeginSubproof\\)\\>\\|{" x) 0))))
 
 ;; returns the difference between goal (and assimilate Proof and BeginSubproof) and
-;; save commands in a commands list. This is to 
+;; save commands in a commands list. This is to
 ;; (defun coq-goal-save-diff-maybe-proof (l)
 ;;   (let ((proofs (coq-proof-count l))
 ;;         (saves (coq-save-count l))
@@ -805,7 +805,7 @@ The point is put exactly before first non comment letter of the command."
 ;; Use `coq-indent-expr-offset' to indent a line belonging to an expression."
 ;;   (let ((diff-goal-save-current
 ;;          (coq-goal-save-diff-maybe-proof (coq-commands-at-line t)))
-;;         (diff-goal-save-prev 
+;;         (diff-goal-save-prev
 ;;          (save-excursion
 ;;            (goto-char prevpoint)
 ;;            (coq-goal-save-diff-maybe-proof (coq-commands-at-line t))))
@@ -816,21 +816,21 @@ The point is put exactly before first non comment letter of the command."
 ;;            ;(forward-char -1)
 ;;            (looking-at coq-indent-close-regexp)))
 ;;         (current-closing-beginning  ; t if the closing is at start of the (current) line
-;;          (save-excursion 
+;;          (save-excursion
 ;;            (back-to-indentation)
 ;;            (looking-at coq-indent-close-regexp))))
 ;;     ;(message "currentkind,prevcol,prevpoint = %d , %d ,%d " kind prevcol prevpoint)
 ;;     (cond
 ;;      ((proof-looking-at-safe "\\<Proof\\>") 0);; no indentation at "Proof ..."
 
-;;      (t (* proof-indent 
+;;      (t (* proof-indent
 ;;            (let ((res
 ;;                   (let ((a diff-goal-save-prev) (b diff-goal-save-current)
 ;;                         (a2 prev-closing-beginning) (b2 current-closing-beginning))
 ;;                     ;(message "a,b,a2,b2 = %d,%d,%S,%S" a b a2 b2)
 ;;                     (cond
 ;;                      ((and (>= a 0) (>= b 0)) a)
-;;                      ((and (>= a 0) (< b 0) b2) (+ a -1)) ; a + b 
+;;                      ((and (>= a 0) (< b 0) b2) (+ a -1)) ; a + b
 ;;                      ((and (>= a 0) (< b 0) (not b2)) a)
 ;;                      ((and (< a 0) (< b 0) a2 b2) a) ; a +1 -1
 ;;                      ((and (< a 0) (< b 0) a2 (not b2)) (+ a 1))

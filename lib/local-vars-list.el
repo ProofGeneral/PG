@@ -49,7 +49,7 @@ local-vars-list provides two useful functions:
 (defun local-vars-list-find ()
   "Find the local variable definition paragraph.
 Return a list containing the prefix and the suffix of its first line,
-or throw 'notfound if not found. Sets the point at the beginning of
+or throw 'notfound if not found.  Sets the point at the beginning of
 the second line of the paragraph."
   (goto-char (point-max))
   (catch 'notfound
@@ -113,12 +113,12 @@ variable definition (or at the \"End:\" line)."
 
 ;; Only looks for file local vars. Not dir local vars.
 (defun local-vars-list-get (symb)
-  "Return the value written in the local variable list for variable symb.
+  "Return the value written in the local variable list for variable SYMB.
 Raises an error if symb is not in the list.
 
 Note: Using `file-local-variables-alist' is not comfortable here
 since editing by hand the file variable zone does not modify this
-alist. Proceed by looking in the file instead."
+alist.  Proceed by looking in the file instead."
   (save-excursion
     (let*
 	((lrpat (local-vars-list-find))
@@ -134,14 +134,13 @@ alist. Proceed by looking in the file instead."
       (local-vars-list-get-current lpat rpat))))
 
 (defun local-vars-list-get-safe (symb)
-  "Return true if variable SYMB belongs to the local variable list of the
-current buffer."
+  "Non-nil if SYMB belongs to the local variable list of the current buffer."
   (condition-case nil (local-vars-list-get symb) (error nil)))
 
 (defun local-vars-list-set (symb val)
-  "Write the value val in the local variable list for variable symb.
+  "Write the value VAL in the local variable list for variable SYMB.
 If the variable is already specified in the list, replace the
-value. If no local variable list is found, create one at the end
+value.  If no local variable list is found, create one at the end
 of the buffer first."
   (add-file-local-variable symb val))
 

@@ -1785,7 +1785,7 @@ does not.  As with any Emacs command, you can invoke these with
 
 @c TEXI DOCSTRING MAGIC: proof-shell-start
 @deffn Command proof-shell-start 
-Initialise a shell-like buffer for a proof assistant.@*
+Initialize a shell-like buffer for a proof assistant.@*
 Does nothing if proof assistant is already running.
 
 Also generates goal and response buffers.
@@ -2286,7 +2286,7 @@ only work for Coq.
 Generate an overview about valid and invalid proofs.@*
 This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
-whether their proof scripts are valid or invalid. Note that
+whether their proof scripts are valid or invalid.  Note that
 proofs closed with a cheating command (see
 @samp{@code{proof-omit-cheating-regexp}}), i.e., Admitted for Coq, count as
 invalid.
@@ -2298,20 +2298,20 @@ the most interesting or challenging point instead of on the first
 invalid proof.
 
 Argument @var{tap}, which can be set by a prefix argument, controls the
-form of the generated overview. Nil, without prefix, gives an
+form of the generated overview.  Nil, without prefix, gives an
 human readable overview, otherwise it's test anything
-protocol (@var{tap}). Argument @var{batch} controls where the overview goes
-to. If nil, or in an interactive call, the overview appears in
-@samp{@code{proof-check-report-buffer}}. If @var{batch} is a string, it should be a
-filename to write the overview to. Otherwise the overview is
+protocol (@var{tap}).  Argument @var{batch} controls where the overview goes
+to.  If nil, or in an interactive call, the overview appears in
+@samp{@code{proof-check-report-buffer}}.  If @var{batch} is a string, it should be a
+filename to write the overview to.  Otherwise the overview is
 output via @samp{message} such that it appears on stdout when this
 command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
-tolerates errors inside scripts of opaque proofs. Any other error
-is reported to the user without generating an overview. The
+tolerates errors inside scripts of opaque proofs.  Any other error
+is reported to the user without generating an overview.  The
 overview only contains those names of theorems whose proof
-scripts are classified as opaque by the omit-proofs feature. For
+scripts are classified as opaque by the omit-proofs feature.  For
 Coq for instance, among others, proof scripts terminated with
 @code{'Defined'} are not opaque and do not appear in the generated
 overview.
@@ -2324,14 +2324,14 @@ instance by asserting all require commands beforehand.
 @c TEXI DOCSTRING MAGIC: proof-check-annotate
 @deffn Command proof-check-annotate annotate-passing &optional save-buffer
 Annotate failing proofs in current buffer with a "@var{fail}" comment.@*
-This function modifies the current buffer in place. Use with
+This function modifies the current buffer in place.  Use with
 care!
 
 Similarly to @samp{@code{proof-check-report}}, check all opaque proofs in the
-current buffer. Instead of generating a report, failing proofs
-are annotated with "@var{fail}" in a comment. Existing "@var{pass}" or
+current buffer.  Instead of generating a report, failing proofs
+are annotated with "@var{fail}" in a comment.  Existing "@var{pass}" or
 "@var{fail}" comments (e.g., from a previous run) are deleted
-together with the surrounding white space. With prefix argument
+together with the surrounding white space.  With prefix argument
 (or when @var{annotate-passing} is non-nil) also passing proofs are
 annotated with a "@var{pass}" comment. Pass and fail comments can be
 placed at the last or second last statement before the opaque
@@ -3797,7 +3797,7 @@ you want to send already has a terminator character, you don't
 need to delete the terminator character first.  Just press the
 terminator somewhere nearby.  Electric!
 
-The default value is @code{nil}.
+The default value is @code{#[128 "\304\301\"\304\300\"\210\207" ['coq-unset-double-hit-advice nil :after nil apply] 5 advice]}.
 @end defopt
 
 @c TEXI DOCSTRING MAGIC: proof-next-command-insert-space
@@ -3851,7 +3851,7 @@ The default value is @code{t}.
 @defvar proof-omit-proofs-option 
 Set to t to omit complete opaque proofs for speed reasons.@*
 When t, complete opaque proofs in the asserted region are not
-sent to the proof assistant (and thus not checked). For files
+sent to the proof assistant (and thus not checked).  For files
 with big proofs this can drastically reduce the processing time
 for the asserted region at the cost of not checking the proofs.
 For partial and non-opaque proofs in the asserted region all
@@ -3952,7 +3952,7 @@ One of the symbols: @code{'locked}, @code{'follow}, @code{'followdown}, @code{'i
 
 If @code{'locked}, point sticks to the end of the locked region.
 If @code{'follow}, point moves just when needed to display the locked region end.
-If @code{'followdown}, point if necessary to stay in writeable region
+If @code{'followdown}, point if necessary to stay in writable region
 If @code{'ignore}, point is never moved after movement commands or on errors.
 
 If you choose @code{'ignore}, you can find the end of the locked using
@@ -4046,11 +4046,11 @@ Face for locked region of proof script (processed commands).
 
 @c TEXI DOCSTRING MAGIC: proof-script-sticky-error-face
 @deffn Face proof-script-sticky-error-face 
-Proof General face for marking an error in the proof script. 
+Proof General face for marking an error in the proof script.
 @end deffn
 @c TEXI DOCSTRING MAGIC: proof-script-highlight-error-face
 @deffn Face proof-script-highlight-error-face 
-Proof General face for highlighting an error in the proof script. 
+Proof General face for highlighting an error in the proof script.
 @end deffn
 @c TEXI DOCSTRING MAGIC: proof-mouse-highlight-face
 @deffn Face proof-mouse-highlight-face 
@@ -4531,30 +4531,29 @@ Variable containing the function detecting a project file.
 See its default value @samp{@code{coq--default-project-find-file}} for an example.
 
 The function takes one argument, the name of a directory, and returns
-the name of a coq/rocq project file it contains if there is one. Return
+the name of a Coq/Rocq project file it contains if there is one.  Return
 nil otherwise.
 
-This is used to detect the coq project file (using
-@samp{@code{locate-dominating-file}}). By default we accept _CoqProject and
-_RocqProject (and any case-variant of these) without checking coq/rocq
-version. If you want something smarter please redefine
+This is used to detect the Coq project file (using
+@samp{@code{locate-dominating-file}}).  By default we accept _CoqProject and
+_RocqProject (and any case-variant of these) without checking Coq/Rocq
+version.  If you want something smarter please redefine
 @samp{@code{coq-project-filename}} directly by using:
 
 (setq @code{coq-project-filename} #'my-own-predicate)
 
-About the coq/rocq project file (cf. Coq documentation on project files
+About the Coq/Rocq project file (cf. Coq documentation on project files
 and "makefile generation"):
 
-The coq project file of a coq development should contain the arguments
-given to coq_makefile. In particular it contains the -I and -R
+The Coq project file of a Coq development should contain the arguments
+given to Coq_makefile. In particular it contains the -I and -R
 options (preferably one per line). If @samp{coq-use-coqproject} is
 t (default) the content of this file will be used by Proof General to
 infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables that set the
 coqtop invocation by Proof General. This is now the recommended way of
 configuring the coqtop invocation. Local file variables may still be
-used to override the coq project file's configuration. .dir-locals.el
+used to override the Coq project file's configuration. .dir-locals.el
 files also work and override project file settings.
-
 @end defvar
 
 
@@ -5021,8 +5020,8 @@ This option can be set/reset via menu
 @c TEXI DOCSTRING MAGIC: coq-compile-auto-save
 @defvar coq-compile-auto-save 
 Buffers to save before checking dependencies for compilation.@*
-There are two orthogonal choices: Firstly one can save all or only the coq
-buffers, where coq buffers means all buffers in coq mode except the current
+There are two orthogonal choices: Firstly one can save all or only the Coq
+buffers, where Coq buffers means all buffers in Coq mode except the current
 buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
@@ -5177,7 +5176,7 @@ configure these things with the following options.
 
 @c TEXI DOCSTRING MAGIC: coq-load-path
 @defvar coq-load-path 
-Non-standard coq library load path.@*
+Non-standard Coq library load path.@*
 This list specifies the LoadPath extension for coqdep, coqc and
 coqtop.  Usually, the elements of this list are strings (for
 "-I") or lists of two strings (for "-R" dir path and
@@ -5187,7 +5186,7 @@ The possible forms of elements of this list correspond to the 4
 forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
 @lisp
   - A list of the form @samp{(}ocamlimport dir)', specifying (in 8.5) a
-    directory to be added to ocaml path (@samp{-I}).
+    directory to be added to Ocaml path (@samp{-I}).
   - A list of the form @samp{(}rec dir path)' (where dir and path are
     strings) specifying a directory to be recursively mapped to the
     logical path @samp{path} (@samp{-R dir path}).
@@ -5205,11 +5204,11 @@ the form @samp{(dir path)} are interpreted as @samp{(rec dir path)}.
 A plain string maps to -Q ... "" in 8.5, and -I ... in 8.4.
 
 Under normal circumstances this list does not need to
-contain the coq standard library or "." for the current
+contain the Coq standard library or "." for the current
 directory (see @samp{@code{coq-load-path-include-current}}).
 
-@var{warning}: if you use coq <= 8.4, the meaning of these options is
-not the same (-I is for coq path).
+@var{warning}: if you use Coq <= 8.4, the meaning of these options is
+not the same (-I is for Coq path).
 @end defvar
 
 
@@ -5237,7 +5236,7 @@ List of regular expressions for directories in which ProofGeneral
 should not compile modules.  If a library file name matches one
 of the regular expressions in this list then ProofGeneral does
 neither compile this file nor check its dependencies for
-compilation.  It makes sense to include non-standard coq library
+compilation.  It makes sense to include non-standard Coq library
 directories here if they are not changed and if they are so big
 that dependency checking takes noticeable time.  The regular
 expressions in here are always matched against the .vo file name,
@@ -5626,12 +5625,12 @@ is killed when changing the opam switch through
 
 @c TEXI DOCSTRING MAGIC: coq-kill-coq-on-opam-switch
 @defvar coq-kill-coq-on-opam-switch 
-If t kill coq when the opam switch changes (requires @samp{opam-switch-mode}).@*
+If t kill Coq when the opam switch changes (requires @samp{opam-switch-mode}).@*
 When @samp{opam-switch-mode} is loaded and the user changes the opam switch
-through @samp{opam-switch-mode} then this option controls whether the coq
+through @samp{opam-switch-mode} then this option controls whether the Coq
 background process (the proof shell) is killed such that the next
 assert command starts a new proof shell, probably using a
-different coq version from a different opam switch.
+different Coq version from a different opam switch.
 
 See https://github.com/ProofGeneral/opam-switch-mode for @samp{opam-switch-mode}
 @end defvar
