@@ -48,7 +48,7 @@ stub defined in proof-site, from names given in `proof-assistant-table'.")
 Used for automatic configuration based on standard variable names.
 Settings will be found by looking for names beginning with this
 symbol as a prefix.
-Non-nil indicates PG has been initialised for an assistant.
+Non-nil indicates PG has been initialized for an assistant.
 If this is nil, the hook functions in `proof-ready-for-assistant-hook'
 are yet to be run.
 
@@ -78,7 +78,7 @@ stub defined in proof-site to <PA>-mode.")
 
 (defvar proof-ready-for-assistant-hook nil
   "Hook functions to run after PG is configured for a proof assistant.
-These functions allow late initialisation, once the choice of prover
+These functions allow late initialization, once the choice of prover
 has been set.")
 
 

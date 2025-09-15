@@ -41,7 +41,7 @@ The test loads optional prover-specific config in <foo>-maths-menu.el"
 ;; Unicode tokens
 ;;
 (defun proof-unicode-tokens-support-available ()
-  "A test to see whether unicode tokens support is available."
+  "A test to see whether Unicode tokens support is available."
   ;; Requires prover-specific config in <foo>-unicode-tokens.el
   ;; Loaded before unicode-tokens.el to allow load-time config there
   (proof-try-require (proof-ass-sym unicode-tokens)))

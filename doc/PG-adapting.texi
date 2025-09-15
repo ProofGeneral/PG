@@ -518,7 +518,7 @@ Command to display the context in proof assistant.
 @c TEXI DOCSTRING MAGIC: proof-info-command
 @defvar proof-info-command 
 Command to ask for help or information in the proof assistant.@*
-String or fn.  If a string, the command to use.
+String or function.  If a string, the command to use.
 If a function, it should return the command string to insert.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-showproof-command
@@ -527,21 +527,21 @@ Command to display proof state in proof assistant.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-goal-command
 @defvar proof-goal-command 
-Command to set a goal in the proof assistant.  String or fn.@*
+Command to set a goal in the proof assistant.  String or function.@*
 If a string, the format character @samp{%s} will be replaced by the
 goal string.
 If a function, it should return the command string to insert.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-save-command
 @defvar proof-save-command 
-Command to save a proved theorem in the proof assistant.  String or fn.@*
+Command to save a proved theorem in the proof assistant.  String or function.@*
 If a string, the format character @samp{%s} will be replaced by the
 theorem name.
 If a function, it should return the command string to insert.
 @end defvar
 @c TEXI DOCSTRING MAGIC: proof-find-theorems-command
 @defvar proof-find-theorems-command 
-Command to search for a theorem containing a given term.  String or fn.@*
+Command to search for a theorem containing a given term.  String or function.@*
 If a string, the format character @samp{%s} will be replaced by the term.
 If a function, it should return the command string to send.
 @end defvar
@@ -1185,9 +1185,9 @@ configured.
 
 @c TEXI DOCSTRING MAGIC: proof-omit-proofs-configured
 @defvar proof-omit-proofs-configured 
-t if the omit proofs feature has been configured by the proof assitant.@*
+Non-nil if the omit proofs feature has been configured by the proof assistant.@*
 See also @samp{@code{proof-omit-proofs-option}} or the Proof General manual
-for a description of the feature. This option can only be set, if
+for a description of the feature.  This option can only be set, if
 all of @samp{@code{proof-script-proof-start-regexp}},
 @samp{@code{proof-script-proof-end-regexp}},
 @samp{@code{proof-script-definition-end-regexp}} and
@@ -1201,7 +1201,7 @@ commands in the source following a match of
 @samp{@code{proof-script-proof-start-regexp}} up to and including the next
 match of @samp{@code{proof-script-proof-end-regexp}}, are omitted (not send
 to the proof assistant) and replaced by
-@samp{@code{proof-script-proof-admit-command}}. If a match for
+@samp{@code{proof-script-proof-admit-command}}.  If a match for
 @samp{@code{proof-script-definition-end-regexp}} is found while searching
 forward for the proof end or if
 @samp{@code{proof-script-cmd-prevents-proof-omission}} recognizes a proof
@@ -1212,7 +1212,7 @@ to and including the match of
 and not omitted, thus all these proof commands _are_ sent to the
 proof assistant.
 
-The feature does not work for nested proofs. If a match for
+The feature does not work for nested proofs.  If a match for
 @samp{@code{proof-script-proof-start-regexp}} is found before the next match
 for @samp{@code{proof-script-proof-end-regexp}} or
 @samp{@code{proof-script-definition-end-regexp}}, the search for opaque
@@ -1252,11 +1252,11 @@ Proof command to be inserted instead of omitted proofs.
 @defvar proof-script-cmd-prevents-proof-omission 
 Optional predicate to match commands that prevent omitting the current proof.@*
 If set, this option should contain a function that takes a proof
-command (as string) as argument and returns t or nil. If set, the
+command (as string) as argument and returns t or nil.  If set, the
 function is called on every proof command inside a proof while
-scanning for proofs to omit. The predicate should return t if the
-command has effects ouside the proof, potentially breaking the
-script if the current proof is omitted. If the predicate returns
+scanning for proofs to omit.  The predicate should return t if the
+command has effects outside the proof, potentially breaking the
+script if the current proof is omitted.  If the predicate returns
 t, the proof is considered to be not opaque and thus not omitted.
 @end defvar
 
@@ -1265,9 +1265,9 @@ t, the proof is considered to be not opaque and thus not omitted.
 Optional regexp for commands that prevent omitting the next proof.@*
 If set, this option should contain a regular expression that
 matches proof-script commands that prevent the omission of proofs
-dirctly following this command. When scanning the newly asserted
+directly following this command.  When scanning the newly asserted
 region for proofs to omit, every proof-script command outside
-proofs is matched against this regexp. If it matches and the next
+proofs is matched against this regexp.  If it matches and the next
 command matches @samp{@code{proof-script-proof-start-regexp}} this following
 proof will not be omitted.
 
@@ -1304,10 +1304,10 @@ following settings must be configured.
 @c TEXI DOCSTRING MAGIC: proof-get-proof-info-fn
 @defvar proof-get-proof-info-fn 
 Return proof name and state number for @samp{@code{proof-check-proofs}}.@*
-Proof assistant specific function for @samp{@code{proof-check-proofs}}. This
+Proof assistant specific function for @samp{@code{proof-check-proofs}}.  This
 function takes no arguments, it is called after completely
 processing the proof script up to a certain point (including all
-callbacks in spans). It must return a list, which contains, in
+callbacks in spans).  It must return a list, which contains, in
 the following order:
 
 * the current state number (as positive integer)
@@ -1327,7 +1327,7 @@ should be a no-op.
 @defvar proof-retract-command-fn 
 Function for retract command to a certain state.@*
 This function takes a state as argument as returned by
-@samp{@code{proof-get-proof-info-fn}}. It should return a command that brings
+@samp{@code{proof-get-proof-info-fn}}.  It should return a command that brings
 the proof assistant back to the same state.
 @end defvar
 
@@ -1335,11 +1335,11 @@ the proof assistant back to the same state.
 @defvar proof-omit-cheating-regexp 
 Regular expression matching proof closing commands for incomplete proofs.@*
 If set, this regular expression is applied to the last command of
-opaque proofs. If it matches the proofs counts as invalid for the
-proof-status statistics and annotation feature. For Coq this is
+opaque proofs.  If it matches the proofs counts as invalid for the
+proof-status statistics and annotation feature.  For Coq this is
 used to mark Admitted proofs as invalid.
 
-This option can be left at @samp{nil}.
+This option can be left at nil.
 @end defvar
 
 
@@ -1568,7 +1568,7 @@ If @samp{@code{proof-terminal-string}} is nil, this has no effect.
 The command for configuring the proof process to gain synchronization.@*
 This command is sent before Proof General's synchronization
 mechanism is engaged, to allow customization inside the process
-to help gain syncrhonization (e.g. engaging special markup).
+to help gain synchronization (e.g. engaging special markup).
 
 It is better to configure the proof assistant for this purpose
 via command line options if possible, in which case this variable
@@ -1590,7 +1590,7 @@ See also @samp{@code{proof-shell-pre-sync-init-cmd}}.
 
 @c TEXI DOCSTRING MAGIC: proof-shell-restart-cmd
 @defvar proof-shell-restart-cmd 
-A command for re-initialising the proof process.
+A command for re-initializing the proof process.
 @end defvar
 
 @c TEXI DOCSTRING MAGIC: proof-shell-quit-cmd
@@ -1737,7 +1737,7 @@ are normally the ones of interest:
  @code{'proof-done-advancing}       A "forward" scripting command
  @code{'proof-done-retracting}      A "backward" scripting command
  @code{'proof-done-invisible}       A non-scripting command
- @code{'proof-shell-set-silent}     Indicates prover output has been surpressed
+ @code{'proof-shell-set-silent}     Indicates prover output has been suppressed
  @code{'proof-shell-clear-silent}   Indicates prover output has been restored
  @code{'init-cmd}                   Early initialization command sent to prover
 @end lisp
@@ -1858,7 +1858,7 @@ command, depending on whether the prover supports nested proofs or not.
 Regexp matching the start of the proof state output.@*
 This is an important setting.  Output between @samp{@code{proof-shell-start-goals-regexp}}
 and @samp{@code{proof-shell-end-goals-regexp}} will be pasted into the goals buffer
-and possibly analysed further for proof-by-pointing markup.
+and possibly analyzed further for proof-by-pointing markup.
 If it is left as nil, the goals buffer will not be used.
 
 The goals display starts at the beginning of the match on this
@@ -1915,7 +1915,7 @@ parsing later.  Note that this affects processing of output which is
 ordinarily accumulated: output which appears before the eager annotation
 start will be discarded.
 
-The start/end annotations can be used to hilight the output, but
+The start/end annotations can be used to highlight the output, but
 are stripped from display of the message in the minibuffer.
 
 It is useful to recognize (starts of) warnings or file-reading messages
@@ -2169,7 +2169,7 @@ before returning to the top level.
 @c TEXI DOCSTRING MAGIC: proof-shell-handle-output-system-specific
 @defvar proof-shell-handle-output-system-specific 
 Set this variable to handle system specific output.@*
-Errors and interrupts are recognised in the function
+Errors and interrupts are recognized in the function
 @samp{@code{proof-shell-handle-immediate-output}}.  Later output is
 handled by @samp{@code{proof-shell-handle-delayed-output}}, which
 displays messages to the user in @strong{goals} and @strong{response}
@@ -2284,7 +2284,7 @@ Proof General.
 @defvar proof-splash-contents 
 Evaluated to configure splash screen displayed when entering Proof General.@*
 A list of the screen contents.  If an element is a string or an image
-specifier, it is displayed centred on the window on its own line.
+specifier, it is displayed centered on the window on its own line.
 If it is nil, a new line is inserted.
 @end defvar
 
@@ -2614,7 +2614,7 @@ the current restriction, and must return the final value of (@code{point-max}).
 
 @c TEXI DOCSTRING MAGIC: pg-after-fontify-output-hook
 @defvar pg-after-fontify-output-hook 
-This hook is called before fonfitying a region in an output buffer.@*
+This hook is called before fontifying a region in an output buffer.@*
 [This hook is presently only used by Isabelle].
 @end defvar
 
@@ -2943,12 +2943,12 @@ speed, the amount of urgent code should be kept small.
 @defun proof-tree-urgent-action last-item
 Urgent actions for proof-tree display.@*
 This is the second entry point of the Proof General prooftree support,
-see also @samp{@code{proof-tree-handle-delayed-output}}. Call
+see also @samp{@code{proof-tree-handle-delayed-output}}.  Call
 @samp{@code{proof-tree-check-proof-finish}} to delay processing the queue region at
 the end of a proof until all show-goal commands from prooftree have been
-processed. Do also call @samp{@code{proof-tree-assistant-specific-urgent-action}},
+processed.  Do also call @samp{@code{proof-tree-assistant-specific-urgent-action}},
 which appropriately inserts show-goal commands if Coq is running
-completely silent. @var{last-item} is the last proof-action item that has just
+completely silent.  @var{last-item} is the last proof-action item that has just
 been processed.
 
 When the proof-tree display is active, this function is called from
@@ -2974,7 +2974,7 @@ assistant is already busy with the next item from
 @defun proof-tree-handle-delayed-output old-proof-marker cmd flags _span
 Process delayed output for prooftree.@*
 This function is the main entry point of the Proof General prooftree
-support, but see also @samp{@code{proof-tree-urgent-action}}. It examines the
+support, but see also @samp{@code{proof-tree-urgent-action}}.  It examines the
 delayed output in order to take appropriate actions and maintains the
 internal state.
 
@@ -3634,7 +3634,7 @@ important one is @code{proof-init-segmentation}.
 
 @c TEXI DOCSTRING MAGIC: proof-init-segmentation
 @defun proof-init-segmentation 
-Initialise the queue and locked spans in a proof script buffer.@*
+Initialize the queue and locked spans in a proof script buffer.@*
 Allocate spans if need be.  The spans are detached from the
 buffer, so the regions are made empty by this function.
 Also clear list of script portions.
@@ -3968,7 +3968,7 @@ bother the user.  They may include
                             show command when running silent.
 @end lisp
 Note that @code{'invisible} does not imply any of the others. If flags
-are non-empty, interactive cues will be surpressed. (E.g.,
+are non-empty, interactive cues will be suppressed. (E.g.,
 printing hints).
 
 See the functions @samp{@code{proof-start-queue}} and @samp{@code{proof-shell-exec-loop}}.
@@ -3979,7 +3979,7 @@ See the functions @samp{@code{proof-start-queue}} and @samp{@code{proof-shell-ex
 Position of end of second last input inside delayed callbacks.@*
 When callbacks of action items are processed, @samp{@code{proof-marker}} has already
 been advanced to the end of the next input that the proof assistant
-processes in parallel with the callback. This variable permits the
+processes in parallel with the callback.  This variable permits the
 callback to access the end of the input belonging to its action-list
 item and then process the complete output that the proof assistant has
 sent.
@@ -4017,7 +4017,7 @@ background compilation finishes.  Then those items are put into
 @defvar pg-subterm-anns-use-stack 
 Choice of syntax tree encoding for terms.
 
-If nil, prover is expected to make no optimisations.
+If nil, prover is expected to make no optimizations.
 If non-nil, the pretty printer of the prover only reports local changes.
 For Coq 6.2, use t.
 @end defvar
@@ -4028,7 +4028,7 @@ buffer and the associated buffers.
 
 @c TEXI DOCSTRING MAGIC: proof-shell-start
 @deffn Command proof-shell-start 
-Initialise a shell-like buffer for a proof assistant.@*
+Initialize a shell-like buffer for a proof assistant.@*
 Does nothing if proof assistant is already running.
 
 Also generates goal and response buffers.
@@ -4358,7 +4358,7 @@ will also be displayed in the response buffer.
 
 For example, if @var{output} has this form:
 @lisp
-  @var{messsage-1}
+  @var{message-1}
   @var{goals-1}
   @var{message-2}
   @var{goals-2}
@@ -4488,7 +4488,7 @@ entry point, @samp{@code{proof-shell-filter}} against such parallel,
 overlapping calls.
 
 The argument @var{str-do-not-use} contains the most recent output, but
-is discarded. @samp{@code{proof-shell-filter}} collects the output from
+is discarded.  @samp{@code{proof-shell-filter}} collects the output from
 @samp{@code{proof-shell-buffer}} (where it is inserted by
 @samp{@code{scomint-output-filter}}), relieving this function from the task
 to buffer the output that arrives during parallel, overlapping

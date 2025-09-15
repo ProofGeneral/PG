@@ -81,15 +81,15 @@
 Please restart Proof General after changing this setting!
 
 If enabled, run Coq completely silent (Set Silent) and only issue
-a show command when necessary to update the goals buffer. This
-behavior is new. If you experience strange effects, please report
-a bug and switch this flag off to return to old behavior. When
+a show command when necessary to update the goals buffer.  This
+behavior is new.  If you experience strange effects, please report
+a bug and switch this flag off to return to old behavior.  When
 disabled, Coq is dynamically switched to silent for longer lists
-of commands and switched to verbose before the last command. A
+of commands and switched to verbose before the last command.  A
 manual Show command (C-c C-p) is necessary if the last command
 fails to update the goals buffer (e.g., if it is a comment or it
 is not executed because some other command before failed, see
-also bug report #568). External proof tree display is only
+also bug report #568).  External proof tree display is only
 supported if this option is t."
   :type 'boolean
   :safe 'booleanp
@@ -102,7 +102,7 @@ These are appended at the end of `coq-shell-init-cmd'."
   :group 'coq)
 
 (defcustom coq-optimise-resp-windows-enable t
-  "If non-nil (default) resize vertically response windw after each command."
+  "If non-nil (default) resize vertically response window after each command."
   :type 'boolean
   :group 'coq)
 
@@ -110,8 +110,8 @@ These are appended at the end of `coq-shell-init-cmd'."
 (defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
  "\"Private_\" \"_subproof\""
   "Initial strings to blacklist in requests to Coq environment.
-If you are setting this via emacs cutomization menus, you should
-restart Coq to see the effect. To change blacklist during a coq
+If you are setting this via Emacs customization menus, you should
+restart Coq to see the effect.  To change blacklist during a Coq
 development, please use \\[coq-change-search-blacklist-interactive]
 instead (or menu: Coq/Settings/Search Blacklist)."
   :type 'string
@@ -146,15 +146,15 @@ Namely, goals that do not fit in the goals window."
    coq-user-init-cmd)
   "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
 List of commands sent to the Coq background process just after it
-has been started. This happens inside `proof-shell-config-done',
+has been started.  This happens inside `proof-shell-config-done',
 when the major mode `coq-shell-mode' is configured in the `*coq*'
 buffer.
 
-Sets silent mode if `coq-run-completely-silent' is set. Note that
+Sets silent mode if `coq-run-completely-silent' is set.  Note that
 this constant is not updated when `coq-run-completely-silent' is changed.
 
 In normal interaction, Coq is started because the user asserts
-some commands. Therefore the commands here are followed by those
+some commands.  Therefore the commands here are followed by those
 inserted inside `proof-assert-command-hook', respectively,
 `coq-adapt-printing-width'.")
 
@@ -168,7 +168,7 @@ inserted inside `proof-assert-command-hook', respectively,
 
 (defvar coq-shell-prompt-pattern
   "\\(?:\n\\(?:[^\n\371]+\371\\|<prompt>[^\n]+</prompt>\\)\\)"
-  "*The prompt pattern for the inferior shell running coq.")
+  "The prompt pattern for the inferior shell running Coq.")
 
 ;; FIXME da: this was disabled (set to nil) -- why?
 ;; da: 3.5: add experimental
@@ -187,9 +187,9 @@ inserted inside `proof-assert-command-hook', respectively,
           ;; \\|This subproof is complete
           )
   "*Regular expression indicating that the proof has been completed.
-Coq instance of `proof-shell-clear-goals-regexp'. Used in
+Coq instance of `proof-shell-clear-goals-regexp'.  Used in
 `proof-shell-process-urgent-message' to determine if the goals
-buffer shall be cleaned. Some of the messages recognized here are
+buffer shall be cleaned.  Some of the messages recognized here are
 not printed by Coq in silent mode, such that Proof General might
 fail to delete the goals buffer.")
 
@@ -553,7 +553,7 @@ This is a subroutine of `proof-shell-filter'."
 
 ;; Use the statenumber inside the coq prompt to backtrack more easily
 (defun coq-last-prompt-info (s)
-  "Extract info from the coq prompt S.  See `coq-last-prompt-info-safe'."
+  "Extract info from the Coq prompt S.  See `coq-last-prompt-info-safe'."
   (let ((lastprompt (or s (error "No prompt !!?")))
         (regex
          (concat ">\\(" coq-id-shy "\\) < \\([0-9]+\\) |\\(\\(?:" coq-id-shy
@@ -571,7 +571,7 @@ This is a subroutine of `proof-shell-filter'."
 
 
 (defun coq-last-prompt-info-safe ()
-  "Return a list with all informations from the last prompt.
+  "Return a list with all information from the last prompt.
 The list contains in the following order the state number, the
 proof stack depth, a list with the names of all pending proofs,
 and as last element the name of the current proof (or nil if
@@ -648,7 +648,7 @@ and read by function `coq-empty-action-list-command'.")
 (defun coq-set-state-infos ()
   "Set the last locked span's state number to the number found last time.
 This number is in the *last but one* prompt (variable `coq-last-but-one-statenum').
-If locked span already has a state number, then do nothing. Also updates
+If locked span already has a state number, then do nothing.  Also updates
 `coq-last-but-one-statenum' to the last state number for next time."
   (if proof-shell-last-prompt
       ;; da: did test proof-script-buffer here, but that seems wrong
@@ -721,7 +721,7 @@ If locked span already has a state number, then do nothing. Also updates
 ;; proof-change-hook used above is not exactly called at right times).
 
 (defun coq-find-and-forget (span)
-  "Backtrack to SPAN.  Using the \"BackTo n\" coq command."
+  "Backtrack to SPAN.  Using the \"BackTo n\" Coq command."
   (if (eq (span-property span 'type) 'proverproc)
       ;; processed externally (i.e. Require, etc), nothing to do
       ;; (should really be unlocked when we undo the Require).
@@ -744,7 +744,7 @@ If locked span already has a state number, then do nothing. Also updates
   "Last goal that Emacs looked at.")
 
 (defun coq-goal-hyp ()
-  "Instanciation for `pg-topterm-goalhyplit-fn', see there."
+  "Instantiation for `pg-topterm-goalhyplit-fn', see there."
   (cond
    ((looking-at "============================\n")
     (goto-char (match-end 0))
@@ -758,7 +758,7 @@ If locked span already has a state number, then do nothing. Also updates
    (t nil)))
 
 (defun coq-state-preserving-p (cmd)
-  "Instanciation for `proof-state-preserving-p', see there."
+  "Instantiation for `proof-state-preserving-p', see there."
   ;; (or
    (proof-string-match coq-non-retractable-instruct-regexp cmd))
   ;; (and
@@ -768,14 +768,14 @@ If locked span already has a state number, then do nothing. Also updates
   ;;   t))))
 
 (defun coq-cmd-prevents-proof-omission (cmd)
-  "Instanciation for `proof-script-cmd-prevents-proof-omission'.
+  "Instantiation for `proof-script-cmd-prevents-proof-omission'.
 This predicate decides whether a command inside a proof might
 have effects outside the proof, which would prohibit omitting the
 proof, see `proof-script-omit-proofs'.
 
 Commands starting lower case are deemed as tactics that have
-proof local effect only and so are bullets and braces. Everything
-else is checked against the STATECH field in the coq syntax data
+proof local effect only and so are bullets and braces.  Everything
+else is checked against the STATECH field in the Coq syntax data
 base, see coq-db.el."
   (if (or (proof-string-match coq-lowercase-command-regexp cmd)
           (proof-string-match coq-bullet-regexp cmd)
@@ -812,7 +812,7 @@ the *goals* buffer."
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
-  "Enumerates the different kinds of notation information one can ask to coq.")
+  "Enumerates the different kinds of notation information one can ask to Coq.")
 
 (defun coq-PrintScope ()
   "Show information on notations.  Coq specific."
@@ -854,7 +854,7 @@ If C is nil, return nil."
     (or (equal (char-syntax c) ?\.) (equal (char-syntax c) ?\_))))
 
 (defun coq-grab-punctuation-left (pos)
-  "Return a string made of punctuations chars found immediately before position POS."
+  "Return a string made of punctuation chars found immediately before position POS."
   (let ((res nil)
         (currpos pos))
     (while (coq-is-symbol-or-punct (char-before currpos))
@@ -864,7 +864,7 @@ If C is nil, return nil."
 
 
 (defun coq-grab-punctuation-right (pos)
-  "Return a string made of punctuations chars found immediately after position POS."
+  "Return a string made of punctuation chars found immediately after position POS."
   (let ((res nil)
         (currpos pos))
     (while (coq-is-symbol-or-punct (char-after currpos))
@@ -935,10 +935,10 @@ is nil (t by default)."
                  (if id id (concat "\"" notat "\""))))))))
 
 (defun coq-guess-or-ask-for-string (s &optional dontguess)
-  "Asks for a coq identifier with message S.
+  "Asks for a Coq identifier with message S.
 If DONTGUESS is non nil, propose a default value as follows:
 
-If region is active, propose its containt as default value.
+If region is active, propose its content as default value.
 
 Otherwise propose identifier at point if any."
   (let* ((guess
@@ -954,7 +954,7 @@ Otherwise propose identifier at point if any."
 
 (defun coq-ask-do (ask do &optional dontguess postformatcmd wait)
   "Ask for an ident and print the corresponding term.
-Add `'dont-show-when-silent' to supress show commands when running
+Add `'dont-show-when-silent' to suppress show commands when running
 silent."
   (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
     (proof-shell-ready-prover)
@@ -1079,7 +1079,7 @@ This is specific to `coq-mode'."
 
 (defun coq-Print (withprintingall)
   "Ask for an ident and print the corresponding term.
-With flag Printing All if some prefix arg is given (C-u)."
+With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive "P")
   (if withprintingall
       (coq-ask-do-show-all "Print" "Print")
@@ -1159,7 +1159,7 @@ This is specific to `coq-mode'."
 
 (defun coq-Check (withprintingall)
   "Ask for a term and print its type.
-With flag Printing All if some prefix arg is given (C-u)."
+With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive "P")
   (if withprintingall
       (coq-ask-do-show-all "Check" "Check")
@@ -1191,7 +1191,7 @@ must be in locked region."
 
 (defun coq-Show (withprintingall)
   "Ask for a number I and show the Ith goal.
-Ask for a number I and show the ith current goal. With non-nil prefix
+Ask for a number I and show the ith current goal.  With non-nil prefix
 argument and not on the locked span, show the goal with flag
 Printing All set."
 ; Disabled:
@@ -1236,7 +1236,7 @@ Printing All set."
 
 ;; FIXME: hopefully this will eventually become a non synchronized option and
 ;; we can remove this.
-;; This obeyx coq-auto-adapt-printing-width
+;; This obeys coq-auto-adapt-printing-width
 (add-hook 'proof-assert-command-hook #'coq-adapt-printing-width)
 (add-hook 'proof-retract-command-hook #'coq-reset-printing-width)
 
@@ -1579,7 +1579,7 @@ These are rehighlighted at each regeneration of goals buffer
 using a hook in `proof-shell-handle-delayed-output-hook'.")
 
 (defvar coq-highlighted-hyps-bg "gray"
-  "background color for highlighted hyps.")
+  "Background color for highlighted hyps.")
 
 
 (defun coq-highlight-hyp-aux (h)
@@ -1619,7 +1619,7 @@ use `coq-unhighlight-hyp' to unhighlight."
 
 (defun coq-highlight-selected-hyps ()
   "Highlight all hyps stored in `coq-highlighted-hyps'.
-This used in hook to rehilight hypothesis after goals buffer is
+This used in hook to rehighlight hypothesis after goals buffer is
 updated."
   (interactive)
   (coq-highlight-hyps coq-highlighted-hyps))
@@ -1719,7 +1719,7 @@ using a hook in `proof-shell-handle-delayed-output-hook'.")
 
 (defun coq-toggle-fold-hyp-at-mouse (event)
   "Toggle hiding the hypothesis at mouse click.
-Used on hyptohesis overlays in goals buffer mainly."
+Used on hypothesis overlays in goals buffer mainly."
   (interactive "e")
   (save-excursion
     (with-current-buffer proof-goals-buffer
@@ -1754,7 +1754,7 @@ Used on hyptohesis overlays in goals buffer mainly."
 (defun coq-fold-hyp-aux (h)
   "Fold hypothesis H's type from the context temporarily.
 Displays \".......\" instead. This function relies on variable
-coq-hyps-positions. The hiding is cancelled as soon as the goals
+coq-hyps-positions. The hiding is canceled as soon as the goals
 buffer is changed, consider using `coq-fold-hyp' if you want the
 hiding to be maintain when scripting/undoing."
   (let ((hyp-overlay (coq-find-hyp-overlay h)))
@@ -2052,17 +2052,17 @@ at `proof-assistant-settings-cmds' evaluation time.")
 (defun coq-shell-mode-config ()
   "Initialization of `coq-shell-mode' that runs in the `*coq*' buffer.
 The interaction buffer with Coq, `*coq*', uses a major mode that
-is derived via `proof-shell-mode' from `scomint-mode'. This
+is derived via `proof-shell-mode' from `scomint-mode'.  This
 function runs as the body of `coq-shell-mode' when the `*coq*'
 buffer is initialized, which happens when the Coq background
-process is started. This function intitalizes the Coq
+process is started.  This function intitalizes the Coq
 personalization of Proof General in the interaction buffer with
-Coq. At the end, this function calls `proof-shell-config-done',
+Coq.  At the end, this function calls `proof-shell-config-done',
 which initializes the Coq session, e.g., by sending
 `proof-shell-init-cmd', respectively, `coq-shell-init-cmd' to Coq.
 
 In normal interaction, the proof assistant is started because the
-user assert some commands. Therefore this function runs only
+user assert some commands.  Therefore this function runs only
 shortly before `proof-assert-command-hook', respectively,
 `coq-adapt-printing-width'."
   (setq
@@ -2223,7 +2223,7 @@ Return the empty string if the version of Coq < 8.10."
     ""))
 
 (defun coq-diffs--setter (symbol new-value)
-  ":set function fo `coq-diffs'.
+  ":set function to `coq-diffs'.
 Set Diffs setting if Coq is running and has a version >= 8.10."
   (set symbol new-value)
   (if (proof-shell-available-p)
@@ -2234,7 +2234,7 @@ Set Diffs setting if Coq is running and has a version >= 8.10."
           (proof-shell-invisible-command cmd)))))
 
 (defcustom coq-diffs 'off
-  "Controls Coq Diffs option"
+  "Controls Coq Diffs option."
   :type '(radio
     (const :tag "Don't show diffs" off)
     (const :tag "Show diffs: only added" on)
@@ -2355,7 +2355,7 @@ This is the Coq incarnation of `proof-tree-find-undo-position'."
   "Return the evar printing command for CMD as action list item.
 Adds, among others, `'empty-action-list' to flags to avoid that
 `coq-empty-action-list-command' adds a show command because it
-recognizes a change of a printing option. When the user quits the
+recognizes a change of a printing option.  When the user quits the
 proof tree display inside prooftree, then the evar command likely
 runs as single command."
   (proof-shell-action-list-item
@@ -2385,15 +2385,15 @@ Function for `proof-tree-display-stop-command'."
   "Insert show-goal commands when running completely silent.
 Coq specific function for `proof-tree-assistant-specific-urgent-action'.
 When running completely silent, insert a show-goal command for commands
-comming from the user. Be careful to not insert show-goal commands for
+coming from the user.  Be careful to not insert show-goal commands for
 show-goal requests from prooftree or for the items inserted by this
-function. LAST-ITEM is the last proof-action item that has just been
-processed. This function is guaranteed to be called at a place where
+function.  LAST-ITEM is the last proof-action item that has just been
+processed.  This function is guaranteed to be called at a place where
 `proof-action-list' can be directly manipulated.
 
 When single stepping through a proof, this function inserts a second
 show command, which is inserted before the one from
-`coq-show-goals-inside-proof'. One would of course be enough, but fixing
+`coq-show-goals-inside-proof'.  One would of course be enough, but fixing
 this would be difficult."
   (let ((flags (nth 3 last-item)))
     (unless (or (memq 'invisible flags)
@@ -2622,7 +2622,7 @@ Based on idea mentioned in Coq reference manual."
 (defvar coq-auto-as-hack-hyp-name-regex
   (concat "\\(" "induction\\|destruct" "\\)\\s-+\\(" coq-id-shy "\\)\\s-*\\.")
   "Regexp of commands needing a hack to generate correct \"as\" close.
-tacitcs like destruct and induction reuse hypothesis names by
+tactics like destruct and induction reuse hypothesis names by
 default, which makes the detection of new hypothesis incorrect.
 the hack consists in adding the \"!\" modifier on the argument
 destructed, so that it is left in the goal and the name cannot be
@@ -2631,7 +2631,7 @@ the whole tactic behaves correctly.
 Warning: this makes the error messages (and location) wrong.")
 
 (defun coq-hack-cmd-for-infoH (s)
-  "return the tactic S hacked with infoH tactical."
+  "Return the tactic S hacked with infoH tactical."
   (cond
    ;; We cannot rebuild the sub-patterns from the final goal, so ';' is not
    ;; supported. Only single tactics like destruct.
@@ -2673,8 +2673,8 @@ Warning: this makes the error messages (and location) wrong.")
   "<infomsg>\n?The proof of \\(?1:[^ \n]+\\)\\(?: \\|\n\\)should start with one of the following commands:\\(?: \\|\n\\)Proof using\\(?2:[^.]*\\)\\.")
 
 (defcustom coq-accept-proof-using-suggestion 'highlight
-  "Whether and how proofgeneral should insert \"Proof using\" suggestions.
-Suggestions are emitted by Coq at Qed time. The possible values
+  "Whether and how ProofGeneral should insert \"Proof using\" suggestions.
+Suggestions are emitted by Coq at Qed time.  The possible values
 of this variable are:
 
 - 'always: always insert the suggested annotation
@@ -2684,29 +2684,28 @@ of this variable are:
   coq-insert-suggested-dependency when point is on the proof
   considered)
 
-- 'ask: asks the user each time. If yes then do as 'always, else
+- 'ask: asks the user each time.  If yes then do as 'always, else
   do as 'highlight
 
 - 'never: ignore completely the suggestions.
 
 Remarks and limitations:
 - do not support nested proofs.
-- always use the *first* annotation suggested by coq.
+- always use the *first* annotation suggested by Coq.
 - the proof is not replayed, which is consistent with the fact
   that pg currently do not deal with async proofs.
 - if there is already a \"Proof using\" annotation, then either it
-  is correct and nothing happens, or it is incorrect and coq
+  is correct and nothing happens, or it is incorrect and Coq
   generates an error. PG won't try to replace the erroneous
   annotation in this case, but you can always go back, remove it
   by hand, and let pg insert the good one.
-- instead of the menu you can do M-x coq-insert-suggested-dependency
-  when point is on the proof considered.
-"
+- instead of the menu you can do \\[coq-insert-suggested-dependency]
+  when point is on the proof considered."
   :type '(choice
 	  (const :tag "Ask user" ask)
 	  (const :tag "Always accept" always)
 	  (const :tag "Higihlight" never)
-	  (const :tag "Ignore completely" ignore)) 
+	  (const :tag "Ignore completely" ignore))
   :group 'coq)
 
 ;; putting "Type" instead of nothing, otherwise Coq may fail if a "with"
@@ -2736,10 +2735,10 @@ annotation. See `proof-dependency-menu-system-specific'." )
   "Regexp matching Coq \"Proof ....\" annotation (with no \"using\" annotation).
 We suppose there is no \"using\" annotation, since Coq will fail
 in this case and no suggestion can be added without replaying the
-script. Actually the only possible content iafter Proof is a
+script.  Actually the only possible content after Proof is a
 \"with annotation\".
 The substring matched numbered 1 must start at the possible
-insertion point for the \"using\" annotation. ")
+insertion point for the \"using\" annotation.")
 
 
 ;; span is typically the whole theorem statement+proof span built after a save
@@ -2768,9 +2767,9 @@ insertion point for the \"using\" annotation. ")
     (span-delete specialspan)))
 
 (defun coq-find-Proof-command (start end)
-  "look for a \"Proof\" command in span SPAN.
+  "Look for a \"Proof\" command in span SPAN.
 
-Return nil if not found. Set point to the end of \"Proof\"
+Return nil if not found.  Set point to the end of \"Proof\"
 otherwise and return position."
   (goto-char start)
   (let ((res t) found)
@@ -3090,14 +3089,14 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 (defvar coq--error-location-regexp
   "^Toplevel input, characters \\(?1:[0-9]+\\)-\\(?2:[0-9]+\\):\\(\n> [^\n]*\\)*\n"
-  "A regexp to search the header of coq error locations.")
+  "A regexp to search the header of Coq error locations.")
 
 ;; I don't use proof-shell-last-output here since it is not always set to the
 ;; really last output (specially when a *tactic* gives an error) instead I go
 ;; directly to the response buffer. This allows also to clean the response
 ;; buffer (better to only scroll it?)
 (defun coq-get-last-error-location (&optional parseresp clean)
-  "Return location information on last error sent by coq.
+  "Return location information on last error sent by Coq.
 
 Return a two elements list (POS LEN) if successful, nil otherwise.
 
@@ -3156,8 +3155,7 @@ If PARSERESP is nil, don't really parse response buffer but take the value of
 If PARSERESP and CLEAN are non-nil, delete the error location from the response
 buffer.
 
-Important: Coq gives char positions in bytes instead of chars.
-"
+Important: Coq gives char positions in bytes instead of chars."
   (proof-with-current-buffer-if-exists proof-script-buffer
     (let ((mtch (coq-get-last-error-location parseresp clean)))
       (when mtch
@@ -3195,21 +3193,21 @@ Important: Coq gives char positions in bytes instead of chars.
 If `coq-run-completely-silent' is set, add a Show command as
 priority action, such that it will still be processed if the
 generic machinery inside `proof-shell-filter' believes it has
-processed the last item from the action list. When Coq runs in
+processed the last item from the action list.  When Coq runs in
 silent mode, we need to update the goals precisely when
 everything else from the action list has been processed.
 
 The Show command is only added inside proofs and only if the last
-processed command was not a show command from this function. The
+processed command was not a show command from this function.  The
 action item flag `'dont-show-when-silent' is used for the latter.
 
 KEEP-RESPONSE should be set if the last command produced some error or
-response that should be kept and shown to the user. If set, the flag
-`'keep-response' is added to the action item. When the show command is
+response that should be kept and shown to the user.  If set, the flag
+`'keep-response' is added to the action item.  When the show command is
 processed in `proof-shell-handle-delayed-output', the flag causes that
 the response buffer is not cleared and that in 2-pane mode the goals are
-not explicitely shown, see `pg-goals-display'. ON-ERROR should be set
-when there is some important message in the response buffer. In this
+not explicitly shown, see `pg-goals-display'.  ON-ERROR should be set
+when there is some important message in the response buffer.  In this
 case `'no-response-display' is added to the flags such that a \"no more
 goals\" reply to the Show command does not overwrite the response
 buffer.
@@ -3229,7 +3227,7 @@ Do nothing if `coq-run-completely-silent' is disabled."
   "Update goals after error.
 This function is intended for
 `proof-shell-handle-error-or-interrupt-hook' to update the goals
-buffer after an error has been detected. See also
+buffer after an error has been detected.  See also
 `coq-show-goals-inside-proof'."
   (coq-show-goals-inside-proof t t))
 
@@ -3238,8 +3236,8 @@ buffer after an error has been detected. See also
 This function is intended for
 `proof-shell-handle-delayed-output-hook' to update the goals
 buffer after the last command has been processed and no error has
-been detected. Take care to keep the response buffer visible if
-the last command was a Search, a Check or something similar. See
+been detected.  Take care to keep the response buffer visible if
+the last command was a Search, a Check or something similar.  See
 also `coq-show-goals-inside-proof'."
   (coq-show-goals-inside-proof (eq proof-shell-last-output-kind 'response) nil))
 
@@ -3338,7 +3336,7 @@ number of hypothesis displayed, without hiding the goal"
 (defun coq-clean-goals-outside-proof ()
   "Clear goals buffer outside proofs.
 This function ensures that the goals buffer is reset after Qed or
-Admitted. This function is for
+Admitted.  This function is for
 `proof-shell-handle-delayed-output-hook'."
   (when (or (not coq-last-but-one-proofstack)
             (proof-string-match coq-shell-proof-completed-regexp
@@ -3434,7 +3432,7 @@ Only when three-buffer-mode is enabled."
 ;; TODO: Have the same for other commands, but with insertion at all.
 
 (defcustom coq-double-hit-enable nil
-  "* Experimental: Whether or not double hit should be enabled in coq mode.
+  "* Experimental: Whether or not double hit should be enabled in Coq mode.
 A double hit is performed by pressing twice a key quickly.  If
 this variable is not nil, then 1) it means that electric
 terminator is off and 2) a double hit on the terminator act as
@@ -3446,7 +3444,7 @@ the usual electric terminator.  See `proof-electric-terminator'."
 
 (defvar coq-double-hit-hot-key "."
   "The key used for double hit electric terminator.
-By default this is the coq terminator \".\" key.
+By default this is the Coq terminator \".\" key.
 For example one can do this:
 
 \(setq coq-double-hit-hot-key (kbd \";\"))
@@ -3488,7 +3486,7 @@ This is an advice to pg `proof-electric-terminator-enable' function."
 (ad-activate 'proof-electric-terminator-enable)
 
 (defvar coq-double-hit-delay 0.25
-  "The maximum delay between the two hit of a double hit in coq/proofgeneral.")
+  "The maximum delay between the two hit of a double hit in Coq/ProofGeneral.")
 
 (defvar coq-double-hit-timer nil
   "The timer used to watch for double hits.")
@@ -3558,12 +3556,12 @@ correct in the new scripting buffer."
 (add-hook 'proof-deactivate-scripting-hook #'coq-kill-proof-shell t)
 
 (defcustom coq-kill-coq-on-opam-switch t
-  "If t kill coq when the opam switch changes (requires `opam-switch-mode').
+  "If t kill Coq when the opam switch changes (requires `opam-switch-mode').
 When `opam-switch-mode' is loaded and the user changes the opam switch
-through `opam-switch-mode' then this option controls whether the coq
+through `opam-switch-mode' then this option controls whether the Coq
 background process (the proof shell) is killed such that the next
 assert command starts a new proof shell, probably using a
-different coq version from a different opam switch.
+different Coq version from a different opam switch.
 
 See https://github.com/ProofGeneral/opam-switch-mode for `opam-switch-mode'"
   :type 'boolean
@@ -3574,10 +3572,10 @@ See https://github.com/ProofGeneral/opam-switch-mode for `opam-switch-mode'"
   "Kill proof shell when the opam switch changes (requires `opam-switch-mode').
 This function is for the `opam-switch-mode' hook
 `opam-switch-change-opam-switch-hook', which runs when the user
-changes the opam switch through `opam-switch-mode'. If
+changes the opam switch through `opam-switch-mode'.  If
 `coq-kill-coq-on-opam-switch' is t, then the proof shell is
 killed such that the next assert starts a new proof shell, using
-coq from the new opam switch."
+Coq from the new opam switch."
   (when (and coq-kill-coq-on-opam-switch proof-script-buffer)
     (coq-kill-proof-shell)))
 

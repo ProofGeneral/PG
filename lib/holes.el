@@ -168,15 +168,15 @@ This is not the keymap used on holes's overlay (see `hole-map' instead).")
 ;;;
 
 (defun holes-region-beginning-or-nil ()
-  "Return the beginning of the acitve region, or nil."
+  "Return the beginning of the active region, or nil."
   (and mark-active (region-beginning)))
 
 (defun holes-region-end-or-nil ()
-  "Return the end of the acitve region, or nil."
+  "Return the end of the active region, or nil."
   (and mark-active (region-end)))
 
 (defun holes-copy-active-region ()
-  "Copy and retuurn the active region."
+  "Copy and return the active region."
   (cl-assert mark-active nil "the region is not active now.")
   (copy-region-as-kill (region-beginning) (region-end))
   (car kill-ring))
@@ -347,7 +347,7 @@ Operate between character positions FROM and TO."
 
 (defun holes-clear-all-buffer-holes (&optional start end)
   "Clear all holes leaving their contents.
-Operate betwenn START and END if non nil."
+Operate between START and END if non nil."
   (interactive)
   (holes-disable-active-hole)
   (span-mapcar-spans
@@ -452,7 +452,7 @@ following hole if it exists."
 	  (setq holes-active-hole holes-default-hole)))))
 
 (defun holes-delete-update-active-hole ()
-  "Deletes the active hole and supresses its content.
+  "Deletes the active hole and suppresses its content.
 Sets `holes-active-hole' to the next hole if it exists."
   (interactive)
   (holes-replace-update-active-hole ""))
@@ -642,7 +642,7 @@ With arg, turn Outline minor mode on if arg is positive, off otherwise.
 
 The mode `holes-mode' is meant to help program editing.  It is
 useful to build complicated expressions by copy pasting several
-peices of text from different parts of a buffer (or even from
+pieces of text from different parts of a buffer (or even from
 different buffers).
 
 HOLES

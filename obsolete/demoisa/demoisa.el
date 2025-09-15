@@ -1,4 +1,4 @@
-;; demoisa.el Example Proof General instance for Isabelle
+;;; demoisa.el --- Example Proof General instance for Isabelle
 ;;
 ;; Copyright (C) 1999 LFCS Edinburgh.
 ;;
@@ -6,7 +6,8 @@
 ;;
 ;; $Id$
 ;;
-;; =================================================================
+
+;;; Commentary:
 ;;
 ;; See README in this directory for an introduction.
 ;;
@@ -29,6 +30,8 @@
 ;; later in the table, set PROOFGENERAL_ASSISTANTS=demoisa in the
 ;; shell before starting Emacs	(or customize proof-assistants).
 ;;
+
+;;; Code:
 
 (require 'proof)			; load generic parts
 (require 'pg-goals)
@@ -138,3 +141,5 @@
 ;; configuration for the goals buffer.
 
 (provide 'demoisa)
+
+;;; demoisa.el ends here

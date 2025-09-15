@@ -19,11 +19,11 @@
 ;; This file file contains tests for `coq-par-job-needs-compilation-quick'.
 ;; It specifies for all combinations of `coq-compile-quick', existing
 ;; files and relative file ages the required result and side effects
-;; of `coq-par-job-needs-compilation-quick'. There are more than 500
-;; single tests, which are all independent. One could therefore define
-;; each of these single tests as an ERT test. However, one line in
+;; of `coq-par-job-needs-compilation-quick'.  There are more than 500
+;; single tests, which are all independent.  One could therefore define
+;; each of these single tests as an ERT test.  However, one line in
 ;; `coq--par-job-needs-compilation-tests' generates between 1 and 4 of
-;; such single tests. Therefore, making each an ERT test is probably
+;; such single tests.  Therefore, making each an ERT test is probably
 ;; not worth the effort.
 ;;
 ;; Debugging hints: Set test--coq-par-only-test to the failing test
@@ -934,7 +934,7 @@ test the result and side effects with `assert'."
 
 (defconst test--coq-par-only-test nil
   "If non-nil, run this test only.
-Must be nil under normal circumstances. Can be set to a number
+Must be nil under normal circumstances.  Can be set to a number
 for debugging, then only this test number is run.")
 
 
@@ -967,7 +967,7 @@ for debugging, then only this test number is run.")
 (defun test-coq-par-job-needs-compilation-quick-fun (dir)
   "Check test data wellformedness and run all the tests."
   (when coq--debug-auto-compilation
-    (message "check coq--par-job-needs-compilation-tests invariant")) 
+    (message "check coq--par-job-needs-compilation-tests invariant"))
   (test-coq-par-test-data-invarint)
   (setq test--coq-par-counter 1)
   (mapc
@@ -981,9 +981,11 @@ for debugging, then only this test number is run.")
    coq--par-job-needs-compilation-tests))
 
 (ert-deftest test-coq-par-job-needs-compilation-quick ()
-  "Run all tests for coq-par-job-needs-compilation-quick."
+  "Run all tests for `coq-par-job-needs-compilation-quick'."
   ;;(setq coq--debug-auto-compilation t)
   (test-coq-par-job-needs-compilation-quick-fun
    (make-temp-name "/tmp/coq-par-test")))
 
-;;; test-coq-par-job-needs-compilation-quick.el ends here
+(provide 'coq-test-par-job-needs-compilation-quick)
+
+;;; coq-test-par-job-needs-compilation-quick.el ends here

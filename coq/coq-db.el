@@ -29,7 +29,7 @@
 (require 'diff-mode)
 
 (defconst coq-syntax-db nil
-  "Documentation-only variable, for coq keyword databases.
+  "Documentation-only variable, for Coq keyword databases.
 Each element of a keyword database contains the definition of a \"form\", of the
 form:
 
@@ -44,25 +44,25 @@ INSERT is the complete text of the form, which may contain holes denoted by
 \"#\" or \"@{xxx}\".
 
 If non-nil the optional STATECH specifies that the command is not state
-preserving for coq.
+preserving for Coq.
 
-If non-nil the optional KWREG is the regexp to colorize correponding to the
+If non-nil the optional KWREG is the regexp to colorize corresponding to the
 keyword.  ex: \"simple\\\\s-+destruct\" (\\\\s-+ meaning \"one or more spaces\").
-*WARNING*: A regexp longer than another one should be put FIRST. For example:
+*WARNING*: A regexp longer than another one should be put FIRST.  For example:
 
   (\"Module Type\" ... ... t \"Module\\s-+Type\")
   (\"Module\" ... ... t \"Module\")
 
-Is ok because the longer regexp is recognized first.
+Is OK because the longer regexp is recognized first.
 
 If non-nil the optional INSERT-FUN is the function to be called when inserting
-the form (instead of inserting INSERT, except when using \\[expand-abbrev]). This
+the form (instead of inserting INSERT, except when using \\[expand-abbrev]).  This
 allows to write functions asking for more information to assist the user.
 
 If non-nil the optional HIDE specifies that this form should not appear in the
 menu but only in interactive completions.
 
-Example of what could be in your emacs init file:
+Example of what could be in your Emacs init file:
 
 \(defvar coq-user-tactics-db
   \\='(
@@ -77,7 +77,7 @@ new keyword to colorize.")
 (defun coq-insert-from-db (db prompt &optional alwaysjump)
   "Ask for a keyword, with completion on keyword database DB and insert.
 Insert corresponding string with holes at point.  If an insertion
-function is present for the keyword, call it instead. See
+function is present for the keyword, call it instead.  See
 `coq-syntax-db' for DB structure.  If ALWAYSJUMP is non nil, jump to
 the first hole even if more than one."
   (let* ((tac (completing-read (concat prompt " (TAB for completion): ")
@@ -251,7 +251,7 @@ structure."
     res))
 
 (defcustom coq-holes-minor-mode t
-  "*Whether to apply holes minor mode (see `holes-show-doc') in coq mode."
+  "*Whether to apply holes minor mode (see `holes-show-doc') in `coq-mode'."
   :type 'boolean
   :group 'coq)
 
@@ -307,12 +307,12 @@ See `coq-syntax-db' for DB structure."
 
 (defface coq-symbol-binder-face
   '((t :inherit font-lock-type-face :bold coq-bold-unicode-binders))
-  "Face for unicode binders, by default a bold version of `font-lock-type-face'."
+  "Face for Unicode binders, by default a bold version of `font-lock-type-face'."
   :group 'proof-faces)
 
 (defface coq-symbol-face
   '((t :inherit font-lock-type-face :bold coq-bold-unicode-binders))
-  "Face for unicode binders, by default a bold version of `font-lock-type-face'."
+  "Face for Unicode binders, by default a bold version of `font-lock-type-face'."
   :group 'proof-faces)
 
 (defface coq-question-mark-face
@@ -337,19 +337,19 @@ See `coq-syntax-db' for DB structure."
   '(
     (((class color) (background light)) . (:background "light gray"))
     (((class color) (background dark)) . (:background "gray" :foreground "black")))
-  "Coq face for the (un)folding hypothesis button"
+  "Coq face for the (un)folding hypothesis button."
   :group 'proof-faces)
 
 (defface coq-button-face-pressed
   '((((class color) (background light)) . (:background "gray"))
     (((class color) (background dark)) . (:background "dim gray" :foreground "black")))
-  "Coq face for the (un)folding hypothesis button"
+  "Coq face for the (un)folding hypothesis button."
   :group 'proof-faces)
 
 (defface coq-button-face-active
   '((((class color) (background light)) . (:background "black" :foreground "white"))
     (((class color) (background dark)) . (:background "grey24" :foreground "black")))
-  "Coq face for the (un)folding hypothesis button"
+  "Coq face for the (un)folding hypothesis button."
   :group 'proof-faces)
 
 (defconst coq-solve-tactics-face 'coq-solve-tactics-face
@@ -373,22 +373,22 @@ Required so that \\='coq-symbol-binder-face is a proper facename")
 
 (defface coq-diffs-added-face
   '((t . (:inherit diff-refine-added)))
-  "Face used to highlight added text in diffs"
+  "Face used to highlight added text in diffs."
   :group 'proof-faces)
 
 (defface coq-diffs-removed-face
   '((t . (:inherit diff-refine-removed)))
-  "Face used to highlight removed text in diffs"
+  "Face used to highlight removed text in diffs."
   :group 'proof-faces)
 
 (defface coq-diffs-added-bg-face
   '((t . (:inherit diff-added)))
-  "Face used to highlight unchanged text in lines showing added text in diffs"
+  "Face used to highlight unchanged text in lines showing added text in diffs."
   :group 'proof-faces)
 
 (defface coq-diffs-removed-bg-face
   '((t . (:inherit diff-removed)))
-  "Face used to highlight unchanged text in lines showing removed text in diffs"
+  "Face used to highlight unchanged text in lines showing removed text in diffs."
   :group 'proof-faces)
 
 (defvar coq-tag-map

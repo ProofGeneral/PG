@@ -54,7 +54,7 @@ If you are on a window system and your value of variable `window-system' is
 not listed here, you may not get the correct syntax colouring behaviour.")
 
 (defmacro proof-face-specs (bl bd ow)
-  "Return a spec for `defface' with BL for light bg, BD for dark, OW o/w."
+  "Return a spec for `defface' with BL for light background, BD for dark, OW o/w."
   `(append
     (apply 'append
      (mapcar
@@ -207,7 +207,7 @@ Warning messages can come from proof assistant or from Proof General itself."
    (:background "indianred1")
    (:background "indianred3")
    (:underline t))
-  "Proof General face for marking an error in the proof script. "
+  "Proof General face for marking an error in the proof script."
   :group 'proof-faces)
 
 (defface proof-script-highlight-error-face
@@ -215,7 +215,7 @@ Warning messages can come from proof assistant or from Proof General itself."
     (:background "indianred1" :bold t)
     (:background "indianred3" :bold t)
     (:underline t :bold t))
-  "Proof General face for highlighting an error in the proof script. "
+  "Proof General face for highlighting an error in the proof script."
   :group 'proof-faces)
 
 (defface proof-omitted-proof-face
@@ -223,7 +223,7 @@ Warning messages can come from proof assistant or from Proof General itself."
    (:background "#EAEFFF" :extend t)
    (:background "#9C4A90" :extend t)
    (:foreground "white" :background "black" :extend t))
-  "*Face for background of omitted proofs"
+  "*Face for background of omitted proofs."
   :group 'proof-faces)
 
 
