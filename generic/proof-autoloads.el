@@ -1,4 +1,4 @@
-;;; proof-autoloads.el --- automatically extracted autoloads
+;;; proof-autoloads.el --- automatically extracted autoloads  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
