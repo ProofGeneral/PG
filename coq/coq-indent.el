@@ -3,7 +3,7 @@
 ;; This file is part of Proof General.
 
 ;; Portions © Copyright 1994-2012  David Aspinall and University of Edinburgh
-;; Portions © Copyright 2003-2021  Free Software Foundation, Inc.
+;; Portions © Copyright 2003-2021, 2023  Free Software Foundation, Inc.
 ;; Portions © Copyright 2001-2017  Pierre Courtieu
 ;; Portions © Copyright 2010, 2016  Erik Martin-Dorel
 ;; Portions © Copyright 2011-2013, 2016-2017  Hendrik Tews
@@ -37,7 +37,7 @@
 (defconst coq-comment-start-or-end-regexp
   (concat coq-comment-start-regexp "\\|" coq-comment-end-regexp))
 
-(defconst coq-bullet-regexp-nospace "\\(-\\)+\\|\\(+\\)+\\|\\(\\*\\)+"
+(defconst coq-bullet-regexp-nospace "\\(-\\)+\\|\\(\\+\\)+\\|\\(\\*\\)+"
   "Matches single bullet, WARNING: Lots of false positive.
 
 No context checking.")
@@ -53,9 +53,9 @@ No context checking.")
 ;; use of the fact that the file is processed from top to bottom. At
 ;; each step the point is put just after the last recognized chunk,
 ;; then spaces are jumped, and THEN the regexp for command end is
-;; searched. Since bullets are are command ends occurring at command
+;; searched. Since bullets are command ends occurring at command
 ;; start, we use the "\\=" regexp to tell if we are at the beginning
-;; of a command. We don't car for the presence of comments, as the
+;; of a command. We don't care for the presence of comments, as the
 ;; regexp search is launched once coments are passed.
 ;; On the contrary when going backward we cannot use this trick.
 
@@ -96,9 +96,11 @@ There are 3 substrings (2 and 3 may be nil):
 * number 2 is the left context matched that is not part of the bullet
 * number 3 is the right context matched that is not part of the bullet")
 
-;; captures a lot of false bullets, unless called at the first non
-;; space character of a command. The primary use of this variable is
-;; to split the buffer into commands, from top to bottom.
+;; captures a lot of false bullets, unless called at the first non space character
+;; of a command. The primary use of this variable is to split the buffer into
+;; commands, from top to bottom. We use the \= regexp for the special case where we
+;; match the regexp at the very starting point (in which case we don't look at what
+;; is before the main regexp)
 (defconst coq-bullet-end-command-forward
   (concat "\\(?:\\=\\(?1:" coq-bullet-regexp-nospace "\\)\\)")
   "Matches ltac bullets.  WARNING: lots of false positive.
@@ -110,7 +112,7 @@ only when searching backward).")
 
 ;; Context aware detecting regexp, usefull when search backward.
 (defconst coq-bullet-end-command-backward
-  (concat "\\(?:\\(?2:" coq-bullet-prefix-regexp-backward "\\)\\(?1:\\(-\\)+\\|\\(+\\)+\\|\\(\\*\\)+\\)\\)")
+  (concat "\\(?:\\(?2:" coq-bullet-prefix-regexp-backward "\\)\\(?1:\\(-\\)+\\|\\(\\+\\)+\\|\\(\\*\\)+\\)\\)")
   "Matches ltac bullets when searching backward.
 
 This should match EXACTLY bullets.  No false positive should be accepted.
@@ -122,7 +124,7 @@ There are 2 substrings:
   (concat
    "\\(?:"
      "\\(?2:"
-       "\\(?:" coq-bullet-prefix-regexp-forward"\\)\\)"
+       "\\(?:" coq-bullet-prefix-regexp-forward "\\)\\)"
       "\\(?1:\\(?:" coq-goal-selector-regexp "\\)?{\\)"
       "\\(?3:\\s-*[^|{]\\)"
      "\\|"
@@ -191,7 +193,6 @@ There are 3 substrings (2 and 3 may be nil):
 Remark: This regexp is much more precise than `coq-end-command-regexp-forward'
 but only works when searching backward.")
 
-(defconst coq-cmd-end-backward-matcher (concat "\\(?2:" coq-simple-cmd-ender-prefix-regexp-backward "\\)\\.\\s-"))
 
 (defun coq-looking-at-comment ()
   "Return non-nil if point is inside a comment."
@@ -345,9 +346,12 @@ a comment, return nil and does not move the point."
 ;;           )))
 ;;     (when found (point))))
 
-;; check if we are in the middle of an command ender. Return the
-;; number of shift needed to have to move one char to see the end of a
-;; command. typically if we are ( >< is the cursor). intro.><
+;; check if we are in the middle of an command ender. Return the number of left
+;; shifts needed to move to see the whole command ender a command. typically if we
+;; are ( >< is the cursor):
+;;   intro.><, then we return 1
+;;   intro><., then we return 0
+;;   int><ro., then we return 0
 (defun coq-is-on-ending-context ()
   (cond
    ((looking-at "}") 0)
@@ -388,6 +392,32 @@ Comments are ignored, of course."
    ))
 
 
+;; Strictly speaking lp:{{ could be a goal selector?
+(defun coq-is-at-elpi-block (pos)
+  (save-excursion (goto-char pos) (and (looking-at "{{") (looking-back "lp:"))))
+
+(defun coq-in-elpi-block (lopen)
+  (cl-find-if 'coq-is-at-elpi-block lopen))
+
+(defun coq-confirm-cmdend (&optional pos)
+  "Return t if POS is really a Rocq command end.
+
+WARNING: POS should be looking at a command that matched command end
+regexp. This function only checks if it is not a false positive, like
+something like a bullet (-,+,*) but actually not at the beginning of a
+command, or a regular command end but located in a comment or inside an
+elpi block."
+  (save-excursion
+    (if pos (goto-char pos))
+    (let ((ppss (syntax-ppss)))
+    (cond
+     ((nth 3 ppss) nil) ;; inside a string
+     ((nth 4 ppss) nil) ;; inside a comment
+     ((coq-in-elpi-block (nth 9 ppss)) nil)
+     ((looking-at "\\+\\|\\*\\|-\\|{\\|}") (coq-empty-command-p))
+     (t)))))
+  
+
 ; slight modification of proof-script-generic-parse-cmdend (one of the
 ; candidate for proof-script-parse-function), to allow "{" and "}" to
 ; be command terminator when the command is empty. This function is
@@ -411,36 +441,15 @@ regexp."
                         (and
                          (re-search-forward coq-end-command-regexp-forward limit t)
                          (match-end 1)))
-                  (or
-                   (and (not (or (string-equal (match-string 1) ".")
-                                 (string-equal (match-string 1) "...")))
-                        ;; Checking that this is really a bullet
-                        ;; command-end that are not a dot are + ++ -
-                        ;; -- etc or { or }. To ensure this is really
-                        ;; a bullet (and not one of the numerous
-                        ;; other possible uses of those tokens) we
-                        ;; check that the command ended by it is
-                        ;; empty. example:
-                        ;; destruct x.
-                        ;; - (* - here ends an empty command*)
-                        (save-excursion
-                          (goto-char (match-beginning 1))
-                          (not (coq-empty-command-p))))
-                   (and
-                    (goto-char foundend)
-                    (nth 8 (syntax-ppss)))))
+                  (not (coq-confirm-cmdend (match-beginning 1))))
         ;; Given the form of coq-end-command-regexp-forward
         ;; match-end 1 is the right place to start again
         ;; to search backward, next time we start from just
         ;; there
         (ignore-errors (goto-char foundend)))
-      (if (and foundend
-               (goto-char foundend) ; move to command end
-               (not (nth 8 (syntax-ppss))))
-          ;; Found command end outside string/comment
-          'cmd
-        ;; Didn't find command end
-        nil))))
+      (if (not foundend) nil
+        (goto-char foundend)
+        'cmd))))
 
 
 ;; This is not used by generic pg, just by a few functions in here.
@@ -464,31 +473,11 @@ and return nil."
                         (and
                          (re-search-backward coq-end-command-regexp-backward limit 'dummy)
                          (match-beginning 1)))
-                  ;; Given the form of coq-end-command-regexp-backward
-                  ;; - bullets should be correctly detected
-                  ;; - match-beginning 1 is the right place to start again
-                  ;;   to search backward, next time we start from just
-                  ;;   there, unless we are in a comment
-                  (goto-char foundbeg)
-                  (let ((ppss (syntax-ppss)))
-                    ;; If neither within a string nor a comment, just exit the
-                    ;; loop.  Otherwise see what kind of syntactic
-                    (and (nth 8 ppss)
-                         (cond
-                          ;; jump directly out of a comment
-                          ((nth 4 ppss)
-                           (setq foundbeg (goto-char (nth 8 ppss))))
-                          ((nth 3 ppss) t) ;FIXME: Why?
-                          ;; nil captured before entering the cond
-                          (t (message "assert false"))))))
+                  (not (coq-confirm-cmdend (match-beginning 1))))
         (ignore-errors (goto-char foundbeg)))
-      (if (and foundbeg
-               (goto-char foundbeg) ; move to command end
-               (not (nth 8 (syntax-ppss))))
-          ;; Found command end outside string/comment
-          'cmd
-        ;; Didn't find command end
-        nil))))
+      (if (not foundbeg) nil
+        (goto-char foundbeg)
+        'cmd))))
 
 
 (defun coq-find-current-start ()

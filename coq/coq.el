@@ -488,14 +488,11 @@ This is a subroutine of `proof-shell-filter'."
 
 
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
-;; candidate for proof-script-parse-function), to allow "{" and "}" to be
-;; command terminator when the command is empty. TO PLUG: swith the comment
-;; below and rename coq-script-parse-function2 into coq-script-parse-function
+;; candidate for proof-script-parse-function). See its definition in
+;; coq-indent.el.
 (defun coq-script-parse-function ()
   "For `proof-script-parse-function' if `proof-script-command-end-regexp' set."
   (coq-script-parse-cmdend-forward))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;; End of "{" and "} experiments ;;;;;;;;;;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; Freeze buffers ;;;;;;;;;;;;
