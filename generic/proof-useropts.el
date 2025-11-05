@@ -232,13 +232,12 @@ and displayed lazily.  See `proof-layout-windows'."
 
 (defcustom proof-three-window-mode-policy 'smart
   "*Window splitting policy for three window mode.
-- If 'vertical then never split horizontally.
-- If 'horizontal then always have scripting buffer on the right
-  and goal and response buffers on the left (one above the
-  other).
-- If 'smart or anything else: 'horizontal when the window
-  is wide enough and 'vertical otherwise.  The width threshold
-  is given by `split-width-threshold'.
+- If 'vertical forces one column mode.
+- If 'horizontal forces 3 column mode
+- If 'hybrid forces 2 columns mode
+- If 'smart or anything else: 'horizontal when the window is wide
+  enough, then hybrid if wide enough and 'vertical otherwise. The width
+  threshold is given by `split-width-threshold'.
 
   See `proof-layout-windows'."
   :type '(choice
