@@ -3698,7 +3698,7 @@ dragging the separating bars.
   where the three useful buffers are displayed: scripting
   buffer, goals buffer and response buffer.
 
-  Here are the three modes:
+  The three possible modes are:
 
   - vertical: the 3 buffers are displayed in one column.
   - hybrid: 2 columns mode, left column displays scripting buffer
@@ -3706,12 +3706,12 @@ dragging the separating bars.
   - horizontal: 3 columns mode, one for each buffer (script, goals,
     response).
 
-  By default, the display mode is automatically chosen by
-  considering the current Emacs frame width: if it is smaller
-  than @samp{@code{split-width-threshold}} then vertical mode is chosen,
-  otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
-  then hybrid mode is chosen, finally if the frame is larger than
-  1.5 * @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
+  By default, the display mode is @code{'smart} which automatically choses
+  between these 3 modes by considering the current Emacs frame width: if
+  it is smaller than @samp{@code{split-width-threshold}} then vertical mode is
+  chosen, otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
+  then hybrid mode is chosen, finally if the frame is larger than 1.5 *
+  @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
 
   You can change the value of @samp{@code{split-width-threshold}} at your
   will.
