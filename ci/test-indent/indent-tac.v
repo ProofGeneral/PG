@@ -418,6 +418,28 @@ Module X.
       {auto. }
     }
     intros r. {
+      now exists
+            {|
+              fld1:=r.(fld2);
+              fld2:=r.(fld1);
+              fld3:=false
+            |}.
+      split.
+      {auto. }
+      {auto. }
+    }
+    intros r. {
+      split.
+      - now exists x.
+        split.
+        {auto. }
+        {auto. }
+      - now exists x.
+        split.
+        {auto. }
+        {auto. }
+    }
+    intros r. {
       exists
         {|
           fld1:=

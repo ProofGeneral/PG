@@ -153,6 +153,28 @@ Module curlybracesatend.
         simpl.
         rewrite Nat.add_1_r.
         reflexivity.
+        intros r. {
+          now exists
+                {|
+                  fld1:=r.(fld2);
+                  fld2:=r.(fld1);
+                  fld3:=false
+                |}.
+          split.
+          {auto. }
+          {auto. }
+        }
+        intros r. {
+          try exists
+                {|
+                  fld1:=r.(fld2);
+                  fld2:=r.(fld1);
+                  fld3:=false
+                |}.
+          split.
+          {auto. }
+          {auto. }
+        }
       }
     }
     idtac.

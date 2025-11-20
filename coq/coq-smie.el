@@ -835,7 +835,7 @@ The point should be at the beginning of the command name."
 	     (let ((prevtok (coq-smie-backward-token)))
 	       ;; => may be wrong here but rare (have "=> ltac"?)
 	       (not (or (coq-is-cmdend-token prevtok)
-			(member prevtok '("; tactic" "[" "]" "|" "=>")))))))
+			(member prevtok '("; tactic" "[" "]" "|" "=>" "Com start")))))))
       "quantif exists")
 
      ((equal tok "∀") "forall")
