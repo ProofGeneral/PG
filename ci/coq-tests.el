@@ -137,6 +137,7 @@ then evaluate the BODY function and finally tear-down (exit Coq)."
 ;;; For info on macros: https://mullikine.github.io/posts/macro-tutorial
 ;;; (pp (macroexpand '(macro args)))
   (save-excursion
+    (if file (should (file-exists-p file)))
     (let* (;; avoids bad width detection in batch mode 
            (coq-auto-adapt-printing-width nil)
            (openfile (or file
@@ -503,6 +504,23 @@ For example, COMMENT could be (*test-definition*)"
                        (equal (span-end sp) (+ 1 proof-cmd-point (length "bar")))))
            )
          (should (equal (proof-queue-or-locked-end) (point-min)))))))) 
+
+(ert-deftest 200_test-command-spliting ()
+  "Test command splitting of a file."
+  (coq-fixture-on-file
+   (coq-test-full-path "test_command_parsing.v")
+   (lambda ()
+     (coq-test-goto-before "(*init*)")
+     (proof-goto-point)
+     (proof-shell-wait)
+     (goto-char (point-min))
+     (let ((cpt 0) type)
+       (while (setq type (funcall proof-script-parse-function))
+         (setq cpt (+ 1 cpt))
+         (should (equal type 'cmd)))
+       (should (equal cpt 17))))))
+
+
 (provide 'coq-tests)
 
 ;;; coq-tests.el ends here
