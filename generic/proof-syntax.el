@@ -244,17 +244,17 @@ may be a string or sexp evaluated to get a string."
   (while alist
     (let ((idx 0))
       (while (string-match (car (car alist)) string idx)
-	(let ((replacement
-	       (cond
-		((stringp (cdr (car alist)))
-		 (cdr (car alist)))
-		(t
-		 (eval (cdr (car alist)))))))
-	  (setq string
-		(concat (substring string 0 (match-beginning 0))
-			replacement
-			(substring string (match-end 0))))
-	  (setq idx (+ (match-beginning 0) (length replacement))))))
+	    (let ((replacement
+	           (cond
+		        ((stringp (cdr (car alist)))
+		         (cdr (car alist)))
+		        (t
+		         (eval (cdr (car alist)))))))
+	      (setq string
+		        (concat (substring string 0 (match-beginning 0))
+			            replacement
+			            (substring string (match-end 0))))
+	      (setq idx (+ (match-beginning 0) (length replacement))))))
     (setq alist (cdr alist)))
   string)
 
