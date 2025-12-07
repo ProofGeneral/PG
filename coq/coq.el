@@ -912,7 +912,15 @@ default."
 (defun coq-id-under-mouse-query (event)
   "Query the prover about the identifier or notation near mouse click EVENT.
 This is mapped to control/shift mouse-1, unless coq-remap-mouse-1
-is nil (t by default)."
+is nil (which is the default).
+
+More precisely:
+- ctrl click issues a Print query
+- shift issues a Check query
+- ctrl+shift click issued a Check query
+- adding meta (alt) to the modifiers perform the same query but with \"Set
+  Printing All\" set
+"
   (interactive "e")
   (save-selected-window
     (save-excursion
@@ -922,14 +930,20 @@ is nil (t by default)."
              (modifs (event-modifiers event))
              (shft (member 'shift modifs))
              (ctrl (member 'control modifs))
-             (cmd (when (or id notat)
-                    (if (and ctrl shft) (if id "Check" "Locate")
-                      (if shft (if id "About" "Locate")
-                        (if ctrl (if id "Print" "Locate")))))))
-        (proof-shell-invisible-command
-         (format (concat  cmd " %s .")
-                 ;; Notation need to be surrounded by ""
-                 (if id id (concat "\"" notat "\""))))))))
+             (mta (member 'meta modifs))
+             (c (cond
+                 ((and (not notat) (not id))
+                  (error "Can't detect anything meaningful under mouse"))
+                 ((and notat (not id)) "Locate")
+                 ((and ctrl shft) "Check")
+                 (shft "About")
+                 (ctrl "Print")))
+             ;; Notation need to be surrounded by ""
+             (cmd (format (concat c " %s") (or id (concat "\"" notat "\"")))))
+        (if mta ;; meta means: Set printing all for the command
+            (coq-command-with-set-unset
+             "Set Printing All" cmd "Unset Printing All" nil "Test Printing All")
+          (proof-shell-invisible-command cmd))))))
 
 (defun coq-guess-or-ask-for-string (s &optional dontguess)
   "Asks for a coq identifier with message S.
@@ -3039,6 +3053,9 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (define-key proof-mode-map [(shift mouse-1)] #'ignore)
   (define-key proof-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
   (define-key proof-mode-map [(control shift mouse-1)] #'ignore)
+  (define-key proof-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-mode-map [(meta shift mouse-1)] #'ignore)
 
   (define-key proof-response-mode-map [(control down-mouse-1)] #'coq-id-under-mouse-query)
   (define-key proof-response-mode-map [(shift down-mouse-1)] #'coq-id-under-mouse-query)
@@ -3046,13 +3063,20 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
   (define-key proof-response-mode-map [(shift mouse-1)] #'ignore)
   (define-key proof-response-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
   (define-key proof-response-mode-map [(control shift mouse-1)] #'ignore)
+  (define-key proof-response-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-response-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-response-mode-map [(meta shift mouse-1)] #'ignore)
+
 
   (define-key proof-goals-mode-map [(control down-mouse-1)] #'coq-id-under-mouse-query)
   (define-key proof-goals-mode-map [(shift down-mouse-1)] #'coq-id-under-mouse-query)
   (define-key proof-goals-mode-map [(control mouse-1)] #'ignore)
   (define-key proof-goals-mode-map [(shift mouse-1)] #'ignore)
   (define-key proof-goals-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(control shift mouse-1)] #'ignore))
+  (define-key proof-goals-mode-map [(control shift mouse-1)] #'ignore)
+  (define-key proof-goals-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-goals-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
+  (define-key proof-goals-mode-map [(meta shift mouse-1)] #'ignore))
 
 
 
