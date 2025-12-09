@@ -46,7 +46,6 @@
 (defvar coq-auto-insert-as)             ; defpacustom
 (defvar coq-time-commands)              ; defpacustom
 (defvar coq-use-project-file)           ; defpacustom
-(defvar coq-use-editing-holes)          ; defpacustom
 (defvar coq-hide-additional-subgoals)
 
 (require 'proof)
@@ -98,7 +97,7 @@ supported if this option is t."
 (defcustom coq-user-init-cmd nil
   "User defined init commands for Coq.
 These are appended at the end of `coq-shell-init-cmd'."
-  :type '(repeat (cons (string :tag "command")))
+  :type '(repeat string)
   :group 'coq)
 
 (defcustom coq-optimise-resp-windows-enable t
@@ -290,6 +289,23 @@ It is mostly useful in three window mode, see also
   "Coq instance of `proof-tree-existentials-state-end-regexp'."
   :type 'regexp
   :group 'coq-proof-tree)
+
+(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
+                                  (fboundp 'yas-expand))
+  "Should Coq use yasnippets templates.
+
+Default value is t unless yasnippet is not installed or company-coq
+appears in the hoocoq-mode-hook."
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-yasnippet-use-default-templates t
+  "Should Proofgeneral coq mode use its yasnippets default templates.
+
+Set this to nil if you don't want the default yasnippets templates."
+  :type 'boolean
+  :group 'coq)
+
 
 ;; 8.4:
 ;; <infomsg>This subproof is complete, but there are still unfocused goals.</infomsg>
@@ -2043,6 +2059,12 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
   (setq proof-cannot-reopen-processed-files nil)
 
+  (if (and coq-use-yasnippet coq-yasnippet-use-default-templates)
+      (if (not (fboundp 'yas-define-snippets))
+          (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed.")
+        (message "Loading default coq yasnippets.")
+        (coq-define-yasnippets-from-db)))
+
   (proof-config-done)
   )
 
@@ -2536,17 +2558,17 @@ mouse activation."
        (typkind (if (string-equal mods "Section")
                     "" ;; if not a section
                   (completing-read "Kind of type (optional, TAB to see list): "
-                                   modtype-kinds-table)))
-       (p (point)))
+                                   modtype-kinds-table))))
     (if (string-equal typkind "")
         (progn
-          (insert mods " " s ".\n#\nEnd " s ".")
-          (holes-replace-string-by-holes-backward p)
-          (goto-char p))
-      (insert mods " " s " " typkind " #.\n#\nEnd " s ".")
-      (holes-replace-string-by-holes-backward p)
-      (goto-char p)
-      (holes-set-point-next-hole-destroy))))
+          (insert mods " " s ".\n")
+          (let ((pt (point)))
+            (insert "\nEnd " s ".")
+            (goto-char pt)))
+      (insert mods " " s " " typkind ".\n")
+      (let ((pt (point)))
+        (insert "\nEnd " s ".")
+        (goto-char pt)))))
 
 (defconst reqkinds-kinds-table
   '(("Require Import") ("Require Export") ("Require") ("Import"))
@@ -2875,7 +2897,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
-
+;; TODO: remove "#"s and maybe rely onb yasnippets.
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
 Based on idea mentioned in Coq reference manual.
@@ -2893,17 +2915,7 @@ Also insert holes at insertion positions."
         (let ((start (point)))
           (insert match)
           (indent-region start (point) nil)
-          (let ((n (holes-replace-string-by-holes-backward start)))
-            (pcase n
-	      (0 nil)                   ; no hole, stay here.
-	      (1
-	       (goto-char start)
-	       (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	      (_
-	       (goto-char start)
-	       (message
-                (substitute-command-keys
-                 "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+          )))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.

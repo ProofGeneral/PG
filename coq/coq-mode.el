@@ -235,10 +235,6 @@ Near here means PT is either inside or just aside of a comment."
   ;; we can cope with nested comments
   (set (make-local-variable 'comment-quote-nested) nil)
 
-  ;; FIXME: have abbreviation without holes
-  ;(if coq-use-editing-holes (holes-mode 1))
-  (if (fboundp 'holes-mode) (holes-mode 1))
-
   ;; Setup Proof-General interface to Coq.
   (if coq-use-pg (coq-pg-setup))
 

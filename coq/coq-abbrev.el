@@ -22,10 +22,6 @@
 (require 'proof)
 (require 'coq-syntax)
 
-(defun holes-show-doc ()
-  (interactive)
-  (describe-function 'holes-mode))
-
 (defun coq-local-vars-list-show-doc ()
   (interactive)
   (describe-variable 'coq-local-vars-doc))
@@ -64,10 +60,45 @@
 (defconst coq-terms-abbrev-table
   (coq-build-abbrev-table-from-db coq-terms-db))
 
+(defun coq-define-yasnippets-from-db ()
+  "Register yas snippets from default proofgeneral coq db.
+
+yassnippet is a framework for inserting code templates for emacs. This
+will add hundreds of yas snippets, generated from proofgeneral list of
+coq commands (which is not necessarily always up to date). You probably
+want to use your own set of snippets at some point but it is a good
+start."
+  (when (fboundp 'yas-define-snippets)
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-solve-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-solve-cheat-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-tacticals-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-decl-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-defn-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-goal-starters-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-queries-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-other-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-ssreflect-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-terms-db))))
+
+
+
+(defun coq-insert-template (abbr alt)
+  "Expand template ABBR using (by priority) yasnippet, abbrev orjust ALT.
+
+
+"
+  (when abbr
+    (if (fboundp 'yas-expand)
+        (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
+          (with-undo-amalgamate (insert abbr) (yas-expand))
+          (progn (insert abbr) (yas-expand)))
+      (let ((ins (or (and abbr (abbrev-expansion abbr)) exp)))
+        (insert (or ins exp))))))
+
 
 
 ;;; The abbrev table built from keywords tables
-;#s and @{..} are replaced by holes by holes-abbrev-complete
 (define-abbrev-table 'coq-mode-abbrev-table
   (append coq-tactics-abbrev-table coq-tacticals-abbrev-table
           coq-commands-abbrev-table coq-terms-abbrev-table)
