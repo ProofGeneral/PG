@@ -2897,6 +2897,19 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
+(defun coq-replace-branch-with-yas-holes (s)
+  "replace occurrences of RE in by REPi in s. i is incremented at each replacement."
+  (let ((res s) (i 2))
+    (setq res (replace-regexp-in-string "\\`match #" "match $1" res))
+    (while (string-match "=> *\n" res nil t)
+      (setq res (replace-regexp-in-string ;; the regexp is made to match only
+                                          ;; the fiorst occurrence
+                 "\\(?1:=> *\n\\)\\(.\\|\n\\)*\\'" 
+                 (concat "=> $" (int-to-string i) "\n")
+                 res nil nil 1))
+      (setq i (+ 1 i)))
+    res))
+
 ;; TODO: remove "#"s and maybe rely onb yasnippets.
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
@@ -2907,15 +2920,19 @@ Also insert holes at insertion positions."
   (let* ((cmd))
     (setq cmd (read-string "Build match for type: "))
     (let* ((thematch
-           (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (match (replace-regexp-in-string "=> *\n" "=> #\n" thematch)))
+            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
+           (match (coq-replace-branch-with-yas-holes thematch)))
       ;; if error, it will be displayed in response buffer (see def of
       ;; proof-shell-invisible-cmd-get-result), otherwise:
       (unless (proof-string-match coq-error-regexp match)
-        (let ((start (point)))
-          (insert match)
-          (indent-region start (point) nil)
-          )))))
+        (if (fboundp 'yas-expand-snippet)
+            (yas-expand-snippet match)
+          (let ((start (point)))
+            (insert thematch)
+            (indent-region start (point) nil)
+            (goto-char start)
+            (search-forward "#")
+            (delete-char -1)))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
