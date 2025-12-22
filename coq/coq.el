@@ -2924,18 +2924,7 @@ Also insert holes at insertion positions."
       (unless (proof-string-match coq-error-regexp match)
         (let ((start (point)))
           (insert match)
-          (indent-region start (point) nil)
-          (let ((n (holes-replace-string-by-holes-backward start)))
-            (pcase n
-	      (0 nil)                   ; no hole, stay here.
-	      (1
-	       (goto-char start)
-	       (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	      (_
-	       (goto-char start)
-	       (message
-                (substitute-command-keys
-                 "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+          (holes-replace-string-by-holes-backward-jump start))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
