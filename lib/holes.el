@@ -632,7 +632,7 @@ If ALWAYSJUMP is non-nil, jump to the first hole even if more than one."
        (when alwaysjump (holes-set-point-next-hole-destroy))
        (unless (active-minibuffer-window) ; otherwise minibuffer gets hidden
 	 (message (substitute-command-keys
-		   "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))
+		   "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-show-doc] to see holes doc.")))))))
 
 
 ;;;###autoload
