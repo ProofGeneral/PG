@@ -2875,6 +2875,38 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
+(defun coq-get-goal-names (show-existentials-output)
+  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
+
+Goals that are marked as \"only printing\" are ignored."
+  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
+        (pos 0)
+        (matches '()))
+    (while (string-match goal-regex show-existentials-output pos)
+      (let ((goal-name (match-string 1 show-existentials-output))
+            (only-printing (match-string 2 show-existentials-output)))
+        (unless only-printing
+          (push goal-name matches))
+        (setq pos (match-end 0))))
+    (nreverse matches)))
+
+(defun coq-insert-named-goal-selectors ()
+  "Insert named goal selectors for the open goals."
+  (interactive)
+  (proof-shell-ready-prover)
+  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
+    (unless (proof-string-match coq-error-regexp output)
+      (let* ((goal-names (coq-get-goal-names output))
+             ;; NOTE: Adding braces would be great, but it messes up indentation.
+             (format-selector (lambda (name) (format "[%s]: #." name)))
+             (goal-selectors (cl-mapcar format-selector goal-names))
+             (snippet (string-join goal-selectors "\n")))
+        (message "%s" goal-names)
+        (if (equal goal-selectors nil)
+            (error "Couldn't find any named goals")
+          (let ((start (point)))
+            (insert snippet)
+            (holes-replace-string-by-holes-backward-jump start)))))))
 
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
