@@ -620,7 +620,7 @@ The LIMIT argument bounds the search; it is a buffer position.
 \"#\" and \"@{..}\" between this positions will become holes.
 If NOINDENT is non-nil, skip the indenting step.
 If ALWAYSJUMP is non-nil, jump to the first hole even if more than one."
-  (unless noindent (save-excursion (indent-region pos (point) nil)))
+  (unless noindent (save-excursion (indent-region pos (point))))
   (let ((n (holes-replace-string-by-holes-backward pos)))
     (pcase n
       (`0 nil)				; no hole, stay here.
@@ -632,7 +632,7 @@ If ALWAYSJUMP is non-nil, jump to the first hole even if more than one."
        (when alwaysjump (holes-set-point-next-hole-destroy))
        (unless (active-minibuffer-window) ; otherwise minibuffer gets hidden
 	 (message (substitute-command-keys
-		   "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc.")))))))
+		   "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-show-doc] to see holes doc.")))))))
 
 
 ;;;###autoload
