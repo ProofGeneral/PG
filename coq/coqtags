@@ -59,13 +59,13 @@ while(<>)
     elsif($stmt=~/^([ \t]*((Axiom)|(Hypothesis)|(Parameter)|(Variable))\s+[\w\']+)/)
       { adddecs($stmt,$1); }
 
-    elsif($stmt=~/^([ \t]*((Definition)|(Fixpoint)|(Inductive)|(CoInductive)|(Record)|(Variant))\s+([\w\']+))/)
+    elsif($stmt=~/^([ \t]*((Definition)|(Fixpoint)|(Inductive)|(CoInductive)|(Record|Class)|(Variant))\s+([\w\']+))/)
     {
 	$tagstring.=$1."\177".$9."\001".$lp.",".$cp."\n";
 	if($2 eq "Inductive" || $2 eq "CoInductive" || $2 eq "Variant"){
 	    add_constructors($stmt);
 	}
-	elsif($2 eq "Record"){
+	elsif($2 eq "Record" || $2 eq "Class"){
 	    add_record_labels($stmt, $8);
 	}
     }
