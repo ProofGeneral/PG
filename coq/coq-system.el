@@ -59,9 +59,9 @@ On Windows you might need something like:
   "return non nil if the detected coq/rocq executable obeys the rocq CLI."
   (let* ((coq-command (or proof-prog-name (coq-autodetect-progname))))
     (condition-case nil
-        (with-temp-buffer
-          (apply 'process-file (list coq-command nil t))
-          (string-match "Supported subcommands:" (buffer-string)))
+        (string-match
+         "Supported subcommands:"
+         (with-output-to-string (process-file coq-command nil standard-output)))
       (error nil))))
 
 (defun coq-detect-coqdep ()
