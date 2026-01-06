@@ -2059,11 +2059,15 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
   (setq proof-cannot-reopen-processed-files nil)
 
-  (if (and coq-use-yasnippet coq-yasnippet-use-default-templates)
-      (if (not (fboundp 'yas-define-snippets))
-          (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed.")
-        (message "Loading default coq yasnippets.")
-        (coq-define-yasnippets-from-db)))
+  (cond 
+   ((and coq-use-yasnippet (not (fboundp 'yas-define-snippets)))
+         (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed."))
+   ((and coq-use-yasnippet (not coq-yasnippet-use-default-templates))
+    (message "Default coq yasnippets NOT loaded as asked."))
+   (coq-use-yasnippet
+    (message "Loading default coq yasnippets.")
+    (coq-define-yasnippets-from-db))
+   (t (message "yasnippet not found by proofgeneral, falling back to simple abbrevs")))
 
   (proof-config-done)
   )
@@ -2910,7 +2914,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
       (setq i (+ 1 i)))
     res))
 
-;; TODO: remove "#"s and maybe rely onb yasnippets.
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
 Based on idea mentioned in Coq reference manual.

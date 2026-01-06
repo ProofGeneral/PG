@@ -184,7 +184,8 @@ of the largest line in the menu (without abbrev and shortcut specifications).
 Used by `coq-build-menu-from-db', which you should probably use instead.  See
 `coq-syntax-db' for DB structure."
   (let ((l db) (res ()) (size lgth)
-	(keybind-abbrev (substitute-command-keys " \\[expand-abbrev]")))
+	(keybind-abbrev (if coq-use-yasnippet (substitute-command-keys " \\[yas-expand]")
+                          (substitute-command-keys " \\[expand-abbrev]"))))
     (while (and l (> size 0))
       (let* ((hd (pop l))
 	     (menu     	 (nth 0 hd)) ; e1 = menu entry
@@ -192,7 +193,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 	     (complt   	 (nth 2 hd)) ; e3 = completion
 	     ;; (state   (nth 3 hd)) ; e4 = state changing
 	     ;; (color   (nth 4 hd)) ; e5 = colorization string
-	     (insertfn 	 (nth 5 hd)) ; e6 = function for smart insertion
+	     ;; (insertfn (nth 5 hd)) ; e6 = function for smart insertion not used
 	     (menuhide 	 (nth 6 hd)) ; e7 = if non-nil : hide in menu
 	     (entry-with (max (- menuwidth (length menu)) 0))
 	     (spaces (make-string entry-with ? ))
@@ -205,7 +206,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  (concat menu
 			  (if (not abbrev) ""
 			    (concat spaces "(" abbrev keybind-abbrev ")")))
-                  `(coq-insert-template ,abbrev ,complt)
+                  `(coq-insert-template ,complt)
 		  t)))
 	    (push menu-entry res)))
 	(cl-decf size)))
@@ -249,6 +250,10 @@ structure."
       (setq lgth (length l)))
     res))
 
+(defun coq-simple-abbrev-from-db (s)
+  "Returns the coq db abbrevitaion string S cleaned from template markups."
+  (if s (replace-regexp-in-string "#\\|@{\\(?1:[^{}]*\\)}" "" s)))
+
 (defun coq-build-abbrev-table-from-db (db)
   "Take a keyword database DB and return an abbrev table.
 See `coq-syntax-db' for DB structure."
@@ -258,9 +263,9 @@ See `coq-syntax-db' for DB structure."
 	     (_e1 (car hd)) (tl1 (cdr hd)) ; e1 = menu entry
 	     (e2 (car tl1)) (tl2 (cdr tl1)) ; e2 = abbreviation
 	     (e3 (car tl2)) (_tl3 (cdr tl2)) ; e3 = completion
-	     )
+             (e3clean (coq-simple-abbrev-from-db e3)))
 	;; careful: nconc destructive!
-	(when e2 (push `(,e2 ,e3 nil :system t) res))
+	(when e2 (push `(,e2 ,e3clean nil :system t) res))
 	(setq l tl)))
     (nreverse res)))
 

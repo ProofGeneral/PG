@@ -79,22 +79,28 @@ start."
     (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-queries-commands-db))
     (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-other-commands-db))
     (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-ssreflect-commands-db))
-    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-terms-db))))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-terms-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-tacticals-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-solve-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-cheat-tactics-db))))
 
 
+;; this is the function called by insertion menus. TODO: separate
+;; these menus from yasnippet templates because this should work even
+;; if the user has its own templates instead of the default ones.
+(defun coq-insert-template (snippet)
+  "Expand template ABBR using (by priority) yasnippet, abbrev or just ALT."
+  (when snippet
+    (if (and coq-use-yasnippet (fboundp 'yas-expand))
+        (yas-expand-snippet (coq-yas-snippet-from-db snippet))
+      (insert (coq-simple-abbrev-from-db snippet)))))
 
-(defun coq-insert-template (abbr alt)
-  "Expand template ABBR using (by priority) yasnippet, abbrev orjust ALT.
-
-
-"
-  (when abbr
-    (if (fboundp 'yas-expand)
-        (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
-          (with-undo-amalgamate (insert abbr) (yas-expand))
-          (progn (insert abbr) (yas-expand)))
-      (let ((ins (or (and abbr (abbrev-expansion abbr)) exp)))
-        (insert (or ins exp))))))
+        ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
+        ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
+        ;;   (progn (insert abbr) (yas-expand)))
+      
 
 
 
