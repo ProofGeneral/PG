@@ -58,10 +58,19 @@ No context checking.")
 ;; of a command. We don't care for the presence of comments, as the
 ;; regexp search is launched once coments are passed.
 ;; On the contrary when going backward we cannot use this trick.
-
-;; NOTE: \\= here allows to fail when the user types a "." just after
-;; an already played command with no space.
-(defconst coq-simple-cmd-ender-prefix-regexp-forward "[^.]\\|\\=\\|\\.\\."
+;;
+;; NOTES:
+;;
+;;  - The use of \\= here allows to fail when the user types a "."
+;;    just after an already played command with no space.
+;;
+;;  - The optional trailing ".." allows coq-period-end-command to
+;;    match "abc...", treating the initial ".." as part of the prefix
+;;    (matched by this regex) and then the third "." as the bullet
+;;    string (see coq-period-end-command).
+(defconst coq-simple-cmd-ender-prefix-regexp-forward
+  (concat  "\\(?:[^.]\\|\\=\\)"
+           "\\(?:\\.\\.\\)?")
   "Used internally.  Matches the allowed prefixes of coq \".\" command ending.")
 
 (defconst coq-simple-cmd-ender-prefix-regexp-backward "[^.]\\|\\.\\."
@@ -84,7 +93,10 @@ No context checking.")
 ;; ". " and "... " are command endings, ".. " is not, same as in
 ;; proof-script-command-end-regexp in coq.el
 (defconst coq-period-end-command
-  (concat "\\(?:\\(?2:" coq-simple-cmd-ender-prefix-regexp-forward "\\)\\(?1:\\.\\)\\(?3:\\s-\\|\\}\\|\\'\\)\\)")
+  (concat "\\(?:"
+          "\\(?2:" coq-simple-cmd-ender-prefix-regexp-forward "\\)"
+          "\\(?1:\\.\\)"
+          "\\(?3:\\s-\\|\\}\\|\\'\\)\\)")
   "Matches coq regular syntax for ending a command (except bullets and curlies).
 
 This should match EXACTLY command ending syntax.  No false
