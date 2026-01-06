@@ -292,23 +292,6 @@ It is mostly useful in three window mode, see also
   :type 'regexp
   :group 'coq-proof-tree)
 
-(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
-                                  (fboundp 'yas-expand))
-  "Should Coq use yasnippets templates.
-
-Default value is t unless yasnippet is not installed or company-coq
-appears in the hoocoq-mode-hook."
-  :type 'boolean
-  :group 'coq)
-
-(defcustom coq-yasnippet-use-default-templates t
-  "Should Proofgeneral coq mode use its yasnippets default templates.
-
-Set this to nil if you don't want the default yasnippets templates."
-  :type 'boolean
-  :group 'coq)
-
-
 ;; 8.4:
 ;; <infomsg>This subproof is complete, but there are still unfocused goals.</infomsg>
 ;;
@@ -2918,6 +2901,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
+
 (defun coq-replace-branch-with-yas-holes (s)
   "replace occurrences of RE in by REPi in s. i is incremented at each replacement."
   (let ((res s) (i 2))
@@ -2931,6 +2915,39 @@ Used for automatic insertion of \"Proof using\" annotations.")
       (setq i (+ 1 i)))
     res))
 
+(defun coq-get-goal-names (show-existentials-output)
+  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
+
+Goals that are marked as \"only printing\" are ignored."
+  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
+        (pos 0)
+        (matches '()))
+    (while (string-match goal-regex show-existentials-output pos)
+      (let ((goal-name (match-string 1 show-existentials-output))
+            (only-printing (match-string 2 show-existentials-output)))
+        (unless only-printing
+          (push goal-name matches))
+        (setq pos (match-end 0))))
+    (nreverse matches)))
+
+(defun coq-insert-named-goal-selectors ()
+  "Insert named goal selectors for the open goals."
+  (interactive)
+  (proof-shell-ready-prover)
+  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
+    (unless (proof-string-match coq-error-regexp output)
+      (let* ((goal-names (coq-get-goal-names output))
+             ;; NOTE: Adding braces would be great, but it messes up indentation.
+             (format-selector (lambda (name) (format "[%s]: #." name)))
+             (goal-selectors (cl-mapcar format-selector goal-names))
+             (snippet (string-join goal-selectors "\n"))
+             (snippet (coq-insert-template snippet)))
+        (message "%s" goal-names)
+        (if (equal goal-selectors nil)
+            (error "Couldn't find any named goals")
+          (let ((start (point)))
+            (if coq-use-yasnippet (yas-expand-snippet snippet) (insert snippet))))))))
+
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
 Based on idea mentioned in Coq reference manual.
@@ -2941,18 +2958,19 @@ Also insert holes at insertion positions."
     (setq cmd (read-string "Build match for type: "))
     (let* ((thematch
             (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (match (coq-replace-branch-with-yas-holes thematch)))
+           (yasmatch (coq-replace-branch-with-yas-holes thematch)))
       ;; if error, it will be displayed in response buffer (see def of
       ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp match)
-        (if (fboundp 'yas-expand-snippet)
-            (yas-expand-snippet match)
+      (unless (proof-string-match coq-error-regexp thematch)
+        (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
+            (yas-expand-snippet yasmatch)
           (let ((start (point)))
             (insert thematch)
             (indent-region start (point) nil)
             (goto-char start)
             (search-forward "#")
             (delete-char -1)))))))
+
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -3010,6 +3028,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)]  #'coq-insert-intros)
 (define-key coq-keymap [(control ?m)]  #'coq-insert-match)
+(define-key coq-keymap [(control ?g)]  #'coq-insert-named-goal-selectors)
 (define-key coq-keymap [(control ?\()] #'coq-insert-section-or-module)
 (define-key coq-keymap [(control ?\))] #'coq-end-Section)
 (define-key coq-keymap [(control ?t)]  #'coq-insert-tactic)

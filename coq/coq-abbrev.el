@@ -22,6 +22,22 @@
 (require 'proof)
 (require 'coq-syntax)
 
+(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
+                                  (fboundp 'yas-expand))
+  "Should Coq use yasnippets templates.
+
+Default value is t unless yasnippet is not installed or company-coq
+appears in the hoocoq-mode-hook."
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-yasnippet-use-default-templates t
+  "Should Proofgeneral coq mode use its yasnippets default templates.
+
+Set this to nil if you don't want the default yasnippets templates."
+  :type 'boolean
+  :group 'coq)
+
 (defun coq-local-vars-list-show-doc ()
   (interactive)
   (describe-variable 'coq-local-vars-doc))
