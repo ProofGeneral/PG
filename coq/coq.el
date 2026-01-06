@@ -2891,6 +2891,38 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
+(defun coq-get-goal-names (show-existentials-output)
+  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
+
+Goals that are marked as \"only printing\" are ignored."
+  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
+        (pos 0)
+        (matches '()))
+    (while (string-match goal-regex show-existentials-output pos)
+      (let ((goal-name (match-string 1 show-existentials-output))
+            (only-printing (match-string 2 show-existentials-output)))
+        (unless only-printing
+          (push goal-name matches))
+        (setq pos (match-end 0))))
+    (nreverse matches)))
+
+(defun coq-insert-named-goal-selectors ()
+  "Insert named goal selectors for the open goals."
+  (interactive)
+  (proof-shell-ready-prover)
+  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
+    (unless (proof-string-match coq-error-regexp output)
+      (let* ((goal-names (coq-get-goal-names output))
+             ;; NOTE: Adding braces would be great, but it messes up indentation.
+             (format-selector (lambda (name) (format "[%s]: #." name)))
+             (goal-selectors (cl-mapcar format-selector goal-names))
+             (snippet (string-join goal-selectors "\n")))
+        (message "%s" goal-names)
+        (if (equal goal-selectors nil)
+            (error "Couldn't find any named goals")
+          (let ((start (point)))
+            (insert snippet)
+            (holes-replace-string-by-holes-backward-jump start)))))))
 
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
@@ -2908,18 +2940,7 @@ Also insert holes at insertion positions."
       (unless (proof-string-match coq-error-regexp match)
         (let ((start (point)))
           (insert match)
-          (indent-region start (point) nil)
-          (let ((n (holes-replace-string-by-holes-backward start)))
-            (pcase n
-	      (0 nil)                   ; no hole, stay here.
-	      (1
-	       (goto-char start)
-	       (holes-set-point-next-hole-destroy)) ; if only one hole, go to it.
-	      (_
-	       (goto-char start)
-	       (message
-                (substitute-command-keys
-                 "\\[holes-set-point-next-hole-destroy] to jump to active hole.  \\[holes-short-doc] to see holes doc."))))))))))
+          (holes-replace-string-by-holes-backward-jump start))))))
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.
@@ -2977,6 +2998,7 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 ;; Insertion commands
 (define-key coq-keymap [(control ?i)]  #'coq-insert-intros)
 (define-key coq-keymap [(control ?m)]  #'coq-insert-match)
+(define-key coq-keymap [(control ?g)]  #'coq-insert-named-goal-selectors)
 (define-key coq-keymap [(control ?\()] #'coq-insert-section-or-module)
 (define-key coq-keymap [(control ?\))] #'coq-end-Section)
 (define-key coq-keymap [(control ?t)]  #'coq-insert-tactic)
