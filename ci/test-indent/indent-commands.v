@@ -249,6 +249,15 @@ Module Mod.
       idtac.
       idtac.
     }
+    [foo.bar]:{
+      idtac.
+      - idtac.
+        idtac. {
+          idtac.
+          idtac.
+        }
+        idtac.
+    }
     [foo]:{
       idtac.
       - idtac.

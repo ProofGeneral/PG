@@ -4,7 +4,7 @@ Definition Bar := nat.
 From elpi Require Import elpi.
 
 
-Lemma le_prop: forall n m p:entier, le n m -> le m p -> le n p.
+Lemma le_prop: forall n m p:nat, le n m -> le m p -> le n p.
 Proof.
   intros n m p. 
   intro H.
@@ -12,11 +12,24 @@ Proof.
   induction H;intros.
   - assumption.
   - { + apply IHle.
-        apply le_Suuc_a_gauche.
+        apply le_S_n.
+        apply le_S.
         assumption. }
 Qed.
 
-
+(* named goals are in rocq >= 9.2,  *)
+Open Scope bool_scope.
+Set Generate Goal Names.
+Goal forall a b, a && b = b && a.
+Proof.
+  intros a b. 
+  destruct a,b.
+  [true.true]: {
+    cbn. reflexivity. }
+  [true.false]: {
+    cbn. reflexivity.
+  }
+Admitted.
 
 Elpi Tactic show.
 Elpi Accumulate lp:{{
