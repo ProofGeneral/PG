@@ -44,8 +44,8 @@ No context checking.")
 
 ;; goal selectors are of two forms;
 ;; 2:
-;; [goalname]:
-(defconst coq-goal-selector-regexp "\\(?:[0-9]+\\|\\[\\w+\\]\\)\\s-*:\\s-*"
+;; [goalname]: where goalname may contain "." (at least)
+(defconst coq-goal-selector-regexp "\\(?:[0-9]+\\|\\[[^]]+\\]\\)\\s-*:\\s-*"
   "regexp of goal selector in coq.")
 
 ;;;;;;;;;;;;;;; FORWARD / BACKWARD REGEXP ;;;;;;;;;;;;;;;;;
@@ -385,6 +385,7 @@ Comments are ignored, of course."
    ;; TODO: looking-back is supposed to be slow. Find something else? 
    ((or (and (looking-at "{")(looking-back "[0-9]+\\s-*:\\s-*" nil t))
         (and (looking-at ":\\s-*{")(looking-back "[0-9]+\\s-*" nil t))
+        (and (looking-at ":\\s-*{")(looking-back "\[[^]]+\]\\s-*" nil t))
         (and (looking-at "[0-9]+:\\s-*{") nil t))
     (goto-char (match-beginning 0))     ; swallow goal selector
     (coq-empty-command-p))
