@@ -1218,8 +1218,7 @@ Printing All set."
   ;; Disabling this as this relies on 'response attribute that is empty when
   ;; the command was processed silently. We should first have a coq command
   ;; asking to print the goal at a given state.
-  (if (and nil ;; disabling this case
-           (proof-in-locked-region-p))
+  (if (proof-in-locked-region-p)
       (let ((s (coq-get-response-string-at)))
         (if (zerop (length (coq-get-response-string-at)))
             (message "Cannot show the state at this point: Coq was silent during this command.")
