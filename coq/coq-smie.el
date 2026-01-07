@@ -776,14 +776,14 @@ The point should be at the beginning of the command name."
            (save-excursion
              (forward-char -1)
              (if (and (looking-at "{")
-                      (looking-back "\\(\\[?\\w+\\]?\\s-*:\\s-*\\)" nil t))
+                      (looking-back coq-goal-selector-regexp nil t))
                  (goto-char (match-beginning 0)))
              (let ((nxttok (coq-smie-backward-token))) ;; recursive call
                (coq-is-cmdend-token nxttok))))
       (forward-char -1)
       (if (looking-at "}") "} subproof"
         (if (and (looking-at "{")
-                 (looking-back "\\(\\[?\\w+\\]?\\s-*:\\s-*\\)" nil t))
+                 (looking-back coq-goal-selector-regexp nil t))
             (goto-char (match-beginning 0)))
         "{ subproof"
         ))

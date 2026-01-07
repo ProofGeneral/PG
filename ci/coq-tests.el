@@ -518,7 +518,7 @@ For example, COMMENT could be (*test-definition*)"
        (while (setq type (funcall proof-script-parse-function))
          (setq cpt (+ 1 cpt))
          (should (equal type 'cmd)))
-       (should (equal cpt 17))))))
+       (should (equal cpt 31))))))
 
 
 (provide 'coq-tests)
