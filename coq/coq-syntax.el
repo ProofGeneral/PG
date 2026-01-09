@@ -1013,7 +1013,7 @@ They deserve a separate menu for sending them to Coq without insertion.")
 ;;    (la fonction vernac_declare_module dans toplevel/vernacentries)
 
 (defun coq-count-match (regexp str)
-  "Count the number of max. non-overlapping substring of STR matching REGEXP.
+  "Count the number of max.  non-overlapping substring of STR matching REGEXP.
 Empty matches are counted once."
   (let ((nbmatch 0) (pos 0) (end (length str))
         (case-fold-search nil))
@@ -1307,12 +1307,12 @@ Very similar to `coq-omit-proof-admit-command', but without the dot."
     "Anomaly[:.]"
     "Toplevel input"
     "\\<Error:")
-  "A list of regexps matching coq error headers.")
+  "A list of regexps matching Coq error headers.")
 
 (defvar coq-error-regexp (coq--regexp-alt-list coq--error-header-re-list))
 
 (defvar coq-no-error-regexp "The command has indeed failed"
-  "see `proof-shell-no-error-regexp'.]")
+  "See `proof-shell-no-error-regexp'.")
 
 ;; april2017: coq-8.7 removes special chars definitely and puts
 ;; <infomsg> and <warning> around all messages except errors.
@@ -1431,14 +1431,14 @@ Used in `coq-cmd-prevents-proof-omission' to identify tactics
 that only have proof-local effects.")
 
 (defconst coq-braces-regexp "^\\({\\|}\\)$"
-  "Regular expression matching braces used for focussing and unfocussing.
+  "Regular expression matching braces used for focusing and unfocusing.
 Used in `coq-cmd-prevents-proof-omission' to identify tactics
 that only have proof-local effects.")
 
 (defcustom coq-cmd-force-next-proof-kept "Let"
   "Instantiating for `proof-script-cmd-force-next-proof-kept'.
 Regular expression for commands that prevent omitting the next
-proof. A Let declaration with an admitted proof yields a warning,
+proof.  A Let declaration with an admitted proof yields a warning,
 see Proof General issue #687 and Coq issue #17199. Therefore,
 proofs for a Let declaration should not be omitted."
   :type 'regexp

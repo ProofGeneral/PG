@@ -144,6 +144,14 @@ check-doc-magic:
 	git diff --exit-code -- doc
 
 ##
+## checkdoc : check the docstrings using the Emacs builtin checkdoc utility
+##
+.PHONY: checkdoc
+checkdoc: $(EL)
+	@$(EMACS) -Q --batch -l resources/checkdoc-config.el \
+	  $(foreach file,$^,"--eval=(checkdoc-file \"$(file)\")")
+
+##
 ## Make an individual .elc.  Building separately means we need to be
 ## careful to add proper requires in source files and prevent
 ## evaluating/optimising top-level forms too early.  Using a separate

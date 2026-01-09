@@ -53,7 +53,7 @@ instead of just \"coqtop\".
 This must be a single program name with no arguments.  See option
 `coq-prog-args' to manually adjust the arguments to the Coq process.
 See also `coq-prog-env' to adjust the environment.
-With then 2025 new CLI 'rocq', this command only return 'rocq'."
+With then 2025 new CLI \\='rocq\\=', this command only return \\='rocq\\='."
   :type 'string
   :group 'coq
   :group 'coq-mode)
@@ -67,7 +67,7 @@ With then 2025 new CLI 'rocq', this command only return 'rocq'."
 	"/usr/local/lib/coq")))
 
 (defconst coq-library-directory (get-coq-library-directory) ;; FIXME Should be refreshed more often
-  "The coq library directory, as reported by \"coqtop -where\".")
+  "The Coq library directory, as reported by \"coqtop -where\".")
 
 (defcustom coq-tags (expand-file-name "/theories/TAGS" coq-library-directory)
   "The default TAGS table for the Coq library."
@@ -146,7 +146,7 @@ With then 2025 new CLI 'rocq', this command only return 'rocq'."
 (defvar coq-outline-heading-end-regexp "\\.[ \t\n]")
 
 (defun coq-near-comment-region ()
-  "Return a list of the forme (BEG END).
+  "Return a list of the form (BEG END).
 BEG,END being is the comment region near position PT.
 Return nil if PT is not near a comment.
 Near here means PT is either inside or just aside of a comment."
@@ -165,7 +165,7 @@ Near here means PT is either inside or just aside of a comment."
 
 
 (defun coq-fill-paragraph-function (_n)
-  "Coq mode specific fill-paragraph function. Fills only comment at point."
+  "Coq mode specific `fill-paragraph' function.  Fills only comment at point."
   (let ((reg (coq-near-comment-region)))
     (when reg
       (fill-region (car reg) (cadr reg))))

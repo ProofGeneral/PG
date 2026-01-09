@@ -47,7 +47,7 @@ i.e.: ((file-name-1 (def1 def2 def3)) (file-name-2 (def1 def2 def3)))")
 (defun proof-depends-module-name-for-buffer ()
   "Return a module name for the current buffer.
 This is a name that the prover prefixes all item names with.
-For example, in isabelle, a file Stuff.ML contains theorems with
+For example, in Isabelle, a file Stuff.ML contains theorems with
 fully qualified names of the form Stuff.theorem1, etc.
 For other provers, this function may need modifying."
   (if buffer-file-name
@@ -221,7 +221,7 @@ NAMEFN is applied to each element of LIST to make the names."
     (vector name nil nil)))
 
 (defun proof-make-highlight-depts-menu (name fn span prop)
-  "Return a menu item that for highlighting dependents/depencies of SPAN."
+  "Return a menu item that for highlighting dependents/dependencies of SPAN."
   (let ((deps (span-property span prop)))
     (vector name `(,fn ,(span-property span 'name) (quote ,deps))
 	    (not (not deps)))))

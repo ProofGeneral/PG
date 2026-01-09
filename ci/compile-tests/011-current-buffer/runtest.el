@@ -1,5 +1,7 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
-;; 
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
+;;
 ;; © Copyright 2024  Hendrik Tews
 ;; 
 ;; Authors: Hendrik Tews
@@ -22,7 +24,7 @@
 ;;           b
 ;;
 ;; Files c and d are completely independent of file a and file b and
-;; not processed by Coq. The idea is that files c or d come from a
+;; not processed by Coq.  The idea is that files c or d come from a
 ;; different project that uses a different `coq-compiler' or
 ;; `coq-dependency-analyzer', see also PG issue #797. These different
 ;; local settings should not confuse the ongoing background
@@ -30,19 +32,20 @@
 ;; File c sets `coq-compiler' as local variable and file d sets
 ;; `coq-dependency-analyzer' as local variable.
 
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
-(configure-delayed-coq)    
+(configure-delayed-coq)
 
 (defvar switch-buffer-while-waiting nil
   "Switch buffer in busy waiting hooks when t.
 Whether the hook functions `switch-to-other-buffer-while-waiting'
 and `switch-back-after-waiting' switch to some other buffer or
-not is controled by this variable. If t, switch to the buffer in
+not is controlled by this variable.  If t, switch to the buffer in
 `cdv-buffer' before starting busy waiting and switch back to the
 buffer in `av-buffer' after busy waiting.")
 
@@ -56,7 +59,7 @@ See `switch-buffer-while-waiting'.")
 
 (defun switch-to-other-buffer-while-waiting ()
   "Hook to switch current buffer before busy waiting.
-Hook function for `cct-before-busy-waiting-hook'. Switches to
+Hook function for `cct-before-busy-waiting-hook'.  Switches to
 `cdv-buffer' if `switch-buffer-while-waiting' is t."
   (when (and switch-buffer-while-waiting cdv-buffer)
     (message "Switch to buffer c.v while busy waiting")
@@ -64,7 +67,7 @@ Hook function for `cct-before-busy-waiting-hook'. Switches to
 
 (defun switch-back-after-waiting ()
   "Hook to switch current buffer back after busy waiting.
-Hook function for `cct-after-busy-waiting-hook'. Switches back to
+Hook function for `cct-after-busy-waiting-hook'.  Switches back to
 `av-buffer' if `switch-buffer-while-waiting' is t."
   (when (and switch-buffer-while-waiting av-buffer)
     (message "Switch back to buffer a.v after busy waiting")
@@ -149,7 +152,7 @@ variables from the original scripting buffer, see also PG issue
 (ert-deftest test-current-buffer-coqdep ()
   "Check that dependency analysis uses the right local variables.
 Dependency analysis during parallel background compilation (i.e.,
-runing `coqdep` on dependencies) should use the local variables
+running `coqdep` on dependencies) should use the local variables
 from the original scripting buffer, see also PG issue #797."
   (unwind-protect
       (progn
@@ -203,7 +206,7 @@ from the original scripting buffer, see also PG issue #797."
 (ert-deftest test-current-buffer-coqc ()
   "Check that compilation of dependencies uses the right local variables.
 Compilation of dependencies during parallel background
-compilation (i.e., runing `coqc` on dependencies) should use the
+compilation (i.e., running `coqc` on dependencies) should use the
 local variables from the original scripting buffer, see also PG
 issue #797.
 
@@ -264,3 +267,7 @@ switch to buffer c.v, which sets `coq-compiler' but leaves
           (set-buffer-modified-p nil))
         (kill-buffer buf)))
     (setq switch-buffer-while-waiting nil)))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

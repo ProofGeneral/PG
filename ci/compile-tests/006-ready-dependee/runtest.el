@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;;
 ;; © Copyright 2020  Hendrik Tews
 ;;
@@ -27,12 +29,13 @@
 ;;
 ;; The idea is that the coqdep chain from b to j takes so long, that k
 ;; has been compiled and is in state ready before the coqdep results
-;; from j are processed. This works - unless the disk cache is cold.
-;; If it works the test triggers two bugs. First, k is locked with the
+;; from j are processed.  This works - unless the disk cache is cold.
+;; If it works the test triggers two bugs.  First, k is locked with the
 ;; require command of c. Second, the modification time of k is not
 ;; propagated to j, such that the whole chain from j to b is not
 ;; recompiled after k has changed.
 
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
@@ -59,7 +62,7 @@
 (defun cct-replace-last-word (line word)
   "Replace last word in line LINE with WORD.
 In current buffer, go to the end of line LINE and one word
-backward. Replace the word there with WORD."
+backward.  Replace the word there with WORD."
   (cct-goto-line line)
   (end-of-line)
   (backward-word)
@@ -130,3 +133,7 @@ Combine all the following tests in this order:
        "./h.vo" "./i.vo" "./j.vo" "./k.vo")
      other-locked-files)
   ))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

@@ -72,7 +72,7 @@ May enable proof-by-pointing or similar features.
 ;;
 ;;;###autoload
 (defun proof-goals-config-done ()
-  "Initialise the goals buffer after the child has been configured."
+  "Initialize the goals buffer after the child has been configured."
   (setq font-lock-defaults '(proof-goals-font-lock-keywords)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -94,7 +94,7 @@ so the response buffer should not be cleared.
 
 IF NODISPLAY is non-nil, do not display the goals buffer in some
 window (but the goals buffer is updated as described above and
-any window currently showing it will keep it). In two-pane mode,
+any window currently showing it will keep it).  In two-pane mode,
 NODISPLAY has the effect that the goals are updated but the
 response buffer is displayed."
   ;; Response buffer may be out of date. It may contain (error)

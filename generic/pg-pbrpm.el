@@ -129,14 +129,14 @@ Matches the region to be returned.")
 
 It stores, in the variable ‘pg-pbrpm-goal-description’, a list with shape
 
-(start-goal end-goal goal-name start-concl hyps ...) with 5 elements per goal:
+\(start-goal end-goal goal-name start-concl hyps ...) with 5 elements per goal:
   start-goal: the position of the first char of the goal
   end-goal: the position of the last char of the goal
   goal-name: the goal name (or number)
   start-concl: the position of first char of the conclusion of the goal
   hyps: the list of hypothesis with the shape:
 
-(start-hyp start-hyp-text end-hyp hyp-name ...) with 4 elements per hypothesis:
+\(start-hyp start-hyp-text end-hyp hyp-name ...) with 4 elements per hypothesis:
   start-hyp: the position of the first char of the hyp (including its name)
   start-hyp-text: the position of the first char of the hyp formula (no name)
   end-hyp: the position of the last char of the hypothesis
@@ -206,7 +206,7 @@ It stores, in the variable ‘pg-pbrpm-goal-description’, a list with shape
 (defun pg-pbrpm-build-menu (event start end)
   "Build a Proof By Rules pop-up menu.
 Depends on the state of the proof, the event and a selected region
-(between the start and end markers).
+\(between the start and end markers).
 The prover command is processed via pg-pbrpm-run-command."
 ;; first, run the prover specific (name, rule)'s list generator
    (let ((click-info (pg-pbrpm-process-click event start end))) ; retrieve click informations
@@ -417,7 +417,7 @@ See `pg-pbrpm-get-pos-info'."
        nil)))
 
 (defun pg-pbrpm-auto-select-around-point ()
-  "Extract some text arround point, according to `pg-pbrpm-auto-select-regexp'.
+  "Extract some text around point, according to `pg-pbrpm-auto-select-regexp'.
 If no match found, return the empty string."
   (save-excursion
     (let ((pos (point)))
@@ -562,7 +562,7 @@ SPAN is a span covering the selected region."
   (mapcar (lambda (span) (pg-pbrpm-process-region span)) pg-pbrpm-regions-list))
 
 (defun pg-pbrpm-region-expression (buffer start end)
-  "Valid parenthesis'd expression."
+  "Valid parenthesized expression."
   ;; an expression is valid if it has as many left paren' as right paren'
   (with-current-buffer buffer
     (buffer-substring start end)))
@@ -600,4 +600,5 @@ SPAN is a span covering the selected region."
      (define-key pg-span-context-menu-keymap [(control button3)] 'pg-span-context-menu)))
 
 (provide 'pg-pbrpm)
-;;; pg-pbrpm ends here
+
+;;; pg-pbrpm.el ends here

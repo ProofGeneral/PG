@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;;
 ;; © Copyright 2021  Hendrik Tews
 ;;
@@ -13,8 +15,8 @@
 ;; ert tests for parallel background compilation for Coq
 ;;
 ;; Test a partially successful and partially failing compilation with
-;; coq-compile-keep-going. Check that the right files are compiled,
-;; locked and unlocked. Check also the case, where unlocking of failed
+;; coq-compile-keep-going.  Check that the right files are compiled,
+;; locked and unlocked.  Check also the case, where unlocking of failed
 ;; files must be delayed, because some earlier successful require job
 ;; has not yet locked its ancestors.
 ;;
@@ -36,8 +38,8 @@
 ;;
 ;; Rb, Rc and Rd are three different require commands in file a. The
 ;; dependency e -> b is not present in test 5 and test 10 (but in all
-;; other tests). The error always happens in file g, for test 1-5 with
-;; coqdep, for tests 6-10 with coqc. There are 10 tests, each with
+;; other tests).  The error always happens in file g, for test 1-5 with
+;; coqdep, for tests 6-10 with coqc.  There are 10 tests, each with
 ;; slighly different delays, in 10 versions of the sources, e.g.,
 ;; a1-a10, b1-b10, and so on.
 ;;
@@ -58,14 +60,14 @@
 ;; 9: RB is ready and Rd is queue waiting
 ;; 10: without dependency b -> e: Rc, Rd are queue waiting, b finishes last
 
-
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
 
 ;;; set configuration
 (cct-configure-proof-general)
-(configure-delayed-coq)    
+(configure-delayed-coq)
 
 (defconst pre-b-ancestors '("b" "f")
     "Ancestors of b without suffixes.")
@@ -76,8 +78,8 @@
 (defun pre-not-compiled (n)
   "List of file name stems for which coqc must not be called.
 Files for which coqc must not be called have an ``X'' in
-coqc-delay. For such files `compile-test-start-delayed' would
-create a ``.X'' file, whose absense is checked in the test."
+coqc-delay.  For such files `compile-test-start-delayed' would
+create a ``.X'' file, whose absence is checked in the test."
   (cond
    ((< n 6) '("g" "c"))
    (t       '("c"))))
@@ -140,3 +142,7 @@ create a ``.X'' file, whose absense is checked in the test."
 (ert-deftest cct-failure-processing-08 () (test-failure-processing 8))
 (ert-deftest cct-failure-processing-09 () (test-failure-processing 9))
 (ert-deftest cct-failure-processing-10 () (test-failure-processing 10))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

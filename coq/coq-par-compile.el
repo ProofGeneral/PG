@@ -26,8 +26,8 @@
 ;; - fix -I current-dir argument for coqc invocations
 ;; - on error, try to put location info into the error message
 ;; - use file-attribute-modification-time and similar functions when
-;;   dropping support for emacs 25 (emacs 26.1 released on 05/2018)
-;; - use define-error when dropping support for emacs 24 (25.1
+;;   dropping support for Emacs 25 (Emacs 26.1 released on 05/2018)
+;; - use define-error when dropping support for Emacs 24 (25.1
 ;;   released on 09/2016)
 ;;
 ;; Note that all argument computations inherit `coq-autodetected-version': when
@@ -455,7 +455,7 @@ names to compilation jobs, regardless of ``-quick''.")
 Used to link top-level jobs with queue dependencies.")
 
 (defvar coq--par-second-stage-in-progress nil
-  "t iff vio2vo or vok is running in background.")
+  "Non-nil iff vio2vo or vok is running in background.")
 
 (defvar coq--par-second-stage-delay-timer nil
   "Holds the timer for the second stage delay.")
@@ -465,12 +465,12 @@ Used to link top-level jobs with queue dependencies.")
 Assume the last top-level ``Require'' command is retired, but
 executing the ``Require'' takes so long that the user can assert
 a next ``Require'' and that the second require is retired before
-the first ``Require'' has been processed. In this case there are
+the first ``Require'' has been processed.  In this case there are
 two `coq-par-require-processed' callbacks active, of which the
-first one must be ignored. For each new callback this counter is
+first one must be ignored.  For each new callback this counter is
 incremented and, when there is a difference,
 `coq-par-require-processed' does not start the second stage
-timer. In case the first callback gets executed before the second
+timer.  In case the first callback gets executed before the second
 require is retired, the race is detected with
 `coq--last-compilation-job' without this counter.")
 
@@ -482,7 +482,7 @@ The names are only used for debugging.")
   "Inform the cycle detection that there is a delayed top-level job.
 The retirement of failing require jobs must be delayed until
 `proof-action-list' is empty, to avoid retracting commands before
-the first failing require. This is done by adding the call to
+the first failing require.  This is done by adding the call to
 `coq-par-kickoff-queue-maybe' to the end of `proof-action-list'.
 This variable is t during this time to disable cycle detection,
 which is otherwise started when `coq--last-compilation-job' has
@@ -518,7 +518,7 @@ the result."
 
 (defun coq-par-time-less (time-1 time-2)
   "Compare extended times.
-The arguments can be an emacs time (a list of 2 to 4 integers,
+The arguments can be an Emacs time (a list of 2 to 4 integers,
 see `current-time') or the symbol 'just-compiled, where the
 latter is greater then everything else."
   (cond
@@ -681,8 +681,8 @@ Use `coq-par-second-stage-enqueue',
 
 (defun coq-par-find-dependency-circle-for-job (job path)
   "Find a dependency cycle in the dependency subtree of JOB.
-Do a depth-first-search to find the cycle. JOB is the current
-node and PATH the stack of visited nodes. Jobs in state
+Do a depth-first-search to find the cycle.  JOB is the current
+node and PATH the stack of visited nodes.  Jobs in state
 'enqueue-coqc can be ignored, because they can never participate
 in a cycle."
   ;; CORRECTNESS ARGUMENT FOR THIS FUNCTION
@@ -756,7 +756,7 @@ ignored, because they can never participate in a cycle."
 
 (defun coq-par-coqdep-warning-arguments ()
   "Return a fresh list with the warning command line arguments for coqdep.
-Warnings (`-w`) are supported in coqdep from 8.19 onwards.
+Warnings (`-w`) are supported in coqdep from 8.19 onward.
 Therefore return the empty list for a detected Coq version
 earlier than 8.19."
   (if (and (coq--post-v818) (consp coq-compile-coqdep-warnings))
@@ -767,7 +767,7 @@ earlier than 8.19."
   "Compute the command line arguments for invoking coqdep on LIB-SRC-FILE.
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
-load-path options to coqdep."
+`load-path' options to coqdep."
   (nconc
    (coq-coqdep-prog-args clpath (file-name-directory lib-src-file) (coq--pre-v85))
    (copy-sequence coq-compile-extra-coqdep-arguments) ; copy for nconc
@@ -778,7 +778,7 @@ load-path options to coqdep."
   "Compute the command line arguments for invoking coqc on LIB-SRC-FILE.
 Argument CLPATH must be `coq-load-path' from the buffer
 that triggered the compilation, in order to provide correct
-load-path options to coqdep."
+`load-path' options to coqdep."
   (nconc (coq-coqc-prog-args clpath
                              (file-name-directory lib-src-file)
                              (coq--pre-v85))
@@ -787,12 +787,12 @@ load-path options to coqdep."
 
 (defun coq-par-analyse-coq-dep-exit (status output command)
   "Analyse output OUTPUT of coqdep command COMMAND with exit status STATUS.
-Returns the list of .vo dependencies if there is no error. Otherwise,
+Returns the list of .vo dependencies if there is no error.  Otherwise,
 writes an error message into `coq--compile-response-buffer', makes
 this buffer visible and returns a string.
 
 This function does always return .vo dependencies, regardless of the
-value of `coq-compile-quick'. If necessary, the conversion into .vio
+value of `coq-compile-quick'.  If necessary, the conversion into .vio
 or .vos files must be done elsewhere."
   ;; (when coq--debug-auto-compilation
   ;;   (message "analyse coqdep output \"%s\"" output))
@@ -950,7 +950,7 @@ interrupt signal to the prover."
       (setq prover-was-busy t))))
 
 (defun coq-par-process-filter (process output)
-  "Store OUTPUT from coq background compilation."
+  "Store OUTPUT from Coq background compilation."
   (process-put process 'coq-process-output
 	       (concat (process-get process 'coq-process-output) output)))
 
@@ -958,7 +958,7 @@ interrupt signal to the prover."
   "Start asynchronous compilation job for COMMAND.
 This function starts COMMAND with arguments ARGUMENTS for
 compilation job JOB, making sure that CONTINUATION runs when the
-process finishes successfully. FILE-RM, if non-nil, denotes a
+process finishes successfully.  FILE-RM, if non-nil, denotes a
 file to be deleted when the process does not finish successfully."
   ;;(message "CPSP %s %s %s %s %s" command arguments continuation job file-rm)
   (let ((process-connection-type nil)	; use pipes
@@ -985,7 +985,7 @@ file to be deleted when the process does not finish successfully."
 		  (get job 'name) process-name
                   (if file-rm
                       (format "rm %s" file-rm)
-                    "no file removal")))         
+                    "no file removal")))
        (when file-rm
 	 (ignore-errors (delete-file file-rm)))
        (signal 'coq-compile-error-command-start
@@ -1002,22 +1002,22 @@ file to be deleted when the process does not finish successfully."
 
 (defun coq-par-process-sentinel (process event)
   "Sentinel for all kinds of Coq background compilation processes.
-Runs when process PROCESS terminated because of EVENT. It
+Runs when process PROCESS terminated because of EVENT.  It
 determines the exit status and calls the continuation function
-that has been registered with that process. Normal compilation
+that has been registered with that process.  Normal compilation
 errors are reported with an error message inside the callback.
-Starts as many queued jobs as possible. The callback and queued
+Starts as many queued jobs as possible.  The callback and queued
 jobs are done with the 'script-buf as current buffer, such that
 local variables and `default-directory' have correct values.
 Second stage compilation jobs that have been killed, possibly
 because the user triggered a next first stage compilation, are
-put back into `coq--par-second-stage-queue'. If, at the end, no
+put back into `coq--par-second-stage-queue'.  If, at the end, no
 job is running in the background but compilation has not been
 finished, then, either second stage compilation finished (which
 is reported), or there must be a cycle in the dependencies, which
-is found and reported here. The cycle detection is skipped, if
+is found and reported here.  The cycle detection is skipped, if
 the retirement of the last compilation job has been delayed per
-`coq--par-delayed-last-job'. All signals are caught inside this
+`coq--par-delayed-last-job'.  All signals are caught inside this
 function and reported appropriately."
   (condition-case err
       (if (process-get process 'coq-par-process-killed)
@@ -1126,9 +1126,9 @@ particular, `default-directory' have the correct values."
   "Callback for `proof-action-list' to signal completion of the last Require.
 This function ensures that second stage compilation starts after
 `coq-compile-second-stage-delay' seconds after the last module has been
-loaded into Coq. When background compilation is successful, this
-callback is inserted with a dummy item into proof-action-list
-somewhere after the last require command. RACE-COUNTER is used to
+loaded into Coq.  When background compilation is successful, this
+callback is inserted with a dummy item into `proof-action-list'
+somewhere after the last require command.  RACE-COUNTER is used to
 detect more than one active callback, see
 `coq--par-second-stage-start-id'"
   ;; When the user asserts new stuff while the (previously) last
@@ -1144,7 +1144,7 @@ detect more than one active callback, see
 (defun coq-par-callback-queue-item (callback)
   "Create queue item containing just CALLBACK.
 Create a queue item for `proof-action-list' containing just
-CALLBACK. CALLBACK must be a function taking a span as argument.
+CALLBACK.  CALLBACK must be a function taking a span as argument.
 The command list in the produced queue item is nil, therefore the
 item will be processed as comment and only the callback will be called."
   ;; A proof-action-list item has the form of
@@ -1183,7 +1183,7 @@ is increased, such that DEPENDANT waits for the completion of DEPENDEE."
 (defun coq-par-add-queue-dependency (dependee dependant)
   "Add queue dependency from require job DEPENDEE to require job DEPENDANT.
 The require item of DEPENDANT comes after those of DEPENDEE.
-Therefore DEPENDANT must wait for DEPENDEE to finish. "
+Therefore DEPENDANT must wait for DEPENDEE to finish."
   (cl-assert (and (not (get dependant 'queue-dependant-waiting))
                   (not (get dependee 'queue-dependant)))
 	  nil "queue dependency cannot be added")
@@ -1196,16 +1196,16 @@ Therefore DEPENDANT must wait for DEPENDEE to finish. "
 
 (defun coq-par-job-needs-compilation-quick (job)
   "Determine whether JOB needs to get compiled and do some side effects.
-This function contains most of the logic nesseary to support
-quick compilation according to `coq-compile-quick' for coq < 8.11.  Taking
+This function contains most of the logic necessary to support
+quick compilation according to `coq-compile-quick' for Coq < 8.11.  Taking
 `coq-compile-quick' into account, it determines if a compilation
 is necessary.  The property 'required-obj-file is set either to
 the file that we need to produce or to the up-to-date object
 file.  If compilation is needed, property 'use-quick is set to `vio' when
 -quick/-vio will be used.  If no compilation is needed, property
 'obj-mod-time remembers the time stamp of 'required-obj-file.
-Indepent of whether compilation is required, .vo or .vio files
-that are in the way are deleted.  Note that the coq documentation
+Independent of whether compilation is required, .vo or .vio files
+that are in the way are deleted.  Note that the Coq documentation
 does not contain a statement, about what file is loaded, if both
 a .vo and a .vio file are present.  To be on the safe side, I
 therefore delete a file if it might be in the way.  Sets the
@@ -1367,13 +1367,13 @@ therefore delete a file if it might be in the way.  Sets the
 
 (defun coq-par-job-needs-compilation-vos (job)
   "Determine whether JOB needs to get compiled.
-This function decides whether JOB needs to get compiled for coq
->= 8.11 and whether a .vo or a .vos should be produced. For the
-latter, `coq-compile-vos' is consulted and, if that is `nil',
-coq-compile-quick, see `coq-compile-prefer-vos'. This function
-assumes that coq is used consistently and that a .vo file cannot
+This function decides whether JOB needs to get compiled for Coq
+>= 8.11 and whether a .vo or a .vos should be produced.  For the
+latter, `coq-compile-vos' is consulted and, if that is nil,
+coq-compile-quick, see `coq-compile-prefer-vos'.  This function
+assumes that Coq is used consistently and that a .vo file cannot
 be present without a .vos file that has the same time stamp or
-has been created more recently. As result, this function sets the
+has been created more recently.  As result, this function sets the
 property 'use-quick to `vos' if JOB should be compiled with -vos.
 If compilation is needed, 'required-obj-file is set.
 If no compilation is needed, 'obj-mod-time is set to the time stamp of
@@ -1448,11 +1448,11 @@ the 'second-stage property on job to 'vok if necessary."
     result))
 
 (defun coq-par-job-needs-compilation (job)
-  "Determine if JOB nees to get compiled and possibly do some side effects.
-This function calls `coq-par-job-needs-compilation-vos for coq >=
-8.11 and `coq-par-job-needs-compilation-quick' otherwise. Returns
+  "Determine if JOB needs to get compiled and possibly do some side effects.
+This function calls `coq-par-job-needs-compilation-vos for Coq >=
+8.11 and `coq-par-job-needs-compilation-quick' otherwise.  Returns
 t if a compilation is required and sets the 'use-quick property
-depending on wheter -quick/-vio or -vos should be used.
+depending on whether -quick/-vio or -vos should be used.
 If compilation is needed, 'required-obj-file is set.  Property
 'obj-mod-time is set when no compilation is needed."
   (if (coq--post-v811)
@@ -1464,7 +1464,7 @@ If compilation is needed, 'required-obj-file is set.  Property
 Apply `coq-par-collect-locked-file-ancestors' recursively to all
 dependees to return those ancestors that are not yet asserted and
 have not been returned yet by a previous invocation of this
-function on a different job. This function sets the
+function on a different job.  This function sets the
 'collect-visited property on all returned jobs, which should be
 cleared before the next collection run."
   ;; (message "CLAD: job %s: dependees %s"
@@ -1478,8 +1478,8 @@ cleared before the next collection run."
 (defun coq-par-collect-locked-file-ancestors (job)
   "Collect locked, not-yet-found ancestors of JOB.
 Return JOB if JOB is not asserted yet and has not been visited
-before by this function. Do the same recursively on all ancestors
-to return all not-yet-asserted ancestors of JOB. This function
+before by this function.  Do the same recursively on all ancestors
+to return all not-yet-asserted ancestors of JOB.  This function
 sets the 'collect-visited property on all returned jobs, which
 should be cleared before the next collection run."
   ;; (message "CLFA job %s cv %s ls %s"
@@ -1490,15 +1490,15 @@ should be cleared before the next collection run."
     (cons job (coq-par-collect-locked-ancestors-dependees job))))
 
 (defun coq-par-collect-locked-require-ancestors-rec (job)
-  "Collect locked, not yet found ancestorors for require job JOB.
+  "Collect locked, not yet found ancestors for require job JOB.
 Return all not yet asserted ancestors for successful jobs JOB as
-well as for failed jobs JOB. For successful jobs, the not yet
-asserted ancestors of preceeding require jobs have been collected
+well as for failed jobs JOB.  For successful jobs, the not yet
+asserted ancestors of preceding require jobs have been collected
 in a previous collection run and have been asserted back then.
 For failed jobs, this is not the case and, moreover, ancestor
-unlocking can only be done when the last failing reqire job is
-retired. Therefore, for failed jobs, this function recureses into
-the preceeding require job, if it exists and is also marked as
+unlocking can only be done when the last failing require job is
+retired.  Therefore, for failed jobs, this function recureses into
+the preceding require job, if it exists and is also marked as
 failed."
   (let ((this-anc (coq-par-collect-locked-ancestors-dependees job))
         (q-dep (get job 'queue-dependee))
@@ -1510,13 +1510,13 @@ failed."
 (defun coq-par-collect-locked-require-ancestors (job)
   "Top-level ancestor collection function - collects not asserted ancestors.
 Return all not yet asserted ancestors for successful jobs JOB as
-well as for failed jobs JOB. For failed require jobs JOB,
-additionally collect all asserted ancestors of all preceeding
-failed require jobs. This is necessary, because for failed jobs,
-unlocking only happens when the last require job is retired. The
+well as for failed jobs JOB.  For failed require jobs JOB,
+additionally collect all asserted ancestors of all preceding
+failed require jobs.  This is necessary, because for failed jobs,
+unlocking only happens when the last require job is retired.  The
 recursion internally uses property 'collect-visited to mark
 already visited jobs in order to avoid an exponential blowup in
-graphs that are not trees. This property is reset here after
+graphs that are not trees.  This property is reset here after
 collection, such that its use stays internal."
   (let ((ancs (coq-par-collect-locked-require-ancestors-rec job)))
     (mapc (lambda (job) (put job 'collect-visited nil)) ancs)
@@ -1587,7 +1587,7 @@ jobs when they transition from 'waiting-queue to 'ready:
   "Trigger `coq-par-kickoff-queue-maybe' from action list.
 Simple wrapper around `coq-par-kickoff-queue-maybe' to ensure the
 right scripting buffer is the current buffer and local variables
-and `default-directory' are taken from there. This function is
+and `default-directory' are taken from there.  This function is
 used to enter background compilation functions from
 `proof-action-list'."
   (with-current-buffer (get job 'script-buf)
@@ -1598,27 +1598,27 @@ used to enter background compilation functions from
 
 (defun coq-par-kickoff-queue-maybe (job)
   "Transition require job JOB to 'waiting-queue and maybe to 'ready.
-This function can only be called for require jobs. It further
+This function can only be called for require jobs.  It further
 must not be called if JOB is in state 'enqueued-coqdep or in
-state 'waiting-dep with some not yet finished dependencies. This
+state 'waiting-dep with some not yet finished dependencies.  This
 function is called when all dependencies of JOB are ready to put
-JOB into state 'waiting-dep. When in state 'waiting-dep, this
+JOB into state 'waiting-dep.  When in state 'waiting-dep, this
 function is also called, when the queue dependency of JOB has
 transitioned to 'ready (inside this function).
 
-First JOB is put into state 'waiting-dep. If there is still a
+First JOB is put into state 'waiting-dep.  If there is still a
 queue dependency, nothing else happens and JOB waits until the
 queue dependee calls this function again when it is ready.
 
 If there is no queue dependency, then require job JOB must be
-retired and transition to 'ready. This means:
+retired and transition to 'ready.  This means:
 - for successful require jobs, ancestors are registered in the
   'queue-span and marked as 'asserted in their 'lock-state
   property
 - processing of items in 'queueitems is started (if JOB is successful)
-- a possible queue dependant gets it's dependency cleared, and,
+- a possible queue dependent gets it's dependency cleared, and,
   if possible the 'waiting-queue -> 'ready transition
-  is (recursively) done for the dependant
+  is (recursively) done for the dependent
 - if this job is the last top-level compilation
   job (`coq--last-compilation-job') then the last compilation job
   and `proof-second-action-list-active' are cleared and second stage
@@ -1626,7 +1626,7 @@ retired and transition to 'ready. This means:
 - If compilation failed, the (failing) last top-level job is
   delayed until `proof-action-list' is empty, possibly by
   registering this call as a callback in an empty
-  proof-action-list item. When proof-action-list is empty, the
+  proof-action-list item.  When proof-action-list is empty, the
   queue span is deleted, remaining spans are cleared and the
   `proof-shell-busy' lock is freed."
   (cl-assert (and (eq (get job 'type) 'require)
@@ -1730,7 +1730,7 @@ retired and transition to 'ready. This means:
 
 (defun coq-par-compile-job-maybe (job)
   "Compile JOB after dependencies are ready or start next transitions.
-This function can only be called for 'file jobs. It must also be
+This function can only be called for 'file jobs.  It must also be
 called for failed jobs to finish all necessary transitions.
 First JOB is put into state 'enqueued-coqc.  Then it is determined
 if JOB needs compilation, what file must be produced (depending
@@ -1760,7 +1760,7 @@ transition 'enqueued-coqc -> 'ready is triggered."
 (defun coq-par-decrease-coqc-dependency (dependant dependee-time)
   "Clear Coq dependency and update dependee information in DEPENDANT.
 This function handles a Coq dependency from child dependee to
-parent dependant when the dependee has finished compilation (ie.
+parent dependent when the dependee has finished compilation (ie.
 is in state 'ready).  DEPENDANT must be in state
 'waiting-dep.  The time of the most recent ancestor is updated, if
 necessary using DEPENDEE-TIME.  DEPENDEE-TIME must be an Emacs
@@ -1796,14 +1796,14 @@ This function can only be called for file jobs and it must also
 be called for failed jobs to complete all necessary transitions.
 This function is called after compilation has been finished (with
 JUST-COMPILED being t) or after determining that compilation was
-not necessary or failed (with JUST-COMPILED being nil). This
+not necessary or failed (with JUST-COMPILED being nil).  This
 function sets 'youngest-coqc-dependency to the maximal (youngest)
 time stamp of the vo file for this job and all its ancestors.
 This function also decreases the dependency counter on all
-dependants, propagates 'youngest-coqc-dependency and
+dependents, propagates 'youngest-coqc-dependency and
 starts any necessary state transitions on the
-dependants.  Nothing special happens, if this job is successful
-but all its dependants are marked failed.  Ancestor unlocking will
+dependents.  Nothing special happens, if this job is successful
+but all its dependents are marked failed.  Ancestor unlocking will
 be done when the last require job is retired.
 
 For the case that JUST-COMPILED is nil and that JOB has not
@@ -1848,7 +1848,7 @@ before."
 (defun coq-par-start-coqdep-on-require (job)
   "Start coqdep for require job JOB.
 Write the require statement in JOB into a temporary file and
-start coqdep on it. 
+start coqdep on it.
 
 This function may be called asynchronously, if the require job
 was queued."
@@ -1985,7 +1985,7 @@ used."
 (defun coq-par-start-task (job)
   "Start the background job for which JOB is waiting.
 JOB was at the head of the compilation queue and now either
-coqdep, coqc, vio2vo or vok is started for it. This function may be called
+coqdep, coqc, vio2vo or vok is started for it.  This function may be called
 synchronously or asynchronously."
   (let ((job-state (get job 'state)))
     (cond
@@ -2018,7 +2018,7 @@ This function may be called synchronously or asynchronously."
   "Start NEW-JOB or put it into the queue of waiting jobs.
 NEW-JOB goes already into the waiting queue, if the number of
 background jobs is one below the limit.  This is in order to leave
-room for Proof General. This function might be called
+room for Proof General.  This function might be called
 synchronously or asynchronously."
   (if (< (1+ coq--current-background-jobs) coq--internal-max-jobs)
       (coq-par-start-task new-job)
@@ -2028,7 +2028,7 @@ synchronously or asynchronously."
   "Common initialization for 'require and 'file jobs.
 Create a new job of type TYPE and initialize all common fields of
 require and file jobs that need an initialization different from
-nil. Argument SCRIPT-BUF must be the script buffer that caused
+nil.  Argument SCRIPT-BUF must be the script buffer that caused
 the background compilation."
   (let ((new-job (make-symbol "coq-compile-job-symbol")))
     (put new-job 'name (format "job-%d" coq--par-next-id))
@@ -2046,19 +2046,19 @@ the background compilation."
 
 (defun coq-par-create-require-job (clpath require-items require-span script-buf)
   "Create a new require job for REQUIRE-SPAN.
-Create a new require job and initialize its fields. CLPATH is the
+Create a new require job and initialize its fields.  CLPATH is the
 load path configured for the current scripting buffer, that is
 passed down to all dependencies and used in all compilations.
 REQUIRE-ITEMS are the non-require commands following the
 REQUIRE-SPAN, they are temporarily stored in the new require job
-outside of `proof-action-list'. SCRIPT-BUF must be the script
-buffer that caused the background compilation. It is stored in
-property 'script-buf and propagated to all dependent jobs. This
+outside of `proof-action-list'.  SCRIPT-BUF must be the script
+buffer that caused the background compilation.  It is stored in
+property 'script-buf and propagated to all dependent jobs.  This
 buffer is made current in all sentinels and other asynchronously
 called functions to ensure local variables and, in particular,
 `default-directory' are correct.
 
-This function is called synchronously when asserting. The new
+This function is called synchronously when asserting.  The new
 require job is neither started nor enqueued here - the caller
 must do this."
   (let* ((coq-load-path clpath)
@@ -2079,15 +2079,15 @@ must do this."
 (defun coq-par-create-file-job (module-vo-file clpath dep-src-file script-buf)
   "Create a new file job for MODULE-VO-FILE.
 DEP-SRC-FILE is the source file whose coqdep output we are just
-processing and which depends on MODULE-VO-FILE. This argument is
+processing and which depends on MODULE-VO-FILE.  This argument is
 only used in the error message, when MODULE-VO-FILE happens to
 coincide with the current scripting buffer (which means we
-detected a dependency cycle). SCRIPT-BUF must be the current
+detected a dependency cycle).  SCRIPT-BUF must be the current
 scripting buffer and CLPATH must be the load path configured in
 there, see also `coq-par-create-require-job'.
 
 If there is a file job for MODULE-VO-FILE, just return this.
-Otherwise, create a new file job and initialize its fields. In
+Otherwise, create a new file job and initialize its fields.  In
 particular, initialize its 'lock-state property from the set of
 as locked registered files in `proof-included-files-list'.
 
@@ -2123,9 +2123,9 @@ If a new job is created it is started or enqueued right away."
       new-job))))
 
 (defun coq-par-mark-queue-failing (job)
-  "Mark require JOB and its queue dependants with 'failed.
+  "Mark require JOB and its queue dependents with 'failed.
 Mark JOB with 'failed and unlock ancestors as appropriate.
-Recurse for queue dependants."
+Recurse for queue dependents."
   (unless (get job 'failed)
     (put job 'failed t)
     (cl-assert (not (eq (get job 'state) 'ready))
@@ -2136,8 +2136,8 @@ Recurse for queue dependants."
       (coq-par-mark-queue-failing (get job 'queue-dependant)))))
 
 (defun coq-par-mark-job-failing (job)
-  "Mark all dependants of JOB as failing and unlock ancestors as appropriate.
-Set the 'failed property on all direct and indirect dependants of
+  "Mark all dependents of JOB as failing and unlock ancestors as appropriate.
+Set the 'failed property on all direct and indirect dependents of
 JOB.  Along the way, unlock ancestors as determined by
 `coq-par-ongoing-compilation'."
   (unless (get job 'failed)
@@ -2158,13 +2158,13 @@ coqdep error, the following actions are taken.
 - temp-require-file for require jobs is deleted
 - the job that started PROCESS is put into state 'waiting-dep
 - a new job is created for every dependency and registered in the
-  dependency tree of all jobs. For dependencies that are 'ready
+  dependency tree of all jobs.  For dependencies that are 'ready
   already, the most recent ancestor modification time is
-  propagated. If a dependency is marked as failed the current job
+  propagated.  If a dependency is marked as failed the current job
   is also marked as failed.
 - if there are no dependencies (especially if coqdep failed) or
   all dependencies are ready already, the next transition is
-  triggered. For file jobs the next transition goes to
+  triggered.  For file jobs the next transition goes to
   'enqueued-coqc, for require jobs it goes to 'waiting-queue.
 - otherwise the current job is left alone until somebody
   decreases its dependency count to 0.
@@ -2195,7 +2195,7 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
                    (get job 'temp-require-file))
                  dependencies-or-error))
       (when (get job 'temp-require-file)
-        (ignore-errors (delete-file (get job 'temp-require-file))))      
+        (ignore-errors (delete-file (get job 'temp-require-file))))
       (setq job-max-time (get job 'youngest-coqc-dependency))
       (dolist (dep-vo-file dependencies-or-error)
 	(unless (coq-compile-ignore-file dep-vo-file)
@@ -2261,7 +2261,7 @@ behind PROCESS."
 
 (defun coq-par-vok-continuation (process exit-status)
   "Vok continuation function.
-Nothing to do in case of success. Otherwise display the errors."
+Nothing to do in case of success.  Otherwise display the errors."
   (let ((job (process-get process 'coq-compilation-job)))
     (if (eq exit-status 0)
 	;; success - nothing to do
@@ -2278,7 +2278,7 @@ Nothing to do in case of success. Otherwise display the errors."
 
 (defun coq-par-vio2vo-continuation (process exit-status)
   "Vio2vo continuation function.
-Nothing to do in case of success. Otherwise display the errors."
+Nothing to do in case of success.  Otherwise display the errors."
   (let ((job (process-get process 'coq-compilation-job)))
     (if (eq exit-status 0)
 	;; success - nothing to do
@@ -2304,7 +2304,7 @@ Nothing to do in case of success. Otherwise display the errors."
   "Start compilation for the required modules in the car of REQUIRE-ITEMS.
 REQUIRE-ITEMS is a list of queue items, eventually to be added to
 `proof-action-list', that contains just one require command in
-the first element. This function starts the compilation process
+the first element.  This function starts the compilation process
 for all modules and their dependencies in this require command.
 
 This function creates one require job for the require command,
@@ -2362,7 +2362,7 @@ reporting.
 
 If `coq-compile-before-require' is non-nil, this function starts
 the compilation (if necessary) of the dependencies
-ansynchronously in parallel in the background.
+asynchronously in parallel in the background.
 
 If there already is a last compilation job (`coq--last-compilation-job')
 then the queue region is extended, while some background
@@ -2370,7 +2370,7 @@ compilation is still running.  In this case I have to preserve the
 internal state.  Otherwise the hash of the compilation jobs and
 the ancestor hash are reinitialized.
 
-As next action the new queue items are splitted at each Require
+As next action the new queue items are split at each Require
 command.  The items before the first Require are appended to the
 old last compilation job or put back into ‘proof-action-list’.  The
 remaining batches of items that each start with a Require are
@@ -2435,10 +2435,10 @@ This function is called synchronously when asserting."
   "Coq function for `proof-shell-extend-queue-hook' doing parallel compilation.
 If `coq-compile-before-require' is non-nil, this function starts
 the compilation (if necessary) of the dependencies
-ansynchronously in parallel in the background.  This function only
+asynchronously in parallel in the background.  This function only
 does the error checking/reporting for
 `coq-par-preprocess-require-commands-internal', which does all
-the work. This function is called synchronously when asserting."
+the work.  This function is called synchronously when asserting."
   (when coq-compile-before-require
     (condition-case err
 	(coq-par-preprocess-require-commands-internal)
