@@ -60,7 +60,19 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `coq-run-completely-silent' to switch back to old behavior. Note
     that external proof tree display is only supported if Coq/Rocq
     runs completely silent.
-
+*** `Holes` library removed.
+    This was a poor man's code template insertion. This is now removed
+    and see next point below for a replacement.
+*** yasnippets default code templates
+    - if you use company-coq, this is disabled by default because
+      company-coq uses its own yasnippet templates.
+    - Templates are defined from coq-syntax.el definitions. No
+      exhaustivity garanteed.
+    - You might want to define your own templates instead.
+    - To opt out from default templates:
+          (setq coq-yasnippet-use-default-templates nil)
+    - To out out from yasnippet with proofgeneral:
+          (setq coq-use-yasnippet nil)
 
 * Changes of Proof General 4.5 from Proof General 4.4
 

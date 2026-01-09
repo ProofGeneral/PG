@@ -25,7 +25,6 @@
 
 (eval-when-compile (require 'cl-lib))   ;decf
 
-(require 'holes)
 (require 'diff-mode)
 
 (defconst coq-syntax-db nil
@@ -88,7 +87,8 @@ the first hole even if more than one."
 	 (pt (point)))
     (if f (funcall f) ; call f if present
       (insert (or s tac)) ; insert completion and indent otherwise
-      (holes-replace-string-by-holes-backward-jump pt nil alwaysjump)
+      ;; FIXHOLE
+      ;;(holes-replace-string-by-holes-backward-jump pt nil alwaysjump)
       (indent-according-to-mode))))
 
 
@@ -184,7 +184,8 @@ of the largest line in the menu (without abbrev and shortcut specifications).
 Used by `coq-build-menu-from-db', which you should probably use instead.  See
 `coq-syntax-db' for DB structure."
   (let ((l db) (res ()) (size lgth)
-	(keybind-abbrev (substitute-command-keys " \\[expand-abbrev]")))
+	(keybind-abbrev (if coq-use-yasnippet (substitute-command-keys " \\[yas-expand]")
+                          (substitute-command-keys " \\[expand-abbrev]"))))
     (while (and l (> size 0))
       (let* ((hd (pop l))
 	     (menu     	 (nth 0 hd)) ; e1 = menu entry
@@ -192,7 +193,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 	     (complt   	 (nth 2 hd)) ; e3 = completion
 	     ;; (state   (nth 3 hd)) ; e4 = state changing
 	     ;; (color   (nth 4 hd)) ; e5 = colorization string
-	     (insertfn 	 (nth 5 hd)) ; e6 = function for smart insertion
+	     ;; (insertfn (nth 5 hd)) ; e6 = function for smart insertion not used
 	     (menuhide 	 (nth 6 hd)) ; e7 = if non-nil : hide in menu
 	     (entry-with (max (- menuwidth (length menu)) 0))
 	     (spaces (make-string entry-with ? ))
@@ -205,8 +206,7 @@ Used by `coq-build-menu-from-db', which you should probably use instead.  See
 		  (concat menu
 			  (if (not abbrev) ""
 			    (concat spaces "(" abbrev keybind-abbrev ")")))
-		  ;;insertion function if present otherwise insert completion
-		  (if insertfn insertfn `(holes-insert-and-expand ,complt))
+                  `(coq-insert-template ,complt)
 		  t)))
 	    (push menu-entry res)))
 	(cl-decf size)))
@@ -250,10 +250,9 @@ structure."
       (setq lgth (length l)))
     res))
 
-(defcustom coq-holes-minor-mode t
-  "*Whether to apply holes minor mode (see `holes-show-doc') in coq mode."
-  :type 'boolean
-  :group 'coq)
+(defun coq-simple-abbrev-from-db (s)
+  "Returns the coq db abbrevitaion string S cleaned from template markups."
+  (if s (replace-regexp-in-string "#\\|@{\\(?1:[^{}]*\\)}" "" s)))
 
 (defun coq-build-abbrev-table-from-db (db)
   "Take a keyword database DB and return an abbrev table.
@@ -264,12 +263,47 @@ See `coq-syntax-db' for DB structure."
 	     (_e1 (car hd)) (tl1 (cdr hd)) ; e1 = menu entry
 	     (e2 (car tl1)) (tl2 (cdr tl1)) ; e2 = abbreviation
 	     (e3 (car tl2)) (_tl3 (cdr tl2)) ; e3 = completion
-	     )
+             (e3clean (coq-simple-abbrev-from-db e3)))
 	;; careful: nconc destructive!
-	(when e2
-	  (push `(,e2 ,e3 ,(if coq-holes-minor-mode #'holes-abbrev-complete)
-                      :system t)
-                res))
+	(when e2 (push `(,e2 ,e3clean nil :system t) res))
+	(setq l tl)))
+    (nreverse res)))
+
+
+(defun coq-db--replace-abbrev-yas (i mtch)
+  "Translationi of a coq db abbrev spec to a yasnippet one."
+  (cond
+   ;; FIXME: define a "end point for the snippet: that is the place where the
+   ;; cursor should go after fiolling the holes. Generally it is the place where
+   ;; you want to continue editing.
+   ((string-equal mtch "#") (concat "$" (int-to-string i)))
+   (t (concat "${" (int-to-string i) ":" (match-string 1 mtch) "}"))
+   )
+  )
+
+(defun coq-yas-snippet-from-db (s)
+  "Translate the coq db abbrevitaion string S into the yasnippet abbrev format."
+  (if s
+    (let ((cpt 0))
+      (replace-regexp-in-string
+       "#\\|@{\\(?1:[^{}]*\\)}"
+       (lambda (mtch) (setq cpt (+ 1 cpt)) (coq-db--replace-abbrev-yas cpt mtch))
+       s))))
+
+(defun coq-yas-snippet-table-from-db (db)
+  "Take a keyword database DB and return a list of yasnippets.
+
+The list contains lists or args to be given to yas-define-snippets.
+See `coq-syntax-db' for DB structure."
+  (let ((l db) (res ()))
+    (while l
+      (let* ((hd (car l))(tl (cdr l))	; hd is a list of length 3 or 4
+	     (e1 (car hd)) (tl1 (cdr hd)) ; e1 = menu entry
+	     (e2 (car tl1)) (tl2 (cdr tl1)) ; e2 = abbreviation
+	     (e3 (car tl2)) (_tl3 (cdr tl2)) ; e3 = completion
+             (yas_e3 (coq-yas-snippet-from-db e3)))
+	;; careful: nconc destructive!
+	(when e2 (push `(,e2 ,yas_e3 ,e1) res))
 	(setq l tl)))
     (nreverse res)))
 

@@ -46,7 +46,6 @@
 (defvar coq-auto-insert-as)             ; defpacustom
 (defvar coq-time-commands)              ; defpacustom
 (defvar coq-use-project-file)           ; defpacustom
-(defvar coq-use-editing-holes)          ; defpacustom
 (defvar coq-hide-additional-subgoals)
 
 (require 'proof)
@@ -98,7 +97,7 @@ supported if this option is t."
 (defcustom coq-user-init-cmd nil
   "User defined init commands for Coq.
 These are appended at the end of `coq-shell-init-cmd'."
-  :type '(repeat (cons (string :tag "command")))
+  :type '(repeat string)
   :group 'coq)
 
 (defcustom coq-optimise-resp-windows-enable t
@@ -2059,6 +2058,16 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
   (setq proof-cannot-reopen-processed-files nil)
 
+  (cond 
+   ((and coq-use-yasnippet (not (fboundp 'yas-define-snippets)))
+         (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed."))
+   ((and coq-use-yasnippet (not coq-yasnippet-use-default-templates))
+    (message "Default coq yasnippets NOT loaded as asked."))
+   (coq-use-yasnippet
+    (message "Loading default coq yasnippets.")
+    (coq-define-yasnippets-from-db))
+   (t (message "yasnippet not found by proofgeneral, falling back to simple abbrevs")))
+
   (proof-config-done)
   )
 
@@ -2552,17 +2561,17 @@ mouse activation."
        (typkind (if (string-equal mods "Section")
                     "" ;; if not a section
                   (completing-read "Kind of type (optional, TAB to see list): "
-                                   modtype-kinds-table)))
-       (p (point)))
+                                   modtype-kinds-table))))
     (if (string-equal typkind "")
         (progn
-          (insert mods " " s ".\n#\nEnd " s ".")
-          (holes-replace-string-by-holes-backward p)
-          (goto-char p))
-      (insert mods " " s " " typkind " #.\n#\nEnd " s ".")
-      (holes-replace-string-by-holes-backward p)
-      (goto-char p)
-      (holes-set-point-next-hole-destroy))))
+          (insert mods " " s ".\n")
+          (let ((pt (point)))
+            (insert "\nEnd " s ".")
+            (goto-char pt)))
+      (insert mods " " s " " typkind ".\n")
+      (let ((pt (point)))
+        (insert "\nEnd " s ".")
+        (goto-char pt)))))
 
 (defconst reqkinds-kinds-table
   '(("Require Import") ("Require Export") ("Require") ("Import"))
@@ -2891,6 +2900,20 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
+
+(defun coq-replace-branch-with-yas-holes (s)
+  "replace occurrences of RE in by REPi in s. i is incremented at each replacement."
+  (let ((res s) (i 2))
+    (setq res (replace-regexp-in-string "\\`match #" "match $1" res))
+    (while (string-match "=> *\n" res nil t)
+      (setq res (replace-regexp-in-string ;; the regexp is made to match only
+                                          ;; the fiorst occurrence
+                 "\\(?1:=> *\n\\)\\(.\\|\n\\)*\\'" 
+                 (concat "=> $" (int-to-string i) "\n")
+                 res nil nil 1))
+      (setq i (+ 1 i)))
+    res))
+
 (defun coq-get-goal-names (show-existentials-output)
   "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
 
@@ -2916,13 +2939,13 @@ Goals that are marked as \"only printing\" are ignored."
              ;; NOTE: Adding braces would be great, but it messes up indentation.
              (format-selector (lambda (name) (format "[%s]: #." name)))
              (goal-selectors (cl-mapcar format-selector goal-names))
-             (snippet (string-join goal-selectors "\n")))
+             (snippet (string-join goal-selectors "\n"))
+             (snippet (coq-insert-template snippet)))
         (message "%s" goal-names)
         (if (equal goal-selectors nil)
             (error "Couldn't find any named goals")
           (let ((start (point)))
-            (insert snippet)
-            (holes-replace-string-by-holes-backward-jump start)))))))
+            (if coq-use-yasnippet (yas-expand-snippet snippet) (insert snippet))))))))
 
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
@@ -2933,14 +2956,20 @@ Also insert holes at insertion positions."
   (let* ((cmd))
     (setq cmd (read-string "Build match for type: "))
     (let* ((thematch
-           (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (match (replace-regexp-in-string "=> *\n" "=> #\n" thematch)))
+            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
+           (yasmatch (coq-replace-branch-with-yas-holes thematch)))
       ;; if error, it will be displayed in response buffer (see def of
       ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp match)
-        (let ((start (point)))
-          (insert match)
-          (holes-replace-string-by-holes-backward-jump start))))))
+      (unless (proof-string-match coq-error-regexp thematch)
+        (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
+            (yas-expand-snippet yasmatch)
+          (let ((start (point)))
+            (insert thematch)
+            (indent-region start (point) nil)
+            (goto-char start)
+            (search-forward "#")
+            (delete-char -1)))))))
+
 
 (defun coq-insert-solve-tactic ()
   "Ask for a closing tactic name, with completion, and insert at point.

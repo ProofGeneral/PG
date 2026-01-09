@@ -22,9 +22,21 @@
 (require 'proof)
 (require 'coq-syntax)
 
-(defun holes-show-doc ()
-  (interactive)
-  (describe-function 'holes-mode))
+(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
+                                  (fboundp 'yas-expand))
+  "Should Coq use yasnippets templates.
+
+Default value is t unless yasnippet is not installed or company-coq
+appears in the hoocoq-mode-hook."
+  :type 'boolean
+  :group 'coq)
+
+(defcustom coq-yasnippet-use-default-templates t
+  "Should Proofgeneral coq mode use its yasnippets default templates.
+
+Set this to nil if you don't want the default yasnippets templates."
+  :type 'boolean
+  :group 'coq)
 
 (defun coq-local-vars-list-show-doc ()
   (interactive)
@@ -64,10 +76,51 @@
 (defconst coq-terms-abbrev-table
   (coq-build-abbrev-table-from-db coq-terms-db))
 
+(defun coq-define-yasnippets-from-db ()
+  "Register yas snippets from default proofgeneral coq db.
+
+yassnippet is a framework for inserting code templates for emacs. This
+will add hundreds of yas snippets, generated from proofgeneral list of
+coq commands (which is not necessarily always up to date). You probably
+want to use your own set of snippets at some point but it is a good
+start."
+  (when (fboundp 'yas-define-snippets)
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-solve-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-solve-cheat-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-tacticals-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-decl-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-defn-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-goal-starters-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-queries-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-other-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-ssreflect-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-terms-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-commands-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-tacticals-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-solve-tactics-db))
+    (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-cheat-tactics-db))))
+
+
+;; this is the function called by insertion menus. TODO: separate
+;; these menus from yasnippet templates because this should work even
+;; if the user has its own templates instead of the default ones.
+(defun coq-insert-template (snippet)
+  "Expand template ABBR using (by priority) yasnippet, abbrev or just ALT."
+  (when snippet
+    (if (and coq-use-yasnippet (fboundp 'yas-expand))
+        (yas-expand-snippet (coq-yas-snippet-from-db snippet))
+      (insert (coq-simple-abbrev-from-db snippet)))))
+
+        ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
+        ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
+        ;;   (progn (insert abbr) (yas-expand)))
+      
+
 
 
 ;;; The abbrev table built from keywords tables
-;#s and @{..} are replaced by holes by holes-abbrev-complete
 (define-abbrev-table 'coq-mode-abbrev-table
   (append coq-tactics-abbrev-table coq-tacticals-abbrev-table
           coq-commands-abbrev-table coq-terms-abbrev-table)
