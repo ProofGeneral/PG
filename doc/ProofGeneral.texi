@@ -3706,7 +3706,7 @@ dragging the separating bars.
   - horizontal: 3 columns mode, one for each buffer (script, goals,
     response).
 
-  By default, the display mode is @code{'smart} which automatically choses
+  By default, the display mode is @code{'smart} which automatically chooses
   between these 3 modes by considering the current Emacs frame width: if
   it is smaller than @samp{@code{split-width-threshold}} then vertical mode is
   chosen, otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
