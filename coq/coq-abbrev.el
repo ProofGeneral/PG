@@ -32,7 +32,7 @@ appears in the hoocoq-mode-hook."
   :group 'coq)
 
 (defcustom coq-yasnippet-use-default-templates t
-  "Should Proofgeneral coq mode use its yasnippets default templates.
+  "Should ProofGeneral coq mode use its yasnippets default templates.
 
 Set this to nil if you don't want the default yasnippets templates."
   :type 'boolean
@@ -77,11 +77,11 @@ Set this to nil if you don't want the default yasnippets templates."
   (coq-build-abbrev-table-from-db coq-terms-db))
 
 (defun coq-define-yasnippets-from-db ()
-  "Register yas snippets from default proofgeneral coq db.
+  "Register yas snippets from default ProofGeneral coq db.
 
-yassnippet is a framework for inserting code templates for emacs. This
-will add hundreds of yas snippets, generated from proofgeneral list of
-coq commands (which is not necessarily always up to date). You probably
+yasnippet is a framework for inserting code templates for Emacs.  This
+will add hundreds of yas snippets, generated from ProofGeneral list of
+coq commands (which is not necessarily always up to date).  You probably
 want to use your own set of snippets at some point but it is a good
 start."
   (when (fboundp 'yas-define-snippets)
@@ -107,7 +107,7 @@ start."
 ;; these menus from yasnippet templates because this should work even
 ;; if the user has its own templates instead of the default ones.
 (defun coq-insert-template (snippet)
-  "Expand template ABBR using (by priority) yasnippet, abbrev or just ALT."
+  "Expand template SNIPPET using (by priority) yasnippet, abbrev or just ALT."
   (when snippet
     (if (and coq-use-yasnippet (fboundp 'yas-expand))
         (yas-expand-snippet (coq-yas-snippet-from-db snippet))

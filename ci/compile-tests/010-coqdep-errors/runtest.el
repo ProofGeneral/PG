@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2024  Hendrik Tews
 ;; 
@@ -13,7 +15,7 @@
 ;; ert tests for parallel background compilation for Coq
 ;;
 ;; Test that parallel background compilation reliably detects coqdep
-;; errors. There are three tests that check the following coqdep errors:
+;; errors.  There are three tests that check the following coqdep errors:
 ;; - coqdep on a require fails because of a missing library (using a.v)
 ;; - coqdep on a dependency fails because of a syntax error (using b.v)
 ;; - coqdep on a dependency fails because of a missing library (using d.v)
@@ -24,6 +26,7 @@
 ;;       |   |
 ;;       c   e
 
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
@@ -126,3 +129,7 @@
     (should (and coqdep-errror-in-response
                  missing-module-in-response
                  (not dependency-in-coq)))))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

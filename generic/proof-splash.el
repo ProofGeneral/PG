@@ -92,7 +92,7 @@ Proof General."
     )
   "Evaluated to configure splash screen displayed when entering Proof General.
 A list of the screen contents.  If an element is a string or an image
-specifier, it is displayed centred on the window on its own line.
+specifier, it is displayed centered on the window on its own line.
 If it is nil, a new line is inserted."
   :type 'sexp
   :group 'proof-general-internals)

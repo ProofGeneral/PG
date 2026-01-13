@@ -1,3 +1,5 @@
+;;; coq-test-proof-stat.el --- Tests for proof-check-report and proof-check-annotate
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2024  Hendrik Tews
@@ -11,10 +13,12 @@
 ;;
 ;; Tests for proof-check-report and proof-check-annotate.
 
+;;; Code:
+
 (defun reset-coq ()
   "Reset Coq and Proof General.
 Do `proof-shell-exit' to kill Coq and reset the locked region and
-a lot of other internal state of Proof General. Used at the
+a lot of other internal state of Proof General.  Used at the
 beginning of the test when several tests work on the same Coq
 source file."
   (when (and (boundp 'proof-shell-buffer)
@@ -84,3 +88,7 @@ Check that `proof-check-report' signals an error with the expected message."
         (with-current-buffer buffer
           (set-buffer-modified-p nil))
         (kill-buffer buffer)))))
+
+(provide 'coq-test-proof-stat)
+
+;;; coq-test-proof-stat.el ends here

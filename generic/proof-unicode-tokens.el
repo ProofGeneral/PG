@@ -69,7 +69,7 @@
 
 ;;;###autoload
 (defun proof-unicode-tokens-set-global (flag)
-  "Set global status of unicode tokens mode for PG buffers to be FLAG.
+  "Set global status of Unicode tokens mode for PG buffers to be FLAG.
 Turn on/off menu in all script buffers and ensure new buffers follow suit."
   (unless proof-unicode-tokens-initialised
     (proof-unicode-tokens-init))
@@ -88,7 +88,7 @@ Turn on/off menu in all script buffers and ensure new buffers follow suit."
   "Turn on or off Unicode tokens mode in Proof General script buffer.
 This invokes `unicode-tokens-mode' to toggle the setting for the current
 buffer, and then sets PG's option for default to match.
-Also we arrange to have unicode tokens mode turn itself on automatically
+Also we arrange to have Unicode tokens mode turn itself on automatically
 in future if we have just activated it for this buffer.
 Note: this function is called when the customize setting for the prover
 is changed."

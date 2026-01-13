@@ -1,4 +1,6 @@
-;; This file is part of Proof General.  -*- lexical-binding: t; -*-
+;;; runtest.el --- Test -*- lexical-binding: t; -*-
+;;
+;; This file is part of Proof General.
 ;;
 ;; © Copyright 2020  Hendrik Tews
 ;;
@@ -24,6 +26,7 @@
 ;;
 ;; where a1 and a2 are the 2 require commands in file a.v.
 
+;;; Code:
 
 ;; require cct-lib for the elisp compilation, otherwise this is present already
 (require 'cct-lib "ci/compile-tests/cct-lib")
@@ -59,3 +62,7 @@
 
     (cct-check-locked 21 'locked)
     (cct-check-locked 22 'unlocked)))
+
+(provide 'runtest)
+
+;;; runtest.el ends here

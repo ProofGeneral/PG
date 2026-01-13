@@ -21,14 +21,14 @@
 ;;
 ;; A big portion of the code in this file implements the callback
 ;; function that Emacs calls when output arrives from the proof
-;; assistant. This callback implements a major feature of Proof
+;; assistant.  This callback implements a major feature of Proof
 ;; General: Sending one command after the other to the proof assistant
 ;; and processing/displaying the reply.
 ;;
 ;; The following documents the call graph of important functions that
-;; contribute to this callback. The entry point is
+;; contribute to this callback.  The entry point is
 ;; `proof-shell-filter-wrapper', which is configured in
-;; `scomint-output-filter-functions'. Sending the next comand to the
+;; `scomint-output-filter-functions'.  Sending the next command to the
 ;; proof assistant and calling the callbacks of the spans happens in
 ;; `proof-shell-exec-loop'.
 ;;
@@ -135,7 +135,7 @@ bother the user.  They may include
                             show command when running silent.
 
 Note that 'invisible does not imply any of the others. If flags
-are non-empty, interactive cues will be surpressed. (E.g.,
+are non-empty, interactive cues will be suppressed. (E.g.,
 printing hints).
 
 See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
@@ -145,11 +145,11 @@ See the functions `proof-start-queue' and `proof-shell-exec-loop'.")
 When the proof assistant is busy, one cannot push to the head of
 `proof-action-list`, because the head usually (but not always)
 contains the item that the proof assistant is currently
-executing. This list therefore holds the items to be executed
-before any other items in `proof-action-list'. Inside
+executing.  This list therefore holds the items to be executed
+before any other items in `proof-action-list'.  Inside
 `proof-shell-exec-loop', when `proof-action-list' is in the right
 state, the content of this list is prepended to
-`proof-action-list'. Use `proof-add-to-priority-queue' to add
+`proof-action-list'.  Use `proof-add-to-priority-queue' to add
 items to this priority list, to ensure the proof assistant starts
 running, in case `proof-action-list' is currently empty.
 
@@ -196,19 +196,19 @@ background compilation finishes.  Then those items are put into
   "Position of end of second last input inside delayed callbacks.
 When callbacks of action items are processed, `proof-marker' has already
 been advanced to the end of the next input that the proof assistant
-processes in parallel with the callback. This variable permits the
+processes in parallel with the callback.  This variable permits the
 callback to access the end of the input belonging to its action-list
 item and then process the complete output that the proof assistant has
 sent.")
 
 (defvar proof-shell-delayed-output-start nil
   "A record of the start of the previous output in the shell buffer.
-The previous output is held back for processing at end of queue. Reset
+The previous output is held back for processing at end of queue.  Reset
 in `proof-shell-filter', i.e., when subsequent output arrives.")
 
 (defvar proof-shell-delayed-output-end nil
   "A record of the start of the previous output in the shell buffer.
-The previous output is held back for processing at end of queue. Reset
+The previous output is held back for processing at end of queue.  Reset
 in `proof-shell-filter', i.e., when subsequent output arrives.")
 
 (defvar proof-shell-delayed-output-flags nil
@@ -375,12 +375,11 @@ In this case `proof-shell-filter' must be called again after it finished.")
   string)
 
 (defvar proof-shell-before-process-hook nil
-  "Functions run from `proof-shell-start' just before
-   starting the prover process. Last chance to modify
-   xxx-prog-args and xxx-prog-name")
+  "Functions run from `proof-shell-start' just before starting the prover process.
+Last chance to modify xxx-prog-args and xxx-prog-name")
 
 (defun proof-shell-start ()
-  "Initialise a shell-like buffer for a proof assistant.
+  "Initialize a shell-like buffer for a proof assistant.
 Does nothing if proof assistant is already running.
 
 Also generates goal and response buffers.
@@ -848,7 +847,7 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
 
 (defun proof-pbp-focus-on-first-goal ()
   "If the `proof-goals-buffer' contains goals, bring the first one into view.
-This is a hook function for proof-shell-handle-delayed-output-hook."
+This is a hook function for `proof-shell-handle-delayed-output-hook'."
   )
 ;; PG 4.0 FIXME
 ;       (let
@@ -1169,8 +1168,8 @@ being processed."
   "Start processing priority items if necessary.
 If there are priority items and the proof shell is not busy with
 other items, then this function starts the prover with the
-priority items. This function relies on the invariants of
-`proof-shell-filter-active' and on `proof-action-list'. The
+priority items.  This function relies on the invariants of
+`proof-shell-filter-active' and on `proof-action-list'.  The
 latter is non-empty, if there is some item, which has not been
 fully processed yet.
 
@@ -1188,7 +1187,7 @@ processed without calling this function."
 (defun proof-add-to-priority-queue (queueitem)
   "Add item to `proof-priority-action-list' and start the queue if necessary.
 Argument QUEUEITEM must be an action item as documented for
-`proof-action-list'. Add flag 'priority-action to QUEUEITEM, such
+`proof-action-list'.  Add flag 'priority-action to QUEUEITEM, such
 that priority items can be recognized and the order of added
 priority items can be preserved."
   (let ((qi (list (car queueitem) (cadr queueitem) (cl-caddr queueitem)
@@ -1339,7 +1338,7 @@ contains only invisible elements for Prooftree synchronization."
 	    (pg-processing-complete-hint))
 	  (pg-finish-tracing-display))
 
-	(and (not proof-second-action-list-active) 
+	(and (not proof-second-action-list-active)
 	     (let ((last-command  (car (nth 1 (car (last proof-action-list))))))
 	       (or (null proof-action-list)
 	 	   (cl-every
@@ -1541,7 +1540,7 @@ entry point, `proof-shell-filter' against such parallel,
 overlapping calls.
 
 The argument STR-DO-NOT-USE contains the most recent output, but
-is discarded. `proof-shell-filter' collects the output from
+is discarded.  `proof-shell-filter' collects the output from
 `proof-shell-buffer' (where it is inserted by
 `scomint-output-filter'), relieving this function from the task
 to buffer the output that arrives during parallel, overlapping
@@ -1816,7 +1815,7 @@ will also be displayed in the response buffer.
 
 For example, if OUTPUT has this form:
 
-  MESSSAGE-1
+  MESSAGE-1
   GOALS-1
   MESSAGE-2
   GOALS-2
@@ -2107,7 +2106,7 @@ Error messages are displayed as usual."
 
 ;;;###autoload
 (define-derived-mode proof-shell-mode scomint-mode
-  "proof-shell" "Proof General shell mode class for proof assistant processes"
+  "proof-shell" "Proof General shell mode class for proof assistant processes."
 
   (setq proof-buffer-type 'shell)
 

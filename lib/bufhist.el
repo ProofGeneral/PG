@@ -55,7 +55,7 @@
 ;;; Now our code
 
 (defgroup bufhist nil
-  "In-memory history of buffer contents"
+  "In-memory history of buffer contents."
   :group 'tools)
 
 (defcustom bufhist-ring-size 30
@@ -81,7 +81,7 @@
   "Ordinary value `buffer-read-only' for this buffer.")
 
 (defvar bufhist-top-point 0
-  "Poistion of top of real buffer contents, after buttons.")
+  "Position of top of real buffer contents, after buttons.")
 
 (defun bufhist-mode-line-format-entry ()
   (when bufhist-ring-pos
@@ -167,7 +167,7 @@ This is as a pair (POINT . CONTENTS)."
   (goto-char (car buf)))
 
 (defun bufhist-checkpoint ()
-  "Add buffer contents to the ring history.  No action if not in bufhist mode."
+  "Add buffer contents to the ring history.  No action if not in `bufhist-mode'."
   (interactive)
   (if bufhist-mode ;; safety
       (ring-insert bufhist-ring (bufhist-get-buffer-contents))))
@@ -186,7 +186,7 @@ This is as a pair (POINT . CONTENTS)."
 
 (defun bufhist-checkpoint-and-erase ()
   "Add buffer contents to history then erase.
-Only erase if not in bufhist mode."
+Only erase if not in `bufhist-mode'."
   (interactive)
   (bufhist-checkpoint)
   (bufhist-erase-buffer))
@@ -283,7 +283,7 @@ If N is omitted or nil, move forward by one item."
 
 ;;;###autoload
 (defun bufhist-init (&optional readwrite ringsize)
-  "Initialise a ring history for the current buffer.
+  "Initialize a ring history for the current buffer.
 The history will be read-only unless READWRITE is non-nil.
 For read-only histories, edits to the buffer switch to the latest version.
 If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."

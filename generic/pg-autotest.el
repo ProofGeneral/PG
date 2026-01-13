@@ -168,7 +168,7 @@
   
 (defun pg-autotest-test-process-wholefile (file)
   "Load FILE and script in one go.
-An error is signalled if scripting doesn't completely the whole buffer."
+An error is signaled if scripting doesn't completely the whole buffer."
   (pg-autotest-find-file-restart file)
   (proof-process-buffer)
   (proof-shell-wait)
@@ -176,7 +176,7 @@ An error is signalled if scripting doesn't completely the whole buffer."
 
 (defun pg-autotest-test-script-wholefile (file)
   "Process FILE line-by-line, using `proof-shell-wait'.
-An error is signalled if scripting doesn't complete."
+An error is signaled if scripting doesn't complete."
   (pg-autotest-find-file-restart file)
   (save-excursion
     (let ((making-progress t) last-locked-end)

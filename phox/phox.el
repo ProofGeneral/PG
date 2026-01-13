@@ -121,8 +121,7 @@ version of it in Phox code, with no chars in [a-z0-9A-Z] after it."
 
 ;;Goto http://www.fileformat.info/info/unicode/block/mathematical_operators/list.htm and copy the needed character
 (defun phox-unicode-simplified ()
-  "Adds a bunch of font-lock rules to display phox commands as
-their unicode counterpart"
+  "Adds font-lock rules to display Phox commands as their Unicode counterpart."
   (interactive)
   (substitute-patterns-with-unicode-symbol
    (list

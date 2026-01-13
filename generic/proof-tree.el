@@ -45,15 +45,15 @@
 ;; 
 ;; A fourth problem is that proof-tree display can only work when the
 ;; prover output is not suppressed (via `proof-full-annotation').
-;; `proof-shell-should-be-silent' takes care of that. For proof
+;; `proof-shell-should-be-silent' takes care of that.  For proof
 ;; assistants that run completely silent,
 ;; `proof-tree-assistant-specific-urgent-action' should be configured
-;; to insert a show-goal command after each command. The callback of
+;; to insert a show-goal command after each command.  The callback of
 ;; this proof action list item should be
 ;; `proof-tree-display-goal-callback'.
 ;; 
 ;; Earlier versions of prooftree maintained certain data structures
-;; twice, one time in prooftree and one time in Proof General. The
+;; twice, one time in prooftree and one time in Proof General.  The
 ;; copy in Proof General was necessary, because all necessary show
 ;; goal commands had to be generated and processed immediately in the
 ;; current state.
@@ -62,46 +62,46 @@
 ;; earlier state, therefore, in the current version all the processing
 ;; is done in prooftree and prooftree sends asynchronous show goal
 ;; requests to Proof General, if sequents are missing or must be
-;; updated. These show goal requests are processed in Proof General as
+;; updated.  These show goal requests are processed in Proof General as
 ;; priority actions, nevertheless, they can be delayed for quite some
-;; time. It might even happen, that the first show goal command for an
+;; time.  It might even happen, that the first show goal command for an
 ;; additionally spawned subgoal arrives at Proof General only after
-;; the proof has been finished. Prooftree can request additional
+;; the proof has been finished.  Prooftree can request additional
 ;; sequent updates for instantiated existentials only after that first
-;; sequent has arrived. Prooftree keeps a tree with the instantiation
+;; sequent has arrived.  Prooftree keeps a tree with the instantiation
 ;; dependencies of existentials, such that it can immediately issue
-;; all sequent update requests for all known instantiations. With this
+;; all sequent update requests for all known instantiations.  With this
 ;; there is at most one round trip to prooftree necessary after a
 ;; proof has been finished in Proof General.
 ;;
 ;; In the proof assistant source code, the next lemma might start
-;; immediately after finishing the preceeding proof. Before processing
+;; immediately after finishing the preceding proof.  Before processing
 ;; that next command, the proof tree display must be switched off in
 ;; Proof General and for Coq, the command for disabling the dependent
-;; evar line must be processed. On the other hand, all show goal
-;; commands arriving late for the preceeding proof must be completely
-;; processed with proof tree display enabled. To solve that problem,
+;; evar line must be processed.  On the other hand, all show goal
+;; commands arriving late for the preceding proof must be completely
+;; processed with proof tree display enabled.  To solve that problem,
 ;; `proof-tree-check-proof-finish' is called as urgent action via
 ;; `proof-tree-urgent-action' inside `proof-shell-exec-loop', before
 ;; the next command in the queue region is sent to the proof
-;; assistant. If this urgent action recognizes a proof end, it moves
+;; assistant.  If this urgent action recognizes a proof end, it moves
 ;; all non-priority actions from `proof-action-list' to
 ;; `proof-tree--delayed-actions' signaling
-;; `proof-second-action-list-active'. This effectively stops
-;; processing of the queue region. When the end of the proof is
+;; `proof-second-action-list-active'.  This effectively stops
+;; processing of the queue region.  When the end of the proof is
 ;; processed in the delayed output handling, Proof General sends a
 ;; proof-complete message to prooftree, thereby requesting a
 ;; confirm-proof-complete from prooftree after prooftree has sent all
-;; show goal requests to Proof General. Via
+;; show goal requests to Proof General.  Via
 ;; `proof-tree-display-stop-command' the confirmation message causes
 ;; the insertion of an action item with tag 'proof-tree-last-item.
 ;; When this item arrives inside `proof-tree-check-proof-finish', all
 ;; show goal commands have been processed, because care is taken to
-;; process priority actions in order. `proof-tree-check-proof-finish'
+;; process priority actions in order.  `proof-tree-check-proof-finish'
 ;; can therefore move the queued commands back to `proof-action-list'
 ;; and continue normal processing.
 ;;
-;; Apart from the urgent action discussed before, 
+;; Apart from the urgent action discussed before,
 ;; the glue code here works on the delayed output.  That is,
 ;; the glue code here runs when the next proof command has already
 ;; been sent to the proof assistant.  The glue code makes a light
@@ -118,7 +118,7 @@
 ;; Existential Variables command in Coq.  There is one proof tree in
 ;; the first layer for the original goal.  The second layer contains
 ;; all the goals that the first Grab Existential Variables command
-;; created from uninstantiated existential variabes in the main proof.
+;; created from uninstantiated existential variables in the main proof.
 ;; The third layer contains the goals that the second Grap Existential
 ;; Variables created.
 
@@ -134,7 +134,7 @@
 ;;
 
 (defgroup proof-tree ()
-  "Customization for the proof tree visualizer"
+  "Customization for the proof tree visualizer."
   :group 'proof-general
   :package-version '(ProofGeneral . "4.2"))
 
@@ -175,7 +175,7 @@ as Lemma, that can start a proof."
 
 (defcustom proof-tree-navigation-command-regexp nil
   "Regexp to match a navigation command.
-A navigation command typically focusses on a different open goal
+A navigation command typically focuses on a different open goal
 without changing any of the open goals.  Leave at nil if there are
 no navigation commands."
   :type '(choice regexp (const nil))
@@ -283,7 +283,7 @@ is retracted (but no stuff before X)."
   "Proof assistant specific function for a show-goal command.
 This function is applied to a goal ID and a state number and
 should return a command (as string) that will display the
-complete sequent with that ID in the given state. The regexp
+complete sequent with that ID in the given state.  The regexp
 `proof-tree-update-goal-regexp' should match the output of the
 proof assistant for the returned command, such that
 `proof-tree-update-sequent' will update the sequent ID inside
@@ -317,9 +317,9 @@ must return a buffer position."
 
 (defcustom proof-tree-start-display-hook ()
   "Normal hook for prooftree when external display starts.
-This hook is called when the external display is startet, more
+This hook is called when the external display is started, more
 precisely, when the proof assistant is in the state that Proof
-General starts to send display commands to prooftree. This means,
+General starts to send display commands to prooftree.  This means,
 retraction to the start of the proof, in case it was necessary,
 has been done and `proof-action-list` is empty.
 
@@ -331,20 +331,20 @@ evars line."
 (defcustom proof-tree-display-stop-command ()
   "Function for the last command before switching off proof-tree display.
 This is a proof assistant specific function that must be
-instantiated. When a proof finishes with proof-tree display,
+instantiated.  When a proof finishes with proof-tree display,
 prooftree may request a number of show goal commands after the
-proof has been finished in the proof assistant. This function
+proof has been finished in the proof assistant.  This function
 must return an action item that can be inserted as last command
 in `proof-action-list' after all these show goal commands.
 
-For Coq this is used to disable the dependent evar line. But also
+For Coq this is used to disable the dependent evar line.  But also
 other proof assistants that enable the proof tree display must
 set this function.
 
 An action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
-see `proof-action-list'. The action item must not be recognized
+see `proof-action-list'.  The action item must not be recognized
 as comment by `proof-shell-slurp-comments', that is COMMANDS must
-be a nonempty list of strings. The generic prooftree glue code
+be a nonempty list of strings.  The generic prooftree glue code
 will add 'proof-tree-last-item to DISPLAYFLAGS when necessary."
   :type 'function
   :group 'proof-tree-internals)
@@ -353,9 +353,9 @@ will add 'proof-tree-last-item to DISPLAYFLAGS when necessary."
   "Function to perform proof assistant specific urgent actions.
 If set, this function is called when the last proof-action item has just
 been processed, before the next item is sent to the proof assistant and
-the callback of the last item is processed. It is guaranteed to be
+the callback of the last item is processed.  It is guaranteed to be
 called at a point at which `proof-action-list' can be directly
-manipulated. If no urgent action is needed, this option should be left
+manipulated.  If no urgent action is needed, this option should be left
 at nil."
   :type 'function
   :group 'proof-tree-internals)
@@ -412,15 +412,15 @@ This variable is only maintained and meaningful if
 (defvar proof-tree--delayed-actions nil
   "Hold delayed action items when waiting for prooftree after proof end.
 This internal variable is completely managed by
-`proof-tree-check-proof-finish'. After a proof with proof-tree
+`proof-tree-check-proof-finish'.  After a proof with proof-tree
 display has been finished, it holds the following commands, until
-all requested show goal commands have been processed. If this
+all requested show goal commands have been processed.  If this
 variable is non-nil, then `proof-second-action-list-active' must
-be set. In addition to holding the to be delayed action items,
+be set.  In addition to holding the to be delayed action items,
 this variable is used to remember that
 `proof-tree-check-proof-finish' waits for
 `proof-tree-display-stop-command' after it recognized the end of
-a proof. Therefore, if non-nil, this variable must either hold a
+a proof.  Therefore, if non-nil, this variable must either hold a
 nonempty list (the to be delayed action items) or t (if there are
 no action items to be delayed.")
 
@@ -431,8 +431,8 @@ no action items to be delayed.")
   "Partition list L according to P.
 Returns a cons pair `(L1 . L2)' of lists, where L1 contains the
 elements of L for which P returns non-nil and L2 those for which
-P returns nil. The concatenation of L1 and L2 is a permutation of
-L, the order of elements in L is preserved. P must be a function
+P returns nil.  The concatenation of L1 and L2 is a permutation of
+L, the order of elements in L is preserved.  P must be a function
 that takes one argument."
   (let (yes no)
     (dolist (x l (cons (nreverse yes) (nreverse no)))
@@ -450,8 +450,8 @@ This marker points to the next piece of output that needs to get processed.")
 
 (defvar proof-tree-filter-continuation nil
   "Continuation when `proof-tree-process-filter' stops early.
-A function that handles a command from Prooftee might fail
-because not all data from Prooftee has yet arrived.  In this case
+A function that handles a command from Prooftree might fail
+because not all data from Prooftree has yet arrived.  In this case
 the continuation is stored in this variable and will be called
 from `proof-tree-process-filter' when more output arrives.")
 
@@ -527,17 +527,17 @@ The command from prooftree has the form \"emacs exec: show-goal
   "Add command `proof-tree-display-stop-command' to priority action list.
 This function adds flag `'dont-show-when-silent' to the action
 list item returned by `proof-tree-display-stop-command' and, when
-LAST-ITEM-FLAG is non-nil, also `'proof-tree-last-item'. The
+LAST-ITEM-FLAG is non-nil, also `'proof-tree-last-item'.  The
 former flag ensures that no show goals command is inserted after
 `proof-tree-display-stop-command' when the prover runs completely
-silent. The latter flag serves as marker for
+silent.  The latter flag serves as marker for
 `proof-tree-check-proof-finish' that all requests from prooftree
-have been processed. The resulting action list item is added to 
+have been processed.  The resulting action list item is added to
 `proof-priority-action-list'.
 
 This function is called in 4 situations.
 - A proof has been finished and the confirm-proof-complete
-  message arrived from prooftree. Only in this case
+  message arrived from prooftree.  Only in this case
   LAST-ITEM-FLAG must be set.
 - The user stopped the proof tree display inside Proof General.
 - A stop-displaying message arrived, because the user stopped the
@@ -569,7 +569,7 @@ and switches the proof-tree display processing off."
 (defun proof-tree-insert-output (string &optional message)
   "Insert output or a message into the prooftree process buffer.
 If MESSAGE is t, a message is inserted and
-`proof-tree-output-marker' is not touched. Otherwise, if
+`proof-tree-output-marker' is not touched.  Otherwise, if
 `proof-tree-output-marker' is nil, it is set to point to the
 newly arrived output."
   (with-current-buffer proof-tree-process-buffer
@@ -589,12 +589,12 @@ This function is the worker for `proof-tree-process-filter', it
 implements all the functionality of `proof-tree-process-filter'.
 
 Records the output in the prooftree process buffer and checks for
-callback function requests. Such callback functions might fail
+callback function requests.  Such callback functions might fail
 because the complete output from Prooftree has not arrived yet.
 In this case they store a continuation function in
 `proof-tree-filter-continuation that will be called when the next
-piece of output arrives. `proof-tree-output-marker' points to the
-next piece of Prooftree output that needs to get processed. If
+piece of output arrives.  `proof-tree-output-marker' points to the
+next piece of Prooftree output that needs to get processed.  If
 everything is processed, the marker is deleted and
 `proof-tree-insert-output' sets it again for the next output.
 
@@ -652,7 +652,7 @@ are transmitted atomically over a pipe."
 (defun proof-tree-process-filter (_proc string)
   "Output filter for prooftree.
 This function is the exception wrapper, all the functionality is
-implemented in `proof-tree-process-filter-internal'. The filter
+implemented in `proof-tree-process-filter-internal'.  The filter
 records the output in `proof-tree-process-buffer' and calls
 callback functions as necessary."
   (condition-case err
@@ -665,7 +665,7 @@ callback functions as necessary."
 ;;
 
 (defun proof-tree-process-sentinel (_proc event)
-  "Sentinel for prooftee.
+  "Sentinel for prooftree.
 Runs on process status changes and cleans up when prooftree dies."
   (proof-tree-insert-output (concat "\nsubprocess status change: " event) t)
   (unless (proof-tree-is-running)
@@ -863,7 +863,7 @@ lambda expressions that you can put into `proof-action-list'."
 This function is for stopping the proof-tree display because of
 some user request, which may either be an undo before the start
 of the proof or some kind of quitting the proof-tree display in
-Proof General or in prooftree. In these cases no show-goal
+Proof General or in prooftree.  In these cases no show-goal
 commands need to be processed, therefore do not add the
 `'proof-tree-last-item' flag to the stop command."
   (setq proof-tree-current-proof nil)
@@ -879,9 +879,9 @@ line off for Coq) have been processed.
 If this function detects the end of the proof, it moves
 non-priority items following in `proof-action-list' to
 `proof-tree--delayed-actions' and sets
-`proof-second-action-list-active'. When later the command from
+`proof-second-action-list-active'.  When later the command from
 `proof-tree-display-stop-command' is recognized, the items are
-moved back. If no items follow the end of the previous proof,
+moved back.  If no items follow the end of the previous proof,
 `proof-tree--delayed-actions' is set to t."
   ;; (message "PTCPF pt %s current %s mode %s delayed %s item %s"
   ;;          proof-tree-current-proof (cadr (funcall proof-tree-get-proof-info))
@@ -921,12 +921,12 @@ moved back. If no items follow the end of the previous proof,
 (defun proof-tree-urgent-action (last-item)
   "Urgent actions for proof-tree display.
 This is the second entry point of the Proof General prooftree support,
-see also `proof-tree-handle-delayed-output'. Call
+see also `proof-tree-handle-delayed-output'.  Call
 `proof-tree-check-proof-finish' to delay processing the queue region at
 the end of a proof until all show-goal commands from prooftree have been
-processed. Do also call `proof-tree-assistant-specific-urgent-action',
+processed.  Do also call `proof-tree-assistant-specific-urgent-action',
 which appropriately inserts show-goal commands if Coq is running
-completely silent. LAST-ITEM is the last proof-action item that has just
+completely silent.  LAST-ITEM is the last proof-action item that has just
 been processed.
 
 When the proof-tree display is active, this function is called from
@@ -966,8 +966,8 @@ current buffer."
 This function cuts out the text between
 `proof-tree-existentials-state-start-regexp' and
 `proof-tree-existentials-state-end-regexp' from the prover
-output, including the matches of these regular expressions. If
-the start regexp is nil, the empty string is returned. If the end
+output, including the matches of these regular expressions.  If
+the START regexp is nil, the empty string is returned.  If the END
 regexp is nil, the match expands to the end of the prover output."
   (goto-char start)
   (if (and proof-tree-existentials-state-start-regexp
@@ -985,9 +985,9 @@ regexp is nil, the match expands to the end of the prover output."
 (defun proof-tree-handle-proof-progress (old-proof-marker cmd-string proof-info)
   "Send CMD-STRING and goals in delayed output to prooftree.
 This function is called if there is some real progress in a
-proof. This function sends the current state, the current goal
-and the list of additional open subgoals to Prooftree. Prooftree
-will sort out the rest. In particular, Prooftree determines
+proof.  This function sends the current state, the current goal
+and the list of additional open subgoals to Prooftree.  Prooftree
+will sort out the rest.  In particular, Prooftree determines
 without input from this function, whether or not a new layer in
 the proof tree must be started.
 
@@ -1070,9 +1070,9 @@ The delayed output of the navigation command is in the region
   "Callback to process a goal for prooftree.
 This function should be used as callback for show-goal commands inserted
 by `proof-tree-assistant-specific-urgent-action' for proof assistants
-running completely silent. OLD-ITEM should be the proof action list item
+running completely silent.  OLD-ITEM should be the proof action list item
 for which `proof-tree-assistant-specific-urgent-action' produced a show
-goal command. OLD-PROOF-INFO must be the result of
+goal command.  OLD-PROOF-INFO must be the result of
 `proof-tree-get-proof-info' just after old-item has been processed."
   ;; (message "PTDGC %s %s" old-item old-proof-info)
   (with-current-buffer proof-shell-buffer
@@ -1109,7 +1109,7 @@ processing a show goal command might happen after the proof.
 
 This function uses `proof-tree-update-goal-regexp' to find a
 sequent, its ID and the corresponding state in the delayed
-output. If something is found an appropriate update-sequent
+output.  If something is found an appropriate update-sequent
 command is sent to prooftree.
 
 The delayed output is in the region
@@ -1135,7 +1135,7 @@ The delayed output is in the region
 (defun proof-tree-handle-delayed-output (old-proof-marker cmd flags _span)
   "Process delayed output for prooftree.
 This function is the main entry point of the Proof General prooftree
-support, but see also `proof-tree-urgent-action'. It examines the
+support, but see also `proof-tree-urgent-action'.  It examines the
 delayed output in order to take appropriate actions and maintains the
 internal state.
 
@@ -1215,7 +1215,7 @@ the flags and SPAN is the span."
 (defun proof-tree-display-current-proof (proof-start)
   "Start an external proof-tree display for the current proof.
 Coq (and probably other proof assistants as well) does not
-support outputing the current proof tree.  Therefore this function
+support outputting the current proof tree.  Therefore this function
 retracts to the start of the current proof, switches the
 proof-tree display on, and reasserts then until the former end of
 the locked region.  Argument PROOF-START must contain the start

@@ -1,3 +1,5 @@
+;;; qrhl-test-input.el --- Tests related to the qRHL prover
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2022  Dominique Unruh
@@ -12,6 +14,8 @@
 ;; Tests related to the qRHL prover
 ;;
 
+;;; Code:
+
 (ert-deftest load-qrhl-input ()
   :expected-result :passed
   "Test that the qRHL input method loads without errors in .qrhl files"
@@ -22,3 +26,7 @@
   ;; are translated correctly. But I don't know how. (Dominique)
   (should (string= current-input-method "qrhl"))
   )
+
+(provide 'qrhl-test-input)
+
+;;; qrhl-test-input.el ends here

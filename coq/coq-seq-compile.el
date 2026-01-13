@@ -59,14 +59,14 @@ properly unlock ANCESTOR-SRC on retract."
 (defun coq-seq-get-library-dependencies (lib-src-file &optional command-intro)
   "Compute dependencies of LIB-SRC-FILE.
 Invoke \"coqdep\" on LIB-SRC-FILE and parse the output to
-compute the compiled coq library object files on which
+compute the compiled Coq library object files on which
 LIB-SRC-FILE depends.  The return value is either a string or a
 list.  If it is a string then an error occurred and the string is
 the core of the error message.  If the return value is a list no
 error occurred and the returned list is the (possibly empty) list
 of file names LIB-SRC-FILE depends on.
 
-If an error occurs this funtion displays
+If an error occurs this function displays
 `coq--compile-response-buffer' with the complete command and its
 output.  The optional argument COMMAND-INTRO is only used in the
 error case.  It is prepended to the displayed command.
@@ -111,7 +111,7 @@ break."
         ()))))
 
 (defun coq-seq-compile-library (src-file)
-  "Recompile coq library SRC-FILE.
+  "Recompile Coq library SRC-FILE.
 Display errors in buffer `coq--compile-response-buffer'."
   (message "Recompile %s" src-file)
   (let ((coqc-arguments
@@ -141,7 +141,7 @@ Display errors in buffer `coq--compile-response-buffer'."
 
 (defun coq-seq-compile-library-if-necessary (max-dep-obj-time src obj)
   "Recompile SRC to OBJ if necessary.
-This function compiles SRC to the coq library object file OBJ
+This function compiles SRC to the Coq library object file OBJ
 if one of the following conditions is true:
 - a dependency has just been compiled
 - OBJ does not exist
@@ -161,7 +161,7 @@ If this function decides to compile SRC to OBJ it returns
 OBJ.
 
 Note that file modification times inside Emacs have only a
-precisision of 1 second.  To avoid spurious recompilations we do
+precision of 1 second.  To avoid spurious recompilations we do
 not recompile if the youngest object file of the dependencies and
 OBJ have identical modification times."
   (let (src-time obj-time)
@@ -188,7 +188,7 @@ OBJ have identical modification times."
 (defun coq-seq-make-lib-up-to-date (coq-obj-hash span lib-obj-file)
   "Make library object file LIB-OBJ-FILE up-to-date.
 Check if LIB-OBJ-FILE and all it dependencies are up-to-date
-compiled coq library objects.  Recompile the necessary objects, if
+compiled Coq library objects.  Recompile the necessary objects, if
 not.  This function returns 'just-compiled if it compiled
 LIB-OBJ-FILE.  Otherwise it returns the modification time of
 LIB-OBJ-FILE as time value (see `time-less-or-equal').
@@ -294,10 +294,10 @@ therefore the customizations for `compile' do not apply."
        (coq-library-src-of-vo-file absolute-module-obj-file)))))
 
 (defun coq-seq-map-module-id-to-obj-file (module-id _span &optional from)
-  "Map MODULE-ID to the appropriate coq object file.
+  "Map MODULE-ID to the appropriate Coq object file.
 The mapping depends of course on `coq-load-path'.  The current
 implementation invokes coqdep with a one-line require command.
-This is probably slower but much simpler than modelling coq file
+This is probably slower but much simpler than modeling Coq file
 loading inside ProofGeneral.  Argument SPAN is only used for error
 handling.  It provides the location information of MODULE-ID for a
 decent error message.

@@ -130,7 +130,7 @@ Used for Proof General's help menu."
 
 (defcustom proof-info-command nil
   "Command to ask for help or information in the proof assistant.
-String or fn.  If a string, the command to use.
+String or function.  If a string, the command to use.
 If a function, it should return the command string to insert."
   :type '(choice string function)
   :group 'prover-config)
@@ -141,7 +141,7 @@ If a function, it should return the command string to insert."
   :group 'prover-config)
 
 (defcustom proof-goal-command nil
-  "Command to set a goal in the proof assistant.  String or fn.
+  "Command to set a goal in the proof assistant.  String or function.
 If a string, the format character `%s' will be replaced by the
 goal string.
 If a function, it should return the command string to insert."
@@ -149,7 +149,7 @@ If a function, it should return the command string to insert."
   :group 'prover-config)
 
 (defcustom proof-save-command nil
-  "Command to save a proved theorem in the proof assistant.  String or fn.
+  "Command to save a proved theorem in the proof assistant.  String or function.
 If a string, the format character `%s' will be replaced by the
 theorem name.
 If a function, it should return the command string to insert."
@@ -157,7 +157,7 @@ If a function, it should return the command string to insert."
   :group 'prover-config)
 
 (defcustom proof-find-theorems-command nil
-  "Command to search for a theorem containing a given term.  String or fn.
+  "Command to search for a theorem containing a given term.  String or function.
 If a string, the format character `%s' will be replaced by the term.
 If a function, it should return the command string to send."
   :type '(choice string function)
@@ -400,7 +400,7 @@ NB: This setting is not used for matching output from the prover."
   :group 'proof-script)
 
 (defcustom proof-show-proof-diffs-regexp nil
-  "Matches all \"Show Proof\" forms (specific to the Coq prover)." 
+  "Matches all \"Show Proof\" forms (specific to the Coq prover)."
   :type 'regexp
   :group 'proof-script)
 
@@ -697,9 +697,9 @@ needed for Coq."
   :group 'proof-script)
 
 (defcustom proof-omit-proofs-configured nil
-  "t if the omit proofs feature has been configured by the proof assitant.
+  "Non-nil if the omit proofs feature has been configured by the proof assistant.
 See also `proof-omit-proofs-option' or the Proof General manual
-for a description of the feature. This option can only be set, if
+for a description of the feature.  This option can only be set, if
 all of `proof-script-proof-start-regexp',
 `proof-script-proof-end-regexp',
 `proof-script-definition-end-regexp' and
@@ -713,7 +713,7 @@ commands in the source following a match of
 `proof-script-proof-start-regexp' up to and including the next
 match of `proof-script-proof-end-regexp', are omitted (not send
 to the proof assistant) and replaced by
-`proof-script-proof-admit-command'. If a match for
+`proof-script-proof-admit-command'.  If a match for
 `proof-script-definition-end-regexp' is found while searching
 forward for the proof end or if
 `proof-script-cmd-prevents-proof-omission' recognizes a proof
@@ -724,7 +724,7 @@ to and including the match of
 and not omitted, thus all these proof commands _are_ sent to the
 proof assistant.
 
-The feature does not work for nested proofs. If a match for
+The feature does not work for nested proofs.  If a match for
 `proof-script-proof-start-regexp' is found before the next match
 for `proof-script-proof-end-regexp' or
 `proof-script-definition-end-regexp', the search for opaque
@@ -741,11 +741,11 @@ without surrounding space."
 (defcustom proof-omit-cheating-regexp nil
   "Regular expression matching proof closing commands for incomplete proofs.
 If set, this regular expression is applied to the last command of
-opaque proofs. If it matches the proofs counts as invalid for the
-proof-status statistics and annotation feature. For Coq this is
+opaque proofs.  If it matches the proofs counts as invalid for the
+proof-status statistics and annotation feature.  For Coq this is
 used to mark Admitted proofs as invalid.
 
-This option can be left at `nil'."
+This option can be left at nil."
   :type 'regexp
   :group 'proof-script)
 
@@ -777,11 +777,11 @@ See `proof-omit-proofs-configured'."
 (defcustom proof-script-cmd-prevents-proof-omission nil
   "Optional predicate to match commands that prevent omitting the current proof.
 If set, this option should contain a function that takes a proof
-command (as string) as argument and returns t or nil. If set, the
+command (as string) as argument and returns t or nil.  If set, the
 function is called on every proof command inside a proof while
-scanning for proofs to omit. The predicate should return t if the
-command has effects ouside the proof, potentially breaking the
-script if the current proof is omitted. If the predicate returns
+scanning for proofs to omit.  The predicate should return t if the
+command has effects outside the proof, potentially breaking the
+script if the current proof is omitted.  If the predicate returns
 t, the proof is considered to be not opaque and thus not omitted."
   :type 'function
   :group 'proof-script)
@@ -790,9 +790,9 @@ t, the proof is considered to be not opaque and thus not omitted."
   "Optional regexp for commands that prevent omitting the next proof.
 If set, this option should contain a regular expression that
 matches proof-script commands that prevent the omission of proofs
-dirctly following this command. When scanning the newly asserted
+directly following this command.  When scanning the newly asserted
 region for proofs to omit, every proof-script command outside
-proofs is matched against this regexp. If it matches and the next
+proofs is matched against this regexp.  If it matches and the next
 command matches `proof-script-proof-start-regexp' this following
 proof will not be omitted.
 
@@ -811,10 +811,10 @@ asserted together."
 
 (defcustom proof-get-proof-info-fn nil
   "Return proof name and state number for `proof-check-proofs'.
-Proof assistant specific function for `proof-check-proofs'. This
+Proof assistant specific function for `proof-check-proofs'.  This
 function takes no arguments, it is called after completely
 processing the proof script up to a certain point (including all
-callbacks in spans). It must return a list, which contains, in
+callbacks in spans).  It must return a list, which contains, in
 the following order:
 
 * the current state number (as positive integer)
@@ -826,7 +826,7 @@ Processing the command returned by `proof-retract-command-fn'
 without processing any other command after calling this function
 should be a no-op.
 
-(This function has the same signature and specification as
+\(This function has the same signature and specification as
 `proof-tree-get-proof-info'.)"
   :type 'function
   :group 'proof-script)
@@ -834,7 +834,7 @@ should be a no-op.
 (defcustom proof-retract-command-fn nil
   "Function for retract command to a certain state.
 This function takes a state as argument as returned by
-`proof-get-proof-info-fn'. It should return a command that brings
+`proof-get-proof-info-fn'.  It should return a command that brings
 the proof assistant back to the same state."
   :type 'function
   :group 'proof-script)
@@ -995,7 +995,7 @@ If `proof-terminal-string' is nil, this has no effect."
    "The command for configuring the proof process to gain synchronization.
 This command is sent before Proof General's synchronization
 mechanism is engaged, to allow customization inside the process
-to help gain syncrhonization (e.g. engaging special markup).
+to help gain synchronization (e.g. engaging special markup).
 
 It is better to configure the proof assistant for this purpose
 via command line options if possible, in which case this variable
@@ -1023,7 +1023,7 @@ See also `proof-shell-pre-sync-init-cmd'."
   :group 'proof-shell)
 
 (defcustom proof-shell-restart-cmd ""
-   "A command for re-initialising the proof process."
+   "A command for re-initializing the proof process."
    :type '(choice string (const nil))
    :group 'proof-shell)
 
@@ -1198,7 +1198,7 @@ It is safe to leave this variable unset (as nil)."
   "Regexp matching a non-error from the proof assistant.
 
 Some commands of the proof assistant may display error message as
-information messages. E.g. in Coq: \"Fail <cmd>\" shows the error
+information messages.  E.g. in Coq: \"Fail <cmd>\" shows the error
 message thrown by <cmd> without failing itself.
 
 Matching this regexp disables error message detection.
@@ -1322,7 +1322,7 @@ is shown to the user.  Set to nil to disable."
   "Regexp matching the start of the proof state output.
 This is an important setting.  Output between `proof-shell-start-goals-regexp'
 and `proof-shell-end-goals-regexp' will be pasted into the goals buffer
-and possibly analysed further for proof-by-pointing markup.
+and possibly analyzed further for proof-by-pointing markup.
 If it is left as nil, the goals buffer will not be used.
 
 The goals display starts at the beginning of the match on this
@@ -1371,7 +1371,7 @@ parsing later.  Note that this affects processing of output which is
 ordinarily accumulated: output which appears before the eager annotation
 start will be discarded.
 
-The start/end annotations can be used to hilight the output, but
+The start/end annotations can be used to highlight the output, but
 are stripped from display of the message in the minibuffer.
 
 It is useful to recognize (starts of) warnings or file-reading messages
@@ -1618,8 +1618,7 @@ This function takes no argument and should use
 `proof-shell-last-prompt' and `proof-shell-last-output' to
 determine whether the last command ended up inside a
 proof (either by remaining inside one or opening a new one), or
-outside of any proof.
-"
+outside of any proof."
   :type 'function
   :group 'proof-script)
 
@@ -1662,7 +1661,7 @@ tokens (for example, editing documentation or source code files)."
   "Whether communication between PG and prover is 8bit clean.
 If non-nil, no special non-ASCII characters must be used in markup.
 If so, the process coding system will be set to UTF-8.
-With old systems that may use unsafe unicode prefix sequences
+With old systems that may use unsafe Unicode prefix sequences
 \(i.e., lead to hanging in C-libraries), this should be set to nil."
   :type 'boolean
   :group 'proof-shell)
@@ -1742,7 +1741,7 @@ are normally the ones of interest:
  'proof-done-advancing	     A \"forward\" scripting command
  'proof-done-retracting	     A \"backward\" scripting command
  'proof-done-invisible	     A non-scripting command
- 'proof-shell-set-silent     Indicates prover output has been surpressed
+ 'proof-shell-set-silent     Indicates prover output has been suppressed
  'proof-shell-clear-silent   Indicates prover output has been restored
  'init-cmd	             Early initialization command sent to prover
 
@@ -1832,7 +1831,7 @@ tries to interrupt the proof process.  It is therefore run earlier
 than `proof-shell-handle-error-or-interrupt-hook', which runs
 when the interrupt is acknowledged inside `proof-shell-exec-loop'.
 
-This hook also runs when the proof assistent is killed.
+This hook also runs when the proof assistant is killed.
 
 Hook functions should set the dynamic variable `prover-was-busy'
 to t if there might have been a reason to interrupt.  Otherwise
@@ -1851,7 +1850,7 @@ before returning to the top level."
 
 (defcustom proof-shell-handle-output-system-specific nil
   "Set this variable to handle system specific output.
-Errors and interrupts are recognised in the function
+Errors and interrupts are recognized in the function
 `proof-shell-handle-immediate-output'.  Later output is
 handled by `proof-shell-handle-delayed-output', which
 displays messages to the user in *goals* and *response*
@@ -1880,7 +1879,7 @@ retracted, or after a command has been sent to the prover with
 `proof-shell-invisible-command'.
 
 It is run *before* the generic processing of the command span is
-done (see function `prof-done-advancing'). See
+done (see function `prof-done-advancing').  See
 `proof-state-change-hook' to insert actions after it."
   :type '(repeat function)
   :group 'proof-shell)
@@ -1892,7 +1891,7 @@ retracted, or after a command has been sent to the prover with
 `proof-shell-invisible-command'.
 
 It is run *after* the generic processing of the command span is
-done (see function `prof-done-advancing'). See
+done (see function `prof-done-advancing').  See
 `proof-state-change-pre-hook' to insert actions before it.
 
 This hook may be used to refresh the toolbar."
@@ -1912,7 +1911,7 @@ the theorem being saved."
 (defcustom proof-dependency-menu-system-specific nil
   "Hook for system specific menu items for dependency menu.
 This must be a function taking one argument: the span one which
-the secific menu must be added. It must return a lit with the
+the specific menu must be added.  It must return a lit with the
 same type as `proof-dependency-in-span-context-menu' returns."
   :type '(repeat function)
   :group 'proof-shell)
@@ -1952,7 +1951,7 @@ Leave unset if no special characters are being used."
   ;; FIXME: The docstring suggest we should use t!?
   "Choice of syntax tree encoding for terms.
 
-If nil, prover is expected to make no optimisations.
+If nil, prover is expected to make no optimizations.
 If non-nil, the pretty printer of the prover only reports local changes.
 For Coq 6.2, use t."
   :type 'boolean
@@ -2052,7 +2051,7 @@ See also `proof-script-font-lock-keywords' and `proof-goals-font-lock-keywords'.
   :group 'proof-goals)
 
 (defcustom proof-shell-font-lock-keywords nil
-  "Value of `font-lock-keywords' used to fontify the shell buiffer.
+  "Value of `font-lock-keywords' used to fontify the shell buffer.
 The shell mode should may this before calling `proof-response-config-done'.
 Note that by default, font lock is turned *off* in shell buffers to
 improve performance.  If you need to understand some output it may help
@@ -2071,7 +2070,7 @@ the current restriction, and must return the final value of (point-max).
   :group 'proof-goals)
 
 (defcustom pg-after-fontify-output-hook nil
-  "This hook is called before fonfitying a region in an output buffer.
+  "This hook is called before fontifying a region in an output buffer.
 \[This hook is presently only used by Isabelle]."
   :type '(repeat function)
   :group 'proof-goals)

@@ -1,3 +1,5 @@
+;;; coq-test-prelude-correct.el --- Test that the Proof General prelude is correct
+;;
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2021  Hendrik Tews
@@ -18,20 +20,22 @@
 ;; This test shows different behaviour before 8.10. When the problem
 ;; is fixed, I expect that the version distinction is no longer
 ;; necessary and can be deleted.
-;;
+
+;;; Code:
+
 ;; Load stuff for `coq--version<'
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
 
 (defconst coq--post-v810 (coq--post-v810)
-  "t if Coq is more recent than 8.9")
+  "Non-nil if Coq is more recent than 8.9.")
 
 (message "prelude tests run with Coq version %s; post-v810: %s"
          (coq-version t) coq--post-v810)
 
 
-;;; Coq source code for tests 
+;;; Coq source code for tests
 
 (defconst coq-src-proof
   "Check 1."
@@ -90,3 +94,7 @@ yield an error."
         (with-current-buffer buffer
           (set-buffer-modified-p nil))
         (kill-buffer buffer)))))
+
+(provide 'coq-test-prelude-correct)
+
+;;; coq-test-prelude-correct.el ends here
