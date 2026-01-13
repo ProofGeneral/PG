@@ -132,6 +132,18 @@ Namely, goals that do not fit in the goals window."
   :type 'boolean
   :group 'coq)
 
+(defcustom coq-goal-conclusion-marker "========"
+  "Marks the part of interest in each goal to focus the goal buffer on"
+  :type 'regexp
+  :group 'coq
+  )
+
+(defcustom coq-center-goal-after-focus 'top
+  "Where to display the goal marker after rendering a proof goal"
+  :type '(radio
+    (const :tag "move conclusion marker to the top of the window" top)
+    (const :tag "move conclusion marker to the middle of the window" middle)
+    (const :tag "move conclusion marker to the bottom of the window" bottom)))
 
 (defconst coq-shell-init-cmd
   (append
@@ -3347,7 +3359,10 @@ also `coq-show-goals-inside-proof'."
           (goto-char (match-beginning 0))
           (buffer-substring p (point)))))))
 
-
+(defun coq-recenter-goal (loc)
+  (cond ((eq loc 'top) (recenter 0))
+        ((eq loc 'middle) (recenter nil))
+        ((eq loc 'bottom) (recenter -1))))
 
 (defun coq-show-first-goal ()
   "Scroll the goal buffer so that the first goal is visible.
@@ -3376,10 +3391,11 @@ number of hypothesis displayed, without hiding the goal"
                 ;; if the top of concl is hidden we may want to show it instead
                 ;; of bottom of concl
                 (when (and coq-prefer-top-of-conclusion
-                         ;; return nil if === is not visible
-                         (not (save-excursion (re-search-backward "========" (window-start) t))))
-                  (re-search-backward "========" nil t)
-                  (recenter 0))
+                           ;; return nil if conclusion marker is not visible
+                           (not (save-excursion (re-search-backward coq-goal-conclusion-marker
+                                                                    (window-start) t))))
+                  (re-search-backward coq-goal-conclusion-marker nil t)
+                  (coq-recenter-goal coq-center-goal-after-focus))
                 (beginning-of-line))))))))
 
 (defvar coq-modeline-string2 ")")
