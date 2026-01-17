@@ -611,11 +611,11 @@ and read by function `coq-empty-action-list-command'.")
   (span-set-property span 'statenum val))
 
 (defsubst coq-get-span-goalcmd (span)
-  "Return the 'goalcmd flag of the SPAN."
+  "Return the \\+`goalcmd' flag of the SPAN."
   (span-property span 'goalcmd))
 
 (defsubst coq-set-span-goalcmd (span val)
-  "Set the 'goalcmd flag of the SPAN to VAL."
+  "Set the \\+`goalcmd' flag of the SPAN to VAL."
   (span-set-property span 'goalcmd val))
 
 (defsubst coq-set-span-proofnum (span val)
@@ -987,7 +987,7 @@ silent."
 (defun coq-command-with-set-unset (setcmd cmd unsetcmd &optional postformatcmd
                                           testcmd)
   "Play commands SETCMD then CMD and then silently UNSETCMD.
-The last UNSETCMD is performed with tag 'empty-action-list so that it
+The last UNSETCMD is performed with tag \\+`empty-action-list' so that it
 does not trigger `proof-shell-empty-action' (which does \"Show\" at
 the time of writing this documentation). Also add
 `'dont-show-when-silent' everywhere to suppress show commands when
@@ -1188,7 +1188,7 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (coq-ask-do-show-all "Check" "Check"))
 
 (defun coq-get-response-string-at (&optional pt)
-  "Go forward from PT until reaching a 'response property, and return it.
+  "Go forward from PT until reaching a \\+`response' property, and return it.
 Response span only starts at first non space character of a
 command, so we may have to go forward to find it.  Starts
 from (point) if pt is nil.  Precondition: pt (or point if nil)
@@ -2699,17 +2699,17 @@ Warning: this makes the error messages (and location) wrong.")
 Suggestions are emitted by Coq at Qed time.  The possible values
 of this variable are:
 
-- 'always: always insert the suggested annotation
+- \\+`always': always insert the suggested annotation
 
-- 'highlight (default value): highlight the Proof command and
+- \\+`highlight' (default value): highlight the Proof command and
   have a contextual menu for insertion (or M-x
   coq-insert-suggested-dependency when point is on the proof
   considered)
 
-- 'ask: asks the user each time.  If yes then do as 'always, else
-  do as 'highlight
+- \\+`ask': asks the user each time.  If yes then do as \\+`always', else
+  do as \\+`highlight'
 
-- 'never: ignore completely the suggestions.
+- \\+`never': ignore completely the suggestions.
 
 Remarks and limitations:
 - do not support nested proofs.
@@ -2718,7 +2718,7 @@ Remarks and limitations:
   that pg currently do not deal with async proofs.
 - if there is already a \"Proof using\" annotation, then either it
   is correct and nothing happens, or it is incorrect and Coq
-  generates an error. PG won't try to replace the erroneous
+  generates an error. PG will not try to replace the erroneous
   annotation in this case, but you can always go back, remove it
   by hand, and let pg insert the good one.
 - instead of the menu you can do \\[coq-insert-suggested-dependency]

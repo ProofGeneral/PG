@@ -50,7 +50,7 @@
 (defcustom coq-prog-env nil
   "List of environment settings to pass to Coq process.
 On Windows you might need something like:
-  (setq coq-prog-env '(\"HOME=C:\\Program Files\\Coq\\\"))"
+  (setq coq-prog-env \\='(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
 ;; We just call "rocq" and look the error message that should mention
@@ -618,7 +618,7 @@ _RocqProject (and any case-variant of these) without checking Coq/Rocq
 version.  If you want something smarter please redefine
 `coq-project-filename' directly by using:
 
-\(setq coq-project-filename #'my-own-predicate)
+\(setq coq-project-filename #\\='my-own-predicate)
 
 About the Coq/Rocq project file (cf. Coq documentation on project files
 and \"makefile generation\"):
@@ -630,14 +630,14 @@ t (default) the content of this file will be used by Proof General to
 infer the `coq-load-path' and the `coq-prog-args' variables that set the
 coqtop invocation by Proof General. This is now the recommended way of
 configuring the coqtop invocation. Local file variables may still be
-used to override the Coq project file's configuration. .dir-locals.el
+used to override the Coq project file\\='s configuration. .dir-locals.el
 files also work and override project file settings."
   :type 'function
   :group 'coq)
 
 (defun coq-find-project-file ()
-  "Return '(buf alreadyopen) where buf is the buffer visiting Coq project file.
-alreadyopen is t if buffer already existed."
+  "Return (BUF ALREADYOPEN) where BUF is the buffer visiting Coq project file.
+ALREADYOPEN is t if buffer already existed."
   (when buffer-file-name
     (let* ((projectfiledir
             (locate-dominating-file
@@ -692,7 +692,7 @@ Returns a mixed list of option-value pairs and strings."
 OPTIONS is a list or conses (switch . argument) and strings.
 Note that the semantics of the -arg flags in Coq project files
 are weird: -arg \"a b\" means pass a and b, separately, to
-coqtop.  But -arg \"'a b'\" means to pass a and b together."
+coqtop.  But -arg \"\\='a b\\='\" means to pass a and b together."
   (let ((args nil))
     (dolist (opt options)
       (pcase opt

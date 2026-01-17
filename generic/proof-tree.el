@@ -345,7 +345,7 @@ An action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
 see `proof-action-list'.  The action item must not be recognized
 as comment by `proof-shell-slurp-comments', that is COMMANDS must
 be a nonempty list of strings.  The generic prooftree glue code
-will add 'proof-tree-last-item to DISPLAYFLAGS when necessary."
+will add \\+`proof-tree-last-item' to DISPLAYFLAGS when necessary."
   :type 'function
   :group 'proof-tree-internals)
 
@@ -557,7 +557,7 @@ This function is called in 4 situations.
 (defun proof-tree-confirm-proof-complete (data)
   "Callback function for confirm-proof-complete messages.
 Add command `proof-tree-display-stop-command' with
-'proof-tree-last-item flag, such that
+\\+`proof-tree-last-item' flag, such that
 `proof-tree-check-proof-finish' eventually sees this last command
 and switches the proof-tree display processing off."
   (if (string-match proof-tree--confirm-complete-regexp data)
@@ -1103,7 +1103,7 @@ goal command.  OLD-PROOF-INFO must be the result of
 This function processes delayed output that the proof assistant
 generated in response to commands that prooftree inserted in
 order to keep its display up-to-date.  Such commands are tagged
-with a 'proof-tree-show-subgoal flag.  Argument PROOF-NAME
+with a \\+`proof-tree-show-subgoal' flag.  Argument PROOF-NAME
 originally comes from prooftree and is passed back now, because
 processing a show goal command might happen after the proof.
 

@@ -49,7 +49,7 @@ local-vars-list provides two useful functions:
 (defun local-vars-list-find ()
   "Find the local variable definition paragraph.
 Return a list containing the prefix and the suffix of its first line,
-or throw 'notfound if not found.  Sets the point at the beginning of
+or throw \\+`notfound' if not found.  Sets the point at the beginning of
 the second line of the paragraph."
   (goto-char (point-max))
   (catch 'notfound

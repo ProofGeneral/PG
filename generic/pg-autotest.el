@@ -39,7 +39,7 @@
   "Flag indicating overall successful state of tests.")
 
 (defvar pg-autotest-log t
-  "Value for 'standard-output' during tests.")
+  "Value for `standard-output' during tests.")
 
 ;;; Some utilities
 
@@ -117,7 +117,7 @@
   (pg-autotest-message "\n\nREMARK: %s\n" msg))
 
 (defun pg-autotest-timestart (&optional clockname)
-  "Make a note of current time, named 'local or CLOCKNAME."
+  "Make a note of current time, named \\+`local' or CLOCKNAME."
   (put 'pg-autotest-time (or clockname 'local)
        (current-time)))
 

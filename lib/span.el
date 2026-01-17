@@ -89,7 +89,7 @@
   (car-safe (spans-at-point-prop pt prop)))
 
 (defun span-delete (span)
-  "Run the 'span-delete-actions and delete SPAN."
+  "Run the \\+`span-delete-actions' and delete SPAN."
   (mapc #'funcall (span-property span 'span-delete-actions))
   (delete-overlay span))
 
@@ -165,7 +165,7 @@ A span is before PT if it begins before the character before PT."
     (setq plist (cddr plist))))
 
 (defun span-at-event (event &optional prop)
-  "Find a span at position of EVENT, with property PROP (default 'span)."
+  "Find a span at position of EVENT, with property PROP (default \\+`span')."
   (car (spans-filter
         (overlays-at (posn-point (event-start event)))
         (or prop 'span))))

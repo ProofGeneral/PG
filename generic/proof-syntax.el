@@ -148,7 +148,7 @@ The returned value is one of the following symbols:
 
 (defun proof-looking-at-syntactic-context ()
   "Determine if current point is at beginning or within comment/string context.
-If so, return a symbol indicating this ('comment or 'string).
+If so, return a symbol indicating this (\\+`comment' or \\+`string').
 This function invokes <PA-syntactic-context> if that is defined, otherwise
 it calls `proof-looking-at-syntactic-context'."
   (if (fboundp (proof-ass-sym syntactic-context))

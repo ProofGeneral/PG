@@ -590,7 +590,7 @@ Optional argument OBJECT is the string or buffer containing the text."
 (defun unicode-tokens-symbs-to-props (symbs &optional facenil)
   "Turn the property name list SYMBS into a list of text properties.
 Symbols are looked up in `unicode-tokens-fontsymb-properties'.
-Optional argument FACENIL means set the face property to nil, unless 'face is in the property list."
+Optional argument FACENIL means set the face property to nil, unless \\+`face' is in the property list."
   (let (props ps)
     (dolist (s symbs)
       (setq ps (cdr-safe

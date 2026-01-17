@@ -178,7 +178,7 @@ done if this `proof-strict-state-preserving' is turned off (nil)."
 (defcustom proof-strict-read-only 'retract
   "*Whether Proof General is strict about the read-only region in buffers.
 If non-nil, an error is given when an attempt is made to edit the
-read-only region, except for the special value 'retract which means
+read-only region, except for the special value \\+`retract' which means
 undo first.  If nil, Proof General is more relaxed (but may give
 you a reprimand!)."
   :type  '(choice
@@ -232,11 +232,11 @@ and displayed lazily.  See `proof-layout-windows'."
 
 (defcustom proof-three-window-mode-policy 'smart
   "*Window splitting policy for three window mode.
-- If 'vertical forces one column mode.
-- If 'horizontal forces 3 column mode
-- If 'hybrid forces 2 columns mode
-- If 'smart or anything else: 'horizontal when the window is wide
-  enough, then hybrid if wide enough and 'vertical otherwise.  The width
+- If \\+`vertical' forces one column mode.
+- If \\+`horizontal' forces 3 column mode
+- If \\+`hybrid' forces 2 columns mode
+- If \\+`smart' or anything else: \\+`horizontal' when the window is wide
+  enough, then hybrid if wide enough and \\+`vertical' otherwise.  The width
   threshold is given by `split-width-threshold'.
 
   See `proof-layout-windows'."
@@ -253,7 +253,7 @@ and displayed lazily.  See `proof-layout-windows'."
 For example, at the end of a proof the goals buffer window will
 be cleared; if this flag is set it will automatically be removed.
 If you want to fix the sizes of your windows you may want to set this
-variable to 'nil' to avoid windows being deleted automatically.
+variable to nil to avoid windows being deleted automatically.
 If you use multiple frames, only the windows in the currently
 selected frame will be automatically deleted."
   :type 'boolean
@@ -376,14 +376,14 @@ This variable exists to disable the cache in case of problems."
 
 (defcustom proof-follow-mode 'locked
   "*Choice of how point moves with script processing commands.
-One of the symbols: 'locked, 'follow, 'followdown, 'ignore.
+One of the symbols: \\+`locked', \\+`follow', \\+`followdown', \\+`ignore'.
 
-If 'locked, point sticks to the end of the locked region.
-If 'follow, point moves just when needed to display the locked region end.
-If 'followdown, point if necessary to stay in writable region
-If 'ignore, point is never moved after movement commands or on errors.
+If \\+`locked', point sticks to the end of the locked region.
+If \\+`follow', point moves just when needed to display the locked region end.
+If \\+`followdown', point if necessary to stay in writable region
+If \\+`ignore', point is never moved after movement commands or on errors.
 
-If you choose 'ignore, you can find the end of the locked using
+If you choose \\+`ignore', you can find the end of the locked using
 \\[proof-goto-end-of-locked]"
   :type '(choice
 	  (const :tag "Follow locked region" locked)
@@ -399,9 +399,9 @@ If you choose 'ignore, you can find the end of the locked using
 ;; ancestor file).  And in that case (supposing file being unlocked is
 ;; an ancestor), it seems unlikely that we need to query for saves.
 (defcustom proof-auto-action-when-deactivating-scripting nil
-  "*If 'retract or 'process, do that when deactivating scripting.
+  "*If \\+`retract' or \\+`process', do that when deactivating scripting.
 
-With this option set to 'retract or 'process, when scripting
+With this option set to \\+`retract' or \\+`process', when scripting
 is turned off in a partly processed buffer, the buffer will be
 retracted or processed automatically.
 
@@ -417,7 +417,7 @@ locked (coloured blue); a buffer is completely unprocessed when there
 is no locked region.
 
 For some proof assistants (such as Coq) fully processed buffers make
-no sense.  Setting this option to 'process has then the same effect
+no sense.  Setting this option to \\+`process' has then the same effect
 as leaving it unset (nil).  (This behaviour is controlled by
 `proof-no-fully-processed-buffer'.)"
   :type '(choice

@@ -96,7 +96,7 @@ to script management from a buffer (rather than being ad-hoc
 query commands to the prover).
 
 When processing commands from a buffer for script management,
-this will be set to the queue mode 'advancing or 'retracting to
+this will be set to the queue mode \\+`advancing' or \\+`retracting' to
 indicate the direction of movement.
 
 When this is non-nil, `proof-shell-ready-prover' will give
@@ -157,7 +157,7 @@ See `proof-shell-thm-display-regexp' for details.")
 
 (defvar proof-shell-error-or-interrupt-seen nil
   "Flag indicating that an error or interrupt has just occurred.
-Set to 'error or 'interrupt if one was observed from the proof
+Set to \\+`error' or \\+`interrupt' if one was observed from the proof
 assistant during the last group of commands.")
 
 (defvar pg-response-next-error nil
@@ -192,12 +192,12 @@ This is raw string, for internal use only.")
   "A symbol denoting the type of the last output string from the proof system.
 Specifically:
 
- 'interrupt	 An interrupt message
- 'error		 An error message
- 'loopback	 A command sent from the PA to be inserted into the script
- 'response	 A response message
- 'goals		 A goals (proof state) display
- 'systemspecific Something specific to a particular system,
+ \\+`interrupt'	 An interrupt message
+ \\+`error'		 An error message
+ \\+`loopback'	 A command sent from the PA to be inserted into the script
+ \\+`response'	 A response message
+ \\+`goals'		 A goals (proof state) display
+ \\+`systemspecific' Something specific to a particular system,
 		  -- see `proof-shell-handle-output-system-specific'
 
 The output corresponding to this will be in `proof-shell-last-output'.
