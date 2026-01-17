@@ -286,7 +286,7 @@ If N is omitted or nil, move forward by one item."
   "Initialize a ring history for the current buffer.
 The history will be read-only unless READWRITE is non-nil.
 For read-only histories, edits to the buffer switch to the latest version.
-If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’."
+If RINGSIZE is omitted or nil, the size defaults to `bufhist-ring-size'."
   (interactive)
   (setq bufhist-ring (make-ring (or ringsize bufhist-ring-size)))
   (setq bufhist-normal-read-only buffer-read-only)

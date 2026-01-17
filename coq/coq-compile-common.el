@@ -78,7 +78,7 @@ Must be used together with `coq-par-enable'."
 
 
 (defun coq-switch-compilation-method ()
-  "Set function for function ‘coq-compile-parallel-in-background’."
+  "Set function for function `coq-compile-parallel-in-background'."
   (if coq-compile-parallel-in-background
       (progn
 	(coq-par-enable)
@@ -808,7 +808,7 @@ not backed by a file.  The buffer to test must be current."
   
 (defun coq-compile-save-some-buffers ()
   "Save buffers according to `coq-compile-auto-save'.
-Uses the local variable ‘coq-compile-buffer-with-current-require’ to pass the
+Uses the local variable `coq-compile-buffer-with-current-require' to pass the
 current buffer (which contains the Require command) to
 `coq-compile-save-buffer-filter'."
   (let ((coq-compile-buffer-with-current-require (current-buffer))

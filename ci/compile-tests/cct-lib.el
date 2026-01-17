@@ -42,10 +42,10 @@
   "Set to t to get more output during test runs.")
 
 (defvar cct-before-busy-waiting-hook nil
-  "Hooks run by ‘cct-process-to-line’ before busy waiting.")
+  "Hooks run by `cct-process-to-line' before busy waiting.")
 
 (defvar cct-after-busy-waiting-hook nil
-  "Hooks run by ‘cct-process-to-line’ after busy waiting.")
+  "Hooks run by `cct-process-to-line' after busy waiting.")
 
 
 (defmacro cct-implies (p q)

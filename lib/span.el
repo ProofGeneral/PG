@@ -203,7 +203,7 @@ A span is before PT if it begins before the character before PT."
 
 (defun span-property-safe (span name)
   "Get the property of span SPAN with property name NAME.
-Like ‘span-property’, but return nil if SPAN is nil."
+Like `span-property', but return nil if SPAN is nil."
   (and span (span-property span name)))
 
 (defun span-set-start (span value)

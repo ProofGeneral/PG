@@ -67,7 +67,7 @@
   :group 'unicode-tokens-options)
 
 (defun unicode-tokens-toggle-add-help-echo ()
-  "Toggle option ‘unicode-tokens-add-help-echo’."
+  "Toggle option `unicode-tokens-add-help-echo'."
   (interactive)
   (customize-set-variable 'unicode-tokens-add-help-echo
 			  (not unicode-tokens-add-help-echo))

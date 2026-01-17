@@ -2372,7 +2372,7 @@ the ancestor hash are reinitialized.
 
 As next action the new queue items are split at each Require
 command.  The items before the first Require are appended to the
-old last compilation job or put back into ‘proof-action-list’.  The
+old last compilation job or put back into `proof-action-list'.  The
 remaining batches of items that each start with a Require are
 then processed by `coq-par-handle-require-list', which creates
 require jobs as necessary.  Before processing the

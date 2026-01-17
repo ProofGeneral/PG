@@ -127,7 +127,7 @@ Matches the region to be returned.")
 (defun pg-pbrpm-analyse-goal-buffer ()
   "Analyse the goal buffer and produce a table to find goals and hypothesis.
 
-It stores, in the variable ‘pg-pbrpm-goal-description’, a list with shape
+It stores, in the variable `pg-pbrpm-goal-description', a list with shape
 
 \(start-goal end-goal goal-name start-concl hyps ...) with 5 elements per goal:
   start-goal: the position of the first char of the goal
@@ -332,7 +332,7 @@ The prover command is processed via pg-pbrpm-run-command."
 (defun pg-pbrpm-run-command (args)
 "Insert command into the proof queue and then run it.
 
-\(adapted from ‘proof-insert-pbp-command’)"
+\(adapted from `proof-insert-pbp-command')"
    (let* ((command (pop args)) (act (pop args)) (spans (pop args)) (allspan (pop spans)))
      (if act (setq command (apply act command spans nil)))
      (if allspan (setq command (concat "(* " (span-string allspan) " *)\n" command ".")))
@@ -439,7 +439,7 @@ If no match found, return the empty string."
       (point))))
 
 (defun pg-pbrpm-process-click (event start end)
-  "Return the list of infos about the click needed to call ‘generate-menu’.
+  "Return the list of infos about the click needed to call `generate-menu'.
 EVENT is an event."
   (save-excursion
     (save-window-excursion
@@ -539,7 +539,7 @@ The current (standard) selection in the same buffer is also stored."
 		     (pg-pbrpm-do-remember-region (car pair) (cdr pair))))))
 
 (defun pg-pbrpm-process-region (span)
-"Return the list of infos on the selected region needed to call ‘generate-menu’.
+"Return the list of infos on the selected region needed to call `generate-menu'.
 SPAN is a span covering the selected region."
    (let ((start (span-start span))
 	 (end (span-end span))

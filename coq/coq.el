@@ -382,7 +382,7 @@ It is mostly useful in three window mode, see also
 ;; would not be shown in response buffer. If it is before, then we want it
 ;; urgent so that it is displayed.
 (defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching ‘proof-shell-eager-annotation-start’
+  "Regexp of commands matching `proof-shell-eager-annotation-start'
 that should maybe not be classified as urgent messages.")
 
 ;; return the end position if found, nil otherwise
@@ -988,7 +988,7 @@ silent."
                                           testcmd)
   "Play commands SETCMD then CMD and then silently UNSETCMD.
 The last UNSETCMD is performed with tag 'empty-action-list so that it
-does not trigger ‘proof-shell-empty-action’ (which does \"Show\" at
+does not trigger `proof-shell-empty-action' (which does \"Show\" at
 the time of writing this documentation). Also add
 `'dont-show-when-silent' everywhere to suppress show commands when
 running silent."
@@ -1775,7 +1775,7 @@ hiding to be maintain when scripting/undoing."
 (defun coq-fold-hyp (h)
   "Fold hypothesis H's type from the context durably.
 \(displays \".......\" instead).  This function relies on variable
-‘coq-hyps-positions’.  The hiding maintained as the goals buffer is
+`coq-hyps-positions'.  The hiding maintained as the goals buffer is
 changed, thanks to a hook on `proof-shell-handle-delayed-output-hook',
 consider using `coq-fold-hyp' if you want the hiding to be maintain
 when scripting/undoing."

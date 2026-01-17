@@ -416,10 +416,10 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-save-with-hole-result 2
-  "How to get theorem name after ‘proof-save-with-hole-regexp’ match.
+  "How to get theorem name after `proof-save-with-hole-regexp' match.
 String or Int.
-If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
-If a string, use ‘replace-match’.  In this case, ‘proof-save-with-hole-regexp’
+If an int N, use `match-string' to get the value of the Nth parenthesis matched.
+If a string, use `replace-match'.  In this case, `proof-save-with-hole-regexp'
 should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
@@ -1711,7 +1711,7 @@ if you don't need it (slight speed penalty)."
   :group 'proof-shell)
 
 (defcustom proof-shell-extend-queue-hook nil
-  "Hooks run by ‘proof-extend-queue’ before extending `proof-action-list'.
+  "Hooks run by `proof-extend-queue' before extending `proof-action-list'.
 Can be used to run additional actions before items are added to
 the queue \(such as compiling required modules for Coq) or to
 modify the items that are going to be added to

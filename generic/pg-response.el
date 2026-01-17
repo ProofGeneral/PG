@@ -95,7 +95,7 @@
 ;;
 
 (defvar pg-response-special-display-regexp nil
-  "Regexp for ‘display-buffer-alist’ for multiple frame use.
+  "Regexp for `display-buffer-alist' for multiple frame use.
 Internal variable, setting this will have no effect!")
 
 (defconst proof-multiframe-parameters
@@ -131,10 +131,10 @@ Internal variable, setting this will have no effect!")
 
 (defun proof-guess-3win-display-policy (&optional policy)
   "Return the 3 windows mode layout policy from user choice POLICY.
-If POLICY is ’smart then guess the good policy from the current
+If POLICY is 'smart then guess the good policy from the current
 frame geometry, otherwise follow POLICY.
 
-See ‘proof-layout-windows’ for more details about POLICY."
+See `proof-layout-windows' for more details about POLICY."
   (if (eq policy 'smart)
       (cond
        ((>= (frame-width) (* 1.5 split-width-threshold)) 'horizontal)
@@ -146,7 +146,7 @@ See ‘proof-layout-windows’ for more details about POLICY."
   "Put the three buffers B1, B2, and B3 into three windows.
 Following POLICY, which can be 'smart, 'horizontal, 'vertical, or 'hybrid.
 
-See ‘proof-layout-windows’ for more details about POLICY.
+See `proof-layout-windows' for more details about POLICY.
 
 This function must not be called if the frame has not enough
 space for 3 windows (see `window-min-height')."
@@ -190,7 +190,7 @@ space for 3 windows (see `window-min-height')."
 
 (defun proof-display-three-b (&optional policy)
   "Layout three buffers in a single frame.  Only do this if buffers exist.
-In this case, call ‘proof-select-three-b’ with argument POLICY.
+In this case, call `proof-select-three-b' with argument POLICY.
 
 This function must not be called if the frame has not enough
 space for 3 windows (see `window-min-height')."

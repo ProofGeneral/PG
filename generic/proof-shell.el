@@ -299,7 +299,7 @@ No change to current buffer or point."
 
 ;;;###autoload
 (defun proof-shell-live-buffer ()
-  "Return non-nil if ‘proof-shell-buffer’ is live."
+  "Return non-nil if `proof-shell-buffer' is live."
   (and proof-shell-buffer
        (buffer-live-p proof-shell-buffer)
        ;; FIXME: Use process-live-p?
@@ -1202,7 +1202,7 @@ priority items can be preserved."
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
-This function calls ‘proof-add-to-queue’ with args QUEUEITEMS and QUEUEMODE."
+This function calls `proof-add-to-queue' with args QUEUEITEMS and QUEUEMODE."
   (if start
       (proof-set-queue-endpoints start end))
   (proof-add-to-queue queueitems queuemode))
@@ -2003,8 +2003,8 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 	  (error "Proof General: quit in proof-shell-wait")))))
 
 (defun proof-done-invisible (span)
-  "Callback for ‘proof-shell-invisible-command’.
-Call ‘proof-state-change-hook’."
+  "Callback for `proof-shell-invisible-command'.
+Call `proof-state-change-hook'."
   (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 

@@ -30,13 +30,13 @@
   "Symbol for the customization group of user options for the proof assistant.
 Do not change this variable! It is set automatically by the mode
 stub defined in proof-site, from the name given in
-‘proof-assistant-table’.")
+`proof-assistant-table'.")
 
 (defvar proof-assistant-internals-cusgrp nil
   "Symbol for the customization group of PG internal settings.
 Do not change this variable! It is set automatically by the mode
 stub defined in proof-site, from the name given in
-‘proof-assistant-table’.")
+`proof-assistant-table'.")
 
 (defvar proof-assistant ""
   "Name of the proof assistant Proof General is using.

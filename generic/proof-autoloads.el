@@ -172,7 +172,7 @@ Commands:\\<bufhist-mode-map>
 Initialise a ring history for the current buffer.
 The history will be read-only unless READWRITE is non-nil.
 For read-only histories, edits to the buffer switch to the latest version.
-If RINGSIZE is omitted or nil, the size defaults to ‘bufhist-ring-size’.
+If RINGSIZE is omitted or nil, the size defaults to `bufhist-ring-size'.
 
 \(fn &optional READWRITE RINGSIZE)" t nil)
 
@@ -894,7 +894,7 @@ No change to current buffer or point.
 \(fn &optional QUEUEMODE)" nil nil)
 
 (autoload 'proof-shell-live-buffer "proof-shell" "\
-Return non-nil if ‘proof-shell-buffer’ is live." nil nil)
+Return non-nil if `proof-shell-buffer' is live." nil nil)
 
 (autoload 'proof-shell-available-p "proof-shell" "\
 Return non-nil if there is a proof shell active and available.
@@ -932,7 +932,7 @@ Begin processing a queue of commands.
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
-This function calls ‘proof-add-to-queue’ with args QUEUEITEMS and QUEUEMODE.
+This function calls `proof-add-to-queue' with args QUEUEITEMS and QUEUEMODE.
 
 \(fn START END QUEUEITEMS &optional QUEUEMODE)" nil nil)
 
@@ -1041,7 +1041,7 @@ Make sure the user gets welcomed one way or another." t nil)
 ;;; Generated autoloads from proof-syntax.el
 
 (autoload 'proof-replace-regexp-in-string "proof-syntax" "\
-Like ‘replace-regexp-in-string’, but set ‘case-fold-search’ to ‘proof-case-fold-search’.
+Like `replace-regexp-in-string', but set `case-fold-search' to `proof-case-fold-search'.
 
 \(fn REGEXP REP STRING)" nil nil)
 
