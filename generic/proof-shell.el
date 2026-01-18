@@ -1800,7 +1800,7 @@ This is useful even with empty delayed output as it will empty
 the buffers.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start,proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 
 If no goals classified output is found, the whole output is
 displayed in the response buffer.

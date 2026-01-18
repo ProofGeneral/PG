@@ -540,7 +540,7 @@ Args as for the macro `proof-deftoggle', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-toggle"))) (&optional arg)
 	      ,(concat "Toggle `" (symbol-name var) "'. With ARG, turn on iff ARG>0.
-This function simply uses customize-set-variable to set the variable.")
+This function simply uses `customize-set-variable' to set the variable.")
 ; It was constructed with `proof-deftoggle-fn'."
 	      (interactive "P")
 	      (customize-set-variable
@@ -566,7 +566,7 @@ Args as for the macro `proof-defintset', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-intset"))) (arg)
 	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
+This function simply uses `customize-set-variable' to set the variable.
 It was constructed with `proof-defintset-fn'.")
 	      (interactive (list
 			    (read-number
@@ -592,7 +592,7 @@ Args as for the macro `proof-deffloatset', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-floatset"))) (arg)
 	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
+This function simply uses `customize-set-variable' to set the variable.
 It was constructed with `proof-deffloatset-fn'.")
 	      (interactive (list
 			    (read-number

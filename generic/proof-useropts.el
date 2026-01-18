@@ -42,7 +42,7 @@ setting.
 
 If there is no function SYM, we try stripping
 `proof-assistant-symbol' and adding \"proof-\" instead to get
-a function name.  This extends proof-set-value to work with
+a function name.  This extends `proof-set-value' to work with
 generic individual settings.
 
 The dynamic action call only happens when values *change*: as an

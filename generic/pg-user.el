@@ -411,8 +411,8 @@ a proof command."
 BODY defaults to CMDVAR, a variable."
   `(defun ,fn ()
      ,(concat doc
-	      (concat "\nIssues a command to the assistant based on "
-		      (symbol-name cmdvar) ".")
+	      (concat "\nIssues a command to the assistant based on `"
+		      (symbol-name cmdvar) "'.")
 		"")
      (interactive)
      (proof-if-setting-configured ,cmdvar
@@ -427,8 +427,8 @@ CMDVAR is a variable holding a function or string.  Automatically has history."
      (defvar ,(intern (concat (symbol-name fn) "-history")) nil
        ,(concat "History of arguments for " (symbol-name fn) "."))
      (defun ,fn (arg)
-     ,(concat doc "\nIssues a command based on ARG to the assistant, using "
-	      (symbol-name cmdvar) ".\n"
+     ,(concat doc "\nIssues a command based on ARG to the assistant, using `"
+	      (symbol-name cmdvar) "'.\n"
 	      "The user is prompted for an argument.")
       (interactive
        (proof-if-setting-configured ,cmdvar

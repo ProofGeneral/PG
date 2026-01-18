@@ -992,7 +992,7 @@ without input from this function, whether or not a new layer in
 the proof tree must be started.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 Urgent messages might be before that, following OLD-PROOF-MARKER,
 which contains the position of `proof-marker', before the next
 command was sent to the proof assistant."
@@ -1037,7 +1037,7 @@ This function is called if there was a navigation command, which
 results in a different goal being current now.
 
 The delayed output of the navigation command is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end']."
   (let ((start proof-shell-delayed-output-start)
 	(end   proof-shell-delayed-output-end)
 	(proof-state (car proof-info))
@@ -1113,7 +1113,7 @@ output.  If something is found an appropriate update-sequent
 command is sent to prooftree.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end']."
   ;; (message "PTUS buf %s output %d-%d state %s"
   ;; 	   (current-buffer)
   ;; 	   proof-shell-delayed-output-start proof-shell-delayed-output-end
@@ -1140,7 +1140,7 @@ delayed output in order to take appropriate actions and maintains the
 internal state.
 
 The delayed output to handle is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 Urgent messages might be before that, following OLD-PROOF-MARKER,
 which contains the position of `proof-marker', before the next
 command was sent to the proof assistant.

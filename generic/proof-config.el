@@ -562,7 +562,7 @@ settings `proof-non-undoables-regexp' and
 This setting is used to for retraction (undoing) in proof scripts.
 
 It should undo the effect of all settings between its target span
-up to (proof-unprocessed-begin).  This may involve forgetting a number
+up to `proof-unprocessed-begin'.  This may involve forgetting a number
 of definitions, declarations, or whatever.
 
 If return value is nil, it means there is nothing to do.
@@ -1039,8 +1039,8 @@ the escape sequences in `proof-shell-filename-escapes' are
 applied to the filename.
 
 This setting is used to define the function `proof-cd' which
-changes to the value of (default-directory) for script buffers.
-For files, the value of (default-directory) is simply the
+changes to the value of `default-directory' for script buffers.
+For files, the value of `default-directory' is simply the
 directory the file resides in.
 
 NB: By default, `proof-cd' is called from `proof-activate-scripting-hook',
@@ -2064,7 +2064,7 @@ and `proof-response-font-lock-keywords'."
 (defcustom pg-before-fontify-output-hook nil
   "This hook is called before fontifying a region in an output buffer.
 A function on this hook can alter the region of the buffer within
-the current restriction, and must return the final value of (point-max).
+the current restriction, and must return the final value of `point-max'.
 \[This hook is presently only used by phox-sym-lock]."
   :type '(repeat function)
   :group 'proof-goals)
