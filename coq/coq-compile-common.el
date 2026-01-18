@@ -125,14 +125,14 @@ This is the internal value, use
 
 (defun coq-max-second-stage-setter (symbol new-value)
   ":set function for `coq-max-background-second-stage-percentage'.
-SYMBOL should be \\='coq-max-background-second-stage-percentage"
+SYMBOL should be \\=`coq-max-background-second-stage-percentage'"
   (set-default symbol new-value)
   (setq coq--max-background-second-stage-percentage-shadow new-value)
   (coq-set-max-second-stage-jobs))
 
 (defun coq-max-jobs-setter (symbol new-value)
   ":set function for `coq-max-background-compilation-jobs'.
-SYMBOL should be \\='coq-max-background-compilation-jobs"
+SYMBOL should be \\=`coq-max-background-compilation-jobs'"
   (set-default symbol new-value)
   (cond
    ((eq new-value 'all-cpus)
@@ -342,7 +342,7 @@ This option can be set/reset via menu
 (defcustom coq-max-background-compilation-jobs 'all-cpus
   "Maximal number of parallel jobs, if parallel compilation is enabled.
 Use the number of available CPU cores if this is set to
-\\='all-cpus.  This variable is the user setting.  The value that is
+\\=`all-cpus'.  This variable is the user setting.  The value that is
 really used is `coq--internal-max-jobs'.  Use `coq-max-jobs-setter'
 or the customization system to change this variable.  Otherwise
 your change will have no effect, because `coq--internal-max-jobs'
@@ -387,7 +387,7 @@ the ``-vok'' second stage was implemented."
   "Delay in seconds before starting the second stage compilation.
 The delay is applied to both ``-vok'' and vio2vo second stages.
 For Coq < 8.11 and vio2vo delay helps to avoid running into a
-library inconsistency with \\='quick-and-vio2vo, see Coq issue
+library inconsistency with \\+`quick-and-vio2vo', see Coq issue
 #5223.
 
 For backward compatibility, if this option is not customized, it
@@ -464,8 +464,8 @@ it might be a string, or one of the symbols `physical-dir',
 `module-object', `module-source', `qualified-id' and
 `requiring-file', which are bound to, respectively, the physical
 directory containing the source file, the Coq object file in
-\\='physical-dir that will be loaded, the Coq source file in
-\\='physical-dir whose object will be loaded, the qualified module
+\\+`physical-dir' that will be loaded, the Coq source file in
+\\+`physical-dir' whose object will be loaded, the qualified module
 identifier that occurs in the \"Require\" command, and the file
 that contains the \"Require\".")
 
@@ -477,10 +477,10 @@ buffers, where Coq buffers means all buffers in Coq mode except the current
 buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
-This makes four permitted values: \\='ask-coq to confirm saving all
-modified Coq buffers, \\='ask-all to confirm saving all modified
-buffers, \\='save-coq to save all modified Coq buffers without
-confirmation and \\='save-all to save all modified buffers without
+This makes four permitted values: \\+`ask-coq' to confirm saving all
+modified Coq buffers, \\+`ask-all' to confirm saving all modified
+buffers, \\+`save-coq' to save all modified Coq buffers without
+confirmation and \\+`save-all' to save all modified buffers without
 confirmation.
 
 This option can be set via menu
@@ -607,9 +607,9 @@ the second low the lower 16 bits of the time."
 (defun coq-max-dep-mod-time (dep-mod-times)
   "Return the maximum in DEP-MOD-TIMES.
 Argument DEP-MOD-TIMES is a list where each element is either a
-time value (see `time-less-or-equal') or \\='just-compiled.  The
+time value (see `time-less-or-equal') or \\+`just-compiled'.  The
 function returns the maximum of the elements in DEP-MOD-TIMES,
-where \\='just-compiled is considered the greatest time value.  If
+where \\+`just-compiled' is considered the greatest time value.  If
 DEP-MOD-TIMES is empty it returns nil."
   (let ((max nil))
     (while dep-mod-times
