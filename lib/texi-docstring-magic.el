@@ -126,7 +126,18 @@ Compatibility between FSF Emacs and XEmacs."
 	          (setq texi-docstring--in-quoted-region nil)
 	          (concat "@end lisp\n" line))
 	      line)))))
-    ;; 2. Pieces of text `stuff' or surrounded in quotes
+    ;; 2. Symbols like \\+`symbol' are marked up with @code.
+    ("\\([\\]\\+`\\([^']+\\)'\\)"
+     t
+     ,(lambda (docstring)
+        (concat "@code{" (match-string 2 docstring) "}")))
+    ;; 3. Symbols like `symbol' are marked up with @code. This will catch
+    ;; most simple symbols made of lower-case letters and hyphens.
+    ("\\(`\\([a-z-]+\\)'\\)"
+     t
+     ,(lambda (docstring)
+        (concat "@code{" (match-string 2 docstring) "}")))
+    ;; 3. Pieces of text `stuff' or surrounded in quotes
     ;; are marked up with @samp.  NB: Must be backquote
     ;; followed by forward quote for this to work.
     ;; Can't use two forward quotes else problems with
@@ -138,23 +149,11 @@ Compatibility between FSF Emacs and XEmacs."
      t
      ,(lambda (docstring)
         (concat "@samp{" (match-string 2 docstring) "}")))
-    ;; 3. Words *emphasized* are made @strong{emphasized}
+    ;; 4. Words *emphasized* are made @strong{emphasized}
     ("\\(\\*\\(\\w+\\)\\*\\)"
      t
      ,(lambda (docstring)
         (concat "@strong{" (match-string 2 docstring) "}")))
-    ;; 4. Words sym-bol which are symbols become @code{sym-bol}.
-    ;; Must have at least one hyphen to be recognized,
-    ;; terminated in whitespace, end of line, or punctuation.
-    ;; Only consider symbols made from word constituents
-    ;; and hyphen.
-    ("\\(\\(\\w+-\\(\\w\\|-\\)+\\)\\)\\(\\s)\\|\\s-\\|\\s.\\|$\\)"
-     ,(lambda (docstring)
-	(or (boundp (intern (match-string 2 docstring)))
-	    (fboundp (intern (match-string 2 docstring)))))
-     ,(lambda (docstring)
-	(concat "@code{" (match-string 2 docstring) "}"
-	        (match-string 4 docstring))))
     ;; 5. Upper cased words ARG corresponding to arguments become
     ;; @var{arg}
     ;; In fact, include any word so long as it is more than 3 characters
@@ -171,20 +170,11 @@ Compatibility between FSF Emacs and XEmacs."
      ,(lambda (docstring)
 	(concat "@var{" (downcase (match-string 1 docstring)) "}"
 	        (match-string 2 docstring))))
-
-    ;; 6. Words 'sym which are lisp quoted are
-    ;; marked with @code.
-    ("\\(\\(\\s-\\|^\\)'\\(\\(\\w\\|-\\)+\\)\\)\\(\\s)\\|\\s-\\|\\s.\\|$\\)"
-     t
-     ,(lambda (docstring)
-	(concat (match-string 2 docstring)
-	        "@code{'" (match-string 3 docstring) "}"
-	        (match-string 5 docstring))))
-    ;; 7,8. Clean up for @lisp environments left with spurious newlines
+    ;; 6,7. Clean up for @lisp environments left with spurious newlines
     ;; after 1.
     ("\\(\\(^\\s-*$\\)\n@lisp\\)" t "@lisp")
     ("\\(\\(^\\s-*$\\)\n@end lisp\\)" t "@end lisp")
-    ;; 9. Hack to remove @samp{@var{...}} sequences.
+    ;; 8. Hack to remove @samp{@var{...}} sequences.
     ;; Changed to just @samp of uppercase.
     ("\\(@samp{@var{\\([^}]+\\)}}\\)"
      t
