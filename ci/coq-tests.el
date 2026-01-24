@@ -202,7 +202,7 @@ For example, COMMENT could be (*test-definition*)"
 
 (ert-deftest 020_coq-test-definition ()
   ;; There are no infomsgr when running silent.
-  ;; :expected-result :failed
+  :expected-result (if (coq--version< (coq-version) "9.2alpha") :failed :passed)
   "Test *response* output after asserting a Definition."
   (coq-fixture-on-file
    (coq-test-full-path "test_stepwise.v")
@@ -401,7 +401,7 @@ For example, COMMENT could be (*test-definition*)"
   ;; When running silent, the message about indeed failing is not
   ;; shown. One might fix this test by checking that there is no
   ;; error, which would be shown without Fail.
-  ;;:expected-result :failed
+  :expected-result (if (coq--version< (coq-version) "9.2alpha") :failed :passed)
   "Test for Fail"
   (coq-fixture-on-file
    (coq-test-full-path "test_stepwise.v")
@@ -429,7 +429,7 @@ For example, COMMENT could be (*test-definition*)"
   ;; When running silent, the message about indeed failing is not
   ;; shown. One might fix this test by checking that there is no
   ;; error, which would be shown without Fail.
-  ;;:expected-result :failed
+  :expected-result (if (coq--version< (coq-version) "9.2alpha") :failed :passed)
   "Test for Fail"
   (coq-fixture-on-file
    (coq-test-full-path "test_stepwise.v")
