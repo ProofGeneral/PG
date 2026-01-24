@@ -141,7 +141,10 @@ Namely, goals that do not fit in the goals window."
      ;; keeping the current value (that may come from another file).
      ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
    '("Set Suggest Proof Using.")
-   (if coq-run-completely-silent '("Set Silent.") ())
+   (if (and coq-run-completely-silent
+            (coq--version< (coq-version t) "9.2+alpha"))
+       '("Set Silent.")
+     ())
    coq-user-init-cmd)
   "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
 List of commands sent to the Coq background process just after it
