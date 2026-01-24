@@ -150,7 +150,10 @@ This function must not rely on coq-autodetect-version, it would be a cycle."
         (with-temp-buffer
           (setq retv (apply 'process-file process-args))
           (if (or (not expectedretv) (equal retv expectedretv)) (buffer-string)))
-      (error nil))))
+      (error
+       (message "Warning: No Coq/Rocq version detected yet.")
+       (message "ProofGeneral will not be able to start a prover session until you have one in your path.")
+       nil))))
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
@@ -171,12 +174,13 @@ Interactively (with INTERACTIVE-P), show that number."
     (setq coq-autodetected-help (or coq-output ""))))
 
 (defun coq--version< (v1 v2)
-  "Compare Coq versions V1 and V2."
+  "Compare Coq versions V1 and V2.
+If V1 or V2 is not a valid version number, return nil."
   ;; -snapshot is only supported by Emacs 24.5, not 24.3
   (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
                                 ("^pl$" . 0)
                                 ,@version-regexp-alist)))
-    (version< v1 v2)))
+    (condition-case nil (version< v1 v2) (error nil))))
 
 (defcustom coq-pre-v85 nil
   "Deprecated.
