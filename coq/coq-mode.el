@@ -53,7 +53,7 @@ instead of just \"coqtop\".
 This must be a single program name with no arguments.  See option
 `coq-prog-args' to manually adjust the arguments to the Coq process.
 See also `coq-prog-env' to adjust the environment.
-With then 2025 new CLI \\='rocq\\=', this command only return \\='rocq\\='."
+With then 2025 new CLI \\+`rocq', this command only return \\+`rocq'."
   :type 'string
   :group 'coq
   :group 'coq-mode)

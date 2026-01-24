@@ -64,7 +64,7 @@
 ;;
 
 (defmacro proof-with-current-buffer-if-exists (buf &rest body)
-  "Like ‘with-current-buffer’ if BUF exists and is live, otherwise nothing."
+  "Like `with-current-buffer' if BUF exists and is live, otherwise nothing."
   `(if (buffer-live-p ,buf)
        (with-current-buffer ,buf
 	 ,@body)))
@@ -73,7 +73,7 @@
 ;; which work from different PG buffers (goals, response), typically
 ;; bound to toolbar commands.
 (defmacro proof-with-script-buffer (&rest body)
-  "Execute BODY in some script buffer: current buf, else ‘proof-script-buffer’.
+  "Execute BODY in some script buffer: current buf, else `proof-script-buffer'.
 Return nil if not a script buffer or if no active scripting buffer."
   (declare (debug t))
   `(cond
@@ -253,12 +253,12 @@ Leave point at END."
 (defun proof-get-window-for-buffer (buffer)
   "Find a window for BUFFER, display it there, return the window.
 NB: may change the selected window.  This function is a wrapper on
-‘display-buffer’.  The idea is that if the user has opened and
+`display-buffer'.  The idea is that if the user has opened and
 closed some windows we want to preserve the layout by only
 switching buffer in already pg-associate windows.  So if the
 buffer is not already displayed, we try to reuse an existing
 associated window, even if in 3-win mode.  If no such window
-exists, we fall back to ‘display-buffer’ while protecting script
+exists, we fall back to `display-buffer' while protecting script
 buffer to be hidden or split.
 
 Experimentally we display a message from time to time advertising
@@ -333,7 +333,7 @@ Ensure that point is visible in window."
 		  (recenter -1))))))))))
 
 (defun proof-clean-buffer (buffer)
-  "Erase BUFFER and hide from display if ‘proof-delete-empty-windows’ set.
+  "Erase BUFFER and hide from display if `proof-delete-empty-windows' set.
 Auto deletion only affects selected frame.  (We assume that the selected
 frame is the one showing the script buffer.)
 No effect if buffer is dead."
@@ -540,7 +540,7 @@ Args as for the macro `proof-deftoggle', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-toggle"))) (&optional arg)
 	      ,(concat "Toggle `" (symbol-name var) "'. With ARG, turn on iff ARG>0.
-This function simply uses customize-set-variable to set the variable.")
+This function simply uses `customize-set-variable' to set the variable.")
 ; It was constructed with `proof-deftoggle-fn'."
 	      (interactive "P")
 	      (customize-set-variable
@@ -566,7 +566,7 @@ Args as for the macro `proof-defintset', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-intset"))) (arg)
 	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
+This function simply uses `customize-set-variable' to set the variable.
 It was constructed with `proof-defintset-fn'.")
 	      (interactive (list
 			    (read-number
@@ -592,7 +592,7 @@ Args as for the macro `proof-deffloatset', except will be evaluated."
    `(defun ,(if othername othername
 	      (intern (concat (symbol-name var) "-floatset"))) (arg)
 	      ,(concat "Set `" (symbol-name var) "' to ARG.
-This function simply uses customize-set-variable to set the variable.
+This function simply uses `customize-set-variable' to set the variable.
 It was constructed with `proof-deffloatset-fn'.")
 	      (interactive (list
 			    (read-number

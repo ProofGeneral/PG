@@ -695,7 +695,7 @@ The point is put exactly before first non comment letter of the command."
 ;; (defun coq-find-unopened (&optional optlvl limit)
 ;;   "Find the last unopened close item (looking forward from point).
 ;; Counter starts to OPTLVL (default 1) and stops when reaching
-;; LIMIT (default ‘point-max’).  This function only works inside an
+;; LIMIT (default `point-max').  This function only works inside an
 ;; expression."
 
 ;;   (let ((lvl (or optlvl 1)) after nextpt endpt)
@@ -751,7 +751,7 @@ The point is put exactly before first non comment letter of the command."
 
 ;; (defun coq-end-offset (&optional limit)
 ;;   "Find the first unclosed open indent item, and return its column.
-;; Stop when reaching LIMIT (default to ‘point-min’)."
+;; Stop when reaching LIMIT (default to `point-min')."
 ;;   (save-excursion
 ;;     (let ((found nil)
 ;;           (anyreg (proof-regexp-alt "\\`" proof-indent-any-regexp)))

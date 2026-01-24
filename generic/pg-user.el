@@ -411,8 +411,8 @@ a proof command."
 BODY defaults to CMDVAR, a variable."
   `(defun ,fn ()
      ,(concat doc
-	      (concat "\nIssues a command to the assistant based on "
-		      (symbol-name cmdvar) ".")
+	      (concat "\nIssues a command to the assistant based on `"
+		      (symbol-name cmdvar) "'.")
 		"")
      (interactive)
      (proof-if-setting-configured ,cmdvar
@@ -427,8 +427,8 @@ CMDVAR is a variable holding a function or string.  Automatically has history."
      (defvar ,(intern (concat (symbol-name fn) "-history")) nil
        ,(concat "History of arguments for " (symbol-name fn) "."))
      (defun ,fn (arg)
-     ,(concat doc "\nIssues a command based on ARG to the assistant, using "
-	      (symbol-name cmdvar) ".\n"
+     ,(concat doc "\nIssues a command based on ARG to the assistant, using `"
+	      (symbol-name cmdvar) "'.\n"
 	      "The user is prompted for an argument.")
       (interactive
        (proof-if-setting-configured ,cmdvar
@@ -533,7 +533,7 @@ This is intended as a value for `proof-activate-scripting-hook'"
 ;;;###autoload
 (defun proof-electric-terminator-enable (&optional arg)
   "Ensure modeline update to display new value for electric terminator.
-This a function is called by the custom-set property 'proof-set-value.
+This a function is called by the custom-set property \\+`proof-set-value'.
 It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
   (unless (null arg)
     (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
@@ -726,14 +726,14 @@ CHUNKS must be the reversed result of `proof-script-omit-filter'
 for a whole buffer.  (Only the top-level must be reversed, the
 commands inside the chunks must be as returned by
 `proof-script-omit-filter', that is in reversed order.) CHUNKS
-must not contain any 'nested-proof chunk.
+must not contain any \\+`nested-proof' chunk.
 
 This function processes the content of CHUNKS normally by
-asserting them one by one.  Any error reported inside a 'no-proof
-chunk is reported as error to the user.  'proof chunks containing
+asserting them one by one.  Any error reported inside a \\+`no-proof'
+chunk is reported as error to the user.  \\+`proof' chunks containing
 errors are silently replaced by
 `proof-script-proof-admit-command'.  The result is a list of proof
-status results, one for each 'proof chunk in the same order.  Each
+status results, one for each \\+`proof' chunk in the same order.  Each
 proof-status result is a list of 4 elements as follows.
 - 1st: proof status as t or nil.  Proofs closed with a match
   of `proof-omit-cheating-regexp', if defined, count as failing,
@@ -742,12 +742,12 @@ proof-status result is a list of 4 elements as follows.
   `proof-get-proof-info-fn'.
 - 3rd: Position of the start of the span containing the theorem
   to prove.  More precisely, it is the second last span of the
-  'no-proof chunk before the 'proof chunk.  Note that spans
+  \\+`no-proof' chunk before the \\+`proof' chunk.  Note that spans
   usually contain preceding white space.  Therefore this position
   is not necessarily the first letter of the keyword introducing
   the theorem statement.
 - 4rd: Position of the start of the span containing \"Proof
-  using\". More precisely, it is the last span in the 'no-proof
+  using\". More precisely, it is the last span in the \\+`no-proof'
   chunk before the proof."
   (let (proof-results current-proof-state-and-name proof-start-points)
     (while chunks
@@ -886,7 +886,7 @@ invalid proof.
 
 Argument TAP, which can be set by a prefix argument, controls the
 form of the generated overview.  Nil, without prefix, gives an
-human readable overview, otherwise it's test anything
+human readable overview, otherwise it\\='s test anything
 protocol (TAP).  Argument BATCH controls where the overview goes
 to.  If nil, or in an interactive call, the overview appears in
 `proof-check-report-buffer'.  If BATCH is a string, it should be a
@@ -900,7 +900,7 @@ is reported to the user without generating an overview.  The
 overview only contains those names of theorems whose proof
 scripts are classified as opaque by the omit-proofs feature.  For
 Coq for instance, among others, proof scripts terminated with
-'Defined' are not opaque and do not appear in the generated
+\"Defined\" are not opaque and do not appear in the generated
 overview.
 
 Note that this command does not (re-)compile required files.
@@ -1674,7 +1674,7 @@ Assume the `undo-in-region' behavior will apply if ARG is non-nil."
 (defvar proof-autosend-timer nil "Timer used by autosend.")
 
 (deflocal proof-autosend-modified-tick nil
-  "Records 'buffer-chars-modified-tick' since last autosend.")
+  "Records `buffer-chars-modified-tick' since last autosend.")
 
 ;;;###autoload
 (defun proof-autosend-enable (&optional nomsg)

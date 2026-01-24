@@ -196,7 +196,7 @@ length of the error."
    (while (proof-looking-at "\\s-") (forward-char 1)))
 
 (defun easycrypt-highlight-error ()
-  "Use ‘easycrypt-get-last-error-location’ to know the position of the
+  "Use `easycrypt-get-last-error-location' to know the position of the
 error and then highlight in the script buffer."
   (proof-with-current-buffer-if-exists proof-script-buffer
     (let ((mtch (easycrypt-get-last-error-location)))

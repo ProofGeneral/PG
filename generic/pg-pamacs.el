@@ -47,7 +47,7 @@
     (setq-default ,var ,value)))
 
 (deflocal proof-buffer-type nil
-  "Symbol for the type of this buffer: 'script, 'shell, 'goals, or 'response.")
+  "Symbol for the type of this buffer: \\+`script', \\+`shell', \\+`goals', or \\+`response'.")
 
 
 ;;
@@ -238,8 +238,8 @@ which can be changed by sending commands.
 
 In this case, NAME stands for the internal setting, flag, etc,
 for the proof assistant, and a :setting and :type value should be
-provided.  The :type of NAME should be one of 'integer, 'float,
-'boolean, 'string.  Other types are not supported (see
+provided.  The :type of NAME should be one of \\+`integer', \\+`float',
+\\+`boolean', \\+`string'.  Other types are not supported (see
 `proof-menu-entry-for-setting').  They will yield an error when
 constructing the proof assistant menu.
 

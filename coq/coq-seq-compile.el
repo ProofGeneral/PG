@@ -43,7 +43,7 @@
 Lock only if `coq-lock-ancestor' is non-nil.  Further, do nothing,
 if ANCESTOR-SRC is already a member of
 `proof-included-files-list'.  Otherwise ANCESTOR-SRC is locked and
-registered in the 'coq-locked-ancestors property of the SPAN to
+registered in the \\+`coq-locked-ancestors' property of the SPAN to
 properly unlock ANCESTOR-SRC on retract."
   (if coq-lock-ancestors
       (let ((true-ancestor-src (file-truename ancestor-src)))
@@ -150,14 +150,14 @@ if one of the following conditions is true:
 
 Argument MAX-DEP-OBJ-TIME provides the information about the
 dependencies.  It is either
-- 'just-compiled if one of the dependencies of SRC has just
+- \\+`just-compiled' if one of the dependencies of SRC has just
   been compiled
 - the time value (see`time-less-or-equal') of the youngest (most
   recently created) object file among the dependencies
 - nil if there are no dependencies, or if they are all ignored
 
 If this function decides to compile SRC to OBJ it returns
-'just-compiled.  Otherwise it returns the modification time of
+\\+`just-compiled'.  Otherwise it returns the modification time of
 OBJ.
 
 Note that file modification times inside Emacs have only a
@@ -189,7 +189,7 @@ OBJ have identical modification times."
   "Make library object file LIB-OBJ-FILE up-to-date.
 Check if LIB-OBJ-FILE and all it dependencies are up-to-date
 compiled Coq library objects.  Recompile the necessary objects, if
-not.  This function returns 'just-compiled if it compiled
+not.  This function returns \\+`just-compiled' if it compiled
 LIB-OBJ-FILE.  Otherwise it returns the modification time of
 LIB-OBJ-FILE as time value (see `time-less-or-equal').
 
@@ -355,7 +355,7 @@ dependencies with \"coqdep\" and compiles modules as necessary.
 This internal checking does currently not handle ML modules.
 
 Argument SPAN is the span of the \"Require\" command.  Locked
-ancestors are registered in its 'coq-locked-ancestors property
+ancestors are registered in its \\+`coq-locked-ancestors' property
 for proper unlocking on retract.
 
 Argument COQ-OBJECT-LOCAL-HASH-SYMBOL provides a place to store

@@ -1425,7 +1425,7 @@ to terminate proof commands.  LEGO and Isabelle used a semicolon,
 @deffn Command proof-goto-end-of-locked &optional switch
 Jump to the end of the locked region, maybe switching to script buffer.@*
 If called interactively or @var{switch} is non-nil, switch to script buffer.
-If called interactively, a mark is set at the current location with @samp{@code{push-mark}}
+If called interactively, a mark is set at the current location with @code{push-mark}
 @end deffn
 
 @c PG4: this is not available at the moment
@@ -1580,7 +1580,7 @@ Also handy for proof by pointing, in case the last proof-by-pointing
 command took the proof in a direction you don't like.
 
 Notice that the deleted command is put into the Emacs kill ring, so
-you can use the usual @samp{yank} and similar commands to retrieve the
+you can use the usual @code{yank} and similar commands to retrieve the
 deleted text.
 @end deffn
 
@@ -1588,10 +1588,10 @@ deleted text.
 @c TEXI DOCSTRING MAGIC: proof-goto-point
 @deffn Command proof-goto-point &optional raw
 Assert or retract to the command at current position.@*
-Calls @samp{@code{proof-assert-until-point}} or @samp{@code{proof-retract-until-point}} as
+Calls @code{proof-assert-until-point} or @code{proof-retract-until-point} as
 appropriate.
 With prefix argument @var{raw}, the activation of the omit proofs feature
-(@samp{@code{proof-omit-proofs-option}}) is temporarily toggled,
+(@code{proof-omit-proofs-option}) is temporarily toggled,
 so we can chose whether to check all proofs in the asserted region,
 or to merely assume them and save time.
 @end deffn
@@ -1600,7 +1600,7 @@ or to merely assume them and save time.
 @deffn Command proof-process-buffer &optional raw
 Process the current (or script) buffer, and maybe move point to the end.@*
 With prefix argument @var{raw}, the activation of the omit proofs feature
-(@samp{@code{proof-omit-proofs-option}}) is temporarily toggled,
+(@code{proof-omit-proofs-option}) is temporarily toggled,
 so we can chose whether to check all proofs in the asserted region,
 or to merely assume them and save time.
 @end deffn
@@ -1608,14 +1608,14 @@ or to merely assume them and save time.
 @c TEXI DOCSTRING MAGIC: proof-retract-buffer
 @deffn Command proof-retract-buffer &optional called-interactively
 Retract the current buffer, and maybe move point to the start.@*
-Point is only moved according to @samp{@code{proof-follow-mode}}, if
+Point is only moved according to @code{proof-follow-mode}, if
 @var{called-interactively} is non-nil, which is the case for all
 interactive calls.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-electric-terminator-toggle
 @deffn Command proof-electric-terminator-toggle &optional arg
-Toggle @samp{@code{proof-electric-terminator-enable}}. With @var{arg}, turn on iff ARG>0.@*
+Toggle @code{proof-electric-terminator-enable}. With @var{arg}, turn on iff ARG>0.@*
 This function simply uses @code{customize-set-variable} to set the variable.
 @end deffn
 
@@ -1728,7 +1728,7 @@ The user is prompted for an argument.
 @deffn Command pg-response-clear-displays 
 Clear Proof General response and tracing buffers.@*
 You can use this command to clear the output from these buffers when
-it becomes overly long.  Particularly useful when @samp{@code{proof-tidy-response}}
+it becomes overly long.  Particularly useful when @code{proof-tidy-response}
 is set to nil, so responses are not cleared automatically.
 @end deffn
 
@@ -1760,15 +1760,15 @@ If a prefix arg is given and there is a selected region, that is
 pasted into the command.  This is handy for copying terms, etc from
 the script.
 
-If @samp{@code{proof-strict-state-preserving}} is set, and @samp{@code{proof-state-preserving-p}}
+If @code{proof-strict-state-preserving} is set, and @code{proof-state-preserving-p}
 is configured, then the latter is used as a check that the command
 will be safe to execute, in other words, that it won't ruin
 synchronization.  If when applied to the command it returns false,
 then an error message is given.
 
 @var{warning}: this command risks spoiling synchronization if the test
-@samp{@code{proof-state-preserving-p}} is not configured, if it is
-only an approximate test, or if @samp{@code{proof-strict-state-preserving}}
+@code{proof-state-preserving-p} is not configured, if it is
+only an approximate test, or if @code{proof-strict-state-preserving}
 is off (nil).
 @end deffn
 
@@ -1790,7 +1790,7 @@ Does nothing if proof assistant is already running.
 
 Also generates goal and response buffers.
 
-If @samp{@code{proof-prog-name-ask}} is set, query the user for the
+If @code{proof-prog-name-ask} is set, query the user for the
 process command.
 @end deffn
 
@@ -1798,28 +1798,28 @@ process command.
 @deffn Command proof-shell-exit &optional dont-ask
 Query the user and exit the proof process.
 
-This simply kills the @samp{@code{proof-shell-buffer}} relying on the hook function
+This simply kills the @code{proof-shell-buffer} relying on the hook function
 
-@samp{@code{proof-shell-kill-function}} to do the hard work.  If optional
+@code{proof-shell-kill-function} to do the hard work.  If optional
 argument @var{dont-ask} is non-nil, the proof process is terminated
 without confirmation.
 
 The kill function uses @samp{<PA>-quit-timeout} as a timeout to wait
-after sending @samp{@code{proof-shell-quit-cmd}} before rudely killing the process.
+after sending @code{proof-shell-quit-cmd} before rudely killing the process.
 
 This function should not be called if
-@samp{@code{proof-shell-exit-in-progress}} is t, because a recursive call of
-@samp{@code{proof-shell-kill-function}} will give strange errors.
+@code{proof-shell-exit-in-progress} is t, because a recursive call of
+@code{proof-shell-kill-function} will give strange errors.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: proof-shell-restart
 @deffn Command proof-shell-restart 
-Clear script buffers and send @samp{@code{proof-shell-restart-cmd}}.@*
+Clear script buffers and send @code{proof-shell-restart-cmd}.@*
 All locked regions are cleared and the active scripting buffer
 deactivated.
 
 If the proof shell is busy, an interrupt is sent with
-@samp{@code{proof-interrupt-process}} and we wait until the process is ready.
+@code{proof-interrupt-process} and we wait until the process is ready.
 
 The restart command should re-synchronize Proof General with the proof
 assistant, without actually exiting and restarting the proof assistant
@@ -2013,7 +2013,7 @@ Non-nil causes Proof General to record output for all proof commands.@*
 Proof output is recorded as it occurs interactively; normally if
 many steps are taken at once, this output is suppressed.  If this
 setting is used to enable it, the proof script can be annotated
-with full details.  See also @samp{@code{proof-output-tooltips}} to enable
+with full details.  See also @code{proof-output-tooltips} to enable
 automatic display of output on mouse hovers.
 
 The default value is @code{nil}.
@@ -2024,7 +2024,7 @@ The default value is @code{nil}.
 @defopt proof-strict-read-only 
 Whether Proof General is strict about the read-only region in buffers.@*
 If non-nil, an error is given when an attempt is made to edit the
-read-only region, except for the special value @code{'retract} which means
+read-only region, except for the special value @code{retract} which means
 undo first.  If nil, Proof General is more relaxed (but may give
 you a reprimand!).
 
@@ -2084,7 +2084,7 @@ off from the keyboard, you can use the key binding:
 
 @c TEXI DOCSTRING MAGIC: proof-autosend-toggle
 @deffn Command proof-autosend-toggle &optional arg
-Toggle @samp{@code{proof-autosend-enable}}. With @var{arg}, turn on iff ARG>0.@*
+Toggle @code{proof-autosend-enable}. With @var{arg}, turn on iff ARG>0.@*
 This function simply uses @code{customize-set-variable} to set the variable.
 @end deffn
 
@@ -2288,12 +2288,12 @@ This command completely processes the current buffer and
 generates an overview about all the opaque proofs in it and
 whether their proof scripts are valid or invalid.  Note that
 proofs closed with a cheating command (see
-@samp{@code{proof-omit-cheating-regexp}}), i.e., Admitted for Coq, count as
+@code{proof-omit-cheating-regexp}), i.e., Admitted for Coq, count as
 invalid.
 
 This command makes sense for a development process where invalid
 proofs are permitted and vos compilation and the omit proofs
-feature (see @samp{@code{proof-omit-proofs-configured}}) are used to work at
+feature (see @code{proof-omit-proofs-configured}) are used to work at
 the most interesting or challenging point instead of on the first
 invalid proof.
 
@@ -2302,9 +2302,9 @@ form of the generated overview.  Nil, without prefix, gives an
 human readable overview, otherwise it's test anything
 protocol (@var{tap}).  Argument @var{batch} controls where the overview goes
 to.  If nil, or in an interactive call, the overview appears in
-@samp{@code{proof-check-report-buffer}}.  If @var{batch} is a string, it should be a
+@code{proof-check-report-buffer}.  If @var{batch} is a string, it should be a
 filename to write the overview to.  Otherwise the overview is
-output via @samp{message} such that it appears on stdout when this
+output via @code{message} such that it appears on stdout when this
 command runs in batch mode.
 
 In the same way as the omit-proofs feature, this command only
@@ -2313,7 +2313,7 @@ is reported to the user without generating an overview.  The
 overview only contains those names of theorems whose proof
 scripts are classified as opaque by the omit-proofs feature.  For
 Coq for instance, among others, proof scripts terminated with
-@code{'Defined'} are not opaque and do not appear in the generated
+"Defined" are not opaque and do not appear in the generated
 overview.
 
 Note that this command does not (re-)compile required files.
@@ -2327,7 +2327,7 @@ Annotate failing proofs in current buffer with a "@var{fail}" comment.@*
 This function modifies the current buffer in place.  Use with
 care!
 
-Similarly to @samp{@code{proof-check-report}}, check all opaque proofs in the
+Similarly to @code{proof-check-report}, check all opaque proofs in the
 current buffer.  Instead of generating a report, failing proofs
 are annotated with "@var{fail}" in a comment.  Existing "@var{pass}" or
 "@var{fail}" comments (e.g., from a previous run) are deleted
@@ -2338,8 +2338,8 @@ placed at the last or second last statement before the opaque
 proof. For Coq this corresponds to the proof using and the
 theorem statement, respectively. In both cases the comment is
 placed at the right margin of the first line, see
-@samp{@code{proof-check-annotate-position}} and
-@samp{@code{proof-check-annotate-right-margin}}.
+@code{proof-check-annotate-position} and
+@code{proof-check-annotate-right-margin}.
 
 Interactively, this command does not save the current buffer
 after placing the annotations. With @var{save-buffer} non-nil, the
@@ -2349,7 +2349,7 @@ current buffer is saved if it has been modified.
 @c TEXI DOCSTRING MAGIC: proof-check-annotate-position
 @defvar proof-check-annotate-position 
 Line for annotating proofs with "@var{pass}" or "@var{fail}" comments.@*
-This option determines the line where @samp{@code{proof-check-annotate}} puts
+This option determines the line where @code{proof-check-annotate} puts
 comments with "@var{pass}" and "@var{fail}". Value `'theoren' uses the
 first line of the second last statement before the start of the
 opaque proof, which corresponds to the line containing a Theorem
@@ -2362,8 +2362,8 @@ Proof using line for Coq.
 @defvar proof-check-annotate-right-margin 
 Right margin for "@var{pass}" and "@var{fail}" comments.@*
 This option determines the right margin to which
-@samp{@code{proof-check-annotate}} right-aligns the comments with "@var{pass}"
-and "@var{fail}". If nil, the value of @samp{@code{fill-column}} is used.
+@code{proof-check-annotate} right-aligns the comments with "@var{pass}"
+and "@var{fail}". If nil, the value of @code{fill-column} is used.
 @end defvar
 
 
@@ -3117,7 +3117,7 @@ List of identifiers to use for completion for this proof assistant.@*
 Completion is activated with M-x complete.
 
 If this table is empty or needs adjusting, please make changes using
-@samp{@code{customize-variable}} and post suggestions at
+@code{customize-variable} and post suggestions at
 https://github.com/ProofGeneral/PG/issues
 @end defvar
 
@@ -3573,7 +3573,7 @@ shown by default on every launch of Proof General.
 @c TEXI DOCSTRING MAGIC: proof-splash-enable
 @defopt proof-splash-enable 
 If non-nil, display a splash screen when Proof General is loaded.@*
-See @samp{@code{proof-splash-time}} for configuring the time that the splash
+See @code{proof-splash-time} for configuring the time that the splash
 screen is shown.
 
 The default value is @code{t}.
@@ -3617,7 +3617,7 @@ screen), you can force a frame to stick to showing the goals or
 response buffer.
 
 This option only takes effect if the frame height is bigger than
-4 times @samp{@code{window-min-height}} (i.e., bigger than 16 with default
+4 times @code{window-min-height} (i.e., bigger than 16 with default
 values) because there must be enough space to create 3 windows.
 
 The default value is @code{t}.
@@ -3634,7 +3634,7 @@ If non-nil, automatically remove windows when they are cleaned.@*
 For example, at the end of a proof the goals buffer window will
 be cleared; if this flag is set it will automatically be removed.
 If you want to fix the sizes of your windows you may want to set this
-variable to @code{'nil'} to avoid windows being deleted automatically.
+variable to nil to avoid windows being deleted automatically.
 If you use multiple frames, only the windows in the currently
 selected frame will be automatically deleted.
 
@@ -3653,7 +3653,7 @@ example.  A convenient way to do this is via the user option
 Whether response and goals buffers have separate frames.@*
 If non-nil, Emacs will make separate frames (screen windows) for
 the goals and response buffers, by altering the Emacs variable
-@samp{@code{special-display-regexps}}.
+@code{special-display-regexps}.
 
 The default value is @code{nil}.
 @end defopt
@@ -3683,13 +3683,13 @@ without adjusting window layout.
 Refresh the display of windows according to current display mode.
 
 For multiple frame mode, this function obeys the setting of
-@samp{@code{pg-response-eagerly-raise}}, which see.
+@code{pg-response-eagerly-raise}, which see.
 
 For single frame mode:
 
 - In two panes mode, this uses a canonical layout made by splitting
 Emacs windows in equal proportions.  The splitting is vertical if
-Emacs width is smaller than @samp{@code{split-width-threshold}} and
+Emacs width is smaller than @code{split-width-threshold} and
 horizontal otherwise.  You can then adjust the proportions by
 dragging the separating bars.
 
@@ -3706,19 +3706,19 @@ dragging the separating bars.
   - horizontal: 3 columns mode, one for each buffer (script, goals,
     response).
 
-  By default, the display mode is @code{'smart} which automatically chooses
+  By default, the display mode is @code{smart} which automatically chooses
   between these 3 modes by considering the current Emacs frame width: if
-  it is smaller than @samp{@code{split-width-threshold}} then vertical mode is
-  chosen, otherwise if it is smaller than 1.5 * @samp{@code{split-width-threshold}}
+  it is smaller than @code{split-width-threshold} then vertical mode is
+  chosen, otherwise if it is smaller than 1.5 * @code{split-width-threshold}
   then hybrid mode is chosen, finally if the frame is larger than 1.5 *
-  @samp{@code{split-width-threshold}} then the horizontal mode is chosen.
+  @code{split-width-threshold} then the horizontal mode is chosen.
 
-  You can change the value of @samp{@code{split-width-threshold}} at your
+  You can change the value of @code{split-width-threshold} at your
   will.
 
   If you want to force one of the layouts, you can set variable
-  @samp{@code{proof-three-window-mode-policy}} to @code{'vertical}, @code{'horizontal} or
-  @code{'hybrid}.  The default value is @code{'smart} which sets the automatic
+  @code{proof-three-window-mode-policy} to @code{vertical}, @code{horizontal} or
+  @code{hybrid}.  The default value is @code{smart} which sets the automatic
   behaviour described above.
 @end lisp
 @end deffn
@@ -3734,7 +3734,7 @@ The default value is @code{nil}.
 
 @c TEXI DOCSTRING MAGIC: proof-colour-locked
 @defopt proof-colour-locked 
-If non-nil, colour the locked region with @samp{@code{proof-locked-face}}.@*
+If non-nil, colour the locked region with @code{proof-locked-face}.@*
 If this is not set, buffers will have no special face set
 on locked regions.
 
@@ -3746,7 +3746,7 @@ The default value is @code{t}.
 Non-nil causes Proof General to add tooltips for prover output.@*
 Hovers will be added when this option is non-nil.  Prover outputs
 can be displayed when the mouse hovers over the region that
-produced it and output is available (see @samp{@code{proof-full-annotation}}).
+produced it and output is available (see @code{proof-full-annotation}).
 If output is not available, the type of the output region is displayed.
 Changes of this option will not be reflected in already-processed
 regions of the script.
@@ -3791,7 +3791,7 @@ customize to be sure that Proof General reconfigures itself properly.
 @defopt proof-electric-terminator-enable 
 If non-nil, use electric terminator mode.@*
 If electric terminator mode is enabled, pressing a terminator will
-automatically issue @samp{proof-assert-next-command} for convenience,
+automatically issue @code{proof-assert-next-command} for convenience,
 to send the command straight to the proof process.  If the command
 you want to send already has a terminator character, you don't
 need to delete the terminator character first.  Just press the
@@ -3857,8 +3857,8 @@ for the asserted region at the cost of not checking the proofs.
 For partial and non-opaque proofs in the asserted region all
 proof commands are sent to the proof assistant.
 
-Using a prefix argument for @samp{@code{proof-goto-point}} (M-x @code{proof-goto-point})
-or @samp{@code{proof-process-buffer}} (M-x @code{proof-process-buffer}) temporarily
+Using a prefix argument for @code{proof-goto-point} (M-x proof-goto-point)
+or @code{proof-process-buffer} (M-x proof-process-buffer) temporarily
 disables omitting proofs.
 @end defvar
 
@@ -3872,9 +3872,9 @@ The default value is @code{nil}.
 
 @c TEXI DOCSTRING MAGIC: PA-prog-args
 @defvar PA-prog-args 
-Arguments to be passed to @samp{@code{proof-prog-name}} to run the proof assistant.@*
-If non-nil, will be treated as a list of arguments for @samp{@code{proof-prog-name}}.
-Otherwise @samp{@code{proof-prog-name}} will be split on spaces to form arguments.
+Arguments to be passed to @code{proof-prog-name} to run the proof assistant.@*
+If non-nil, will be treated as a list of arguments for @code{proof-prog-name}.
+Otherwise @code{proof-prog-name} will be split on spaces to form arguments.
 
 Remark: Arguments are interpreted strictly: each one must contain only one
 word, with no space (unless it is the same word). For example if the
@@ -3884,18 +3884,18 @@ arguments are -x foo -y bar, then the list should be '("-x" "foo"
 
 @c TEXI DOCSTRING MAGIC: PA-prog-env
 @defvar PA-prog-env 
-Modifications to @samp{@code{process-environment}} made before running @samp{@code{proof-prog-name}}.@*
+Modifications to @code{process-environment} made before running @code{proof-prog-name}.@*
 Each element should be a string of the form ENVVARNAME=@var{value}.  They will be
 added to the environment before launching the prover (but not pervasively).
 For example for coq on Windows you might need something like:
-(setq @code{coq-prog-env} '("HOME=C:\Program Files\Coq\"))
+(setq coq-prog-env '("HOME=C:\Program Files\Coq\"))
 @end defvar
 
 @c TEXI DOCSTRING MAGIC: proof-prog-name-guess
 @defopt proof-prog-name-guess 
-If non-nil, use @samp{@code{proof-guess-command-line}} to guess @samp{@code{proof-prog-name}}.@*
-This option is compatible with @samp{@code{proof-prog-name-ask}}.
-No effect if @samp{@code{proof-guess-command-line}} is nil.
+If non-nil, use @code{proof-guess-command-line} to guess @code{proof-prog-name}.@*
+This option is compatible with @code{proof-prog-name-ask}.
+No effect if @code{proof-guess-command-line} is nil.
 
 The default value is @code{nil}.
 @end defopt
@@ -3936,7 +3936,7 @@ The default value is @code{32}.
 Non-nil to run Proof General in debug mode.@*
 This changes some behaviour (e.g. markup stripping) and displays
 debugging messages in the response buffer.  To avoid erasing
-messages shortly after they're printed, set @samp{@code{proof-tidy-response}} to nil.
+messages shortly after they're printed, set @code{proof-tidy-response} to nil.
 This is only useful for PG developers.
 
 The default value is @code{nil}.
@@ -3948,24 +3948,24 @@ The default value is @code{nil}.
 @c TEXI DOCSTRING MAGIC: proof-follow-mode
 @defopt proof-follow-mode 
 Choice of how point moves with script processing commands.@*
-One of the symbols: @code{'locked}, @code{'follow}, @code{'followdown}, @code{'ignore}.
+One of the symbols: @code{locked}, @code{follow}, @code{followdown}, @code{ignore}.
 
-If @code{'locked}, point sticks to the end of the locked region.
-If @code{'follow}, point moves just when needed to display the locked region end.
-If @code{'followdown}, point if necessary to stay in writable region
-If @code{'ignore}, point is never moved after movement commands or on errors.
+If @code{locked}, point sticks to the end of the locked region.
+If @code{follow}, point moves just when needed to display the locked region end.
+If @code{followdown}, point if necessary to stay in writable region
+If @code{ignore}, point is never moved after movement commands or on errors.
 
-If you choose @code{'ignore}, you can find the end of the locked using
-M-x @code{proof-goto-end-of-locked}
+If you choose @code{ignore}, you can find the end of the locked using
+M-x proof-goto-end-of-locked
 
 The default value is @code{locked}.
 @end defopt
 
 @c TEXI DOCSTRING MAGIC: proof-auto-action-when-deactivating-scripting
 @defopt proof-auto-action-when-deactivating-scripting 
-If @code{'retract} or @code{'process}, do that when deactivating scripting.
+If @code{retract} or @code{process}, do that when deactivating scripting.
 
-With this option set to @code{'retract} or @code{'process}, when scripting
+With this option set to @code{retract} or @code{process}, when scripting
 is turned off in a partly processed buffer, the buffer will be
 retracted or processed automatically.
 
@@ -3981,9 +3981,9 @@ locked (coloured blue); a buffer is completely unprocessed when there
 is no locked region.
 
 For some proof assistants (such as Coq) fully processed buffers make
-no sense.  Setting this option to @code{'process} has then the same effect
+no sense.  Setting this option to @code{process} has then the same effect
 as leaving it unset (nil).  (This behaviour is controlled by
-@samp{@code{proof-no-fully-processed-buffer}}.)
+@code{proof-no-fully-processed-buffer}.)
 
 The default value is @code{nil}.
 @end defopt
@@ -3996,7 +3996,7 @@ For example,
    ssh bigjobs
 @end lisp
 Would cause Proof General to issue the command @samp{ssh bigjobs coqtop}
-to start Coq remotely on our large compute server called @samp{bigjobs}.
+to start Coq remotely on our large compute server called @code{bigjobs}.
 
 The protocol used should be configured so that no user interaction
 (passwords, or whatever) is required to get going.  For proper
@@ -4528,28 +4528,28 @@ Documentation of the user option @code{coq-project-filename}:
 @defvar coq-project-filename 
 Variable containing the function detecting a project file.
 
-See its default value @samp{@code{coq--default-project-find-file}} for an example.
+See its default value @code{coq--default-project-find-file} for an example.
 
 The function takes one argument, the name of a directory, and returns
 the name of a Coq/Rocq project file it contains if there is one.  Return
 nil otherwise.
 
 This is used to detect the Coq project file (using
-@samp{@code{locate-dominating-file}}).  By default we accept _CoqProject and
+@code{locate-dominating-file}).  By default we accept _CoqProject and
 _RocqProject (and any case-variant of these) without checking Coq/Rocq
 version.  If you want something smarter please redefine
-@samp{@code{coq-project-filename}} directly by using:
+@code{coq-project-filename} directly by using:
 
-(setq @code{coq-project-filename} #'my-own-predicate)
+(setq coq-project-filename #'my-own-predicate)
 
 About the Coq/Rocq project file (cf. Coq documentation on project files
 and "makefile generation"):
 
 The Coq project file of a Coq development should contain the arguments
 given to Coq_makefile. In particular it contains the -I and -R
-options (preferably one per line). If @samp{coq-use-coqproject} is
+options (preferably one per line). If @code{coq-use-coqproject} is
 t (default) the content of this file will be used by Proof General to
-infer the @samp{@code{coq-load-path}} and the @samp{@code{coq-prog-args}} variables that set the
+infer the @code{coq-load-path} and the @code{coq-prog-args} variables that set the
 coqtop invocation by Proof General. This is now the recommended way of
 configuring the coqtop invocation. Local file variables may still be
 used to override the Coq project file's configuration. .dir-locals.el
@@ -4569,11 +4569,11 @@ down to ``Coq Use Project File'').
 @defvar coq-use-project-file 
 If t, when opening a Coq file read the dominating _CoqProject.@*
 If t, when a Coq file is opened, Proof General will look for a
-project file (see @samp{@code{coq-project-filename}}) somewhere in the
+project file (see @code{coq-project-filename}) somewhere in the
 current directory or its parent directories.  If there is one,
 its contents are read and used to determine the arguments that
 must be given to coqtop.  In particular it sets the load
-path (including the -R lib options) (see @samp{@code{coq-load-path}}).
+path (including the -R lib options) (see @code{coq-load-path}).
 @end defvar
 
 You can also use the .dir-locals.el as above to configure this setting
@@ -5025,10 +5025,10 @@ buffers, where Coq buffers means all buffers in Coq mode except the current
 buffer.  Secondly, Emacs can ask about each such buffer or save all of them
 unconditionally.
 
-This makes four permitted values: @code{'ask-coq} to confirm saving all
-modified Coq buffers, @code{'ask-all} to confirm saving all modified
-buffers, @code{'save-coq} to save all modified Coq buffers without
-confirmation and @code{'save-all} to save all modified buffers without
+This makes four permitted values: @code{ask-coq} to confirm saving all
+modified Coq buffers, @code{ask-all} to confirm saving all modified
+buffers, @code{save-coq} to save all modified Coq buffers without
+confirmation and @code{save-all} to save all modified buffers without
 confirmation.
 
 This option can be set via menu
@@ -5048,7 +5048,7 @@ with synchronous job.  With this old method Proof General is
 locked during compilation.  If this setting is t, then the new
 method is used and compilation jobs are dispatched in parallel in
 the background.  The maximal number of parallel compilation jobs
-is set with @samp{@code{coq-max-background-compilation-jobs}}.
+is set with @code{coq-max-background-compilation-jobs}.
 
 This option can be set/reset via menu
 @samp{Coq -> Auto Compilation -> Compile Parallel In Background}.
@@ -5077,38 +5077,38 @@ This option can be set/reset via menu
 @defvar coq-max-background-compilation-jobs 
 Maximal number of parallel jobs, if parallel compilation is enabled.@*
 Use the number of available CPU cores if this is set to
-@code{'all-cpus}.  This variable is the user setting.  The value that is
-really used is @samp{@code{coq--internal-max-jobs}}.  Use @samp{@code{coq-max-jobs-setter}}
+@code{all-cpus}.  This variable is the user setting.  The value that is
+really used is @code{coq--internal-max-jobs}.  Use @code{coq-max-jobs-setter}
 or the customization system to change this variable.  Otherwise
-your change will have no effect, because @samp{@code{coq--internal-max-jobs}}
+your change will have no effect, because @code{coq--internal-max-jobs}
 is not adapted.
 @end defvar
 
 
 @c TEXI DOCSTRING MAGIC: coq-max-background-second-stage-percentage
 @defvar coq-max-background-second-stage-percentage 
-Percentage of @samp{@code{coq-max-background-compilation-jobs}} for the second stage.@*
-This setting configures the maximal number of @samp{`-vok}' or vio2vo background
+Percentage of @code{coq-max-background-compilation-jobs} for the second stage.@*
+This setting configures the maximal number of @samp{@code{-vok}} or vio2vo background
 jobs running in a second stage as
-percentage of @samp{@code{coq-max-background-compilation-jobs}}.
+percentage of @code{coq-max-background-compilation-jobs}.
 
 For backward compatibility, if this option is not customized, it
 is initialized from the now deprecated option
-@samp{@code{coq-max-background-vio2vo-percentage}}.
+@samp{coq-max-background-vio2vo-percentage}.
 @end defvar
 
 
 @c TEXI DOCSTRING MAGIC: coq-compile-second-stage-delay
 @defvar coq-compile-second-stage-delay 
 Delay in seconds before starting the second stage compilation.@*
-The delay is applied to both @samp{`-vok}' and vio2vo second stages.
+The delay is applied to both @samp{@code{-vok}} and vio2vo second stages.
 For Coq < 8.11 and vio2vo delay helps to avoid running into a
-library inconsistency with @code{'quick-and-vio2vo}, see Coq issue
+library inconsistency with @code{quick-and-vio2vo}, see Coq issue
 #@var{5223}.
 
 For backward compatibility, if this option is not customized, it
 is initialized from the now deprecated option
-@samp{@code{coq-compile-vio2vo-delay}}.
+@samp{coq-compile-vio2vo-delay}.
 @end defvar
 
 Locking ancestors can be disabled with the following option.
@@ -5116,7 +5116,7 @@ Locking ancestors can be disabled with the following option.
 @c TEXI DOCSTRING MAGIC: coq-lock-ancestors
 @defvar coq-lock-ancestors 
 If non-nil, lock ancestor module files.@*
-If external compilation is used (via @samp{@code{coq-compile-command}}) then
+If external compilation is used (via @code{coq-compile-command}) then
 only the direct ancestors are locked.  Otherwise all ancestors are
 locked when the "Require" command is processed.
 
@@ -5155,7 +5155,7 @@ For instance, "make -C %p %o" expands to "make -C bar foo.vo"
 when module "foo" from directory "bar" is required.
 
 After the substitution the command can be changed in the
-minibuffer if @samp{@code{coq-confirm-external-compilation}} is t.
+minibuffer if @code{coq-confirm-external-compilation} is t.
 @end defvar
 
 
@@ -5189,23 +5189,23 @@ forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
     directory to be added to Ocaml path (@samp{-I}).
   - A list of the form @samp{(}rec dir path)' (where dir and path are
     strings) specifying a directory to be recursively mapped to the
-    logical path @samp{path} (@samp{-R dir path}).
+    logical path @code{path} (@samp{-R dir path}).
   - A list of the form @samp{(}recnoimport dir path)' (where dir and
     path are strings) specifying a directory to be recursively
-    mapped to the logical path @samp{path} (@samp{-Q dir path}), but not
+    mapped to the logical path @code{path} (@samp{-Q dir path}), but not
     imported (modules accessible for import with qualified names
     only).  Note that -Q dir "" has a special, nonrecursive meaning.
   - A list of the form (8.4 only) @samp{(}nonrec dir path)', specifying a
-    directory to be mapped to the logical path @code{'path'} ('-I dir -as path').
+    directory to be mapped to the logical path 'path' ('-I dir -as path').
 @end lisp
-For convenience the symbol @samp{rec} can be omitted and entries of
+For convenience the symbol @code{rec} can be omitted and entries of
 the form @samp{(dir path)} are interpreted as @samp{(rec dir path)}.
 
 A plain string maps to -Q ... "" in 8.5, and -I ... in 8.4.
 
 Under normal circumstances this list does not need to
 contain the Coq standard library or "." for the current
-directory (see @samp{@code{coq-load-path-include-current}}).
+directory (see @code{coq-load-path-include-current}).
 
 @var{warning}: if you use Coq <= 8.4, the meaning of these options is
 not the same (-I is for Coq path).
@@ -5217,7 +5217,7 @@ not the same (-I is for Coq path).
 If t, let coqdep search the current directory too.@*
 Should be t for normal users.  If t, pass -Q dir "" to coqdep when
 processing files in directory "dir" in addition to any entries in
-@samp{@code{coq-load-path}}.
+@code{coq-load-path}.
 
 This setting is only relevant with Coq < 8.5.
 @end defvar
@@ -5240,7 +5240,7 @@ compilation.  It makes sense to include non-standard Coq library
 directories here if they are not changed and if they are so big
 that dependency checking takes noticeable time.  The regular
 expressions in here are always matched against the .vo file name,
-regardless whether @samp{`-quick}' would be used to compile the file
+regardless whether @samp{@code{-quick}} would be used to compile the file
 or not.
 @end defvar
 
@@ -5625,14 +5625,14 @@ is killed when changing the opam switch through
 
 @c TEXI DOCSTRING MAGIC: coq-kill-coq-on-opam-switch
 @defvar coq-kill-coq-on-opam-switch 
-If t kill Coq when the opam switch changes (requires @samp{opam-switch-mode}).@*
-When @samp{opam-switch-mode} is loaded and the user changes the opam switch
-through @samp{opam-switch-mode} then this option controls whether the Coq
+If t kill Coq when the opam switch changes (requires @code{opam-switch-mode}).@*
+When @code{opam-switch-mode} is loaded and the user changes the opam switch
+through @code{opam-switch-mode} then this option controls whether the Coq
 background process (the proof shell) is killed such that the next
 assert command starts a new proof shell, probably using a
 different Coq version from a different opam switch.
 
-See https://github.com/ProofGeneral/opam-switch-mode for @samp{opam-switch-mode}
+See https://github.com/ProofGeneral/opam-switch-mode for @code{opam-switch-mode}
 @end defvar
 
 @c =================================================================

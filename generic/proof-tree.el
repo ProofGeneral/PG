@@ -345,7 +345,7 @@ An action item is a list `(SPAN COMMANDS ACTION [DISPLAYFLAGS])',
 see `proof-action-list'.  The action item must not be recognized
 as comment by `proof-shell-slurp-comments', that is COMMANDS must
 be a nonempty list of strings.  The generic prooftree glue code
-will add 'proof-tree-last-item to DISPLAYFLAGS when necessary."
+will add \\+`proof-tree-last-item' to DISPLAYFLAGS when necessary."
   :type 'function
   :group 'proof-tree-internals)
 
@@ -557,7 +557,7 @@ This function is called in 4 situations.
 (defun proof-tree-confirm-proof-complete (data)
   "Callback function for confirm-proof-complete messages.
 Add command `proof-tree-display-stop-command' with
-'proof-tree-last-item flag, such that
+\\+`proof-tree-last-item' flag, such that
 `proof-tree-check-proof-finish' eventually sees this last command
 and switches the proof-tree display processing off."
   (if (string-match proof-tree--confirm-complete-regexp data)
@@ -992,7 +992,7 @@ without input from this function, whether or not a new layer in
 the proof tree must be started.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 Urgent messages might be before that, following OLD-PROOF-MARKER,
 which contains the position of `proof-marker', before the next
 command was sent to the proof assistant."
@@ -1037,7 +1037,7 @@ This function is called if there was a navigation command, which
 results in a different goal being current now.
 
 The delayed output of the navigation command is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end']."
   (let ((start proof-shell-delayed-output-start)
 	(end   proof-shell-delayed-output-end)
 	(proof-state (car proof-info))
@@ -1103,7 +1103,7 @@ goal command.  OLD-PROOF-INFO must be the result of
 This function processes delayed output that the proof assistant
 generated in response to commands that prooftree inserted in
 order to keep its display up-to-date.  Such commands are tagged
-with a 'proof-tree-show-subgoal flag.  Argument PROOF-NAME
+with a \\+`proof-tree-show-subgoal' flag.  Argument PROOF-NAME
 originally comes from prooftree and is passed back now, because
 processing a show goal command might happen after the proof.
 
@@ -1113,7 +1113,7 @@ output.  If something is found an appropriate update-sequent
 command is sent to prooftree.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end]."
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end']."
   ;; (message "PTUS buf %s output %d-%d state %s"
   ;; 	   (current-buffer)
   ;; 	   proof-shell-delayed-output-start proof-shell-delayed-output-end
@@ -1140,7 +1140,7 @@ delayed output in order to take appropriate actions and maintains the
 internal state.
 
 The delayed output to handle is in the region
-\[proof-shell-delayed-output-start, proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 Urgent messages might be before that, following OLD-PROOF-MARKER,
 which contains the position of `proof-marker', before the next
 command was sent to the proof assistant.

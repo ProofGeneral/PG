@@ -112,7 +112,7 @@ See `cct-generic-check-main-buffer'."
 (defun test-slow-require (n)
   "Test part N of slow require job tests.
 XXX Test a setting where the second require job is still in state
-'enqueued-coqdep when the first one finishes."
+\\+`enqueued-coqdep' when the first one finishes."
   (let*
       ;; .v file names are used as file and as buffer names
       ((av (format "a%d.v" n))

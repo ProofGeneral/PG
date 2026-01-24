@@ -87,7 +87,7 @@ indentation work well.
 
 An example of configuration is:
 
-  (setq coq-smie-user-tokens '((\"xor\" . \"or\") (\"ifb\" . \"if\")))
+  (setq coq-smie-user-tokens \\='((\"xor\" . \"or\") (\"ifb\" . \"if\")))
 
 to have token \"xor\" and \"ifb\" be considered as having
 respectively same priority and associativity as \"or\" and \"if\".

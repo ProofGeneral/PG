@@ -381,7 +381,7 @@ value of proof-locked span."
   "Remove the queue span from buffer, cleaning spans no longer queued.
 If BADSPAN is non-nil, assume that this was the span whose command
 caused the error.  Go to the start of it if `proof-follow-mode' is
-'locked.
+\\+`locked'.
 
 If INTERRUPTP is non-nil, do not consider BADSPAN itself as faulty.
 
@@ -404,14 +404,14 @@ This is a subroutine used in proof-shell-handle-{error,interrupt}."
       (proof-script-delete-spans start end)))
 
 (defun proof-script-delete-spans (beg end)
-  "Delete primary spans between BEG and END.  Secondary 'pghelp spans are left."
+  "Delete primary spans between BEG and END.  Secondary \\+`pghelp' spans are left."
   (span-delete-spans beg end 'type)
   (span-delete-spans beg end 'idiom)
   (span-delete-spans beg end 'pg-span)
   )
 
 (defun proof-script-delete-secondary-spans (beg end)
-  "Delete secondary spans between BEG and END (currently, 'pghelp spans)."
+  "Delete secondary spans between BEG and END (currently, \\+`pghelp' spans)."
   (span-delete-spans beg end 'pghelp))
 
 
@@ -515,7 +515,7 @@ If called interactively, a mark is set at the current location with `push-mark'"
   "If the end of the locked region is not visible, jump to the end of it.
 A possible hook function for `proof-shell-handle-error-or-interrupt-hook'.
 Does nothing if there is no active scripting buffer, or if
-`proof-follow-mode' is set to 'ignore."
+`proof-follow-mode' is set to \\+`ignore'."
   (interactive)
   (if (and proof-script-buffer
 	   (not (eq proof-follow-mode 'ignore)))
@@ -595,7 +595,7 @@ will be recorded as a textual name used instead of ID for users;
 NAME does not need to be unique.
 
 NAME is a name that comes from the proof script or prover output.
-It is recorded in the span with the 'rawname property."
+It is recorded in the span with the \\+`rawname' property."
   (cl-assert (symbolp idiomsym))
   (cl-assert (stringp id))
   (if name (cl-assert (stringp name)))
@@ -633,12 +633,12 @@ It is recorded in the span with the 'rawname property."
 
 (defun pg-invisible-prop (idiom)
   "Return an invisibility symbol for the given IDIOM.
-This is a value for the overlay 'invisible property."
+This is a value for the overlay \\+`invisible' property."
   (intern (concat "pg-" (symbol-name (or idiom 'other)))))
 
 (defun pg-set-element-span-invisible (span invisiblep)
   "Function to adjust visibility of SPAN to INVISIBLEP.
-We use list values of the 'invisible property which contain
+We use list values of the \\+`invisible' property which contain
 private symbols, that should play well with other conforming modes
 and `buffer-invisibility-spec'."
   (let* ((invisible-prop  (pg-invisible-prop (span-property span 'idiom)))
@@ -712,13 +712,13 @@ IDIOMSYM is a symbol and ID is a strings."
   "Return a user-level name for SPAN.
 This is based on its name and type.
 
-Each span has a 'type property, one of:
+Each span has a \\+`type' property, one of:
 
-    'goalsave     A goal..savegoal region in the buffer, a completed proof.
-    'vanilla      Initialized in proof-semis-to-vanillas, for
-    'comment      A comment outside a command.
-    'proverproc   A region closed by the prover, processed outwith PG
-    'pbp	  A PBP command inserted automatically into the script."
+    \\+`goalsave'     A goal..savegoal region in the buffer, a completed proof.
+    \\+`vanilla'      Initialized in proof-semis-to-vanillas, for
+    \\+`comment'      A comment outside a command.
+    \\+`proverproc'   A region closed by the prover, processed outwith PG
+    \\+`pbp'	  A PBP command inserted automatically into the script."
   (let ((type    (span-property span 'type))
 	(idiom   (span-property span 'idiom))
 	(rawname (span-property span 'rawname)))
@@ -773,7 +773,7 @@ This is used to annotate the buffer with the result of proof steps."
 The daughter span covers the non whitespace content of the main span.
 
 We add the last output (when non-empty) to the hover display, and
-also as the 'response property on the span.
+also as the \\+`response' property on the span.
 
 Optional argument MOUSEFACE means use the given face as a mouse highlight
 face, if it is a face, otherwise, if it is non-nil but not a face,
@@ -782,7 +782,7 @@ do not add a mouse highlight.
 In any case, a mouse highlight and tooltip are only set if
 `proof-output-tooltips' is non-nil.
 
-Argument FACE means add 'face property FACE to the span."
+Argument FACE means add \\+`face' property FACE to the span."
   (let* ((output     (pg-last-output-displayform))
 	 (new-start   (save-excursion
 		       (goto-char (span-start span))
@@ -1077,7 +1077,7 @@ Otherwise retract it.  Errors are ignored"
 
 (defun proof-deactivate-scripting-query-user-action ()
   "Display the script and query the user for a deactivate action.
-Returns 'retract, 'process or finally nil if user declined."
+Returns \\+`retract', \\+`process' or finally nil if user declined."
   ;; Would be nicer to ask a single question, but
   ;; a nuisance to define our own dialogue since it
   ;; doesn't really fit with one of the standard ones.
@@ -1120,7 +1120,7 @@ Returns 'retract, 'process or finally nil if user declined."
 	    nil)))))
 
 (defun proof-deactivate-scripting-choose-action ()
-  "Select a deactivation action, 'process, 'retract or nil."
+  "Select a deactivation action, \\+`process', \\+`retract' or nil."
   (let ((auto-action
 	 (if (and proof-no-fully-processed-buffer
 		  (eq proof-auto-action-when-deactivating-scripting
@@ -1147,7 +1147,7 @@ user option `proof-auto-action-when-deactivating-scripting'.
 If `proof-no-fully-processed-buffer' is t there is only the choice
 to fully retract the active scripting buffer.  In this case the
 active scripting buffer is retracted even if it was fully processed.
-Setting `proof-auto-action-when-deactivating-scripting' to 'process
+Setting `proof-auto-action-when-deactivating-scripting' to \\+`process'
 is ignored in this case.
 
 If the scripting buffer is (or has become) fully processed, and it is
@@ -1379,9 +1379,9 @@ Argument SPAN has just been processed.
 This is the callback for all the normal commands.  Besides stuff
 that is not yet documented here, this function
 - extends the locked region
-- creates additional spans (without 'type property) for help,
+- creates additional spans (without \\+`type' property) for help,
   tooltips, color and menus
-- merges spans with 'type as needed to achieve atomic undo for
+- merges spans with \\+`type' as needed to achieve atomic undo for
   proofs and sections
 - enters some commands and their spans in some database (with for
   me unknown purpose)"
@@ -1478,10 +1478,10 @@ that is not yet documented here, this function
   "Retire commands that close a proof or some other region.
 This is a subroutine of `proof-done-advancing'.
 Besides stuff that is not yet documented here, this function
-- creates additional spans (without 'type property) for help,
+- creates additional spans (without \\+`type' property) for help,
   tooltips, color and menus
 - in particular, adds the background color for omitted proofs
-- merges spans with 'type as needed to achieve atomic undo for
+- merges spans with \\+`type' as needed to achieve atomic undo for
   proofs and sections; for Coq this is done at least for proofs
   and sections.
 - enters some commands and their spans in some database (with for
@@ -1737,7 +1737,7 @@ them by type.  Return a list of lists of the form
 
 where:
 
-  TYPE is a symbol indicating the type of text found, either 'cmd or 'comment;
+  TYPE is a symbol indicating the type of text found, either \\+`cmd' or \\+`comment';
   TEXT is the string content taken from the buffer;
   ENDPOS is the position of the final character of the text.
 
@@ -2031,14 +2031,14 @@ contains a type tag as first element.  The chunk list is returned
 in reversed order, i.e., the first vanilla span in VANILLAS is
 inside the last chunk.
 
-There are three types of chunks: 'proof for commands inside a
-proof that can be omitted, 'no-proof for commands that are
-outside a proof or cannot be omitted, and 'nested for commands
+There are three types of chunks: \\+`proof' for commands inside a
+proof that can be omitted, \\+`no-proof' for commands that are
+outside a proof or cannot be omitted, and \\+`nested' for commands
 that contain a nested proof.  Note that there may be several
-adjacent 'no-proof chunks, for instance for commands outside a
+adjacent \\+`no-proof' chunks, for instance for commands outside a
 proof followed by a proof that cannot be omitted.
 
-The 'proof chunk has 4 elements:
+The \\+`proof' chunk has 4 elements:
 
 \('proof proof-cmds-reversed span-start-first-proof-cmd span-end-first-proof-cmd)
 
@@ -2052,21 +2052,21 @@ start of the command that matched
 `proof-script-proof-start-regexp' and span-end-first-proof-cmd is
 the position of the end of that command.
 
-The 'no-proof chunk has 2 elements.
+The \\+`no-proof' chunk has 2 elements.
 
 \('no-proof cmds-reversed)
 
 cmds-reversed contains the vanilla spans of VANILLAS in reversed
 order.
 
-The 'nested-proof chunk has 3 elements.
+The \\+`nested-proof' chunk has 3 elements.
 
 \('nested-proof cmds-reversed line-number-nested-proof)
 
 line-number-nested-proof is the line number where the nested
 proof was detected.  cmds-reversed is the tail of VANILLAS,
 containing the start of the nested proof, in reversed order.  If
-there is a 'nested-proof chunk in the result, it is the first
+there is a \\+`nested-proof' chunk in the result, it is the first
 chunk."
   (cl-assert
    (and proof-omit-proofs-configured proof-script-proof-start-regexp
@@ -2199,7 +2199,7 @@ opaque proofs in the action list VANILLAS.  Additionally, it uses
 `proof-script-cmd-force-next-proof-kept' to detect proofs that
 cannot be omitted.  Complete opaque proofs are replaced by
 `proof-script-proof-admit-command'.  The span of the admit command
-contains an 'omitted-proof-region property with the region of the
+contains an \\+`omitted-proof-region' property with the region of the
 omitted proof.  This is used in `proof-done-advancing-save' to
 colour the omitted proof with `proof-omitted-proof-face'.
 

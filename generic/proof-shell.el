@@ -103,7 +103,7 @@ prover.  It might be the empty list if nothing needs to be sent to
 the prover, such as, for comments.  Usually COMMANDS
 contains just 1 string, but it might also contains more elements.
 The text should be obtained with
-`(mapconcat 'identity COMMANDS \" \")', where the last argument
+`(mapconcat \\='identity COMMANDS \" \")', where the last argument
 is a space.
 
 ACTION is the callback to be invoked when this item has been
@@ -117,24 +117,24 @@ The DISPLAYFLAGS are set
 for non-scripting commands or for when scripting should not
 bother the user.  They may include
 
-  'invisible		    non-script command (`proof-shell-invisible-command')
-  'no-response-display      do not display messages in *response* buffer
-  'no-error-display         do not display errors/take error action
-  'no-goals-display         do not goals in *goals* buffer
-  'keep-response            do not erase the response buffer when goals are shown
-  'proof-tree-show-subgoal  item inserted by the proof-tree package to display
+  \\+`invisible'		    non-script command (`proof-shell-invisible-command')
+  \\+`no-response-display'      do not display messages in *response* buffer
+  \\+`no-error-display'         do not display errors/take error action
+  \\+`no-goals-display'         do not goals in *goals* buffer
+  \\+`keep-response'            do not erase the response buffer when goals are shown
+  \\+`proof-tree-show-subgoal'  item inserted by the proof-tree package to display
                             the current or some other goal
-  'proof-tree-last-item     marks the item that follows the last show-goal
+  \\+`proof-tree-last-item'     marks the item that follows the last show-goal
                             request after a proof finished with proof-tree
                             display, causes switch back to normal queue region
                             processing
-  'priority-action          item added via proof-add-to-priority-queue
-  'empty-action-list        proof-shell-empty-action-list-command should not be
+  \\+`priority-action'          item added via proof-add-to-priority-queue
+  \\+`empty-action-list'        proof-shell-empty-action-list-command should not be
                             called if this is the last item in the action list
-  'dont-show-when-silent    Used for commands that should not be followed by a
+  \\+`dont-show-when-silent'    Used for commands that should not be followed by a
                             show command when running silent.
 
-Note that 'invisible does not imply any of the others. If flags
+Note that \\+`invisible' does not imply any of the others. If flags
 are non-empty, interactive cues will be suppressed. (E.g.,
 printing hints).
 
@@ -299,7 +299,7 @@ No change to current buffer or point."
 
 ;;;###autoload
 (defun proof-shell-live-buffer ()
-  "Return non-nil if ‘proof-shell-buffer’ is live."
+  "Return non-nil if `proof-shell-buffer' is live."
   (and proof-shell-buffer
        (buffer-live-p proof-shell-buffer)
        ;; FIXME: Use process-live-p?
@@ -764,7 +764,7 @@ This is a subroutine of `proof-shell-handle-error'."
 (defun proof-shell-handle-error-or-interrupt (err-or-int flags)
   "React on an error or interrupt message triggered by the prover.
 
-The argument ERR-OR-INT should be set to 'error or 'interrupt
+The argument ERR-OR-INT should be set to \\+`error' or \\+`interrupt'
 which affects the action taken.
 
 For errors, we first flush unprocessed output (usually goals).
@@ -776,12 +776,12 @@ In both cases we then sound a beep, clear the queue and spans and
 finally we call `proof-shell-handle-error-or-interrupt-hook'.
 
 Commands which are not part of regular script management (with
-FLAGS containing 'no-error-display) will not cause any display action.
+FLAGS containing \\+`no-error-display') will not cause any display action.
 
 This is called in two places: (1) from the output processing
 functions, in case we find an error or interrupt message output,
 and (2) from the exec loop, in case of a pending interrupt which
-didn't cause prover output."
+didn\\='t cause prover output."
   (unless (memq 'no-error-display flags)
     (cond
      ((eq err-or-int 'interrupt)
@@ -812,7 +812,7 @@ didn't cause prover output."
 
 (defun proof-shell-error-or-interrupt-action (err-or-int)
   "Take action on errors or interrupts.
-ERR-OR-INT is a flag, 'error or 'interrupt.
+ERR-OR-INT is a flag, \\+`error' or \\+`interrupt'.
 This is a subroutine of `proof-shell-handle-error-or-interrupt'.
 Must be called with proof shell buffer current.
 
@@ -1187,7 +1187,7 @@ processed without calling this function."
 (defun proof-add-to-priority-queue (queueitem)
   "Add item to `proof-priority-action-list' and start the queue if necessary.
 Argument QUEUEITEM must be an action item as documented for
-`proof-action-list'.  Add flag 'priority-action to QUEUEITEM, such
+`proof-action-list'.  Add flag \\+`priority-action' to QUEUEITEM, such
 that priority items can be recognized and the order of added
 priority items can be preserved."
   (let ((qi (list (car queueitem) (cadr queueitem) (cl-caddr queueitem)
@@ -1202,7 +1202,7 @@ priority items can be preserved."
 If START is non-nil, START and END are buffer positions in the
 active scripting buffer for the queue region.
 
-This function calls ‘proof-add-to-queue’ with args QUEUEITEMS and QUEUEMODE."
+This function calls `proof-add-to-queue' with args QUEUEITEMS and QUEUEMODE."
   (if start
       (proof-set-queue-endpoints start end))
   (proof-add-to-queue queueitems queuemode))
@@ -1213,7 +1213,7 @@ This function calls ‘proof-add-to-queue’ with args QUEUEITEMS and QUEUEMODE.
   "Extend the current queue with QUEUEITEMS, queue end END.
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to END.
-The queue mode is set to 'advancing"
+The queue mode is set to \\+`advancing'"
   (proof-set-queue-endpoints (proof-unprocessed-begin) end)
   (condition-case err
       (run-hooks 'proof-shell-extend-queue-hook)
@@ -1794,13 +1794,13 @@ by the filter is to send the next command from the queue."
   "Display delayed goals/responses, when queue is stopped or completed.
 This function handles the cases of `proof-shell-output-kind' which
 are not dealt with eagerly during script processing, namely
-'response and 'goals types.
+\\+`response' and \\+`goals' types.
 
 This is useful even with empty delayed output as it will empty
 the buffers.
 
 The delayed output is in the region
-\[proof-shell-delayed-output-start,proof-shell-delayed-output-end].
+\[`proof-shell-delayed-output-start', `proof-shell-delayed-output-end'].
 
 If no goals classified output is found, the whole output is
 displayed in the response buffer.
@@ -1835,7 +1835,7 @@ The goals and response outputs are copied into
 `proof-shell-last-response-output' respectively.
 
 The value returned is the value for `proof-shell-last-output-kind',
-i.e., 'goals or 'response."
+i.e., \\+`goals' or \\+`response'."
   (let ((start proof-shell-delayed-output-start)
 	(end   proof-shell-delayed-output-end)
 	(flags proof-shell-delayed-output-flags))
@@ -2003,8 +2003,8 @@ If TIMEOUTSECS is a number, time out after that many seconds."
 	  (error "Proof General: quit in proof-shell-wait")))))
 
 (defun proof-done-invisible (span)
-  "Callback for ‘proof-shell-invisible-command’.
-Call ‘proof-state-change-hook’."
+  "Callback for `proof-shell-invisible-command'.
+Call `proof-state-change-hook'."
   (run-hooks 'proof-state-change-pre-hook)
   (run-hooks 'proof-state-change-hook))
 
@@ -2029,7 +2029,7 @@ if it is set.  It should probably run the hook variables
 `proof-state-change-hook'.
 
 FLAGS are additional flags to put onto the `proof-action-list'.
-The flag 'invisible is always added to FLAGS."
+The flag \\+`invisible' is always added to FLAGS."
   (unless (stringp cmd)
     (setq cmd (eval cmd)))
   (if cmd

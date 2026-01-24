@@ -325,8 +325,8 @@ point the position where the parse should begin.  It should
 move point to the exact end of the next \"segment\", and return
 a symbol indicating what has been parsed:
 
-  'comment	for a comment
-  'cmd		for a proof script command
+  \\+`comment'	for a comment
+  \\+`cmd'		for a proof script command
   nil		if there is no complete next segment in the buffer
 
 If this is left unset, it will be configured automatically to
@@ -416,10 +416,10 @@ It's safe to leave this setting as nil."
   :group 'proof-script)
 
 (defcustom proof-save-with-hole-result 2
-  "How to get theorem name after ‘proof-save-with-hole-regexp’ match.
+  "How to get theorem name after `proof-save-with-hole-regexp' match.
 String or Int.
-If an int N, use ‘match-string’ to get the value of the Nth parenthesis matched.
-If a string, use ‘replace-match’.  In this case, ‘proof-save-with-hole-regexp’
+If an int N, use `match-string' to get the value of the Nth parenthesis matched.
+If a string, use `replace-match'.  In this case, `proof-save-with-hole-regexp'
 should match the entire command."
   :type '(choice string integer)
   :group 'proof-script)
@@ -471,11 +471,11 @@ may be left as nil."
 Used for provers which allow nested atomic goal-saves, but with some
 nested history that must be undone specially.
 
-At the moment, the behaviour is that a goal-save span has a 'nestedundos
+At the moment, the behaviour is that a goal-save span has a \\+`nestedundos'
 property which is set to the number of commands within it which match
 this regexp.  The idea is that the prover-specific code can create a
 customized undo command to retract the goal-save region, based on the
-'nestedundos setting.  Coq uses this to forget declarations, since
+\\+`nestedundos' setting.  Coq uses this to forget declarations, since
 declarations in Coq reside in a separate context with its own (flat)
 history."
   :type '(choice (const nil) regexp)
@@ -529,14 +529,14 @@ off the goal..[save] region in more flexible ways.
 The possibilities are:
 
 	nil  -  nothing special; close only when a save arrives
-  'closeany  -  close as soon as the next command arrives, save or not
- 'closegoal  -  close when the next \"goal\" command arrives
-    'extend  -  keep extending the closed region until a save or goal.
+  \\+`closeany'  -  close as soon as the next command arrives, save or not
+ \\+`closegoal'  -  close when the next \"goal\" command arrives
+    \\+`extend'  -  keep extending the closed region until a save or goal.
 
 If your proof assistant allows nested goals, it will be wrong to close
 off the portion of proof so far, so this variable should be set to nil.
 
-NB: 'extend behaviour is not currently compatible with appearance of
+NB: \\+`extend' behaviour is not currently compatible with appearance of
 save commands, so don't use that if your prover has save commands."
   :type '(choice
 	  (const :tag "Close on save only" nil)
@@ -562,7 +562,7 @@ settings `proof-non-undoables-regexp' and
 This setting is used to for retraction (undoing) in proof scripts.
 
 It should undo the effect of all settings between its target span
-up to (proof-unprocessed-begin).  This may involve forgetting a number
+up to `proof-unprocessed-begin'.  This may involve forgetting a number
 of definitions, declarations, or whatever.
 
 If return value is nil, it means there is nothing to do.
@@ -588,7 +588,7 @@ you only need to set if you use that function (by not customizing
   "Function to return cons if point is at a goal/hypothesis/literal.
 This is used to parse the proofstate output to mark it up for
 proof-by-pointing or literal command insertion.  It should return a cons or nil.
-First element of the cons is a symbol, 'goal', 'hyp' or 'lit'.
+First element of the cons is a symbol, \\+`goal', \\+`hyp' or \\+`lit'.
 The second element is a string: the goal, hypothesis, or literal command itself.
 
 If you leave this variable unset, no proof-by-pointing markup
@@ -639,7 +639,7 @@ The classic behaviour of Proof General is to undo completed
 proofs in one step: this design arose because older provers
 discarded nested history once proofs were complete.  The proof
 script engine amalgamates spans for a complete proof (into a
-single 'goalsave) to give this effect.
+single \\+`goalsave') to give this effect.
 
 Newer designs keep more state, and may support arbitrary undo
 with a file being processed.  If this flag is non-nil,
@@ -853,7 +853,7 @@ the proof assistant back to the same state."
   :group 'proof-script)
 
 (defcustom proof-indent-hang nil
-  "Enable 'hanging' indentation for proof script."
+  "Enable hanging indentation for proof script."
   :type 'boolean
   :group 'proof-script)
 
@@ -1039,8 +1039,8 @@ the escape sequences in `proof-shell-filename-escapes' are
 applied to the filename.
 
 This setting is used to define the function `proof-cd' which
-changes to the value of (default-directory) for script buffers.
-For files, the value of (default-directory) is simply the
+changes to the value of `default-directory' for script buffers.
+For files, the value of `default-directory' is simply the
 directory the file resides in.
 
 NB: By default, `proof-cd' is called from `proof-activate-scripting-hook',
@@ -1673,7 +1673,7 @@ by the cdr.
 For example, when directories are sent to Isabelle, HOL, and Coq,
 they appear inside ML strings and the backslash character and
 quote characters must be escaped.  The setting
-  '((\"\\\\\\\\\" . \"\\\\\\\\\")
+  \\='((\"\\\\\\\\\" . \"\\\\\\\\\")
     (\"\\\"\" . \"\\\\\\\"\"))
 achieves this.
 
@@ -1711,7 +1711,7 @@ if you don't need it (slight speed penalty)."
   :group 'proof-shell)
 
 (defcustom proof-shell-extend-queue-hook nil
-  "Hooks run by ‘proof-extend-queue’ before extending `proof-action-list'.
+  "Hooks run by `proof-extend-queue' before extending `proof-action-list'.
 Can be used to run additional actions before items are added to
 the queue \(such as compiling required modules for Coq) or to
 modify the items that are going to be added to
@@ -1738,12 +1738,12 @@ shell filter once `string' has been processed.  The `action' variable
 suggests what class of command is about to be inserted, the first two
 are normally the ones of interest:
 
- 'proof-done-advancing	     A \"forward\" scripting command
- 'proof-done-retracting	     A \"backward\" scripting command
- 'proof-done-invisible	     A non-scripting command
- 'proof-shell-set-silent     Indicates prover output has been suppressed
- 'proof-shell-clear-silent   Indicates prover output has been restored
- 'init-cmd	             Early initialization command sent to prover
+ \\+`proof-done-advancing'	     A \"forward\" scripting command
+ \\+`proof-done-retracting'	     A \"backward\" scripting command
+ \\+`proof-done-invisible'	     A non-scripting command
+ \\+`proof-shell-set-silent'     Indicates prover output has been suppressed
+ \\+`proof-shell-clear-silent'   Indicates prover output has been restored
+ \\+`init-cmd'	             Early initialization command sent to prover
 
 Caveats: You should be very careful about setting this hook.  Proof
 General relies on a careful synchronization with the process between
@@ -1867,7 +1867,7 @@ be prevented, the function should update the variable
 
 The symbol will be compared against standard ones, see documentation
 of `proof-shell-last-output-kind'.  A suggested canonical non-standard
-symbol is 'systemspecific."
+symbol is \\+`systemspecific'."
   :type '(repeat function)
   :group 'proof-shell)
 
@@ -2064,7 +2064,7 @@ and `proof-response-font-lock-keywords'."
 (defcustom pg-before-fontify-output-hook nil
   "This hook is called before fontifying a region in an output buffer.
 A function on this hook can alter the region of the buffer within
-the current restriction, and must return the final value of (point-max).
+the current restriction, and must return the final value of `point-max'.
 \[This hook is presently only used by phox-sym-lock]."
   :type '(repeat function)
   :group 'proof-goals)

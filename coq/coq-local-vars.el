@@ -50,8 +50,8 @@ coqtop -foo3 -R foo bar -I foo2
 FILE VARIABLES
 
 If for some reason you want to avoid or override the project file
-method, you can use the file variables.  See Info node ‘(emacs)File
-Variables’.  This feature of Emacs allows to set Emacs variables on a
+method, you can use the file variables.  See Info node `(emacs)File
+Variables'.  This feature of Emacs allows to set Emacs variables on a
 per-file basis.  File Variables are (usually) written as a list at the
 end of the file.
 

@@ -1049,7 +1049,7 @@ Used by `coq-goal-command-p'"
 ;; unused anymore (for good)
 (defun coq-goal-command-str-p (str)
   "Decide syntactically whether STR is a goal start or not.
-Use ‘coq-goal-command-p’ on a span instead if possible."
+Use `coq-goal-command-p' on a span instead if possible."
   (let* ((match (coq-count-match "\\_<match\\_>" str))
          (with (- (coq-count-match "\\_<with\\_>" str) (coq-count-match "\\_<with\\s-+signature\\_>" str)))
          (letwith (+ (coq-count-match "\\_<let\\_>" str) (- with match)))
