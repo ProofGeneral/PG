@@ -961,7 +961,7 @@ Otherwise propose identifier at point if any."
            (t (coq-id-or-notation-at-point)))))
     (read-string
      (if guess (concat s " (default " guess "): ") (concat s ": "))
-     nil 'proof-minibuffer-history guess)))
+     nil 'proof-minibuffer-history guess t)))
 
 
 (defun coq-ask-do (ask do &optional dontguess postformatcmd wait)
