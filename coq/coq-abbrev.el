@@ -111,7 +111,9 @@ start."
   (when snippet
     (if (and coq-use-yasnippet (fboundp 'yas-expand))
         (yas-expand-snippet (coq-yas-snippet-from-db snippet))
-      (insert (coq-simple-abbrev-from-db snippet)))))
+      (let ((start (point)))
+        (insert (coq-simple-abbrev-from-db snippet))
+        (indent-region start (point))))))
 
         ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
         ;;     (with-undo-amalgamate (insert abbr) (yas-expand))

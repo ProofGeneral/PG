@@ -2938,13 +2938,10 @@ Goals that are marked as \"only printing\" are ignored."
              ;; NOTE: Adding braces would be great, but it messes up indentation.
              (format-selector (lambda (name) (format "[%s]: #." name)))
              (goal-selectors (cl-mapcar format-selector goal-names))
-             (snippet (string-join goal-selectors "\n"))
-             (snippet (coq-insert-template snippet)))
-        (message "%s" goal-names)
+             (snippet (string-join goal-selectors "\n")))
         (if (equal goal-selectors nil)
             (error "Couldn't find any named goals")
-          (let ((start (point)))
-            (if coq-use-yasnippet (yas-expand-snippet snippet) (insert snippet))))))))
+          (coq-insert-template snippet))))))
 
 (defun coq-insert-match ()
   "Insert a match expression from a type name by Show Match.
