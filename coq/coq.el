@@ -384,27 +384,55 @@ It is mostly useful in three window mode, see also
 ;; result, if it follows we want it to be non urgent, otherwise the result
 ;; would not be shown in response buffer. If it is before, then we want it
 ;; urgent so that it is displayed.
-(defvar coq-eager-no-urgent-regex "\\s-*Finished "
+(defvar coq-eager-no-urgent-regex
+  ;; "\\s-*Finished \\|" not needed anymore in silent mode (and in roc W= 9.2,
+  ;; since the goal is not printed in the same command (but by the next Show).
+  ;; TODO: remove it after a few versions.
+  "\\s-*Finished \\|\n?\\s-*This subproof is complete, but\\|\\s-*All the remaining goals are on the shelf."
   "Regexp of commands matching `proof-shell-eager-annotation-start'
 that should maybe not be classified as urgent messages.")
 
+(defconst coq--goal-header--when-unfocused-goals "[0-9]+ goals?\n\ngoal ";; The trailing white space is important here
+  "Regexp for goals displyed when there are no focused goal.
+
+This regexp should match the start of coq's goal printing ONLY when there
+is currently no goal under focus. This is used in
+`coq-non-urgent-eager-annotation` to detect a infomsg that should NOT be
+considered urgent: (because we only want it displayed for the last
+command).")
+
+
 ;; return the end position if found, nil otherwise
 (defun coq-non-urgent-eager-annotation ()
+  "Return non-nil if looking at a non-urgent eager annotation.
+
+See `coq-search-urgent-message'."
   (save-excursion
-    (when (and (looking-at coq-eager-no-urgent-regex)
-               (re-search-forward proof-shell-eager-annotation-end nil t))
-      (let ((res (match-end 0))); robustify
-        ;; if there is something else than a prompt here then this eager
-        ;; annotation is left urgent (return nil), otherwise it is not urgent
-        ;; (return position of the end of the annotation)
-        (when (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
-          res)))))
+    (if (looking-at coq-eager-no-urgent-regex)
+        (if (re-search-forward proof-shell-eager-annotation-end nil t)
+            (let ((res (match-end 0))); robustify
+              ;; if there is something else than a prompt (????or an unfocused goal?) here then this eager
+              ;; annotation is left urgent (return nil), otherwise it is not urgent
+              ;; (return position of the end of the annotation)
+              (when (or (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
+                        (looking-at (concat "\\s-*" coq--goal-header--when-unfocused-goals)))
+                res))
+          t)
+      nil)))
 
 ;; Looking for eager annotation which does not match coq-eager-no-urgent-regex
 (defun coq-search-urgent-message ()
-  "Find forward the next really urgent message.
+  "Find forward next eager annotation that is really urgent.
+
 Return the position of the beginning of the message (after the
-annotation-start) if found."
+annotation-start) if found.
+
+This function is used in Coq's replacement for
+`proof-shell-process-urgent-messages'. It replaces a simple search
+`proof-shell-eager-annotation-start' because some messages that do match
+it should not be treated as urgent. This is due to a mismatch between
+message category between Coq and PG.
+"
   (let ((again t) (start-start nil) (end-end nil) ;; (found nil)
         (eager proof-shell-eager-annotation-start))
     (while again
@@ -432,7 +460,46 @@ between regexps `proof-shell-eager-annotation-start' and
 
 We update `proof-shell-urgent-message-marker' to point to last message found.
 
-This is a subroutine of `proof-shell-filter'."
+This is a subroutine of `proof-shell-filter'.
+
+DOCUMENTATION OF THIS VERSION OF THE FUNCTION (redefined for Coq).
+
+When thi shappens:
+
+  PROMPT-0 > command1.
+  MESSAGE-1
+  PROMPT-1 > command2.
+  MESSAGE-2
+  GOALS-2
+  PROMPT-2 >
+
+MESSAGE-2 is displayed. Even if it is urgent because it concerns the
+last command.
+
+But (non urgent) MESSAGE-1 is not displayed by default. There is only
+one case where MESSAGE-1 is displayed: if both following conditions are
+true.
+
+- command2 is inserted in action-list with the 'keep-response tag
+- AND MESSAGE-2 (not MESSAGE-1) IS NOT URGENT.
+
+Thus we detect cases where we want MESSAGE-2, despite being an eager
+annotation, shoudl not be considered urgent.
+
+One such situation comes from the fact that PG now systematically
+inserts a \"Show\" command at the end of the action-list. So now we have
+this:
+
+  PROMPT-0 <= last command2
+  MESSAGE-1
+  PROMPT-1 <= Show.
+  MESSAGE-2
+  GOALS-2
+  PROMPT-2 >
+
+And we want MESSAGE-1 to be visible together with MESSAGE-2 (which can
+be something like \"<infomsg>This subproof is complete, but ...\").
+"
   (let ((pt (point)) (end t)
 	lastend laststart
 	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
@@ -2464,6 +2531,23 @@ Return command that undos to state."
 (defconst coq--time-prefix "Time "
   "Coq command prefix for displaying timing information.")
 
+(defconst coq--non-timeable-command-regexp "\\`BackTo"
+  "Regexp for Coq (non bullet) commands not supporting \"Time\".
+
+See `coq-cmd-incompatible-with-Time'. ")
+
+(defun coq-cmd-incompatible-with-Time (str)
+  "Return non-nil if str is a command that support Time.
+
+Time CMD. is supposed to execute CMD and then print the cpu time it took
+to execute. It is not applicable to commands like e.g. \"BackTo\" or
+bullets.
+
+Uses `coq--non-timeable-command-regexp`.
+"
+  (or (coq-bullet-p str) ;; coq does not accept "Time -".
+      (string-match coq--non-timeable-command-regexp str)))
+
 (defun coq-bullet-p (s)
   (string-match coq-bullet-regexp-nospace s))
 
@@ -2473,7 +2557,8 @@ Return command that undos to state."
     (with-no-warnings  ;; NB: dynamic scoping of `string' and `action'
       ;; Don't add the prefix if this is a command sent internally
       (unless (or (eq action 'proof-done-invisible)
-                  (coq-bullet-p string)) ;; coq does not accept "Time -".
+                  ;; Some cmds do not support "Time".
+                  (coq-cmd-incompatible-with-Time string))
         (setq string (concat coq--time-prefix string))
         ;; coqtop *really wants* a newline after a comand-ending dot.
         ;; (error) locations are very wrong otherwise
