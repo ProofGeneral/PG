@@ -332,6 +332,10 @@ Set to t if you want this feature, but note that it is deprecated."
                (cl-every 'stringp (cdr entry))
                (equal (length entry) 3))
           (and (listp entry)
+               (eq (car entry) 'package)
+               (cl-every 'stringp (cdr entry))
+               (equal (length entry) 2))
+          (and (listp entry)
                (eq (car entry) 'ocamlimport)
                (cl-every 'stringp (cdr entry))
                (equal (length entry) 2))
@@ -352,6 +356,8 @@ forms of include options (`-I' `-Q' and `-R').  An element can be
 
   - A list of the form `(\\='ocamlimport dir)', specifying (in 8.5) a
     directory to be added to Ocaml path (`-I').
+  - A list of the form `(\\='package name)', specifying (since 9.3) a
+    ocamlfind package with Rocq files.
   - A list of the form `(\\='rec dir path)' (where dir and path are
     strings) specifying a directory to be recursively mapped to the
     logical path `path' (`-R dir path').
@@ -385,6 +391,10 @@ not the same (-I is for Coq path)."
                                (const recnoimport)
                                (string :tag "directory")
                                (string :tag "log path"))
+                         (list :tag
+                               "ocamlfind package for Rocq"
+                               (const package)
+                               (string :tag "name"))
                          (list :tag
                                "compatibility for of -I (-I ... -as ... in coq<=8.4)"
                                (const nonrec)
@@ -435,6 +445,8 @@ request compatibility handling of flags."
        (list "-Q" (expand-file-name dir) ""))
       (`(ocamlimport ,dir)
        (list "-I" (expand-file-name dir)))
+      (`(package ,name)
+       (list "-package" name))
       (`(recnoimport ,dir ,alias)
        (list "-Q" (expand-file-name dir) alias))
       ((or `(rec ,dir ,alias) `(,dir ,alias))
@@ -659,6 +671,7 @@ ALREADYOPEN is t if buffer already existed."
   '(("-R" . 2)
     ("-Q" . 2)
     ("-I" . 1)
+    ("-package" . 1)
     ("-arg" . 1)
     ("-opt" . 0)
     ("-byte" . 0)))
@@ -711,6 +724,8 @@ coqtop.  But -arg \"\\='a b\\='\" means to pass a and b together."
   (pcase option
     (`("-I" ,path)
      (list 'ocamlimport (expand-file-name path base-directory)))
+    (`("-package" ,name)
+     (list 'package name))
     (`("-R" ,path ,alias)
      (list 'rec (expand-file-name path base-directory) alias))
     (`("-Q" ,path ,alias)
