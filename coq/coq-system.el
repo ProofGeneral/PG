@@ -675,11 +675,19 @@ If ARITY is nil, return SWITCH."
     (let ((arguments (cl-subseq raw-args 0 arity)))
       (cons switch arguments)))))
 
+(defun coq--filter-project-file-commented-lines (contents)
+  "Filter out the lines starting with '#' of string CONTENTS."
+  (let* ((l (split-string contents "^"))
+         (lrem (cl-remove-if (lambda (s) (string-match "^[[:blank:]]*#" s)) l)))
+    (cl-reduce (lambda (a b) (cl-concatenate 'string a b))
+               lrem)))
+
 (defun coq--read-options-from-project-file (contents)
   "Read options from CONTENTS of _CoqProject.
 Returns a mixed list of option-value pairs and strings."
-  (let ((raw-args (split-string-and-unquote contents coq--project-file-separator))
-        (options nil))
+  (let* ((contents (coq--filter-project-file-commented-lines contents))
+         (raw-args (split-string-and-unquote contents coq--project-file-separator))
+         (options nil))
     (while raw-args
       (let* ((switch (pop raw-args))
              (arity (cdr (assoc switch coq--makefile-switch-arities))))
