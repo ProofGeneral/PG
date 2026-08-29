@@ -1788,7 +1788,13 @@ by the filter is to send the next command from the queue."
   "If FLAGS permit, display response STR; set `proof-shell-last-response-output'."
   (setq proof-shell-last-response-output str) ; set even if not displayed
   (unless (memq 'no-response-display flags)
-    (pg-response-display str)))
+    ;; if keep-response then we do not really erase the response
+    ;; (hence the fourth arg), but we still want to update
+    ;; pg-response-erase-flag correctly
+    (pg-response-maybe-erase t nil nil (member 'keep-response flags))
+    (pg-response-display-with-face str)
+    (proof-display-and-keep-buffer proof-response-buffer)))
+
 
 (defun proof-shell-handle-delayed-output ()
   "Display delayed goals/responses, when queue is stopped or completed.
