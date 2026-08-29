@@ -1622,7 +1622,15 @@ outside of any proof."
   :type 'function
   :group 'proof-script)
 
+(defcustom proof-shell-timeout-warn 30
+  "How many seconds (integer) to wait before PG warns us that
+a command is taking a long time and might be malformed.
 
+nil disables the timeout timer.
+
+Default value is 30 (seconds)."
+  :type 'integer
+  :group 'proof-shell)
 
 ;;
 ;; 3c. tokens mode: turning on/off tokens output

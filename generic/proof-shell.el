@@ -226,6 +226,13 @@ This flag is set for the duration of `proof-shell-kill-function'
 to tell hooks in `proof-deactivate-scripting-hook' to refrain
 from calling `proof-shell-exit'.")
 
+(defvar proof-shell-timer nil
+  "A timer that alerts the user when the current command sent to the
+shell is taking too long and might be malformed. This is cancelled
+in `proof-shell-exec-loop' or if there was an error and armed when
+the next command is sent to the process.
+Disable by setting `proof-shell-timeout-warn' to nil. Configure by
+setting `proof-shell-timeout-warn' to an integer.")
 
 
 ;;
@@ -833,6 +840,11 @@ unless the FLAGS for the command are non-nil (see `proof-action-list')."
     ;; proof-action-list is empty on error.
     (setq proof-action-list nil)
     (proof-release-lock)
+    (unless proof-shell-busy
+      ;; if the shell isn't still busy, cancel timer on error
+      (if (and proof-shell-timer proof-shell-timeout-warn)
+	  (progn (cancel-timer proof-shell-timer)
+		 (setq proof-shell-timer nil))))
     (unless flags
       ;; Give a hint about C-c C-`.  (NB: approximate test)
       (if (pg-response-has-error-location)
@@ -1014,6 +1026,19 @@ used in `proof-add-to-queue' when we start processing a queue, and in
       ;; Replace CRs from string with spaces to avoid spurious prompts.
       (if proof-shell-strip-crs-from-input
 	  (setq string (subst-char-in-string ?\n ?\  string)))
+      ;; arm the timer if we've received a user command (callback is proof-done-advancing)
+      (when (and (eq 'proof-done-advancing action)
+		 proof-shell-timeout-warn)
+	(when proof-shell-timer
+	  ;; cancel previous timer, if it exists
+	  (cancel-timer proof-shell-timer)
+	  (setq proof-shell-timer nil))
+	(setq proof-shell-timer
+	      (run-with-timer proof-shell-timeout-warn nil
+			      'message
+			      (substitute-command-keys "This command is taking a while. \
+Is the syntax correct? Do \\[proof-interrupt-process] to interrupt prover or
+\\[proof-shell-exit] to terminate it."))))
 
       (insert string)
 
@@ -1120,7 +1145,6 @@ being processed."
             (eq proof-shell-busy queuemode) nil
             "wrong queuemode in proof-add-to-queue: %s instead expected %s"
             proof-shell-busy queuemode))))
-
 
   (let ((nothingthere (null proof-action-list)))
     ;; Now extend or start the queue.
@@ -1336,7 +1360,11 @@ contains only invisible elements for Prooftree synchronization."
 	  (proof-detach-queue)
 	  (unless flags ; hint after a batch of scripting
 	    (pg-processing-complete-hint))
-	  (pg-finish-tracing-display))
+	  (pg-finish-tracing-display)
+	  (when (and proof-shell-timeout-warn proof-shell-timer)
+	    ;; cancel timer if there's nothing in the action lists
+	    (progn (cancel-timer proof-shell-timer)
+		   (setq proof-shell-timer nil))))
 
 	(and (not proof-second-action-list-active)
 	     (let ((last-command  (car (nth 1 (car (last proof-action-list))))))
