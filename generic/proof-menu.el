@@ -143,6 +143,15 @@ without adjusting window layout."
   ;; NB: C-c ` is next-error in universal-keys
   (proof-define-keys map proof-universal-keys))
 
+(defvar proof-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-n") #'proof-assert-next-command-interactive)
+    (define-key map (kbd "C-u") #'proof-undo-last-successful-command)
+    map))
+
+;; support for `repeat-mode' (≥Emacs 28)
+(put #'proof-assert-next-command-interactive 'repeat-map 'proof-repeat-map)
+(put #'proof-undo-last-successful-command 'repeat-map 'proof-repeat-map)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
