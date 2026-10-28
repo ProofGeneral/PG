@@ -375,122 +375,6 @@ It is mostly useful in three window mode, see also
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
 
 
-(defun coq-remove-starting-blanks (s)
-  (string-match "\\`\\s-*" s)
-  (substring s (match-end 0) (length s)))
-
-
-;; Messages dispalyed by "Time" are always following or preceding the real
-;; result, if it follows we want it to be non urgent, otherwise the result
-;; would not be shown in response buffer. If it is before, then we want it
-;; urgent so that it is displayed.
-(defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching `proof-shell-eager-annotation-start'
-that should maybe not be classified as urgent messages.")
-
-;; return the end position if found, nil otherwise
-(defun coq-non-urgent-eager-annotation ()
-  (save-excursion
-    (when (and (looking-at coq-eager-no-urgent-regex)
-               (re-search-forward proof-shell-eager-annotation-end nil t))
-      (let ((res (match-end 0))); robustify
-        ;; if there is something else than a prompt here then this eager
-        ;; annotation is left urgent (return nil), otherwise it is not urgent
-        ;; (return position of the end of the annotation)
-        (when (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
-          res)))))
-
-;; Looking for eager annotation which does not match coq-eager-no-urgent-regex
-(defun coq-search-urgent-message ()
-  "Find forward the next really urgent message.
-Return the position of the beginning of the message (after the
-annotation-start) if found."
-  (let ((again t) (start-start nil) (end-end nil) ;; (found nil)
-        (eager proof-shell-eager-annotation-start))
-    (while again
-      (setq start-start (and (re-search-forward eager nil 'limit)
-                             (match-beginning 0)))
-      (setq end-end (and start-start (coq-non-urgent-eager-annotation)))
-      (unless end-end
-        (setq again nil) ; exit while
-        ;; display message (this prints the message once now but it will be
-        ;; reprinted as a normal output, bad?)
-        ;;(proof-shell-process-urgent-message start-start end-end)
-        ))
-    (and start-start (goto-char start-start))))
-
-;; This is a modified version of the same function in generic/proof-shell.el.
-;; Using function coq-search-urgent-message instead of regex
-;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages.
-(defun proof-shell-process-urgent-messages ()
-  "Scan the shell buffer for urgent messages.
-Scanning starts from `proof-shell-urgent-message-scanner' or
-`scomint-last-input-end', which ever is later.  We deal with strings
-between regexps `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-We update `proof-shell-urgent-message-marker' to point to last message found.
-
-This is a subroutine of `proof-shell-filter'."
-  (let ((pt (point)) (end t)
-	lastend laststart
-	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
-			 (marker-position scomint-last-input-end))))
-    (goto-char initstart)
-    (while (and end (setq laststart (coq-search-urgent-message))
-                )
-;      (setq laststart (match-beginning 0))
-      (if (setq end
-		(re-search-forward proof-shell-eager-annotation-end nil t))
-	  (save-excursion
-	    (setq lastend end)
-	    ;; Process the region including the annotations
-	    (proof-shell-process-urgent-message laststart lastend))))
-
-    (set-marker
-     proof-shell-urgent-message-scanner
-     (if end ;; couldn't find message start; move forward to avoid rescanning
-         (max (or lastend 1) ;; goto after last end urgent msg
-              ;; or near the end of current output if that jumps farther.
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
-       ;; incomplete message; leave marker at start of message
-       laststart))
-
-    ;; Set position of last urgent message found
-    (if lastend
-	(set-marker proof-shell-urgent-message-marker lastend))
-
-    (goto-char pt)))
-
-;; Due to the architecture of proofgeneral, informative message put *before*
-;; the goal disappear unless marked as "urgent", i.e. being enclosed with
-;; "eager-annotation" syntax. Since we don't want the Warning color to be used
-;; for simple informative message, we have to redefine this function to use
-;; normal face when the "eager annotation" is acutally not a warning. This is a
-;; modified version of the same function in generic/proof-shell.el.
-(defun proof-shell-process-urgent-message-default (start end)
-  "A subroutine of `proof-shell-process-urgent-message'."
-  ;; Clear the response buffer this time, but not next, leave window.
-  (pg-response-maybe-erase nil nil)
-  (proof-minibuffer-message
-   (buffer-substring-no-properties
-    (save-excursion
-      (re-search-forward proof-shell-eager-annotation-start end nil)
-      (point))
-    (min end
-         (save-excursion (end-of-line) (point))
-         (+ start 75))))
-  (goto-char start)
-  (let* (;; (face (if (looking-at "<infomsg>") 'default
-         ;;         'proof-eager-annotation-face))
-         (str (proof-shell-strip-eager-annotations start end))
-         (strnotrailingspace
-          (coq-remove-starting-blanks (proof-strip-whitespace-at-end str))))
-    (pg-response-display-with-face strnotrailingspace))) ; face
-
-
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
 ;; candidate for proof-script-parse-function). See its definition in
 ;; coq-indent.el.
@@ -2115,6 +1999,9 @@ shortly before `proof-assert-command-hook', respectively,
    ;; this requires changes in Coq.
    proof-shell-eager-annotation-start coq-shell-eager-annotation-start
    proof-shell-eager-annotation-start-length 32
+   ;; no warning face for the whole message, rely on font-lock and on
+   ;; `coq-insert-tagged-text' instead
+   proof-shell-eager-annotation-face nil
 
    ;; we need these two strings to be recognized so that the first appearing is
    ;; analyzed
