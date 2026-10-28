@@ -1875,9 +1875,12 @@ i.e., \\+`goals' or \\+`response'."
         (setq both
 	      (> (- gmark rstart) 4))
         (if both
-	    (proof-shell-display-output-as-response
-	     flags
-	     (buffer-substring-no-properties rstart gmark)))
+            (progn
+              (if (member 'keep-response flags)
+                  (setq pg-response-erase-flag nil))
+	      (proof-shell-display-output-as-response
+	       flags
+	       (buffer-substring-no-properties rstart gmark))))
         ;; display goals output second so it persists in 2-pane mode
         (unless (memq 'no-goals-display flags)
 	  (pg-goals-display proof-shell-last-goals-output
@@ -1887,6 +1890,8 @@ i.e., \\+`goals' or \\+`response'."
         (setq proof-shell-last-output-kind 'goals)))
 
      (t
+      (if (member 'keep-response flags)
+          (setq pg-response-erase-flag nil))
       (proof-shell-display-output-as-response flags proof-shell-last-output)
       ;; indicate that (only) a response output has been given
       (if (equal proof-shell-last-output "")

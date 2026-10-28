@@ -379,7 +379,11 @@ Returns non-nil if response buffer was cleared."
       doit)))
 
 (defun pg-response-display (str)
-  "Show STR as a response in the response buffer."
+  "Show STR as a response in the response buffer.
+
+Calls `pg-response-maybe-erase' with `erase-next-time' set to t and all
+other flags (clean-windows force keep) to nil. Obeys
+`pg-response-erase-flag' though."
 
   (pg-response-maybe-erase t nil)
   (pg-response-display-with-face str)
