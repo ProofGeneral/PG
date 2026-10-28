@@ -182,10 +182,7 @@ inserted inside `proof-assert-command-hook', respectively,
 
 (defvar coq-shell-proof-completed-regexp
   (concat "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|"
-          "Proof\\s-completed\\|"
-          ;; if printing width is small, eg. when running in batch mode,
-          ;; there might be a line break after infomsg
-          "<infomsg>\n?.*\\s-is\\s-declared"
+          "Proof\\s-completed"
           ;; \\|This subproof is complete
           )
   "*Regular expression indicating that the proof has been completed.
