@@ -596,7 +596,7 @@ The point should be at the beginning of the command name."
   (let* (;; (orig (point))
          (cmdstrt (save-excursion (coq-find-real-start)))
          (corresp (coq-smie-search-token-backward
-		   '("let" "Inductive" "CoInductive" "{|" "." "with" "Module" "where"
+		   '("let" "Inductive" "CoInductive" "Variant" "{|" "." "with" "Module" "where"
                      "Equations")
 		   cmdstrt '((("let" "with") . ":=")))))
     (cond
