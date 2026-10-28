@@ -199,6 +199,19 @@ fail to delete the goals buffer.")
 (defvar coq-goal-regexp
   "\\(============================\\)\\|\\(\\(?:sub\\)?goal [0-9]+\\)\n")
 
+(defvar coq-start-goals-regexp
+  (concat
+   ;; messages about the proof state are displayed with the goals
+   "\\(?:<infomsg>\\s-*\\(?:This subproof is complete"
+   "\\|All the remaining goals are on the shelf"
+   "\\|No more \\(?:sub\\)?goals\\)[^<]*</infomsg>\\s-*\\)?"
+   "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
+   "\\|No more \\(?:sub\\)?goals\\.")
+  "Coq instance of `proof-shell-start-goals-regexp'.
+Messages about the state of the proof (subproof or proof complete,
+goals on the shelf or given up) are part of the goals output, so that
+they are displayed in the goals buffer instead of the response buffer.")
+
 
 (defconst coq-interrupt-regexp "User Interrupt."
   "Regexp corresponding to an interrupt.")
@@ -2018,7 +2031,7 @@ shortly before `proof-assert-command-hook', respectively,
    proof-shell-result-end "\372 End Pbp result \373"
 
 ;   proof-shell-start-goals-regexp          "^\\(?:(dependent evars:[^)]*)\\s-+\\)?[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
+   proof-shell-start-goals-regexp          coq-start-goals-regexp
    proof-shell-end-goals-regexp
    (if coq-hide-additional-subgoals
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
@@ -3303,10 +3316,14 @@ number of hypothesis displayed, without hiding the goal"
   "Clear goals buffer outside proofs.
 This function ensures that the goals buffer is reset after Qed or
 Admitted.  This function is for
-`proof-shell-handle-delayed-output-hook'."
+`proof-shell-handle-delayed-output-hook'.
+
+A proof completed message which has been displayed in the goals
+buffer (see `coq-start-goals-regexp') is kept."
   (when (or (not coq-last-but-one-proofstack)
-            (proof-string-match coq-shell-proof-completed-regexp
-                                proof-shell-last-output))
+            (and (not (eq proof-shell-last-output-kind 'goals))
+                 (proof-string-match coq-shell-proof-completed-regexp
+                                     proof-shell-last-output)))
     (proof-clean-buffer proof-goals-buffer)))
 
 
