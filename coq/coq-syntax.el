@@ -1318,8 +1318,11 @@ Very similar to `coq-omit-proof-admit-command', but without the dot."
 ;; <infomsg> and <warning> around all messages except errors.
 ;; We let our legacy regexp for some years and remove them, say, in 2020.
 ;; 09/2024: Adding more eager annotations to fix debug mode.
+;; 10/2026: <infomsg> are not urgent anymore, except the "Proof using"
+;; suggestion which is analysed as an urgent message (see
+;; `coq-shell-theorem-dependency-list-regexp').
 (defvar coq-shell-eager-annotation-start
-   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<infomsg>\\|<warning>\\|Going to execute:")
+   "\376\\|\\[Reinterning\\|Warning:\\|TcDebug \\|<warning>\\|Going to execute:\\|<infomsg>\n?The proof of ")
 
 (defvar coq-shell-eager-annotation-end
   "\377\\|done\\]\\|</infomsg>\\|</warning>\\|\\*\\*\\*\\*\\*\\*\\|) >")
