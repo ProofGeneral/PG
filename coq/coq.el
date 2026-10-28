@@ -133,7 +133,24 @@ Namely, goals that do not fit in the goals window."
   :group 'coq)
 
 
-(defconst coq-shell-init-cmd
+(defun coq-shell-init-cmd ()
+  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
+Return the list of commands sent to the Coq background process just
+after it has been started.  This happens inside
+`proof-shell-config-done', when the major mode `coq-shell-mode' is
+configured in the `*coq*' buffer.
+
+This is computed each time Coq is started, after the detection of its
+version (see `coq-prog-args'), which may have changed since Proof
+General was loaded (e.g., after a change of opam switch).
+
+Sets silent mode if `coq-run-completely-silent' is set and the
+version of Coq needs it.
+
+In normal interaction, Coq is started because the user asserts
+some commands.  Therefore the commands here are followed by those
+inserted inside `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'."
   (append
    `(
      ;; Should this variable be buffer-local? No opinion on that but if yes we
@@ -145,20 +162,7 @@ Namely, goals that do not fit in the goals window."
             (coq--version< (coq-version t) "9.2+alpha"))
        '("Set Silent.")
      ())
-   coq-user-init-cmd)
-  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
-List of commands sent to the Coq background process just after it
-has been started.  This happens inside `proof-shell-config-done',
-when the major mode `coq-shell-mode' is configured in the `*coq*'
-buffer.
-
-Sets silent mode if `coq-run-completely-silent' is set.  Note that
-this constant is not updated when `coq-run-completely-silent' is changed.
-
-In normal interaction, Coq is started because the user asserts
-some commands.  Therefore the commands here are followed by those
-inserted inside `proof-assert-command-hook', respectively,
-`coq-adapt-printing-width'.")
+   coq-user-init-cmd))
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
@@ -2020,7 +2024,7 @@ shortly before `proof-assert-command-hook', respectively,
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
      (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))
 
-   proof-shell-init-cmd coq-shell-init-cmd
+   proof-shell-init-cmd (coq-shell-init-cmd)
 
    proof-no-fully-processed-buffer t
 

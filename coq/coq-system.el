@@ -56,9 +56,10 @@ On Windows you might need something like:
 
 ;; We just call "rocq" and look the error message that should mention
 ;; subcommands
-(defun coq-detect-rocq-cli ()
-  "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI."
-  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname))))
+(defun coq-detect-rocq-cli (&optional coq-command)
+  "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI.
+If COQ-COMMAND is non nil, test this executable instead."
+  (let* ((coq-command (or coq-command proof-prog-name (coq-autodetect-progname))))
     (condition-case nil
         (string-match
          "Supported subcommands:"
@@ -144,15 +145,17 @@ not found).
 This function supports calling coqtop via tramp.
 This function must not rely on coq-autodetect-version, it would be a cycle."
   (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
-         (coq-args (if (coq-detect-rocq-cli) (list "top" option) (list option)))
+         ;; test the executable we call, not another one
+         (coq-args (if (coq-detect-rocq-cli coq-command) (list "top" option) (list option)))
          retv)
     (condition-case nil
-        ;; Fail gracefully if rocq/coq executable not found
-        (with-temp-buffer
-          (let ((output (with-output-to-string
-                          (setq retv (apply 'process-file coq-command nil
-                                            standard-output nil coq-args)))))
-            (if (or (not expectedretv) (equal retv expectedretv)) output)))
+        ;; Fail gracefully if rocq/coq executable not found.  No
+        ;; `with-temp-buffer' here: the process must run in the
+        ;; environment of the current buffer (e.g., for direnv).
+        (let ((output (with-output-to-string
+                        (setq retv (apply 'process-file coq-command nil
+                                          standard-output nil coq-args)))))
+          (if (or (not expectedretv) (equal retv expectedretv)) output))
       (error
        (message "Warning: No Coq/Rocq version detected yet (tried \"%s\")." coq-command)
        (message "ProofGeneral will not be able to start a prover session until you have one in your path.")
