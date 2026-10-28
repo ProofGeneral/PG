@@ -145,12 +145,12 @@ This function supports calling coqtop via tramp.
 This function must not rely on coq-autodetect-version, it would be a cycle."
   (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
          (coq-args (if (coq-detect-rocq-cli) (list "top" option) (list option)))
-         (process-args (append (list coq-command nil t nil) coq-args))
          retv)
     (condition-case nil
-        (with-temp-buffer
-          (setq retv (apply 'process-file process-args))
-          (if (or (not expectedretv) (equal retv expectedretv)) (buffer-string)))
+        (let ((output (with-output-to-string
+                        (setq retv (apply 'process-file coq-command nil
+                                          standard-output nil coq-args)))))
+          (if (or (not expectedretv) (equal retv expectedretv)) output))
       (error nil))))
 
 (defun coq-autodetect-version (&optional interactive-p)
