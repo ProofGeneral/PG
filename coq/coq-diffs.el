@@ -25,13 +25,20 @@
   (save-excursion
      (re-search-forward regex limit t)))
 
+(defvar coq-removed-tags-regexp
+  "<\\(?:infomsg\\|warning\\)>\n?\\|\n?</\\(?:infomsg\\|warning\\)>"
+  "Regexp matching message tags to remove from text displayed to the user.
+The newline following an opening tag or preceding a closing tag is
+removed too, to avoid empty lines.")
+
 (defun coq-insert-tagged-text (str)
   "Insert text into the current buffer applying faces specified by tags.
 
 For example \\='<diff.added>foo</diff.added>\\=' inserts \\='foo\\=' in the buffer
 and applies the appropriate face.
 
-`coq-tag-map' defines the mapping from tag name to face."
+`coq-tag-map' defines the mapping from tag name to face.  Tags matching
+`coq-removed-tags-regexp' are removed."
 ;; Coq inserts tags before splitting into lines.  Avoid highlighting
 ;; white space at the beginning or end of lines in a conclusion or
 ;; hypothesis that's split across multiple lines.
@@ -45,7 +52,7 @@ and applies the appropriate face.
       (strend)
       (lend)
       (end-white-begin))
-    (insert str)
+    (insert (replace-regexp-in-string coq-removed-tags-regexp "" str))
     (setq strend (copy-marker (point)))
     (goto-char start)
     (while (< (point) strend)
