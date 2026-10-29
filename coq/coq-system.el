@@ -56,9 +56,10 @@ On Windows you might need something like:
 
 ;; We just call "rocq" and look the error message that should mention
 ;; subcommands
-(defun coq-detect-rocq-cli ()
-  "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI."
-  (let* ((coq-command (or proof-prog-name (coq-autodetect-progname))))
+(defun coq-detect-rocq-cli (&optional coq-command)
+  "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI.
+If COQ-COMMAND is non nil, test this executable instead."
+  (let* ((coq-command (or coq-command proof-prog-name (coq-autodetect-progname))))
     (condition-case nil
         (string-match
          "Supported subcommands:"
@@ -144,14 +145,21 @@ not found).
 This function supports calling coqtop via tramp.
 This function must not rely on coq-autodetect-version, it would be a cycle."
   (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
-         (coq-args (if (coq-detect-rocq-cli) (list "top" option) (list option)))
+         ;; test the executable we call, not another one
+         (coq-args (if (coq-detect-rocq-cli coq-command) (list "top" option) (list option)))
          retv)
     (condition-case nil
+        ;; Fail gracefully if rocq/coq executable not found.  No
+        ;; `with-temp-buffer' here: the process must run in the
+        ;; environment of the current buffer (e.g., for direnv).
         (let ((output (with-output-to-string
                         (setq retv (apply 'process-file coq-command nil
                                           standard-output nil coq-args)))))
           (if (or (not expectedretv) (equal retv expectedretv)) output))
-      (error nil))))
+      (error
+       (message "Warning: No Coq/Rocq version detected yet (tried \"%s\")." coq-command)
+       (message "ProofGeneral will not be able to start a prover session until you have one in your path.")
+       nil))))
 
 (defun coq-autodetect-version (&optional interactive-p)
   "Detect and record the version of Coq currently in use.
@@ -172,12 +180,13 @@ Interactively (with INTERACTIVE-P), show that number."
     (setq coq-autodetected-help (or coq-output ""))))
 
 (defun coq--version< (v1 v2)
-  "Compare Coq versions V1 and V2."
+  "Compare Coq versions V1 and V2.
+If V1 or V2 is not a valid version number, return nil."
   ;; -snapshot is only supported by Emacs 24.5, not 24.3
   (let ((version-regexp-alist `(("^[-_+ ]?snapshot$" . -4)
                                 ("^pl$" . 0)
                                 ,@version-regexp-alist)))
-    (version< v1 v2)))
+    (condition-case nil (version< v1 v2) (error nil))))
 
 (defcustom coq-pre-v85 nil
   "Deprecated.

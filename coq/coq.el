@@ -133,7 +133,24 @@ Namely, goals that do not fit in the goals window."
   :group 'coq)
 
 
-(defconst coq-shell-init-cmd
+(defun coq-shell-init-cmd ()
+  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
+Return the list of commands sent to the Coq background process just
+after it has been started.  This happens inside
+`proof-shell-config-done', when the major mode `coq-shell-mode' is
+configured in the `*coq*' buffer.
+
+This is computed each time Coq is started, after the detection of its
+version (see `coq-prog-args'), which may have changed since Proof
+General was loaded (e.g., after a change of opam switch).
+
+Sets silent mode if `coq-run-completely-silent' is set and the
+version of Coq needs it.
+
+In normal interaction, Coq is started because the user asserts
+some commands.  Therefore the commands here are followed by those
+inserted inside `proof-assert-command-hook', respectively,
+`coq-adapt-printing-width'."
   (append
    `(
      ;; Should this variable be buffer-local? No opinion on that but if yes we
@@ -141,21 +158,11 @@ Namely, goals that do not fit in the goals window."
      ;; keeping the current value (that may come from another file).
      ,(format "Add Search Blacklist %s." coq-search-blacklist-current-string))
    '("Set Suggest Proof Using.")
-   (if coq-run-completely-silent '("Set Silent.") ())
-   coq-user-init-cmd)
-  "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
-List of commands sent to the Coq background process just after it
-has been started.  This happens inside `proof-shell-config-done',
-when the major mode `coq-shell-mode' is configured in the `*coq*'
-buffer.
-
-Sets silent mode if `coq-run-completely-silent' is set.  Note that
-this constant is not updated when `coq-run-completely-silent' is changed.
-
-In normal interaction, Coq is started because the user asserts
-some commands.  Therefore the commands here are followed by those
-inserted inside `proof-assert-command-hook', respectively,
-`coq-adapt-printing-width'.")
+   (if (and coq-run-completely-silent
+            (coq--version< (coq-version t) "9.2+alpha"))
+       '("Set Silent.")
+     ())
+   coq-user-init-cmd))
 
 ;; FIXME: Even if we don't use coq-indent for indentation, we still need it for
 ;; coq-script-parse-cmdend-forward/backward and coq-find-real-start.
@@ -179,10 +186,7 @@ inserted inside `proof-assert-command-hook', respectively,
 
 (defvar coq-shell-proof-completed-regexp
   (concat "No\\s-+more\\s-+\\(?:sub\\)?goals\\.\\|Subtree\\s-proved!\\|"
-          "Proof\\s-completed\\|"
-          ;; if printing width is small, eg. when running in batch mode,
-          ;; there might be a line break after infomsg
-          "<infomsg>\n?.*\\s-is\\s-declared"
+          "Proof\\s-completed"
           ;; \\|This subproof is complete
           )
   "*Regular expression indicating that the proof has been completed.
@@ -194,6 +198,19 @@ fail to delete the goals buffer.")
 
 (defvar coq-goal-regexp
   "\\(============================\\)\\|\\(\\(?:sub\\)?goal [0-9]+\\)\n")
+
+(defvar coq-start-goals-regexp
+  (concat
+   ;; messages about the proof state are displayed with the goals
+   "\\(?:<infomsg>\\s-*\\(?:This subproof is complete"
+   "\\|All the remaining goals are on the shelf"
+   "\\|No more \\(?:sub\\)?goals\\)[^<]*</infomsg>\\s-*\\)?"
+   "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
+   "\\|No more \\(?:sub\\)?goals\\.")
+  "Coq instance of `proof-shell-start-goals-regexp'.
+Messages about the state of the proof (subproof or proof complete,
+goals on the shelf or given up) are part of the goals output, so that
+they are displayed in the goals buffer instead of the response buffer.")
 
 
 (defconst coq-interrupt-regexp "User Interrupt."
@@ -370,122 +387,6 @@ It is mostly useful in three window mode, see also
          (frame-resp (mapcar #'window-frame wins-resp))
          (frame-gls (mapcar #'window-frame wins-gls)))
     (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
-
-
-(defun coq-remove-starting-blanks (s)
-  (string-match "\\`\\s-*" s)
-  (substring s (match-end 0) (length s)))
-
-
-;; Messages dispalyed by "Time" are always following or preceding the real
-;; result, if it follows we want it to be non urgent, otherwise the result
-;; would not be shown in response buffer. If it is before, then we want it
-;; urgent so that it is displayed.
-(defvar coq-eager-no-urgent-regex "\\s-*Finished "
-  "Regexp of commands matching `proof-shell-eager-annotation-start'
-that should maybe not be classified as urgent messages.")
-
-;; return the end position if found, nil otherwise
-(defun coq-non-urgent-eager-annotation ()
-  (save-excursion
-    (when (and (looking-at coq-eager-no-urgent-regex)
-               (re-search-forward proof-shell-eager-annotation-end nil t))
-      (let ((res (match-end 0))); robustify
-        ;; if there is something else than a prompt here then this eager
-        ;; annotation is left urgent (return nil), otherwise it is not urgent
-        ;; (return position of the end of the annotation)
-        (when (looking-at (concat "\\s-*" proof-shell-annotated-prompt-regexp))
-          res)))))
-
-;; Looking for eager annotation which does not match coq-eager-no-urgent-regex
-(defun coq-search-urgent-message ()
-  "Find forward the next really urgent message.
-Return the position of the beginning of the message (after the
-annotation-start) if found."
-  (let ((again t) (start-start nil) (end-end nil) ;; (found nil)
-        (eager proof-shell-eager-annotation-start))
-    (while again
-      (setq start-start (and (re-search-forward eager nil 'limit)
-                             (match-beginning 0)))
-      (setq end-end (and start-start (coq-non-urgent-eager-annotation)))
-      (unless end-end
-        (setq again nil) ; exit while
-        ;; display message (this prints the message once now but it will be
-        ;; reprinted as a normal output, bad?)
-        ;;(proof-shell-process-urgent-message start-start end-end)
-        ))
-    (and start-start (goto-char start-start))))
-
-;; This is a modified version of the same function in generic/proof-shell.el.
-;; Using function coq-search-urgent-message instead of regex
-;; proof-shell-eager-annotation-start, in order to let non urgent message as
-;; such. i.e. "Time" messages.
-(defun proof-shell-process-urgent-messages ()
-  "Scan the shell buffer for urgent messages.
-Scanning starts from `proof-shell-urgent-message-scanner' or
-`scomint-last-input-end', which ever is later.  We deal with strings
-between regexps `proof-shell-eager-annotation-start' and
-`proof-shell-eager-annotation-end'.
-
-We update `proof-shell-urgent-message-marker' to point to last message found.
-
-This is a subroutine of `proof-shell-filter'."
-  (let ((pt (point)) (end t)
-	lastend laststart
-	(initstart (max  (marker-position proof-shell-urgent-message-scanner)
-			 (marker-position scomint-last-input-end))))
-    (goto-char initstart)
-    (while (and end (setq laststart (coq-search-urgent-message))
-                )
-;      (setq laststart (match-beginning 0))
-      (if (setq end
-		(re-search-forward proof-shell-eager-annotation-end nil t))
-	  (save-excursion
-	    (setq lastend end)
-	    ;; Process the region including the annotations
-	    (proof-shell-process-urgent-message laststart lastend))))
-
-    (set-marker
-     proof-shell-urgent-message-scanner
-     (if end ;; couldn't find message start; move forward to avoid rescanning
-         (max (or lastend 1) ;; goto after last end urgent msg
-              ;; or near the end of current output if that jumps farther.
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
-       ;; incomplete message; leave marker at start of message
-       laststart))
-
-    ;; Set position of last urgent message found
-    (if lastend
-	(set-marker proof-shell-urgent-message-marker lastend))
-
-    (goto-char pt)))
-
-;; Due to the architecture of proofgeneral, informative message put *before*
-;; the goal disappear unless marked as "urgent", i.e. being enclosed with
-;; "eager-annotation" syntax. Since we don't want the Warning color to be used
-;; for simple informative message, we have to redefine this function to use
-;; normal face when the "eager annotation" is acutally not a warning. This is a
-;; modified version of the same function in generic/proof-shell.el.
-(defun proof-shell-process-urgent-message-default (start end)
-  "A subroutine of `proof-shell-process-urgent-message'."
-  ;; Clear the response buffer this time, but not next, leave window.
-  (pg-response-maybe-erase nil nil)
-  (proof-minibuffer-message
-   (buffer-substring-no-properties
-    (save-excursion
-      (re-search-forward proof-shell-eager-annotation-start end nil)
-      (point))
-    (min end
-         (save-excursion (end-of-line) (point))
-         (+ start 75))))
-  (goto-char start)
-  (let* (;; (face (if (looking-at "<infomsg>") 'default
-         ;;         'proof-eager-annotation-face))
-         (str (proof-shell-strip-eager-annotations start end))
-         (strnotrailingspace
-          (coq-remove-starting-blanks (proof-strip-whitespace-at-end str))))
-    (pg-response-display-with-face strnotrailingspace))) ; face
 
 
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
@@ -2112,6 +2013,9 @@ shortly before `proof-assert-command-hook', respectively,
    ;; this requires changes in Coq.
    proof-shell-eager-annotation-start coq-shell-eager-annotation-start
    proof-shell-eager-annotation-start-length 32
+   ;; no warning face for the whole message, rely on font-lock and on
+   ;; `coq-insert-tagged-text' instead
+   proof-shell-eager-annotation-face nil
 
    ;; we need these two strings to be recognized so that the first appearing is
    ;; analyzed
@@ -2127,13 +2031,13 @@ shortly before `proof-assert-command-hook', respectively,
    proof-shell-result-end "\372 End Pbp result \373"
 
 ;   proof-shell-start-goals-regexp          "^\\(?:(dependent evars:[^)]*)\\s-+\\)?[0-9]+\\(?: focused\\)? subgoals?"
-   proof-shell-start-goals-regexp          "[0-9]+\\(?: focused\\)? \\(?:sub\\)?goals?"
+   proof-shell-start-goals-regexp          coq-start-goals-regexp
    proof-shell-end-goals-regexp
    (if coq-hide-additional-subgoals
        (setq proof-shell-end-goals-regexp coq-end-goals-regexp-hide-subgoals)
      (setq proof-shell-end-goals-regexp coq-end-goals-regexp-show-subgoals))
 
-   proof-shell-init-cmd coq-shell-init-cmd
+   proof-shell-init-cmd (coq-shell-init-cmd)
 
    proof-no-fully-processed-buffer t
 
@@ -3412,10 +3316,14 @@ number of hypothesis displayed, without hiding the goal"
   "Clear goals buffer outside proofs.
 This function ensures that the goals buffer is reset after Qed or
 Admitted.  This function is for
-`proof-shell-handle-delayed-output-hook'."
+`proof-shell-handle-delayed-output-hook'.
+
+A proof completed message which has been displayed in the goals
+buffer (see `coq-start-goals-regexp') is kept."
   (when (or (not coq-last-but-one-proofstack)
-            (proof-string-match coq-shell-proof-completed-regexp
-                                proof-shell-last-output))
+            (and (not (eq proof-shell-last-output-kind 'goals))
+                 (proof-string-match coq-shell-proof-completed-regexp
+                                     proof-shell-last-output)))
     (proof-clean-buffer proof-goals-buffer)))
 
 

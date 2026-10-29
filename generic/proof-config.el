@@ -1413,6 +1413,17 @@ The default value is \"\\n\" to match up to the end of the line."
   :type '(choice regexp (const :tag "Unset" nil))
   :group 'proof-shell)
 
+(defcustom proof-shell-eager-annotation-face 'proof-eager-annotation-face
+  "Face used to display urgent messages in the response buffer, or nil.
+Urgent messages are those delimited by `proof-shell-eager-annotation-start'
+and `proof-shell-eager-annotation-end'.
+
+If nil, no face is applied: the message is inserted with
+`pg-insert-text-function' and fontified like any other response,
+see `proof-response-font-lock-keywords'."
+  :type '(choice face (const :tag "No face" nil))
+  :group 'proof-shell)
+
 (defcustom proof-shell-strip-output-markup 'identity
   "A function which strips markup from the process output.
 This should remove any markup which is made invisible by font-lock

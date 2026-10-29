@@ -27,6 +27,7 @@
 
 
 ;; Some tests show different behaviour in 8.7, load stuff for `coq--version<'
+(require 'subr-x)
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
@@ -287,10 +288,11 @@ window also in two-pane mode."
           (set-buffer-modified-p nil))
         (kill-buffer buffer)))))
 
-(defun goals-buffer-should-be-empty (pos msg)
+(defun goals-buffer-should-be-empty (pos msg &optional content)
   "Check that `*goals*' is empty after asserting/retracting to POS.
 MSG is only used in a message, it should tell after which action
-the goals buffer is expected to be empty."
+the goals buffer is expected to be empty.  If CONTENT is non-nil,
+the goals buffer must instead match the regular expression CONTENT."
   (message "Check that goals buffer is empty after %s" msg)
   (goto-char pos)
   (proof-goto-point)
@@ -300,16 +302,20 @@ the goals buffer is expected to be empty."
 
   ;; check that the goals buffer is empty
   (with-current-buffer proof-goals-buffer
-    (should (equal (point-min) (point-max)))))
+    (if content
+        (should (string-match-p content (string-trim (buffer-string))))
+      (should (equal (point-min) (point-max))))))
 
-(defun goals-buffer-should-get-reset (coq-src coq-stm msg)
+(defun goals-buffer-should-get-reset (coq-src coq-stm msg &optional content)
   "Check that the goals buffer is reset.
 Put the string COQ-SRC into a buffer and assert until the first
 occurrence of COQ-STM, which should be a regular expression.  At
 this point the goals buffer needs to contain something.  Then
 assert to the end of COQ-SRC and check that the goals buffer has
 been reset.  MSG is used in messages only.  It should say after
-which action the goals buffer should have been reset."
+which action the goals buffer should have been reset.  If CONTENT
+is non-nil, the reset goals buffer must match the regular expression
+CONTENT."
   (message "Check that goals are reset after %s." msg)
   (let (buffer)
     (unwind-protect
@@ -332,7 +338,7 @@ which action the goals buffer should have been reset."
           (with-current-buffer proof-goals-buffer
             (should (not (equal (point-min) (point-max)))))
 
-          (goals-buffer-should-be-empty (point-max) msg))
+          (goals-buffer-should-be-empty (point-max) msg content))
 
       ;; clean up
       (when buffer
@@ -366,9 +372,10 @@ which action the goals buffer should have been reset."
   (goals-buffer-should-get-reset coq-src-admitted "intros P" "Admitted"))
 
 (ert-deftest goals-reset-no-more-goals ()
-  "The goals buffer is reset when there are no more goals."
+  "The goals buffer only shows \"No more goals.\" when there are no more goals."
   (goals-buffer-should-get-reset coq-src-no-more-goals
-                                 "Lemma a" "no more goals"))
+                                 "Lemma a" "no more goals"
+                                 "\\`No more \\(?:sub\\)?goals\\.\\'"))
 
 (ert-deftest goals-reset-qed ()
   "The goals buffer is reset after Qed."
@@ -517,9 +524,11 @@ variable and check that the error message is displayed."
           ;; (record-buffer-content "*coq*")
           ;; (record-buffer-content "*response*")
 
-          ;; check that the goals buffer is empty
+          ;; check that the goals buffer shows no goal (the proof is
+          ;; still open after the error, without remaining goals)
           (with-current-buffer proof-goals-buffer
-            (should (equal (point-min) (point-max))))
+            (should (string-match-p "\\`\\(?:No more \\(?:sub\\)?goals\\.\\)?\\'"
+                                    (string-trim (buffer-string)))))
 
           (with-current-buffer proof-response-buffer
             (goto-char (point-min))

@@ -1428,7 +1428,10 @@ ends with text matching `proof-shell-eager-annotation-end'."
 (defun proof-shell-process-urgent-message-default (start end)
   "A subroutine of `proof-shell-process-urgent-message'."
   ;; Clear the response buffer this time, but not next, leave window.
-  (pg-response-maybe-erase nil nil)
+  ;; Keep it if the command being processed asks for it (e.g., a Show
+  ;; command sent after the user's last command).
+  (pg-response-maybe-erase nil nil nil
+                           (memq 'keep-response (nth 3 (car proof-action-list))))
   (proof-minibuffer-message
    (buffer-substring-no-properties
     (save-excursion
@@ -1437,9 +1440,13 @@ ends with text matching `proof-shell-eager-annotation-end'."
     (min end
 	 (save-excursion (end-of-line) (point))
 	 (+ start 75))))
-  (pg-response-display-with-face
-   (proof-shell-strip-eager-annotations start end)
-   'proof-eager-annotation-face))
+  (let ((str (proof-shell-strip-eager-annotations start end)))
+    ;; remove blanks around the message, newlines are added by
+    ;; `pg-response-display-with-face'
+    (string-match "\\`\\s-*" str)
+    (pg-response-display-with-face
+     (proof-strip-whitespace-at-end (substring str (match-end 0)))
+     proof-shell-eager-annotation-face)))
 
 (defun proof-shell-process-urgent-message-trace (start end)
   "Display a message in the tracing buffer.
@@ -1723,8 +1730,15 @@ This is a subroutine of `proof-shell-filter'."
      proof-shell-urgent-message-scanner
      (if end ;; couldn't find message start; move forward to avoid rescanning
 	 (max initstart
-	      (- (point)
-		 (1+ proof-shell-eager-annotation-start-length)))
+	      ;; never rescan an already processed message (see #214)
+	      (or lastend initstart)
+	      ;; but rescan enough to catch a message start that may be
+	      ;; incomplete.  The beginning of the line covers it even
+	      ;; when `proof-shell-eager-annotation-start-length' is too
+	      ;; small, provided message starts don't span several lines.
+	      (min (- (point)
+		      (1+ proof-shell-eager-annotation-start-length))
+		   (line-beginning-position)))
        ;; incomplete message; leave marker at start of message
        laststart))
 
@@ -1875,9 +1889,12 @@ i.e., \\+`goals' or \\+`response'."
         (setq both
 	      (> (- gmark rstart) 4))
         (if both
-	    (proof-shell-display-output-as-response
-	     flags
-	     (buffer-substring-no-properties rstart gmark)))
+            (progn
+              (if (member 'keep-response flags)
+                  (setq pg-response-erase-flag nil))
+	      (proof-shell-display-output-as-response
+	       flags
+	       (buffer-substring-no-properties rstart gmark))))
         ;; display goals output second so it persists in 2-pane mode
         (unless (memq 'no-goals-display flags)
 	  (pg-goals-display proof-shell-last-goals-output
@@ -1887,6 +1904,8 @@ i.e., \\+`goals' or \\+`response'."
         (setq proof-shell-last-output-kind 'goals)))
 
      (t
+      (if (member 'keep-response flags)
+          (setq pg-response-erase-flag nil))
       (proof-shell-display-output-as-response flags proof-shell-last-output)
       ;; indicate that (only) a response output has been given
       (if (equal proof-shell-last-output "")
