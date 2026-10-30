@@ -228,7 +228,7 @@ completely processing the buffer as the last step."
 
 	(t
 	 (pg-autotest-message
-	  " random jump: going to point: %d" random-point))
+	  " random jump: going to point: %d" random-point)
 	 (goto-char random-point)
 	 (unless (if (>= (point) (proof-unprocessed-begin))
 		     (proof-only-whitespace-to-locked-region-p))
@@ -242,7 +242,7 @@ completely processing the buffer as the last step."
 		    " random jump: interrupting prover")
 		   (proof-interrupt-process)))
 	     (proof-shell-wait))
-	   (cl-decf jumps)))))
+	   (cl-decf jumps))))))
   (unless (proof-locked-region-full-p)
     (proof-process-buffer)
     (proof-shell-wait))
