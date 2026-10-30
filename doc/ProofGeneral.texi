@@ -5190,6 +5190,8 @@ forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
 @lisp
   - A list of the form @samp{(}ocamlimport dir)', specifying (in 8.5) a
     directory to be added to Ocaml path (@samp{-I}).
+  - A list of the form @samp{(}package name)', specifying (since 9.3) a
+    ocamlfind package with Rocq files.
   - A list of the form @samp{(}rec dir path)' (where dir and path are
     strings) specifying a directory to be recursively mapped to the
     logical path @code{path} (@samp{-R dir path}).
