@@ -28,6 +28,8 @@
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
 
+(declare-function coq-pg-setup "coq")   ; coq.el requires this file
+
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
   :group 'programming)

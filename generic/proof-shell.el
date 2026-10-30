@@ -71,6 +71,7 @@
 ;; dependency.
 (declare-function proof-tree-handle-delayed-output "proof-tree"
 		  (old-proof-marker cmd flags _span))
+(declare-function proof-tree-urgent-action "proof-tree" (last-item))
 ;; without the nil initialization the compiler still warns about this variable
 (defvar proof-tree-external-display)
 

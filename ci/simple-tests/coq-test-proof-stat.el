@@ -15,6 +15,9 @@
 
 ;;; Code:
 
+(declare-function proof-shell-exit "proof-shell")
+(declare-function proof-check-report "pg-user")
+
 (defun reset-coq ()
   "Reset Coq and Proof General.
 Do `proof-shell-exit' to kill Coq and reset the locked region and

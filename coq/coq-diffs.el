@@ -15,6 +15,8 @@
 
 ;;; Code:
 
+(require 'span)
+
 (defun coq-highlight-with-face (end face)
   (if face
     ;; (put-text-property (point) end 'face face) doesn't work
