@@ -143,10 +143,10 @@ Return a symbol representing the PGIP command processed, or nil."
     (dolist (config pgmlconfigures)
       (cond
        ((and (not (stringp config))
-	     (eq (xml-node-name config) "symconfig"))
+	     (eq (xml-node-name config) 'symconfig))
 	(let
-	    ((symname   (pg-pgip-get-symname node))
-	     (asciialt  (pg-xml-get-attr 'alt node t)))
+	    ((symname   (pg-pgip-get-symname config))
+	     (asciialt  (pg-xml-get-attr 'alt config t)))
 	  (put (intern symname)
 	       'pgml-alt asciialt)))
        (t
