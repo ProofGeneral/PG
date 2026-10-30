@@ -30,7 +30,7 @@
 ;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../coq/coq-abbrev.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-abbrev" '("coq-" "holes-show-doc")))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../coq/coq-abbrev" '("coq-")))
 
 ;;;***
 
@@ -183,119 +183,6 @@ Stop keeping ring history for current buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads nil "../lib/holes" "../lib/holes.el" (0 0 0 0))
-;;; Generated autoloads from ../lib/holes.el
-
-(autoload 'holes-set-make-active-hole "../lib/holes" "\
-Make a new hole between START and END or at point, and make it active.
-
-\(fn &optional START END)" t nil)
-
-(autoload 'holes-mode "../lib/holes" "\
-Toggle Holes minor mode.
-With arg, turn Outline minor mode on if arg is positive, off otherwise.
-
-The mode `holes-mode' is meant to help program editing.  It is
-useful to build complicated expressions by copy pasting several
-peices of text from different parts of a buffer (or even from
-different buffers).
-
-HOLES
-
-A hole is a piece of (highlighted) text that may be replaced by
-another part of text later.  There is no information stored on the
-file for holes, so you can save and modify files containing holes with
-no harm... You can even insert or delete characters inside holes like
-any other characters.
-
-USE
-
-At any time only one particular hole, called \"active\", can be
-\"filled\".  Holes can be in several buffers but there is always one or
-zero active hole globally.  It is highlighted with a different color.
-
-Functions described below have default shortcuts when `holes-mode' is
-on that you can customize.
-
-TO DEFINE A HOLE, two methods:
-
- o Select a region with keyboard or mouse, then use
-   \\[holes-set-make-active-hole].  If the selected region is empty,
-   then a hole containing # is created at point.
-
- o Select text with mouse while pressing ctrl and meta (`C-M-select').
-   If the selected region is empty (i.e. if you just click while
-   pressing ctrl+meta), then a hole containing # is created.
-
-TO ACTIVATE A HOLE, click on it with the button 1 of your mouse.  The
-previous active hole will be deactivated.
-
-TO FORGET A HOLE without deleting its text, click on it with the
-button 2 (middle) of your mouse.
-
-TO DESTROY A HOLE and delete its text, click on it with the button 3
-of your mouse.
-
-TO FILL A HOLE with a text selection, first make sure it is active,
-then two methods:
-
- o Select text with keyboard or mouse and hit
-   \\[holes-replace-update-active-hole]
-
- o Select text with mouse while pressing ctrl, meta and shift
-   (`C-M-S-select').  This is a
-   generalization of the `mouse-track-insert' feature of XEmacs.  This
-   method allows you to fill different holes faster than with the usual
-   copy-paste method.
-
-After replacement the next hole is automatically made active so you
-can fill it immediately by hitting again
-\\[holes-replace-update-active-hole] or `C-M-S-select'.
-
-TO JUMP TO THE ACTIVE HOLE, just hit
-\\[holes-set-point-next-hole-destroy].  You must
-be in the buffer containing the active hole.  the point will move to
-the active hole, and the active hole will be destroyed so you can type
-something to put at its place.  The following hole is automatically
-made active, so you can hit \\[holes-set-point-next-hole-destroy]
-again.
-
-It is useful in combination with abbreviations.  For example in
-`coq-mode' \"fix\" is an abbreviation for Fixpoint # (# : #) {struct #} :
-# := #, where each # is a hole. Then hitting
-\\[holes-set-point-next-hole-destroy] goes from one hole to the
-following and you can fill-in each hole very quickly.
-
-COMBINING HOLES AND SKELETONS
-
-`holes' minor mode is made to work with minor mode `skeleton' minor
-mode.
-
-KNOWN BUGS
-
- o Don't try to make overlapping holes, it doesn't work. (what would
-it mean anyway?)
-
- o Cutting or pasting a hole will not produce new holes, and
-undoing on holes cannot make holes re-appear.
-
-\(fn &optional ARG)" t nil)
-
-(autoload 'holes-abbrev-complete "../lib/holes" "\
-Complete abbrev by putting holes and indenting.
-Moves point at beginning of expanded text.  Put this function as
-call-back for your abbrevs, and just expanded \"#\" and \"@{..}\" will
-become holes." nil nil)
-
-(autoload 'holes-insert-and-expand "../lib/holes" "\
-Insert S, expand it and replace #s and @{]s by holes.
-
-\(fn S)" nil nil)
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "../lib/holes" '("hole")))
-
-;;;***
-
 ;;;### (autoloads nil "../lib/local-vars-list" "../lib/local-vars-list.el"
 ;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../lib/local-vars-list.el
@@ -404,7 +291,7 @@ Configure Proof General for profiling.  Use \\[elp-results] to see results." t n
 ;;;### (autoloads nil "pg-custom" "pg-custom.el" (0 0 0 0))
 ;;; Generated autoloads from pg-custom.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-custom" '("completion-table" "favourites" "help-menu-entries" "keymap" "maths-menu-enable" "menu-entries" "one-command-per-line" "pro" "quit-timeout" "script-indent" "tags-program" "toolbar-entries" "unicode-tokens-enable" "use-holes")))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "pg-custom" '("completion-table" "favourites" "help-menu-entries" "keymap" "maths-menu-enable" "menu-entries" "one-command-per-line" "pro" "quit-timeout" "script-indent" "tags-program" "toolbar-entries" "unicode-tokens-enable")))
 
 ;;;***
 

@@ -1784,16 +1784,6 @@ at `proof-assistant-settings-cmds' evaluation time.")
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Holes mode switch
-;; TODO: have this plugged agian when we have abbreviation without holes
-;; For now holes are always enabled.
-;(defpacustom use-editing-holes t
-;  "Enable holes for editing."
-;  :type 'boolean)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;   Configuring proof and pbp mode and setting up various utilities  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2050,7 +2040,6 @@ shortly before `proof-assert-command-hook', respectively,
    proof-shell-restart-cmd coq-shell-restart-cmd
    pg-subterm-anns-use-stack t)
 
-  ;; (holes-mode 1)  da: does the shell really need holes mode on?
   (setq proof-shell-font-lock-keywords 'coq-font-lock-keywords-1)
 
   ;; prooftree config

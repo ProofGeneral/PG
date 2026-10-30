@@ -209,6 +209,11 @@
 ;; file. This simplifies the logic for deciding about recompilation
 ;; quite a bit.
 ;;
+;; Since Rocq 9.2, coqc does not produce the empty .vos and .vok files
+;; any more when compiling to .vo, and coqc -vok does not produce the
+;; .vok file any more. Therefore coq-par-coqc-continuation and
+;; coq-par-vok-continuation create these files themselves.
+;;
 ;;
 ;; For 6- running vio2vo or -vok to check proofs
 ;;
@@ -2234,6 +2239,17 @@ is directly passed to `coq-par-analyse-coq-dep-exit'."
 	(message "%s: wait for %d dependencies"
 		 (get job 'name) (get job 'coqc-dependency-count))))))
 
+(defun coq-par-create-empty-file (file)
+  "Create FILE as an empty file, overwriting any previous content.
+This mimics coqc before Rocq 9.2, which created empty .vos and
+.vok files when compiling to .vo and an empty .vok file for -vok.
+Overwriting is necessary because a stale .vos from an earlier -vos
+compilation must not become valid again."
+  (when coq--debug-auto-compilation
+    (message "create empty file %s" file))
+  (let ((coding-system-for-write 'no-conversion))
+    (write-region "" nil file nil 'silent)))
+
 (defun coq-par-coqc-continuation (process exit-status)
   "Coqc continuation function.
 If coqc failed, signal an error or mark the job as \\+`failed', and
@@ -2244,6 +2260,13 @@ behind PROCESS."
     (if (eq exit-status 0)
 	(progn
 	  ;; coqc success
+	  (when (and (coq--post-v811) (not (eq (get job 'use-quick) 'vos)))
+	    ;; Since Rocq 9.2 coqc does not produce empty .vos and .vok
+	    ;; files any more when compiling to .vo, but
+	    ;; coq-par-job-needs-compilation-vos relies on them.
+	    (let ((vo-file (get job 'vo-file)))
+	      (coq-par-create-empty-file (coq-library-vos-of-vo-file vo-file))
+	      (coq-par-create-empty-file (coq-library-vok-of-vo-file vo-file))))
 	  (when (get job 'second-stage)
 	    (coq-par-second-stage-enqueue job))
 	  (coq-par-kickoff-coqc-dependants job t))
@@ -2261,12 +2284,16 @@ behind PROCESS."
 
 (defun coq-par-vok-continuation (process exit-status)
   "Vok continuation function.
-Nothing to do in case of success.  Otherwise display the errors."
+In case of success create the .vok file.  Otherwise display the errors."
   (let ((job (process-get process 'coq-compilation-job)))
     (if (eq exit-status 0)
-	;; success - nothing to do
-	(when coq--debug-auto-compilation
-	  (message "%s: vok finished successfully" (get job 'name)))
+	(progn
+	  ;; Since Rocq 9.2 coqc -vok does not produce the .vok file any
+	  ;; more, see coq-par-coqc-continuation.
+	  (coq-par-create-empty-file
+	   (coq-library-vok-of-vo-file (get job 'vo-file)))
+	  (when coq--debug-auto-compilation
+	    (message "%s: vok finished successfully" (get job 'name))))
       (when coq--debug-auto-compilation
 	(message "%s: vok failed" (get job 'name)))
       (coq-compile-display-error

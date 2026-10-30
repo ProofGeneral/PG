@@ -1306,38 +1306,38 @@ If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."
 ;;;;;;;;;; DEBUG CODE ;;;;;;
 ;; smie-config-show-indent is sufficient most of the time.
 
-(defun coq-debug-smie--parent (point parent &optional num)
-  ;;refresh highlighting? Not a good idea since this is called several times.
-  ;;(hlt-unhighlight-region)
-  (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
-         (end (cadr parent))
-         (regi (list (list beg end)))
-         (tok (car (cddr parent)))
-         (face (cond
-                ((equal num 1) 'hlt-regexp-level-1)
-                ((equal num 2) 'hlt-regexp-level-2)
-                (t 'hlt-regexp-level-1))))
-    ;; uncomment to see visually the region
-    ;;(and parent (hlt-highlight-regions regi face))
-    ;;(when end (hlt-highlight-regions (list (list end (+ end 1))) 'hlt-regexp-level-1))
-    ;; and the point considered
-    (hlt-highlight-regions (list (list point (+ point 1))) 'holiday)))
+;; (defun coq-debug-smie--parent (point parent &optional num)
+;;   ;;refresh highlighting? Not a good idea since this is called several times.
+;;   ;;(hlt-unhighlight-region)
+;;   (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
+;;          (end (cadr parent))
+;;          (regi (list (list beg end)))
+;;          (tok (car (cddr parent)))
+;;          (face (cond
+;;                 ((equal num 1) 'hlt-regexp-level-1)
+;;                 ((equal num 2) 'hlt-regexp-level-2)
+;;                 (t 'hlt-regexp-level-1))))
+;;     ;; uncomment to see visually the region
+;;     ;;(and parent (hlt-highlight-regions regi face))
+;;     ;;(when end (hlt-highlight-regions (list (list end (+ end 1))) 'hlt-regexp-level-1))
+;;     ;; and the point considered
+;;     (hlt-highlight-regions (list (list point (+ point 1))) 'holiday)))
 
-;; Debugging smie rules calls, needs the highlight library and
-;; something like this in .emacs: (require 'highlight)
-;; (custom-set-faces '(highlight ((((type x) (class color) (background light)) (:background "Wheat")))))
-(defun coq-show-smie--parent (parent token parent-token &optional num msg)
-  (ignore-errors
-   (message "%s token: %S ; parent: %S ; parent-token: %S" msg token parent parent-token)
-   (hlt-unhighlight-region)
-   (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
-          (end (cadr parent))
-          (regi (list (list beg end)))
-          ;; (tok (car (cddr parent)))
-          (face (cond
-                 ((equal num 2) 'hlt-regexp-level-2)
-                 (t 'hlt-regexp-level-1))))
-     (and parent (hlt-highlight-regions regi face)))))
+;; ;; Debugging smie rules calls, needs the highlight library and
+;; ;; something like this in .emacs: (require 'highlight)
+;; ;; (custom-set-faces '(highlight ((((type x) (class color) (background light)) (:background "Wheat")))))
+;; (defun coq-show-smie--parent (parent token parent-token &optional num msg)
+;;   (ignore-errors
+;;    (message "%s token: %S ; parent: %S ; parent-token: %S" msg token parent parent-token)
+;;    (hlt-unhighlight-region)
+;;    (let* ((beg (if (listp (car parent)) (caar parent) (car parent)))
+;;           (end (cadr parent))
+;;           (regi (list (list beg end)))
+;;           ;; (tok (car (cddr parent)))
+;;           (face (cond
+;;                  ((equal num 2) 'hlt-regexp-level-2)
+;;                  (t 'hlt-regexp-level-1))))
+;;      (and parent (hlt-highlight-regions regi face)))))
 ;;;;;;;;;; END DEBUG CODE ;;;;;;;;;;;;
 
 (defun coq-indent-categorize-token-after (tk)
