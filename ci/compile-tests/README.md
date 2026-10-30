@@ -42,6 +42,8 @@ All tests are for parallel background compilation.
 011-current-buffer
 : check that background compilation is not confused by local variables
   in unrelated buffers
+012-interrupt-compilation
+: interrupt a background compilation while Coq is idle
 
 # Tests currently missing
 
