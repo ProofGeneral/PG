@@ -18,9 +18,10 @@ function usage(){
     cat <<-EOF
 	usage: compile-test-start-delayed key prog args...
 
-	Start program prog with arguments args with some delay. There
-	must be at least one argument in args and the last one must be
-	a file or something that becomes a file when ".v" is appended.
+	Start program prog with arguments args with some delay. One of
+	args must be a file or something that becomes a file when ".v"
+	is appended; when there are several, the last one is used.
+	Options such as -vos may follow the file.
 	The delay is taken from a line in that file that
 	contains the key, followed by a space and the delay in seconds
 	(maybe somewhere in the middle of the line). The file must
@@ -43,20 +44,25 @@ fi
 # echo compile-test-start-delayed "$@"
 
 key="$1"
-file="${@: -1}"
 
 #echo key $key file "\"$file\""
 
 shift
 
+# The file is not necessarily the last argument: options such as
+# -vos or -vok are added after it.
 # vio2vo needs a module name or a .vio file on the command line
 # support only module names for now
-if [ ! -f "$file" ] ; then
-    if [ -f "$file.v" ] ; then
-        file="$file.v"
-    else
-        exit 22
+file=""
+for arg in "${@:2}" ; do
+    if [ -f "$arg" ] ; then
+        file="$arg"
+    elif [ -f "$arg.v" ] ; then
+        file="$arg.v"
     fi
+done
+if [ -z "$file" ] ; then
+    exit 22
 fi
 
 delay=$(sed -ne "/$key/ s/.*$key \([X0-9.]*\).*/\1/p" $file)

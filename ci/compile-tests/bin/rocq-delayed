@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Delayed rocq for the Rocq command line interface: delay "rocq c"
+# like coqc-delayed and "rocq dep" like coqdep-delayed. Other
+# subcommands are run without delay.
+
+case "$1" in
+    c) exec compile-test-start-delayed coqc-delay rocq "$@" ;;
+    dep) exec compile-test-start-delayed coqdep-delay rocq "$@" ;;
+    *) exec rocq "$@" ;;
+esac

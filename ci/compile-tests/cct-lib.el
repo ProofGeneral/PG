@@ -392,14 +392,20 @@ from directory ../bin.  These scripts delay the start of the real
 coqdep and coqc as specified in the Coq source file, see
 ../bin/compile-test-start-delayed.
 
+With the Rocq command line interface, use rocq-delayed for both.
+
 This function uses relative file names and must be called in a
 test subdirectory parallel to the bin directory."
   (let ((bin-dir (file-truename "../bin")))
     (add-to-list 'exec-path bin-dir)
     (setenv "PATH" (concat bin-dir ":" (getenv "PATH")))
-    (custom-set-variables
-     '(coq-dependency-analyzer "coqdep-delayed")
-     '(coq-compiler "coqc-delayed"))))
+    (if (coq-detect-rocq-cli)
+        (custom-set-variables
+         '(coq-dependency-analyzer "rocq-delayed")
+         '(coq-compiler "rocq-delayed"))
+      (custom-set-variables
+       '(coq-dependency-analyzer "coqdep-delayed")
+       '(coq-compiler "coqc-delayed")))))
 
 (provide 'cct-lib)
 
