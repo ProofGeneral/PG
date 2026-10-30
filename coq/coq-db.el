@@ -87,8 +87,6 @@ the first hole even if more than one."
 	 (pt (point)))
     (if f (funcall f) ; call f if present
       (insert (or s tac)) ; insert completion and indent otherwise
-      ;; FIXHOLE
-      ;;(holes-replace-string-by-holes-backward-jump pt nil alwaysjump)
       (indent-according-to-mode))))
 
 
@@ -275,7 +273,7 @@ See `coq-syntax-db' for DB structure."
   (cond
    ;; FIXME: define a "end point for the snippet: that is the place where the
    ;; cursor should go after fiolling the holes. Generally it is the place where
-   ;; you want to continue editing.
+   ;; you want to continue editing. 
    ((string-equal mtch "#") (concat "$" (int-to-string i)))
    (t (concat "${" (int-to-string i) ":" (match-string 1 mtch) "}"))
    )

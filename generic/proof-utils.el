@@ -52,6 +52,7 @@
 
 
 (require 'proof-site)			; basic vars
+(require 'pg-vars)			; proof-assistant
 (require 'pg-pamacs)			; macros for pa config
 (require 'proof-config)			; config vars
 (require 'bufhist)			; bufhist
@@ -499,33 +500,23 @@ or if the window is the only window of its frame."
 ;;
 
 (defun proof-submit-bug-report ()
-  "Submit an bug report or other report for Proof General."
+  "Display how to report a bug, with the versions to include in the report.
+Also open the Proof General issue tracker in a browser."
   (interactive)
-  (require 'reporter)
-  (let
-      ((reporter-prompt-for-summary-p
-	"(Very) brief summary of problem or suggestion: "))
-    (reporter-submit-bug-report
-     "da+pg-bugs@inf.ed.ac.uk"
-     "Proof General"
-     (list 'proof-general-version 'proof-assistant)
-     nil nil
-     "*** Proof General now uses Trac for project management and bug reporting, please go to:
-***
-***    http://proofgeneral.inf.ed.ac.uk/trac/search
-***
-*** To see if your bug has been reported already, and a new ticket if not.
-*** To report a bug, either register yourself as a user, or use the generic account
-*** username \"pgemacs\" with password \"pgemacs\"
-***
-*** Please only continue with this email mechanism instead IF YOU REALLY MUST.
-*** The address is not monitored very often and quite possibly will be ignored.
-***
-*** When reporting a bug, please include a small test case for us to repeat it.
-*** Please also check that it is not already covered in the BUGS or FAQ files that came with
-*** the distribution, or the latest versions at
-***    http://proofgeneral.inf.ed.ac.uk/BUGS  and
-***    http://proofgeneral.inf.ed.ac.uk/FAQ ")))
+  (with-help-window "*Proof General bug report*"
+    (princ (format "To report a bug, first check whether it is already reported at
+
+  https://github.com/ProofGeneral/PG/issues
+
+If not, open a new issue there, with a small example reproducing the
+bug and the following versions:
+
+Proof General: %s
+Emacs: %s
+Proof assistant: %s
+"
+                   proof-general-short-version emacs-version proof-assistant)))
+  (browse-url "https://github.com/ProofGeneral/PG/issues"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

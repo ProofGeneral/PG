@@ -4382,7 +4382,6 @@ assistant.  It supports most of the generic features of Proof General.
 * Editing multiple proofs::
 * User-loaded tactics::
 * Indentation tweaking::
-* Holes feature::
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
 * Opam-switch-mode support::
@@ -5191,6 +5190,8 @@ forms of include options (@samp{-I} @samp{-Q} and @samp{-R}).  An element can be
 @lisp
   - A list of the form @samp{(}ocamlimport dir)', specifying (in 8.5) a
     directory to be added to Ocaml path (@samp{-I}).
+  - A list of the form @samp{(}package name)', specifying (since 9.3) a
+    ocamlfind package with Rocq files.
   - A list of the form @samp{(}rec dir path)' (where dir and path are
     strings) specifying a directory to be recursively mapped to the
     logical path @code{path} (@samp{-R dir path}).
@@ -5514,32 +5515,6 @@ and
 exploring the file around the indentation point. Consequently this
 refers to internals of PoofGeneral. Contact the Proof General team if you
 need help.
-
-
-@node Holes feature
-@section Holes feature
-
-@emph{Holes} are an experimental feature for complex expression editing
-by filling in templates. It is inspired from other tools, like Pcoq
-(@uref{http://www-sop.inria.fr/lemme/pcoq/index.html}).  The principle
-is simple, holes are pieces of text that can be "filled" by various
-means. The Coq command insertion menu system makes use of the holes
-system.  Almost all holes operations are available in the Holes menu.
-
-@b{Notes:} Holes make use of the Emacs abbreviation mechanism, it will
-work without problem if you don't have an abbrev table defined for Coq
-in your config files.  Use @code{C-h v abbrev-file-name} to see the name
-of the abbreviation file. 
-
-If you already have such a table it won't be automatically overwritten
-(so that you keep your own abbreviations).  But you must read the abbrev
-file given in the Proof General sources to be able to use the command
-insertion menus.  You can do the following to merge your abbreviations
-with ProofGeneral's abbreviations: @code{M-x read-abbrev-file}, then
-select the file named @code{coq-abbrev.el} in the
-@code{ProofGeneral/coq} directory. At Emacs exit you will be asked if
-you want to save abbrevs; answer yes.
-
 
 @node Proof-Tree Visualization
 @section Proof-Tree Visualization
