@@ -861,21 +861,33 @@ Does nothing if `coq-use-project-file' is nil."
 ;; different options). We first detect executables (taking
 ;; proof-prog-name-ask into account), then elaborate the
 ;; proof-prog-args. Note: we don't support proof-prog-name-guess
+(defun coq--user-set-p (symbol)
+  "Return non-nil if the user set option SYMBOL with customize."
+  (or (get symbol 'saved-value) (get symbol 'customized-value)))
+
 (add-hook 'proof-shell-before-process-hook
           (lambda ()
-            ;; detect executables unless explicitely set by hand. In
-            ;; this case we try to find coqdep and coqc in the same
-            ;; directory
-            (if (and proof-prog-name-ask proof-prog-name)
+            ;; detect executables unless explicitely set by hand,
+            ;; with proof-prog-name-ask or by customizing them. When
+            ;; the prover is set by hand, we try to find coqdep and
+            ;; coqc in the same directory
+            (if (and (or proof-prog-name-ask (coq--user-set-p 'coq-prog-name))
+                     proof-prog-name)
                 ;; let us find other executables in the exact same
                 ;; place. TODO: go back to default exec-path if not found?
-                (let ((exec-path (list (file-name-directory proof-prog-name))))
-                  (setq coq-compiler (executable-find (coq-detect-coqc)))
-                  (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep))))
+                (let ((exec-path (if (file-name-directory proof-prog-name)
+                                     (list (file-name-directory proof-prog-name))
+                                   exec-path)))
+                  (unless (coq--user-set-p 'coq-compiler)
+                    (setq coq-compiler (executable-find (coq-detect-coqc))))
+                  (unless (coq--user-set-p 'coq-dependency-analyzer)
+                    (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep)))))
               ;; default: detect everything from the current exec-path
               (setq proof-prog-name (coq-autodetect-progname))
-              (setq coq-compiler (coq-detect-coqc))
-              (setq coq-dependency-analyzer (coq-detect-coqdep)))
+              (unless (coq--user-set-p 'coq-compiler)
+                (setq coq-compiler (coq-detect-coqc)))
+              (unless (coq--user-set-p 'coq-dependency-analyzer)
+                (setq coq-dependency-analyzer (coq-detect-coqdep))))
             (when coq-debug
               (message "coq-proof-prog-name: %S" proof-prog-name)
               (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
