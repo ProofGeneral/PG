@@ -22,6 +22,8 @@
 (require 'proof)
 (require 'coq-syntax)
 
+(declare-function yas-expand-snippet "yasnippet")
+
 (defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
                                   (fboundp 'yas-expand))
   "Should Coq use yasnippets templates.

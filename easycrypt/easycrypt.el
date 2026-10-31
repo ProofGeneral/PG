@@ -215,9 +215,6 @@ error and then highlight in the script buffer."
 (defun easycrypt-highlight-error-hook ()
   (easycrypt-highlight-error))
 
-(defun easycrypt-redisplay-hook ()
-  (easycrypt-redisplay))
-
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
           'easycrypt-highlight-error-hook t)
 

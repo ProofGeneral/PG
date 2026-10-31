@@ -17,6 +17,8 @@
 
 ;;; Code:
 
+(declare-function coq-prog-args "coq-system")
+
 (ert-deftest coqtop-unavailable ()
   "Proof General can open Coq files even when coqtop is unavailable.."
   (setq coq-prog-name "unavailable-program")

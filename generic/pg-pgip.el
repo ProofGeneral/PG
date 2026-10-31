@@ -38,6 +38,7 @@
 
 (declare-function pg-response-warning "pg-response")
 (declare-function pg-response-message "pg-response")
+(declare-function proof-segment-up-to "proof-script")
 (require 'proof-script)
 
 (defalias 'pg-pgip-debug   'proof-debug)

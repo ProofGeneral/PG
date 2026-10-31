@@ -38,6 +38,8 @@
 
 (declare-function proof-segment-up-to "proof-script")
 (declare-function proof-interrupt-process "proof-shell")
+(declare-function proof-add-to-queue "proof-shell")
+(declare-function proof-shell-exit "proof-shell")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

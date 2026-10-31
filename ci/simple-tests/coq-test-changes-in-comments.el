@@ -18,6 +18,10 @@
 
 ;;; Code:
 
+(declare-function span-end "span")
+(declare-function proof-goto-point "pg-user")
+(declare-function pg-protected-undo "pg-user")
+
 (defconst coq-src-comment
   "(*
   Comment 1

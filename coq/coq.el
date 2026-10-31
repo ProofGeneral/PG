@@ -59,6 +59,7 @@
 (require 'coq-diffs)                    ; highlight proof diffs
 
 (defvar prettify-symbols-alist)
+(declare-function yas-expand-snippet "yasnippet")
 
 
 ;; ----- coq-shell configuration options
