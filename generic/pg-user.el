@@ -25,6 +25,7 @@
 (require 'scomint)
 
 (require 'proof-script)	        ; we build on proof-script
+(require 'pg-double-hit)
 
 ;; For seq-group-by inside `proof-check-report'. This is apparently
 ;; not automatically loaded in Emacs 26.3. In a real PG session it is
@@ -537,6 +538,10 @@ This a function is called by the custom-set property \\+`proof-set-value'.
 It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
   (unless (null arg)
     (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
+  ;; the double hit is a replacement
+  (when (and proof-electric-terminator-enable proof-double-hit-enable)
+    (proof-double-hit-toggle 0)
+    (message "Hit M-1 . to enter a real \".\"."))
   (force-mode-line-update))
 
 (proof-deftoggle proof-electric-terminator-enable
