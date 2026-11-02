@@ -2060,6 +2060,13 @@ shortly before `proof-assert-command-hook', respectively,
    proof-tree-display-stop-command 'coq-proof-tree-disable-evars
    )
 
+  ;; `coq-pg-setup' sets `proof-tree-configured' when the Coq file
+  ;; is opened, but the version of Coq may not be known at that time
+  ;; (e.g., opam switch selected later with `opam-switch-set-switch').
+  ;; It is known now, because `coq-prog-args' has just detected it.
+  (when coq-run-completely-silent
+    (setq proof-tree-configured (coq--post-v810)))
+
   (proof-shell-config-done))
 
 
