@@ -304,6 +304,18 @@ Return nil if the version cannot be detected."
 	 (signal 'coq-unclassifiable-version  coq-version-to-use))
 	(t (signal (car err) (cdr err))))))))
 
+(defun coq--post-v92 ()
+  "Return t if the auto-detected version of Coq is >= 9.2+alpha.
+Return nil if the version cannot be detected."
+  (let ((coq-version-to-use (or (coq-version t) "9.1")))
+    (condition-case err
+	(not (coq--version< coq-version-to-use "9.2+alpha"))
+      (error
+       (cond
+	((equal (substring (cadr err) 0 15) "Invalid version")
+	 (signal 'coq-unclassifiable-version  coq-version-to-use))
+	(t (signal (car err) (cdr err))))))))
+
 (defun coq--supports-topfile ()
   "Return t if \"-topfile\" appears in coqtop options."
   (string-match "-topfile" coq-autodetected-help)

@@ -91,7 +91,11 @@ manual Show command (C-c C-p) is necessary if the last command
 fails to update the goals buffer (e.g., if it is a comment or it
 is not executed because some other command before failed, see
 also bug report #568).  External proof tree display is only
-supported if this option is t."
+supported if this option is t.
+
+This option is ignored for Rocq >= 9.2, which always runs completely
+silent, because it does not print goals any more.  Lisp code should
+therefore test `coq--run-silent-p' instead of this option."
   :type 'boolean
   :safe 'booleanp
   :group 'coq)
@@ -1193,7 +1197,7 @@ This function is called from `proof-shell-exec-loop' via
      (and (string-match-p "BackTo\\s-" cmd)
           (> (length coq-last-but-one-proofstack) coq--retract-naborts)))
     (append
-     (unless coq-run-completely-silent '("Unset Silent."))
+     (unless (coq--run-silent-p) '("Unset Silent."))
      (if (coq--post-v810) (list (coq-diffs)) ())
      (coq--show-proof-stepwise-cmds)))
 
@@ -1202,7 +1206,7 @@ This function is called from `proof-shell-exec-loop' via
      ;; proof, then only set the Diffs option.
      (string-match-p "BackTo\\s-" cmd))
     (append
-     (unless coq-run-completely-silent '("Unset Silent."))
+     (unless (coq--run-silent-p) '("Unset Silent."))
      (if (coq--post-v810) (list (coq-diffs)) ())))
      
    ((or
@@ -1845,6 +1849,46 @@ at `proof-assistant-settings-cmds' evaluation time.")
     ;;(define-key map (kbd ";") #'coq-terminator-insert) ; for french keyboards
     map))
 
+(defvar coq--run-silent-warned nil
+  "Non-nil if the user has been warned that Rocq >= 9.2 runs silent.")
+
+(defun coq--run-silent-p ()
+  "Return non-nil if Coq runs completely silent.
+This is the value of `coq-run-completely-silent', except for Rocq >=
+9.2, which always runs completely silent, because it does not print
+goals any more."
+  (or coq-run-completely-silent (coq--post-v92)))
+
+(defun coq-configure-silent ()
+  "Configure Proof General for running Coq silent or not.
+See `coq--run-silent-p'.  This runs in `coq-pg-setup' and again in
+`coq-shell-mode-config', because the version of Coq is not necessarily
+known when the Coq file is opened."
+  (when (and (not coq-run-completely-silent)
+             (coq--post-v92)
+             (not coq--run-silent-warned))
+    (setq coq--run-silent-warned t)
+    (display-warning
+     'proof-general
+     "`coq-run-completely-silent' is ignored for Rocq >= 9.2, which always runs completely silent."))
+  (if (coq--run-silent-p)
+      (setq
+       ;; When proof-shell-start-silent-cmd and proof-shell-stop-silent-cmd
+       ;; are nil, the generic code won't switch Coq to silent and noisy at,
+       ;; respectively, the beginning and end of longer asserted regions.
+       proof-shell-start-silent-cmd nil
+       proof-shell-stop-silent-cmd nil
+       ;; prooftree is only supported for Coq/Rocq running silent
+       proof-tree-configured (coq--post-v810)
+       proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
+       proof-tree-find-begin-of-unfinished-proof
+         'coq-find-begin-of-unfinished-proof
+       proof-tree-assistant-specific-urgent-action
+         'proof-tree-coq-urgent-action)
+    (setq proof-shell-start-silent-cmd "Set Silent."
+          proof-shell-stop-silent-cmd "Unset Silent."
+          proof-tree-configured nil)))
+
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
@@ -1909,22 +1953,7 @@ at `proof-assistant-settings-cmds' evaluation time.")
   ;; span menu
   (setq proof-script-span-context-menu-extensions #'coq-create-span-menu)
 
-  ;; When proof-shell-start-silent-cmd and proof-shell-stop-silent-cmd stay at
-  ;; their default value nil, the generic code won't switch Coq to silent and
-  ;; noisy at, respectively, the beginning and end of longer asserted regions.
-  (unless coq-run-completely-silent
-    (setq proof-shell-start-silent-cmd "Set Silent."
-          proof-shell-stop-silent-cmd "Unset Silent."))
-
-  ;; prooftree config - prooftree is only supported for Coq/Rocq running silent
-  (when coq-run-completely-silent
-    (setq
-     proof-tree-configured (coq--post-v810)
-     proof-tree-get-proof-info 'coq-proof-tree-get-proof-info
-     proof-tree-find-begin-of-unfinished-proof
-       'coq-find-begin-of-unfinished-proof
-     proof-tree-assistant-specific-urgent-action
-       'proof-tree-coq-urgent-action))
+  (coq-configure-silent)
 
   ;; proof-omit-proofs config
   (setq
@@ -2056,12 +2085,11 @@ shortly before `proof-assert-command-hook', respectively,
    proof-tree-display-stop-command 'coq-proof-tree-disable-evars
    )
 
-  ;; `coq-pg-setup' sets `proof-tree-configured' when the Coq file
-  ;; is opened, but the version of Coq may not be known at that time
-  ;; (e.g., opam switch selected later with `opam-switch-set-switch').
-  ;; It is known now, because `coq-prog-args' has just detected it.
-  (when coq-run-completely-silent
-    (setq proof-tree-configured (coq--post-v810)))
+  ;; `coq-pg-setup' did this already when the Coq file was opened, but
+  ;; the version of Coq may not have been known at that time (e.g.,
+  ;; opam switch selected later with `opam-switch-set-switch').  It is
+  ;; known now, because `coq-prog-args' has just detected it.
+  (coq-configure-silent)
 
   (proof-shell-config-done))
 
@@ -3161,10 +3189,10 @@ Important: Coq gives char positions in bytes instead of chars."
 
 (defun coq-show-goals-inside-proof (keep-response on-error)
   "Update goals when action item list has been processed, if running silent.
-If `coq-run-completely-silent' is set, add a Show command as
-priority action, such that it will still be processed if the
-generic machinery inside `proof-shell-filter' believes it has
-processed the last item from the action list.  When Coq runs in
+If Coq runs completely silent (see `coq--run-silent-p'), add a
+Show command as priority action, such that it will still be
+processed if the generic machinery inside `proof-shell-filter'
+believes it has processed the last item from the action list.  When Coq runs in
 silent mode, we need to update the goals precisely when
 everything else from the action list has been processed.
 
@@ -3183,8 +3211,8 @@ case `'no-response-display' is added to the flags such that a \"no more
 goals\" reply to the Show command does not overwrite the response
 buffer.
 
-Do nothing if `coq-run-completely-silent' is disabled."
-  (when (and coq-run-completely-silent
+Do nothing if Coq does not run completely silent."
+  (when (and (coq--run-silent-p)
              coq-last-but-one-proofstack
              (not (member 'dont-show-when-silent
                           proof-shell-delayed-output-flags)))
