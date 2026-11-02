@@ -3732,6 +3732,25 @@ goals and response windows to fit their contents.
 The default value is @code{nil}.
 @end defopt
 
+@c TEXI DOCSTRING MAGIC: proof-goals-indicators-enable
+@defopt proof-goals-indicators-enable 
+Whether goals windows tell when the goals continue above or below.@*
+Arrows are then displayed in the left fringe, see
+@code{indicate-buffer-boundaries}.  They are not visible if the fringe is
+too narrow, see @code{fringe-mode}.
+
+The default value is @code{t}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: proof-goals-scroll-margin
+@defopt proof-goals-scroll-margin 
+Number of empty lines that scrolling can show after the goals.@*
+Scrolling further would only hide them.  If nil, scrolling is not
+limited.
+
+The default value is @code{1}.
+@end defopt
+
 @c TEXI DOCSTRING MAGIC: proof-colour-locked
 @defopt proof-colour-locked 
 If non-nil, colour the locked region with @code{proof-locked-face}.@*
@@ -4384,6 +4403,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Indentation tweaking::
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
+* Display of the goals::
 * Opam-switch-mode support::
 @end menu
 
@@ -5577,6 +5597,39 @@ The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
 have added or removed tokens are shown with the entire line highlighted with
 a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
 with non-@code{Bg} faces.
+
+@node Display of the goals
+@section Display of the goals
+@cindex goals display
+@vindex coq-fold-other-goals
+@vindex coq-prefer-top-of-conclusion
+
+When the goals do not fit in their window, Proof General shows the last
+hypotheses and the conclusion of the first goal: the hypotheses near
+the conclusion matter most.  If @code{coq-prefer-top-of-conclusion} is
+non-nil, a conclusion that does not fit shows its beginning and the
+separator line instead of its end.  Arrows in the fringe tell what is
+out of view, see @code{proof-goals-indicators-enable}.  The mode line
+of the goals buffer gives the number of focused and unfocused goals,
+for instance @code{3+4}.  The number of unfocused goals is only right
+if Coq displays them: use @code{Set Printing Unfocused}, for instance
+in @code{coq-user-init-cmd}.
+
+The goals after the first one are folded: a line gives their number,
+with the number of unfocused goals if Coq displays them (@code{Set
+Printing Unfocused}).  Click on this line or type @kbd{RET} on it to
+show or hide them, or use the menu @code{Coq -> Settings -> Fold Other
+Goals}.
+
+@c TEXI DOCSTRING MAGIC: coq-fold-other-goals
+@defopt coq-fold-other-goals 
+If non-nil, the goals other than the first one are folded.@*
+Only their number is displayed, with the number of unfocused goals if
+Coq displays them (see Set Printing Unfocused), on a line that unfolds
+them when clicked, see @code{coq-toggle-other-goals}.
+
+The default value is @code{t}.
+@end defopt
 
 @node Opam-switch-mode support
 @section Opam-switch-mode support
