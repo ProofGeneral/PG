@@ -203,6 +203,10 @@ Scrolling stops at the end of the goals."
 
 (ert-deftest goals-display-fits ()
   "When the goals fit: no scrolling."
+  ;; For Emacs 26.3, 27.1, and 27.2, the default frame is 10x9 when
+  ;; running in a docker container (see coq-test-three-window.el): the
+  ;; goals window has 10 columns and 3 lines and the goals cannot fit.
+  (skip-unless (version<= "28" emacs-version))
   (with-goals-at-marker "small"
     (proof-goals--scrolled window (1- (point-max)))
     (should (= (window-start window) (point-min)))))
