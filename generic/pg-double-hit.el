@@ -51,13 +51,15 @@ Called by `proof-set-value' on `proof-double-hit-enable'."
 (defvar proof-double-hit--time nil
   "Time of the last hit, while a double hit is possible.")
 
-(defun proof-double-hit-insert (function &optional count)
+(defun proof-double-hit-insert (function &optional count terminator)
   "Insert the key typed, or call FUNCTION on a double hit.
 A double hit is the same key typed again within
 `proof-double-hit-delay', outside comments and strings, when
-`proof-double-hit-enable' is non-nil.  The second hit is not inserted
-and FUNCTION is called without argument, after the first one.  With
-COUNT, insert COUNT times the key."
+`proof-double-hit-enable' is non-nil.  The second hit is not inserted,
+the first one is replaced by the string TERMINATOR if non-nil, and
+FUNCTION is called without argument.  This way, a key other than the
+terminator, bound to the same command, gives the terminator on a double
+hit.  With COUNT, insert COUNT times the key."
   (if (and proof-double-hit-enable (null count)
            proof-double-hit--time
            (< (float-time (time-since proof-double-hit--time))
@@ -66,6 +68,9 @@ COUNT, insert COUNT times the key."
            (not (nth 8 (syntax-ppss))))
       (progn
         (setq proof-double-hit--time nil)
+        (when terminator
+          (delete-char -1)
+          (insert terminator))
         (funcall function))
     (self-insert-command (prefix-numeric-value count))
     (setq proof-double-hit--time (and (null count) (current-time)))))

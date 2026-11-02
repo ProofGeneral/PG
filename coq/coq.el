@@ -1837,13 +1837,10 @@ at `proof-assistant-settings-cmds' evaluation time.")
 (defvar coq-pg-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map proof-mode-map)
-
-    ;; Setting the new mapping for terminator, overrides the following in
-    ;; proof-script:
+    ;; The terminator is bound in `coq-mode-map', for all backends.  This
+    ;; overrides the following in proof-script:
     ;; (define-key proof-mode-map (vector (aref proof-terminal-string 0))
     ;;             #'proof-electric-terminator)
-    (define-key map (kbd ".") #'coq-terminator-insert)
-    ;;(define-key map (kbd ";") #'coq-terminator-insert) ; for french keyboards
     map))
 
 (defvar coq--run-silent-warned nil
@@ -1889,6 +1886,7 @@ known when the Coq file is opened."
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
+  (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -3357,19 +3355,18 @@ Only when three-buffer-mode is enabled."
 ;; pg-double-hit.el.  The "." is used for records and modules qualified
 ;; notations, so the electric terminator is not pertinent.
 
-(defun coq-terminator-insert (&optional count)
-  "A wrapper on `proof-electric-terminator'.
+(defun coq-pg-terminator-insert (&optional count)
+  "A wrapper on `proof-electric-terminator', COUNT is the prefix argument.
 Used to accept double hits instead if enabled, see
 `proof-double-hit-enable'.  If by accident option
 `proof-electric-terminator-enable' and option `proof-double-hit-enable'
-are non-nil at the same time, this gives priority to the former."
-  (interactive "P")
+are non-nil at the same time, this gives priority to the former.
+This is `coq-terminator-insert-function' for Proof General."
   (if (and (not proof-electric-terminator-enable) proof-double-hit-enable)
-      (proof-double-hit-insert #'proof-assert-electric-terminator count)
+      (proof-double-hit-insert #'proof-assert-electric-terminator count
+                               proof-terminal-string)
     ;; otherwise call this, which checks proof-electric-terminator-enable
     (proof-electric-terminator count)))
-
-(put 'coq-terminator-insert 'delete-selection t)
 
 
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;

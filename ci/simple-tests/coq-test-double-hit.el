@@ -26,10 +26,14 @@
              (consp proof-action-list))
     (accept-process-output nil 0.1)))
 
+(defun type-key (char)
+  "Type CHAR in the current buffer, as if with the keyboard."
+  (let ((last-command-event char))
+    (call-interactively (key-binding (string char)))))
+
 (defun type-dot ()
   "Type \".\" in the current buffer, as if with the keyboard."
-  (let ((last-command-event ?.))
-    (call-interactively (key-binding "."))))
+  (type-key ?.))
 
 (defmacro with-double-hit-file (&rest body)
   "Run BODY in a buffer visiting a Coq file ending with a sentence
@@ -97,6 +101,34 @@ without its final dot, at the end of the buffer."
     (should coq-double-hit-enable)
     (coq-double-hit-toggle 0)
     (should-not proof-double-hit-enable)))
+
+(ert-deftest coq-double-hit-common-command ()
+  "The terminator is bound in `coq-mode-map', common to all backends.
+Proof General sets the backend function, and binding another key in
+`coq-mode-map' to `coq-terminator-insert' works: a double hit on it
+gives \".\" and processes up to it, a single hit inserts it."
+  (with-double-hit-file
+    (should (eq (key-binding ".") #'coq-terminator-insert))
+    (should (eq (lookup-key coq-mode-map ".") #'coq-terminator-insert))
+    (should (eq coq-terminator-insert-function #'coq-pg-terminator-insert))
+    (unwind-protect
+        (progn
+          (define-key coq-mode-map (kbd ";") #'coq-terminator-insert)
+          (should (eq (key-binding ";") #'coq-terminator-insert))
+          (proof-electric-terminator-toggle 0)
+          (proof-double-hit-toggle 1)
+          ;; a single hit inserts the key
+          (type-key ?\;)
+          (should (string-suffix-p "Definition y := 1;" (buffer-string)))
+          (sleep-for 0.6)
+          (delete-char -1)
+          ;; a double hit inserts the terminator and processes
+          (type-key ?\;)
+          (type-key ?\;)
+          (wait-for-coq)
+          (should (string-suffix-p "Definition y := 1." (buffer-string)))
+          (should (= (proof-unprocessed-begin) (point-max))))
+      (define-key coq-mode-map (kbd ";") nil))))
 
 (ert-deftest coq-double-hit-excludes-electric-terminator ()
   "The double hit and the electric terminator exclude each other."
