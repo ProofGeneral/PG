@@ -57,6 +57,8 @@
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
 (require 'coq-diffs)                    ; highlight proof diffs
+(require 'coq-goals)                    ; folding of the other goals
+(require 'pg-goals-indicators)          ; goals out of view
 
 (defvar prettify-symbols-alist)
 
@@ -125,12 +127,6 @@ instead (or menu: Coq/Settings/Search Blacklist)."
   "Current value of Coq Search Blacklist.
 This may become desynchronized with Coq if you use the command
 \"Add/Remove Search Blacklist\" in you script." )
-
-(defcustom coq-prefer-top-of-conclusion nil
-  "Prefer start of the conclusion over its end when displaying large goals.
-Namely, goals that do not fit in the goals window."
-  :type 'boolean
-  :group 'coq)
 
 
 (defun coq-shell-init-cmd ()
@@ -2076,7 +2072,10 @@ shortly before `proof-assert-command-hook', respectively,
       (cons "Coq" coq-other-buffers-menu-entries)))
 
 
+(setq coq-goals-buffer-function (lambda () proof-goals-buffer))
+
 (defun coq-goals-mode-config ()
+  (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
   (setq proof-goals-font-lock-keywords coq-goals-font-lock-keywords)
@@ -3215,88 +3214,20 @@ also `coq-show-goals-inside-proof'."
 ;; Scroll response buffer to maximize display of first goal
 ;;
 
-(defun coq-first-word-before (reg)
-  "Get the word before first string matching REG in current buffer."
-  (save-excursion
-    (goto-char (point-min))
-    (re-search-forward reg nil t)
-    (goto-char (match-beginning 0))
-    (backward-word 1)
-    (buffer-substring (point)
-                      (progn (forward-word 1) (point)))))
-
-(defun coq-get-from-to-paren (reg)
-  "Get the word after first string matching REG in current buffer."
-  (save-excursion
-    (goto-char (point-min))
-    (if (null (re-search-forward reg nil t)) ""
-      (goto-char (match-end 0))
-      (let ((p (point)))
-        (if (null (re-search-forward ")" nil t))
-            ""
-          (goto-char (match-beginning 0))
-          (buffer-substring p (point)))))))
-
-
-
 (defun coq-show-first-goal ()
   "Scroll the goal buffer so that the first goal is visible.
 First goal is displayed on the bottom of its window, maximizing the
-number of hypothesis displayed, without hiding the goal"
+number of hypothesis displayed, without hiding the goal.  See
+`coq-goals-show-first-goal'."
   (interactive)
   ;; CPC 2015-12-31: Added the check below: if the command that caused this
   ;; call was silent, we shouldn't touch the goals buffer.  See GitHub issues
   ;; https://github.com/cpitclaudel/company-coq/issues/32 and
   ;; https://github.com/cpitclaudel/company-coq/issues/8.
   (unless (memq 'no-goals-display proof-shell-delayed-output-flags)
-    (let ((pg-frame (car (coq-find-threeb-frames)))) ; selecting the good frame
-      (with-selected-frame (or pg-frame (window-frame (selected-window)))
-        ;; prefer current frame
-        (let ((goal-win (or (get-buffer-window proof-goals-buffer) (get-buffer-window proof-goals-buffer t))))
-          (if goal-win
-              (with-selected-window goal-win
-                ;; find snd goal or buffer end, if not found this goes to the
-                ;; end of buffer
-                (search-forward-regexp "\\(?:sub\\)?goal 2\\|\\*\\*\\* Unfocused goals:\\|\\'")
-                (beginning-of-line)
-                ;; find something backward else than a space: bottom of concl
-                (ignore-errors (search-backward-regexp "\\S-"))
-                (recenter (- 1)) ; put bot of concl at bottom of window
-                (beginning-of-line)
-                ;; if the top of concl is hidden we may want to show it instead
-                ;; of bottom of concl
-                (when (and coq-prefer-top-of-conclusion
-                         ;; return nil if === is not visible
-                         (not (save-excursion (re-search-backward "========" (window-start) t))))
-                  (re-search-backward "========" nil t)
-                  (recenter 0))
-                (beginning-of-line))))))))
-
-(defvar coq-modeline-string2 ")")
-(defvar coq-modeline-string1 ")")
-(defvar coq-modeline-string0 " Script(")
-(defun coq-build-subgoals-string (n s)
-  (concat coq-modeline-string0 (int-to-string n)
-          "-" s
-          (if (> n 1) coq-modeline-string2
-            coq-modeline-string1)))
-
-(defun coq-update-minor-mode-alist ()
-  "Modify `minor-mode-alist' to display the number of subgoals in the modeline."
-  (when (and proof-goals-buffer proof-script-buffer)
-    (let ((nbgoals (with-current-buffer proof-goals-buffer
-                     (string-to-number (coq-first-word-before "focused\\|\\(?:sub\\)?goal"))))
-          (nbunfocused (with-current-buffer proof-goals-buffer
-                         (coq-get-from-to-paren "unfocused: "))))
-      (with-current-buffer proof-script-buffer
-        (let ((toclean (assq 'proof-active-buffer-fake-minor-mode minor-mode-alist)))
-          (while toclean ;; clean minor-mode-alist
-            (setq minor-mode-alist (remove toclean minor-mode-alist))
-            (setq toclean (assq 'proof-active-buffer-fake-minor-mode minor-mode-alist)))
-          (setq minor-mode-alist
-                (append (list (list 'proof-active-buffer-fake-minor-mode
-                                    (coq-build-subgoals-string nbgoals nbunfocused)))
-                        minor-mode-alist)))))))
+    (with-current-buffer proof-goals-buffer
+      (coq-goals-fold-other-goals))
+    (coq-goals-show-first-goal proof-goals-buffer)))
 
 (defun coq-clean-goals-outside-proof ()
   "Clear goals buffer outside proofs.
@@ -3317,8 +3248,6 @@ buffer (see `coq-start-goals-regexp') is kept."
 ;; *after* windows resizing.
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  #'coq-show-first-goal)
-(add-hook 'proof-shell-handle-delayed-output-hook
-	  #'coq-update-minor-mode-alist)
 (add-hook 'proof-shell-handle-delayed-output-hook
           #'coq-clean-goals-outside-proof)
 

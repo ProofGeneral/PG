@@ -176,6 +176,10 @@ start."
      :style toggle
      :selected proof-electric-terminator-enable
      :help "Automatically send commands when terminator typed"]
+    ["Fold Other Goals" coq-toggle-other-goals
+     :style toggle
+     :selected coq-fold-other-goals
+     :help "Display only the number of the goals after the first one."]
     ["Double Hit Electric Terminator" coq-double-hit-toggle
      :style toggle
      :selected coq-double-hit-enable
