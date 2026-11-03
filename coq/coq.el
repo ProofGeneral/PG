@@ -786,6 +786,14 @@ arguments."
        'no-response-display 'empty-action-list 'dont-show-when-silent)))
   (when then (funcall then)))
 
+(defun coq-pg-query-result (command)
+  "Send the query COMMAND to Coq and return its answer, nil on an error.
+This is `coq-query-result-function' for Proof General, see it."
+  (proof-shell-ready-prover)
+  (let ((output (proof-shell-invisible-cmd-get-result (concat command " ."))))
+    (unless (proof-string-match coq-error-regexp output)
+      output)))
+
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
 
 
@@ -1611,6 +1619,7 @@ known when the Coq file is opened."
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
   (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -1830,6 +1839,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-goals-mode-config ()
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1838,6 +1848,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-response-config ()
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2555,9 +2566,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 
 ;; Insertion commands
-(define-key coq-keymap [(control ?i)]  #'coq-insert-intros)
-(define-key coq-keymap [(control ?m)]  #'coq-insert-match)
-(define-key coq-keymap [(control ?g)]  #'coq-insert-named-goal-selectors)
 (define-key coq-keymap [(control ?\()] #'coq-insert-section-or-module)
 (define-key coq-keymap [(control ?\))] #'coq-end-Section)
 (define-key coq-keymap [(control ?t)]  #'coq-insert-tactic)

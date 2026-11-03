@@ -30,7 +30,9 @@
 
 (defvar proof-minibuffer-history)
 (defvar coq-highlight-hyps-cited-in-response)
+(defvar coq-one-command-per-line)
 (declare-function coq-highlight-hyps-cited-in-response "coq")
+(declare-function coq-terminator-insert "coq-mode")
 
 (defvar-local coq-query-function nil
   "Function running a query, set by each Coq backend.
@@ -47,6 +49,19 @@ See `coq-query-function' for the arguments."
   (unless coq-query-function
     (user-error "Coq: no backend to run queries in this buffer"))
   (funcall coq-query-function command flags then))
+
+(defvar-local coq-query-result-function nil
+  "Function running a query and returning its answer, set by each backend.
+It is called with the argument COMMAND, the query without its final
+dot, for instance \"Show Intros\".  It waits for the answer and returns
+it as a string, without displaying it, or nil if Coq answers an error.")
+
+(defun coq-query-result (command)
+  "Run the query COMMAND and return its answer, nil on an error.
+See `coq-query-result-function'."
+  (unless coq-query-result-function
+    (user-error "Coq: no backend to run queries in this buffer"))
+  (funcall coq-query-result-function command))
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
@@ -457,16 +472,19 @@ See `coq-insert-intros' to insert them."
   "Insert an intros or move command with names given by Show Intros.
 Based on idea mentioned in Coq reference manual."
   (interactive)
-  (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
+  (let* ((output (or (coq-query-result "Show Intros") "")))
     (indent-region (point)
                    (progn (insert (coq--format-intros output))
                           (save-excursion
-                            (insert (if coq-one-command-per-line "\n" " "))
+                            ;; t if the backend does not define it
+                            (insert (if (or (not (boundp 'coq-one-command-per-line))
+                                            coq-one-command-per-line)
+                                        "\n" " "))
                             (point))))
-    ;; `proof-electric-terminator' moves the point in all sorts of strange
+    ;; The electric terminator moves the point in all sorts of strange
     ;; ways, so we run it last
     (let ((last-command-event ?.)) ;; Insert a dot
-      (proof-electric-terminator))))
+      (coq-terminator-insert))))
 
 (defun coq-replace-branch-with-yas-holes (s)
   "Replace occurrences of RE in by REPi in S. i is incremented at each replacement."
@@ -499,9 +517,8 @@ Goals that are marked as \"only printing\" are ignored."
 (defun coq-insert-named-goal-selectors ()
   "Insert named goal selectors for the open goals."
   (interactive)
-  (proof-shell-ready-prover)
-  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
-    (unless (proof-string-match coq-error-regexp output)
+  (let ((output (coq-query-result "Show Existentials")))
+    (when output
       (let* ((goal-names (coq-get-goal-names output))
              ;; NOTE: Adding braces would be great, but it messes up indentation.
              (format-selector (lambda (name) (format "[%s]: #." name)))
@@ -516,17 +533,13 @@ Goals that are marked as \"only printing\" are ignored."
 Based on idea mentioned in Coq reference manual.
 Also insert holes at insertion positions."
   (interactive)
-  (proof-shell-ready-prover)
   (let* ((cmd))
     (setq cmd (read-string "Build match for type: "))
-    (let* ((thematch
-            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (yasmatch (coq-replace-branch-with-yas-holes thematch)))
-      ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp thematch)
+    (let ((thematch (coq-query-result (concat "Show Match " cmd))))
+      ;; nil on an error
+      (when thematch
         (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
-            (yas-expand-snippet yasmatch)
+            (yas-expand-snippet (coq-replace-branch-with-yas-holes thematch))
           (let ((start (point)))
             (insert thematch)
             (indent-region start (point) nil)

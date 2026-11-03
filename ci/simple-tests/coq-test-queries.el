@@ -9,7 +9,8 @@
 ;; Test that the query commands (About, Check, Search...) are bound in
 ;; `coq-mode-map', common to all backends, that Proof General sets
 ;; `coq-query-function', and that the printing flags of a query are
-;; set for this query only, and the option `coq-remap-mouse-1'.
+;; set for this query only.  Test also the option `coq-remap-mouse-1'
+;; and the insertions built from the answer of a query.
 
 ;;; Code:
 
@@ -20,6 +21,8 @@
 (proof-ready-for-assistant 'coq)
 
 (require 'ert)
+(require 'cl-lib)
+(require 'subr-x)
 
 (defvar proof-second-action-list-active)
 (defvar proof-action-list)
@@ -27,6 +30,8 @@
 (defvar proof-goals-buffer)
 (defvar coq-mode-map)
 (defvar coq-query-function)
+(defvar coq-query-result-function)
+(defvar coq-use-yasnippet)
 
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
@@ -39,6 +44,12 @@
 (declare-function coq-Check "coq-queries")
 (declare-function coq-Search "coq-queries")
 (declare-function coq-id-under-mouse-query "coq-queries")
+(declare-function coq-query-result "coq-queries")
+(declare-function coq-insert-match "coq-queries")
+(declare-function coq-insert-named-goal-selectors "coq-queries")
+(declare-function coq-pg-query-result "coq")
+(declare-function proof-electric-terminator-toggle "pg-user")
+(declare-function proof-double-hit-toggle "pg-double-hit")
 
 
 ;;; utility functions
@@ -53,7 +64,7 @@
   "Run BODY in a buffer visiting a Coq file, processed to its end."
   (declare (indent 0) (debug t))
   `(let ((file (make-temp-file "queries" nil ".v"
-                               "Definition x := 0.\nLemma l : x = 0.\n"))
+                               "Definition x := 0.\nLemma l : forall n : nat, n = x -> True.\n"))
          buffer)
      (unwind-protect
          (progn
@@ -87,20 +98,49 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-b")) #'coq-About))
     (should (eq (key-binding (kbd "C-c C-a C-c")) #'coq-Check))
     (should (eq (key-binding (kbd "C-c C-a C-a")) #'coq-Search))
-    ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a C-i")) #'coq-insert-intros))
+    (should (eq (key-binding (kbd "C-c C-a C-m")) #'coq-insert-match))
+    (should (eq (key-binding (kbd "C-c C-a C-g"))
+                #'coq-insert-named-goal-selectors))
+    ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))))
 
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
   (coq-test-queries-with-file
-    (should (eq coq-query-function #'coq-pg-query))
-    (with-current-buffer proof-goals-buffer
-      (should (eq coq-query-function #'coq-pg-query)))
-    (with-current-buffer proof-response-buffer
-      (should (eq coq-query-function #'coq-pg-query)))
+    (dolist (buffer (list (current-buffer) proof-goals-buffer
+                          proof-response-buffer))
+      (with-current-buffer buffer
+        (should (eq coq-query-function #'coq-pg-query))
+        (should (eq coq-query-result-function #'coq-pg-query-result))))
     (with-temp-buffer
-      (should-error (coq-run-query "Check x") :type 'user-error))))
+      (should-error (coq-run-query "Check x") :type 'user-error)
+      (should-error (coq-query-result "Check x") :type 'user-error))))
+
+(ert-deftest coq-test-queries-result ()
+  "`coq-query-result' returns the answer of a query, nil on an error."
+  (coq-test-queries-with-file
+    (should (string-match-p "x\\s-*:\\s-*nat" (coq-query-result "Check x")))
+    (should-not (coq-query-result "Check unknown_identifier"))))
+
+(ert-deftest coq-test-queries-insert-intros ()
+  "`coq-insert-intros' inserts the names given by Show Intros."
+  (coq-test-queries-with-file
+    (proof-electric-terminator-toggle 0)
+    (proof-double-hit-toggle 0)
+    (coq-insert-intros)
+    (should (string-match-p "intros n H\\.\\'"
+                            (string-trim-right (buffer-string))))))
+
+(ert-deftest coq-test-queries-insert-match ()
+  "`coq-insert-match' inserts the match given by Show Match."
+  (coq-test-queries-with-file
+    (let ((coq-use-yasnippet nil))
+      (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "nat")))
+        (coq-insert-match))
+      (should (string-match-p "match\\s-+with" (buffer-string)))
+      (should (string-match-p "| O =>" (buffer-string)))
+      (should (string-match-p "| S [[:alnum:]_]+ =>" (buffer-string))))))
 
 (ert-deftest coq-test-queries-run ()
   "A query displays its answer."
