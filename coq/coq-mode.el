@@ -27,6 +27,9 @@
 ;; (if t (require 'coq nil 'noerror))
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
+(require 'pg-double-hit)
+(require 'coq-queries)                  ; common to all backends
+(require 'coq-templates)                ; abbrevs and yasnippets, idem
 
 (declare-function coq-pg-setup "coq")   ; coq.el requires this file
 
@@ -79,6 +82,34 @@ With then 2025 new CLI \\+`rocq', this command only return \\+`rocq'."
   "If non-nil, activate the ProofGeneral backend."
   :type 'boolean)
 
+;; The double hit is generic, see pg-double-hit.el.  Here for both
+;; backends.
+(define-obsolete-variable-alias 'coq-double-hit-enable
+  'proof-double-hit-enable "4.6")
+(define-obsolete-variable-alias 'coq-double-hit-delay
+  'proof-double-hit-delay "4.6")
+(define-obsolete-function-alias 'coq-double-hit-toggle
+  #'proof-double-hit-toggle "4.6")
+
+(defvar-local coq-terminator-insert-function nil
+  "Function called by `coq-terminator-insert' with the prefix argument.
+Each backend sets it.  If nil, the terminator is just inserted.")
+
+(defun coq-terminator-insert (&optional count)
+  "Insert the key typed, COUNT times, it is supposed to be a terminator.
+What happens next depends on the backend, typically the electric
+terminator and the double hit, see `proof-electric-terminator-enable'
+and `proof-double-hit-enable'.  Bind another key to this command in
+`coq-mode-map' to use it in all backends.  On a double hit of that key,
+\".\" replaces it, for instance:
+  (define-key coq-mode-map (kbd \";\") #\='coq-terminator-insert)"
+  (interactive "P")
+  (if coq-terminator-insert-function
+      (funcall coq-terminator-insert-function count)
+    (self-insert-command (prefix-numeric-value count))))
+
+(put 'coq-terminator-insert 'delete-selection t)
+
 ;; prettify is in emacs > 24.4
 (defvar prettify-symbols-alist)
 
@@ -103,8 +134,27 @@ With then 2025 new CLI \\+`rocq', this command only return \\+`rocq'."
 
 (defvar coq-mode-map
   (let ((map (make-sparse-keymap)))
+    ;; In all backends, see `coq-terminator-insert-function'.
+    (define-key map (kbd ".") #'coq-terminator-insert)
+    ;; Queries, in all backends, see `coq-query-function'.
+    (define-key map (kbd "C-c C-a C-a") #'coq-Search)
+    (define-key map (kbd "C-c C-a C-b") #'coq-About)
+    (define-key map (kbd "C-c C-a C-c") #'coq-Check)
+    (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
+    (define-key map (kbd "C-c C-a C-p") #'coq-Print)
+    (define-key map (kbd "C-c C-a C-q") #'coq-query)
+    (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
+    (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
+    (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
+    ;; Insertions built from a query, see `coq-query-result-function'.
+    (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
+    (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)
+    (define-key map (kbd "C-c C-a C-g") #'coq-insert-named-goal-selectors)
     map)
   "Keymap for `coq-mode'.")
+
+;; The queries at mouse click, in all backends, see `coq-remap-mouse-1'.
+(coq-mouse-query-add-keymap coq-mode-map)
 
 (defvar coq-mode-syntax-table
   (let ((st (make-syntax-table)))
@@ -236,6 +286,9 @@ Near here means PT is either inside or just aside of a comment."
 
   ;; we can cope with nested comments
   (set (make-local-variable 'comment-quote-nested) nil)
+
+  ;; abbrevs and yasnippet templates, in all backends
+  (coq-templates-setup)
 
   ;; Setup Proof-General interface to Coq.
   (if coq-use-pg (coq-pg-setup))

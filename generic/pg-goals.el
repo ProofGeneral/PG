@@ -25,6 +25,7 @@
 (defvar proof-assistant-menu)           ; defined by macro in proof-menu
 
 (require 'pg-assoc)
+(require 'pg-goals-indicators)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -45,7 +46,8 @@ May enable proof-by-pointing or similar features.
   (buffer-disable-undo)
   (if proof-keep-response-history (bufhist-mode)) ; history for contents
   (set-buffer-modified-p nil)
-  (setq cursor-in-non-selected-windows nil))
+  (setq cursor-in-non-selected-windows nil)
+  (proof-goals-indicators-setup))
 
 ;;
 ;; Menu for goals buffer

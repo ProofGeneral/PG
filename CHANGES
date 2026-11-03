@@ -24,8 +24,34 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 *** Improve splash screen, add menu entry to permanently disable it
     (Proof-General -> Quick Options -> Display -> Disable Splash Screen),
     reduce splash screen time to make it less annoying
+*** Goals windows tell when the goals continue out of view, with
+    arrows in the fringe, see `proof-goals-indicators-enable'.
+    Scrolling the goals stops at their end, see
+    `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** The goals after the first one are folded to a line giving their
+    number, with the number of unfocused goals if Coq displays them.
+    Click on the line or type RET on it to unfold them, see
+    `coq-fold-other-goals' (menu Coq -> Settings -> Fold Other Goals).
+*** The number of goals is displayed in the mode line of the goals
+    buffer instead of the one of the script buffer, with the number of
+    unfocused goals: 3+4 for 3 focused and 4 unfocused goals, in
+    `coq-goals-count-face'.  The number of unfocused goals is only
+    right with Set Printing Unfocused.
+*** The query commands (About, Check, Print, Search... under C-c C-a)
+    and the insertions built from a query (C-c C-a C-i, C-m and C-g)
+    are bound in `coq-mode-map', meant to be common to all Coq
+    backends: a key bound to them there works in every backend.
+*** With C-u C-u, the query commands ask which printing flags to use
+    for this query only, among `coq-query-flags' (C-u still gives
+    Printing All).  Search accepts these prefixes too.  A printing
+    flag already set is not unset any more after such a query.
+*** Setting `coq-remap-mouse-1' with customize takes effect
+    immediately, also in the goals and response buffers.
+*** The abbrevs and the default yasnippet templates of Coq mode are
+    available in all Coq backends, see `coq-use-yasnippet' and
+    `coq-yasnippet-use-default-templates'.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing
     #113, #392 and #589). There is no escape character any more, in any
     argument: write -arg "-w 'a b'" instead of -arg "-w \"a b\"", and

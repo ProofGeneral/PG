@@ -3732,6 +3732,25 @@ goals and response windows to fit their contents.
 The default value is @code{nil}.
 @end defopt
 
+@c TEXI DOCSTRING MAGIC: proof-goals-indicators-enable
+@defopt proof-goals-indicators-enable 
+Whether goals windows tell when the goals continue above or below.@*
+Arrows are then displayed in the left fringe, see
+@code{indicate-buffer-boundaries}.  They are not visible if the fringe is
+too narrow, see @code{fringe-mode}.
+
+The default value is @code{t}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: proof-goals-scroll-margin
+@defopt proof-goals-scroll-margin 
+Number of empty lines that scrolling can show after the goals.@*
+Scrolling further would only hide them.  If nil, scrolling is not
+limited.
+
+The default value is @code{1}.
+@end defopt
+
 @c TEXI DOCSTRING MAGIC: proof-colour-locked
 @defopt proof-colour-locked 
 If non-nil, colour the locked region with @code{proof-locked-face}.@*
@@ -4384,6 +4403,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Indentation tweaking::
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
+* Display of the goals::
 * Opam-switch-mode support::
 @end menu
 
@@ -4409,27 +4429,49 @@ proposed by coq on the current goal.
 Show the goal (enter for the current goal, i <enter> for the ith goal).
 
 Add the prefix C-u to see the answer with all pretty printing options
-temporarily disable (Set Printing All).
+temporarily disable (Set Printing All), or C-u C-u to choose the
+printing flags, as for the following queries.
 
 @item C-c C-a C-c   
 Prompts for ``Check '' query arguments, the default input name is built
 from the identifier under the cursor.
 
 Add the prefix C-u to see the answer with all pretty printing options
-temporarily disable (Set Printing All).
+temporarily disable (Set Printing All).  Add the prefix C-u C-u to
+choose the printing flags for this query only, among the ones of the
+option @code{coq-query-flags} (Printing All, Implicit, Coercions,
+Parentheses, No Notations, Universes).
 
 @item C-c C-a C-p
 The same for a ``Print '' query.
 @item C-c C-a C-b
 The same for a ``About '' query.
 @item C-c C-a C-a
-The same for a ``Search '' query (no C-u prefix).
+The same for a ``Search '' query.
 @item C-c C-a C-o
 The same for a Search ``SearchIsos'' (no C-u prefix).
 
 @item C-c C-a C-)
 Inserts ``End <section-name>.'' (this should work well with nested sections).
 @end table
+
+@vindex coq-mode-map
+The query keys above (and also @kbd{C-c C-a C-q}, @kbd{C-c C-a C-l},
+@kbd{C-c C-a C-n} and @kbd{C-c C-a h}) and the insertions built from
+a query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g})
+are bound in @code{coq-mode-map}, which is meant to be common to all
+the backends of Coq mode.  To bind these commands to other keys, do it
+in this keymap, for instance:
+@lisp
+(define-key coq-mode-map (kbd "<f9>") #'coq-Check)
+@end lisp
+
+@vindex coq-remap-mouse-1
+If the option @code{coq-remap-mouse-1} is set, clicking on an
+identifier with control runs Print on it, with shift About, with
+control and shift Check, and adding meta runs it with Printing All.
+This overrides the global bindings of control and shift mouse-1, which
+is why the option is off by default.
 
 
 
@@ -5577,6 +5619,39 @@ The 4 @code{Coq Diffs ...} faces control the highlights.  Lines that
 have added or removed tokens are shown with the entire line highlighted with
 a @code{Coq Diffs ... Bg} face.  The added or removed tokens themselves are highlighted
 with non-@code{Bg} faces.
+
+@node Display of the goals
+@section Display of the goals
+@cindex goals display
+@vindex coq-fold-other-goals
+@vindex coq-prefer-top-of-conclusion
+
+When the goals do not fit in their window, Proof General shows the last
+hypotheses and the conclusion of the first goal: the hypotheses near
+the conclusion matter most.  If @code{coq-prefer-top-of-conclusion} is
+non-nil, a conclusion that does not fit shows its beginning and the
+separator line instead of its end.  Arrows in the fringe tell what is
+out of view, see @code{proof-goals-indicators-enable}.  The mode line
+of the goals buffer gives the number of focused and unfocused goals,
+for instance @code{3+4}.  The number of unfocused goals is only right
+if Coq displays them: use @code{Set Printing Unfocused}, for instance
+in @code{coq-user-init-cmd}.
+
+The goals after the first one are folded: a line gives their number,
+with the number of unfocused goals if Coq displays them (@code{Set
+Printing Unfocused}).  Click on this line or type @kbd{RET} on it to
+show or hide them, or use the menu @code{Coq -> Settings -> Fold Other
+Goals}.
+
+@c TEXI DOCSTRING MAGIC: coq-fold-other-goals
+@defopt coq-fold-other-goals 
+If non-nil, the goals other than the first one are folded.@*
+Only their number is displayed, with the number of unfocused goals if
+Coq displays them (see Set Printing Unfocused), on a line that unfolds
+them when clicked, see @code{coq-toggle-other-goals}.
+
+The default value is @code{t}.
+@end defopt
 
 @node Opam-switch-mode support
 @section Opam-switch-mode support

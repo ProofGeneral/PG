@@ -29,6 +29,19 @@ coq-test-hook-variables
 : test that the hooks of proof-shell.el can read and modify the
   variables they share with Proof General through dynamic binding,
   with proof-shell.el interpreted and byte-compiled
+coq-test-silent-option
+: test that `coq-run-completely-silent` is ignored with a warning for
+  Rocq >= 9.2, which does not print goals any more (skipped for older
+  versions)
+coq-test-double-hit
+: test the double hit electric terminator and that the terminator
+  command is common to all backends
+coq-test-queries
+: test that the query commands are common to all backends and that
+  their printing flags are for one query only
+coq-test-without-pg
+: test Coq mode without the Proof General backend: no proof shell is
+  loaded, the abbrevs and the commands common to all backends are there
 coq-proof-stat-batch-test
 : Batch mode test for proof-check-proofs. There is no Emacs lisp file
   for this test. It is programmed out in the Makefile goal
