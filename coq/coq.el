@@ -2170,97 +2170,6 @@ mouse activation."
 ;; Some smart insertion functions
 ;;
 
-(defconst module-kinds-table
-  '(("Section" 0) ("Module" 1) ("Module Type" 2) ("Declare Module" 3))
-  "Enumerates the different kinds of modules.")
-
-(defconst modtype-kinds-table
-  '(("" 1) (":" 2) ("<:" 3))
-  "Enumerates the different kinds of type information for modules.")
-
-(defun coq-postfix-.v-p (s)
-  (string-match-p "\\.v\\'" s))
-
-(defun coq-directories-files (l)
-  (let* ((file-list-list (mapcar #'directory-files l))
-         (file-list (apply #'append file-list-list))
-         (filtered-list (cl-remove-if-not #'coq-postfix-.v-p file-list)))
-  filtered-list))
-
-(defun coq-remove-dot-v-extension (s)
-  (substring s 0 -2))
-
-(defun coq-load-path-to-paths (ldpth)
-  (if (listp ldpth) (car ldpth) ldpth))
-
-(defun coq-build-accessible-modules-list ()
-  (let* ((pth (or coq-load-path '(".")))
-         (cleanpth (mapcar #'coq-load-path-to-paths pth))
-         (existingpth (cl-remove-if-not #'file-exists-p cleanpth))
-         (file-list (coq-directories-files existingpth)))
-    (mapcar #'coq-remove-dot-v-extension file-list)))
-
-(defun coq-insert-section-or-module ()
-  "Insert a module or a section after asking right questions."
-  (interactive)
-  (let*
-      ((mods (completing-read "Kind of module (TAB to see list): "
-                              module-kinds-table))
-       (s (read-string  "Name: "))
-       (typkind (if (string-equal mods "Section")
-                    "" ;; if not a section
-                  (completing-read "Kind of type (optional, TAB to see list): "
-                                   modtype-kinds-table))))
-    (if (string-equal typkind "")
-        (progn
-          (insert mods " " s ".\n")
-          (let ((pt (point)))
-            (insert "\nEnd " s ".")
-            (goto-char pt)))
-      (insert mods " " s " " typkind ".\n")
-      (let ((pt (point)))
-        (insert "\nEnd " s ".")
-        (goto-char pt)))))
-
-(defconst reqkinds-kinds-table
-  '(("Require Import") ("Require Export") ("Require") ("Import"))
-  "Enumerates the different kinds of requiring a module.")
-
-(defun coq-insert-requires ()
-  "Insert requires to modules, iteratively."
-  (interactive)
-  (let* ((s)
-         (reqkind
-          (completing-read
-           "Command (TAB to see list, default Require Import) : "
-           reqkinds-kinds-table nil nil nil nil "Require Import")))
-    (cl-loop do
-             (setq s (completing-read "Name (empty to stop) : "
-                                      (coq-build-accessible-modules-list)))
-             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
-             while (not (string-equal s "")))))
-
-;; TODO add module closing
-(defun coq-end-Section ()
-  "Ends a Coq section."
-  (interactive)
-  (let ((count 1)) ; The number of section already "Ended" + 1
-    (let ((section
-	   (save-excursion
-	     (progn
-	       (while (and (> count 0)
-			   (search-backward-regexp
-			    "Chapter\\|Section\\|End" 0 t))
-		 (if (char-equal (char-after (point)) ?E)
-		     (setq count (1+ count))
-		   (setq count (1- count))))
-	       (buffer-substring-no-properties
-          (progn (beginning-of-line) (forward-word 1) (point))
-          (progn (end-of-line) (point)))))))
-      (insert (concat "End" section)))))
-
-
-
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
 ;; destruct foo., where foo is a name.
@@ -2520,39 +2429,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (coq-script-parse-cmdend-forward)
 ;;       (coq-insert-as-in-next-command)
 ;;       (proof-assert-next-command-interactive))))
-
-
-
-
-
-
-(defun coq-insert-solve-tactic ()
-  "Ask for a closing tactic name, with completion, and insert at point.
-Completion is on a quasi-exhaustive list of Coq closing tactics."
-  (interactive)
-  (coq-insert-from-db coq-solve-tactics-db "Closing tactic"))
-
-(defun coq-insert-tactic ()
-  "Insert a tactic name at point, with completion.
-Questions may be asked to the user to select the tactic."
-  (interactive)
-  (coq-insert-from-db coq-tactics-db "Tactic"))
-
-(defun coq-insert-tactical ()
-  "Ask for a closing tactic name, with completion, and insert at point.
-Completion is on a quasi-exhaustive list of Coq tacticals."
-  (interactive)
-  (coq-insert-from-db coq-tacticals-db "Tactical"))
-
-(defun coq-insert-command ()
-  "Ask for a command name, with completion, and insert it at point."
-  (interactive)
-  (coq-insert-from-db coq-commands-db "Command"))
-
-(defun coq-insert-term ()
-  "Ask for a term kind, with completion, and insert it at point."
-  (interactive)
-  (coq-insert-from-db coq-terms-db "Kind of term"))
 
 
 ;; Insertion commands
