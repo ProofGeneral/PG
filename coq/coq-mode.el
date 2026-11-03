@@ -28,6 +28,7 @@
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
 (require 'pg-double-hit)
+(require 'coq-queries)                  ; common to all backends
 
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
@@ -132,8 +133,21 @@ and `proof-double-hit-enable'.  Bind another key to this command in
   (let ((map (make-sparse-keymap)))
     ;; In all backends, see `coq-terminator-insert-function'.
     (define-key map (kbd ".") #'coq-terminator-insert)
+    ;; Queries, in all backends, see `coq-query-function'.
+    (define-key map (kbd "C-c C-a C-a") #'coq-Search)
+    (define-key map (kbd "C-c C-a C-b") #'coq-About)
+    (define-key map (kbd "C-c C-a C-c") #'coq-Check)
+    (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
+    (define-key map (kbd "C-c C-a C-p") #'coq-Print)
+    (define-key map (kbd "C-c C-a C-q") #'coq-query)
+    (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
+    (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
+    (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
     map)
   "Keymap for `coq-mode'.")
+
+;; The queries at mouse click, in all backends, see `coq-remap-mouse-1'.
+(coq-mouse-query-add-keymap coq-mode-map)
 
 (defvar coq-mode-syntax-table
   (let ((st (make-syntax-table)))

@@ -32,6 +32,9 @@ coq-test-silent-option
 coq-test-double-hit
 : test the double hit electric terminator and that the terminator
   command is common to all backends
+coq-test-queries
+: test that the query commands are common to all backends and that
+  their printing flags are for one query only
 coq-proof-stat-batch-test
 : Batch mode test for proof-check-proofs. There is no Emacs lisp file
   for this test. It is programmed out in the Makefile goal
