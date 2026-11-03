@@ -4429,27 +4429,49 @@ proposed by coq on the current goal.
 Show the goal (enter for the current goal, i <enter> for the ith goal).
 
 Add the prefix C-u to see the answer with all pretty printing options
-temporarily disable (Set Printing All).
+temporarily disable (Set Printing All), or C-u C-u to choose the
+printing flags, as for the following queries.
 
 @item C-c C-a C-c   
 Prompts for ``Check '' query arguments, the default input name is built
 from the identifier under the cursor.
 
 Add the prefix C-u to see the answer with all pretty printing options
-temporarily disable (Set Printing All).
+temporarily disable (Set Printing All).  Add the prefix C-u C-u to
+choose the printing flags for this query only, among the ones of the
+option @code{coq-query-flags} (Printing All, Implicit, Coercions,
+Parentheses, No Notations, Universes).
 
 @item C-c C-a C-p
 The same for a ``Print '' query.
 @item C-c C-a C-b
 The same for a ``About '' query.
 @item C-c C-a C-a
-The same for a ``Search '' query (no C-u prefix).
+The same for a ``Search '' query.
 @item C-c C-a C-o
 The same for a Search ``SearchIsos'' (no C-u prefix).
 
 @item C-c C-a C-)
 Inserts ``End <section-name>.'' (this should work well with nested sections).
 @end table
+
+@vindex coq-mode-map
+The query keys above (and also @kbd{C-c C-a C-q}, @kbd{C-c C-a C-l},
+@kbd{C-c C-a C-n} and @kbd{C-c C-a h}) and the insertions built from
+a query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g})
+are bound in @code{coq-mode-map}, which is meant to be common to all
+the backends of Coq mode.  To bind these commands to other keys, do it
+in this keymap, for instance:
+@lisp
+(define-key coq-mode-map (kbd "<f9>") #'coq-Check)
+@end lisp
+
+@vindex coq-remap-mouse-1
+If the option @code{coq-remap-mouse-1} is set, clicking on an
+identifier with control runs Print on it, with shift About, with
+control and shift Check, and adding meta runs it with Printing All.
+This overrides the global bindings of control and shift mouse-1, which
+is why the option is off by default.
 
 
 

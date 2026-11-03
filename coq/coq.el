@@ -786,6 +786,14 @@ arguments."
        'no-response-display 'empty-action-list 'dont-show-when-silent)))
   (when then (funcall then)))
 
+(defun coq-pg-query-result (command)
+  "Send the query COMMAND to Coq and return its answer, nil on an error.
+This is `coq-query-result-function' for Proof General, see it."
+  (proof-shell-ready-prover)
+  (let ((output (proof-shell-invisible-cmd-get-result (concat command " ."))))
+    (unless (proof-string-match coq-error-regexp output)
+      output)))
+
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
 
 
@@ -835,9 +843,10 @@ must be in locked region."
 
 (defun coq-Show (withprintingall)
   "Ask for a number I and show the Ith goal.
-Ask for a number I and show the ith current goal.  With non-nil prefix
-argument and not on the locked span, show the goal with flag
-Printing All set."
+Ask for a number I and show the ith current goal.  When not on the
+locked span, the prefix argument gives the printing flags, see
+`coq-query-flags-from-prefix': \\[universal-argument] for Printing All,
+\\[universal-argument] \\[universal-argument] to choose them."
 ; Disabled:
 ;  "Ask for a number i and show the ith goal, or show ancient goal.
 ;If point is on a locked span, show the corresponding coq
@@ -859,9 +868,8 @@ Printing All set."
             (pg-response-display s)
             (proof-display-and-keep-buffer proof-response-buffer)
             (coq-optimise-resp-windows))))
-    (if withprintingall
-        (coq-ask-do-show-all "Show goal number" "Show" t)
-      (coq-ask-do "Show goal number" "Show" t))))
+    (coq-ask-do "Show goal number" "Show" t nil nil
+                (coq-query-flags-from-prefix withprintingall))))
 
 (defun coq-Show-with-implicits ()
   "Ask for a number i and show the ith goal."
@@ -1611,6 +1619,7 @@ known when the Coq file is opened."
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
   (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -1830,6 +1839,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-goals-mode-config ()
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1838,6 +1848,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-response-config ()
   (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2259,32 +2270,6 @@ mouse activation."
       (insert (concat "End" section)))))
 
 
-(defun coq--format-intros (output)
-  "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
-  (let* ((shints1 (replace-regexp-in-string "^[0-9] \\(?:sub\\)?goal\\(.\\|\n\\|\r\\)*"  "" output))
-         (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
-    (if (or (string= "" shints)
-            (string-match coq-error-regexp shints))
-        (error "Don't know what to intro")
-      (save-excursion
-        (if (re-search-backward "Require.*ssreflect" nil t)
-            (format "move=> %s" shints)
-          (format "intros %s" shints))))))
-
-(defun coq-insert-intros ()
-  "Insert an intros or move command with names given by Show Intros.
-Based on idea mentioned in Coq reference manual."
-  (interactive)
-  (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
-    (indent-region (point)
-                   (progn (insert (coq--format-intros output))
-                          (save-excursion
-                            (insert (if coq-one-command-per-line "\n" " "))
-                            (point))))
-    ;; `proof-electric-terminator' moves the point in all sorts of strange
-    ;; ways, so we run it last
-    (let ((last-command-event ?.)) ;; Insert a dot
-      (proof-electric-terminator))))
 
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
@@ -2548,71 +2533,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
 
 
 
-(defun coq-replace-branch-with-yas-holes (s)
-  "Replace occurrences of RE in by REPi in S. i is incremented at each replacement."
-  (let ((res s) (i 2))
-    (setq res (replace-regexp-in-string "\\`match #" "match $1" res))
-    (while (string-match "=> *\n" res nil t)
-      (setq res (replace-regexp-in-string ;; the regexp is made to match only
-                                          ;; the fiorst occurrence
-                 "\\(?1:=> *\n\\)\\(.\\|\n\\)*\\'"
-                 (concat "=> $" (int-to-string i) "\n")
-                 res nil nil 1))
-      (setq i (+ 1 i)))
-    res))
 
-(defun coq-get-goal-names (show-existentials-output)
-  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
-
-Goals that are marked as \"only printing\" are ignored."
-  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
-        (pos 0)
-        (matches '()))
-    (while (string-match goal-regex show-existentials-output pos)
-      (let ((goal-name (match-string 1 show-existentials-output))
-            (only-printing (match-string 2 show-existentials-output)))
-        (unless only-printing
-          (push goal-name matches))
-        (setq pos (match-end 0))))
-    (nreverse matches)))
-
-(defun coq-insert-named-goal-selectors ()
-  "Insert named goal selectors for the open goals."
-  (interactive)
-  (proof-shell-ready-prover)
-  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
-    (unless (proof-string-match coq-error-regexp output)
-      (let* ((goal-names (coq-get-goal-names output))
-             ;; NOTE: Adding braces would be great, but it messes up indentation.
-             (format-selector (lambda (name) (format "[%s]: #." name)))
-             (goal-selectors (cl-mapcar format-selector goal-names))
-             (snippet (string-join goal-selectors "\n")))
-        (if (equal goal-selectors nil)
-            (error "Couldn't find any named goals")
-          (coq-insert-template snippet))))))
-
-(defun coq-insert-match ()
-  "Insert a match expression from a type name by Show Match.
-Based on idea mentioned in Coq reference manual.
-Also insert holes at insertion positions."
-  (interactive)
-  (proof-shell-ready-prover)
-  (let* ((cmd))
-    (setq cmd (read-string "Build match for type: "))
-    (let* ((thematch
-            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (yasmatch (coq-replace-branch-with-yas-holes thematch)))
-      ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp thematch)
-        (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
-            (yas-expand-snippet yasmatch)
-          (let ((start (point)))
-            (insert thematch)
-            (indent-region start (point) nil)
-            (goto-char start)
-            (search-forward "#")
-            (delete-char -1)))))))
 
 
 (defun coq-insert-solve-tactic ()
@@ -2645,9 +2566,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 
 
 ;; Insertion commands
-(define-key coq-keymap [(control ?i)]  #'coq-insert-intros)
-(define-key coq-keymap [(control ?m)]  #'coq-insert-match)
-(define-key coq-keymap [(control ?g)]  #'coq-insert-named-goal-selectors)
 (define-key coq-keymap [(control ?\()] #'coq-insert-section-or-module)
 (define-key coq-keymap [(control ?\))] #'coq-end-Section)
 (define-key coq-keymap [(control ?t)]  #'coq-insert-tactic)

@@ -30,7 +30,9 @@
 
 (defvar proof-minibuffer-history)
 (defvar coq-highlight-hyps-cited-in-response)
+(defvar coq-one-command-per-line)
 (declare-function coq-highlight-hyps-cited-in-response "coq")
+(declare-function coq-terminator-insert "coq-mode")
 
 (defvar-local coq-query-function nil
   "Function running a query, set by each Coq backend.
@@ -47,6 +49,51 @@ See `coq-query-function' for the arguments."
   (unless coq-query-function
     (user-error "Coq: no backend to run queries in this buffer"))
   (funcall coq-query-function command flags then))
+
+(defvar-local coq-query-result-function nil
+  "Function running a query and returning its answer, set by each backend.
+It is called with the argument COMMAND, the query without its final
+dot, for instance \"Show Intros\".  It waits for the answer and returns
+it as a string, without displaying it, or nil if Coq answers an error.")
+
+(defun coq-query-result (command)
+  "Run the query COMMAND and return its answer, nil on an error.
+See `coq-query-result-function'."
+  (unless coq-query-result-function
+    (user-error "Coq: no backend to run queries in this buffer"))
+  (funcall coq-query-result-function command))
+
+(defcustom coq-query-flags
+  '(("All" . "Set Printing All")
+    ("Implicit" . "Set Printing Implicit")
+    ("Coercions" . "Set Printing Coercions")
+    ("Parentheses" . "Set Printing Parentheses")
+    ("No Notations" . "Unset Printing Notations")
+    ("Universes" . "Set Printing Universes"))
+  "Printing flags that a query can use, by name.
+With \\[universal-argument] \\[universal-argument], query commands ask
+which ones to use, see `coq-query-flags-from-prefix'.  Each value is the
+Coq command setting a boolean flag, for this query only."
+  :type '(alist :key-type (string :tag "Name")
+                :value-type (string :tag "Coq command"))
+  :group 'coq)
+
+(defun coq-query-flags-from-prefix (arg)
+  "Return the printing flags of a query with prefix argument ARG.
+None without prefix argument.  With \\[universal-argument] \\[universal-argument] or more,
+ask which ones among `coq-query-flags'.  With any other prefix
+argument, for instance \\[universal-argument], Set Printing All."
+  (cond
+   ((null arg) nil)
+   ((and (consp arg) (>= (car arg) 16))
+    (mapcar (lambda (name) (cdr (assoc name coq-query-flags)))
+            (completing-read-multiple "Printing flags: " coq-query-flags
+                                      nil t)))
+   (t (list "Set Printing All"))))
+
+(defun coq--query-prompt (prompt flags)
+  "PROMPT for a query, mentioning FLAGS if any."
+  (if flags (format "%s [%s]" prompt (string-join flags ", ")) prompt))
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
@@ -245,7 +292,8 @@ argument.  WAIT may be a function, called once the answer is
 displayed, any other non-nil value waits for the answer.  FLAGS are
 printing flags for this query only, see `coq-query-function'."
   (let ((postform (or postformatcmd #'identity))
-        (arg (coq-guess-or-ask-for-string ask dontguess)))
+        (arg (coq-guess-or-ask-for-string (coq--query-prompt ask flags)
+                                          dontguess)))
     (coq-run-query (concat do " " (funcall postform arg))
                    flags
                    (cond ((functionp wait) wait)
@@ -290,13 +338,13 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-ask-do "SearchRewrite" "SearchRewrite" nil))
 
-(defun coq-Print (withprintingall)
+(defun coq-Print (arg)
   "Ask for an ident and print the corresponding term.
-With flag Printing All if some prefix arg is given (\\[universal-argument])."
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "Print" "Print")
-    (coq-ask-do "Print" "Print")))
+  (coq-ask-do "Print" "Print" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-Print-Ltac ()
   "Ask for an ident and print the corresponding Ltac term."
@@ -313,12 +361,13 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive)
   (coq-ask-do-show-all "Print" "Print"))
 
-(defun coq-About (withprintingall)
-  "Ask for an ident and print information on it."
+(defun coq-About (arg)
+  "Ask for an ident and print information on it.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "About" "About")
-    (coq-ask-do "About" "About")))
+  (coq-ask-do "About" "About" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-About-with-implicits ()
   "Ask for an ident and print information on it."
@@ -367,13 +416,13 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-ask-do "Print Implicit" "Print Implicit"))
 
-(defun coq-Check (withprintingall)
+(defun coq-Check (arg)
   "Ask for a term and print its type.
-With flag Printing All if some prefix arg is given (\\[universal-argument])."
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "Check" "Check")
-    (coq-ask-do "Check" "Check")))
+  (coq-ask-do "Check" "Check" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-Check-show-implicits ()
   "Ask for a term and print its type."
@@ -385,21 +434,30 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
-(defun coq-query (showall)
-  "Ask for a query, with completion, and send to Coq."
+(defun coq-query (arg)
+  "Ask for a query, with completion, and send to Coq.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (let ((q (coq-build-command-from-db coq-queries-commands-db "which Query?")))
-    (coq-run-query (coq-remove-trailing-dot (string-trim-right q))
-                   (and showall '("Set Printing All")))))
+  (let* ((flags (coq-query-flags-from-prefix arg))
+         (q (coq-build-command-from-db coq-queries-commands-db
+                                       (coq--query-prompt "which Query?"
+                                                          flags))))
+    (coq-run-query (coq-remove-trailing-dot (string-trim-right q)) flags)))
 
-(defun coq-Search ()
-  (interactive)
+(defun coq-Search (&optional arg)
+  "Ask for a pattern and search the lemmas matching it.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
+  (interactive "P")
   (coq-ask-do
    ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
    ;;  "_ind" "_rec" "R_" "_equation"
    "Search (ex: \"eq_\" eq -bool)"
    "Search"
-   nil nil #'coq-search-done))
+   nil nil #'coq-search-done (coq-query-flags-from-prefix arg)))
 
 (defun coq-search-done ()
   "Highlight the hypotheses cited by the answer of a Search, if wanted.
@@ -438,6 +496,99 @@ See `coq-highlight-hyps-cited-in-response'."
 See `coq-insert-intros' to insert them."
   (interactive)
   (coq-run-query "Show Intros"))
+
+;; Insertions built from the answer of a query
+
+(defun coq--format-intros (output)
+  "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
+  (let* ((shints1 (replace-regexp-in-string "^[0-9] \\(?:sub\\)?goal\\(.\\|\n\\|\r\\)*"  "" output))
+         (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
+    (if (or (string= "" shints)
+            (string-match coq-error-regexp shints))
+        (error "Don't know what to intro")
+      (save-excursion
+        (if (re-search-backward "Require.*ssreflect" nil t)
+            (format "move=> %s" shints)
+          (format "intros %s" shints))))))
+
+(defun coq-insert-intros ()
+  "Insert an intros or move command with names given by Show Intros.
+Based on idea mentioned in Coq reference manual."
+  (interactive)
+  (let* ((output (or (coq-query-result "Show Intros") "")))
+    (indent-region (point)
+                   (progn (insert (coq--format-intros output))
+                          (save-excursion
+                            ;; t if the backend does not define it
+                            (insert (if (or (not (boundp 'coq-one-command-per-line))
+                                            coq-one-command-per-line)
+                                        "\n" " "))
+                            (point))))
+    ;; The electric terminator moves the point in all sorts of strange
+    ;; ways, so we run it last
+    (let ((last-command-event ?.)) ;; Insert a dot
+      (coq-terminator-insert))))
+
+(defun coq-replace-branch-with-yas-holes (s)
+  "Replace occurrences of RE in by REPi in S. i is incremented at each replacement."
+  (let ((res s) (i 2))
+    (setq res (replace-regexp-in-string "\\`match #" "match $1" res))
+    (while (string-match "=> *\n" res nil t)
+      (setq res (replace-regexp-in-string ;; the regexp is made to match only
+                                          ;; the fiorst occurrence
+                 "\\(?1:=> *\n\\)\\(.\\|\n\\)*\\'"
+                 (concat "=> $" (int-to-string i) "\n")
+                 res nil nil 1))
+      (setq i (+ 1 i)))
+    res))
+
+(defun coq-get-goal-names (show-existentials-output)
+  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
+
+Goals that are marked as \"only printing\" are ignored."
+  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
+        (pos 0)
+        (matches '()))
+    (while (string-match goal-regex show-existentials-output pos)
+      (let ((goal-name (match-string 1 show-existentials-output))
+            (only-printing (match-string 2 show-existentials-output)))
+        (unless only-printing
+          (push goal-name matches))
+        (setq pos (match-end 0))))
+    (nreverse matches)))
+
+(defun coq-insert-named-goal-selectors ()
+  "Insert named goal selectors for the open goals."
+  (interactive)
+  (let ((output (coq-query-result "Show Existentials")))
+    (when output
+      (let* ((goal-names (coq-get-goal-names output))
+             ;; NOTE: Adding braces would be great, but it messes up indentation.
+             (format-selector (lambda (name) (format "[%s]: #." name)))
+             (goal-selectors (cl-mapcar format-selector goal-names))
+             (snippet (string-join goal-selectors "\n")))
+        (if (equal goal-selectors nil)
+            (error "Couldn't find any named goals")
+          (coq-insert-template snippet))))))
+
+(defun coq-insert-match ()
+  "Insert a match expression from a type name by Show Match.
+Based on idea mentioned in Coq reference manual.
+Also insert holes at insertion positions."
+  (interactive)
+  (let* ((cmd))
+    (setq cmd (read-string "Build match for type: "))
+    (let ((thematch (coq-query-result (concat "Show Match " cmd))))
+      ;; nil on an error
+      (when thematch
+        (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
+            (yas-expand-snippet (coq-replace-branch-with-yas-holes thematch))
+          (let ((start (point)))
+            (insert thematch)
+            (indent-region start (point) nil)
+            (goto-char start)
+            (search-forward "#")
+            (delete-char -1)))))))
 
 (provide 'coq-queries)
 
