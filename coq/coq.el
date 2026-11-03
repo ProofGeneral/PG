@@ -2259,32 +2259,6 @@ mouse activation."
       (insert (concat "End" section)))))
 
 
-(defun coq--format-intros (output)
-  "Create an “intros” or ”move” form from the OUTPUT of “Show Intros”."
-  (let* ((shints1 (replace-regexp-in-string "^[0-9] \\(?:sub\\)?goal\\(.\\|\n\\|\r\\)*"  "" output))
-         (shints (replace-regexp-in-string "[\r\n ]*\\'" "" shints1)))
-    (if (or (string= "" shints)
-            (string-match coq-error-regexp shints))
-        (error "Don't know what to intro")
-      (save-excursion
-        (if (re-search-backward "Require.*ssreflect" nil t)
-            (format "move=> %s" shints)
-          (format "intros %s" shints))))))
-
-(defun coq-insert-intros ()
-  "Insert an intros or move command with names given by Show Intros.
-Based on idea mentioned in Coq reference manual."
-  (interactive)
-  (let* ((output (proof-shell-invisible-cmd-get-result "Show Intros.")))
-    (indent-region (point)
-                   (progn (insert (coq--format-intros output))
-                          (save-excursion
-                            (insert (if coq-one-command-per-line "\n" " "))
-                            (point))))
-    ;; `proof-electric-terminator' moves the point in all sorts of strange
-    ;; ways, so we run it last
-    (let ((last-command-event ?.)) ;; Insert a dot
-      (proof-electric-terminator))))
 
 (defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
 
@@ -2548,71 +2522,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
 
 
 
-(defun coq-replace-branch-with-yas-holes (s)
-  "Replace occurrences of RE in by REPi in S. i is incremented at each replacement."
-  (let ((res s) (i 2))
-    (setq res (replace-regexp-in-string "\\`match #" "match $1" res))
-    (while (string-match "=> *\n" res nil t)
-      (setq res (replace-regexp-in-string ;; the regexp is made to match only
-                                          ;; the fiorst occurrence
-                 "\\(?1:=> *\n\\)\\(.\\|\n\\)*\\'"
-                 (concat "=> $" (int-to-string i) "\n")
-                 res nil nil 1))
-      (setq i (+ 1 i)))
-    res))
 
-(defun coq-get-goal-names (show-existentials-output)
-  "Return the list of goal names by parsing SHOW-EXISTENTIALS-OUTPUT.
-
-Goals that are marked as \"only printing\" are ignored."
-  (let ((goal-regex "Existential [0-9]+ =\\s-+\\?\\([^ ]+\\) :\\s-+\\[[^]]*]\\( (\\(?:shelved; \\)?only printing)\\)?")
-        (pos 0)
-        (matches '()))
-    (while (string-match goal-regex show-existentials-output pos)
-      (let ((goal-name (match-string 1 show-existentials-output))
-            (only-printing (match-string 2 show-existentials-output)))
-        (unless only-printing
-          (push goal-name matches))
-        (setq pos (match-end 0))))
-    (nreverse matches)))
-
-(defun coq-insert-named-goal-selectors ()
-  "Insert named goal selectors for the open goals."
-  (interactive)
-  (proof-shell-ready-prover)
-  (let ((output (proof-shell-invisible-cmd-get-result "Show Existentials.")))
-    (unless (proof-string-match coq-error-regexp output)
-      (let* ((goal-names (coq-get-goal-names output))
-             ;; NOTE: Adding braces would be great, but it messes up indentation.
-             (format-selector (lambda (name) (format "[%s]: #." name)))
-             (goal-selectors (cl-mapcar format-selector goal-names))
-             (snippet (string-join goal-selectors "\n")))
-        (if (equal goal-selectors nil)
-            (error "Couldn't find any named goals")
-          (coq-insert-template snippet))))))
-
-(defun coq-insert-match ()
-  "Insert a match expression from a type name by Show Match.
-Based on idea mentioned in Coq reference manual.
-Also insert holes at insertion positions."
-  (interactive)
-  (proof-shell-ready-prover)
-  (let* ((cmd))
-    (setq cmd (read-string "Build match for type: "))
-    (let* ((thematch
-            (proof-shell-invisible-cmd-get-result (concat "Show Match " cmd ".")))
-           (yasmatch (coq-replace-branch-with-yas-holes thematch)))
-      ;; if error, it will be displayed in response buffer (see def of
-      ;; proof-shell-invisible-cmd-get-result), otherwise:
-      (unless (proof-string-match coq-error-regexp thematch)
-        (if (and coq-use-yasnippet (fboundp 'yas-expand-snippet))
-            (yas-expand-snippet yasmatch)
-          (let ((start (point)))
-            (insert thematch)
-            (indent-region start (point) nil)
-            (goto-char start)
-            (search-forward "#")
-            (delete-char -1)))))))
 
 
 (defun coq-insert-solve-tactic ()

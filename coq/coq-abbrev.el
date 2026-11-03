@@ -22,15 +22,6 @@
 (require 'proof)
 (require 'coq-syntax)
 
-(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode coq-mode-hook))
-                                  (fboundp 'yas-expand))
-  "Should Coq use yasnippets templates.
-
-Default value is t unless yasnippet is not installed or company-coq
-appears in the hoocoq-mode-hook."
-  :type 'boolean
-  :group 'coq)
-
 (defcustom coq-yasnippet-use-default-templates t
   "Should ProofGeneral coq mode use its yasnippets default templates.
 
@@ -102,18 +93,6 @@ start."
     (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-solve-tactics-db))
     (yas-define-snippets 'coq-mode (coq-yas-snippet-table-from-db coq-user-cheat-tactics-db))))
 
-
-;; this is the function called by insertion menus. TODO: separate
-;; these menus from yasnippet templates because this should work even
-;; if the user has its own templates instead of the default ones.
-(defun coq-insert-template (snippet)
-  "Expand template SNIPPET using (by priority) yasnippet, abbrev or just ALT."
-  (when snippet
-    (if (and coq-use-yasnippet (fboundp 'yas-expand))
-        (yas-expand-snippet (coq-yas-snippet-from-db snippet))
-      (let ((start (point)))
-        (insert (coq-simple-abbrev-from-db snippet))
-        (indent-region start (point))))))
 
         ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
         ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
