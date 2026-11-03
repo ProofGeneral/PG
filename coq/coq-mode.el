@@ -29,6 +29,7 @@
 (require 'coq-syntax)                   ;For font-lock-keywords
 (require 'pg-double-hit)
 (require 'coq-queries)                  ; common to all backends
+(require 'coq-templates)                ; abbrevs and yasnippets, idem
 
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
@@ -283,6 +284,9 @@ Near here means PT is either inside or just aside of a comment."
 
   ;; we can cope with nested comments
   (set (make-local-variable 'comment-quote-nested) nil)
+
+  ;; abbrevs and yasnippet templates, in all backends
+  (coq-templates-setup)
 
   ;; Setup Proof-General interface to Coq.
   (if coq-use-pg (coq-pg-setup))
