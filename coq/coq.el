@@ -59,6 +59,7 @@
 (require 'coq-diffs)                    ; highlight proof diffs
 (require 'coq-goals)                    ; folding of the other goals
 (require 'pg-goals-indicators)          ; goals out of view
+(require 'pg-double-hit)                ; double hit electric terminator
 
 (defvar prettify-symbols-alist)
 
@@ -1836,17 +1837,10 @@ at `proof-assistant-settings-cmds' evaluation time.")
 (defvar coq-pg-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map proof-mode-map)
-
-    ;;(define-key coq-mode-map coq-double-hit-hot-key 'coq-terminator-insert)
-
-    ;; Setting the new mapping for terminator, overrides the following in
-    ;; proof-script:
+    ;; The terminator is bound in `coq-mode-map', for all backends.  This
+    ;; overrides the following in proof-script:
     ;; (define-key proof-mode-map (vector (aref proof-terminal-string 0))
     ;;             #'proof-electric-terminator)
-    ;;(define-key proof-mode-map (kbd coq-double-hit-hot-key)
-    ;;            #'coq-terminator-insert)
-    (define-key map (kbd ".") #'coq-terminator-insert)
-    ;;(define-key map (kbd ";") #'coq-terminator-insert) ; for french keyboards
     map))
 
 (defvar coq--run-silent-warned nil
@@ -1892,6 +1886,7 @@ known when the Coq file is opened."
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
+  (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -3356,117 +3351,22 @@ Only when three-buffer-mode is enabled."
           #'coq-optimise-resp-windows-if-option)
 
 ;;; DOUBLE HIT ELECTRIC TERMINATOR
-;; Trying to have double hit on colon behave like electric terminator. The "."
-;; is used for records and modules qualified notatiohns, so electric terminator
-;; is not pertinent.
+;; Double hit on "." behaves like the electric terminator, see
+;; pg-double-hit.el.  The "." is used for records and modules qualified
+;; notations, so the electric terminator is not pertinent.
 
-;; TODO: make this a minor mode with something in the modeline, like in
-;; pg-user.el for electric-terminator.
-;; TODO: Have the same for other commands, but with insertion at all.
-
-(defcustom coq-double-hit-enable nil
-  "* Experimental: Whether or not double hit should be enabled in Coq mode.
-A double hit is performed by pressing twice a key quickly.  If
-this variable is not nil, then 1) it means that electric
-terminator is off and 2) a double hit on the terminator act as
-the usual electric terminator.  See `proof-electric-terminator'."
-  :type 'boolean
-  :set #'proof-set-value
-  :group 'proof-user-options)
-
-
-(defvar coq-double-hit-hot-key "."
-  "The key used for double hit electric terminator.
-By default this is the Coq terminator \".\" key.
-For example one can do this:
-
-\(setq coq-double-hit-hot-key (kbd \";\"))
-
-to use semi-colon instead (on French keyboard, it is the same key as
-\".\" but without shift.")
-
-(defvar coq-double-hit-hot-keybinding nil
-  "The keybinding that was erased by double hit terminator enabling.
-It will be restored if double hit terminator is toggle off.")
-
-;; We redefine the keybinding when we go in and out of double hit mode, even if
-;; in principle coq-terminator-insert is compatible with
-;; proof-electric-terminator. This may be overprudent but I suspect that
-(defun coq-double-hit-enable ()
-  "Disables electric terminator since double hit is a replacement.
-This function is called by `proof-set-value' on `coq-double-hit-enable'."
-  (when (and coq-double-hit-enable proof-electric-terminator-enable)
-    (proof-electric-terminator-toggle 0))
-  ;; this part switch between bindings of coq-double-hit-hot-key: the nominal
-  ;; one and coq-terminator-insert
-;  (if (not coq-double-hit-enable)
-;      (define-key coq-mode-map (kbd coq-double-hit-hot-key) coq-double-hit-hot-keybinding)
-;    (setq coq-double-hit-hot-keybinding (key-binding coq-double-hit-hot-key))
-;    (define-key coq-mode-map (kbd coq-double-hit-hot-key) 'coq-terminator-insert))
-  )
-
-
-
-(proof-deftoggle coq-double-hit-enable coq-double-hit-toggle)
-
-(defadvice proof-electric-terminator-enable (after coq-unset-double-hit-advice)
-  "Disable double hit terminator since electric terminator is a replacement.
-This is an advice to pg `proof-electric-terminator-enable' function."
-  (when (and coq-double-hit-enable proof-electric-terminator-enable)
-    (coq-double-hit-toggle 0)
-    (message "Hit M-1 . to enter a real \".\".")))
-
-(ad-activate 'proof-electric-terminator-enable)
-
-(defvar coq-double-hit-delay 0.25
-  "The maximum delay between the two hit of a double hit in Coq/ProofGeneral.")
-
-(defvar coq-double-hit-timer nil
-  "The timer used to watch for double hits.")
-
-(defvar coq-double-hit-hot nil
-  "The variable telling that a double hit is still possible.")
-
-
-
-(defun coq-unset-double-hit-hot ()
-  "Disable timer `coq-double-hit-timer' and set it to nil.
-Shut off the current double hit if any.  This function is supposed to
-be called at double hit timeout."
-  (when coq-double-hit-timer (cancel-timer coq-double-hit-timer))
-  (setq coq-double-hit-hot nil)
-  (setq coq-double-hit-timer nil))
-
-(defun coq-colon-self-insert ()
-  "Detect a double hit and act as electric terminator if detected.
-Starts a timer for a double hit otherwise."
-  (interactive)
-  (if (and coq-double-hit-hot
-           (not (proof-inside-comment (point)))
-           (not (proof-inside-string (point))))
-      (progn (coq-unset-double-hit-hot)
-             (delete-char -1) ; remove previously typed char
-             (proof-assert-electric-terminator)); insert the terminator
-    (self-insert-command 1)
-    (setq coq-double-hit-hot t)
-    (setq coq-double-hit-timer
-          (run-with-timer coq-double-hit-delay
-                          nil #'coq-unset-double-hit-hot))))
-
-(defun coq-terminator-insert (&optional count)
-  "A wrapper on `proof-electric-terminator'.
-Used to accept double hits instead if enabled.
-If by accident option `proof-electric-terminator-enable' and option
-`coq-double-hit-enable' are non-nil at the same time, this gives
-priority to the former."
-  (interactive)
-  (if (and (not proof-electric-terminator-enable)
-           coq-double-hit-enable (null count))
-      (coq-colon-self-insert)
+(defun coq-pg-terminator-insert (&optional count)
+  "A wrapper on `proof-electric-terminator', COUNT is the prefix argument.
+Used to accept double hits instead if enabled, see
+`proof-double-hit-enable'.  If by accident option
+`proof-electric-terminator-enable' and option `proof-double-hit-enable'
+are non-nil at the same time, this gives priority to the former.
+This is `coq-terminator-insert-function' for Proof General."
+  (if (and (not proof-electric-terminator-enable) proof-double-hit-enable)
+      (proof-double-hit-insert #'proof-assert-electric-terminator count
+                               proof-terminal-string)
     ;; otherwise call this, which checks proof-electric-terminator-enable
     (proof-electric-terminator count)))
-
-(put 'coq-terminator-insert 'delete-selection t)
 
 
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;

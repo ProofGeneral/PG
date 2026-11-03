@@ -180,9 +180,9 @@ start."
      :style toggle
      :selected coq-fold-other-goals
      :help "Display only the number of the goals after the first one."]
-    ["Double Hit Electric Terminator" coq-double-hit-toggle
+    ["Double Hit Electric Terminator" proof-double-hit-toggle
      :style toggle
-     :selected coq-double-hit-enable
+     :selected proof-double-hit-enable
      :help "Automatically send commands when terminator is typed twice quickly."]
     ("Auto Compilation"
      ["Compile Before Require"
