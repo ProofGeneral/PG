@@ -11,7 +11,8 @@
 ;;; Commentary:
 ;;
 ;; The abbrevs and the yasnippet templates of Coq mode, built from the
-;; keyword databases of coq-syntax.el.  Moved from coq-abbrev.el.
+;; keyword databases of coq-syntax.el.  They are common to all Coq
+;; backends: `coq-mode' calls `coq-templates-setup'.
 
 ;;; Code:
 
@@ -67,6 +68,22 @@ start."
   (append coq-tactics-abbrev-table coq-tacticals-abbrev-table
           coq-commands-abbrev-table coq-terms-abbrev-table)
   "Abbrev table for Coq.")
+
+(defvar coq-use-yasnippet)
+
+(defun coq-templates-setup ()
+  "Register the default yasnippet templates, if wanted.
+See `coq-use-yasnippet' and `coq-yasnippet-use-default-templates'.
+Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
+  (cond
+   ((and coq-use-yasnippet (not (fboundp 'yas-define-snippets)))
+    (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed."))
+   ((and coq-use-yasnippet (not coq-yasnippet-use-default-templates))
+    (message "Default coq yasnippets NOT loaded as asked."))
+   (coq-use-yasnippet
+    (message "Loading default coq yasnippets.")
+    (coq-define-yasnippets-from-db))
+   (t (message "yasnippet not found by proofgeneral, falling back to simple abbrevs"))))
 
 (provide 'coq-templates)
 

@@ -1702,16 +1702,6 @@ known when the Coq file is opened."
 
   (setq proof-cannot-reopen-processed-files nil)
 
-  (cond
-   ((and coq-use-yasnippet (not (fboundp 'yas-define-snippets)))
-         (message "Warning: `coq-use-yasnippet` is t but yasnippet not installed."))
-   ((and coq-use-yasnippet (not coq-yasnippet-use-default-templates))
-    (message "Default coq yasnippets NOT loaded as asked."))
-   (coq-use-yasnippet
-    (message "Loading default coq yasnippets.")
-    (coq-define-yasnippets-from-db))
-   (t (message "yasnippet not found by proofgeneral, falling back to simple abbrevs")))
-
   (proof-config-done)
   )
 
