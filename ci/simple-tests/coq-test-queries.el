@@ -48,6 +48,7 @@
 (declare-function coq-insert-match "coq-queries")
 (declare-function coq-insert-named-goal-selectors "coq-queries")
 (declare-function coq-pg-query-result "coq")
+(declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
 (declare-function proof-double-hit-toggle "pg-double-hit")
 
@@ -162,6 +163,26 @@ set stays set."
     (coq-run-query "Check (1 + 1)" '("Set Printing All") #'ignore)
     (coq-test-queries-wait)
     (should (coq-flag-is-on-p "Test Printing All"))))
+
+(ert-deftest coq-test-queries-flags-from-prefix ()
+  "The prefix argument gives the printing flags of a query."
+  (should-not (coq-query-flags-from-prefix nil))
+  (should (equal (coq-query-flags-from-prefix '(4)) '("Set Printing All")))
+  ;; not only interactively
+  (should (equal (coq-query-flags-from-prefix t) '("Set Printing All")))
+  (cl-letf (((symbol-function 'completing-read-multiple)
+             (lambda (&rest _) '("Implicit" "No Notations"))))
+    (should (equal (coq-query-flags-from-prefix '(16))
+                   '("Set Printing Implicit" "Unset Printing Notations")))))
+
+(ert-deftest coq-test-queries-unset-flag ()
+  "A flag unsetting an option, like No Notations, is undone after the
+query."
+  (coq-test-queries-with-file
+    (coq-run-query "Check (1 + 1)" '("Unset Printing Notations") #'ignore)
+    (coq-test-queries-wait)
+    (should (string-match-p "Nat\\.add" (coq-test-queries-response)))
+    (should (coq-flag-is-on-p "Test Printing Notations"))))
 
 (ert-deftest coq-test-queries-mouse ()
   "`coq-remap-mouse-1' binds the queries at mouse click when set, in the

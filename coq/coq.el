@@ -843,9 +843,10 @@ must be in locked region."
 
 (defun coq-Show (withprintingall)
   "Ask for a number I and show the Ith goal.
-Ask for a number I and show the ith current goal.  With non-nil prefix
-argument and not on the locked span, show the goal with flag
-Printing All set."
+Ask for a number I and show the ith current goal.  When not on the
+locked span, the prefix argument gives the printing flags, see
+`coq-query-flags-from-prefix': \\[universal-argument] for Printing All,
+\\[universal-argument] \\[universal-argument] to choose them."
 ; Disabled:
 ;  "Ask for a number i and show the ith goal, or show ancient goal.
 ;If point is on a locked span, show the corresponding coq
@@ -867,9 +868,8 @@ Printing All set."
             (pg-response-display s)
             (proof-display-and-keep-buffer proof-response-buffer)
             (coq-optimise-resp-windows))))
-    (if withprintingall
-        (coq-ask-do-show-all "Show goal number" "Show" t)
-      (coq-ask-do "Show goal number" "Show" t))))
+    (coq-ask-do "Show goal number" "Show" t nil nil
+                (coq-query-flags-from-prefix withprintingall))))
 
 (defun coq-Show-with-implicits ()
   "Ask for a number i and show the ith goal."

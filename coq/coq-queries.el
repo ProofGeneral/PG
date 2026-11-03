@@ -63,6 +63,38 @@ See `coq-query-result-function'."
     (user-error "Coq: no backend to run queries in this buffer"))
   (funcall coq-query-result-function command))
 
+(defcustom coq-query-flags
+  '(("All" . "Set Printing All")
+    ("Implicit" . "Set Printing Implicit")
+    ("Coercions" . "Set Printing Coercions")
+    ("Parentheses" . "Set Printing Parentheses")
+    ("No Notations" . "Unset Printing Notations")
+    ("Universes" . "Set Printing Universes"))
+  "Printing flags that a query can use, by name.
+With \\[universal-argument] \\[universal-argument], query commands ask
+which ones to use, see `coq-query-flags-from-prefix'.  Each value is the
+Coq command setting a boolean flag, for this query only."
+  :type '(alist :key-type (string :tag "Name")
+                :value-type (string :tag "Coq command"))
+  :group 'coq)
+
+(defun coq-query-flags-from-prefix (arg)
+  "Return the printing flags of a query with prefix argument ARG.
+None without prefix argument.  With \\[universal-argument] \\[universal-argument] or more,
+ask which ones among `coq-query-flags'.  With any other prefix
+argument, for instance \\[universal-argument], Set Printing All."
+  (cond
+   ((null arg) nil)
+   ((and (consp arg) (>= (car arg) 16))
+    (mapcar (lambda (name) (cdr (assoc name coq-query-flags)))
+            (completing-read-multiple "Printing flags: " coq-query-flags
+                                      nil t)))
+   (t (list "Set Printing All"))))
+
+(defun coq--query-prompt (prompt flags)
+  "PROMPT for a query, mentioning FLAGS if any."
+  (if flags (format "%s [%s]" prompt (string-join flags ", ")) prompt))
+
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
   "Enumerates the different kinds of notation information one can ask to Coq.")
@@ -260,7 +292,8 @@ argument.  WAIT may be a function, called once the answer is
 displayed, any other non-nil value waits for the answer.  FLAGS are
 printing flags for this query only, see `coq-query-function'."
   (let ((postform (or postformatcmd #'identity))
-        (arg (coq-guess-or-ask-for-string ask dontguess)))
+        (arg (coq-guess-or-ask-for-string (coq--query-prompt ask flags)
+                                          dontguess)))
     (coq-run-query (concat do " " (funcall postform arg))
                    flags
                    (cond ((functionp wait) wait)
@@ -305,13 +338,13 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-ask-do "SearchRewrite" "SearchRewrite" nil))
 
-(defun coq-Print (withprintingall)
+(defun coq-Print (arg)
   "Ask for an ident and print the corresponding term.
-With flag Printing All if some prefix arg is given (\\[universal-argument])."
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "Print" "Print")
-    (coq-ask-do "Print" "Print")))
+  (coq-ask-do "Print" "Print" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-Print-Ltac ()
   "Ask for an ident and print the corresponding Ltac term."
@@ -328,12 +361,13 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive)
   (coq-ask-do-show-all "Print" "Print"))
 
-(defun coq-About (withprintingall)
-  "Ask for an ident and print information on it."
+(defun coq-About (arg)
+  "Ask for an ident and print information on it.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "About" "About")
-    (coq-ask-do "About" "About")))
+  (coq-ask-do "About" "About" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-About-with-implicits ()
   "Ask for an ident and print information on it."
@@ -382,13 +416,13 @@ This is specific to `coq-mode'."
   (interactive)
   (coq-ask-do "Print Implicit" "Print Implicit"))
 
-(defun coq-Check (withprintingall)
+(defun coq-Check (arg)
   "Ask for a term and print its type.
-With flag Printing All if some prefix arg is given (\\[universal-argument])."
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (if withprintingall
-      (coq-ask-do-show-all "Check" "Check")
-    (coq-ask-do "Check" "Check")))
+  (coq-ask-do "Check" "Check" nil nil nil (coq-query-flags-from-prefix arg)))
 
 (defun coq-Check-show-implicits ()
   "Ask for a term and print its type."
@@ -400,21 +434,30 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
-(defun coq-query (showall)
-  "Ask for a query, with completion, and send to Coq."
+(defun coq-query (arg)
+  "Ask for a query, with completion, and send to Coq.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
   (interactive "P")
-  (let ((q (coq-build-command-from-db coq-queries-commands-db "which Query?")))
-    (coq-run-query (coq-remove-trailing-dot (string-trim-right q))
-                   (and showall '("Set Printing All")))))
+  (let* ((flags (coq-query-flags-from-prefix arg))
+         (q (coq-build-command-from-db coq-queries-commands-db
+                                       (coq--query-prompt "which Query?"
+                                                          flags))))
+    (coq-run-query (coq-remove-trailing-dot (string-trim-right q)) flags)))
 
-(defun coq-Search ()
-  (interactive)
+(defun coq-Search (&optional arg)
+  "Ask for a pattern and search the lemmas matching it.
+With \\[universal-argument], with Printing All.  With
+\\[universal-argument] \\[universal-argument], ask which printing flags to use, see
+`coq-query-flags-from-prefix'."
+  (interactive "P")
   (coq-ask-do
    ;; TODO: use [Add Search Blacklist "foo"] to exclude optionaly some patterns:
    ;;  "_ind" "_rec" "R_" "_equation"
    "Search (ex: \"eq_\" eq -bool)"
    "Search"
-   nil nil #'coq-search-done))
+   nil nil #'coq-search-done (coq-query-flags-from-prefix arg)))
 
 (defun coq-search-done ()
   "Highlight the hypotheses cited by the answer of a Search, if wanted.
