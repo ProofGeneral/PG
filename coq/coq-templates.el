@@ -94,11 +94,18 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
 
 (defvar coq-load-path)                  ; in coq-system.el
 
-(defconst module-kinds-table
+(define-obsolete-variable-alias 'module-kinds-table
+  'coq-module-kinds-table "4.6")
+(define-obsolete-variable-alias 'modtype-kinds-table
+  'coq-modtype-kinds-table "4.6")
+(define-obsolete-variable-alias 'reqkinds-kinds-table
+  'coq-require-kinds-table "4.6")
+
+(defconst coq-module-kinds-table
   '(("Section" 0) ("Module" 1) ("Module Type" 2) ("Declare Module" 3))
   "Enumerates the different kinds of modules.")
 
-(defconst modtype-kinds-table
+(defconst coq-modtype-kinds-table
   '(("" 1) (":" 2) ("<:" 3))
   "Enumerates the different kinds of type information for modules.")
 
@@ -129,12 +136,12 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
   (interactive)
   (let*
       ((mods (completing-read "Kind of module (TAB to see list): "
-                              module-kinds-table))
+                              coq-module-kinds-table))
        (s (read-string  "Name: "))
        (typkind (if (string-equal mods "Section")
                     "" ;; if not a section
                   (completing-read "Kind of type (optional, TAB to see list): "
-                                   modtype-kinds-table))))
+                                   coq-modtype-kinds-table))))
     (if (string-equal typkind "")
         (progn
           (insert mods " " s ".\n")
@@ -146,7 +153,7 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
         (insert "\nEnd " s ".")
         (goto-char pt)))))
 
-(defconst reqkinds-kinds-table
+(defconst coq-require-kinds-table
   '(("Require Import") ("Require Export") ("Require") ("Import"))
   "Enumerates the different kinds of requiring a module.")
 
@@ -157,7 +164,7 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
          (reqkind
           (completing-read
            "Command (TAB to see list, default Require Import) : "
-           reqkinds-kinds-table nil nil nil nil "Require Import")))
+           coq-require-kinds-table nil nil nil nil "Require Import")))
     (cl-loop do
              (setq s (completing-read "Name (empty to stop) : "
                                       (coq-build-accessible-modules-list)))
