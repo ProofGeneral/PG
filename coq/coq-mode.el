@@ -148,6 +148,15 @@ and `proof-double-hit-enable'.  Bind another key to this command in
     (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
     (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)
     (define-key map (kbd "C-c C-a C-g") #'coq-insert-named-goal-selectors)
+    ;; Insertions without backend, see coq-templates.el.
+    (define-key map (kbd "C-c C-a C-(") #'coq-insert-section-or-module)
+    (define-key map (kbd "C-c C-a C-)") #'coq-end-Section)
+    (define-key map (kbd "C-c C-a C-t") #'coq-insert-tactic)
+    (define-key map (kbd "C-c C-a t") #'coq-insert-tactical)
+    (define-key map (kbd "C-c C-a !") #'coq-insert-solve-tactic)
+    (define-key map (kbd "C-c C-a C-SPC") #'coq-insert-term)
+    (define-key map (kbd "C-c C-a C-<return>") #'coq-insert-command)
+    (define-key map (kbd "C-c C-a C-r") #'coq-insert-requires)
     map)
   "Keymap for `coq-mode'.")
 

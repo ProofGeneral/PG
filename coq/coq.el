@@ -2431,15 +2431,7 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
-;; Insertion commands
-(define-key coq-keymap [(control ?\()] #'coq-insert-section-or-module)
-(define-key coq-keymap [(control ?\))] #'coq-end-Section)
-(define-key coq-keymap [(control ?t)]  #'coq-insert-tactic)
-(define-key coq-keymap [?t]            #'coq-insert-tactical)
-(define-key coq-keymap [?!]            #'coq-insert-solve-tactic) ; will work in tty
-(define-key coq-keymap [(control ?\s)] #'coq-insert-term)
-(define-key coq-keymap [(control return)] #'coq-insert-command)
-(define-key coq-keymap [(control ?r)]  #'coq-insert-requires)
+;; Insertion commands (the ones without backend are in `coq-mode-map')
 ; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
 ; anyway company-coq should provide an "as!<TAB>".
 (define-key coq-keymap [(?\[)]         #'coq-insert-as-in-next-command) ;; not for goal/response buffer?

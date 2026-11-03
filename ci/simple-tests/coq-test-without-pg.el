@@ -9,7 +9,7 @@
 ;; Test the part of Coq mode common to all backends, with the Proof
 ;; General backend disabled (`coq-use-pg' nil): it must not load the
 ;; proof shell, and the abbrevs, the terminator command, the query
-;; commands and their keys must be there.
+;; and insertion commands and their keys must be there.
 
 ;;; Code:
 
@@ -19,6 +19,7 @@
 
 (require 'proof-site)
 (require 'ert)
+(require 'cl-lib)
 
 (defvar coq-mode-abbrev-table)
 (defvar coq-query-function)
@@ -30,6 +31,14 @@
 (declare-function coq-About "coq-queries")
 (declare-function coq-Check "coq-queries")
 (declare-function coq-insert-intros "coq-queries")
+(declare-function coq-insert-tactic "coq-templates")
+(declare-function coq-insert-tactical "coq-templates")
+(declare-function coq-insert-solve-tactic "coq-templates")
+(declare-function coq-insert-term "coq-templates")
+(declare-function coq-insert-command "coq-templates")
+(declare-function coq-insert-requires "coq-templates")
+(declare-function coq-insert-section-or-module "coq-templates")
+(declare-function coq-end-Section "coq-templates")
 
 
 ;;; utility functions
@@ -78,6 +87,14 @@ run the queries."
     (should (eq (key-binding (kbd "C-c C-a C-b")) #'coq-About))
     (should (eq (key-binding (kbd "C-c C-a C-c")) #'coq-Check))
     (should (eq (key-binding (kbd "C-c C-a C-i")) #'coq-insert-intros))
+    (should (eq (key-binding (kbd "C-c C-a C-(")) #'coq-insert-section-or-module))
+    (should (eq (key-binding (kbd "C-c C-a C-)")) #'coq-end-Section))
+    (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
+    (should (eq (key-binding (kbd "C-c C-a t")) #'coq-insert-tactical))
+    (should (eq (key-binding (kbd "C-c C-a !")) #'coq-insert-solve-tactic))
+    (should (eq (key-binding (kbd "C-c C-a C-SPC")) #'coq-insert-term))
+    (should (eq (key-binding (kbd "C-c C-a C-<return>")) #'coq-insert-command))
+    (should (eq (key-binding (kbd "C-c C-a C-r")) #'coq-insert-requires))
     ;; no backend
     (should-not coq-query-function)
     (should-error (coq-run-query "Check x") :type 'user-error)
@@ -86,6 +103,18 @@ run the queries."
     (let ((last-command-event ?.))
       (call-interactively (key-binding ".")))
     (should (string-suffix-p "0.\n." (buffer-string)))))
+
+(ert-deftest coq-test-without-pg-insertions ()
+  "The insertion commands without query work without backend."
+  (coq-test-without-pg-with-file
+    (goto-char (point-max))
+    (cl-letf (((symbol-function 'completing-read)
+               (lambda (&rest _) "reflexivity")))
+      (coq-insert-tactic))
+    (should (string-suffix-p "reflexivity" (buffer-string)))
+    (insert "\nSection S.\n")
+    (coq-end-Section)
+    (should (string-suffix-p "Section S.\nEnd S." (buffer-string)))))
 
 (provide 'coq-test-without-pg)
 

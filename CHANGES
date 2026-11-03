@@ -52,6 +52,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 *** The abbrevs and the default yasnippet templates of Coq mode are
     available in all Coq backends, see `coq-use-yasnippet' and
     `coq-yasnippet-use-default-templates'.
+*** The insertion commands that need no query (C-c C-a C-t, t, !,
+    C-SPC, C-RET, C-r, C-( and C-) for tactics, tacticals, closing
+    tactics, terms, commands, requires and sections) are bound in
+    `coq-mode-map' too, and available in all Coq backends.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing
     #113, #392 and #589). There is no escape character any more, in any
     argument: write -arg "-w 'a b'" instead of -arg "-w \"a b\"", and

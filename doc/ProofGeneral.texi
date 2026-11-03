@@ -4457,10 +4457,13 @@ Inserts ``End <section-name>.'' (this should work well with nested sections).
 
 @vindex coq-mode-map
 The query keys above (and also @kbd{C-c C-a C-q}, @kbd{C-c C-a C-l},
-@kbd{C-c C-a C-n} and @kbd{C-c C-a h}) and the insertions built from
-a query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g})
-are bound in @code{coq-mode-map}, which is meant to be common to all
-the backends of Coq mode.  To bind these commands to other keys, do it
+@kbd{C-c C-a C-n} and @kbd{C-c C-a h}), the insertions built from a
+query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g}) and
+the other insertions (@kbd{C-c C-a C-t}, @kbd{t}, @kbd{!},
+@kbd{C-SPC}, @kbd{C-RET}, @kbd{C-r}, @kbd{C-(} and @kbd{C-)} after
+@kbd{C-c C-a}, for tactics, tacticals, closing tactics, terms,
+commands, requires and sections) are bound in @code{coq-mode-map},
+which is meant to be common to all the backends of Coq mode.  To bind these commands to other keys, do it
 in this keymap, for instance:
 @lisp
 (define-key coq-mode-map (kbd "<f9>") #'coq-Check)

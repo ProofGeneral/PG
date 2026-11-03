@@ -39,6 +39,8 @@
 (declare-function coq-pg-query "coq")
 (declare-function coq-Show "coq")
 (declare-function coq-insert-intros "coq")
+(declare-function coq-insert-tactic "coq-templates")
+(declare-function coq-insert-as-in-next-command "coq")
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-About "coq-queries")
 (declare-function coq-Check "coq-queries")
@@ -103,8 +105,10 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-m")) #'coq-insert-match))
     (should (eq (key-binding (kbd "C-c C-a C-g"))
                 #'coq-insert-named-goal-selectors))
+    (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
     ;; Proof General only, in `coq-keymap'
-    (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))))
+    (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+    (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
 
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
