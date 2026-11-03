@@ -23,6 +23,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)                       ; `cl-pushnew'
 (require 'subr-x)                       ; `string-trim-right'
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
@@ -138,14 +139,49 @@ Support dot.notation.of.modules."
       (let ((notation (coq-notation-at-position (point))))
         (if notation (concat "\"" notation "\"") ""))))
 
+(defvar coq-mouse-query-keymaps nil
+  "The keymaps where `coq-remap-mouse-1' binds the queries at mouse click.
+See `coq-mouse-query-add-keymap'.")
+
+(defconst coq--mouse-query-keys
+  '([(control down-mouse-1)] [(shift down-mouse-1)]
+    [(control shift down-mouse-1)] [(control meta down-mouse-1)]
+    [(meta shift down-mouse-1)])
+  "The keys of the queries at mouse click, see `coq-id-under-mouse-query'.")
+
+(defconst coq--mouse-query-ignored-keys
+  '([(control mouse-1)] [(shift mouse-1)] [(control shift mouse-1)]
+    [(meta shift mouse-1)])
+  "The up events of `coq--mouse-query-keys', ignored.")
+
 (defcustom coq-remap-mouse-1 nil
   "Whether Coq mode should remap mouse button 1 to Coq queries.
+See `coq-id-under-mouse-query'.  This is for the script buffer and, in
+the backends that support it, the goals and response buffers.
 
 This overrides the default global binding of (control mouse-1) and
 \(shift mouse-1) (buffers and faces menus).  Hence it is nil by
 default."
   :type 'boolean
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (mapc #'coq--mouse-query-update coq-mouse-query-keymaps))
   :group 'coq)
+
+(defun coq--mouse-query-update (map)
+  "Bind or unbind the queries at mouse click in MAP.
+Bind them if `coq-remap-mouse-1' is non-nil, unbind them otherwise."
+  (dolist (key coq--mouse-query-keys)
+    (define-key map key (and coq-remap-mouse-1 #'coq-id-under-mouse-query)))
+  (dolist (key coq--mouse-query-ignored-keys)
+    (define-key map key (and coq-remap-mouse-1 #'ignore))))
+
+(defun coq-mouse-query-add-keymap (map)
+  "Add MAP to `coq-mouse-query-keymaps' and update its bindings.
+`coq-mode-map' is there, each backend adds the keymaps of its goals
+and response buffers."
+  (cl-pushnew map coq-mouse-query-keymaps :test #'eq)
+  (coq--mouse-query-update map))
 
 
 ;; On a mouse event, try to query the id at point clicked.

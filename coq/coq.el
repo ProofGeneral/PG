@@ -2710,37 +2710,9 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?l)] #'coq-LocateConstant)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?n)] #'coq-LocateNotation)
 
-(when coq-remap-mouse-1
-  (define-key proof-mode-map [(control down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-mode-map [(shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-mode-map [(control mouse-1)] #'ignore)
-  (define-key proof-mode-map [(shift mouse-1)] #'ignore)
-  (define-key proof-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-mode-map [(control shift mouse-1)] #'ignore)
-  (define-key proof-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-mode-map [(meta shift mouse-1)] #'ignore)
-
-  (define-key proof-response-mode-map [(control down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-response-mode-map [(shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-response-mode-map [(control mouse-1)] #'ignore)
-  (define-key proof-response-mode-map [(shift mouse-1)] #'ignore)
-  (define-key proof-response-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-response-mode-map [(control shift mouse-1)] #'ignore)
-  (define-key proof-response-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-response-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-response-mode-map [(meta shift mouse-1)] #'ignore)
-
-
-  (define-key proof-goals-mode-map [(control down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(control mouse-1)] #'ignore)
-  (define-key proof-goals-mode-map [(shift mouse-1)] #'ignore)
-  (define-key proof-goals-mode-map [(control shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(control shift mouse-1)] #'ignore)
-  (define-key proof-goals-mode-map [(control meta down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(meta shift down-mouse-1)] #'coq-id-under-mouse-query)
-  (define-key proof-goals-mode-map [(meta shift mouse-1)] #'ignore))
+;; The queries at mouse click, see `coq-remap-mouse-1'.
+(coq-mouse-query-add-keymap coq-response-mode-map)
+(coq-mouse-query-add-keymap coq-goals-mode-map)
 
 
 

@@ -146,6 +146,9 @@ and `proof-double-hit-enable'.  Bind another key to this command in
     map)
   "Keymap for `coq-mode'.")
 
+;; The queries at mouse click, in all backends, see `coq-remap-mouse-1'.
+(coq-mouse-query-add-keymap coq-mode-map)
+
 (defvar coq-mode-syntax-table
   (let ((st (make-syntax-table)))
     (modify-syntax-entry ?\$ "." st)
