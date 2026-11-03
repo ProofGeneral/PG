@@ -750,6 +750,42 @@ running silent."
                         'empty-action-list
                         'dont-show-when-silent))))
 
+(defun coq-pg--flag-opposite (flag)
+  "The command undoing FLAG: Unset for Set and conversely."
+  (if (string-match "\\`Set " flag)
+      (replace-match "Unset " t t flag)
+    (replace-regexp-in-string "\\`Unset " "Set " flag t t)))
+
+(defun coq-pg--flag-in-effect-p (flag)
+  "Non-nil if FLAG, like \"Set Printing All\", is already in effect.
+Ask Coq with the corresponding Test command."
+  (let ((on (coq-flag-is-on-p
+             (replace-regexp-in-string "\\`\\(Un\\)?[Ss]et " "Test " flag t t))))
+    (if (string-match "\\`Set " flag) on (not on))))
+
+(defun coq-pg-query (command &optional flags then)
+  "Send the query COMMAND to Coq with printing FLAGS, then call THEN.
+The flags not in effect yet are set before the query and unset after
+it.  This is `coq-query-function' for Proof General, see it for the
+arguments."
+  (proof-shell-ready-prover)
+  (let ((flags (cl-remove-if #'coq-pg--flag-in-effect-p flags)))
+    ;; As in `coq-command-with-set-unset': with flags, no Show or
+    ;; anything usually inserted after a group of commands.
+    (dolist (flag flags)
+      (proof-shell-invisible-command
+       (concat flag " .") nil nil
+       'no-response-display 'empty-action-list 'dont-show-when-silent))
+    (apply #'proof-shell-invisible-command
+           (concat command " .") (or flags then) nil
+           (if flags '(empty-action-list dont-show-when-silent)
+             '(dont-show-when-silent)))
+    (dolist (flag (reverse flags))
+      (proof-shell-invisible-command
+       (concat (coq-pg--flag-opposite flag) " .") 'waitforit nil
+       'no-response-display 'empty-action-list 'dont-show-when-silent)))
+  (when then (funcall then)))
+
   ;; (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
 
 
@@ -1427,13 +1463,6 @@ See  `coq-fold-hyp'."
     (coq-fold-hyp h)))
 ;;;;;;;
 
-(proof-definvisible coq-PrintHint "Print Hint.")
-
-;; Items on show menu
-(proof-definvisible coq-show-tree "Show Tree.")
-(proof-definvisible coq-show-proof "Show Proof.")
-(proof-definvisible coq-show-conjectures "Show Conjectures.")
-(proof-definvisible coq-show-intros "Show Intros.") ; see coq-insert-intros below
 (proof-definvisible coq-set-printing-implicit "Set Printing Implicit.")
 (proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
 (proof-definvisible coq-set-printing-all "Set Printing All.")
@@ -1581,6 +1610,7 @@ known when the Coq file is opened."
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
   (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
+  (setq coq-query-function #'coq-pg-query)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -1799,6 +1829,7 @@ shortly before `proof-assert-command-hook', respectively,
 (setq coq-goals-buffer-function (lambda () proof-goals-buffer))
 
 (defun coq-goals-mode-config ()
+  (setq coq-query-function #'coq-pg-query)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1806,6 +1837,7 @@ shortly before `proof-assert-command-hook', respectively,
   (proof-goals-config-done))
 
 (defun coq-response-config ()
+  (setq coq-query-function #'coq-pg-query)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2623,7 +2655,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [?!]            #'coq-insert-solve-tactic) ; will work in tty
 (define-key coq-keymap [(control ?\s)] #'coq-insert-term)
 (define-key coq-keymap [(control return)] #'coq-insert-command)
-(define-key coq-keymap [(control ?q)]  #'coq-query)
 (define-key coq-keymap [(control ?r)]  #'coq-insert-requires)
 ; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
 ; anyway company-coq should provide an "as!<TAB>".
@@ -2633,14 +2664,6 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
 (define-key coq-keymap [(control ?s)]  #'coq-Show)
 (define-key coq-keymap [?r]            #'proof-store-response-win)
 (define-key coq-keymap [?g]            #'proof-store-goals-win)
-(define-key coq-keymap [(control ?o)]  #'coq-SearchIsos)
-(define-key coq-keymap [(control ?p)]  #'coq-Print)
-(define-key coq-keymap [(control ?b)]  #'coq-About)
-(define-key coq-keymap [(control ?a)]  #'coq-Search)
-(define-key coq-keymap [(control ?c)]  #'coq-Check)
-(define-key coq-keymap [?h]            #'coq-PrintHint)
-(define-key coq-keymap [(control ?l)]  #'coq-LocateConstant)
-(define-key coq-keymap [(control ?n)]  #'coq-LocateNotation)
 (define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)
 (define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
 (define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)

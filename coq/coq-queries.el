@@ -15,19 +15,37 @@
 ;;
 ;; The query commands: they ask for an identifier or a term, guessed
 ;; from point, and send a query about it to Coq, like About, Check,
-;; Print, Search or Locate.  Moved from coq.el.
+;; Print, Search or Locate.
+;;
+;; They are common to all Coq backends: they run the query with
+;; `coq-run-query', which calls `coq-query-function', set by the
+;; backend.  Their keys are in `coq-mode-map'.
 
 ;;; Code:
 
+(require 'subr-x)                       ; `string-trim-right'
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
 
 (defvar proof-minibuffer-history)
 (defvar coq-highlight-hyps-cited-in-response)
-(declare-function proof-shell-ready-prover "proof-shell")
-(declare-function proof-shell-invisible-command "proof-shell")
-(declare-function coq-command-with-set-unset "coq")
 (declare-function coq-highlight-hyps-cited-in-response "coq")
+
+(defvar-local coq-query-function nil
+  "Function running a query, set by each Coq backend.
+It is called with the arguments COMMAND FLAGS THEN.  COMMAND is the
+query, without its final dot, for instance \"About nat\".  FLAGS is a
+list of commands setting boolean printing flags for this query only,
+for instance (\"Set Printing All\"), the backend undoes them after the
+query.  THEN is nil or a function, called without argument once the
+answer is displayed.")
+
+(defun coq-run-query (command &optional flags then)
+  "Run the query COMMAND with printing FLAGS, then call THEN.
+See `coq-query-function' for the arguments."
+  (unless coq-query-function
+    (user-error "Coq: no backend to run queries in this buffer"))
+  (funcall coq-query-function command flags then))
 
 (defconst notation-print-kinds-table
   '(("Print Scope(s)" 0) ("Print Visibility" 1))
@@ -45,9 +63,9 @@
        )
     (cond
      ((and (string-equal mods "Print Scope(s)") (string-equal s ""))
-      (proof-shell-invisible-command (format "Print Scopes.")))
+      (coq-run-query "Print Scopes"))
      (t
-      (proof-shell-invisible-command (format "%s %s ." mods s))))))
+      (coq-run-query (format "%s %s" mods s))))))
 
 (defun coq-remove-trailing-dot (s)
   "Return the string S without its trailing \".\" if any.
@@ -162,10 +180,8 @@ More precisely:
                  (ctrl "Print")))
              ;; Notation need to be surrounded by ""
              (cmd (format (concat c " %s") (or id (concat "\"" notat "\"")))))
-        (if mta ;; meta means: Set printing all for the command
-            (coq-command-with-set-unset
-             "Set Printing All" cmd "Unset Printing All" nil "Test Printing All")
-          (proof-shell-invisible-command cmd))))))
+        ;; meta means: Set printing all for the command
+        (coq-run-query cmd (and mta '("Set Printing All")))))))
 
 (defun coq-guess-or-ask-for-string (s &optional dontguess)
   "Asks for a Coq identifier with message S.
@@ -185,31 +201,28 @@ Otherwise propose identifier at point if any."
      nil 'proof-minibuffer-history guess)))
 
 
-(defun coq-ask-do (ask do &optional dontguess postformatcmd wait)
-  "Ask for an ident and print the corresponding term.
-Add `'dont-show-when-silent' to suppress show commands when running
-silent."
-  (let* ((cmd) (postform (if (eq postformatcmd nil) 'identity postformatcmd)))
-    (proof-shell-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (proof-shell-invisible-command
-     (format (concat do " %s .") (funcall postform cmd))
-     wait
-     nil
-     'dont-show-when-silent)))
+(defun coq-ask-do (ask do &optional dontguess postformatcmd wait flags)
+  "Ask for an argument with prompt ASK and run the query DO on it.
+The argument is guessed from point or region, unless DONTGUESS, see
+`coq-guess-or-ask-for-string'.  If non-nil, POSTFORMATCMD formats the
+argument.  WAIT may be a function, called once the answer is
+displayed, any other non-nil value waits for the answer.  FLAGS are
+printing flags for this query only, see `coq-query-function'."
+  (let ((postform (or postformatcmd #'identity))
+        (arg (coq-guess-or-ask-for-string ask dontguess)))
+    (coq-run-query (concat do " " (funcall postform arg))
+                   flags
+                   (cond ((functionp wait) wait)
+                         (wait #'ignore)))))
 
 
-(defun coq-ask-do-set-unset (ask do setcmd unsetcmd
+(defun coq-ask-do-set-unset (ask do setcmd _unsetcmd
                                  &optional dontguess postformatcmd _tescmd)
-  "Ask for an ident id and execute command DO in SETCMD mode.
-More precisely it executes SETCMD, then DO id and finally silently
-UNSETCMD.  See `coq-command-with-set-unset'."
-  (let* ((cmd)
-         ;; (postform (if (eq postformatcmd nil) 'identity postformatcmd tescmd))
-         )
-    (proof-shell-ready-prover)
-    (setq cmd (coq-guess-or-ask-for-string ask dontguess))
-    (coq-command-with-set-unset setcmd (concat do " " cmd) unsetcmd postformatcmd)))
+  "Ask for an argument with prompt ASK and run the query DO on it.
+Run it with the printing flag SETCMD, for instance \"Set Printing All\",
+for this query only: the backend undoes it, UNSETCMD is ignored.  See
+`coq-ask-do' for DONTGUESS and POSTFORMATCMD."
+  (coq-ask-do ask do dontguess postformatcmd nil (list setcmd)))
 
 
 (defun coq-ask-do-show-implicits (ask do &optional dontguess postformatcmd)
@@ -303,7 +316,7 @@ This is specific to `coq-mode'."
 (defun coq-Pwd ()
   "Display the current Coq working directory."
   (interactive)
-  (proof-shell-invisible-command "Pwd."))
+  (coq-run-query "Pwd"))
 
 (defun coq-Inspect ()
   (interactive)
@@ -340,10 +353,8 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
   "Ask for a query, with completion, and send to Coq."
   (interactive "P")
   (let ((q (coq-build-command-from-db coq-queries-commands-db "which Query?")))
-    (if showall
-        (coq-command-with-set-unset
-         "Set Printing All" q "Unset Printing All" nil "Test Printing All")
-      (proof-shell-invisible-command q))))
+    (coq-run-query (coq-remove-trailing-dot (string-trim-right q))
+                   (and showall '("Set Printing All")))))
 
 (defun coq-Search ()
   (interactive)
@@ -352,12 +363,45 @@ With flag Printing All if some prefix arg is given (\\[universal-argument])."
    ;;  "_ind" "_rec" "R_" "_equation"
    "Search (ex: \"eq_\" eq -bool)"
    "Search"
-   nil nil t)
-  (when coq-highlight-hyps-cited-in-response
-    (coq-highlight-hyps-cited-in-response)
-    (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting."))
-  (unless coq-highlight-hyps-cited-in-response
+   nil nil #'coq-search-done))
+
+(defun coq-search-done ()
+  "Highlight the hypotheses cited by the answer of a Search, if wanted.
+See `coq-highlight-hyps-cited-in-response'."
+  (if (and coq-highlight-hyps-cited-in-response
+           (fboundp 'coq-highlight-hyps-cited-in-response))
+      (progn
+        (coq-highlight-hyps-cited-in-response)
+        (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting."))
     (message "[Coq/Settings/Search Blacklist] to change blacklisting.")))
+
+;; Items of the menu Show, see coq-abbrev.el
+
+(defun coq-PrintHint ()
+  "Print the hints that apply to the current goal."
+  (interactive)
+  (coq-run-query "Print Hint"))
+
+(defun coq-show-tree ()
+  "Show the proof tree."
+  (interactive)
+  (coq-run-query "Show Tree"))
+
+(defun coq-show-proof ()
+  "Show the proof term built so far."
+  (interactive)
+  (coq-run-query "Show Proof"))
+
+(defun coq-show-conjectures ()
+  "Show the names of the current conjectures."
+  (interactive)
+  (coq-run-query "Show Conjectures"))
+
+(defun coq-show-intros ()
+  "Show the names that intros would give.
+See `coq-insert-intros' to insert them."
+  (interactive)
+  (coq-run-query "Show Intros"))
 
 (provide 'coq-queries)
 
