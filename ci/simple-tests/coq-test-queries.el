@@ -42,6 +42,8 @@
 (declare-function coq-pg-query "coq")
 (declare-function coq-Show "coq-queries")
 (declare-function coq-ask-printing-width "coq-goals")
+(declare-function coq-store-goals-win "coq-goals")
+(declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-as-in-next-command "coq")
@@ -115,6 +117,8 @@ Proof General still work."
     (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-s")) #'coq-Show))
     (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
     (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
+    (should (eq (key-binding (kbd "C-c C-a r")) #'coq-store-response-win))
+    (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
     ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
 
@@ -164,6 +168,31 @@ region, asks for a goal number elsewhere."
     ;; one column less, see `coq-adapt-printing-width'
     (should (string-match-p "\\_<50\\_>"
                             (coq-query-result "Test Printing Width")))))
+
+(ert-deftest coq-test-queries-store ()
+  "`coq-store-goals-win' and `coq-store-response-win' copy the goals and
+the response at the top of the buffer *response-freeze*."
+  (coq-test-queries-with-file
+    (cl-letf (((symbol-function 'display-buffer-other-frame)
+               #'display-buffer))
+      (unwind-protect
+          (progn
+            (coq-store-goals-win t)
+            (with-current-buffer "*response-freeze*"
+              (should (eq major-mode 'coq-response-mode))
+              (should (string-match-p "n = x -> True" (buffer-string))))
+            (coq-run-query "Check x" nil #'ignore)
+            (coq-test-queries-wait)
+            (coq-store-response-win)
+            (with-current-buffer "*response-freeze*"
+              ;; the response first, then the goals
+              (should (string-match-p "x\\s-*:\\s-*nat\\(.\\|\n\\)*n = x -> True"
+                                      (buffer-string)))))
+        (when (get-buffer "*response-freeze*")
+          (with-current-buffer "*response-freeze*"
+            ;; a response buffer is not killed while Coq runs
+            (setq-local kill-buffer-hook nil)
+            (kill-buffer)))))))
 
 (ert-deftest coq-test-queries-result ()
   "`coq-query-result' returns the answer of a query, nil on an error."

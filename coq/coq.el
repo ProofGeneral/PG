@@ -395,47 +395,7 @@ It is mostly useful in three window mode, see also
   (coq-script-parse-cmdend-forward))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;; Freeze buffers ;;;;;;;;;;;;
-;; For storing output of respnse and goals buffers into a permanent buffer.
-
-(defun coq-clone-buffer-response-mode (s &optional erase)
-  (let ((already-existing (get-buffer s))
-        (nb (get-buffer-create s)))
-    (save-window-excursion
-      (switch-to-buffer nb)
-      (unless already-existing
-        (coq-response-mode)
-        (read-only-mode 0))
-      (goto-char (point-min))
-      (insert "\n************************************\n")
-      (goto-char (point-min)))
-    (if erase (copy-to-buffer nb (point-min) (point-max))
-      (append-to-buffer nb (point-min) (point-max)))
-    ;; (set-window-point window pos)
-    nb))
-
-;; copy the content of proof-response-buffer into the "response-freeze" buffer,
-;; resetting its content if ERASE non nil.
-(defun proof-store-buffer-win (buffer &optional erase)
-  (proof-with-current-buffer-if-exists buffer
-    (let ((newbuffer nil))
-      (set-buffer buffer)
-      (setq newbuffer (coq-clone-buffer-response-mode "*response-freeze*" erase))
-      (let ((win (display-buffer-other-frame newbuffer))
-            (win-point-min (save-window-excursion
-                             (switch-to-buffer-other-frame newbuffer)
-                             (point-min))))
-      (set-window-point win win-point-min)))))
-
-(defun proof-store-response-win (&optional erase)
-  (interactive "P")
-  (proof-store-buffer-win proof-response-buffer erase))
-
-(defun proof-store-goals-win (&optional erase)
-  (interactive "P")
-  (proof-store-buffer-win proof-goals-buffer erase))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; The frozen copies of the goals and response buffers are in coq-goals.el.
 
 
 
@@ -2009,8 +1969,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 (define-key coq-keymap [(?\[)]         #'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
-(define-key coq-keymap [?r]            #'proof-store-response-win)
-(define-key coq-keymap [?g]            #'proof-store-goals-win)
 (define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
 (define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
 (define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
@@ -2028,8 +1986,8 @@ Used for automatic insertion of \"Proof using\" annotations.")
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] #'coq-About)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] #'coq-Search)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] #'coq-Show)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)?r] #'proof-store-response-win)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)?g] #'proof-store-goals-win)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)?r] #'coq-store-response-win)
+(define-key coq-goals-mode-map [(control ?c)(control ?a)?g] #'coq-store-goals-win)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)?h] #'coq-PrintHint)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?q)] #'coq-query)
 (define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?w)] #'coq-ask-adapt-printing-width-and-show)
@@ -2045,8 +2003,8 @@ Used for automatic insertion of \"Proof using\" annotations.")
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] #'coq-About)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] #'coq-Search)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] #'coq-Show)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] #'proof-store-response-win)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] #'proof-store-goals-win)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] #'coq-store-response-win)
+(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] #'coq-store-goals-win)
 (define-key coq-response-mode-map [(control ?c)(control ?a)?h] #'coq-PrintHint)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?q)] #'coq-query)
 (define-key coq-response-mode-map [(control ?c)(control ?a)(control ?w)] #'coq-ask-adapt-printing-width-and-show)
