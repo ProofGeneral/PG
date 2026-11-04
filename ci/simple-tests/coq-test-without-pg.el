@@ -105,13 +105,16 @@ run the queries."
     (should (string-suffix-p "0.\n." (buffer-string)))))
 
 (ert-deftest coq-test-without-pg-insertions ()
-  "The insertion commands without query work without backend."
+  "The insertion commands without query work without backend, and
+indent."
   (coq-test-without-pg-with-file
     (goto-char (point-max))
+    (insert "Lemma l : True.\nProof.\n")
     (cl-letf (((symbol-function 'completing-read)
                (lambda (&rest _) "reflexivity")))
       (coq-insert-tactic))
-    (should (string-suffix-p "reflexivity" (buffer-string)))
+    ;; inserted and indented
+    (should (string-suffix-p "Proof.\n  reflexivity" (buffer-string)))
     (insert "\nSection S.\n")
     (coq-end-Section)
     (should (string-suffix-p "Section S.\nEnd S." (buffer-string)))))
