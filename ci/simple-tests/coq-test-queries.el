@@ -45,6 +45,7 @@
 (declare-function coq-Show "coq-queries")
 (declare-function coq-ask-printing-width "coq-goals")
 (declare-function coq-store-goals-win "coq-goals")
+(declare-function coq-toggle-fold-hyp-at-point "coq-hyps")
 (declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
@@ -128,7 +129,20 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
     (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
     (should (eq (key-binding (kbd "C-c C-a n")) #'coq-unset-printing-notations))
-    (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
+    (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))
+    ;; the same query and display keys in the goals and response buffers
+    (dolist (buffer (list proof-goals-buffer proof-response-buffer))
+      (with-current-buffer buffer
+        (should (eq (key-binding (kbd "C-c C-a C-b")) #'coq-About))
+        (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+        (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
+        (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
+        (should (eq (key-binding (kbd "C-c C-a C-9"))
+                    #'coq-set-printing-parentheses))))
+    (with-current-buffer proof-goals-buffer
+      (should (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))
+    (with-current-buffer proof-response-buffer
+      (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win)))))
 
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."

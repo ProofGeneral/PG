@@ -1897,36 +1897,15 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?c)] #'coq-Check)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?p)] #'coq-Print)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?o)] #'coq-SearchIsos)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?b)] #'coq-About)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?a)] #'coq-Search)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?s)] #'coq-Show)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)?r] #'coq-store-response-win)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)?g] #'coq-store-goals-win)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)?h] #'coq-PrintHint)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?q)] #'coq-query)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?w)] #'coq-ask-adapt-printing-width-and-show)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?l)] #'coq-LocateConstant)
-(define-key coq-goals-mode-map [(control ?c)(control ?a)(control ?n)] #'coq-LocateNotation)
+;; The keys of the queries and of the display, as in the script buffer.
+(coq-queries-define-keys coq-goals-mode-map)
 ;; specific to goals buffer: (un)foldinng and (un)highlighting shortcuts
 (coq-hyps-define-keys coq-goals-mode-map)
 
-
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?c)] #'coq-Check)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?p)] #'coq-Print)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?o)] #'coq-SearchIsos)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?b)] #'coq-About)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?a)] #'coq-Search)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?s)] #'coq-Show)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?r)] #'coq-store-response-win)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?g)] #'coq-store-goals-win)
-(define-key coq-response-mode-map [(control ?c)(control ?a)?h] #'coq-PrintHint)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?q)] #'coq-query)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?w)] #'coq-ask-adapt-printing-width-and-show)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?l)] #'coq-LocateConstant)
-(define-key coq-response-mode-map [(control ?c)(control ?a)(control ?n)] #'coq-LocateNotation)
+(coq-queries-define-keys coq-response-mode-map)
+;; Before C-c C-a r and g, kept for compatibility.
+(define-key coq-response-mode-map (kbd "C-c C-a C-r") #'coq-store-response-win)
+(define-key coq-response-mode-map (kbd "C-c C-a C-g") #'coq-store-goals-win)
 
 ;; The queries at mouse click, see `coq-remap-mouse-1'.
 (coq-mouse-query-add-keymap coq-response-mode-map)

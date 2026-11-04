@@ -72,6 +72,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     the menu Coq -> OPTIONS).  The options
     `coq-auto-adapt-printing-width' and
     `coq-optimise-resp-windows-enable' are common too.
+*** The goals and response buffers have the same keys as the script
+    buffer for the queries and the display, see
+    `coq-queries-define-keys', in particular the printing flags.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing
     #113, #392 and #589). There is no escape character any more, in any
     argument: write -arg "-w 'a b'" instead of -arg "-w \"a b\"", and

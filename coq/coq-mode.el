@@ -135,25 +135,9 @@ and `proof-double-hit-enable'.  Bind another key to this command in
   (let ((map (make-sparse-keymap)))
     ;; In all backends, see `coq-terminator-insert-function'.
     (define-key map (kbd ".") #'coq-terminator-insert)
-    ;; Queries, in all backends, see `coq-query-function'.
-    (define-key map (kbd "C-c C-a C-a") #'coq-Search)
-    (define-key map (kbd "C-c C-a C-b") #'coq-About)
-    (define-key map (kbd "C-c C-a C-c") #'coq-Check)
-    (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
-    (define-key map (kbd "C-c C-a C-p") #'coq-Print)
-    (define-key map (kbd "C-c C-a C-q") #'coq-query)
-    (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
-    (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
-    (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
-    (define-key map (kbd "C-c C-a C-s") #'coq-Show)
-    (define-key map (kbd "C-c C-a C-w") #'coq-ask-printing-width)
-    (define-key map (kbd "C-c C-a r") #'coq-store-response-win)
-    (define-key map (kbd "C-c C-a g") #'coq-store-goals-win)
-    ;; Printing flags, see `coq-set-flag-function'.
-    (define-key map (kbd "C-c C-a C-9") #'coq-set-printing-parentheses)
-    (define-key map (kbd "C-c C-a C-0") #'coq-unset-printing-parentheses)
-    (define-key map (kbd "C-c C-a N") #'coq-set-printing-notations)
-    (define-key map (kbd "C-c C-a n") #'coq-unset-printing-notations)
+    ;; Queries and display, in all backends, also in the goals and
+    ;; response buffers.
+    (coq-queries-define-keys map)
     ;; Insertions built from a query, see `coq-query-result-function'.
     (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
     (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)

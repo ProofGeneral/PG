@@ -733,6 +733,34 @@ Also insert holes at insertion positions."
             (search-forward "#")
             (delete-char -1)))))))
 
+;;; Keys
+
+(defun coq-queries-define-keys (map)
+  "Bind the keys of the queries and of the display in MAP.
+They are the keys under C-c C-a common to all backends that make sense
+in a goals or response buffer too: `coq-mode-map' has them, with the
+insertion keys."
+  ;; Queries, see `coq-query-function'.
+  (define-key map (kbd "C-c C-a C-a") #'coq-Search)
+  (define-key map (kbd "C-c C-a C-b") #'coq-About)
+  (define-key map (kbd "C-c C-a C-c") #'coq-Check)
+  (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
+  (define-key map (kbd "C-c C-a C-p") #'coq-Print)
+  (define-key map (kbd "C-c C-a C-q") #'coq-query)
+  (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
+  (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
+  (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
+  (define-key map (kbd "C-c C-a C-s") #'coq-Show)
+  ;; Display, see coq-goals.el.
+  (define-key map (kbd "C-c C-a C-w") #'coq-ask-printing-width)
+  (define-key map (kbd "C-c C-a r") #'coq-store-response-win)
+  (define-key map (kbd "C-c C-a g") #'coq-store-goals-win)
+  ;; Printing flags, see `coq-set-flag-function'.
+  (define-key map (kbd "C-c C-a C-9") #'coq-set-printing-parentheses)
+  (define-key map (kbd "C-c C-a C-0") #'coq-unset-printing-parentheses)
+  (define-key map (kbd "C-c C-a N") #'coq-set-printing-notations)
+  (define-key map (kbd "C-c C-a n") #'coq-unset-printing-notations))
+
 (provide 'coq-queries)
 
 ;;; coq-queries.el ends here
