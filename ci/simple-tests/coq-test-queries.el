@@ -31,13 +31,14 @@
 (defvar coq-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
+(defvar coq-show-at-point-function)
 (defvar coq-use-yasnippet)
 
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
 (declare-function coq-flag-is-on-p "coq")
 (declare-function coq-pg-query "coq")
-(declare-function coq-Show "coq")
+(declare-function coq-Show "coq-queries")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-as-in-next-command "coq")
@@ -50,6 +51,7 @@
 (declare-function coq-insert-match "coq-queries")
 (declare-function coq-insert-named-goal-selectors "coq-queries")
 (declare-function coq-pg-query-result "coq")
+(declare-function coq-pg-show-at-point "coq")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
 (declare-function proof-double-hit-toggle "pg-double-hit")
@@ -106,8 +108,9 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-g"))
                 #'coq-insert-named-goal-selectors))
     (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
-    ;; Proof General only, in `coq-keymap'
+    (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-s")) #'coq-Show))
     (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+    ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
 
 (ert-deftest coq-test-queries-function-set ()
@@ -117,10 +120,32 @@ Proof General still work."
                           proof-response-buffer))
       (with-current-buffer buffer
         (should (eq coq-query-function #'coq-pg-query))
-        (should (eq coq-query-result-function #'coq-pg-query-result))))
+        (should (eq coq-query-result-function #'coq-pg-query-result))
+        (should (eq coq-show-at-point-function #'coq-pg-show-at-point))))
     (with-temp-buffer
       (should-error (coq-run-query "Check x") :type 'user-error)
       (should-error (coq-query-result "Check x") :type 'user-error))))
+
+(ert-deftest coq-test-queries-show ()
+  "`coq-Show' shows the answer to the command at point in the locked
+region, asks for a goal number elsewhere."
+  (coq-test-queries-with-file
+    ;; after the locked region
+    (goto-char (point-max))
+    (insert "\n")
+    (should-not (coq-pg-show-at-point))
+    (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "1")))
+      (coq-Show nil))
+    (coq-test-queries-wait)
+    (should (string-match-p "n = x -> True" (coq-test-queries-response)))
+    ;; on the lemma, in the locked region
+    (with-current-buffer proof-response-buffer
+      (let ((inhibit-read-only t)) (erase-buffer)))
+    (goto-char (point-min))
+    (search-forward "Lemma")
+    (cl-letf (((symbol-function 'read-string)
+               (lambda (&rest _) (error "No goal number asked here"))))
+      (coq-Show nil))))
 
 (ert-deftest coq-test-queries-result ()
   "`coq-query-result' returns the answer of a query, nil on an error."

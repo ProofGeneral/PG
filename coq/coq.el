@@ -842,45 +842,23 @@ must be in locked region."
         (forward-char))
       (span-property (span-at (point) 'response) 'response))))
 
-(defun coq-Show (withprintingall)
-  "Ask for a number I and show the Ith goal.
-Ask for a number I and show the ith current goal.  When not on the
-locked span, the prefix argument gives the printing flags, see
-`coq-query-flags-from-prefix': \\[universal-argument] for Printing All,
-\\[universal-argument] \\[universal-argument] to choose them."
-; Disabled:
-;  "Ask for a number i and show the ith goal, or show ancient goal.
-;If point is on a locked span, show the corresponding coq
-;output (i.e. for tactics: the goal after the tactic). Otherwise
-;ask for a number i and show the ith current goal. With non-nil
-;prefix argument and not on the locked span, show the goal with
-;flag Printing All set."
-;
-  (interactive "P")
-  ;; Disabling this as this relies on 'response attribute that is empty when
-  ;; the command was processed silently. We should first have a coq command
-  ;; asking to print the goal at a given state.
-  (if (proof-in-locked-region-p)
-      (let ((s (coq-get-response-string-at)))
-        (if (zerop (length (coq-get-response-string-at)))
-            (message "Cannot show the state at this point: Coq was silent during this command.")
-          (set-buffer proof-response-buffer)
-          (let ((inhibit-read-only 'titi))
-            (pg-response-display s)
-            (proof-display-and-keep-buffer proof-response-buffer)
-            (coq-optimise-resp-windows))))
-    (coq-ask-do "Show goal number" "Show" t nil nil
-                (coq-query-flags-from-prefix withprintingall))))
-
-(defun coq-Show-with-implicits ()
-  "Ask for a number i and show the ith goal."
-  (interactive)
-  (coq-ask-do-show-implicits "Show goal number" "Show" t))
-
-(defun coq-Show-with-all ()
-  "Ask for a number i and show the ith goal."
-  (interactive)
-  (coq-ask-do-show-all "Show goal number" "Show" t))
+(defun coq-pg-show-at-point ()
+  "Show the answer of Coq to the command at point, in the locked region.
+Return nil outside of it.  This is `coq-show-at-point-function' for
+Proof General, see it."
+  ;; This relies on the \\+`response' property, empty when the command was
+  ;; processed silently.  We should first have a coq command asking to
+  ;; print the goal at a given state.
+  (when (proof-in-locked-region-p)
+    (let ((s (coq-get-response-string-at)))
+      (if (zerop (length s))
+          (message "Cannot show the state at this point: Coq was silent during this command.")
+        (set-buffer proof-response-buffer)
+        (let ((inhibit-read-only 'titi))
+          (pg-response-display s)
+          (proof-display-and-keep-buffer proof-response-buffer)
+          (coq-optimise-resp-windows))))
+    t))
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
 ;; silently to a previous value when retracting. So we reset the stored width
@@ -1214,6 +1192,7 @@ known when the Coq file is opened."
   (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
   (setq coq-query-function #'coq-pg-query)
   (setq coq-query-result-function #'coq-pg-query-result)
+  (setq coq-show-at-point-function #'coq-pg-show-at-point)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -1425,6 +1404,7 @@ shortly before `proof-assert-command-hook', respectively,
 (defun coq-goals-mode-config ()
   (setq coq-query-function #'coq-pg-query)
   (setq coq-query-result-function #'coq-pg-query-result)
+  (setq coq-show-at-point-function #'coq-pg-show-at-point)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1434,6 +1414,7 @@ shortly before `proof-assert-command-hook', respectively,
 (defun coq-response-config ()
   (setq coq-query-function #'coq-pg-query)
   (setq coq-query-result-function #'coq-pg-query-result)
+  (setq coq-show-at-point-function #'coq-pg-show-at-point)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2032,7 +2013,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 (define-key coq-keymap [(?\[)]         #'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
-(define-key coq-keymap [(control ?s)]  #'coq-Show)
 (define-key coq-keymap [?r]            #'proof-store-response-win)
 (define-key coq-keymap [?g]            #'proof-store-goals-win)
 (define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)

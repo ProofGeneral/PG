@@ -433,6 +433,34 @@ With \\[universal-argument], with Printing All.  With
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
+(defvar-local coq-show-at-point-function nil
+  "Function showing the state of Coq at point, set by each backend, or nil.
+`coq-Show' calls it without argument.  It returns nil if it shows
+nothing, for instance outside of the processed part: `coq-Show' asks
+for a goal number then.")
+
+(defun coq-Show (withprintingall)
+  "Show the state at point, or ask for a number I and show the Ith goal.
+The state at point is shown if the backend can, see
+`coq-show-at-point-function'.  Otherwise the prefix argument gives the
+printing flags, see `coq-query-flags-from-prefix':
+\\[universal-argument] for Printing All, \\[universal-argument] \\[universal-argument] to choose them."
+  (interactive "P")
+  (unless (and coq-show-at-point-function
+               (funcall coq-show-at-point-function))
+    (coq-ask-do "Show goal number" "Show" t nil nil
+                (coq-query-flags-from-prefix withprintingall))))
+
+(defun coq-Show-with-implicits ()
+  "Ask for a number i and show the ith goal."
+  (interactive)
+  (coq-ask-do-show-implicits "Show goal number" "Show" t))
+
+(defun coq-Show-with-all ()
+  "Ask for a number i and show the ith goal."
+  (interactive)
+  (coq-ask-do-show-all "Show goal number" "Show" t))
+
 (defun coq-query (arg)
   "Ask for a query, with completion, and send to Coq.
 With \\[universal-argument], with Printing All.  With
