@@ -22,6 +22,8 @@
 (require 'cl-lib)
 
 (defvar coq-mode-abbrev-table)
+(defvar coq-load-path)
+(defvar coq-prog-args)
 (defvar coq-query-function)
 (defvar coq-use-yasnippet)
 
@@ -78,6 +80,26 @@
     ;; no yasnippet in the tests, `coq-templates-setup' just says so
     (let ((coq-use-yasnippet nil))
       (coq-templates-setup))))
+
+(ert-deftest coq-test-without-pg-project-file ()
+  "The project file sets the load path and the arguments."
+  (let* ((dir (file-name-as-directory (make-temp-file "without_pg" t)))
+         (file (expand-file-name "a.v" dir))
+         buffer)
+    (unwind-protect
+        (progn
+          (with-temp-file (expand-file-name "_RocqProject" dir)
+            (insert "-R theories Foo\n-Q lib \"\"\n-arg -w -arg all\n"))
+          (with-temp-file file (insert "Definition x := 0.\n"))
+          (find-file file)
+          (setq buffer (current-buffer))
+          (should (equal coq-load-path
+                         `((rec ,(expand-file-name "theories" dir) "Foo")
+                           (recnoimport ,(expand-file-name "lib" dir) ""))))
+          (should (equal coq-prog-args '("-w" "all")))
+          (should-not (featurep 'proof)))
+      (when buffer (kill-buffer buffer))
+      (delete-directory dir t))))
 
 (ert-deftest coq-test-without-pg-commands ()
   "The common commands and their keys are there, without backend to
