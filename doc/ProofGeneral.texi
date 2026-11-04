@@ -4404,6 +4404,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
 * Display of the goals::
+* Folding and highlighting hypotheses::
 * Opam-switch-mode support::
 @end menu
 
@@ -5652,6 +5653,41 @@ them when clicked, see @code{coq-toggle-other-goals}.
 
 The default value is @code{t}.
 @end defopt
+
+@node Folding and highlighting hypotheses
+@section Folding and highlighting hypotheses
+@cindex hypotheses, folding
+@cindex hypotheses, highlighting
+@vindex coq-highlight-hyps-sticky
+@vindex coq-highlighted-hyps-bg
+@vindex coq-highlight-hyps-cited-in-response
+
+The hypotheses of the first goal can be folded: their type is replaced
+by dots, the text stays in the buffer for copy.  A folded hypothesis
+stays folded in the next goals.  They can also be highlighted, with
+the background color @code{coq-highlighted-hyps-bg}.  The highlighting
+stops at the next goals, unless @code{coq-highlight-hyps-sticky} is
+non-nil.  A @code{Search} highlights the hypotheses it finds, unless
+@code{coq-highlight-hyps-cited-in-response} is nil.
+
+In the goals buffer:
+@table @kbd
+@item f
+fold or unfold the hypothesis at point,
+@item F
+unfold all the hypotheses,
+@item h
+highlight or unhighlight the hypothesis at point,
+@item H
+unhighlight all the hypotheses.
+@end table
+
+The first column of each hypothesis is a button, @code{-} or @code{+}
+when folded: click on it to fold or unfold the hypothesis.  A right
+click on its name does the same, a middle click inserts its name at
+point.  The commands are also in the menu @code{Coq -> Settings ->
+Hypotheses}.  Elsewhere than in the goals buffer, they work on the
+hypothesis named by the identifier at point.
 
 @node Opam-switch-mode support
 @section Opam-switch-mode support

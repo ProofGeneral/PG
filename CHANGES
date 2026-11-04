@@ -47,6 +47,12 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     for this query only, among `coq-query-flags' (C-u still gives
     Printing All).  Search accepts these prefixes too.  A printing
     flag already set is not unset any more after such a query.
+*** The folding and highlighting of hypotheses (keys f, F, h, H in the
+    goals buffer) are also in the menu Coq -> Settings -> Hypotheses.
+    Elsewhere than in the goals buffer, they work on the hypothesis
+    named at point.  A highlighting that is not sticky (see
+    `coq-highlight-hyps-sticky') is forgotten at the next goals, and a
+    middle click on a hypothesis inserts the name clicked.
 *** Setting `coq-remap-mouse-1' with customize takes effect
     immediately, also in the goals and response buffers.
 *** The abbrevs and the default yasnippet templates of Coq mode are
