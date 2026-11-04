@@ -158,6 +158,8 @@ and `proof-double-hit-enable'.  Bind another key to this command in
     (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
     (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)
     (define-key map (kbd "C-c C-a C-g") #'coq-insert-named-goal-selectors)
+    ;; "as [xxx]", see `coq-processed-end-function'
+    (define-key map (kbd "C-c C-a [") #'coq-insert-as-in-next-command)
     ;; Insertions without backend, see coq-templates.el.
     (define-key map (kbd "C-c C-a C-(") #'coq-insert-section-or-module)
     (define-key map (kbd "C-c C-a C-)") #'coq-end-Section)

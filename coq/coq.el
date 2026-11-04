@@ -1132,6 +1132,7 @@ backends call them."
   (setq coq-query-result-function #'coq-pg-query-result)
   (setq coq-show-at-point-function #'coq-pg-show-at-point)
   (setq coq-set-flag-function #'coq-pg-set-flag)
+  (setq coq-processed-end-function #'proof-unprocessed-begin)
   (setq coq-ask-printing-width-function
         #'coq-ask-adapt-printing-width-and-show))
 
@@ -1689,37 +1690,7 @@ mouse activation."
 ;; Some smart insertion functions
 ;;
 
-(defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
-
-;; destruct foo., where foo is a name.
-(defvar coq-auto-as-hack-hyp-name-regex
-  (concat "\\(" "induction\\|destruct" "\\)\\s-+\\(" coq-id-shy "\\)\\s-*\\.")
-  "Regexp of commands needing a hack to generate correct \"as\" close.
-tactics like destruct and induction reuse hypothesis names by
-default, which makes the detection of new hypothesis incorrect.
-the hack consists in adding the \"!\" modifier on the argument
-destructed, so that it is left in the goal and the name cannot be
-reused.  We also add a \"clear\" at the end of the tactic so that
-the whole tactic behaves correctly.
-Warning: this makes the error messages (and location) wrong.")
-
-(defun coq-hack-cmd-for-infoH (s)
-  "Return the tactic S hacked with infoH tactical."
-  (cond
-   ;; We cannot rebuild the sub-patterns from the final goal, so ';' is not
-   ;; supported. Only single tactics like destruct.
-   ((string-match ";" s) s) ;; composed tactic cannot be treated
-   ((string-match coq-auto-as-hack-hyp-name-regex s)
-    (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
-   ((string-match coq-keywords-accepting-as-regex s)
-    (concat "infoH " s))
-   (t (concat "infoH " s))))
-
-;; Point supposed to be at the end of locked region, that is
-;; (proof-assert-next-command-interactive) has just finished
-(defun coq-tactic-already-has-an-as-close(s)
-  "Return t if the last tactic of locked region contains an \"as\" close."
-  (save-excursion (string-match "\\<as\\>" s)))
+;; The insertion of "as" clauses is in coq-queries.el.
 
 ;::::::::::::: inserting suggested Proof using XXX... ;;;;;;;;;;
 ;; global mechanism:
@@ -1903,39 +1874,6 @@ SPAN is the span of the whole theorem (statement + proof)."
 Used for automatic insertion of \"Proof using\" annotations.")
 
 
-(defun coq-insert-as-in-next-command ()
-  (interactive)
-  (save-excursion
-    (goto-char (proof-unprocessed-begin))
-    (forward-char 1)
-    (coq-find-real-start)
-    (let* ((pt (point))
-           (_ (coq-script-parse-cmdend-forward))
-           (cmd (buffer-substring pt (point)))
-           (newcmd (if (coq-tactic-already-has-an-as-close cmd)
-                       nil
-                     (coq-hack-cmd-for-infoH cmd))))
-      (when newcmd ; FIXME: we stop if as already there, replace it instead?
-        (proof-shell-invisible-command newcmd t)
-        (let* ((str (string-match "<infoH>\\([^<]*\\)</infoH>"
-                                  ;; proof-shell-last-response-output would be
-                                  ;; smaller/faster but since this message is output
-                                  ;; *before* resulting goals, it is not detected as
-                                  ;; a response message.
-                                  proof-shell-last-output))
-               (substr  (or (and str (match-string 1 proof-shell-last-output)) ""))
-               ;; emptysubstr = t if substr is empty or contains only spaces and |
-               (emptysubstr (and (string-match "\\(\\s-\\||\\)*" substr)
-                                 (eq (length substr) (length (match-string 0 substr)))))) ; idem
-          (unless (or emptysubstr (coq-tactic-already-has-an-as-close newcmd)) ;; FIXME
-            (save-excursion
-              ;; TODO: look for eqn:XX and go before it.
-              ;; Go just before the last "."
-              (goto-char (proof-unprocessed-begin))
-              (coq-script-parse-cmdend-forward)
-              (coq-script-parse-cmdend-backward)
-              (insert (concat " as [" substr "]")))))))))
-
 ;; Trying to propose insertion of "as" for a whole region. But iterating
 ;; proof-assert-next-command-interactive is probably wrong if some error occur
 ;; during scripting.
@@ -1950,10 +1888,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;;       (proof-assert-next-command-interactive))))
 
 
-;; Insertion commands (the ones without backend are in `coq-mode-map')
-; [ for "as [xxx]" is easy to remember, ccontrol-[ would be better but hard to type on french keyboards
-; anyway company-coq should provide an "as!<TAB>".
-(define-key coq-keymap [(?\[)]         #'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
 

@@ -38,6 +38,7 @@
 (declare-function coq-store-goals-win "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq-queries")
+(declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-tactical "coq-templates")
 (declare-function coq-insert-solve-tactic "coq-templates")
@@ -119,6 +120,7 @@ run the queries."
     (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
     (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
     (should (eq (key-binding (kbd "C-c C-a C-i")) #'coq-insert-intros))
+    (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))
     (should (eq (key-binding (kbd "C-c C-a C-(")) #'coq-insert-section-or-module))
     (should (eq (key-binding (kbd "C-c C-a C-)")) #'coq-end-Section))
     (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
@@ -132,6 +134,7 @@ run the queries."
     (should-error (coq-run-query "Check x") :type 'user-error)
     (should-error (coq-ask-printing-width) :type 'user-error)
     (should-error (coq-set-printing-parentheses) :type 'user-error)
+    (should-error (coq-insert-as-in-next-command) :type 'user-error)
     ;; no goals buffer, nothing to copy
     (coq-store-goals-win)
     (should-not (get-buffer "*response-freeze*"))

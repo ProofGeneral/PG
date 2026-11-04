@@ -33,6 +33,7 @@
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
 (defvar coq-set-flag-function)
+(defvar coq-processed-end-function)
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
 (defvar coq-use-yasnippet)
@@ -47,7 +48,7 @@
 (declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
-(declare-function coq-insert-as-in-next-command "coq")
+(declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-About "coq-queries")
 (declare-function coq-Check "coq-queries")
@@ -119,6 +120,7 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-g"))
                 #'coq-insert-named-goal-selectors))
     (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
+    (should (eq (lookup-key coq-mode-map (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))
     (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-s")) #'coq-Show))
     (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
     (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
@@ -126,7 +128,6 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
     (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
     (should (eq (key-binding (kbd "C-c C-a n")) #'coq-unset-printing-notations))
-    ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
 
 (ert-deftest coq-test-queries-function-set ()
@@ -211,6 +212,29 @@ the response at the top of the buffer *response-freeze*."
     (coq-unset-printing-parentheses)
     (coq-test-queries-wait)
     (should-not (coq-flag-is-on-p "Test Printing Parentheses."))))
+
+(ert-deftest coq-test-queries-insert-as ()
+  "`coq-insert-as-in-next-command' inserts the names given by infoH in the
+next command, Coq state unchanged."
+  (coq-test-queries-with-file
+    (should (eq coq-processed-end-function #'proof-unprocessed-begin))
+    (goto-char (point-max))
+    (insert "Proof.\n  intros n.\n  destruct n.\n")
+    (search-backward "intros")
+    (end-of-line)
+    (proof-goto-point)
+    (coq-test-queries-wait)
+    (coq-insert-as-in-next-command)
+    (should (string-suffix-p "destruct n as [ | n0 ].\n" (buffer-string)))
+    ;; the next command is not processed
+    (should (< (proof-unprocessed-begin)
+               (save-excursion (goto-char (point-max))
+                               (search-backward "destruct"))))
+    ;; nor run: the goal is not destructed
+    (should (string-match-p "n = x -> True" (coq-query-result "Show")))
+    ;; there is already an "as"
+    (coq-insert-as-in-next-command)
+    (should (string-suffix-p "destruct n as [ | n0 ].\n" (buffer-string)))))
 
 (ert-deftest coq-test-queries-result ()
   "`coq-query-result' returns the answer of a query, nil on an error."
