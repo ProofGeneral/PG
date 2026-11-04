@@ -22,6 +22,7 @@
 (require 'proof)
 (require 'coq-syntax)
 (require 'coq-templates)                ; abbrevs and yasnippets
+(require 'coq-hyps)                     ; menu of the hypotheses
 
 (defun coq-local-vars-list-show-doc ()
   (interactive)
@@ -108,6 +109,7 @@
      :style toggle
      :selected coq-fold-other-goals
      :help "Display only the number of the goals after the first one."]
+    ,coq-hyps-menu
     ["Double Hit Electric Terminator" proof-double-hit-toggle
      :style toggle
      :selected proof-double-hit-enable

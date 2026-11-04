@@ -27,11 +27,10 @@
 (require 'subr-x)                       ; `string-trim-right'
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
+(require 'coq-hyps)                     ; `coq-highlight-hyps-cited-in-response'
 
 (defvar proof-minibuffer-history)
-(defvar coq-highlight-hyps-cited-in-response)
 (defvar coq-one-command-per-line)
-(declare-function coq-highlight-hyps-cited-in-response "coq")
 (declare-function coq-terminator-insert "coq-mode")
 
 (defvar-local coq-query-function nil
@@ -462,8 +461,7 @@ With \\[universal-argument], with Printing All.  With
 (defun coq-search-done ()
   "Highlight the hypotheses cited by the answer of a Search, if wanted.
 See `coq-highlight-hyps-cited-in-response'."
-  (if (and coq-highlight-hyps-cited-in-response
-           (fboundp 'coq-highlight-hyps-cited-in-response))
+  (if coq-highlight-hyps-cited-in-response
       (progn
         (coq-highlight-hyps-cited-in-response)
         (message "M-x coq-unhighlight-selected-hyps to remove highlighting, [Coq/Settings/Search Blacklist] to change blacklisting."))
