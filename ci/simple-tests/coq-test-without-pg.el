@@ -33,6 +33,7 @@
 (declare-function coq-About "coq-queries")
 (declare-function coq-Check "coq-queries")
 (declare-function coq-Show "coq-queries")
+(declare-function coq-set-printing-parentheses "coq-queries")
 (declare-function coq-ask-printing-width "coq-goals")
 (declare-function coq-store-goals-win "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
@@ -116,6 +117,7 @@ run the queries."
     (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
     (should (eq (key-binding (kbd "C-c C-a r")) #'coq-store-response-win))
     (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
+    (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
     (should (eq (key-binding (kbd "C-c C-a C-i")) #'coq-insert-intros))
     (should (eq (key-binding (kbd "C-c C-a C-(")) #'coq-insert-section-or-module))
     (should (eq (key-binding (kbd "C-c C-a C-)")) #'coq-end-Section))
@@ -129,6 +131,7 @@ run the queries."
     (should-not coq-query-function)
     (should-error (coq-run-query "Check x") :type 'user-error)
     (should-error (coq-ask-printing-width) :type 'user-error)
+    (should-error (coq-set-printing-parentheses) :type 'user-error)
     ;; no goals buffer, nothing to copy
     (coq-store-goals-win)
     (should-not (get-buffer "*response-freeze*"))

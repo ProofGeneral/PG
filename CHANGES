@@ -64,8 +64,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `coq-mode-map' too, and available in all Coq backends.
 *** Show (C-c C-a C-s), the printing width (C-c C-a C-w) and the
     frozen copies of the response and goals (C-c C-a r and g, renamed
-    `coq-store-response-win' and `coq-store-goals-win') are bound in
-    `coq-mode-map' and available in all Coq backends too, as well as
+    `coq-store-response-win' and `coq-store-goals-win') and the
+    printing flags (C-c C-a C-9, C-0, N and n for Printing Parentheses
+    and Notations, and the commands of the menu Coq -> OPTIONS) are
+    bound in `coq-mode-map' and available in all Coq backends too, as
+    well as
     the options `coq-auto-adapt-printing-width' and
     `coq-optimise-resp-windows-enable'.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing

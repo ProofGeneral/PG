@@ -32,6 +32,7 @@
 (defvar coq-query-function)
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
+(defvar coq-set-flag-function)
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
 (defvar coq-use-yasnippet)
@@ -57,7 +58,11 @@
 (declare-function coq-insert-named-goal-selectors "coq-queries")
 (declare-function coq-pg-query-result "coq")
 (declare-function coq-pg-show-at-point "coq")
+(declare-function coq-pg-set-flag "coq")
 (declare-function coq-ask-adapt-printing-width-and-show "coq")
+(declare-function coq-set-printing-parentheses "coq-queries")
+(declare-function coq-unset-printing-parentheses "coq-queries")
+(declare-function coq-unset-printing-notations "coq-queries")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
 (declare-function proof-double-hit-toggle "pg-double-hit")
@@ -119,6 +124,8 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
     (should (eq (key-binding (kbd "C-c C-a r")) #'coq-store-response-win))
     (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
+    (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
+    (should (eq (key-binding (kbd "C-c C-a n")) #'coq-unset-printing-notations))
     ;; Proof General only, in `coq-keymap'
     (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))))
 
@@ -193,6 +200,17 @@ the response at the top of the buffer *response-freeze*."
             ;; a response buffer is not killed while Coq runs
             (setq-local kill-buffer-hook nil)
             (kill-buffer)))))))
+
+(ert-deftest coq-test-queries-set-flag ()
+  "The printing flag commands set the flag in Coq with Proof General."
+  (coq-test-queries-with-file
+    (should (eq coq-set-flag-function #'coq-pg-set-flag))
+    (coq-set-printing-parentheses)
+    (coq-test-queries-wait)
+    (should (coq-flag-is-on-p "Test Printing Parentheses."))
+    (coq-unset-printing-parentheses)
+    (coq-test-queries-wait)
+    (should-not (coq-flag-is-on-p "Test Printing Parentheses."))))
 
 (ert-deftest coq-test-queries-result ()
   "`coq-query-result' returns the answer of a query, nil on an error."

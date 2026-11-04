@@ -433,6 +433,50 @@ With \\[universal-argument], with Printing All.  With
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
+;;; Printing flags for all the next goals and queries
+
+(defvar-local coq-set-flag-function nil
+  "Function setting a printing flag for the next goals and queries.
+Set by each backend.  It is called with the argument COMMAND, setting or
+unsetting a flag, without its final dot, for instance \"Set Printing
+Parentheses\".  See `coq-query-flags' for a flag of one query only.")
+
+(defun coq-set-flag (command)
+  "Run COMMAND, setting a printing flag for the next goals and queries.
+See `coq-set-flag-function'."
+  (unless coq-set-flag-function
+    (user-error "Coq: no backend to set printing flags in this buffer"))
+  (funcall coq-set-flag-function command))
+
+(defmacro coq-define-flag-command (name command)
+  "Define the command NAME, running COMMAND with `coq-set-flag'."
+  `(defun ,name ()
+     ,(format "Run %s.\nFor the next goals and queries, see `coq-set-flag'."
+              command)
+     (interactive)
+     (coq-set-flag ,command)))
+
+(coq-define-flag-command coq-set-printing-implicit "Set Printing Implicit")
+(coq-define-flag-command coq-unset-printing-implicit "Unset Printing Implicit")
+(coq-define-flag-command coq-set-printing-all "Set Printing All")
+(coq-define-flag-command coq-unset-printing-all "Unset Printing All")
+(coq-define-flag-command coq-set-printing-parentheses "Set Printing Parentheses")
+(coq-define-flag-command coq-unset-printing-parentheses "Unset Printing Parentheses")
+(coq-define-flag-command coq-set-printing-notations "Set Printing Notations")
+(coq-define-flag-command coq-unset-printing-notations "Unset Printing Notations")
+(coq-define-flag-command coq-set-printing-synth "Set Printing Synth")
+(coq-define-flag-command coq-unset-printing-synth "Unset Printing Synth")
+(coq-define-flag-command coq-set-printing-coercions "Set Printing Coercions")
+(coq-define-flag-command coq-unset-printing-coercions "Unset Printing Coercions")
+(coq-define-flag-command coq-set-printing-compact-contexts "Set Printing Compact Contexts")
+(coq-define-flag-command coq-unset-printing-compact-contexts "Unset Printing Compact Contexts")
+(coq-define-flag-command coq-set-printing-unfocused "Set Printing Unfocused")
+(coq-define-flag-command coq-unset-printing-unfocused "Unset Printing Unfocused")
+(coq-define-flag-command coq-set-printing-universes "Set Printing Universes")
+(coq-define-flag-command coq-unset-printing-universes "Unset Printing Universes")
+(coq-define-flag-command coq-set-printing-wildcards "Set Printing Wildcard")
+(coq-define-flag-command coq-unset-printing-wildcards "Unset Printing Wildcard")
+
 (defvar-local coq-show-at-point-function nil
   "Function showing the state of Coq at point, set by each backend, or nil.
 `coq-Show' calls it without argument.  It returns nil if it shows

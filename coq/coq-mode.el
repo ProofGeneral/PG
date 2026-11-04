@@ -149,6 +149,11 @@ and `proof-double-hit-enable'.  Bind another key to this command in
     (define-key map (kbd "C-c C-a C-w") #'coq-ask-printing-width)
     (define-key map (kbd "C-c C-a r") #'coq-store-response-win)
     (define-key map (kbd "C-c C-a g") #'coq-store-goals-win)
+    ;; Printing flags, see `coq-set-flag-function'.
+    (define-key map (kbd "C-c C-a C-9") #'coq-set-printing-parentheses)
+    (define-key map (kbd "C-c C-a C-0") #'coq-unset-printing-parentheses)
+    (define-key map (kbd "C-c C-a N") #'coq-set-printing-notations)
+    (define-key map (kbd "C-c C-a n") #'coq-unset-printing-notations)
     ;; Insertions built from a query, see `coq-query-result-function'.
     (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
     (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)

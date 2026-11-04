@@ -995,26 +995,12 @@ redisplayed."
     found))
 
 
-(proof-definvisible coq-set-printing-implicit "Set Printing Implicit.")
-(proof-definvisible coq-unset-printing-implicit "Unset Printing Implicit.")
-(proof-definvisible coq-set-printing-all "Set Printing All.")
-(proof-definvisible coq-unset-printing-all "Unset Printing All.")
-(proof-definvisible coq-set-printing-parentheses "Set Printing Parentheses.")
-(proof-definvisible coq-unset-printing-parentheses "Unset Printing Parentheses.")
-(proof-definvisible coq-set-printing-notations "Set Printing Notations.")
-(proof-definvisible coq-unset-printing-notations "Unset Printing Notations.")
-(proof-definvisible coq-set-printing-synth "Set Printing Synth.")
-(proof-definvisible coq-unset-printing-synth "Unset Printing Synth.")
-(proof-definvisible coq-set-printing-coercions "Set Printing Coercions.")
-(proof-definvisible coq-unset-printing-coercions "Unset Printing Coercions.")
-(proof-definvisible coq-set-printing-compact-contexts "Set Printing Compact Contexts.")
-(proof-definvisible coq-unset-printing-compact-contexts "Unset Printing Compact Contexts.")
-(proof-definvisible coq-set-printing-unfocused "Set Printing Unfocused.")
-(proof-definvisible coq-unset-printing-unfocused "Unset Printing Unfocused.")
-(proof-definvisible coq-set-printing-universes "Set Printing Universes.")
-(proof-definvisible coq-unset-printing-universes "Unset Printing Universes.")
-(proof-definvisible coq-set-printing-wildcards "Set Printing Wildcard.")
-(proof-definvisible coq-unset-printing-wildcards "Unset Printing Wildcard.")
+(defun coq-pg-set-flag (command)
+  "Send COMMAND, setting or unsetting a printing flag, to Coq.
+This is `coq-set-flag-function' for Proof General, see it."
+  (proof-shell-invisible-command (concat command ".")))
+
+;; The commands setting the printing flags are in coq-queries.el.
 ; Takes an argument
 ;(proof-definvisible coq-set-printing-printing-depth "Set Printing Printing Depth .")
 ;(proof-definvisible coq-unset-printing-printing-depth "Unset Printing Printing Depth .")
@@ -1145,6 +1131,7 @@ backends call them."
   (setq coq-query-function #'coq-pg-query)
   (setq coq-query-result-function #'coq-pg-query-result)
   (setq coq-show-at-point-function #'coq-pg-show-at-point)
+  (setq coq-set-flag-function #'coq-pg-set-flag)
   (setq coq-ask-printing-width-function
         #'coq-ask-adapt-printing-width-and-show))
 
@@ -1969,10 +1956,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 (define-key coq-keymap [(?\[)]         #'coq-insert-as-in-next-command) ;; not for goal/response buffer?
 
 ; Query commands
-(define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
-(define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
-(define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
-(define-key coq-keymap [(?n)]          #'coq-unset-printing-notations)
 
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
