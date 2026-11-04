@@ -1,4 +1,4 @@
-;;; coq-templates.el --- Abbrevs and yasnippet templates for Coq  -*- lexical-binding:t -*-
+;;; coq-templates.el --- Abbrevs, templates and insertions for Coq  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -10,12 +10,14 @@
 
 ;;; Commentary:
 ;;
-;; The abbrevs and the yasnippet templates of Coq mode, built from the
-;; keyword databases of coq-syntax.el.  They are common to all Coq
-;; backends: `coq-mode' calls `coq-templates-setup'.
+;; The abbrevs, the yasnippet templates and the insertion commands of
+;; Coq mode, mostly built from the keyword databases of coq-syntax.el.
+;; They are common to all Coq backends: `coq-mode' calls
+;; `coq-templates-setup'.
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'coq-syntax)
 
 (defcustom coq-yasnippet-use-default-templates t
@@ -84,6 +86,138 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
     (message "Loading default coq yasnippets.")
     (coq-define-yasnippets-from-db))
    (t (message "yasnippet not found by proofgeneral, falling back to simple abbrevs"))))
+
+;;; Insertion commands
+;;
+;; They insert text from the keyword databases of coq-syntax.el, or
+;; after asking questions, without any backend.
+
+(defvar coq-load-path)                  ; in coq-system.el
+
+(define-obsolete-variable-alias 'module-kinds-table
+  'coq-module-kinds-table "4.6")
+(define-obsolete-variable-alias 'modtype-kinds-table
+  'coq-modtype-kinds-table "4.6")
+(define-obsolete-variable-alias 'reqkinds-kinds-table
+  'coq-require-kinds-table "4.6")
+
+(defconst coq-module-kinds-table
+  '(("Section" 0) ("Module" 1) ("Module Type" 2) ("Declare Module" 3))
+  "Enumerates the different kinds of modules.")
+
+(defconst coq-modtype-kinds-table
+  '(("" 1) (":" 2) ("<:" 3))
+  "Enumerates the different kinds of type information for modules.")
+
+(defun coq-postfix-.v-p (s)
+  (string-match-p "\\.v\\'" s))
+
+(defun coq-directories-files (l)
+  (let* ((file-list-list (mapcar #'directory-files l))
+         (file-list (apply #'append file-list-list))
+         (filtered-list (cl-remove-if-not #'coq-postfix-.v-p file-list)))
+  filtered-list))
+
+(defun coq-remove-dot-v-extension (s)
+  (substring s 0 -2))
+
+(defun coq-load-path-to-paths (ldpth)
+  (if (listp ldpth) (car ldpth) ldpth))
+
+(defun coq-build-accessible-modules-list ()
+  (let* ((pth (or coq-load-path '(".")))
+         (cleanpth (mapcar #'coq-load-path-to-paths pth))
+         (existingpth (cl-remove-if-not #'file-exists-p cleanpth))
+         (file-list (coq-directories-files existingpth)))
+    (mapcar #'coq-remove-dot-v-extension file-list)))
+
+(defun coq-insert-section-or-module ()
+  "Insert a module or a section after asking right questions."
+  (interactive)
+  (let*
+      ((mods (completing-read "Kind of module (TAB to see list): "
+                              coq-module-kinds-table))
+       (s (read-string  "Name: "))
+       (typkind (if (string-equal mods "Section")
+                    "" ;; if not a section
+                  (completing-read "Kind of type (optional, TAB to see list): "
+                                   coq-modtype-kinds-table))))
+    (if (string-equal typkind "")
+        (progn
+          (insert mods " " s ".\n")
+          (let ((pt (point)))
+            (insert "\nEnd " s ".")
+            (goto-char pt)))
+      (insert mods " " s " " typkind ".\n")
+      (let ((pt (point)))
+        (insert "\nEnd " s ".")
+        (goto-char pt)))))
+
+(defconst coq-require-kinds-table
+  '(("Require Import") ("Require Export") ("Require") ("Import"))
+  "Enumerates the different kinds of requiring a module.")
+
+(defun coq-insert-requires ()
+  "Insert requires to modules, iteratively."
+  (interactive)
+  (let* ((s)
+         (reqkind
+          (completing-read
+           "Command (TAB to see list, default Require Import) : "
+           coq-require-kinds-table nil nil nil nil "Require Import")))
+    (cl-loop do
+             (setq s (completing-read "Name (empty to stop) : "
+                                      (coq-build-accessible-modules-list)))
+             (unless (zerop (length s)) (insert (format "%s %s.\n" reqkind s)))
+             while (not (string-equal s "")))))
+
+;; TODO add module closing
+(defun coq-end-Section ()
+  "Ends a Coq section."
+  (interactive)
+  (let ((count 1)) ; The number of section already "Ended" + 1
+    (let ((section
+	   (save-excursion
+	     (progn
+	       (while (and (> count 0)
+			   (search-backward-regexp
+			    "Chapter\\|Section\\|End" 0 t))
+		 (if (char-equal (char-after (point)) ?E)
+		     (setq count (1+ count))
+		   (setq count (1- count))))
+	       (buffer-substring-no-properties
+          (progn (beginning-of-line) (forward-word 1) (point))
+          (progn (end-of-line) (point)))))))
+      (insert (concat "End" section)))))
+
+
+(defun coq-insert-solve-tactic ()
+  "Ask for a closing tactic name, with completion, and insert at point.
+Completion is on a quasi-exhaustive list of Coq closing tactics."
+  (interactive)
+  (coq-insert-from-db coq-solve-tactics-db "Closing tactic"))
+
+(defun coq-insert-tactic ()
+  "Insert a tactic name at point, with completion.
+Questions may be asked to the user to select the tactic."
+  (interactive)
+  (coq-insert-from-db coq-tactics-db "Tactic"))
+
+(defun coq-insert-tactical ()
+  "Ask for a closing tactic name, with completion, and insert at point.
+Completion is on a quasi-exhaustive list of Coq tacticals."
+  (interactive)
+  (coq-insert-from-db coq-tacticals-db "Tactical"))
+
+(defun coq-insert-command ()
+  "Ask for a command name, with completion, and insert it at point."
+  (interactive)
+  (coq-insert-from-db coq-commands-db "Command"))
+
+(defun coq-insert-term ()
+  "Ask for a term kind, with completion, and insert it at point."
+  (interactive)
+  (coq-insert-from-db coq-terms-db "Kind of term"))
 
 (provide 'coq-templates)
 
