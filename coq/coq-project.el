@@ -407,7 +407,7 @@ variable."
            (if (or avoidpath avoidargs)
                (concat "\n(" msg " overridden by dir/file local values)")
              "")))
-        (when coq-debug
+        (when (bound-and-true-p coq-debug)
           (message "coq-prog-args: %S" coq-prog-args)
           (message "coq-load-path: %S" coq-load-path))
         (unless no-kill (kill-buffer proj-file-buf))))))
@@ -436,12 +436,11 @@ Does nothing if `coq-use-project-file' is nil."
     ))
 
 
-;; Since coq-project-filename can be set via .dir-locals.el or file variable,
-;; we need to call coq-load-coq-project-file only *after* local variables are
-;; set. But coq-mode-hook is called BEFORE local variables are read. Therefore
-;; coq-load-coq-project-file is added to hack-local-variables-hook instead. To
-;; avoid adding for other modes , the setting is performed inside
-;; coq-mode-hook. This is described in www.emacswiki.org/emacs/LocalVariables
+;; Since coq-project-filename can be set via .dir-locals.el or file
+;; variable, `coq-load-project-file' must run only *after* local
+;; variables are set.  The `coq-mode' function, which runs before, adds
+;; it to the buffer-local `hack-local-variables-hook'.  See
+;; www.emacswiki.org/emacs/LocalVariables.
 
 ;; NOTE: the coq-prog-arg variable is local to the buffer, and it is
 ;; re-populated each time coq is launched on this buffer. In other
@@ -449,14 +448,6 @@ Does nothing if `coq-use-project-file' is nil."
 ;; run.
 
 ;; TODO: also read COQBIN somewhere?
-;; Note: this does not need to be at a particular place in the hook, but we
-;; need to make this hook local.
-;; hack-local-variables-hook seems to hack local and dir local vars.
-(add-hook 'coq-mode-hook
-          (lambda ()
-            (add-hook 'hack-local-variables-hook
-                      #'coq-load-project-file
-                      nil t)))
 
 
 (defun coq-toggle-use-project-file ()

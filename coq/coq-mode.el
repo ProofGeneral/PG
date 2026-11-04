@@ -30,6 +30,7 @@
 (require 'pg-double-hit)
 (require 'coq-queries)                  ; common to all backends
 (require 'coq-templates)                ; abbrevs and yasnippets, idem
+(require 'coq-project)                  ; load path and project file, idem
 
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
@@ -296,6 +297,10 @@ Near here means PT is either inside or just aside of a comment."
 
   ;; abbrevs and yasnippet templates, in all backends
   (coq-templates-setup)
+
+  ;; load path from the project file, in all backends, after the
+  ;; file/dir local variables, which may override it
+  (add-hook 'hack-local-variables-hook #'coq-load-project-file nil t)
 
   ;; Setup Proof-General interface to Coq.
   (if coq-use-pg (coq-pg-setup))
