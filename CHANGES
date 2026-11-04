@@ -62,8 +62,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     C-SPC, C-RET, C-r, C-( and C-) for tactics, tacticals, closing
     tactics, terms, commands, requires and sections) are bound in
     `coq-mode-map' too, and available in all Coq backends.
-*** Show (C-c C-a C-s) is bound in `coq-mode-map' and available in
-    all Coq backends too.
+*** Show (C-c C-a C-s) and the printing width (C-c C-a C-w) are bound
+    in `coq-mode-map' and available in all Coq backends too, as well as
+    the options `coq-auto-adapt-printing-width' and
+    `coq-optimise-resp-windows-enable'.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing
     #113, #392 and #589). There is no escape character any more, in any
     argument: write -arg "-w 'a b'" instead of -arg "-w \"a b\"", and

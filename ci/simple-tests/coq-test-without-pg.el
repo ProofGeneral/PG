@@ -33,6 +33,7 @@
 (declare-function coq-About "coq-queries")
 (declare-function coq-Check "coq-queries")
 (declare-function coq-Show "coq-queries")
+(declare-function coq-ask-printing-width "coq-goals")
 (declare-function coq-insert-intros "coq-queries")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-tactical "coq-templates")
@@ -110,6 +111,7 @@ run the queries."
     (should (eq (key-binding (kbd "C-c C-a C-b")) #'coq-About))
     (should (eq (key-binding (kbd "C-c C-a C-c")) #'coq-Check))
     (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+    (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
     (should (eq (key-binding (kbd "C-c C-a C-i")) #'coq-insert-intros))
     (should (eq (key-binding (kbd "C-c C-a C-(")) #'coq-insert-section-or-module))
     (should (eq (key-binding (kbd "C-c C-a C-)")) #'coq-end-Section))
@@ -122,6 +124,7 @@ run the queries."
     ;; no backend
     (should-not coq-query-function)
     (should-error (coq-run-query "Check x") :type 'user-error)
+    (should-error (coq-ask-printing-width) :type 'user-error)
     ;; the terminator is just inserted
     (goto-char (point-max))
     (let ((last-command-event ?.))

@@ -109,11 +109,6 @@ These are appended at the end of `coq-shell-init-cmd'."
   :type '(repeat string)
   :group 'coq)
 
-(defcustom coq-optimise-resp-windows-enable t
-  "If non-nil (default) resize vertically response window after each command."
-  :type 'boolean
-  :group 'coq)
-
 ;; Default coq is only Private_ and _subproof
 (defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
  "\"Private_\" \"_subproof\""
@@ -936,17 +931,14 @@ This function is called from `proof-shell-exec-loop' via
      (coq--show-proof-stepwise-cmds))))
 
 ;; This does not Set Printing Width, it rather tells pg to do that before each
-;; command (if necessary)
-(defpacustom auto-adapt-printing-width t
-  "If non-nil, adapt automatically printing width of goals window.
-Each time the user sends a bunch of commands to Coq, check if the
-width of the goals window changed, and adapt coq printing width.
-WARNING: If several windows are displaying the goals buffer, one
-is chosen arbitrarily.  WARNING 2: when backtracking the printing
-width is synchronized by coq (?!)."
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq)
+;; command (if necessary).  The option `coq-auto-adapt-printing-width' is
+;; common to all backends, see coq-goals.el.  Here only its entry in the
+;; settings menu, as `defpacustom' would do.
+(unless (assq 'auto-adapt-printing-width proof-assistant-settings)
+  (push (list 'auto-adapt-printing-width nil 'boolean
+              (documentation-property 'coq-auto-adapt-printing-width
+                                      'variable-documentation t))
+        proof-assistant-settings))
 
 (defvar coq-shell-current-line-width nil
   "Current line width of the Coq printing width.
@@ -1186,13 +1178,21 @@ known when the Coq file is opened."
           proof-shell-stop-silent-cmd "Unset Silent."
           proof-tree-configured nil)))
 
+(defun coq-pg-set-backend-functions ()
+  "Set the functions of the Proof General backend in the current buffer.
+In the script, goals and response buffers: the commands common to all
+backends call them."
+  (setq coq-query-function #'coq-pg-query)
+  (setq coq-query-result-function #'coq-pg-query-result)
+  (setq coq-show-at-point-function #'coq-pg-show-at-point)
+  (setq coq-ask-printing-width-function
+        #'coq-ask-adapt-printing-width-and-show))
+
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
   (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
-  (setq coq-query-function #'coq-pg-query)
-  (setq coq-query-result-function #'coq-pg-query-result)
-  (setq coq-show-at-point-function #'coq-pg-show-at-point)
+  (coq-pg-set-backend-functions)
   
   ;; coq-mode colorize errors better than the generic mechanism
   (setq proof-script-color-error-messages nil)
@@ -1402,9 +1402,7 @@ shortly before `proof-assert-command-hook', respectively,
 (setq coq-response-buffer-function (lambda () proof-response-buffer))
 
 (defun coq-goals-mode-config ()
-  (setq coq-query-function #'coq-pg-query)
-  (setq coq-query-result-function #'coq-pg-query-result)
-  (setq coq-show-at-point-function #'coq-pg-show-at-point)
+  (coq-pg-set-backend-functions)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1412,9 +1410,7 @@ shortly before `proof-assert-command-hook', respectively,
   (proof-goals-config-done))
 
 (defun coq-response-config ()
-  (setq coq-query-function #'coq-pg-query)
-  (setq coq-query-result-function #'coq-pg-query-result)
-  (setq coq-show-at-point-function #'coq-pg-show-at-point)
+  (coq-pg-set-backend-functions)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -2015,7 +2011,6 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ; Query commands
 (define-key coq-keymap [?r]            #'proof-store-response-win)
 (define-key coq-keymap [?g]            #'proof-store-goals-win)
-(define-key coq-keymap [(control ?w)]  #'coq-ask-adapt-printing-width-and-show)
 (define-key coq-keymap [(control ?9)]  #'coq-set-printing-parentheses)
 (define-key coq-keymap [(control ?0)]  #'coq-unset-printing-parentheses)
 (define-key coq-keymap [(?N)]          #'coq-set-printing-notations)
