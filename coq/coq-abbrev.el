@@ -29,28 +29,6 @@
   (describe-variable 'coq-local-vars-doc))
 
 
-(defconst coq-tactics-menu
-  (append '("Tactics (menu)"
-	    ["Intros (smart)" coq-insert-intros :help "Insert \"intros h1 .. hn.\" where hi are the default names given by Coq."])
-	  (coq-build-menu-from-db (append coq-tactics-db coq-solve-tactics-db))))
-
-(defconst coq-tacticals-menu
-  (append '("Tacticals (menu)")
-	  (coq-build-menu-from-db coq-tacticals-db)))
-
-(defconst coq-commands-menu
-  (append '("Command (menu)"
-	    ;["Module/Section (smart)" coq-insert-section-or-module t]
-	    ;["Require (smart)" coq-insert-requires t]
-	    )
-	  (coq-build-menu-from-db coq-commands-db)))
-
-(defconst coq-terms-menu
-  (append '("Term (menu)"
-	    ["Match (smart)" coq-insert-match t])
-	  (coq-build-menu-from-db coq-terms-db)))
-
-
         ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
         ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
         ;;   (progn (insert abbr) (yas-expand)))
@@ -346,21 +324,7 @@
   (append coq-menu-common-entries
   `(
     ""
-    ("INSERT"
-     ["Intros (smart)" coq-insert-intros :help "Insert \"intros h1 .. hn.\" where hi are the default names given by Coq."]
-     ""
-     ["Tactic (interactive)" coq-insert-tactic t]
-     ["Tactical (interactive)" coq-insert-tactical t]
-     ["Command (interactive)" coq-insert-command t]
-     ["Term (interactive)" coq-insert-term t]
-     ""
-     ,coq-tactics-menu
-     ,coq-tacticals-menu
-     ,coq-commands-menu
-     ,coq-terms-menu
-     ""
-     ["Module/Section (smart)" coq-insert-section-or-module t]
-     ["Require (smart)" coq-insert-requires t])
+    ,coq-insert-menu
     ""
     ("ABBREVS"
      ["Expand At Point" expand-abbrev t]
