@@ -273,6 +273,39 @@ This macro also extends the `proof-assistant-settings' list."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; Toggle commands for boolean settings (here, not in proof-utils.el, to
+;; be usable without the proof shell)
+;;
+
+(defun proof-deftoggle-fn (var &optional othername)
+  "Define a function <VAR>-toggle for toggling a boolean customize setting VAR.
+Args as for the macro `proof-deftoggle', except will be evaluated."
+  (eval
+   `(defun ,(if othername othername
+	      (intern (concat (symbol-name var) "-toggle"))) (&optional arg)
+	      ,(concat "Toggle `" (symbol-name var) "'. With ARG, turn on iff ARG>0.
+This function simply uses `customize-set-variable' to set the variable.")
+; It was constructed with `proof-deftoggle-fn'."
+	      (interactive "P")
+	      (customize-set-variable
+	       (quote ,var)
+	       (if (null arg) (not ,var)
+		 (> (prefix-numeric-value arg) 0))))))
+
+(defmacro proof-deftoggle (var &optional othername)
+  "Define a function VAR-toggle for toggling a boolean customize setting VAR.
+The toggle function uses `customize-set-variable' to change the variable.
+OTHERNAME gives an alternative name than the default <VAR>-toggle.
+The name of the defined function is returned."
+  `(progn
+     (declare-function ,(if othername othername
+			  (intern (concat (symbol-name var) "-toggle")))
+		       "proof-utils")
+     (proof-deftoggle-fn (quote ,var) (quote ,othername))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; Evaluation once proof assistant is known
 ;;
 
