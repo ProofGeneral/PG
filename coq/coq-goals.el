@@ -260,11 +260,25 @@ See `coq-fold-other-goals'."
         (coq-goals-fold-other-goals))))
   (message "Other goals %s" (if coq-fold-other-goals "folded" "unfolded")))
 
+(defvar-local coq-goals-count-function nil
+  "Function returning the numbers of goals of the current goals buffer.
+If non-nil, `coq-goals-count' calls it without argument instead of
+reading the goals in the buffer, for backends that know them.  It
+returns the same values.")
+
 (defun coq-goals-count ()
   "Numbers of goals of the current goals buffer, as (FOCUSED . UNFOCUSED).
 UNFOCUSED is a string if Coq gives it per level.  Set Printing
 Unfocused is supposed to be on: if no unfocused goal is displayed,
-there is none.  Return nil outside of proofs."
+there is none.  Return nil outside of proofs.  See also
+`coq-goals-count-function'."
+  (if coq-goals-count-function
+      (funcall coq-goals-count-function)
+    (coq-goals--read-count)))
+
+(defun coq-goals--read-count ()
+  "Numbers of goals of the current goals buffer, read in its text.
+See `coq-goals-count'."
   (save-excursion
     (goto-char (point-min))
     (let ((focused
