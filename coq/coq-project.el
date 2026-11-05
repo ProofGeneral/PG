@@ -24,7 +24,11 @@
 
 (require 'cl-lib)
 
-(defvar coq-prog-args)
+(defvar coq-prog-args nil
+  "Arguments of the Coq programs, on top of the load path.
+Set from the project file by `coq-load-project-file', or as a file
+variable.  With Proof General, this is also an option, see
+`proof-prog-args'.")
 (defvar coq-debug)
 
 ;; Arbitrary arguments can already be passed through _CoqProject.
