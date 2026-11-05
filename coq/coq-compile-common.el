@@ -23,7 +23,7 @@
 ;;; Code:
 
 (require 'cl-lib)                       ;cl-every cl-some
-(require 'proof-shell)
+(require 'pg-pamacs)                    ;proof-deftoggle
 (require 'coq-system)
 (require 'compile)
 
@@ -35,56 +35,6 @@
 ;;
 ;; Multiple file handling -- sequential compilation of required modules
 ;;
-
-;;; enable / disable parallel / sequential compilation
-;; I would rather put these functions into coq-seq-compile and
-;; coq-par-compile, respectively. However, the :initialization
-;; function of a defcustom seems to be evaluated when reading the
-;; defcustom form. Therefore, these functions must be defined already,
-;; when the defcustom coq-compile-parallel-in-background is read.
-
-(defun coq-par-enable ()
-  "Enable parallel compilation.
-Must be used together with `coq-seq-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
-	    #'coq-par-preprocess-require-commands)
-  (add-hook 'proof-shell-signal-interrupt-hook
-	    #'coq-par-user-interrupt)
-  (add-hook 'proof-shell-handle-error-or-interrupt-hook
-	    #'coq-par-user-interrupt))
-
-(defun coq-par-disable ()
-  "Disable parallel compilation.
-Must be used together with `coq-seq-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
-	       #'coq-par-preprocess-require-commands)
-  (remove-hook 'proof-shell-signal-interrupt-hook
-	       #'coq-par-user-interrupt)
-  (remove-hook 'proof-shell-handle-error-or-interrupt-hook
-	       #'coq-par-user-interrupt))
-
-(defun coq-seq-enable ()
-  "Enable sequential synchronous compilation.
-Must be used together with `coq-par-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
-	    #'coq-seq-preprocess-require-commands))
-
-(defun coq-seq-disable ()
-  "Disable sequential synchronous compilation.
-Must be used together with `coq-par-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
-	       #'coq-seq-preprocess-require-commands))
-
-
-
-(defun coq-switch-compilation-method ()
-  "Set function for function `coq-compile-parallel-in-background'."
-  (if coq-compile-parallel-in-background
-      (progn
-	(coq-par-enable)
-	(coq-seq-disable))
-    (coq-par-disable)
-    (coq-seq-enable)))
 
 (defun number-of-cpus ()
   (let (status ncpus)
@@ -195,11 +145,6 @@ This option can be set/reset via menu
 
 (proof-deftoggle coq-compile-parallel-in-background)
 
-(defun coq-compile-parallel-in-background ()
-  (coq-switch-compilation-method))
-
-;; defpacustom fails to call :eval during inititialization, see trac #456
-(coq-switch-compilation-method)
 
 (defcustom coq-compile-quick 'quick-and-vio2vo
   "Control quick compilation, vio2vo and vio/vo files auto compilation.
@@ -512,8 +457,6 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
-(proof-deftoggle coq-show-proof-stepwise)
-
 (defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
 Otherwise start the external compilation without confirmation.
@@ -676,11 +619,20 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 ;;; ancestor unlocking
 ;;; (locking is different for sequential and parallel compilation)
 
+;; Proof General, only used when it is loaded: ancestor locking.
+(defvar proof-script-buffer)
+(defvar proof-included-files-list)
+(declare-function proof-restart-buffers "proof-script")
+(declare-function proof-files-to-buffers "proof-script")
+(declare-function span-property "span")
+(declare-function span-set-property "span")
+
 (defun coq-unlock-ancestor (ancestor-src)
   "Unlock ANCESTOR-SRC."
   (let* ((default-directory
 	   (buffer-local-value 'default-directory
-			       (or proof-script-buffer (current-buffer))))
+			       (or (bound-and-true-p proof-script-buffer)
+                                   (current-buffer))))
 	 (true-ancestor (file-truename ancestor-src)))
     (setq proof-included-files-list
           (delete true-ancestor proof-included-files-list))
@@ -693,6 +645,8 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 
 
 ;;; manage coq--compile-response-buffer
+
+(declare-function proof-display-and-keep-buffer "proof-utils")
 
 (defconst coq--compile-response-initial-content "-*- mode: compilation; -*-\n\n"
   "Content of `coq--compile-response-buffer' after initialization.")
@@ -753,7 +707,9 @@ the command whose output will appear in the buffer."
         (with-no-warnings (font-lock-fontify-buffer)))))
   ;; Make it so the next C-x ` will use this buffer.
   (setq next-error-last-buffer (get-buffer coq--compile-response-buffer))
-  (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)
+  (if (fboundp 'proof-display-and-keep-buffer)
+      (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)
+    (display-buffer coq--compile-response-buffer))
   ;; Partial fix for #54: ensure that the compilation response
   ;; buffer is not in a dedicated window.
   (mapc (lambda (w) (set-window-dedicated-p w nil))

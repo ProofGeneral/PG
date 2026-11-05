@@ -65,6 +65,57 @@
 
 (defvar prettify-symbols-alist)
 
+;;; enable / disable parallel / sequential compilation in the proof shell
+;; Here, not in coq-compile-common.el, which does not depend on the
+;; proof shell: other backends call coq-par-compile.el directly.
+
+(defun coq-par-enable ()
+  "Enable parallel compilation.
+Must be used together with `coq-seq-disable'."
+  (add-hook 'proof-shell-extend-queue-hook
+	    #'coq-par-preprocess-require-commands)
+  (add-hook 'proof-shell-signal-interrupt-hook
+	    #'coq-par-user-interrupt)
+  (add-hook 'proof-shell-handle-error-or-interrupt-hook
+	    #'coq-par-user-interrupt))
+
+(defun coq-par-disable ()
+  "Disable parallel compilation.
+Must be used together with `coq-seq-enable'."
+  (remove-hook 'proof-shell-extend-queue-hook
+	       #'coq-par-preprocess-require-commands)
+  (remove-hook 'proof-shell-signal-interrupt-hook
+	       #'coq-par-user-interrupt)
+  (remove-hook 'proof-shell-handle-error-or-interrupt-hook
+	       #'coq-par-user-interrupt))
+
+(defun coq-seq-enable ()
+  "Enable sequential synchronous compilation.
+Must be used together with `coq-par-disable'."
+  (add-hook 'proof-shell-extend-queue-hook
+	    #'coq-seq-preprocess-require-commands))
+
+(defun coq-seq-disable ()
+  "Disable sequential synchronous compilation.
+Must be used together with `coq-par-enable'."
+  (remove-hook 'proof-shell-extend-queue-hook
+	       #'coq-seq-preprocess-require-commands))
+
+(defun coq-switch-compilation-method ()
+  "Set function for function `coq-compile-parallel-in-background'."
+  (if coq-compile-parallel-in-background
+      (progn
+	(coq-par-enable)
+	(coq-seq-disable))
+    (coq-par-disable)
+    (coq-seq-enable)))
+
+(defun coq-compile-parallel-in-background ()
+  (coq-switch-compilation-method))
+
+;; defpacustom fails to call :eval during inititialization, see trac #456
+(coq-switch-compilation-method)
+
 
 ;; ----- coq-shell configuration options
 
@@ -72,6 +123,7 @@
 ;; debugging functions
 ;; (defun proofstack () (coq-get-span-proofstack (span-at (point) 'type)))
 (defvar coq-debug nil)
+(defvar coq-prog-args)                  ; defpgcustom prog-args, pg-custom.el
 ;; End debugging
 
 ;; Obsolete
@@ -282,6 +334,8 @@ It is mostly useful in three window mode, see also
   :type 'boolean
   :safe 'booleanp
   :group 'coq-auto-compile)
+
+(proof-deftoggle coq-show-proof-stepwise)
 
 ;;
 ;; prooftree customization

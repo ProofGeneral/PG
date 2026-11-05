@@ -28,6 +28,7 @@
 (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
 
 (require 'coq-compile-common)
+(require 'proof-shell)                  ; sequential compilation is for it only
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

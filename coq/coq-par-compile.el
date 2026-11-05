@@ -39,6 +39,22 @@
 (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
 (eval-when-compile (require 'cl-lib))
 (require 'coq-compile-common)
+(require 'span)
+
+;; The proof shell of Proof General is not required: another backend
+;; calls `coq-par-start-compilation', see "Interface with the script
+;; management" below.  The variables of the proof shell are only read
+;; when it is loaded.
+(defvar proof-action-list)
+(defvar proof-second-action-list-active)
+(defvar proof-script-buffer)
+(defvar proof-included-files-list)
+(defvar proof-shell-interrupt-pending)
+(declare-function proof-add-to-queue "proof-shell")
+(declare-function proof-release-lock "proof-shell")
+(declare-function proof-detach-queue "proof-shell")
+(declare-function proof-script-clear-queue-spans-on-error "proof-script")
+(declare-function proof-register-possibly-new-processed-file "proof-script")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1713,7 +1729,7 @@ retired and transition to \\+`ready'.  This means:
       (setq coq--par-delayed-last-job nil))
     (if (and (get job 'failed)
 	     (eq coq--last-compilation-job job)
-	     proof-action-list)
+	     (bound-and-true-p proof-action-list))
 	(progn
 	  (when coq--debug-auto-compilation
 	    (message "%s: delay queue kickoff until action list is empty"
@@ -2175,7 +2191,7 @@ If a new job is created it is started or enqueued right away."
       ;; and cleared, then we might have visited and locked this file
       ;; already
       (if (member (file-truename (get new-job 'src-file))
-		  proof-included-files-list)
+		  (bound-and-true-p proof-included-files-list))
 	  (put new-job 'lock-state 'asserted)
 	(put new-job 'lock-state 'unlocked))
       (message "Check %s" (get new-job 'src-file))
