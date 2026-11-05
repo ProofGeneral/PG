@@ -131,6 +131,51 @@ This may become desynchronized with Coq if you use the command
 \"Add/Remove Search Blacklist\" in you script." )
 
 
+;; Detecting coqtop or rocq args should happen at the last moment
+;; before calling the process. In particular it should happen after
+;; that proof-prog-name-ask is performed. This hook is exactly called
+;; after querying proof-prog-name (if proof-prog-name-ask is t). This
+;; way the options can be elaborated correctly (coqtop and rocq have
+;; different options). We first detect executables (taking
+;; proof-prog-name-ask into account), then elaborate the
+;; proof-prog-args. Note: we don't support proof-prog-name-guess
+(defun coq-pg-detect-programs ()
+  "Detect the Coq programs and arguments, just before starting Coq.
+In `proof-shell-before-process-hook'."
+  ;; detect executables unless explicitely set by hand,
+  ;; with proof-prog-name-ask or by customizing them. When
+  ;; the prover is set by hand, we try to find coqdep and
+  ;; coqc in the same directory
+  (if (and (or proof-prog-name-ask (coq--user-set-p 'coq-prog-name))
+           proof-prog-name)
+      ;; let us find other executables in the exact same
+      ;; place. TODO: go back to default exec-path if not found?
+      (let ((exec-path (if (file-name-directory proof-prog-name)
+                           (list (file-name-directory proof-prog-name))
+                         exec-path)))
+        (unless (coq--user-set-p 'coq-compiler)
+          (setq coq-compiler (executable-find (coq-detect-coqc))))
+        (unless (coq--user-set-p 'coq-dependency-analyzer)
+          (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep)))))
+    ;; default: detect everything from the current exec-path
+    (setq proof-prog-name (coq-autodetect-progname))
+    (unless (coq--user-set-p 'coq-compiler)
+      (setq coq-compiler (coq-detect-coqc)))
+    (unless (coq--user-set-p 'coq-dependency-analyzer)
+      (setq coq-dependency-analyzer (coq-detect-coqdep))))
+  (when coq-debug
+    (message "coq-proof-prog-name: %S" proof-prog-name)
+    (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
+    (message "coq-compiler: %S"  coq-compiler))
+  ;; in principe coq-prog-name is only used to set up
+  ;; proof-prog-name, but it may sometimes be used by itself
+  ;; so let us sync them
+  (setq coq-prog-name proof-prog-name)
+  ;; now elaborate args
+  (setq coq-prog-args (coq-prog-args)))
+
+(add-hook 'proof-shell-before-process-hook #'coq-pg-detect-programs)
+
 (defun coq-shell-init-cmd ()
   "Commands for initial Coq configuration, Coq variant of `proof-shell-init-cmd'.
 Return the list of commands sent to the Coq background process just
