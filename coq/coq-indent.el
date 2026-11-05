@@ -24,7 +24,7 @@
 
 ;;; Code:
 
-(require 'proof-syntax)                 ; proof-inside-comment
+(require 'proof-syntax)       ; proof-looking-at etc., no proof shell
 
 
 ;; debugging
