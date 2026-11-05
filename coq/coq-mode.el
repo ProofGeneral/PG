@@ -24,6 +24,14 @@
                (expand-file-name
                 (file-name-directory (or load-file-name buffer-file-name)))))
 
+;; Syntax utilities and faces of Proof General (generic/proof-syntax.el)
+;; are used even without the Proof General backend.
+(unless (locate-library "proof-syntax")
+  (add-to-list 'load-path
+               (expand-file-name
+                "../generic/"
+                (file-name-directory (or load-file-name buffer-file-name)))))
+
 ;; (if t (require 'coq nil 'noerror))
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
