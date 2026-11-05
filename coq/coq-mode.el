@@ -31,8 +31,6 @@
 (require 'coq-queries)                  ; common to all backends
 (require 'coq-templates)                ; abbrevs and yasnippets, idem
 
-(declare-function coq-pg-setup "coq")   ; coq.el requires this file
-
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
   :group 'programming)
