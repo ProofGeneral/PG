@@ -92,7 +92,7 @@ Otherwise the abbrevs of `coq-mode-abbrev-table' are available."
 ;; They insert text from the keyword databases of coq-syntax.el, or
 ;; after asking questions, without any backend.
 
-(defvar coq-load-path)                  ; in coq-system.el
+(defvar coq-load-path)                  ; in coq-project.el
 
 (define-obsolete-variable-alias 'module-kinds-table
   'coq-module-kinds-table "4.6")
