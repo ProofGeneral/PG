@@ -30,6 +30,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** New option `coq-backend' choosing how Coq mode interacts with Coq:
+    `pg' (Proof General, the default) or nil (edition only, without
+    loading the Proof General machinery).  It replaces `coq-use-pg',
+    now obsolete, which still gives its default value.
 *** The goals after the first one are folded to a line giving their
     number, with the number of unfocused goals if Coq displays them.
     Click on the line or type RET on it to unfold them, see

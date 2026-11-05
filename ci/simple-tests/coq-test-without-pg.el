@@ -7,14 +7,16 @@
 ;;; Commentary:
 ;;
 ;; Test the part of Coq mode common to all backends, with the Proof
-;; General backend disabled (`coq-use-pg' nil): it must not load the
-;; proof shell, and the abbrevs, the terminator command, the query
-;; and insertion commands and their keys must be there.
+;; General backend disabled (obsolete `coq-use-pg' nil, so `coq-backend'
+;; nil): it must not load the proof shell, and the abbrevs, the
+;; terminator command, the query and insertion commands and their keys
+;; must be there.
 
 ;;; Code:
 
 ;; before loading coq-mode.el, which defines it
 (defvar coq-use-pg)
+(defvar coq-backend)
 (setq coq-use-pg nil)
 
 (require 'proof-site)
@@ -76,6 +78,8 @@
   "Coq mode without the Proof General backend loads no proof shell."
   (coq-test-without-pg-with-file
     (should (eq major-mode 'coq-mode))
+    ;; the obsolete option gives the default of the new one
+    (should (null coq-backend))
     (should-not (featurep 'proof))
     (should-not (featurep 'proof-shell))
     (should-not (featurep 'proof-script))))
