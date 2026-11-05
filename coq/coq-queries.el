@@ -28,6 +28,7 @@
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
 (require 'coq-hyps)                     ; `coq-highlight-hyps-cited-in-response'
+(require 'coq-indent)                   ; `coq-script-parse-cmdend-forward'
 
 (defvar proof-minibuffer-history)
 (defvar coq-one-command-per-line)
@@ -433,6 +434,150 @@ With \\[universal-argument], with Printing All.  With
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
+;;; Printing flags for all the next goals and queries
+
+(defvar-local coq-set-flag-function nil
+  "Function setting a printing flag for the next goals and queries.
+Set by each backend.  It is called with the argument COMMAND, setting or
+unsetting a flag, without its final dot, for instance \"Set Printing
+Parentheses\".  See `coq-query-flags' for a flag of one query only.")
+
+(defun coq-set-flag (command)
+  "Run COMMAND, setting a printing flag for the next goals and queries.
+See `coq-set-flag-function'."
+  (unless coq-set-flag-function
+    (user-error "Coq: no backend to set printing flags in this buffer"))
+  (funcall coq-set-flag-function command))
+
+(defmacro coq-define-flag-command (name command)
+  "Define the command NAME, running COMMAND with `coq-set-flag'."
+  `(defun ,name ()
+     ,(format "Run %s.\nFor the next goals and queries, see `coq-set-flag'."
+              command)
+     (interactive)
+     (coq-set-flag ,command)))
+
+(coq-define-flag-command coq-set-printing-implicit "Set Printing Implicit")
+(coq-define-flag-command coq-unset-printing-implicit "Unset Printing Implicit")
+(coq-define-flag-command coq-set-printing-all "Set Printing All")
+(coq-define-flag-command coq-unset-printing-all "Unset Printing All")
+(coq-define-flag-command coq-set-printing-parentheses "Set Printing Parentheses")
+(coq-define-flag-command coq-unset-printing-parentheses "Unset Printing Parentheses")
+(coq-define-flag-command coq-set-printing-notations "Set Printing Notations")
+(coq-define-flag-command coq-unset-printing-notations "Unset Printing Notations")
+(coq-define-flag-command coq-set-printing-synth "Set Printing Synth")
+(coq-define-flag-command coq-unset-printing-synth "Unset Printing Synth")
+(coq-define-flag-command coq-set-printing-coercions "Set Printing Coercions")
+(coq-define-flag-command coq-unset-printing-coercions "Unset Printing Coercions")
+(coq-define-flag-command coq-set-printing-compact-contexts "Set Printing Compact Contexts")
+(coq-define-flag-command coq-unset-printing-compact-contexts "Unset Printing Compact Contexts")
+(coq-define-flag-command coq-set-printing-unfocused "Set Printing Unfocused")
+(coq-define-flag-command coq-unset-printing-unfocused "Unset Printing Unfocused")
+(coq-define-flag-command coq-set-printing-universes "Set Printing Universes")
+(coq-define-flag-command coq-unset-printing-universes "Unset Printing Universes")
+(coq-define-flag-command coq-set-printing-wildcards "Set Printing Wildcard")
+(coq-define-flag-command coq-unset-printing-wildcards "Unset Printing Wildcard")
+
+;;; Insertion of "as" clauses
+
+(defvar coq-keywords-accepting-as-regex (regexp-opt '("induction" "destruct" "inversion" "injection")))
+
+;; destruct foo., where foo is a name.
+(defvar coq-auto-as-hack-hyp-name-regex
+  (concat "\\(" "induction\\|destruct" "\\)\\s-+\\(" coq-id-shy "\\)\\s-*\\.")
+  "Regexp of commands needing a hack to generate correct \"as\" close.
+tactics like destruct and induction reuse hypothesis names by
+default, which makes the detection of new hypothesis incorrect.
+the hack consists in adding the \"!\" modifier on the argument
+destructed, so that it is left in the goal and the name cannot be
+reused.  We also add a \"clear\" at the end of the tactic so that
+the whole tactic behaves correctly.
+Warning: this makes the error messages (and location) wrong.")
+
+(defun coq-hack-cmd-for-infoH (s)
+  "Return the tactic S hacked with infoH tactical."
+  (cond
+   ;; We cannot rebuild the sub-patterns from the final goal, so ';' is not
+   ;; supported. Only single tactics like destruct.
+   ((string-match ";" s) s) ;; composed tactic cannot be treated
+   ((string-match coq-auto-as-hack-hyp-name-regex s)
+    (concat "infoH " (match-string 1 s) " (" (match-string 2 s) ")."))
+   ((string-match coq-keywords-accepting-as-regex s)
+    (concat "infoH " s))
+   (t (concat "infoH " s))))
+
+;; Point supposed to be at the end of locked region, that is
+;; (proof-assert-next-command-interactive) has just finished
+(defun coq-tactic-already-has-an-as-close(s)
+  "Return t if the last tactic of locked region contains an \"as\" close."
+  (save-excursion (string-match "\\<as\\>" s)))
+
+(defvar-local coq-processed-end-function nil
+  "Function returning the end of the part of the script processed by Coq.
+Set by each backend, called without argument in the script buffer.")
+
+(defun coq-insert-as-in-next-command ()
+  "Insert an \"as\" clause in the next command, from the names Coq gives.
+The next command is the one after the processed part of the script, see
+`coq-processed-end-function'.  It is run with the tactical infoH as a
+query, see `coq-query-result', which leaves the state of Coq unchanged."
+  (interactive)
+  (unless coq-processed-end-function
+    (user-error "Coq: no backend to run the next command in this buffer"))
+  (save-excursion
+    (goto-char (funcall coq-processed-end-function))
+    (forward-char 1)
+    (coq-find-real-start)
+    (let* ((pt (point))
+           (_ (coq-script-parse-cmdend-forward))
+           (cmd (buffer-substring pt (point)))
+           (newcmd (and (not (coq-tactic-already-has-an-as-close cmd))
+                        (coq-hack-cmd-for-infoH cmd)))
+           ;; not a composed tactic, see `coq-hack-cmd-for-infoH'
+           (output (and newcmd
+                        (string-prefix-p "infoH " newcmd)
+                        (coq-query-result
+                         (replace-regexp-in-string "\\.\\s-*\\'" "" newcmd))))
+           (substr (and output
+                        (string-match "<infoH>\\([^<]*\\)</infoH>" output)
+                        (match-string 1 output))))
+      ;; nothing if substr contains only spaces and |
+      (when (and substr (string-match-p "[^|[:space:]]" substr))
+        ;; TODO: look for eqn:XX and go before it.
+        ;; Go just before the last "."
+        (goto-char (funcall coq-processed-end-function))
+        (coq-script-parse-cmdend-forward)
+        (coq-script-parse-cmdend-backward)
+        (insert (concat " as [" substr "]"))))))
+
+(defvar-local coq-show-at-point-function nil
+  "Function showing the state of Coq at point, set by each backend, or nil.
+`coq-Show' calls it without argument.  It returns nil if it shows
+nothing, for instance outside of the processed part: `coq-Show' asks
+for a goal number then.")
+
+(defun coq-Show (withprintingall)
+  "Show the state at point, or ask for a number I and show the Ith goal.
+The state at point is shown if the backend can, see
+`coq-show-at-point-function'.  Otherwise the prefix argument gives the
+printing flags, see `coq-query-flags-from-prefix':
+\\[universal-argument] for Printing All, \\[universal-argument] \\[universal-argument] to choose them."
+  (interactive "P")
+  (unless (and coq-show-at-point-function
+               (funcall coq-show-at-point-function))
+    (coq-ask-do "Show goal number" "Show" t nil nil
+                (coq-query-flags-from-prefix withprintingall))))
+
+(defun coq-Show-with-implicits ()
+  "Ask for a number i and show the ith goal."
+  (interactive)
+  (coq-ask-do-show-implicits "Show goal number" "Show" t))
+
+(defun coq-Show-with-all ()
+  "Ask for a number i and show the ith goal."
+  (interactive)
+  (coq-ask-do-show-all "Show goal number" "Show" t))
+
 (defun coq-query (arg)
   "Ask for a query, with completion, and send to Coq.
 With \\[universal-argument], with Printing All.  With
@@ -587,6 +732,34 @@ Also insert holes at insertion positions."
             (goto-char start)
             (search-forward "#")
             (delete-char -1)))))))
+
+;;; Keys
+
+(defun coq-queries-define-keys (map)
+  "Bind the keys of the queries and of the display in MAP.
+They are the keys under C-c C-a common to all backends that make sense
+in a goals or response buffer too: `coq-mode-map' has them, with the
+insertion keys."
+  ;; Queries, see `coq-query-function'.
+  (define-key map (kbd "C-c C-a C-a") #'coq-Search)
+  (define-key map (kbd "C-c C-a C-b") #'coq-About)
+  (define-key map (kbd "C-c C-a C-c") #'coq-Check)
+  (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
+  (define-key map (kbd "C-c C-a C-p") #'coq-Print)
+  (define-key map (kbd "C-c C-a C-q") #'coq-query)
+  (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
+  (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
+  (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
+  (define-key map (kbd "C-c C-a C-s") #'coq-Show)
+  ;; Display, see coq-goals.el.
+  (define-key map (kbd "C-c C-a C-w") #'coq-ask-printing-width)
+  (define-key map (kbd "C-c C-a r") #'coq-store-response-win)
+  (define-key map (kbd "C-c C-a g") #'coq-store-goals-win)
+  ;; Printing flags, see `coq-set-flag-function'.
+  (define-key map (kbd "C-c C-a C-9") #'coq-set-printing-parentheses)
+  (define-key map (kbd "C-c C-a C-0") #'coq-unset-printing-parentheses)
+  (define-key map (kbd "C-c C-a N") #'coq-set-printing-notations)
+  (define-key map (kbd "C-c C-a n") #'coq-unset-printing-notations))
 
 (provide 'coq-queries)
 

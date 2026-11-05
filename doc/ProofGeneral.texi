@@ -4458,9 +4458,14 @@ Inserts ``End <section-name>.'' (this should work well with nested sections).
 
 @vindex coq-mode-map
 The query keys above (and also @kbd{C-c C-a C-q}, @kbd{C-c C-a C-l},
-@kbd{C-c C-a C-n} and @kbd{C-c C-a h}), the insertions built from a
-query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g}) and
-the other insertions (@kbd{C-c C-a C-t}, @kbd{t}, @kbd{!},
+@kbd{C-c C-a C-n} and @kbd{C-c C-a h}), the display keys (@kbd{C-c C-a
+C-w} for the printing width, @kbd{C-c C-a r} and @kbd{g} to copy the
+response or the goals in the buffer @code{*response-freeze*}, @kbd{C-c
+C-a C-9}, @kbd{C-0}, @kbd{N} and @kbd{n} to set or unset Printing
+Parentheses and Notations), the insertions built from a query
+(@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m}, @kbd{C-c C-a C-g} and @kbd{C-c
+C-a [} for an ``as'' clause in the next command) and the other
+insertions (@kbd{C-c C-a C-t}, @kbd{t}, @kbd{!},
 @kbd{C-SPC}, @kbd{C-RET}, @kbd{C-r}, @kbd{C-(} and @kbd{C-)} after
 @kbd{C-c C-a}, for tactics, tacticals, closing tactics, terms,
 commands, requires and sections) are bound in @code{coq-mode-map},

@@ -38,6 +38,33 @@ them when clicked, see `coq-toggle-other-goals'."
   :type 'boolean
   :group 'coq)
 
+(defcustom coq-auto-adapt-printing-width t
+  "If non-nil, adapt the printing width of Coq to the goals window.
+With Proof General, each time the user sends a bunch of commands to
+Coq, check if the width of the goals window changed, and set Coq
+printing width (Set Printing Width).  If several windows display the
+goals buffer, one is chosen arbitrarily.  When backtracking, Coq
+restores the printing width of the state it goes back to: the width is
+adapted again at the next command.
+
+With Eglot, the goals are printed at the width of their window, and
+printed again when it changes.  The answers of the queries are printed
+at the width of the response window."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq)
+
+(defcustom coq-optimise-resp-windows-enable t
+  "If non-nil (default), resize the goals and response windows to their content.
+After each command, the response window gets the height of its content,
+the goals window the rest, when they are one above the other.
+
+With Proof General, only in three windows mode.  With Eglot, when the
+conclusion is apart (see `coq-eglot-split-goals'), the hypotheses get
+the height they need too, the conclusion window gets the rest."
+  :type 'boolean
+  :group 'coq)
+
 (defface coq-other-goals-face '((t :inherit shadow))
   "Face of the line giving the number of the other goals.
 See `coq-fold-other-goals'."
@@ -149,6 +176,77 @@ gives their number."
 
 (defvar coq-goals-buffer-function nil
   "Function returning the goals buffer of the current backend.")
+
+(defvar coq-response-buffer-function nil
+  "Function returning the response buffer of the current backend.")
+
+(defvar-local coq-ask-printing-width-function nil
+  "Command asking for a printing width and printing the goals at it.
+Set by each backend, called interactively by `coq-ask-printing-width'.")
+
+(defun coq-ask-printing-width ()
+  "Ask for a printing width and print the goals at this width.
+The backend does it, see `coq-ask-printing-width-function'.  See also
+`coq-auto-adapt-printing-width'."
+  (interactive)
+  (unless coq-ask-printing-width-function
+    (user-error "Coq: no backend to set the printing width in this buffer"))
+  (call-interactively coq-ask-printing-width-function))
+
+;;; Frozen copies of the goals and response buffers
+
+(defconst coq-store-buffer-name "*response-freeze*"
+  "Name of the buffer where `coq-store-goals-win' copies the goals.
+And `coq-store-response-win' the response.")
+
+(defun coq-store-buffer-win (buffer &optional erase)
+  "Copy BUFFER at the top of the buffer `coq-store-buffer-name'.
+Erase it first if ERASE is non-nil.  Display it in another frame.  It
+is in the mode of the response buffer, see
+`coq-response-buffer-function'."
+  (when (buffer-live-p buffer)
+    (let* ((existing (get-buffer coq-store-buffer-name))
+           (frozen (get-buffer-create coq-store-buffer-name))
+           (response (and coq-response-buffer-function
+                          (funcall coq-response-buffer-function))))
+      (with-current-buffer frozen
+        (unless existing
+          (when (buffer-live-p response)
+            (funcall (buffer-local-value 'major-mode response)))
+          (read-only-mode 0))
+        (goto-char (point-min))
+        (insert "\n************************************\n")
+        (goto-char (point-min)))
+      (with-current-buffer buffer
+        (if erase
+            (copy-to-buffer frozen (point-min) (point-max))
+          (append-to-buffer frozen (point-min) (point-max))))
+      (set-window-point (display-buffer-other-frame frozen)
+                        (with-current-buffer frozen (point-min))))))
+
+(defun coq-store-response-win (&optional erase)
+  "Copy the response buffer at the top of the buffer `coq-store-buffer-name'.
+Erase it first with a prefix argument ERASE."
+  (interactive "P")
+  (coq-store-buffer-win (and coq-response-buffer-function
+                             (funcall coq-response-buffer-function))
+                        erase))
+
+(defun coq-store-goals-win (&optional erase)
+  "Copy the goals buffer at the top of the buffer `coq-store-buffer-name'.
+Erase it first with a prefix argument ERASE."
+  (interactive "P")
+  (coq-store-buffer-win (and coq-goals-buffer-function
+                             (funcall coq-goals-buffer-function))
+                        erase))
+
+(define-obsolete-function-alias 'proof-store-buffer-win
+  #'coq-store-buffer-win "4.6")
+(define-obsolete-function-alias 'proof-store-response-win
+  #'coq-store-response-win "4.6")
+(define-obsolete-function-alias 'proof-store-goals-win
+  #'coq-store-goals-win "4.6")
+
 
 (defun coq-toggle-other-goals ()
   "Fold or unfold the goals other than the first one.

@@ -52,9 +52,6 @@ They stay folded in the next goals.")
 (defvar coq-hypcross-hovering-help t
   "Whether the folding buttons of the hypotheses show a help when hovered.")
 
-(defvar coq-response-buffer-function nil
-  "Function returning the response buffer of the current backend.")
-
 (defvar coq-hypname-map (make-sparse-keymap)
   "Keymap of the names of the hypotheses.")
 
