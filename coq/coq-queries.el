@@ -434,6 +434,57 @@ With \\[universal-argument], with Printing All.  With
   (interactive)
   (coq-ask-do-show-all "Check" "Check"))
 
+;;; Search blacklist
+
+;; Default coq is only Private_ and _subproof
+(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
+ "\"Private_\" \"_subproof\""
+  "Initial strings to blacklist in requests to Coq environment.
+If you are setting this via Emacs customization menus, you should
+restart Coq to see the effect.  To change blacklist during a Coq
+development, please use \\[coq-change-search-blacklist-interactive]
+instead (or menu: Coq/OTHER QUERIES/Search Blacklist)."
+  :type 'string
+  :group 'coq)
+
+;; Coq has no command to overwrite the current blacklist, only to add or remove
+;; particular strings. To provide the overwrite feature to the user we thus need
+;; to know the current value of blacklist to first remove everything, then add
+;; the new values.
+;;; TODO: retrieve the value from coq itself and remove this variable?
+(defvar coq-search-blacklist-current-string coq-search-blacklist-string
+  "Current value of Coq Search Blacklist.
+This may become desynchronized with Coq if you use the command
+\"Add/Remove Search Blacklist\" in you script." )
+
+(defvar-local coq-set-search-blacklist-function nil
+  "Function replacing the search blacklist of Coq.
+Set by each backend.  It is called with the arguments OLD and NEW, the
+blacklists before and after, strings in the syntax of Add Search
+Blacklist, like \"\\\"Private_\\\" \\\"_subproof\\\"\".")
+
+(defvar coq-search-blacklist-history nil
+  "History of `coq-change-search-blacklist-interactive'.")
+
+(defun coq-change-search-blacklist (s)
+  "Replace the search blacklist of Coq by S.
+S is in the syntax of Add Search Blacklist.  See
+`coq-set-search-blacklist-function'."
+  (unless coq-set-search-blacklist-function
+    (user-error "Coq: no backend to set the search blacklist in this buffer"))
+  (funcall coq-set-search-blacklist-function
+           coq-search-blacklist-current-string s)
+  (setq coq-search-blacklist-current-string s))
+
+(defun coq-change-search-blacklist-interactive ()
+  "Ask for a new search blacklist and replace the one of Coq.
+See `coq-change-search-blacklist'."
+  (interactive)
+  (coq-change-search-blacklist
+   (read-string "Set search blacklist to: "
+                coq-search-blacklist-current-string
+                'coq-search-blacklist-history)))
+
 ;;; Printing flags for all the next goals and queries
 
 (defvar-local coq-set-flag-function nil
