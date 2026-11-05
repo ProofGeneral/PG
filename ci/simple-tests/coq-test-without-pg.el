@@ -34,6 +34,7 @@
 (defvar coq-par-failure-function)
 (defvar coq-par-abort-function)
 (defvar coq-lock-ancestors)
+(defvar coq-compile-menu)
 (defvar coq-insert-menu)
 
 (declare-function coq-run-query "coq-queries")
@@ -247,7 +248,10 @@ interface functions.  Return released or failed."
                        dir "Definition a := undefined_constant.\n")
                       'failed))
           (should-not (featurep 'proof-shell))
-          (should-not (featurep 'proof-script)))
+          (should-not (featurep 'proof-script))
+          ;; the menu and its toggle commands
+          (should (equal (car coq-compile-menu) "Auto Compilation"))
+          (should (commandp 'coq-compile-before-require-toggle)))
       (delete-directory dir t))))
 
 (provide 'coq-test-without-pg)
