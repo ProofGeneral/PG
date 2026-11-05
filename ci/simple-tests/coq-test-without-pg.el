@@ -7,14 +7,16 @@
 ;;; Commentary:
 ;;
 ;; Test the part of Coq mode common to all backends, with the Proof
-;; General backend disabled (`coq-use-pg' nil): it must not load the
-;; proof shell, and the abbrevs, the terminator command, the query
-;; and insertion commands and their keys must be there.
+;; General backend disabled (obsolete `coq-use-pg' nil, so `coq-backend'
+;; nil): it must not load the proof shell, and the abbrevs, the
+;; terminator command, the query and insertion commands and their keys
+;; must be there.
 
 ;;; Code:
 
 ;; before loading coq-mode.el, which defines it
 (defvar coq-use-pg)
+(defvar coq-backend)
 (setq coq-use-pg nil)
 
 (require 'proof-site)
@@ -26,6 +28,7 @@
 (defvar coq-prog-args)
 (defvar coq-query-function)
 (defvar coq-use-yasnippet)
+(defvar coq-goals-count-function)
 
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-templates-setup "coq-templates")
@@ -38,6 +41,7 @@
 (declare-function coq-store-goals-win "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq-queries")
+(declare-function coq-goals-count "coq-goals")
 (declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-tactical "coq-templates")
@@ -74,6 +78,8 @@
   "Coq mode without the Proof General backend loads no proof shell."
   (coq-test-without-pg-with-file
     (should (eq major-mode 'coq-mode))
+    ;; the obsolete option gives the default of the new one
+    (should (null coq-backend))
     (should-not (featurep 'proof))
     (should-not (featurep 'proof-shell))
     (should-not (featurep 'proof-script))))
@@ -158,6 +164,15 @@ indent."
     (insert "\nSection S.\n")
     (coq-end-Section)
     (should (string-suffix-p "Section S.\nEnd S." (buffer-string)))))
+
+(ert-deftest coq-test-without-pg-goals-count-function ()
+  "A backend can give the numbers of goals instead of reading them."
+  (require 'coq-goals)
+  (with-temp-buffer
+    (insert "2 goals\n")
+    (should (equal (car (coq-goals-count)) 2))
+    (setq-local coq-goals-count-function (lambda () '(5 . 3)))
+    (should (equal (coq-goals-count) '(5 . 3)))))
 
 (provide 'coq-test-without-pg)
 

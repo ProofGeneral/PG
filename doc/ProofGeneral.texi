@@ -4391,6 +4391,15 @@ mode you can expand an abbreviation by pressing @kbd{C-x '}
 Coq Proof General is an instantiation of Proof General for the Coq proof
 assistant.  It supports most of the generic features of Proof General.
 
+@vindex coq-backend
+@vindex coq-use-pg
+Coq mode interacts with Coq through a backend, chosen with the option
+@code{coq-backend}.  The default, @code{pg}, is Proof General, which
+runs Coq in a shell and which this chapter describes.  With @code{nil},
+Coq mode only edits Coq files, without loading Proof General.  The
+older option @code{coq-use-pg} is obsolete, it gives the default value
+of @code{coq-backend}.
+
 @menu
 * Coq-specific commands::
 * Using the Coq project file::
