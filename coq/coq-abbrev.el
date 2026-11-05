@@ -295,7 +295,7 @@
      ["Print Section..." coq-PrintSection t]
      ""
      ["Locate notation..." coq-LocateNotation t]
-     ["Print Implicit..." coq-Print t]
+     ["Print Implicit..." coq-Print-implicit t]
      ["Print Scope/Visibility..." coq-PrintScope t])
     ("OPTIONS"
      ["Set Printing All" coq-set-printing-all t]
@@ -308,8 +308,8 @@
      ["Unset Printing Notations" coq-unset-printing-notations t]
      ["Set Printing Coercions" coq-set-printing-coercions t]
      ["Unset Printing Coercions" coq-unset-printing-coercions t]
-     ["Set Printing Compact Contexts" coq-set-printing-implicit t]
-     ["Unset Printing Compact Contexts" coq-unset-printing-implicit t]
+     ["Set Printing Compact Contexts" coq-set-printing-compact-contexts t]
+     ["Unset Printing Compact Contexts" coq-unset-printing-compact-contexts t]
      ["Set Printing Synth" coq-set-printing-synth t]
      ["Unset Printing Synth" coq-unset-printing-synth t]
      ["Set Printing Universes" coq-set-printing-universes t]
