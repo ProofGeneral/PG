@@ -37,6 +37,7 @@
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
 (defvar coq-use-yasnippet)
+(defvar coq-menu-common-entries)
 
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
@@ -52,6 +53,7 @@
 (declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-About "coq-queries")
+(declare-function coq-Print-implicit "coq-queries")
 (declare-function coq-Check "coq-queries")
 (declare-function coq-Search "coq-queries")
 (declare-function coq-id-under-mouse-query "coq-queries")
@@ -315,6 +317,31 @@ query."
     (coq-test-queries-wait)
     (should (string-match-p "Nat\\.add" (coq-test-queries-response)))
     (should (coq-flag-is-on-p "Test Printing Notations"))))
+
+(ert-deftest coq-test-queries-menu-commands ()
+  "The menu entries of the printing flags run the flag they name."
+  (require 'coq-abbrev)
+  (let (entries)
+    (cl-labels ((walk (menu)
+                  (dolist (item menu)
+                    (cond ((vectorp item) (push item entries))
+                          ((consp item) (walk (cdr item)))))))
+      (walk coq-menu-common-entries))
+    (dolist (item entries)
+      (let ((label (aref item 0))
+            (re "\\`\\(Set\\|Unset\\) Printing \\(.*\\)\\'"))
+        (when (and (string-match re label)
+                   (not (equal (match-string 2 label) "Width")))
+          (let ((command (format "coq-%s-printing-%s"
+                                 (downcase (match-string 1 label))
+                                 (replace-regexp-in-string
+                                  " " "-" (downcase (match-string 2 label))))))
+            (should (equal (list label (aref item 1))
+                           (list label (intern command))))))))
+    (should (eq (aref (cl-find "Print Implicit..." entries
+                               :key (lambda (v) (aref v 0)) :test #'equal)
+                      1)
+                #'coq-Print-implicit))))
 
 (ert-deftest coq-test-queries-mouse ()
   "`coq-remap-mouse-1' binds the queries at mouse click when set, in the

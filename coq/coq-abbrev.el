@@ -29,28 +29,6 @@
   (describe-variable 'coq-local-vars-doc))
 
 
-(defconst coq-tactics-menu
-  (append '("Tactics (menu)"
-	    ["Intros (smart)" coq-insert-intros :help "Insert \"intros h1 .. hn.\" where hi are the default names given by Coq."])
-	  (coq-build-menu-from-db (append coq-tactics-db coq-solve-tactics-db))))
-
-(defconst coq-tacticals-menu
-  (append '("Tacticals (menu)")
-	  (coq-build-menu-from-db coq-tacticals-db)))
-
-(defconst coq-commands-menu
-  (append '("Command (menu)"
-	    ;["Module/Section (smart)" coq-insert-section-or-module t]
-	    ;["Require (smart)" coq-insert-requires t]
-	    )
-	  (coq-build-menu-from-db coq-commands-db)))
-
-(defconst coq-terms-menu
-  (append '("Term (menu)"
-	    ["Match (smart)" coq-insert-match t])
-	  (coq-build-menu-from-db coq-terms-db)))
-
-
         ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
         ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
         ;;   (progn (insert abbr) (yas-expand)))
@@ -317,7 +295,7 @@
      ["Print Section..." coq-PrintSection t]
      ""
      ["Locate notation..." coq-LocateNotation t]
-     ["Print Implicit..." coq-Print t]
+     ["Print Implicit..." coq-Print-implicit t]
      ["Print Scope/Visibility..." coq-PrintScope t])
     ("OPTIONS"
      ["Set Printing All" coq-set-printing-all t]
@@ -330,8 +308,8 @@
      ["Unset Printing Notations" coq-unset-printing-notations t]
      ["Set Printing Coercions" coq-set-printing-coercions t]
      ["Unset Printing Coercions" coq-unset-printing-coercions t]
-     ["Set Printing Compact Contexts" coq-set-printing-implicit t]
-     ["Unset Printing Compact Contexts" coq-unset-printing-implicit t]
+     ["Set Printing Compact Contexts" coq-set-printing-compact-contexts t]
+     ["Unset Printing Compact Contexts" coq-unset-printing-compact-contexts t]
      ["Set Printing Synth" coq-set-printing-synth t]
      ["Unset Printing Synth" coq-unset-printing-synth t]
      ["Set Printing Universes" coq-set-printing-universes t]
@@ -346,21 +324,7 @@
   (append coq-menu-common-entries
   `(
     ""
-    ("INSERT"
-     ["Intros (smart)" coq-insert-intros :help "Insert \"intros h1 .. hn.\" where hi are the default names given by Coq."]
-     ""
-     ["Tactic (interactive)" coq-insert-tactic t]
-     ["Tactical (interactive)" coq-insert-tactical t]
-     ["Command (interactive)" coq-insert-command t]
-     ["Term (interactive)" coq-insert-term t]
-     ""
-     ,coq-tactics-menu
-     ,coq-tacticals-menu
-     ,coq-commands-menu
-     ,coq-terms-menu
-     ""
-     ["Module/Section (smart)" coq-insert-section-or-module t]
-     ["Require (smart)" coq-insert-requires t])
+    ,coq-insert-menu
     ""
     ("ABBREVS"
      ["Expand At Point" expand-abbrev t]
