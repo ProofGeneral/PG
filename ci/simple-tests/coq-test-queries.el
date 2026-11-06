@@ -38,6 +38,7 @@
 (defvar coq-processed-end-function)
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
+(defvar coq-auto-adapt-printing-width)
 (defvar coq-use-yasnippet)
 (defvar coq-menu-common-entries)
 
@@ -195,7 +196,15 @@ region, asks for a goal number elsewhere."
     (should (eql coq-shell-current-line-width 51))
     ;; one column less, see `coq-adapt-printing-width'
     (should (string-match-p "\\_<50\\_>"
-                            (coq-query-result "Test Printing Width")))))
+                            (coq-query-result "Test Printing Width")))
+    ;; also when the width is not adapted automatically
+    (let ((coq-auto-adapt-printing-width nil))
+      (cl-letf (((symbol-function 'read-number) (lambda (&rest _) 61)))
+        (coq-ask-printing-width))
+      (coq-test-queries-wait)
+      (should (eql coq-shell-current-line-width 61))
+      (should (string-match-p "\\_<60\\_>"
+                              (coq-query-result "Test Printing Width"))))))
 
 (ert-deftest coq-test-queries-store ()
   "`coq-store-goals-win' and `coq-store-response-win' copy the goals and
