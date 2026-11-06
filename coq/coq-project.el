@@ -465,6 +465,15 @@ Does nothing if `coq-use-project-file' is nil."
   ;;(setq coq-prog-args nil)
   )
 
+(defconst coq-project-menu-entries
+  '(["Use project file" coq-toggle-use-project-file
+     :style toggle
+     :selected (and (boundp 'coq-use-project-file) coq-use-project-file)
+     ])
+  "Entries of the project file, common to all Coq backends.
+A list of menu items, not a submenu: Proof General puts them in its
+COQ PROG (ARGS) submenu.")
+
 (provide 'coq-project)
 
 ;;; coq-project.el ends here

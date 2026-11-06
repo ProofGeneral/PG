@@ -24,6 +24,8 @@
 (require 'coq-templates)                ; abbrevs and yasnippets
 (require 'coq-hyps)                     ; menu of the hypotheses
 (require 'coq-compile-common)           ; menu of the compilation
+(require 'coq-queries)                  ; menus of the queries and options
+(require 'coq-project)                  ; menu of the project file
 
 (defun coq-local-vars-list-show-doc ()
   (interactive)
@@ -137,65 +139,9 @@
       :selected (eq coq-accept-proof-using-suggestion 'ignore)
       :help "no highlight (right click insertion still possible)"])
     ""
-    ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
-    ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]
-    ["About..." coq-About :help "With prefix arg (C-u): Set Printing All first"]
-    ["Other..." coq-query]
-    [ "Store Response" coq-store-response-win :help "Stores the content of response buffer in a dedicated buffer"]
-    [ "Store Goal" coq-store-goals-win  :help "Stores the content of goals buffer in a dedicated buffer"]
-    ("OTHER QUERIES"
-     ["Print Hint" coq-PrintHint t]
-     ["Show ith Goal..." coq-Show t]
-     ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
-     ["Show ith Goal... (show all)" coq-Show-with-all t]
-     ["Show Tree" coq-show-tree t]
-     ["Show Proof" coq-show-proof t]
-     ["Show Conjectures" coq-show-conjectures t];; maybe not so useful with editing in PG?
-     ""
-     ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
-     ["Print... (show implicits)" coq-Print-with-implicits t]
-     ["Print... (show all)" coq-Print-with-all t]
-     ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]
-     ["Check (show implicits)..." coq-Check-show-implicits t]
-     ["Check (show all)..." coq-Check-show-all t]
-     ["About..." coq-About :help "With prefix arg (C-u): Set Printing All first"]
-     ["About...(show implicits)" coq-About-with-implicits t]
-     ["About...(show all)" coq-About-with-all t]
-     ["Search..." coq-Search t]
-     ["SearchRewrite..." coq-SearchRewrite t]
-     ["SearchPattern..." coq-SearchIsos t]
-     ["Search Blacklist..." coq-change-search-blacklist-interactive t]
-     ["Locate constant..." coq-LocateConstant t]
-     ["Locate Library..." coq-LocateLibrary t]
-     ["Pwd" coq-Pwd t]
-     ["Inspect..." coq-Inspect t]
-     ["Print Section..." coq-PrintSection t]
-     ""
-     ["Locate notation..." coq-LocateNotation t]
-     ["Print Implicit..." coq-Print-implicit t]
-     ["Print Scope/Visibility..." coq-PrintScope t])
-    ("OPTIONS"
-     ["Set Printing All" coq-set-printing-all t]
-     ["Unset Printing All" coq-unset-printing-all t]
-     ["Set Printing Implicit" coq-set-printing-implicit t]
-     ["Unset Printing Implicit" coq-unset-printing-implicit t]
-     ["Set Printing Parentheses" coq-set-printing-parentheses t]
-     ["Unset Printing Parentheses" coq-unset-printing-parentheses t]
-     ["Set Printing Notations" coq-set-printing-notations t]
-     ["Unset Printing Notations" coq-unset-printing-notations t]
-     ["Set Printing Coercions" coq-set-printing-coercions t]
-     ["Unset Printing Coercions" coq-unset-printing-coercions t]
-     ["Set Printing Compact Contexts" coq-set-printing-compact-contexts t]
-     ["Unset Printing Compact Contexts" coq-unset-printing-compact-contexts t]
-     ["Set Printing Synth" coq-set-printing-synth t]
-     ["Unset Printing Synth" coq-unset-printing-synth t]
-     ["Set Printing Universes" coq-set-printing-universes t]
-     ["Unset Printing Universes" coq-unset-printing-universes t]
-     ["Set Printing Unfocused" coq-set-printing-unfocused t]
-     ["Unset Printing Unfocused" coq-unset-printing-unfocused t]
-     ["Set Printing Wildcards" coq-set-printing-wildcards t]
-     ["Unset Printing Wildcards" coq-unset-printing-wildcards t]
-     ["Set Printing Width" coq-ask-adapt-printing-width-and-show t])))
+    ,@coq-queries-menu-entries
+    ,coq-other-queries-menu
+    ,coq-options-menu))
 
 (setq-default coq-menu-entries
   (append coq-menu-common-entries
@@ -203,20 +149,10 @@
     ""
     ,coq-insert-menu
     ""
-    ("ABBREVS"
-     ["Expand At Point" expand-abbrev t]
-     ["Unexpand Last" unexpand-abbrev t]
-     ["List Abbrevs" list-abbrevs t]
-     ["Edit Abbrevs" edit-abbrevs t]
-     ["Abbrev Mode" abbrev-mode
-      :style toggle
-      :selected (and (boundp 'abbrev-mode) abbrev-mode)])
+    ,coq-abbrevs-menu
     ""
     ("COQ PROG (ARGS)"
-     ["Use project file" coq-toggle-use-project-file
-      :style toggle
-      :selected (and (boundp 'coq-use-project-file) coq-use-project-file)
-      ]
+     ,@coq-project-menu-entries
      ["Set Coq Prog *persistently*" coq-ask-insert-coq-prog-name t]
      ["help" coq-local-vars-list-show-doc t]
      ["Compile" coq-Compile t]))))
