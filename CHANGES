@@ -35,6 +35,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     of `coq-show-proof-stepwise' and of `coq-auto-adapt-printing-width'
     (new `coq-auto-adapt-printing-width-toggle'), and `coq-Compile', are
     defined without the proof shell, for all Coq backends.
+*** The menus of the queries, of the printing options, of the
+    abbreviations and of the project file are shared by all Coq
+    backends: `coq-queries-menu-entries', `coq-other-queries-menu',
+    `coq-options-menu', `coq-abbrevs-menu' and
+    `coq-project-menu-entries'.
 *** The compilation of the Requires before they are processed (see
     `coq-compile-before-require') does not depend on the proof shell
     any more: other Coq backends can use it, with its options and its

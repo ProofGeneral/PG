@@ -41,6 +41,11 @@
 (defvar proof-output-tooltips)
 (defvar proof-electric-terminator-enable)
 (defvar coq-show-proof-stepwise)
+(defvar coq-queries-menu-entries)
+(defvar coq-other-queries-menu)
+(defvar coq-options-menu)
+(defvar coq-abbrevs-menu)
+(defvar coq-project-menu-entries)
 
 (declare-function coq-run-query "coq-queries")
 (declare-function proof-output-tooltips-toggle "proof-useropts")
@@ -307,6 +312,38 @@ interface functions.  Return released or failed."
       (should-not proof-electric-terminator-enable))
     (should-not (featurep 'proof-shell))
     (should-not (featurep 'proof-script))))
+
+(defun coq-test-without-pg-menu-commands (entries)
+  "Return the commands of the menu items in ENTRIES, and of their submenus."
+  (let (commands)
+    (dolist (item entries)
+      (cond
+       ((and (vectorp item) (symbolp (aref item 1)))
+        (push (aref item 1) commands))
+       ((consp item)
+        (setq commands
+              (append (coq-test-without-pg-menu-commands (cdr item))
+                      commands)))))
+    commands))
+
+(ert-deftest coq-test-without-pg-menus ()
+  "The menus common to all backends only use commands defined without PG."
+  (coq-test-without-pg-with-file
+    (should (equal (car coq-other-queries-menu) "OTHER QUERIES"))
+    (should (equal (car coq-options-menu) "OPTIONS"))
+    (should (equal (car coq-abbrevs-menu) "ABBREVS"))
+    (dolist (entries (list coq-queries-menu-entries
+                           (cdr coq-other-queries-menu)
+                           (cdr coq-options-menu)
+                           (cdr coq-abbrevs-menu)
+                           coq-project-menu-entries))
+      (let ((commands (coq-test-without-pg-menu-commands entries)))
+        (should commands)
+        (dolist (command commands)
+          (should (commandp command)))))
+    (should (memq 'coq-ask-printing-width
+                  (coq-test-without-pg-menu-commands (cdr coq-options-menu))))
+    (should-not (featurep 'proof-shell))))
 
 (provide 'coq-test-without-pg)
 
