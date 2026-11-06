@@ -522,30 +522,7 @@ This is intended as a value for `proof-activate-scripting-hook'"
 ;; Electric terminator mode
 ;;
 
-;; Register proof-electric-terminator as a minor mode.
-(or (assq 'proof-electric-terminator-enable minor-mode-alist)
-    (setq minor-mode-alist
-	  (append minor-mode-alist
-		  (list '(proof-electric-terminator-enable
-			  (:eval
-			   (if (eq major-mode proof-mode-for-script)
-			       proof-terminal-string)))))))
-
-;;;###autoload
-(defun proof-electric-terminator-enable (&optional arg)
-  "Ensure modeline update to display new value for electric terminator.
-This a function is called by the custom-set property \\+`proof-set-value'.
-It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
-  (unless (null arg)
-    (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
-  ;; the double hit is a replacement
-  (when (and proof-electric-terminator-enable proof-double-hit-enable)
-    (proof-double-hit-toggle 0)
-    (message "Hit M-1 . to enter a real \".\"."))
-  (force-mode-line-update))
-
-(proof-deftoggle proof-electric-terminator-enable
-		 proof-electric-terminator-toggle)
+;; The minor mode, its function and its toggle are in proof-useropts.el.
 
 (defun proof-electric-terminator (&optional count)
   "Insert terminator char, maybe sending the command to the assistant.

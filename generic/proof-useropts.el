@@ -552,6 +552,40 @@ screen is shown."
 (proof-deftoggle proof-omit-proofs-option)
 (proof-deftoggle proof-splash-enable)
 
+;;
+;; Electric terminator mode
+;;
+
+(declare-function proof-double-hit-toggle "pg-double-hit")
+(defvar proof-mode-for-script)
+(defvar proof-terminal-string)
+
+;; Register proof-electric-terminator as a minor mode.
+(or (assq 'proof-electric-terminator-enable minor-mode-alist)
+    (setq minor-mode-alist
+	  (append minor-mode-alist
+		  (list '(proof-electric-terminator-enable
+			  (:eval
+			   (if (and (boundp 'proof-mode-for-script)
+                                    (eq major-mode proof-mode-for-script))
+			       proof-terminal-string)))))))
+
+(defun proof-electric-terminator-enable (&optional arg)
+  "Ensure modeline update to display new value for electric terminator.
+This a function is called by the custom-set property \\+`proof-set-value'.
+It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
+  (unless (null arg)
+    (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
+  ;; the double hit is a replacement
+  (when (and proof-electric-terminator-enable
+             (bound-and-true-p proof-double-hit-enable))
+    (proof-double-hit-toggle 0)
+    (message "Hit M-1 . to enter a real \".\"."))
+  (force-mode-line-update))
+
+(proof-deftoggle proof-electric-terminator-enable
+		 proof-electric-terminator-toggle)
+
 (provide 'proof-useropts)
 
 ;;; proof-useropts.el ends here
