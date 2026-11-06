@@ -150,6 +150,25 @@ the directory of the file in BODY."
               (should (equal proof-prog-name "/customized/rocq")))
           (put 'coq-prog-name 'customized-value customized))))))
 
+(ert-deftest coq-test-file-variables-prog-name-local ()
+  "The Coq program and the compilers given by file variables are kept."
+  (let* ((progdir (file-name-as-directory (make-temp-file "progdir" t)))
+         (prog (expand-file-name "rocq" progdir)))
+    (unwind-protect
+        (progn
+          (make-symbolic-link (executable-find (coq-autodetect-progname)) prog)
+          (coq-test-file-variables-with-file nil
+              (list (format "coq-prog-name: %S" prog)
+                    "coq-compiler: \"/local/coqc\""
+                    "coq-dependency-analyzer: \"/local/coqdep\"")
+            (coq-test-file-variables-detect
+              (coq-pg-detect-programs)
+              (should (equal proof-prog-name prog))
+              (should (equal coq-prog-name prog))
+              (should (equal coq-compiler "/local/coqc"))
+              (should (equal coq-dependency-analyzer "/local/coqdep")))))
+      (delete-directory progdir t))))
+
 (provide 'coq-test-file-variables)
 
 ;;; coq-test-file-variables.el ends here

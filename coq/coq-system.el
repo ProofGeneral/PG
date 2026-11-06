@@ -441,8 +441,11 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (coq-coqtop-prog-args coq-load-path))
 
 (defun coq--user-set-p (symbol)
-  "Return non-nil if the user set option SYMBOL with customize."
-  (or (get symbol 'saved-value) (get symbol 'customized-value)))
+  "Return non-nil if the user set option SYMBOL.
+With customize, or with a file or directory variable in the current
+buffer."
+  (or (local-variable-p symbol)
+      (get symbol 'saved-value) (get symbol 'customized-value)))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook

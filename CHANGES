@@ -30,6 +30,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** The Coq program, compiler and dependency analyzer given by file or
+    directory variables (`coq-prog-name', `coq-compiler',
+    `coq-dependency-analyzer') are no longer replaced by the detected
+    ones when Coq starts.
 *** The toggle commands of the user options of Proof General
     (`proof-three-window-toggle', `proof-electric-terminator-toggle'…),
     of `coq-show-proof-stepwise' and of `coq-auto-adapt-printing-width'
