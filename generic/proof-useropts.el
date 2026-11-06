@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(require 'pg-pamacs)                    ; proof-deftoggle
+
 (defgroup proof-user-options nil
   "User options for Proof General."
   :group 'proof-general
@@ -525,6 +527,30 @@ screen is shown."
   :group 'proof-user-options)
 
 
+;;
+;; Toggle commands of the user options, for the menus of all backends
+;;
+
+(proof-deftoggle proof-delete-empty-windows)
+(proof-deftoggle proof-shrink-windows-tofit)
+(proof-deftoggle proof-multiple-frames-enable proof-multiple-frames-toggle)
+(proof-deftoggle proof-layout-windows-on-visit-file
+		 proof-layout-windows-eagerly-toggle)
+(proof-deftoggle proof-three-window-enable proof-three-window-toggle)
+(proof-deftoggle proof-auto-raise-buffers proof-auto-raise-toggle)
+(proof-deftoggle proof-disappearing-proofs)
+(proof-deftoggle proof-full-annotation)
+(proof-deftoggle proof-colour-locked)
+(proof-deftoggle proof-sticky-errors)
+(proof-deftoggle proof-shell-quiet-errors)
+(proof-deftoggle proof-minibuffer-messages)
+(proof-deftoggle proof-output-tooltips)
+(proof-deftoggle proof-autosend-enable proof-autosend-toggle)
+(proof-deftoggle proof-fast-process-buffer)
+(proof-deftoggle proof-imenu-enable proof-imenu-toggle)
+(proof-deftoggle proof-keep-response-history)
+(proof-deftoggle proof-omit-proofs-option)
+(proof-deftoggle proof-splash-enable)
 
 (provide 'proof-useropts)
 
