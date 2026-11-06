@@ -38,8 +38,14 @@
 (defvar coq-set-search-blacklist-function)
 (defvar coq-search-blacklist-current-string)
 (defvar coq-insert-menu)
+(defvar proof-output-tooltips)
+(defvar proof-electric-terminator-enable)
+(defvar coq-show-proof-stepwise)
 
 (declare-function coq-run-query "coq-queries")
+(declare-function proof-output-tooltips-toggle "proof-useropts")
+(declare-function proof-electric-terminator-toggle "proof-useropts")
+(declare-function coq-show-proof-stepwise-toggle "coq-goals")
 (declare-function coq-templates-setup "coq-templates")
 (declare-function coq-terminator-insert "coq-mode")
 (declare-function coq-About "coq-queries")
@@ -268,6 +274,39 @@ interface functions.  Return released or failed."
       (coq-change-search-blacklist "\"foo_\"")
       (should (equal args '("\"Private_\"" "\"foo_\"")))
       (should (equal coq-search-blacklist-current-string "\"foo_\"")))))
+
+;; toggles
+
+(ert-deftest coq-test-without-pg-toggles ()
+  "The toggle commands of the options are defined without PG."
+  (coq-test-without-pg-with-file
+    (require 'proof-useropts)
+    (require 'coq-goals)
+    (require 'coq-compile-common)
+    (dolist (command '(proof-three-window-toggle proof-output-tooltips-toggle
+                       proof-autosend-toggle proof-electric-terminator-toggle
+                       proof-disappearing-proofs-toggle
+                       proof-sticky-errors-toggle
+                       proof-omit-proofs-option-toggle
+                       coq-show-proof-stepwise-toggle
+                       coq-auto-adapt-printing-width-toggle
+                       coq-Compile))
+      (should (commandp command)))
+    (let ((proof-output-tooltips nil)
+          (coq-show-proof-stepwise nil))
+      (proof-output-tooltips-toggle)
+      (should proof-output-tooltips)
+      (coq-show-proof-stepwise-toggle)
+      (should coq-show-proof-stepwise))
+    ;; the electric terminator, its function and its lighter
+    (let ((proof-electric-terminator-enable nil))
+      (proof-electric-terminator-toggle 1)
+      (should proof-electric-terminator-enable)
+      (should (stringp (format-mode-line minor-mode-alist)))
+      (proof-electric-terminator-toggle 0)
+      (should-not proof-electric-terminator-enable))
+    (should-not (featurep 'proof-shell))
+    (should-not (featurep 'proof-script))))
 
 (provide 'coq-test-without-pg)
 
