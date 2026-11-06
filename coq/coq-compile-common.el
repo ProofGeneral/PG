@@ -786,6 +786,13 @@ current buffer (which contains the Require command) to
 
 
 
+(defun coq-Compile ()
+  "Compiles current buffer."
+  (interactive)
+  (let* ((n (buffer-name))
+         (l (string-match ".v" n)))
+    (compile (concat "make " (substring n 0 l) ".vo"))))
+
 ;;; menu
 
 (defconst coq-compile-menu

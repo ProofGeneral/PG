@@ -303,18 +303,6 @@ See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
   :group 'coq)
 
-(defcustom coq-show-proof-stepwise nil
-  "Display the proof terms stepwise in the *response* buffer.
-This option can be combined with option `coq-diffs'.
-It is mostly useful in three window mode, see also
-`proof-three-window-mode-policy' for details."
-
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
-
-(proof-deftoggle coq-show-proof-stepwise)
-
 ;;
 ;; prooftree customization
 ;;
@@ -1090,13 +1078,6 @@ Required to benefit from delayed evaluation when
 at `proof-assistant-settings-cmds' evaluation time.")
 (add-to-list 'proof-assistant-settings
              '(diffs--function "%l" string "Show Diffs in Coq") t)
-
-(defun coq-Compile ()
-  "Compiles current buffer."
-  (interactive)
-  (let* ((n (buffer-name))
-         (l (string-match ".v" n)))
-    (compile (concat "make " (substring n 0 l) ".vo"))))
 
 
 
