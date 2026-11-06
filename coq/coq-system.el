@@ -51,18 +51,33 @@ On Windows you might need something like:
   (setq coq-prog-env \\='(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
+(defvar coq--rocq-cli-cache nil
+  "Results of `coq-detect-rocq-cli'.
+An alist from (REMOTE COMMAND EXEC-PATH) to the result for COMMAND.")
+
 ;; We just call "rocq" and look the error message that should mention
 ;; subcommands
 (defun coq-detect-rocq-cli (&optional coq-command)
   "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI.
-If COQ-COMMAND is non nil, test this executable instead."
+If COQ-COMMAND is non nil, test this executable instead.  The result
+is cached for the command, the remote host of `default-directory' and
+`exec-path'; a command that cannot be run is not cached."
   (let* ((coq-command (or coq-command (bound-and-true-p proof-prog-name)
-                              (coq-autodetect-progname))))
-    (condition-case nil
-        (string-match
-         "Supported subcommands:"
-         (with-output-to-string (process-file coq-command nil standard-output)))
-      (error nil))))
+                          (coq-autodetect-progname)))
+         (key (list (file-remote-p default-directory) coq-command exec-path))
+         (cached (assoc key coq--rocq-cli-cache)))
+    (if cached
+        (cdr cached)
+      (condition-case nil
+          (let ((result
+                 (and (string-match-p
+                       "Supported subcommands:"
+                       (with-output-to-string
+                         (process-file coq-command nil standard-output)))
+                      t)))
+            (push (cons key result) coq--rocq-cli-cache)
+            result)
+        (error nil)))))
 
 (defun coq-detect-coqdep ()
   (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
