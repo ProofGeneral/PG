@@ -30,6 +30,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** Storing the goals or the response again (C-c C-a g, C-c C-a r)
+    updates the window that displays *response-freeze*, instead of
+    opening a new frame each time.
 *** The Coq program, compiler and dependency analyzer given by file or
     directory variables (`coq-prog-name', `coq-compiler',
     `coq-dependency-analyzer') are no longer replaced by the detected

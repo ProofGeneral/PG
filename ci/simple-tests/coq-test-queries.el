@@ -250,6 +250,29 @@ region, asks for a goal number elsewhere."
       (should (string-match-p "\\_<60\\_>"
                               (coq-query-result "Test Printing Width"))))))
 
+(ert-deftest coq-test-queries-store-same-window ()
+  "Storing again updates the window that displays *response-freeze*.
+For instance with C-c C-a C-r from this buffer: no new frame."
+  (coq-test-queries-with-file
+    (let ((frames 0))
+      (cl-letf (((symbol-function 'display-buffer-other-frame)
+                 (lambda (buffer &rest _)
+                   (setq frames (1+ frames))
+                   (display-buffer buffer))))
+        (unwind-protect
+            (progn
+              (coq-store-goals-win t)
+              (should (= frames 1))
+              (should (get-buffer-window "*response-freeze*" 'visible))
+              (with-current-buffer "*response-freeze*"
+                (coq-store-response-win))
+              (coq-store-goals-win)
+              (should (= frames 1)))
+          (when (get-buffer "*response-freeze*")
+            (with-current-buffer "*response-freeze*"
+              (setq-local kill-buffer-hook nil)
+              (kill-buffer))))))))
+
 (ert-deftest coq-test-queries-store ()
   "`coq-store-goals-win' and `coq-store-response-win' copy the goals and
 the response at the top of the buffer *response-freeze*."
