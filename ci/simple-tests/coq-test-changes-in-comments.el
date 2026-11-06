@@ -1,4 +1,4 @@
-;;; coq-test-changes-in-comments.el --- Test changes inside comments
+;;; coq-test-changes-in-comments.el --- Test changes inside comments  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 
@@ -17,6 +17,10 @@
 
 
 ;;; Code:
+
+(declare-function span-end "span")
+(declare-function proof-goto-point "pg-user")
+(declare-function pg-protected-undo "pg-user")
 
 (defconst coq-src-comment
   "(*

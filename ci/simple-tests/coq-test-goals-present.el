@@ -1,4 +1,4 @@
-;;; coq-test-goals-present.el --- Test that Proof General shows goals correctly in various situations
+;;; coq-test-goals-present.el --- Test that Proof General shows goals correctly in various situations  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 
@@ -18,6 +18,9 @@
 ;; global configuration for this file
 ;; all tests in this file shall run in two-pane mode
 ;;; Code:
+
+(declare-function coq-Search "coq")
+(declare-function coq-Check "coq")
 
 (setq proof-three-window-enable nil)
 ;; Some Emacs versions run with a frame width of 10 in batch mode

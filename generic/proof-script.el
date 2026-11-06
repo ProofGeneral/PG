@@ -44,6 +44,8 @@
 (declare-function proof-autosend-enable "pg-user")
 (declare-function proof-interrupt-process "pg-shell")
 (declare-function proof-cd-sync "pg-user" ())
+(declare-function proof-electric-terminator "pg-user")
+(declare-function pg-span-context-menu "pg-user")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

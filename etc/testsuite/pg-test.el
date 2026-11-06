@@ -1,4 +1,4 @@
-;;; pg-test.el --- Simple test framework for Proof General.
+;;; pg-test.el --- Simple test framework for Proof General.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

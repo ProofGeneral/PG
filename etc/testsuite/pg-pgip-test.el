@@ -1,4 +1,4 @@
-;;; Tests for pg-pgip.el
+;;; Tests for pg-pgip.el  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

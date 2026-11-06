@@ -1,4 +1,4 @@
-;;; proof-unicode-tokens.el --- Support Unicode tokens package
+;;; proof-unicode-tokens.el --- Support Unicode tokens package  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -32,6 +32,8 @@
 
 (eval-when-compile (require 'proof-utils))	; import macros
 (require 'proof-config)			; config variables
+
+(declare-function proof-unicode-tokens-support-available "proof-auxmodes")
 
 (defvar proof-unicode-tokens-initialised nil
   "Flag indicating whether or not we've performed startup.")

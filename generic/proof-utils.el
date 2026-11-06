@@ -1,4 +1,4 @@
-;;; proof-utils.el --- Proof General utility functions and macros
+;;; proof-utils.el --- Proof General utility functions and macros  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -24,6 +24,9 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+
+(declare-function package-menu-mark-upgrades "package")
+(declare-function package-menu-execute "package")
 ;;
 ;; Give Emacs version mismatch error here.
 ;;
@@ -113,6 +116,7 @@ Return nil if not a script buffer or if no active scripting buffer."
   (interactive)
   (unless (proof-try-require 'package)
     (error "The package feature is not available!"))
+  (defvar package-menu-async)
   (let ((package-menu-async nil))
     (package-list-packages)
     (package-menu-mark-upgrades)
@@ -363,6 +367,8 @@ If flag `proof-general-debug' is nil, do nothing."
   (when proof-general-debug
     (with-current-buffer (get-buffer-create "*PG Debug*")
       (help-mode)
+      (defvar warning-minimum-log-level)
+      (defvar warning-minimum-level)
       (let ((formatted (apply 'format msg args))
 	    (warning-minimum-log-level :debug)
 	    (warning-minimum-level :debug)

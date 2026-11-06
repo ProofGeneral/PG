@@ -1,4 +1,4 @@
-;;; cct-lib.el --- Background compilation test helpers
+;;; cct-lib.el --- Background compilation test helpers  -*- lexical-binding: t; -*-
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2020 - 2021  Hendrik Tews

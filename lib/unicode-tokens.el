@@ -52,6 +52,8 @@
 (eval-when-compile
   (require 'maths-menu))		; nuke compile warnings
 
+(declare-function unicode-chars-list-chars "unicode-chars")
+
 ;;
 ;; Customizable user options
 ;;
@@ -1222,7 +1224,8 @@ Commands available are:
 	 (with-no-warnings
 	   ns-input-font)))
      (t
-      (apply #'old-ns-respond-to-change-font args))))
+      (with-no-warnings
+	(apply #'old-ns-respond-to-change-font args)))))
 
   (defun ns-popup-font-panel (&rest args)
     (setq unicode-tokens-respond-to-change-font nil)

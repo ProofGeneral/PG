@@ -1,4 +1,4 @@
-;;; coq-test-coqtop-unavailable.el --- Test for when coqtop is unavailable
+;;; coq-test-coqtop-unavailable.el --- Test for when coqtop is unavailable  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 
@@ -16,6 +16,8 @@
 
 
 ;;; Code:
+
+(declare-function coq-prog-args "coq-system")
 
 (ert-deftest coqtop-unavailable ()
   "Proof General can open Coq files even when coqtop is unavailable.."

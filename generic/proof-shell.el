@@ -1,4 +1,4 @@
-;;; proof-shell.el --- Proof General shell mode
+;;; proof-shell.el --- Proof General shell mode  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -71,6 +71,7 @@
 ;; dependency.
 (declare-function proof-tree-handle-delayed-output "proof-tree"
 		  (old-proof-marker cmd flags _span))
+(declare-function proof-tree-urgent-action "proof-tree" (last-item))
 ;; without the nil initialization the compiler still warns about this variable
 (defvar proof-tree-external-display)
 
@@ -586,6 +587,7 @@ shell buffer, called by `proof-shell-bail-out' if process exits."
 	 (proc     (get-buffer-process (current-buffer)))
 	 (bufname  (buffer-name)))
     (message "%s, cleaning up and exiting..." bufname)
+    (defvar prover-was-busy)  ; see `proof-shell-signal-interrupt-hook'
     (let (prover-was-busy)
       ;; hook functions might set prover-was-busy
       (run-hooks 'proof-shell-signal-interrupt-hook))
@@ -948,6 +950,7 @@ In the first case, PG will terminate the queue of commands at the first
 available point.  In the second case, you may need to press enter inside
 the prover command buffer (e.g., with Isabelle2009 press RET inside *isabelle*)."
   (interactive)
+  (defvar prover-was-busy)  ; see `proof-shell-signal-interrupt-hook'
   (let ((prover-was-busy nil))
     (unless (proof-shell-live-buffer)
       (error "Proof process not started!"))
@@ -974,18 +977,19 @@ the prover command buffer (e.g., with Isabelle2009 press RET inside *isabelle*).
 ;;
 
 ;;;###autoload
-(defun proof-shell-insert (strings action &optional scriptspan)
+(defun proof-shell-insert (strings action-arg &optional scriptspan-arg)
   "Insert STRINGS at the end of the proof shell, call `scomint-send-input'.
 
 STRINGS is a list of strings (which will be concatenated), or a
 single string.
 
-The ACTION argument is a symbol which is typically the name of a
+The ACTION-ARG argument is a symbol which is typically the name of a
 callback for when each string has been processed.
 
-This calls `proof-shell-insert-hook'.  The arguments ACTION and
-SCRIPTSPAN may be examined by the hook to determine how to modify
-the string variable (exploiting dynamic scoping) which will be
+This calls `proof-shell-insert-hook'.  The hook functions see
+ACTION-ARG and SCRIPTSPAN-ARG in the dynamically bound variables
+`action' and `scriptspan', which they may examine to determine how
+to modify the dynamically bound variable `string', which will be
 the command actually sent to the shell.
 
 Note that the hook is not called for the empty (null) string
@@ -1005,9 +1009,18 @@ used in `proof-add-to-queue' when we start processing a queue, and in
   (with-current-buffer proof-shell-buffer
     (goto-char (point-max))
 
+    ;; Functions on `proof-shell-insert-hook' read and modify these
+    ;; variables through dynamic scoping.  Arguments must not have the
+    ;; same names: in interpreted code, the lexical argument would
+    ;; hide the dynamic binding when reading the variable here.
+    (defvar string)
+    (defvar action)
+    (defvar scriptspan)
     ;; TEMP: next step: preprocess list of strings directly
     (let ((string (if (stringp strings) strings
-		    (apply 'concat strings))))
+		    (apply 'concat strings)))
+	  (action action-arg)
+	  (scriptspan scriptspan-arg))
       ;; Hook for munging `string' and other dirty hacks.
       (run-hooks 'proof-shell-insert-hook)
 
@@ -1209,18 +1222,26 @@ This function calls `proof-add-to-queue' with args QUEUEITEMS and QUEUEMODE."
 
 
 ;;;###autoload
-(defun proof-extend-queue (end queueitems)
-  "Extend the current queue with QUEUEITEMS, queue end END.
+(defun proof-extend-queue (end queueitems-arg)
+  "Extend the current queue with QUEUEITEMS-ARG, queue end END.
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to END.
-The queue mode is set to \\+`advancing'"
+The queue mode is set to \\+`advancing'.
+The functions on `proof-shell-extend-queue-hook' see QUEUEITEMS-ARG
+in the dynamically bound variable `queueitems' and may modify it."
   (proof-set-queue-endpoints (proof-unprocessed-begin) end)
-  (condition-case err
-      (run-hooks 'proof-shell-extend-queue-hook)
-    ((error quit)
-     (proof-detach-queue)
-     (signal (car err) (cdr err))))
-  (proof-add-to-queue queueitems 'advancing))
+  ;; Functions on `proof-shell-extend-queue-hook' read and may modify
+  ;; `queueitems' through dynamic scoping.  The argument must not have
+  ;; the same name: in interpreted code, the lexical argument would
+  ;; hide the dynamic binding when reading `queueitems' below.
+  (defvar queueitems)
+  (let ((queueitems queueitems-arg))
+    (condition-case err
+	(run-hooks 'proof-shell-extend-queue-hook)
+      ((error quit)
+       (proof-detach-queue)
+       (signal (car err) (cdr err))))
+    (proof-add-to-queue queueitems 'advancing)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

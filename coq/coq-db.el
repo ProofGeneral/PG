@@ -27,6 +27,8 @@
 
 (require 'diff-mode)
 
+(declare-function yas-expand-snippet "yasnippet")
+
 (defcustom coq-use-yasnippet (and (not (member 'company-coq-mode
                                               ;; maybe loaded before coq-mode
                                               (bound-and-true-p coq-mode-hook)))

@@ -1,4 +1,4 @@
-;;; pgshell.el --- Proof General for shell scripts.
+;;; pgshell.el --- Proof General for shell scripts.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

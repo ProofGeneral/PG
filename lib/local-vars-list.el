@@ -1,4 +1,4 @@
-;;; local-vars.el --- local variables list utilities
+;;; local-vars.el --- local variables list utilities  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

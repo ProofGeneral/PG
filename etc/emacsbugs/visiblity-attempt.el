@@ -1,4 +1,4 @@
-;;; visiblity-attempt.el --- Test area for invisibility
+;;; visiblity-attempt.el --- Test area for invisibility  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

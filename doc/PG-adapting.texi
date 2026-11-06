@@ -4109,19 +4109,23 @@ Input to the proof shell via the queue region is managed by the
 functions @code{proof-extend-queue} and @code{proof-shell-exec-loop}.
 
 @c TEXI DOCSTRING MAGIC: proof-extend-queue
-@defun proof-extend-queue end queueitems
-Extend the current queue with @var{queueitems}, queue end @var{end}.@*
+@defun proof-extend-queue end queueitems-arg
+Extend the current queue with @var{queueitems-arg}, queue end @var{end}.@*
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to @var{end}.
-The queue mode is set to @code{advancing}
+The queue mode is set to @code{advancing}.
+The functions on @code{proof-shell-extend-queue-hook} see @var{queueitems-arg}
+in the dynamically bound variable @code{queueitems} and may modify it.
 @end defun
 
 @c TEXI DOCSTRING MAGIC: proof-extend-queue
-@defun proof-extend-queue end queueitems
-Extend the current queue with @var{queueitems}, queue end @var{end}.@*
+@defun proof-extend-queue end queueitems-arg
+Extend the current queue with @var{queueitems-arg}, queue end @var{end}.@*
 To make sense, the commands should correspond to processing actions
 for processing a region from (buffer-queue-or-locked-end) to @var{end}.
-The queue mode is set to @code{advancing}
+The queue mode is set to @code{advancing}.
+The functions on @code{proof-shell-extend-queue-hook} see @var{queueitems-arg}
+in the dynamically bound variable @code{queueitems} and may modify it.
 @end defun
 @vindex proof-action-list
 @c TEXI DOCSTRING MAGIC: proof-shell-exec-loop
@@ -4149,18 +4153,19 @@ Input is actually inserted into the shell buffer and sent to the process
 by the low-level function @code{proof-shell-insert}.  
 
 @c TEXI DOCSTRING MAGIC: proof-shell-insert
-@defun proof-shell-insert strings action &optional scriptspan
+@defun proof-shell-insert strings action-arg &optional scriptspan-arg
 Insert @var{strings} at the end of the proof shell, call @code{scomint-send-input}.
 
 @var{strings} is a list of strings (which will be concatenated), or a
 single string.
 
-The @var{action} argument is a symbol which is typically the name of a
+The @var{action-arg} argument is a symbol which is typically the name of a
 callback for when each string has been processed.
 
-This calls @code{proof-shell-insert-hook}.  The arguments @var{action} and
-@var{scriptspan} may be examined by the hook to determine how to modify
-the string variable (exploiting dynamic scoping) which will be
+This calls @code{proof-shell-insert-hook}.  The hook functions see
+@var{action-arg} and @var{scriptspan-arg} in the dynamically bound variables
+@code{action} and @code{scriptspan}, which they may examine to determine how
+to modify the dynamically bound variable @code{string}, which will be
 the command actually sent to the shell.
 
 Note that the hook is not called for the empty (null) string

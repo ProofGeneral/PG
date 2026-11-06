@@ -1,4 +1,4 @@
-;;; proof-config.el --- Proof General configuration for proof assistant
+;;; proof-config.el --- Proof General configuration for proof assistant  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; phox.el --- Major mode for the PhoX proof assistant
+;;; phox.el --- Major mode for the PhoX proof assistant  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

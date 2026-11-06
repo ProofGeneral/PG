@@ -1,4 +1,4 @@
-;;; easycrypt-syntax.el --- Syntax definitions for EasyCrypt mode
+;;; easycrypt-syntax.el --- Syntax definitions for EasyCrypt mode  -*- lexical-binding: t; -*-
 
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute

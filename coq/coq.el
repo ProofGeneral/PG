@@ -64,6 +64,7 @@
 (require 'pg-double-hit)                ; double hit electric terminator
 
 (defvar prettify-symbols-alist)
+(declare-function yas-expand-snippet "yasnippet")
 
 ;;; enable / disable parallel / sequential compilation in the proof shell
 ;; Here, not in coq-compile-common.el, which does not depend on the

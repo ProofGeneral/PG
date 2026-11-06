@@ -31,6 +31,11 @@
 (defvar coq-confirm-external-compilation); defpacustom
 (defvar coq-compile-parallel-in-background) ; defpacustom
 
+;; coq-seq-compile and coq-par-compile require this file
+(declare-function coq-seq-preprocess-require-commands "coq-seq-compile")
+(declare-function coq-par-preprocess-require-commands "coq-par-compile")
+(declare-function coq-par-user-interrupt "coq-par-compile")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Multiple file handling -- sequential compilation of required modules

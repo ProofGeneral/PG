@@ -1,4 +1,4 @@
-;;; coq-test-three-window.el --- Test starting Proof General in three-pane mode
+;;; coq-test-three-window.el --- Test starting Proof General in three-pane mode  -*- lexical-binding: t; -*-
 ;; This file is part of Proof General.
 ;; 
 ;; © Copyright 2024  Hendrik Tews
@@ -30,6 +30,9 @@
 ;; size.
 
 ;;; Code:
+
+(declare-function proof-shell-exit "proof-shell")
+(declare-function proof-toggle-active-scripting "proof-script")
 
 (require 'pg-response)
 
