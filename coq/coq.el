@@ -1416,8 +1416,18 @@ shortly before `proof-assert-command-hook', respectively,
 (setq coq-goals-buffer-function (lambda () proof-goals-buffer))
 (setq coq-response-buffer-function (lambda () proof-response-buffer))
 
+(defun coq-pg-set-buffer-keys (map generic-map)
+  "Make the keys of `coq-all-buffers-keymap' a parent of MAP.
+Before GENERIC-MAP, the keymap of Proof General, parent of MAP.  MAP
+keeps the priority, with the key bindings of the user there.  Called
+each time the goals or response buffer is set up, for the key bindings
+of the user in `coq-mode-map'."
+  (set-keymap-parent map (make-composed-keymap (coq-all-buffers-keymap)
+                                               generic-map)))
+
 (defun coq-goals-mode-config ()
   (coq-pg-set-backend-functions)
+  (coq-pg-set-buffer-keys coq-goals-mode-map proof-goals-mode-map)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1426,6 +1436,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-response-config ()
   (coq-pg-set-backend-functions)
+  (coq-pg-set-buffer-keys coq-response-mode-map proof-response-mode-map)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -1956,15 +1967,10 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
-;; The keys of the queries and of the display, as in the script buffer.
-(coq-queries-define-keys coq-goals-mode-map)
-;; specific to goals buffer: (un)foldinng and (un)highlighting shortcuts
+;; The keys of the queries and of the display, as in the script buffer,
+;; are in a parent of these keymaps, see `coq-pg-set-buffer-keys'.
+;; Specific to the goals buffer: (un)folding and (un)highlighting.
 (coq-hyps-define-keys coq-goals-mode-map)
-
-(coq-queries-define-keys coq-response-mode-map)
-;; Before C-c C-a r and g, kept for compatibility.
-(define-key coq-response-mode-map (kbd "C-c C-a C-r") #'coq-store-response-win)
-(define-key coq-response-mode-map (kbd "C-c C-a C-g") #'coq-store-goals-win)
 
 ;; The queries at mouse click, see `coq-remap-mouse-1'.
 (coq-mouse-query-add-keymap coq-response-mode-map)

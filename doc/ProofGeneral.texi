@@ -4410,6 +4410,15 @@ preferably on commands common to all backends, like the queries
 key bindings of @code{coq-mode-map} have priority over those of
 @code{proof-mode-map}.
 
+@vindex coq-all-buffers-commands
+The key bindings of @code{coq-mode-map} for the commands of
+@code{coq-all-buffers-commands} (the queries, the display and the
+printing options) apply also in the goals and response buffers, in all
+backends, including the key bindings of the user.  In these buffers,
+@kbd{C-c C-a C-r} and @kbd{C-c C-a C-g} also store the response and the
+goals; in the goals buffer, @kbd{f}, @kbd{F}, @kbd{h} and @kbd{H} fold
+and highlight the hypotheses.
+
 @menu
 * Coq-specific commands::
 * Using the Coq project file::

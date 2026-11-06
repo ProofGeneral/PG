@@ -41,6 +41,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     those in `proof-mode-map' only to Proof General: to keep your key
     bindings with another backend, define them in `coq-mode-map',
     preferably on commands common to all backends (see the manual).
+    Those for the commands of `coq-all-buffers-commands' (queries,
+    display, printing options) apply also in the goals and response
+    buffers.  C-c C-a C-r and C-c C-a C-g store the response and the
+    goals in the goals buffer too, not only in the response buffer.
 *** The toggle commands of the user options of Proof General
     (`proof-three-window-toggle', `proof-electric-terminator-toggle'…),
     of `coq-show-proof-stepwise' and of `coq-auto-adapt-printing-width'
