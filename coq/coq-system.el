@@ -44,7 +44,8 @@
   (let ((noext (file-name-base s)))
     (string-match-p "\\`[[:alpha:]_][[:alnum:]_]*\\'" noext)))
 
-;; DEAD CODE?
+;; Also defined, with the same default, by `defpgcustom prog-env' in
+;; pg-custom.el; Proof General passes it to the Coq process.
 (defcustom coq-prog-env nil
   "List of environment settings to pass to Coq process.
 On Windows you might need something like:
@@ -202,13 +203,6 @@ If V1 or V2 is not a valid version number, return nil."
                                 ,@version-regexp-alist)))
     (condition-case nil (version< v1 v2) (error nil))))
 
-(defcustom coq-pre-v85 nil
-  "Deprecated.
-Use `coq-pinned-version' if you want to bypass the
-version detection that Proof General does automatically."
-  :type 'boolean
-  :group 'coq)
-
 (defun coq--version-at-least (version default)
   "Return non-nil if the auto-detected version of Coq is >= VERSION.
 If the version cannot be detected, use DEFAULT instead.  Return nil if
@@ -276,12 +270,6 @@ Return nil if the version cannot be detected."
   "Return t if \"-topfile\" appears in coqtop options."
   (string-match "-topfile" coq-autodetected-help)
 )
-
-(defcustom coq-use-makefile nil
-  "Whether to look for a Makefile to attempt to guess the command line.
-Set to t if you want this feature, but note that it is deprecated."
-  :type 'string
-  :group 'coq)
 
 (defcustom coq-www-home-page "http://coq.inria.fr/"
   "Coq home page URL."

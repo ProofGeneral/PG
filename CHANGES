@@ -34,6 +34,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     directory variables (`coq-prog-name', `coq-compiler',
     `coq-dependency-analyzer') are no longer replaced by the detected
     ones when Coq starts.
+*** The options `coq-use-makefile' and `coq-pre-v85', deprecated and
+    unused, are removed: use `coq-pinned-version' instead of the
+    latter.
 *** The toggle commands of the user options of Proof General
     (`proof-three-window-toggle', `proof-electric-terminator-toggle'…),
     of `coq-show-proof-stepwise' and of `coq-auto-adapt-printing-width'
