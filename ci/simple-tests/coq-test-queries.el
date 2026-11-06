@@ -31,16 +31,31 @@
 (defvar coq-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
+(defvar coq-show-at-point-function)
+(defvar coq-set-flag-function)
+(defvar coq-set-search-blacklist-function)
+(defvar coq-search-blacklist-current-string)
+(defvar coq-processed-end-function)
+(defvar coq-ask-printing-width-function)
+(defvar coq-shell-current-line-width)
 (defvar coq-use-yasnippet)
+(defvar coq-menu-common-entries)
 
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
 (declare-function coq-flag-is-on-p "coq")
 (declare-function coq-pg-query "coq")
-(declare-function coq-Show "coq")
+(declare-function coq-Show "coq-queries")
+(declare-function coq-ask-printing-width "coq-goals")
+(declare-function coq-store-goals-win "coq-goals")
+(declare-function coq-toggle-fold-hyp-at-point "coq-hyps")
+(declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq")
+(declare-function coq-insert-tactic "coq-templates")
+(declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-About "coq-queries")
+(declare-function coq-Print-implicit "coq-queries")
 (declare-function coq-Check "coq-queries")
 (declare-function coq-Search "coq-queries")
 (declare-function coq-id-under-mouse-query "coq-queries")
@@ -48,6 +63,14 @@
 (declare-function coq-insert-match "coq-queries")
 (declare-function coq-insert-named-goal-selectors "coq-queries")
 (declare-function coq-pg-query-result "coq")
+(declare-function coq-pg-show-at-point "coq")
+(declare-function coq-pg-set-flag "coq")
+(declare-function coq-pg-set-search-blacklist "coq")
+(declare-function coq-change-search-blacklist "coq-queries")
+(declare-function coq-ask-adapt-printing-width-and-show "coq")
+(declare-function coq-set-printing-parentheses "coq-queries")
+(declare-function coq-unset-printing-parentheses "coq-queries")
+(declare-function coq-unset-printing-notations "coq-queries")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
 (declare-function proof-double-hit-toggle "pg-double-hit")
@@ -103,8 +126,29 @@ Proof General still work."
     (should (eq (key-binding (kbd "C-c C-a C-m")) #'coq-insert-match))
     (should (eq (key-binding (kbd "C-c C-a C-g"))
                 #'coq-insert-named-goal-selectors))
-    ;; Proof General only, in `coq-keymap'
-    (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))))
+    (should (eq (key-binding (kbd "C-c C-a C-t")) #'coq-insert-tactic))
+    (should (eq (lookup-key coq-mode-map (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))
+    (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-s")) #'coq-Show))
+    (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+    (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
+    (should (eq (key-binding (kbd "C-c C-a r")) #'coq-store-response-win))
+    (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
+    (should (eq (key-binding (kbd "C-c C-a C-9")) #'coq-set-printing-parentheses))
+    (should (eq (key-binding (kbd "C-c C-a n")) #'coq-unset-printing-notations))
+    (should (eq (key-binding (kbd "C-c C-a [")) #'coq-insert-as-in-next-command))
+    ;; the same query and display keys in the goals and response buffers
+    (dolist (buffer (list proof-goals-buffer proof-response-buffer))
+      (with-current-buffer buffer
+        (should (eq (key-binding (kbd "C-c C-a C-b")) #'coq-About))
+        (should (eq (key-binding (kbd "C-c C-a C-s")) #'coq-Show))
+        (should (eq (key-binding (kbd "C-c C-a C-w")) #'coq-ask-printing-width))
+        (should (eq (key-binding (kbd "C-c C-a g")) #'coq-store-goals-win))
+        (should (eq (key-binding (kbd "C-c C-a C-9"))
+                    #'coq-set-printing-parentheses))))
+    (with-current-buffer proof-goals-buffer
+      (should (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))
+    (with-current-buffer proof-response-buffer
+      (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win)))))
 
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
@@ -113,10 +157,118 @@ Proof General still work."
                           proof-response-buffer))
       (with-current-buffer buffer
         (should (eq coq-query-function #'coq-pg-query))
-        (should (eq coq-query-result-function #'coq-pg-query-result))))
+        (should (eq coq-query-result-function #'coq-pg-query-result))
+        (should (eq coq-show-at-point-function #'coq-pg-show-at-point))
+        (should (eq coq-ask-printing-width-function
+                    #'coq-ask-adapt-printing-width-and-show))))
     (with-temp-buffer
       (should-error (coq-run-query "Check x") :type 'user-error)
       (should-error (coq-query-result "Check x") :type 'user-error))))
+
+(ert-deftest coq-test-queries-show ()
+  "`coq-Show' shows the answer to the command at point in the locked
+region, asks for a goal number elsewhere."
+  (coq-test-queries-with-file
+    ;; after the locked region
+    (goto-char (point-max))
+    (insert "\n")
+    (should-not (coq-pg-show-at-point))
+    (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "1")))
+      (coq-Show nil))
+    (coq-test-queries-wait)
+    (should (string-match-p "n = x -> True" (coq-test-queries-response)))
+    ;; on the lemma, in the locked region
+    (with-current-buffer proof-response-buffer
+      (let ((inhibit-read-only t)) (erase-buffer)))
+    (goto-char (point-min))
+    (search-forward "Lemma")
+    (cl-letf (((symbol-function 'read-string)
+               (lambda (&rest _) (error "No goal number asked here"))))
+      (coq-Show nil))))
+
+(ert-deftest coq-test-queries-printing-width ()
+  "`coq-ask-printing-width' sets the printing width with Proof General."
+  (coq-test-queries-with-file
+    (cl-letf (((symbol-function 'read-number) (lambda (&rest _) 51)))
+      (coq-ask-printing-width))
+    (coq-test-queries-wait)
+    (should (eql coq-shell-current-line-width 51))
+    ;; one column less, see `coq-adapt-printing-width'
+    (should (string-match-p "\\_<50\\_>"
+                            (coq-query-result "Test Printing Width")))))
+
+(ert-deftest coq-test-queries-store ()
+  "`coq-store-goals-win' and `coq-store-response-win' copy the goals and
+the response at the top of the buffer *response-freeze*."
+  (coq-test-queries-with-file
+    (cl-letf (((symbol-function 'display-buffer-other-frame)
+               #'display-buffer))
+      (unwind-protect
+          (progn
+            (coq-store-goals-win t)
+            (with-current-buffer "*response-freeze*"
+              (should (eq major-mode 'coq-response-mode))
+              (should (string-match-p "n = x -> True" (buffer-string))))
+            (coq-run-query "Check x" nil #'ignore)
+            (coq-test-queries-wait)
+            (coq-store-response-win)
+            (with-current-buffer "*response-freeze*"
+              ;; the response first, then the goals
+              (should (string-match-p "x\\s-*:\\s-*nat\\(.\\|\n\\)*n = x -> True"
+                                      (buffer-string)))))
+        (when (get-buffer "*response-freeze*")
+          (with-current-buffer "*response-freeze*"
+            ;; a response buffer is not killed while Coq runs
+            (setq-local kill-buffer-hook nil)
+            (kill-buffer)))))))
+
+(ert-deftest coq-test-queries-set-flag ()
+  "The printing flag commands set the flag in Coq with Proof General."
+  (coq-test-queries-with-file
+    (should (eq coq-set-flag-function #'coq-pg-set-flag))
+    (coq-set-printing-parentheses)
+    (coq-test-queries-wait)
+    (should (coq-flag-is-on-p "Test Printing Parentheses."))
+    (coq-unset-printing-parentheses)
+    (coq-test-queries-wait)
+    (should-not (coq-flag-is-on-p "Test Printing Parentheses."))))
+
+(ert-deftest coq-test-queries-search-blacklist ()
+  "The search blacklist is replaced in Coq with Proof General."
+  (coq-test-queries-with-file
+    (should (eq coq-set-search-blacklist-function
+                #'coq-pg-set-search-blacklist))
+    (let ((coq-search-blacklist-current-string
+           coq-search-blacklist-current-string))
+      (coq-change-search-blacklist "\"foo_\"")
+      (coq-test-queries-wait)
+      (should (equal coq-search-blacklist-current-string "\"foo_\""))
+      (let ((table (coq-query-result "Print Table Search Blacklist")))
+        (should (string-match-p "foo_" table))
+        (should-not (string-match-p "Private_" table))))))
+
+(ert-deftest coq-test-queries-insert-as ()
+  "`coq-insert-as-in-next-command' inserts the names given by infoH in the
+next command, Coq state unchanged."
+  (coq-test-queries-with-file
+    (should (eq coq-processed-end-function #'proof-unprocessed-begin))
+    (goto-char (point-max))
+    (insert "Proof.\n  intros n.\n  destruct n.\n")
+    (search-backward "intros")
+    (end-of-line)
+    (proof-goto-point)
+    (coq-test-queries-wait)
+    (coq-insert-as-in-next-command)
+    (should (string-suffix-p "destruct n as [ | n0 ].\n" (buffer-string)))
+    ;; the next command is not processed
+    (should (< (proof-unprocessed-begin)
+               (save-excursion (goto-char (point-max))
+                               (search-backward "destruct"))))
+    ;; nor run: the goal is not destructed
+    (should (string-match-p "n = x -> True" (coq-query-result "Show")))
+    ;; there is already an "as"
+    (coq-insert-as-in-next-command)
+    (should (string-suffix-p "destruct n as [ | n0 ].\n" (buffer-string)))))
 
 (ert-deftest coq-test-queries-result ()
   "`coq-query-result' returns the answer of a query, nil on an error."
@@ -183,6 +335,31 @@ query."
     (coq-test-queries-wait)
     (should (string-match-p "Nat\\.add" (coq-test-queries-response)))
     (should (coq-flag-is-on-p "Test Printing Notations"))))
+
+(ert-deftest coq-test-queries-menu-commands ()
+  "The menu entries of the printing flags run the flag they name."
+  (require 'coq-abbrev)
+  (let (entries)
+    (cl-labels ((walk (menu)
+                  (dolist (item menu)
+                    (cond ((vectorp item) (push item entries))
+                          ((consp item) (walk (cdr item)))))))
+      (walk coq-menu-common-entries))
+    (dolist (item entries)
+      (let ((label (aref item 0))
+            (re "\\`\\(Set\\|Unset\\) Printing \\(.*\\)\\'"))
+        (when (and (string-match re label)
+                   (not (equal (match-string 2 label) "Width")))
+          (let ((command (format "coq-%s-printing-%s"
+                                 (downcase (match-string 1 label))
+                                 (replace-regexp-in-string
+                                  " " "-" (downcase (match-string 2 label))))))
+            (should (equal (list label (aref item 1))
+                           (list label (intern command))))))))
+    (should (eq (aref (cl-find "Print Implicit..." entries
+                               :key (lambda (v) (aref v 0)) :test #'equal)
+                      1)
+                #'coq-Print-implicit))))
 
 (ert-deftest coq-test-queries-mouse ()
   "`coq-remap-mouse-1' binds the queries at mouse click when set, in the

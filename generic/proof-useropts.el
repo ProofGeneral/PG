@@ -247,6 +247,19 @@ and displayed lazily.  See `proof-layout-windows'."
 	  (const :tag "Vertical" vertical))
   :group 'proof-user-options)
 
+(defun proof-guess-3win-display-policy (&optional policy)
+  "Return the 3 windows mode layout policy from user choice POLICY.
+If POLICY is \\+`smart' then guess the good policy from the current
+frame geometry, otherwise follow POLICY.
+
+See `proof-layout-windows' for more details about POLICY."
+  (if (eq policy 'smart)
+      (cond
+       ((>= (frame-width) (* 1.5 split-width-threshold)) 'horizontal)
+       ((>= (frame-width) split-width-threshold) 'hybrid)
+       (t 'vertical))
+    policy))
+
 
 (defcustom proof-delete-empty-windows nil
   "*If non-nil, automatically remove windows when they are cleaned.

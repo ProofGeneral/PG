@@ -34,6 +34,7 @@
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
+(require 'proof-shell)
 
 (defconst coq--between-v814-v815 (and (coq--post-v814) (coq--pre-v816))
   "Non-nil if Coq is either 8.14 or 8.15.")

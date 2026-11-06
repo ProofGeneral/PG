@@ -26,6 +26,7 @@
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
+(require 'proof-shell)
 
 (defconst coq--post-v809 (coq--post-v809)
   "Non-nil if Coq is more recent than 8.8.")

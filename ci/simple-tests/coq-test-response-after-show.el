@@ -29,6 +29,7 @@
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
+(require 'proof-shell)
 
 (message "response after Show tests run with Coq version %s" (coq-version t))
 

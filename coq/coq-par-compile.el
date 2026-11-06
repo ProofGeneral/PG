@@ -39,6 +39,22 @@
 (defvar queueitems)       ; dynamic scope in p-s-extend-queue-hook
 (eval-when-compile (require 'cl-lib))
 (require 'coq-compile-common)
+(require 'span)
+
+;; The proof shell of Proof General is not required: another backend
+;; calls `coq-par-start-compilation', see "Interface with the script
+;; management" below.  The variables of the proof shell are only read
+;; when it is loaded.
+(defvar proof-action-list)
+(defvar proof-second-action-list-active)
+(defvar proof-script-buffer)
+(defvar proof-included-files-list)
+(defvar proof-shell-interrupt-pending)
+(declare-function proof-add-to-queue "proof-shell")
+(declare-function proof-release-lock "proof-shell")
+(declare-function proof-detach-queue "proof-shell")
+(declare-function proof-script-clear-queue-spans-on-error "proof-script")
+(declare-function proof-register-possibly-new-processed-file "proof-script")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -495,6 +511,59 @@ not been retired but no compilation process is running in the
 background.")
 
 
+;;; Interface with the script management
+;;
+;; By default, the queue items of require jobs go back into
+;; `proof-action-list' and the queue region of Proof General is
+;; cleared on errors.  Another backend sets the following variables
+;; buffer locally in its script buffers, which are current when the
+;; functions are called, see `coq-par-start-compilation'.
+
+(defvar coq-par-release-items-function #'coq-par-add-items-to-action-list
+  "Function called with the queue items of a successful require job.
+It is called with the items and the job when the compilation needed by
+the require command is finished and all the preceding require jobs are
+retired.  The script buffer of the job is current.")
+
+(defvar coq-par-failure-function #'coq-par-clear-queue-on-failure
+  "Function called when the last require job is retired after a failure.
+It is called without argument, with the script buffer of the job
+current.")
+
+(defvar coq-par-abort-function #'coq-par-abort-action-list
+  "Function called after `coq-par-emergency-cleanup' killed all jobs.
+It is called with the script buffer of the last require job, or nil
+if there was none.  The value of this variable in that buffer is
+used.")
+
+(defmacro coq-par-with-script-buffer (job &rest body)
+  "Evaluate BODY in the script buffer of JOB, if it is still live."
+  (declare (indent 1) (debug t))
+  (let ((buffer (make-symbol "buffer")))
+    `(let ((,buffer (get ,job 'script-buf)))
+       (with-current-buffer (if (buffer-live-p ,buffer) ,buffer
+                              (current-buffer))
+         ,@body))))
+
+(defun coq-par-add-items-to-action-list (items _job)
+  "Add ITEMS to `proof-action-list' and start their execution."
+  (proof-add-to-queue items 'advancing))
+
+(defun coq-par-clear-queue-on-failure ()
+  "Clear the queue region and release the proof shell lock."
+  ;; variables that hold the queue span are buffer local
+  (with-current-buffer (or proof-script-buffer (current-buffer))
+    (proof-script-clear-queue-spans-on-error nil))
+  (proof-release-lock))
+
+(defun coq-par-abort-action-list (_buffer)
+  "Reset the queue region and signal an interrupt to the proof shell."
+  (when proof-action-list
+    (setq proof-shell-interrupt-pending t))
+  (proof-release-lock)
+  (proof-detach-queue))
+
+
 ;;; utility functions
 
 (defun split-list-at-predicate (l pred)
@@ -910,17 +979,20 @@ background compilation process detected a severe error.  When
 not severe.  This function is also used for the user action to
 kill all background compilation.
 
-On top of `coq-par-kill-and-cleanup', this function resets the
-queue region (and thus `proof-action-list' and signals an
-interrupt to the proof shell."
+On top of `coq-par-kill-and-cleanup', this function calls
+`coq-par-abort-function', which by default resets the queue region
+(and thus `proof-action-list') and signals an interrupt to the proof
+shell."
   (interactive)				; needed for menu
   (when coq--debug-auto-compilation
     (message "emergency cleanup"))
-  (coq-par-kill-and-cleanup)
-  (when proof-action-list
-    (setq proof-shell-interrupt-pending t))
-  (proof-release-lock)
-  (proof-detach-queue))
+  (let ((buffer (and coq--last-compilation-job
+                     (get coq--last-compilation-job 'script-buf))))
+    (coq-par-kill-and-cleanup)
+    (funcall (if (buffer-live-p buffer)
+                 (buffer-local-value 'coq-par-abort-function buffer)
+               coq-par-abort-function)
+             buffer)))
 
 (defun coq-par-user-interrupt ()
   "React to a generic user interrupt with cleaning up everything.
@@ -1580,7 +1652,8 @@ jobs when they transition from \\+`waiting-queue' to \\+`ready':
 		   (lambda (_span) (coq-par-require-processed
                                2nd-stage-counter)))
 		  (cdr items))))))
-      (proof-add-to-queue items 'advancing)
+      (coq-par-with-script-buffer job
+        (funcall coq-par-release-items-function items job))
       (when coq--debug-auto-compilation
 	(message "%s: add %s items to action list"
 		 (get job 'name) (length items)))
@@ -1656,7 +1729,7 @@ retired and transition to \\+`ready'.  This means:
       (setq coq--par-delayed-last-job nil))
     (if (and (get job 'failed)
 	     (eq coq--last-compilation-job job)
-	     proof-action-list)
+	     (bound-and-true-p proof-action-list))
 	(progn
 	  (when coq--debug-auto-compilation
 	    (message "%s: delay queue kickoff until action list is empty"
@@ -1709,10 +1782,8 @@ retired and transition to \\+`ready'.  This means:
                  (coq-unlock-ancestor (get anc-job 'src-file))
                  (put anc-job 'lock-state 'unlocked))
                (coq-par-collect-locked-require-ancestors job))
-	      ;; variables that hold the queue span are buffer local
-	      (with-current-buffer (or proof-script-buffer (current-buffer))
-		(proof-script-clear-queue-spans-on-error nil))
-	      (proof-release-lock)
+	      (coq-par-with-script-buffer job
+                (funcall coq-par-failure-function))
 	      (when (or (and (coq--post-v811)
                              (eq coq-compile-vos 'vos-and-vok))
                         (and (not (coq--post-v811))
@@ -2106,7 +2177,7 @@ If a new job is created it is started or enqueued right away."
       (put new-job 'vo-file module-vo-file)
       (put new-job 'src-file (coq-library-src-of-vo-file module-vo-file))
       (when (equal (get new-job 'src-file)
-		   (buffer-file-name proof-script-buffer))
+		   (buffer-file-name script-buf))
         ;; test this error case - maybe need more files participating
         ;; in the circle?
 	(signal 'coq-compile-error-circular-dep
@@ -2120,7 +2191,7 @@ If a new job is created it is started or enqueued right away."
       ;; and cleared, then we might have visited and locked this file
       ;; already
       (if (member (file-truename (get new-job 'src-file))
-		  proof-included-files-list)
+		  (bound-and-true-p proof-included-files-list))
 	  (put new-job 'lock-state 'asserted)
 	(put new-job 'lock-state 'unlocked))
       (message "Check %s" (get new-job 'src-file))
@@ -2436,20 +2507,7 @@ This function is called synchronously when asserting."
     ;; XXX handle external compilation here, compile everything
     ;; with one command, use compilation-finish-functions to get
     ;; notification
-    (when (cdr splitted-items)
-      (when coq--par-second-stage-delay-timer
-	(cancel-timer coq--par-second-stage-delay-timer)
-	(setq coq--par-second-stage-delay-timer nil))
-      (when coq--par-second-stage-in-progress
-	(cl-assert (not coq--last-compilation-job)
-		nil "normal compilation and second stage in parallel 2")
-	;; there are only second stage background processes
-	(coq-par-kill-all-processes)
-	(setq coq--par-second-stage-in-progress nil))
-      ;; save buffers before invoking the first coqdep
-      (coq-compile-save-some-buffers)
-      (dolist (require-items (cdr splitted-items))
-	(coq-par-handle-require-list require-items)))
+    (coq-par-handle-require-lists (cdr splitted-items))
     (when coq--last-compilation-job
       (setq proof-second-action-list-active t))
     (coq-par-start-jobs-until-full)
@@ -2457,6 +2515,50 @@ This function is called synchronously when asserting."
       (if coq--last-compilation-job
 	  (message "return control, waiting for background jobs")
 	(message "return control, no background jobs")))))
+
+(defun coq-par-handle-require-lists (require-lists)
+  "Start compilation for each element of REQUIRE-LISTS.
+Each element is a list of queue items starting with a require
+command, see `coq-par-handle-require-list'.  Before, stop a possibly
+ongoing second stage compilation and save buffers.  Jobs are created,
+but maybe not started, see `coq-par-start-jobs-until-full'."
+  (when require-lists
+    (when coq--par-second-stage-delay-timer
+      (cancel-timer coq--par-second-stage-delay-timer)
+      (setq coq--par-second-stage-delay-timer nil))
+    (when coq--par-second-stage-in-progress
+      (cl-assert (not coq--last-compilation-job)
+	         nil "normal compilation and second stage in parallel 2")
+      ;; there are only second stage background processes
+      (coq-par-kill-all-processes)
+      (setq coq--par-second-stage-in-progress nil))
+    ;; save buffers before invoking the first coqdep
+    (coq-compile-save-some-buffers)
+    (dolist (require-items require-lists)
+      (coq-par-handle-require-list require-items))))
+
+(defun coq-par-start-compilation (require-items)
+  "Start the compilation needed by REQUIRE-ITEMS, outside `proof-action-list'.
+Entry point for other backends than the proof shell.  Each element of
+REQUIRE-ITEMS is a queue item (SPAN COMMANDS ...) for one require
+command: SPAN is the span or overlay of the command, COMMANDS a list
+containing its text.  The current buffer is the script buffer.  When
+the compilation for an item is finished and the previous items are
+released, the list containing just this item and the require job are
+passed to `coq-par-release-items-function'.  On failure, either
+`coq-par-failure-function' or `coq-par-abort-function' is called.
+Those functions are taken from the script buffer, where they should
+be set buffer locally.  Return non-nil if compilation started, nil
+if an error occurred, which was reported and cleaned up."
+  (let ((proof-script-buffer (current-buffer)))
+    (coq-par-call-handling-errors
+     (lambda ()
+       (unless coq--last-compilation-job
+         (coq-par-init-compilation-hash)
+         (coq-init-compile-response-buffer))
+       (coq-par-handle-require-lists (mapcar #'list require-items))
+       (coq-par-start-jobs-until-full)
+       t))))
 
 (defun coq-par-preprocess-require-commands ()
   "Coq function for `proof-shell-extend-queue-hook' doing parallel compilation.
@@ -2467,27 +2569,37 @@ does the error checking/reporting for
 `coq-par-preprocess-require-commands-internal', which does all
 the work.  This function is called synchronously when asserting."
   (when coq-compile-before-require
-    (condition-case err
-	(coq-par-preprocess-require-commands-internal)
-      (coq-compile-error
-       (coq-par-emergency-cleanup)
-       (message "%s %s" (get (car err) 'error-message) (cdr err)))
-      (coq-unclassifiable-version
-       (coq-par-emergency-cleanup)
-       (if (equal (cdr err) "trunk")
-	   (message
-	    (concat "your Coq version \"trunk\" is too unspecific for "
-		    "Proof General; please customize coq-pinned-version"))
-	 (message "%s \"%s\"; consider customizing coq-pinned-version"
-		  (get (car err) 'error-message) (cdr err))))
-      (file-error
-       (coq-par-emergency-cleanup)
-       (message "Error: %s" (mapconcat 'identity (cdr err) ": ")))
-      (error
-       (message "Unexpected error during parallel compilation: %s"
-		err)
-       (coq-par-emergency-cleanup)
-       (signal (car err) (cdr err))))))
+    (coq-par-call-handling-errors
+     #'coq-par-preprocess-require-commands-internal)))
+
+(defun coq-par-call-handling-errors (function)
+  "Call FUNCTION, report errors and clean up after them.
+Return the value of FUNCTION, or nil after an error.  Errors not
+specific to compilation are signaled again."
+  (condition-case err
+      (funcall function)
+    (coq-compile-error
+     (coq-par-emergency-cleanup)
+     (message "%s %s" (get (car err) 'error-message) (cdr err))
+     nil)
+    (coq-unclassifiable-version
+     (coq-par-emergency-cleanup)
+     (if (equal (cdr err) "trunk")
+	 (message
+	  (concat "your Coq version \"trunk\" is too unspecific for "
+		  "Proof General; please customize coq-pinned-version"))
+       (message "%s \"%s\"; consider customizing coq-pinned-version"
+		(get (car err) 'error-message) (cdr err)))
+     nil)
+    (file-error
+     (coq-par-emergency-cleanup)
+     (message "Error: %s" (mapconcat 'identity (cdr err) ": "))
+     nil)
+    (error
+     (message "Unexpected error during parallel compilation: %s"
+	      err)
+     (coq-par-emergency-cleanup)
+     (signal (car err) (cdr err)))))
 
 
 (provide 'coq-par-compile)

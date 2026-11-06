@@ -30,6 +30,17 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** The compilation of the Requires before they are processed (see
+    `coq-compile-before-require') does not depend on the proof shell
+    any more: other Coq backends can use it, with its options and its
+    menu `coq-compile-menu'.
+*** Changing the search blacklist (`coq-change-search-blacklist-interactive',
+    menu Coq -> OTHER QUERIES -> Search Blacklist...) is available in all
+    Coq backends too, see `coq-set-search-blacklist-function'.
+*** New option `coq-backend' choosing how Coq mode interacts with Coq:
+    `pg' (Proof General, the default) or nil (edition only, without
+    loading the Proof General machinery).  It replaces `coq-use-pg',
+    now obsolete, which still gives its default value.
 *** The goals after the first one are folded to a line giving their
     number, with the number of unfocused goals if Coq displays them.
     Click on the line or type RET on it to unfold them, see
@@ -47,15 +58,42 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     for this query only, among `coq-query-flags' (C-u still gives
     Printing All).  Search accepts these prefixes too.  A printing
     flag already set is not unset any more after such a query.
+*** The folding and highlighting of hypotheses (keys f, F, h, H in the
+    goals buffer) are also in the menu Coq -> Settings -> Hypotheses.
+    Elsewhere than in the goals buffer, they work on the hypothesis
+    named at point.  A highlighting that is not sticky (see
+    `coq-highlight-hyps-sticky') is forgotten at the next goals, and a
+    middle click on a hypothesis inserts the name clicked.
 *** Setting `coq-remap-mouse-1' with customize takes effect
     immediately, also in the goals and response buffers.
 *** The abbrevs and the default yasnippet templates of Coq mode are
     available in all Coq backends, see `coq-use-yasnippet' and
     `coq-yasnippet-use-default-templates'.
+*** The insertion commands that need no query (C-c C-a C-t, t, !,
+    C-SPC, C-RET, C-r, C-( and C-) for tactics, tacticals, closing
+    tactics, terms, commands, requires and sections) are bound in
+    `coq-mode-map' too, and available in all Coq backends.
+*** These commands are bound in `coq-mode-map' and available in all
+    Coq backends too: Show (C-c C-a C-s), the insertion of an "as"
+    clause in the next command (C-c C-a [), the printing width
+    (C-c C-a C-w), the frozen copies of the response and goals
+    (C-c C-a r and g, renamed `coq-store-response-win' and
+    `coq-store-goals-win') and the printing flags (C-c C-a C-9, C-0, N
+    and n for Printing Parentheses and Notations, and the commands of
+    the menu Coq -> OPTIONS).  The options
+    `coq-auto-adapt-printing-width' and
+    `coq-optimise-resp-windows-enable' are common too.
+*** The goals and response buffers have the same keys as the script
+    buffer for the queries and the display, see
+    `coq-queries-define-keys', in particular the printing flags.
 *** Align _CoqProject/_RocqProject parsing with rocq makefile (fixing
     #113, #392 and #589). There is no escape character any more, in any
     argument: write -arg "-w 'a b'" instead of -arg "-w \"a b\"", and
     -R "C:\dev\lib" Top instead of -R "C:\\dev\\lib" Top.
+*** The project file (_CoqProject, _RocqProject) is read in all Coq
+    backends: it sets `coq-load-path' and `coq-prog-args' when a Coq
+    file is opened, see `coq-use-project-file' and
+    `coq-project-filename'.
 *** support Coq 8.19
 **** New option coq-compile-coqdep-warnings to configure the warning
      command line argument (-w) of coqdep. The default of this option

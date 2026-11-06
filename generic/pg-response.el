@@ -30,6 +30,7 @@
 
 (require 'pg-assoc)
 (require 'span)
+(require 'proof-useropts)                ; proof-guess-3win-display-policy
 
 (defvar pg-insert-text-function #'insert
   "Hook for Coq diffs highlighting routine.")
@@ -128,19 +129,6 @@ Internal variable, setting this will have no effect!")
 (defun proof-three-window-enable ()
   (proof-layout-windows))
 
-
-(defun proof-guess-3win-display-policy (&optional policy)
-  "Return the 3 windows mode layout policy from user choice POLICY.
-If POLICY is \\+`smart' then guess the good policy from the current
-frame geometry, otherwise follow POLICY.
-
-See `proof-layout-windows' for more details about POLICY."
-  (if (eq policy 'smart)
-      (cond
-       ((>= (frame-width) (* 1.5 split-width-threshold)) 'horizontal)
-       ((>= (frame-width) split-width-threshold) 'hybrid)
-       (t 'vertical))
-    policy))
 
 (defun proof-select-three-b (b1 b2 b3 &optional policy)
   "Put the three buffers B1, B2, and B3 into three windows.

@@ -21,6 +21,7 @@
 
 (eval-when-compile (require 'cl-lib))
 (require 'coq-db)
+(require 'proof-syntax)                 ; proof-zap-commas, proof faces
 
 ;;; keyword databases
 

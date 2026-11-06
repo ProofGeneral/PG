@@ -244,6 +244,20 @@ Note: to change proof assistant, you must start a new Emacs session.")
 Set on startup to contents of environment variable PROOFGENERAL_ASSISTANTS, the
 Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
 
+(defvar coq-backend)
+
+(defun proof-site--coq-backend ()
+  "Return the backend chosen for Coq, see `coq-backend'.
+`coq-backend' is defined in coq-mode.el, which is not loaded yet when
+the mode stub runs.  It may be set already, or only saved by customize."
+  (cond
+   ((boundp 'coq-backend) coq-backend)
+   ((get 'coq-backend 'saved-value)
+    (eval (car (get 'coq-backend 'saved-value)) t))
+   ;; obsolete option
+   ((and (boundp 'coq-use-pg) (not (symbol-value 'coq-use-pg))) nil)
+   (t 'pg)))
+
 ;; Add auto-loads and load-path elements to support the
 ;; proof assistants selected, and define stub major mode functions
 (let ((assistants proof-general-configured-provers))
@@ -290,6 +304,14 @@ Lisp variable `proof-assistants', or the contents of `proof-assistant-table'.")
 		     ,assistant-name
 		     " Proof General error: Proof General already in use for "
 		     proof-assistant))))
+	      ;; Coq with another backend than Proof General: load only
+	      ;; coq-mode, which sets up the backend.
+	      ((and (eq (quote ,assistant) 'coq)
+		    (not (eq (proof-site--coq-backend) 'pg)))
+	       (proof-add-to-load-path
+		(expand-file-name "coq/" proof-home-directory))
+	       (load-library "coq-mode")
+	       (coq-mode))
 	      (t
 	       ;; prepare variables and load path
 	       (proof-ready-for-assistant (quote ,assistant) ,assistant-name)

@@ -41,7 +41,8 @@ coq-test-queries
   their printing flags are for one query only
 coq-test-without-pg
 : test Coq mode without the Proof General backend: no proof shell is
-  loaded, the abbrevs and the commands common to all backends are there
+  loaded, the abbrevs and the commands common to all backends are there,
+  and the project file sets the load path
 coq-proof-stat-batch-test
 : Batch mode test for proof-check-proofs. There is no Emacs lisp file
   for this test. It is programmed out in the Makefile goal

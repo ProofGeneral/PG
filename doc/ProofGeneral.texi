@@ -4391,6 +4391,15 @@ mode you can expand an abbreviation by pressing @kbd{C-x '}
 Coq Proof General is an instantiation of Proof General for the Coq proof
 assistant.  It supports most of the generic features of Proof General.
 
+@vindex coq-backend
+@vindex coq-use-pg
+Coq mode interacts with Coq through a backend, chosen with the option
+@code{coq-backend}.  The default, @code{pg}, is Proof General, which
+runs Coq in a shell and which this chapter describes.  With @code{nil},
+Coq mode only edits Coq files, without loading Proof General.  The
+older option @code{coq-use-pg} is obsolete, it gives the default value
+of @code{coq-backend}.
+
 @menu
 * Coq-specific commands::
 * Using the Coq project file::
@@ -4404,6 +4413,7 @@ assistant.  It supports most of the generic features of Proof General.
 * Proof-Tree Visualization::
 * Showing Proof Diffs::
 * Display of the goals::
+* Folding and highlighting hypotheses::
 * Opam-switch-mode support::
 @end menu
 
@@ -4457,10 +4467,18 @@ Inserts ``End <section-name>.'' (this should work well with nested sections).
 
 @vindex coq-mode-map
 The query keys above (and also @kbd{C-c C-a C-q}, @kbd{C-c C-a C-l},
-@kbd{C-c C-a C-n} and @kbd{C-c C-a h}) and the insertions built from
-a query (@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m} and @kbd{C-c C-a C-g})
-are bound in @code{coq-mode-map}, which is meant to be common to all
-the backends of Coq mode.  To bind these commands to other keys, do it
+@kbd{C-c C-a C-n} and @kbd{C-c C-a h}), the display keys (@kbd{C-c C-a
+C-w} for the printing width, @kbd{C-c C-a r} and @kbd{g} to copy the
+response or the goals in the buffer @code{*response-freeze*}, @kbd{C-c
+C-a C-9}, @kbd{C-0}, @kbd{N} and @kbd{n} to set or unset Printing
+Parentheses and Notations), the insertions built from a query
+(@kbd{C-c C-a C-i}, @kbd{C-c C-a C-m}, @kbd{C-c C-a C-g} and @kbd{C-c
+C-a [} for an ``as'' clause in the next command) and the other
+insertions (@kbd{C-c C-a C-t}, @kbd{t}, @kbd{!},
+@kbd{C-SPC}, @kbd{C-RET}, @kbd{C-r}, @kbd{C-(} and @kbd{C-)} after
+@kbd{C-c C-a}, for tactics, tacticals, closing tactics, terms,
+commands, requires and sections) are bound in @code{coq-mode-map},
+which is meant to be common to all the backends of Coq mode.  To bind these commands to other keys, do it
 in this keymap, for instance:
 @lisp
 (define-key coq-mode-map (kbd "<f9>") #'coq-Check)
@@ -5652,6 +5670,41 @@ them when clicked, see @code{coq-toggle-other-goals}.
 
 The default value is @code{t}.
 @end defopt
+
+@node Folding and highlighting hypotheses
+@section Folding and highlighting hypotheses
+@cindex hypotheses, folding
+@cindex hypotheses, highlighting
+@vindex coq-highlight-hyps-sticky
+@vindex coq-highlighted-hyps-bg
+@vindex coq-highlight-hyps-cited-in-response
+
+The hypotheses of the first goal can be folded: their type is replaced
+by dots, the text stays in the buffer for copy.  A folded hypothesis
+stays folded in the next goals.  They can also be highlighted, with
+the background color @code{coq-highlighted-hyps-bg}.  The highlighting
+stops at the next goals, unless @code{coq-highlight-hyps-sticky} is
+non-nil.  A @code{Search} highlights the hypotheses it finds, unless
+@code{coq-highlight-hyps-cited-in-response} is nil.
+
+In the goals buffer:
+@table @kbd
+@item f
+fold or unfold the hypothesis at point,
+@item F
+unfold all the hypotheses,
+@item h
+highlight or unhighlight the hypothesis at point,
+@item H
+unhighlight all the hypotheses.
+@end table
+
+The first column of each hypothesis is a button, @code{-} or @code{+}
+when folded: click on it to fold or unfold the hypothesis.  A right
+click on its name does the same, a middle click inserts its name at
+point.  The commands are also in the menu @code{Coq -> Settings ->
+Hypotheses}.  Elsewhere than in the goals buffer, they work on the
+hypothesis named by the identifier at point.
 
 @node Opam-switch-mode support
 @section Opam-switch-mode support

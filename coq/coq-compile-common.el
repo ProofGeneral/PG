@@ -23,7 +23,7 @@
 ;;; Code:
 
 (require 'cl-lib)                       ;cl-every cl-some
-(require 'proof-shell)
+(require 'pg-pamacs)                    ;proof-deftoggle
 (require 'coq-system)
 (require 'compile)
 
@@ -40,56 +40,6 @@
 ;;
 ;; Multiple file handling -- sequential compilation of required modules
 ;;
-
-;;; enable / disable parallel / sequential compilation
-;; I would rather put these functions into coq-seq-compile and
-;; coq-par-compile, respectively. However, the :initialization
-;; function of a defcustom seems to be evaluated when reading the
-;; defcustom form. Therefore, these functions must be defined already,
-;; when the defcustom coq-compile-parallel-in-background is read.
-
-(defun coq-par-enable ()
-  "Enable parallel compilation.
-Must be used together with `coq-seq-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
-	    #'coq-par-preprocess-require-commands)
-  (add-hook 'proof-shell-signal-interrupt-hook
-	    #'coq-par-user-interrupt)
-  (add-hook 'proof-shell-handle-error-or-interrupt-hook
-	    #'coq-par-user-interrupt))
-
-(defun coq-par-disable ()
-  "Disable parallel compilation.
-Must be used together with `coq-seq-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
-	       #'coq-par-preprocess-require-commands)
-  (remove-hook 'proof-shell-signal-interrupt-hook
-	       #'coq-par-user-interrupt)
-  (remove-hook 'proof-shell-handle-error-or-interrupt-hook
-	       #'coq-par-user-interrupt))
-
-(defun coq-seq-enable ()
-  "Enable sequential synchronous compilation.
-Must be used together with `coq-par-disable'."
-  (add-hook 'proof-shell-extend-queue-hook
-	    #'coq-seq-preprocess-require-commands))
-
-(defun coq-seq-disable ()
-  "Disable sequential synchronous compilation.
-Must be used together with `coq-par-enable'."
-  (remove-hook 'proof-shell-extend-queue-hook
-	       #'coq-seq-preprocess-require-commands))
-
-
-
-(defun coq-switch-compilation-method ()
-  "Set function for function `coq-compile-parallel-in-background'."
-  (if coq-compile-parallel-in-background
-      (progn
-	(coq-par-enable)
-	(coq-seq-disable))
-    (coq-par-disable)
-    (coq-seq-enable)))
 
 (defun number-of-cpus ()
   (let (status ncpus)
@@ -200,11 +150,6 @@ This option can be set/reset via menu
 
 (proof-deftoggle coq-compile-parallel-in-background)
 
-(defun coq-compile-parallel-in-background ()
-  (coq-switch-compilation-method))
-
-;; defpacustom fails to call :eval during inititialization, see trac #456
-(coq-switch-compilation-method)
 
 (defcustom coq-compile-quick 'quick-and-vio2vo
   "Control quick compilation, vio2vo and vio/vo files auto compilation.
@@ -517,8 +462,6 @@ This option can be set via menu
 ;; define coq-lock-ancestors-toggle
 (proof-deftoggle coq-lock-ancestors)
 
-(proof-deftoggle coq-show-proof-stepwise)
-
 (defcustom coq-confirm-external-compilation t
   "If set let user change and confirm the compilation command.
 Otherwise start the external compilation without confirmation.
@@ -681,11 +624,20 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 ;;; ancestor unlocking
 ;;; (locking is different for sequential and parallel compilation)
 
+;; Proof General, only used when it is loaded: ancestor locking.
+(defvar proof-script-buffer)
+(defvar proof-included-files-list)
+(declare-function proof-restart-buffers "proof-script")
+(declare-function proof-files-to-buffers "proof-script")
+(declare-function span-property "span")
+(declare-function span-set-property "span")
+
 (defun coq-unlock-ancestor (ancestor-src)
   "Unlock ANCESTOR-SRC."
   (let* ((default-directory
 	   (buffer-local-value 'default-directory
-			       (or proof-script-buffer (current-buffer))))
+			       (or (bound-and-true-p proof-script-buffer)
+                                   (current-buffer))))
 	 (true-ancestor (file-truename ancestor-src)))
     (setq proof-included-files-list
           (delete true-ancestor proof-included-files-list))
@@ -698,6 +650,8 @@ Changes the suffix from .vo to .vok.  VO-OBJ-FILE must have a .vo suffix."
 
 
 ;;; manage coq--compile-response-buffer
+
+(declare-function proof-display-and-keep-buffer "proof-utils")
 
 (defconst coq--compile-response-initial-content "-*- mode: compilation; -*-\n\n"
   "Content of `coq--compile-response-buffer' after initialization.")
@@ -758,7 +712,9 @@ the command whose output will appear in the buffer."
         (with-no-warnings (font-lock-fontify-buffer)))))
   ;; Make it so the next C-x ` will use this buffer.
   (setq next-error-last-buffer (get-buffer coq--compile-response-buffer))
-  (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)
+  (if (fboundp 'proof-display-and-keep-buffer)
+      (proof-display-and-keep-buffer coq--compile-response-buffer 1 t)
+    (display-buffer coq--compile-response-buffer))
   ;; Partial fix for #54: ensure that the compilation response
   ;; buffer is not in a dedicated window.
   (mapc (lambda (w) (set-window-dedicated-p w nil))
@@ -833,6 +789,137 @@ current buffer (which contains the Require command) to
             buffer-filter nil)))
     (save-some-buffers unconditionally buffer-filter)))
 
+
+
+;;; menu
+
+(defconst coq-compile-menu
+  `("Auto Compilation"
+    ["Compile Before Require"
+     coq-compile-before-require-toggle
+     :style toggle
+     :selected coq-compile-before-require
+     :help "Check dependencies of required modules and compile on the fly."]
+    ["Parallel background compilation"
+     coq-compile-parallel-in-background-toggle
+     :style toggle
+     :selected coq-compile-parallel-in-background
+     :active coq-compile-before-require
+     :help ,(concat "Compile parallel in background or "
+                    "sequentially with blocking ProofGeneral.")]
+    ["Keep going"
+     coq-compile-keep-going-toggle
+     :style toggle
+     :selected coq-compile-keep-going
+     :active (and coq-compile-before-require
+                  coq-compile-parallel-in-background)
+     :help ,(concat "Continue background compilation after "
+                    "the first error as far as possible")]
+    ("vos compilation (coq >= 8.11)"
+     ["unset"
+      (customize-set-variable 'coq-compile-vos nil)
+      :style radio
+      :selected (eq coq-compile-vos nil)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Derive behavior from Quick compilation setting above"]
+     ["use -vos and -vok"
+      (customize-set-variable 'coq-compile-vos 'vos-and-vok)
+      :style radio
+      :selected (eq coq-compile-vos 'vos-and-vok)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Speedup with -vos, check proofs later, possibly inconsistent"]
+     ["use -vos, no -vok"
+      (customize-set-variable 'coq-compile-vos 'vos)
+      :style radio
+      :selected (eq coq-compile-vos 'vos)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Speedup with -vos, don't check proofs, possibly inconsistent"]
+     ["ensure vo"
+      (customize-set-variable 'coq-compile-vos 'ensure-vo)
+      :style radio
+      :selected (eq coq-compile-vos 'ensure-vo)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Ensure only vo's are used for consistency"]
+     )
+    ("Quick compilation (coq < 8.11)"
+     ["no quick"
+      (customize-set-variable 'coq-compile-quick 'no-quick)
+      :style radio
+      :selected (eq coq-compile-quick 'no-quick)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Compile without -quick but accept existing .vio's"]
+     ["quick no vio2vo"
+      (customize-set-variable 'coq-compile-quick 'quick-no-vio2vo)
+      :style radio
+      :selected (eq coq-compile-quick 'quick-no-vio2vo)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Compile with -quick, accept existing .vo's, don't run vio2vo"]
+     ["quick and vio2vo"
+      (customize-set-variable 'coq-compile-quick 'quick-and-vio2vo)
+      :style radio
+      :selected (eq coq-compile-quick 'quick-and-vio2vo)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Compile with -quick, accept existing .vo's, run vio2vo later"]
+     ["ensure vo"
+      (customize-set-variable 'coq-compile-quick 'ensure-vo)
+      :style radio
+      :selected (eq coq-compile-quick 'ensure-vo)
+      :active (and coq-compile-before-require
+                   coq-compile-parallel-in-background)
+      :help "Ensure only vo's are used for consistency"]
+     )
+    ("Auto Save"
+     ["Query coq buffers"
+      (customize-set-variable 'coq-compile-auto-save 'ask-coq)
+      :style radio
+      :selected (eq coq-compile-auto-save 'ask-coq)
+      :active coq-compile-before-require
+      :help "Ask for each coq-mode buffer, except the current buffer"]
+     ["Query all buffers"
+      (customize-set-variable 'coq-compile-auto-save 'ask-all)
+      :style radio
+      :selected (eq coq-compile-auto-save 'ask-all)
+      :active coq-compile-before-require
+      :help "Ask for all buffers"]
+     ["Autosave coq buffers"
+      (customize-set-variable 'coq-compile-auto-save 'save-coq)
+      :style radio
+      :selected (eq coq-compile-auto-save 'save-coq)
+      :active coq-compile-before-require
+      :help "Save all Coq buffers without confirmation, except the current one"]
+     ["Autosave all buffers"
+      (customize-set-variable 'coq-compile-auto-save 'save-all)
+      :style radio
+      :selected (eq coq-compile-auto-save 'save-all)
+      :active coq-compile-before-require
+      :help "Save all buffers without confirmation"]
+     )
+    ["Lock Ancestors"
+     coq-lock-ancestors-toggle
+     :style toggle
+     :selected coq-lock-ancestors
+     :active coq-compile-before-require
+     :help "Lock files of imported modules"]
+    ["Confirm External Compilation"
+     coq-confirm-external-compilation-toggle
+     :style toggle
+     :selected coq-confirm-external-compilation
+     :active (and coq-compile-before-require
+                  (not (equal coq-compile-command "")))
+     :help "Confirm external compilation command, see `coq-compile-command'."]
+    ["Abort Background Compilation"
+     coq-par-emergency-cleanup
+     :active (and coq-compile-before-require
+                  coq-compile-parallel-in-background)
+     :help "Abort background compilation and kill all compilation processes."])
+  "Menu of the compilation of the Requires, for all backends.")
 
 (provide 'coq-compile-common)
 

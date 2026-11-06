@@ -24,12 +24,23 @@
                (expand-file-name
                 (file-name-directory (or load-file-name buffer-file-name)))))
 
+;; Syntax utilities and faces of Proof General (generic/proof-syntax.el)
+;; are used even without the Proof General backend.
+(unless (locate-library "proof-syntax")
+  (add-to-list 'load-path
+               (expand-file-name
+                "../generic/"
+                (file-name-directory (or load-file-name buffer-file-name)))))
+
 ;; (if t (require 'coq nil 'noerror))
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
 (require 'pg-double-hit)
 (require 'coq-queries)                  ; common to all backends
 (require 'coq-templates)                ; abbrevs and yasnippets, idem
+
+(declare-function coq-pg-setup "coq")   ; coq.el requires this file
+(require 'coq-project)                  ; load path and project file, idem
 
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
@@ -77,8 +88,19 @@ With then 2025 new CLI \\+`rocq', this command only return \\+`rocq'."
   :type 'string)
 
 (defcustom coq-use-pg t
-  "If non-nil, activate the ProofGeneral backend."
+  "If non-nil, activate the ProofGeneral backend.
+Obsolete, use `coq-backend' instead."
   :type 'boolean)
+(make-obsolete-variable 'coq-use-pg 'coq-backend "4.6")
+
+(defcustom coq-backend (if (with-no-warnings coq-use-pg) 'pg nil)
+  "Backend used by `coq-mode' to interact with Coq.
+- `pg': the Proof General backend, running Coq in a shell.
+- nil: no interaction with Coq, edition only.
+This must be set before `coq-mode' is loaded, changing it afterwards
+has no effect until Emacs is restarted."
+  :type '(choice (const :tag "Proof General" pg)
+                 (const :tag "None" nil)))
 
 ;; The double hit is generic, see pg-double-hit.el.  Here for both
 ;; backends.
@@ -134,20 +156,24 @@ and `proof-double-hit-enable'.  Bind another key to this command in
   (let ((map (make-sparse-keymap)))
     ;; In all backends, see `coq-terminator-insert-function'.
     (define-key map (kbd ".") #'coq-terminator-insert)
-    ;; Queries, in all backends, see `coq-query-function'.
-    (define-key map (kbd "C-c C-a C-a") #'coq-Search)
-    (define-key map (kbd "C-c C-a C-b") #'coq-About)
-    (define-key map (kbd "C-c C-a C-c") #'coq-Check)
-    (define-key map (kbd "C-c C-a C-o") #'coq-SearchIsos)
-    (define-key map (kbd "C-c C-a C-p") #'coq-Print)
-    (define-key map (kbd "C-c C-a C-q") #'coq-query)
-    (define-key map (kbd "C-c C-a C-l") #'coq-LocateConstant)
-    (define-key map (kbd "C-c C-a C-n") #'coq-LocateNotation)
-    (define-key map (kbd "C-c C-a h") #'coq-PrintHint)
+    ;; Queries and display, in all backends, also in the goals and
+    ;; response buffers.
+    (coq-queries-define-keys map)
     ;; Insertions built from a query, see `coq-query-result-function'.
     (define-key map (kbd "C-c C-a C-i") #'coq-insert-intros)
     (define-key map (kbd "C-c C-a C-m") #'coq-insert-match)
     (define-key map (kbd "C-c C-a C-g") #'coq-insert-named-goal-selectors)
+    ;; "as [xxx]", see `coq-processed-end-function'
+    (define-key map (kbd "C-c C-a [") #'coq-insert-as-in-next-command)
+    ;; Insertions without backend, see coq-templates.el.
+    (define-key map (kbd "C-c C-a C-(") #'coq-insert-section-or-module)
+    (define-key map (kbd "C-c C-a C-)") #'coq-end-Section)
+    (define-key map (kbd "C-c C-a C-t") #'coq-insert-tactic)
+    (define-key map (kbd "C-c C-a t") #'coq-insert-tactical)
+    (define-key map (kbd "C-c C-a !") #'coq-insert-solve-tactic)
+    (define-key map (kbd "C-c C-a C-SPC") #'coq-insert-term)
+    (define-key map (kbd "C-c C-a C-<return>") #'coq-insert-command)
+    (define-key map (kbd "C-c C-a C-r") #'coq-insert-requires)
     map)
   "Keymap for `coq-mode'.")
 
@@ -236,7 +262,7 @@ Near here means PT is either inside or just aside of a comment."
 (add-to-list 'auto-mode-alist '("\\.v\\'" . coq-mode))
 
 (defalias 'coq--parent-mode
-  (if coq-use-pg 'proof-mode 'prog-mode))
+  (if (eq coq-backend 'pg) 'proof-mode 'prog-mode))
 
 ;;;###autoload
 (define-derived-mode coq-mode coq--parent-mode "Coq"
@@ -288,8 +314,13 @@ Near here means PT is either inside or just aside of a comment."
   ;; abbrevs and yasnippet templates, in all backends
   (coq-templates-setup)
 
-  ;; Setup Proof-General interface to Coq.
-  (if coq-use-pg (coq-pg-setup))
+  ;; load path from the project file, in all backends, after the
+  ;; file/dir local variables, which may override it
+  (add-hook 'hack-local-variables-hook #'coq-load-project-file nil t)
+
+  ;; Setup the interface to Coq.
+  (pcase coq-backend
+    ('pg (coq-pg-setup)))
 
   ;; font-lock
   (setq-local font-lock-defaults '(coq-font-lock-keywords-1))
