@@ -194,126 +194,68 @@ version detection that Proof General does automatically."
   :type 'boolean
   :group 'coq)
 
+(defun coq--version-at-least (version default)
+  "Return non-nil if the auto-detected version of Coq is >= VERSION.
+If the version cannot be detected, use DEFAULT instead.  Return nil if
+it is not a valid version number."
+  (not (coq--version< (or (coq-version t) default) version)))
+
+(defun coq--version-before (version default)
+  "Return non-nil if the auto-detected version of Coq is < VERSION.
+If the version cannot be detected, use DEFAULT instead.  Return nil if
+it is not a valid version number."
+  (coq--version< (or (coq-version t) default) version))
+
 (defun coq--pre-v85 ()
   "Return non-nil if the auto-detected version of Coq is < 8.5.
 Returns nil if the version can't be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.5snapshot")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-before "8.5snapshot" "8.5"))
 
 (defun coq--post-v86 ()
   "Return t if the auto-detected version of Coq is >= 8.6.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.6"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.6" "8.5"))
 
 (defun coq--post-v809 ()
   "Return t if the auto-detected version of Coq is >= 8.9.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.8")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.10alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.10alpha" "8.8"))
 
 (defun coq--post-v810 ()
   "Return t if the auto-detected version of Coq is >= 8.10.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.9")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.10alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.10alpha" "8.9"))
 
 (defun coq--post-v811 ()
   "Return t if the auto-detected version of Coq is >= 8.11.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.10")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.11"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.11" "8.10"))
 
 (defun coq--post-v814 ()
   "Return t if the auto-detected version of Coq is >= 8.14.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.13")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.14"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.14" "8.13"))
 
 (defun coq--pre-v816 ()
   "Return t if the auto-detected version of Coq is < 8.16.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.16")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.16")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-before "8.16" "8.16"))
 
 (defun coq--is-v817 ()
   "Return t if the auto-detected version of Coq is some 8.17 version.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.16")))
-    (condition-case err
-	(and  (not (coq--version< coq-version-to-use "8.17"))
-              (coq--version< coq-version-to-use "8.18alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (and (coq--version-at-least "8.17" "8.16")
+       (coq--version-before "8.18alpha" "8.16")))
 
 (defun coq--post-v818 ()
   "Return t if the auto-detected version of Coq is >= 8.19alpha.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.18")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.19alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.19alpha" "8.18"))
 
 (defun coq--post-v92 ()
   "Return t if the auto-detected version of Coq is >= 9.2+alpha.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "9.1")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "9.2+alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "9.2+alpha" "9.1"))
 
 (defun coq--supports-topfile ()
   "Return t if \"-topfile\" appears in coqtop options."
