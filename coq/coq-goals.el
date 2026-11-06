@@ -23,6 +23,7 @@
 
 (require 'subr-x)
 (require 'seq)
+(require 'pg-pamacs)                    ; proof-deftoggle
 
 (defcustom coq-prefer-top-of-conclusion nil
   "Prefer start of the conclusion over its end when displaying large goals.
@@ -53,6 +54,20 @@ at the width of the response window."
   :type 'boolean
   :safe 'booleanp
   :group 'coq)
+
+(proof-deftoggle coq-auto-adapt-printing-width)
+
+(defcustom coq-show-proof-stepwise nil
+  "Display the proof terms stepwise in the *response* buffer.
+This option can be combined with option `coq-diffs'.
+It is mostly useful in three window mode, see also
+`proof-three-window-mode-policy' for details."
+
+  :type 'boolean
+  :safe 'booleanp
+  :group 'coq-auto-compile)
+
+(proof-deftoggle coq-show-proof-stepwise)
 
 (defcustom coq-optimise-resp-windows-enable t
   "If non-nil (default), resize the goals and response windows to their content.

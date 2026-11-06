@@ -30,6 +30,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** The toggle commands of the user options of Proof General
+    (`proof-three-window-toggle', `proof-electric-terminator-toggle'…),
+    of `coq-show-proof-stepwise' and of `coq-auto-adapt-printing-width'
+    (new `coq-auto-adapt-printing-width-toggle'), and `coq-Compile', are
+    defined without the proof shell, for all Coq backends.
 *** The compilation of the Requires before they are processed (see
     `coq-compile-before-require') does not depend on the proof shell
     any more: other Coq backends can use it, with its options and its
