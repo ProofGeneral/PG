@@ -1021,12 +1021,13 @@ present, current pg display mode and current geometry otherwise."
      (t nil) ;; assert false?
      )))
 
-(defun coq-adapt-printing-width (&optional show width)
+(defun coq-adapt-printing-width (&optional show width force)
   "Sends a Set Printing Width command to Coq to fit the response window's WIDTH.
 A Show command is also issued if SHOW is non-nil, so that the goal is
-redisplayed."
+redisplayed.  Nothing is done if `coq-auto-adapt-printing-width' is nil,
+unless FORCE is non-nil."
   (interactive)
-  (when coq-auto-adapt-printing-width
+  (when (or force coq-auto-adapt-printing-width)
     (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
       ;; if no available width, or unchanged, do nothing
       (when (and wdth (not (equal wdth coq-shell-current-line-width)))
@@ -1043,10 +1044,13 @@ redisplayed."
   (coq-adapt-printing-width t width))
 
 (defun coq-ask-adapt-printing-width-and-show ()
+  "Ask for a printing width, set it in Coq and show the goals again.
+Even if `coq-auto-adapt-printing-width' is nil: the user asked for it.
+This is `coq-ask-printing-width-function' for Proof General."
   (interactive)
   (let* ((deflt (coq-goals-window-width))
          (rd (read-number (format "Width (%S): " deflt) deflt)))
-    (coq-adapt-printing-width t rd)))
+    (coq-adapt-printing-width t rd t)))
 
 ;;;;; utils fo overlays
 (defun coq-overlays-at (pt prop)
