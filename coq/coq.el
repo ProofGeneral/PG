@@ -176,6 +176,10 @@ In `proof-shell-before-process-hook'."
   ;; with proof-prog-name-ask or by customizing them. When
   ;; the prover is set by hand, we try to find coqdep and
   ;; coqc in the same directory
+  ;; A file variable coq-prog-name is set after coq-pg-setup copied
+  ;; coq-prog-name to proof-prog-name: copy it again, unless asked.
+  (when (and (not proof-prog-name-ask) (local-variable-p 'coq-prog-name))
+    (setq proof-prog-name coq-prog-name))
   (if (and (or proof-prog-name-ask (coq--user-set-p 'coq-prog-name))
            proof-prog-name)
       ;; let us find other executables in the exact same
