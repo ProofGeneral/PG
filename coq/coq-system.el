@@ -219,7 +219,7 @@ Return nil if the version cannot be detected."
 (defun coq--post-v809 ()
   "Return t if the auto-detected version of Coq is >= 8.9.
 Return nil if the version cannot be detected."
-  (coq--version-at-least "8.10alpha" "8.8"))
+  (coq--version-at-least "8.9alpha" "8.8"))
 
 (defun coq--post-v810 ()
   "Return t if the auto-detected version of Coq is >= 8.10.
