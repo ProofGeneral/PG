@@ -33,6 +33,8 @@
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
 (defvar coq-set-flag-function)
+(defvar coq-set-search-blacklist-function)
+(defvar coq-search-blacklist-current-string)
 (defvar coq-processed-end-function)
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
@@ -63,6 +65,8 @@
 (declare-function coq-pg-query-result "coq")
 (declare-function coq-pg-show-at-point "coq")
 (declare-function coq-pg-set-flag "coq")
+(declare-function coq-pg-set-search-blacklist "coq")
+(declare-function coq-change-search-blacklist "coq-queries")
 (declare-function coq-ask-adapt-printing-width-and-show "coq")
 (declare-function coq-set-printing-parentheses "coq-queries")
 (declare-function coq-unset-printing-parentheses "coq-queries")
@@ -228,6 +232,20 @@ the response at the top of the buffer *response-freeze*."
     (coq-unset-printing-parentheses)
     (coq-test-queries-wait)
     (should-not (coq-flag-is-on-p "Test Printing Parentheses."))))
+
+(ert-deftest coq-test-queries-search-blacklist ()
+  "The search blacklist is replaced in Coq with Proof General."
+  (coq-test-queries-with-file
+    (should (eq coq-set-search-blacklist-function
+                #'coq-pg-set-search-blacklist))
+    (let ((coq-search-blacklist-current-string
+           coq-search-blacklist-current-string))
+      (coq-change-search-blacklist "\"foo_\"")
+      (coq-test-queries-wait)
+      (should (equal coq-search-blacklist-current-string "\"foo_\""))
+      (let ((table (coq-query-result "Print Table Search Blacklist")))
+        (should (string-match-p "foo_" table))
+        (should-not (string-match-p "Private_" table))))))
 
 (ert-deftest coq-test-queries-insert-as ()
   "`coq-insert-as-in-next-command' inserts the names given by infoH in the

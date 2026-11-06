@@ -35,6 +35,8 @@
 (defvar coq-par-abort-function)
 (defvar coq-lock-ancestors)
 (defvar coq-compile-menu)
+(defvar coq-set-search-blacklist-function)
+(defvar coq-search-blacklist-current-string)
 (defvar coq-insert-menu)
 
 (declare-function coq-run-query "coq-queries")
@@ -50,6 +52,7 @@
 (declare-function coq-insert-intros "coq-queries")
 (declare-function coq-goals-count "coq-goals")
 (declare-function coq-par-start-compilation "coq-par-compile")
+(declare-function coq-change-search-blacklist "coq-queries")
 (declare-function coq-insert-as-in-next-command "coq-queries")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-tactical "coq-templates")
@@ -253,6 +256,18 @@ interface functions.  Return released or failed."
           (should (equal (car coq-compile-menu) "Auto Compilation"))
           (should (commandp 'coq-compile-before-require-toggle)))
       (delete-directory dir t))))
+
+(ert-deftest coq-test-without-pg-search-blacklist ()
+  "The search blacklist goes through the function of the backend."
+  (coq-test-without-pg-with-file
+    (should-error (coq-change-search-blacklist "\"foo_\"") :type 'user-error)
+    (let ((coq-search-blacklist-current-string "\"Private_\"")
+          args)
+      (setq-local coq-set-search-blacklist-function
+                  (lambda (old new) (setq args (list old new))))
+      (coq-change-search-blacklist "\"foo_\"")
+      (should (equal args '("\"Private_\"" "\"foo_\"")))
+      (should (equal coq-search-blacklist-current-string "\"foo_\"")))))
 
 (provide 'coq-test-without-pg)
 

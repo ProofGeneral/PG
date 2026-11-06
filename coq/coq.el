@@ -161,28 +161,6 @@ These are appended at the end of `coq-shell-init-cmd'."
   :type '(repeat string)
   :group 'coq)
 
-;; Default coq is only Private_ and _subproof
-(defcustom coq-search-blacklist-string ; add this? \"_ind\" \"_rect\" \"_rec\"
- "\"Private_\" \"_subproof\""
-  "Initial strings to blacklist in requests to Coq environment.
-If you are setting this via Emacs customization menus, you should
-restart Coq to see the effect.  To change blacklist during a Coq
-development, please use \\[coq-change-search-blacklist-interactive]
-instead (or menu: Coq/Settings/Search Blacklist)."
-  :type 'string
-  :group 'coq)
-
-;; Coq has no command to overwrite the current blacklist, only to add or remove
-;; particular strings. To provide the overwrite feature to the user we thus need
-;; to know the current value of blacklist to first remove everything, then add
-;; the new values.
-;;; TODO: retrieve the value from coq itself and remove this variable?
-(defvar coq-search-blacklist-current-string coq-search-blacklist-string
-  "Current value of Coq Search Blacklist.
-This may become desynchronized with Coq if you use the command
-\"Add/Remove Search Blacklist\" in you script." )
-
-
 ;; Detecting coqtop or rocq args should happen at the last moment
 ;; before calling the process. In particular it should happen after
 ;; that proof-prog-name-ask is performed. This hook is exactly called
@@ -1231,6 +1209,7 @@ backends call them."
   (setq coq-query-result-function #'coq-pg-query-result)
   (setq coq-show-at-point-function #'coq-pg-show-at-point)
   (setq coq-set-flag-function #'coq-pg-set-flag)
+  (setq coq-set-search-blacklist-function #'coq-pg-set-search-blacklist)
   (setq coq-processed-end-function #'proof-unprocessed-begin)
   (setq coq-ask-printing-width-function
         #'coq-ask-adapt-printing-width-and-show))
@@ -1543,23 +1522,15 @@ Set Diffs setting if Coq is running and has a version >= 8.10."
 ;; state: unnoticed by the user, and desynched from
 ;; coq-search-blacklist-current-string.
 ;; TODO: have a way to detect error and re-set old value.
-(defun coq-change-search-blacklist (s)
-  (let* ((cmd-clean (list (format "Remove Search Blacklist %s."
-                                  coq-search-blacklist-current-string)))
+(defun coq-pg-set-search-blacklist (old new)
+  "Replace the search blacklist OLD of Coq by NEW.
+This is `coq-set-search-blacklist-function' for Proof General."
+  (proof-shell-ready-prover)
+  (let* ((cmd-clean (list (format "Remove Search Blacklist %s." old)))
          (item-clean `(nil ,cmd-clean proof-done-invisible 'invisible))
-         (cmd-set (list (format "Add Search Blacklist %s." s)))
+         (cmd-set (list (format "Add Search Blacklist %s." new)))
          (item-set `(nil ,cmd-set proof-done-invisible 'invisible)))
   (proof-add-to-queue `(,item-clean ,item-set) 'advancing)))
-
-(defun coq-change-search-blacklist-interactive ()
-  (interactive)
-  (proof-shell-ready-prover)
-  (let* ((current-value coq-search-blacklist-current-string)
-         (s (read-string
-             "Set search blacklist to: "
-             current-value 'proof-minibuffer-history)))
-    (coq-change-search-blacklist s)
-    (setq coq-search-blacklist-current-string s)))
 
 ;; (defpacustom search-blacklist coq-search-blacklist-string
 ;;   "Strings to blacklist in requests to Coq environment."
