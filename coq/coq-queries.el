@@ -881,7 +881,7 @@ level of its Coq menu.")
     ["Unset Printing Unfocused" coq-unset-printing-unfocused t]
     ["Set Printing Wildcards" coq-set-printing-wildcards t]
     ["Unset Printing Wildcards" coq-unset-printing-wildcards t]
-    ["Set Printing Width" coq-ask-adapt-printing-width-and-show t])
+    ["Set Printing Width" coq-ask-printing-width t])
   "Menu of the printing options, common to all Coq backends.
 The flags go through `coq-set-flag-function', the width through
 `coq-ask-printing-width-function'.")
