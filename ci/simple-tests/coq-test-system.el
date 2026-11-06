@@ -6,7 +6,9 @@
 
 ;;; Commentary:
 ;;
-;; Test the cache of `coq-detect-rocq-cli'.  Coq is not started.
+;; Test the cache of `coq-detect-rocq-cli' and the round trip between
+;; the options of a project file and `coq-load-path'.  Coq is not
+;; started.
 
 ;;; Code:
 
@@ -18,8 +20,12 @@
 (require 'coq-system)
 
 (defvar coq--rocq-cli-cache)
+(defvar coq-load-path-include-current)
 
 (declare-function coq-detect-rocq-cli "coq-system")
+(declare-function coq--read-options-from-project-file "coq-project")
+(declare-function coq--extract-load-path "coq-project")
+(declare-function coq-include-options "coq-project")
 
 
 (ert-deftest coq-test-system-rocq-cli-cache ()
@@ -49,6 +55,24 @@
       (should-not (coq-detect-rocq-cli "missing"))
       (should-not (coq-detect-rocq-cli "missing"))
       (should (equal (cl-count "missing" calls :test #'equal) 2)))))
+
+(defun coq-test-system-roundtrip (project pre-v85)
+  "Return non-nil if the include options of PROJECT survive a round trip.
+Read as `coq-load-path' then printed back, with PRE-V85 compatibility."
+  (with-no-warnings                     ; obsolete variable
+    (let* ((parsed (coq--read-options-from-project-file project))
+           (coq-load-path-include-current nil)
+           (extracted (coq--extract-load-path parsed nil)))
+      (equal (apply #'append parsed)
+             (coq-include-options extracted nil pre-v85)))))
+
+(ert-deftest coq-test-system-options-roundtrip ()
+  "The include options of a project file are printed back unchanged."
+  (dolist (project '("-Q /test Test" "-Q /test \"\"" "-R /test Test" "-I /test"))
+    (should (coq-test-system-roundtrip project nil)))
+  ;; Coq < 8.5 has no -Q
+  (dolist (project '("-R /test Test" "-I /test"))
+    (should (coq-test-system-roundtrip project t))))
 
 (provide 'coq-test-system)
 

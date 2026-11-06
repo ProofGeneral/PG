@@ -288,37 +288,6 @@ Set to t if you want this feature, but note that it is deprecated."
   :type 'string
   :group 'coq)
 
-(defun coq--options-test-roundtrip-1 (coq-project parsed pre-v85)
-  "Run a sanity check on COQ-PROJECT's PARSED options.
-If PRE-V85 is non-nil, use compatibility mode."
-  (let* ((concatenated (apply #'append parsed))
-         (coq-load-path-include-current nil)
-         (extracted (coq--extract-load-path parsed nil))
-         (roundtrip (coq-include-options extracted nil pre-v85)))
-    (princ (format "[%s] with compatibility flag set to %S: " coq-project pre-v85))
-    (if (equal concatenated roundtrip)
-        (princ "OK\n")
-      (princ (format "Failed.\n:: Original:  %S\n:: LoadPath: %S\n:: Roundtrip: %S\n"
-                     concatenated extracted roundtrip)))))
-
-(defun coq--options-test-roundtrip (coq-project &optional v85-only)
-  "Run a sanity check on COQ-PROJECT.
-If V85-ONLY is non-nil, do not check the compatibility code."
-  (let ((parsed (coq--read-options-from-project-file coq-project)))
-    (coq--options-test-roundtrip-1 coq-project parsed nil)
-    (unless v85-only
-      (coq--options-test-roundtrip-1 coq-project parsed t))))
-
-(defun coq--options-test-roundtrips ()
-  "Run sanity tests on coq-project parsing code.
-More precisely, check that parsing and reprinting the include
-options of a few coq-project files does the right thing."
-  (with-output-to-temp-buffer "*tests*"
-    (coq--options-test-roundtrip "-Q /test Test")
-    (coq--options-test-roundtrip "-Q /test \"\"")
-    (coq--options-test-roundtrip "-R /test Test")
-    (coq--options-test-roundtrip "-I /test")))
-
 ;; it is better to inform coqtop of the name of the current module
 ;; using the -topfile option, so that coqtop understands references
 ;; to it. But don't insist if this would fail (because of wrong
