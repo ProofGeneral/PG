@@ -38,6 +38,7 @@
 (defvar coq-set-search-blacklist-function)
 (defvar coq-search-blacklist-current-string)
 (defvar coq-insert-menu)
+(defvar coq-mode-map)
 (defvar proof-output-tooltips)
 (defvar proof-electric-terminator-enable)
 (defvar coq-show-proof-stepwise)
@@ -344,6 +345,26 @@ interface functions.  Return released or failed."
     (should (memq 'coq-ask-printing-width
                   (coq-test-without-pg-menu-commands (cdr coq-options-menu))))
     (should-not (featurep 'proof-shell))))
+
+;; key bindings of the user
+
+(ert-deftest coq-test-without-pg-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply without PG.
+Also those of `local-set-key' in `coq-mode-hook', which changes
+`coq-mode-map'.  See also `coq-test-queries-user-keys'."
+  (let ((hook (lambda () (local-set-key (kbd "C-c z") #'coq-About))))
+    (unwind-protect
+        (progn
+          (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (add-hook 'coq-mode-hook hook)
+          (coq-test-without-pg-with-file
+            (should (eq (current-local-map) coq-mode-map))
+            (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+            (should (eq (key-binding (kbd "C-c z")) #'coq-About))
+            (should (eq (lookup-key coq-mode-map (kbd "C-c z")) #'coq-About))))
+      (remove-hook 'coq-mode-hook hook)
+      (define-key coq-mode-map (kbd "C-c y") nil)
+      (define-key coq-mode-map (kbd "C-c z") nil))))
 
 (provide 'coq-test-without-pg)
 

@@ -4400,6 +4400,16 @@ Coq mode only edits Coq files, without loading Proof General.  The
 older option @code{coq-use-pg} is obsolete, it gives the default value
 of @code{coq-backend}.
 
+@vindex coq-mode-map
+Key bindings defined in @code{coq-mode-map} (including with
+@code{local-set-key} in @code{coq-mode-hook}) apply to all Coq backends;
+those in @code{proof-mode-map} only to Proof General.  To keep your key
+bindings with another backend, define them in @code{coq-mode-map},
+preferably on commands common to all backends, like the queries
+(@code{coq-Check}, @code{coq-Search}@dots{}).  With Proof General, the
+key bindings of @code{coq-mode-map} have priority over those of
+@code{proof-mode-map}.
+
 @menu
 * Coq-specific commands::
 * Using the Coq project file::

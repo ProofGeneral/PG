@@ -29,6 +29,7 @@
 (defvar proof-response-buffer)
 (defvar proof-goals-buffer)
 (defvar coq-mode-map)
+(defvar proof-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
@@ -42,6 +43,7 @@
 (defvar coq-use-yasnippet)
 (defvar coq-menu-common-entries)
 
+(declare-function coq-Print "coq-queries")
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
 (declare-function coq-flag-is-on-p "coq")
@@ -150,6 +152,23 @@ Proof General still work."
       (should (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))
     (with-current-buffer proof-response-buffer
       (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win)))))
+
+(ert-deftest coq-test-queries-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply with Proof General.
+Before those of `proof-mode-map', also on a key of Proof General.  Those
+of `proof-mode-map' apply too.  See also `coq-test-without-pg-user-keys'."
+  (unwind-protect
+      (progn
+        (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+        (define-key coq-mode-map (kbd "C-c C-t") #'coq-About)
+        (define-key proof-mode-map (kbd "C-c x") #'coq-Print)
+        (coq-test-queries-with-file
+          (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+          (should (eq (key-binding (kbd "C-c C-t")) #'coq-About))
+          (should (eq (key-binding (kbd "C-c x")) #'coq-Print))))
+    (define-key coq-mode-map (kbd "C-c y") nil)
+    (define-key coq-mode-map (kbd "C-c C-t") nil)
+    (define-key proof-mode-map (kbd "C-c x") nil)))
 
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
