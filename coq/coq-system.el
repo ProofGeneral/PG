@@ -24,7 +24,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'proof)
 (require 'coq-mode)                     ;for coq-prog-name
 (require 'coq-project)                  ;load path and project file
 
@@ -34,6 +33,8 @@
 
 (defvar coq-prog-args)
 (defvar coq-debug)
+;; Set by the backend, see `coq-pg-detect-programs' for Proof General.
+(defvar proof-prog-name)
 
 ;; Regular files should be of the form "valid_modulename.v" coq
 ;; accepts lots of things as letter, this is probably much stricter.
@@ -55,7 +56,8 @@ On Windows you might need something like:
 (defun coq-detect-rocq-cli (&optional coq-command)
   "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI.
 If COQ-COMMAND is non nil, test this executable instead."
-  (let* ((coq-command (or coq-command proof-prog-name (coq-autodetect-progname))))
+  (let* ((coq-command (or coq-command (bound-and-true-p proof-prog-name)
+                              (coq-autodetect-progname))))
     (condition-case nil
         (string-match
          "Supported subcommands:"
@@ -140,7 +142,8 @@ fails.  Return also nil on other kinds of errors (e.g., `coq-prog-name'
 not found).
 This function supports calling coqtop via tramp.
 This function must not rely on coq-autodetect-version, it would be a cycle."
-  (let* ((coq-command (or proof-prog-name coq-prog-name (coq-autodetect-progname)))
+  (let* ((coq-command (or (bound-and-true-p proof-prog-name) coq-prog-name
+                          (coq-autodetect-progname)))
          ;; test the executable we call, not another one
          (coq-args (if (coq-detect-rocq-cli coq-command) (list "top" option) (list option)))
          retv)
@@ -437,51 +440,9 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (coq-autodetect-help)
   (coq-coqtop-prog-args coq-load-path))
 
-;; Detecting coqtop or rocq args should happen at the last moment
-;; before calling the process. In particular it should happen after
-;; that proof-prog-name-ask is performed. This hook is exactly called
-;; after querying proof-prog-name (if proof-prog-name-ask is t). This
-;; way the options can be elaborated correctly (coqtop and rocq have
-;; different options). We first detect executables (taking
-;; proof-prog-name-ask into account), then elaborate the
-;; proof-prog-args. Note: we don't support proof-prog-name-guess
 (defun coq--user-set-p (symbol)
   "Return non-nil if the user set option SYMBOL with customize."
   (or (get symbol 'saved-value) (get symbol 'customized-value)))
-
-(add-hook 'proof-shell-before-process-hook
-          (lambda ()
-            ;; detect executables unless explicitely set by hand,
-            ;; with proof-prog-name-ask or by customizing them. When
-            ;; the prover is set by hand, we try to find coqdep and
-            ;; coqc in the same directory
-            (if (and (or proof-prog-name-ask (coq--user-set-p 'coq-prog-name))
-                     proof-prog-name)
-                ;; let us find other executables in the exact same
-                ;; place. TODO: go back to default exec-path if not found?
-                (let ((exec-path (if (file-name-directory proof-prog-name)
-                                     (list (file-name-directory proof-prog-name))
-                                   exec-path)))
-                  (unless (coq--user-set-p 'coq-compiler)
-                    (setq coq-compiler (executable-find (coq-detect-coqc))))
-                  (unless (coq--user-set-p 'coq-dependency-analyzer)
-                    (setq coq-dependency-analyzer (executable-find (coq-detect-coqdep)))))
-              ;; default: detect everything from the current exec-path
-              (setq proof-prog-name (coq-autodetect-progname))
-              (unless (coq--user-set-p 'coq-compiler)
-                (setq coq-compiler (coq-detect-coqc)))
-              (unless (coq--user-set-p 'coq-dependency-analyzer)
-                (setq coq-dependency-analyzer (coq-detect-coqdep))))
-            (when coq-debug
-              (message "coq-proof-prog-name: %S" proof-prog-name)
-              (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
-              (message "coq-compiler: %S"  coq-compiler))
-            ;; in principe coq-prog-name is only used to set up
-            ;; proof-prog-name, but it may sometimes be used by itself
-            ;; so let us sync them
-            (setq coq-prog-name proof-prog-name)
-            ;; now elaborate args
-            (setq coq-prog-args (coq-prog-args))))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook

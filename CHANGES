@@ -30,6 +30,10 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
+*** The compilation of the Requires before they are processed (see
+    `coq-compile-before-require') does not depend on the proof shell
+    any more: other Coq backends can use it, with its options and its
+    menu `coq-compile-menu'.
 *** New option `coq-backend' choosing how Coq mode interacts with Coq:
     `pg' (Proof General, the default) or nil (edition only, without
     loading the Proof General machinery).  It replaces `coq-use-pg',

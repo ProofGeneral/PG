@@ -28,6 +28,7 @@
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-system)
+(require 'proof-shell)
 
 (declare-function proof-goto-point "pg-user")
 (declare-function proof-unprocessed-begin "proof-script")

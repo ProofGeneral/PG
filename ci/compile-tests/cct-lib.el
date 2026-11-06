@@ -35,6 +35,7 @@
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
 (require 'coq-compile-common)
+(require 'proof-shell)
 (require 'ert)
 
 
