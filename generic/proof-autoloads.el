@@ -34,14 +34,6 @@
 
 ;;;***
 
-;;;### (autoloads nil "../coq/coq-autotest" "../coq/coq-autotest.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ../coq/coq-autotest.el
-
-(autoload 'coq-autotest "../coq/coq-autotest" nil t nil)
-
-;;;***
-
 ;;;### (autoloads nil "../coq/coq-compile-common" "../coq/coq-compile-common.el"
 ;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../coq/coq-compile-common.el
