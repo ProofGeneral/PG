@@ -414,7 +414,7 @@ query."
 
 (ert-deftest coq-test-queries-menu-commands ()
   "The menu entries of the printing flags run the flag they name."
-  (require 'coq-abbrev)
+  (require 'coq)                       ; the menus, formerly coq-abbrev.el
   (let (entries)
     (cl-labels ((walk (menu)
                   (dolist (item menu)
