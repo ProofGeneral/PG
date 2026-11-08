@@ -27,7 +27,7 @@
 (require 'subr-x)                       ; `string-trim-right'
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
-(require 'coq-hyps)                     ; `coq-highlight-hyps-cited-in-response'
+(require 'coq-goals)                    ; `coq-highlight-hyps-cited-in-response'
 (require 'coq-indent)                   ; `coq-script-parse-cmdend-forward'
 
 (defvar proof-minibuffer-history)

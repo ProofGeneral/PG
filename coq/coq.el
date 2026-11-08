@@ -59,7 +59,6 @@
 (require 'coq-diffs)                    ; highlight proof diffs
 (require 'coq-goals)                    ; folding of the other goals
 (require 'coq-queries)                  ; About, Check, Search etc.
-(require 'coq-hyps)                     ; folding and highlighting of hypotheses
 (require 'pg-goals-indicators)          ; goals out of view
 (require 'pg-double-hit)                ; double hit electric terminator
 

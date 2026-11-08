@@ -33,14 +33,14 @@
 (declare-function proof-shell-exit "proof-shell")
 (declare-function coq-run-query "coq-queries")
 (declare-function coq-search-done "coq-queries")
-(declare-function coq-toggle-fold-hyp-at-point "coq-hyps")
-(declare-function coq-toggle-fold-hyp-at-mouse "coq-hyps")
-(declare-function coq-toggle-fold-hyp "coq-hyps")
-(declare-function coq-unfold-hyps "coq-hyps")
-(declare-function coq-toggle-highlight-hyp-at-point "coq-hyps")
-(declare-function coq-toggle-highlight-hyp "coq-hyps")
-(declare-function coq-unhighlight-selected-hyps "coq-hyps")
-(declare-function coq-insert-at-point-hyp-at-mouse "coq-hyps")
+(declare-function coq-toggle-fold-hyp-at-point "coq-goals")
+(declare-function coq-toggle-fold-hyp-at-mouse "coq-goals")
+(declare-function coq-toggle-fold-hyp "coq-goals")
+(declare-function coq-unfold-hyps "coq-goals")
+(declare-function coq-toggle-highlight-hyp-at-point "coq-goals")
+(declare-function coq-toggle-highlight-hyp "coq-goals")
+(declare-function coq-unhighlight-selected-hyps "coq-goals")
+(declare-function coq-insert-at-point-hyp-at-mouse "coq-goals")
 
 
 ;;; utility functions

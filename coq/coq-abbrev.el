@@ -22,7 +22,7 @@
 (require 'proof)
 (require 'coq-syntax)
 (require 'coq-templates)                ; abbrevs and yasnippets
-(require 'coq-hyps)                     ; menu of the hypotheses
+(require 'coq-goals)                    ; menu of the hypotheses
 (require 'coq-compile-common)           ; menu of the compilation
 (require 'coq-queries)                  ; menus of the queries and options
 (require 'coq-project)                  ; menu of the project file
