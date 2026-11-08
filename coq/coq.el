@@ -56,7 +56,6 @@
 (require 'coq-abbrev)                   ; abbrev and coq specific menu
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-(require 'coq-diffs)                    ; highlight proof diffs
 (require 'coq-goals)                    ; folding of the other goals
 (require 'coq-queries)                  ; About, Check, Search etc.
 (require 'pg-goals-indicators)          ; goals out of view
