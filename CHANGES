@@ -30,12 +30,11 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-goals-scroll-margin'.
 
 ** Coq changes
-*** Fewer files in coq/: the code of coq-hyps.el and coq-diffs.el is
-    in coq-goals.el, of coq-abbrev.el in coq.el, of coq-local-vars.el
-    in coq-project.el.  The old files remain as compatibility files,
-    which will be removed: require the new ones instead.
-    `with-eval-after-load' of the old features still works.  The unused
-    coq-autotest.el is removed.
+*** Fewer files in coq/: the code of coq-diffs.el is in coq-goals.el,
+    of coq-abbrev.el in coq.el, of coq-local-vars.el in coq-project.el.
+    The old files remain as compatibility files, which will be removed:
+    require the new ones instead.  `with-eval-after-load' of the old
+    features still works.  The unused coq-autotest.el is removed.
 *** Storing the goals or the response again (C-c C-a g, C-c C-a r)
     updates the window that displays *response-freeze*, instead of
     opening a new frame each time.

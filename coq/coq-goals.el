@@ -770,6 +770,5 @@ and applies the appropriate face.
 
 (provide 'coq-goals)
 (provide 'coq-diffs)                    ; compatibility, see coq-diffs.el
-(provide 'coq-hyps)                     ; compatibility, see coq-hyps.el
 
 ;;; coq-goals.el ends here

@@ -410,8 +410,7 @@ those of the parent of `coq-mode-map' nor of the insertions."
   "The old files merged into others can still be required.
 With a message, and `with-eval-after-load' of their feature still works
 when the file that has their code is loaded."
-  (dolist (old '((coq-hyps coq-goals coq-unfold-hyps)
-                 (coq-diffs coq-goals coq-insert-tagged-text)
+  (dolist (old '((coq-diffs coq-goals coq-insert-tagged-text)
                  (coq-local-vars coq-project coq-ask-insert-coq-prog-name)
                  (coq-abbrev coq coq-local-vars-list-show-doc)))
     (pcase-let ((`(,feature ,new ,function) old))
