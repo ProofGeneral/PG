@@ -395,6 +395,40 @@ those of the parent of `coq-mode-map' nor of the insertions."
       (set-keymap-parent coq-mode-map parent)
       (define-key coq-mode-map (kbd "C-c y") nil))))
 
+;; compatibility files of the files merged into others
+
+(defun coq-test-without-pg-fresh-emacs (form)
+  "Evaluate FORM in a new Emacs with Proof General, return its output."
+  (with-temp-buffer
+    (call-process (expand-file-name invocation-name invocation-directory)
+                  nil t nil "-batch" "-q"
+                  "-l" (expand-file-name "../../generic/proof-site.el")
+                  "--eval" (prin1-to-string form))
+    (buffer-string)))
+
+(ert-deftest coq-test-without-pg-compatibility-files ()
+  "The old files merged into others can still be required.
+With a message, and `with-eval-after-load' of their feature still works
+when the file that has their code is loaded."
+  (dolist (old '((coq-hyps coq-goals coq-unfold-hyps)
+                 (coq-diffs coq-goals coq-insert-tagged-text)
+                 (coq-local-vars coq-project coq-ask-insert-coq-prog-name)
+                 (coq-abbrev coq coq-local-vars-list-show-doc)))
+    (pcase-let ((`(,feature ,new ,function) old))
+      (let ((output (coq-test-without-pg-fresh-emacs
+                     `(progn (proof-ready-for-assistant 'coq) ; for coq.el
+                             (require ',feature)
+                             (princ (format "defined:%S\n" (fboundp ',function)))))))
+        (should (string-match-p "defined:t" output))
+        (should (string-match-p (format "%s is obsolete" feature) output)))
+      (let ((output (coq-test-without-pg-fresh-emacs
+                     `(progn (proof-ready-for-assistant 'coq)
+                             (with-eval-after-load ',feature
+                               (princ "after-load\n"))
+                             (require ',new)))))
+        (should (string-match-p "after-load" output))
+        (should-not (string-match-p "is obsolete" output))))))
+
 (provide 'coq-test-without-pg)
 
 ;;; coq-test-without-pg.el ends here
