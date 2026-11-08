@@ -61,7 +61,10 @@ May enable proof-by-pointing or similar features.
 ;;
 ;; Keys for goals buffer
 ;;
-(define-key proof-goals-mode-map [q] 'bury-buffer)
+;; This was bound to [q], the event symbol q, not the character: it
+;; never worked, the key q is `undefined' here (see
+;; `proof-universal-keys-only-mode').  Is it really useful?
+;; (define-key proof-goals-mode-map [?q] 'bury-buffer)
 ;; TODO: use standard Emacs button behaviour here (cf Info mode)
 (define-key proof-goals-mode-map [mouse-1] 'pg-goals-button-action)
 (define-key proof-goals-mode-map [C-M-mouse-3]

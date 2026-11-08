@@ -29,6 +29,8 @@
 (defvar proof-response-buffer)
 (defvar proof-goals-buffer)
 (defvar coq-mode-map)
+(defvar proof-mode-map)
+(defvar coq-goals-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
@@ -42,6 +44,9 @@
 (defvar coq-use-yasnippet)
 (defvar coq-menu-common-entries)
 
+(declare-function coq-Print "coq-queries")
+(declare-function coq-Inspect "coq-queries")
+(declare-function pg-goals-button-action "pg-goals")
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
 (declare-function coq-flag-is-on-p "coq")
@@ -151,6 +156,45 @@ Proof General still work."
     (with-current-buffer proof-response-buffer
       (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win)))))
 
+(ert-deftest coq-test-queries-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply with Proof General.
+Before those of `proof-mode-map', also on a key of Proof General.  Those
+of `proof-mode-map' apply too.  In the goals and response buffers, those
+of `coq-mode-map' for `coq-all-buffers-commands' apply, after those of
+the user in `coq-goals-mode-map'.  See also
+`coq-test-without-pg-user-keys'."
+  (unwind-protect
+      (progn
+        (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+        (define-key coq-mode-map (kbd "C-c C-t") #'coq-About)
+        (define-key proof-mode-map (kbd "C-c x") #'coq-Print)
+        (define-key coq-goals-mode-map (kbd "C-c C-a C-p") #'coq-Inspect)
+        (coq-test-queries-with-file
+          (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+          (should (eq (key-binding (kbd "C-c C-t")) #'coq-About))
+          (should (eq (key-binding (kbd "C-c x")) #'coq-Print))
+          ;; in the goals and response buffers, for the commands of
+          ;; `coq-all-buffers-commands'
+          (dolist (buffer (list proof-goals-buffer proof-response-buffer))
+            (with-current-buffer buffer
+              (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+              (should-not (eq (key-binding (kbd "C-c x")) #'coq-Print))
+              (should (eq (key-binding (kbd "C-c C-a C-r")) #'coq-store-response-win))
+              (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win))
+              ;; the keys of Proof General there
+              (should (eq (key-binding [mouse-1]) #'pg-goals-button-action))))
+          (with-current-buffer proof-goals-buffer
+            ;; the keys of the user in coq-goals-mode-map have priority
+            (should (eq (key-binding (kbd "C-c C-a C-p")) #'coq-Inspect))
+            (should (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))
+          (with-current-buffer proof-response-buffer
+            (should (eq (key-binding (kbd "C-c C-a C-p")) #'coq-Print))
+            (should-not (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))))
+    (define-key coq-mode-map (kbd "C-c y") nil)
+    (define-key coq-mode-map (kbd "C-c C-t") nil)
+    (define-key proof-mode-map (kbd "C-c x") nil)
+    (define-key coq-goals-mode-map (kbd "C-c C-a C-p") nil)))
+
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
   (coq-test-queries-with-file
@@ -205,6 +249,29 @@ region, asks for a goal number elsewhere."
       (should (eql coq-shell-current-line-width 61))
       (should (string-match-p "\\_<60\\_>"
                               (coq-query-result "Test Printing Width"))))))
+
+(ert-deftest coq-test-queries-store-same-window ()
+  "Storing again updates the window that displays *response-freeze*.
+For instance with C-c C-a C-r from this buffer: no new frame."
+  (coq-test-queries-with-file
+    (let ((frames 0))
+      (cl-letf (((symbol-function 'display-buffer-other-frame)
+                 (lambda (buffer &rest _)
+                   (setq frames (1+ frames))
+                   (display-buffer buffer))))
+        (unwind-protect
+            (progn
+              (coq-store-goals-win t)
+              (should (= frames 1))
+              (should (get-buffer-window "*response-freeze*" 'visible))
+              (with-current-buffer "*response-freeze*"
+                (coq-store-response-win))
+              (coq-store-goals-win)
+              (should (= frames 1)))
+          (when (get-buffer "*response-freeze*")
+            (with-current-buffer "*response-freeze*"
+              (setq-local kill-buffer-hook nil)
+              (kill-buffer))))))))
 
 (ert-deftest coq-test-queries-store ()
   "`coq-store-goals-win' and `coq-store-response-win' copy the goals and

@@ -216,9 +216,9 @@ And `coq-store-response-win' the response.")
 
 (defun coq-store-buffer-win (buffer &optional erase)
   "Copy BUFFER at the top of the buffer `coq-store-buffer-name'.
-Erase it first if ERASE is non-nil.  Display it in another frame.  It
-is in the mode of the response buffer, see
-`coq-response-buffer-function'."
+Erase it first if ERASE is non-nil.  Display it in another frame,
+unless a visible window displays it already.  It is in the mode of the
+response buffer, see `coq-response-buffer-function'."
   (when (buffer-live-p buffer)
     (let* ((existing (get-buffer coq-store-buffer-name))
            (frozen (get-buffer-create coq-store-buffer-name))
@@ -236,7 +236,8 @@ is in the mode of the response buffer, see
         (if erase
             (copy-to-buffer frozen (point-min) (point-max))
           (append-to-buffer frozen (point-min) (point-max))))
-      (set-window-point (display-buffer-other-frame frozen)
+      (set-window-point (or (get-buffer-window frozen 'visible)
+                            (display-buffer-other-frame frozen))
                         (with-current-buffer frozen (point-min))))))
 
 (defun coq-store-response-win (&optional erase)

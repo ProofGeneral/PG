@@ -38,6 +38,8 @@
 (defvar coq-set-search-blacklist-function)
 (defvar coq-search-blacklist-current-string)
 (defvar coq-insert-menu)
+(defvar coq-mode-map)
+(defvar coq-all-buffers-commands)
 (defvar proof-output-tooltips)
 (defvar proof-electric-terminator-enable)
 (defvar coq-show-proof-stepwise)
@@ -48,6 +50,7 @@
 (defvar coq-project-menu-entries)
 
 (declare-function coq-run-query "coq-queries")
+(declare-function coq-all-buffers-keymap "coq-queries")
 (declare-function proof-output-tooltips-toggle "proof-useropts")
 (declare-function proof-electric-terminator-toggle "proof-useropts")
 (declare-function coq-show-proof-stepwise-toggle "coq-goals")
@@ -344,6 +347,53 @@ interface functions.  Return released or failed."
     (should (memq 'coq-ask-printing-width
                   (coq-test-without-pg-menu-commands (cdr coq-options-menu))))
     (should-not (featurep 'proof-shell))))
+
+;; key bindings of the user
+
+(ert-deftest coq-test-without-pg-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply without PG.
+Also those of `local-set-key' in `coq-mode-hook', which changes
+`coq-mode-map'.  See also `coq-test-queries-user-keys'."
+  (let ((hook (lambda () (local-set-key (kbd "C-c z") #'coq-About))))
+    (unwind-protect
+        (progn
+          (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (add-hook 'coq-mode-hook hook)
+          (coq-test-without-pg-with-file
+            (should (eq (current-local-map) coq-mode-map))
+            (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+            (should (eq (key-binding (kbd "C-c z")) #'coq-About))
+            (should (eq (lookup-key coq-mode-map (kbd "C-c z")) #'coq-About))))
+      (remove-hook 'coq-mode-hook hook)
+      (define-key coq-mode-map (kbd "C-c y") nil)
+      (define-key coq-mode-map (kbd "C-c z") nil))))
+
+(ert-deftest coq-test-without-pg-all-buffers-keys ()
+  "The keys of `coq-mode-map' for the goals and response buffers.
+Those of `coq-all-buffers-commands', default and of the user, but not
+those of the parent of `coq-mode-map' nor of the insertions."
+  (let ((parent (keymap-parent coq-mode-map))
+        (other (make-sparse-keymap)))
+    (unwind-protect
+        (coq-test-without-pg-with-file
+          (dolist (command coq-all-buffers-commands)
+            (should (commandp command)))
+          (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (define-key other (kbd "C-c w") #'coq-About)
+          (set-keymap-parent coq-mode-map other)
+          (let ((map (coq-all-buffers-keymap)))
+            (should (eq (lookup-key map (kbd "C-c C-a C-b")) #'coq-About))
+            (should (eq (lookup-key map (kbd "C-c C-a g")) #'coq-store-goals-win))
+            (should (eq (lookup-key map (kbd "C-c y")) #'coq-Check))
+            (should-not (lookup-key map (kbd "C-c w")))
+            (should-not (lookup-key map (kbd "C-c C-a C-i")))
+            ;; insertions in the script buffer
+            (should (eq (lookup-key map (kbd "C-c C-a C-r")) #'coq-store-response-win))
+            (should (eq (lookup-key map (kbd "C-c C-a C-g")) #'coq-store-goals-win))
+            (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-r"))
+                        #'coq-insert-requires))))
+      (set-keymap-parent coq-mode-map parent)
+      (define-key coq-mode-map (kbd "C-c y") nil))))
 
 (provide 'coq-test-without-pg)
 
