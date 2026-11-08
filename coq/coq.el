@@ -52,8 +52,6 @@
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
-(require 'coq-local-vars)               ; setting coq args via file variables
-                                        ;   (prefer _CoqProject file instead)
 (require 'coq-templates)                ; menu of the insertions
 (require 'coq-compile-common)           ; menu of the compilation
 (require 'coq-project)                  ; menu of the project file
