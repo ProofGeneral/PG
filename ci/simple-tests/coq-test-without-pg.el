@@ -38,8 +38,22 @@
 (defvar coq-set-search-blacklist-function)
 (defvar coq-search-blacklist-current-string)
 (defvar coq-insert-menu)
+(defvar coq-mode-map)
+(defvar coq-all-buffers-commands)
+(defvar proof-output-tooltips)
+(defvar proof-electric-terminator-enable)
+(defvar coq-show-proof-stepwise)
+(defvar coq-queries-menu-entries)
+(defvar coq-other-queries-menu)
+(defvar coq-options-menu)
+(defvar coq-abbrevs-menu)
+(defvar coq-project-menu-entries)
 
 (declare-function coq-run-query "coq-queries")
+(declare-function coq-all-buffers-keymap "coq-queries")
+(declare-function proof-output-tooltips-toggle "proof-useropts")
+(declare-function proof-electric-terminator-toggle "proof-useropts")
+(declare-function coq-show-proof-stepwise-toggle "coq-goals")
 (declare-function coq-templates-setup "coq-templates")
 (declare-function coq-terminator-insert "coq-mode")
 (declare-function coq-About "coq-queries")
@@ -268,6 +282,158 @@ interface functions.  Return released or failed."
       (coq-change-search-blacklist "\"foo_\"")
       (should (equal args '("\"Private_\"" "\"foo_\"")))
       (should (equal coq-search-blacklist-current-string "\"foo_\"")))))
+
+;; toggles
+
+(ert-deftest coq-test-without-pg-toggles ()
+  "The toggle commands of the options are defined without PG."
+  (coq-test-without-pg-with-file
+    (require 'proof-useropts)
+    (require 'coq-goals)
+    (require 'coq-compile-common)
+    (dolist (command '(proof-three-window-toggle proof-output-tooltips-toggle
+                       proof-autosend-toggle proof-electric-terminator-toggle
+                       proof-disappearing-proofs-toggle
+                       proof-sticky-errors-toggle
+                       proof-omit-proofs-option-toggle
+                       coq-show-proof-stepwise-toggle
+                       coq-auto-adapt-printing-width-toggle
+                       coq-Compile))
+      (should (commandp command)))
+    (let ((proof-output-tooltips nil)
+          (coq-show-proof-stepwise nil))
+      (proof-output-tooltips-toggle)
+      (should proof-output-tooltips)
+      (coq-show-proof-stepwise-toggle)
+      (should coq-show-proof-stepwise))
+    ;; the electric terminator, its function and its lighter
+    (let ((proof-electric-terminator-enable nil))
+      (proof-electric-terminator-toggle 1)
+      (should proof-electric-terminator-enable)
+      (should (stringp (format-mode-line minor-mode-alist)))
+      (proof-electric-terminator-toggle 0)
+      (should-not proof-electric-terminator-enable))
+    (should-not (featurep 'proof-shell))
+    (should-not (featurep 'proof-script))))
+
+(defun coq-test-without-pg-menu-commands (entries)
+  "Return the commands of the menu items in ENTRIES, and of their submenus."
+  (let (commands)
+    (dolist (item entries)
+      (cond
+       ((and (vectorp item) (symbolp (aref item 1)))
+        (push (aref item 1) commands))
+       ((consp item)
+        (setq commands
+              (append (coq-test-without-pg-menu-commands (cdr item))
+                      commands)))))
+    commands))
+
+(ert-deftest coq-test-without-pg-menus ()
+  "The menus common to all backends only use commands defined without PG."
+  (coq-test-without-pg-with-file
+    (should (equal (car coq-other-queries-menu) "OTHER QUERIES"))
+    (should (equal (car coq-options-menu) "OPTIONS"))
+    (should (equal (car coq-abbrevs-menu) "ABBREVS"))
+    (dolist (entries (list coq-queries-menu-entries
+                           (cdr coq-other-queries-menu)
+                           (cdr coq-options-menu)
+                           (cdr coq-abbrevs-menu)
+                           coq-project-menu-entries))
+      (let ((commands (coq-test-without-pg-menu-commands entries)))
+        (should commands)
+        (dolist (command commands)
+          (should (commandp command)))))
+    (should (memq 'coq-ask-printing-width
+                  (coq-test-without-pg-menu-commands (cdr coq-options-menu))))
+    (should-not (featurep 'proof-shell))))
+
+;; key bindings of the user
+
+(ert-deftest coq-test-without-pg-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply without PG.
+Also those of `local-set-key' in `coq-mode-hook', which changes
+`coq-mode-map'.  See also `coq-test-queries-user-keys'."
+  (let ((hook (lambda () (local-set-key (kbd "C-c z") #'coq-About))))
+    (unwind-protect
+        (progn
+          (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (add-hook 'coq-mode-hook hook)
+          (coq-test-without-pg-with-file
+            (should (eq (current-local-map) coq-mode-map))
+            (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+            (should (eq (key-binding (kbd "C-c z")) #'coq-About))
+            (should (eq (lookup-key coq-mode-map (kbd "C-c z")) #'coq-About))))
+      (remove-hook 'coq-mode-hook hook)
+      (define-key coq-mode-map (kbd "C-c y") nil)
+      (define-key coq-mode-map (kbd "C-c z") nil))))
+
+(ert-deftest coq-test-without-pg-all-buffers-keys ()
+  "The keys of `coq-mode-map' for the goals and response buffers.
+Those of `coq-all-buffers-commands', default and of the user, but not
+those of the parent of `coq-mode-map' nor of the insertions."
+  (let ((parent (keymap-parent coq-mode-map))
+        (other (make-sparse-keymap)))
+    (unwind-protect
+        (coq-test-without-pg-with-file
+          (dolist (command coq-all-buffers-commands)
+            (should (commandp command)))
+          (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (define-key coq-mode-map (kbd "C-c v") #'forward-char)
+          (define-key other (kbd "C-c w") #'coq-About)
+          (set-keymap-parent coq-mode-map other)
+          (let ((map (coq-all-buffers-keymap)))
+            (should (eq (lookup-key map (kbd "C-c C-a C-b")) #'coq-About))
+            (should (eq (lookup-key map (kbd "C-c C-a g")) #'coq-store-goals-win))
+            (should (eq (lookup-key map (kbd "C-c y")) #'coq-Check))
+            (should-not (lookup-key map (kbd "C-c v")))
+            (should-not (lookup-key map (kbd "C-c w")))
+            (should-not (lookup-key map (kbd "C-c C-a C-i")))
+            ;; insertions in the script buffer
+            (should (eq (lookup-key map (kbd "C-c C-a C-r")) #'coq-store-response-win))
+            (should (eq (lookup-key map (kbd "C-c C-a C-g")) #'coq-store-goals-win))
+            (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-r"))
+                        #'coq-insert-requires)))
+          ;; An interaction backend extends the commands copied from
+          ;; `coq-mode-map' to the goals and response keymaps it manages.
+          (let ((map (coq-all-buffers-keymap '(forward-char))))
+            (should (eq (lookup-key map (kbd "C-c v")) #'forward-char))))
+      (set-keymap-parent coq-mode-map parent)
+      (define-key coq-mode-map (kbd "C-c y") nil)
+      (define-key coq-mode-map (kbd "C-c v") nil))))
+
+;; compatibility files of the files merged into others
+
+(defun coq-test-without-pg-fresh-emacs (form)
+  "Evaluate FORM in a new Emacs with Proof General, return its output."
+  (with-temp-buffer
+    (call-process (expand-file-name invocation-name invocation-directory)
+                  nil t nil "-batch" "-q"
+                  "-l" (expand-file-name "../../generic/proof-site.el")
+                  "--eval" (prin1-to-string form))
+    (buffer-string)))
+
+(ert-deftest coq-test-without-pg-compatibility-files ()
+  "The old files merged into others can still be required.
+With a message, and `with-eval-after-load' of their feature still works
+when the file that has their code is loaded."
+  (dolist (old '((coq-diffs coq-goals coq-insert-tagged-text)
+                 (coq-local-vars coq-project coq-ask-insert-coq-prog-name)
+                 (coq-abbrev coq coq-local-vars-list-show-doc)))
+    (pcase-let ((`(,feature ,new ,function) old))
+      (let ((output (coq-test-without-pg-fresh-emacs
+                     `(progn (proof-ready-for-assistant 'coq) ; for coq.el
+                             (require ',feature)
+                             (princ (format "defined:%S\n" (fboundp ',function)))))))
+        (should (string-match-p "defined:t" output))
+        (should (string-match-p (format "%s is obsolete" feature) output)))
+      (let ((output (coq-test-without-pg-fresh-emacs
+                     `(progn (proof-ready-for-assistant 'coq)
+                             (with-eval-after-load ',feature
+                               (princ "after-load\n"))
+                             (require ',new)))))
+        (should (string-match-p "after-load" output))
+        (should-not (string-match-p "is obsolete" output))))))
 
 (provide 'coq-test-without-pg)
 

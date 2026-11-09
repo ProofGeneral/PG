@@ -27,7 +27,6 @@
 (require 'coq-system)
 (require 'compile)
 
-;;(defvar coq-pre-v85 nil)
 (defvar coq-confirm-external-compilation); defpacustom
 (defvar coq-compile-parallel-in-background) ; defpacustom
 
@@ -790,6 +789,13 @@ current buffer (which contains the Require command) to
     (save-some-buffers unconditionally buffer-filter)))
 
 
+
+(defun coq-Compile ()
+  "Compiles current buffer."
+  (interactive)
+  (let* ((n (buffer-name))
+         (l (string-match ".v" n)))
+    (compile (concat "make " (substring n 0 l) ".vo"))))
 
 ;;; menu
 

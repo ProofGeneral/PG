@@ -261,6 +261,17 @@ Completion is on a quasi-exhaustive list of Coq tacticals."
     ["Require (smart)" coq-insert-requires t])
   "Menu of the insertions, common to all Coq backends.")
 
+(defconst coq-abbrevs-menu
+  '("ABBREVS"
+    ["Expand At Point" expand-abbrev t]
+    ["Unexpand Last" unexpand-abbrev t]
+    ["List Abbrevs" list-abbrevs t]
+    ["Edit Abbrevs" edit-abbrevs t]
+    ["Abbrev Mode" abbrev-mode
+     :style toggle
+     :selected (and (boundp 'abbrev-mode) abbrev-mode)])
+  "Menu of the abbreviations, common to all Coq backends.")
+
 (provide 'coq-templates)
 
 ;;; coq-templates.el ends here

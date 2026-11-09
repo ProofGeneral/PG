@@ -47,24 +47,162 @@
 (defvar coq-time-commands)              ; defpacustom
 (defvar coq-use-project-file)           ; defpacustom
 (defvar coq-hide-additional-subgoals)
+(defvar coq-other-buffers-menu-entries) ; set below, with the Coq menu
 
 (require 'proof)
 (require 'coq-system)                   ; load path, option, project file etc.
 (require 'coq-syntax)                   ; font-lock, syntax categories (tactics, commands etc)
-(require 'coq-local-vars)               ; setting coq args via file variables
-                                        ;   (prefer _CoqProject file instead)
-(require 'coq-abbrev)                   ; abbrev and coq specific menu
+(require 'coq-templates)                ; menu of the insertions
+(require 'coq-compile-common)           ; menu of the compilation
+(require 'coq-project)                  ; menu of the project file
 (require 'coq-seq-compile)              ; sequential compilation of Requires
 (require 'coq-par-compile)              ; parallel compilation of Requires
-(require 'coq-diffs)                    ; highlight proof diffs
 (require 'coq-goals)                    ; folding of the other goals
 (require 'coq-queries)                  ; About, Check, Search etc.
-(require 'coq-hyps)                     ; folding and highlighting of hypotheses
 (require 'pg-goals-indicators)          ; goals out of view
-(require 'pg-double-hit)                ; double hit electric terminator
 
 (defvar prettify-symbols-alist)
 (declare-function yas-expand-snippet "yasnippet")
+
+;;; The Coq menu of Proof General
+;; Formerly coq-abbrev.el.  The menus common to all backends are in
+;; the files of their commands (coq-compile-menu, coq-insert-menu...).
+
+(defun coq-local-vars-list-show-doc ()
+  (interactive)
+  (describe-variable 'coq-local-vars-doc))
+
+
+        ;; (if (fboundp 'with-undo-amalgamate) ;; emacs > 29.1
+        ;;     (with-undo-amalgamate (insert abbr) (yas-expand))
+        ;;   (progn (insert abbr) (yas-expand)))
+      
+
+
+;; The coq menu partly built from tables
+
+;; Common part (script, response and goals buffers)
+(defconst coq-menu-common-entries
+  `(
+      ["Toggle 3 Windows Mode" proof-three-window-toggle
+     :style toggle
+     :selected proof-three-window-enable
+     :help "Toggles the use of separate windows or frames for Coq responses and goals."
+     ]
+    ("3 Windows mode layout"
+     ["smart"
+      (progn
+	(customize-set-variable 'proof-three-window-mode-policy 'smart)
+	(proof-layout-windows))
+      :style radio
+      :selected (eq proof-three-window-mode-policy 'smart)
+      :help "Adapt to frame width (C-c C-l to refresh)"]
+     ["hybrid"
+      (progn
+	(customize-set-variable 'proof-three-window-mode-policy 'hybrid)
+	(proof-layout-windows))
+      :style radio
+      :selected (eq proof-three-window-mode-policy 'hybrid)
+      :help "two column mode"]
+     ["horizontal"
+      (progn
+	(customize-set-variable 'proof-three-window-mode-policy 'horizontal)
+	(proof-layout-windows))
+      :style radio
+      :selected (eq proof-three-window-mode-policy 'horizontal)
+      :help "Three column mode"]
+     ["vertical"
+      (progn
+	(customize-set-variable 'proof-three-window-mode-policy 'vertical)
+	(proof-layout-windows))
+      :style radio
+      :selected (eq proof-three-window-mode-policy 'vertical)
+      :help "One column mode"])
+    ["Refresh Windows Layout" proof-layout-windows t]
+    ["Toggle tooltips" proof-output-tooltips-toggle
+     :style toggle
+     :selected proof-output-tooltips
+     :help "Toggles Tooltips (popup when hovering commands).\nSet `proof-output-tooltips' to nil to disable it by default."]
+    ["Electric Terminator" proof-electric-terminator-toggle
+     :style toggle
+     :selected proof-electric-terminator-enable
+     :help "Automatically send commands when terminator typed"]
+    ["Fold Other Goals" coq-toggle-other-goals
+     :style toggle
+     :selected coq-fold-other-goals
+     :help "Display only the number of the goals after the first one."]
+    ,coq-hyps-menu
+    ["Double Hit Electric Terminator" proof-double-hit-toggle
+     :style toggle
+     :selected proof-double-hit-enable
+     :help "Automatically send commands when terminator is typed twice quickly."]
+    ,coq-compile-menu
+     ("Diffs"
+      ["off"
+       (customize-set-variable 'coq-diffs 'off)
+       :style radio
+       :selected (eq coq-diffs 'off)
+       :help "Don't show diffs"]
+      ["on"
+       (customize-set-variable 'coq-diffs 'on)
+       :style radio
+       :selected (eq coq-diffs 'on)
+       :help "Show diffs: only added"]
+      ["removed"
+       (customize-set-variable 'coq-diffs 'removed)
+       :style radio
+       :selected (eq coq-diffs 'removed)
+       :help "Show diffs: added and removed"])
+    ["Show Proof (Diffs)"
+      coq-show-proof-stepwise-toggle
+      :style toggle
+      :selected coq-show-proof-stepwise
+      :help "Display the proof terms stepwise in the *response* buffer."]
+    ("\"Proof using\" mode..."
+     ["ask"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'ask)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'ask)
+      :help "Ask user when a new proof using annotation is suggested"]
+     ["always"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'always)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'always)
+      :help "Always update the proof using annotation when suggested"]
+     ["highlight"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'highlight)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'highlight)
+      :help "Highight the proof when an auto insert is suggested (right click to insert))"]
+     ["Ignore"
+      (customize-set-variable 'coq-accept-proof-using-suggestion 'ignore)
+      :style radio
+      :selected (eq coq-accept-proof-using-suggestion 'ignore)
+      :help "no highlight (right click insertion still possible)"])
+    ""
+    ,@coq-queries-menu-entries
+    ,coq-other-queries-menu
+    ,coq-options-menu))
+
+(setq-default coq-menu-entries
+  (append coq-menu-common-entries
+  `(
+    ""
+    ,coq-insert-menu
+    ""
+    ,coq-abbrevs-menu
+    ""
+    ("COQ PROG (ARGS)"
+     ,@coq-project-menu-entries
+     ["Set Coq Prog *persistently*" coq-ask-insert-coq-prog-name t]
+     ["help" coq-local-vars-list-show-doc t]
+     ["Compile" coq-Compile t]))))
+
+(setq-default coq-help-menu-entries
+  '(["help on setting prog name persistently for a file"
+     coq-local-vars-list-show-doc t]))
+
+(setq-default coq-other-buffers-menu-entries coq-menu-common-entries)
 
 ;;; enable / disable parallel / sequential compilation in the proof shell
 ;; Here, not in coq-compile-common.el, which does not depend on the
@@ -177,6 +315,10 @@ In `proof-shell-before-process-hook'."
   ;; with proof-prog-name-ask or by customizing them. When
   ;; the prover is set by hand, we try to find coqdep and
   ;; coqc in the same directory
+  ;; A file variable coq-prog-name is set after coq-pg-setup copied
+  ;; coq-prog-name to proof-prog-name: copy it again, unless asked.
+  (when (and (not proof-prog-name-ask) (local-variable-p 'coq-prog-name))
+    (setq proof-prog-name coq-prog-name))
   (if (and (or proof-prog-name-ask (coq--user-set-p 'coq-prog-name))
            proof-prog-name)
       ;; let us find other executables in the exact same
@@ -303,18 +445,6 @@ A setting of nil means show all output from Coq.  See also option
 See also option `coq-hide-additional-subgoals'."
   :type '(choice regexp (const nil))
   :group 'coq)
-
-(defcustom coq-show-proof-stepwise nil
-  "Display the proof terms stepwise in the *response* buffer.
-This option can be combined with option `coq-diffs'.
-It is mostly useful in three window mode, see also
-`proof-three-window-mode-policy' for details."
-
-  :type 'boolean
-  :safe 'booleanp
-  :group 'coq-auto-compile)
-
-(proof-deftoggle coq-show-proof-stepwise)
 
 ;;
 ;; prooftree customization
@@ -1034,12 +1164,13 @@ present, current pg display mode and current geometry otherwise."
      (t nil) ;; assert false?
      )))
 
-(defun coq-adapt-printing-width (&optional show width)
+(defun coq-adapt-printing-width (&optional show width force)
   "Sends a Set Printing Width command to Coq to fit the response window's WIDTH.
 A Show command is also issued if SHOW is non-nil, so that the goal is
-redisplayed."
+redisplayed.  Nothing is done if `coq-auto-adapt-printing-width' is nil,
+unless FORCE is non-nil."
   (interactive)
-  (when coq-auto-adapt-printing-width
+  (when (or force coq-auto-adapt-printing-width)
     (let ((wdth (or width (coq-guess-goal-buffer-at-next-command))))
       ;; if no available width, or unchanged, do nothing
       (when (and wdth (not (equal wdth coq-shell-current-line-width)))
@@ -1056,10 +1187,13 @@ redisplayed."
   (coq-adapt-printing-width t width))
 
 (defun coq-ask-adapt-printing-width-and-show ()
+  "Ask for a printing width, set it in Coq and show the goals again.
+Even if `coq-auto-adapt-printing-width' is nil: the user asked for it.
+This is `coq-ask-printing-width-function' for Proof General."
   (interactive)
   (let* ((deflt (coq-goals-window-width))
          (rd (read-number (format "Width (%S): " deflt) deflt)))
-    (coq-adapt-printing-width t rd)))
+    (coq-adapt-printing-width t rd t)))
 
 ;;;;; utils fo overlays
 (defun coq-overlays-at (pt prop)
@@ -1091,13 +1225,6 @@ Required to benefit from delayed evaluation when
 at `proof-assistant-settings-cmds' evaluation time.")
 (add-to-list 'proof-assistant-settings
              '(diffs--function "%l" string "Show Diffs in Coq") t)
-
-(defun coq-Compile ()
-  "Compiles current buffer."
-  (interactive)
-  (let* ((n (buffer-name))
-         (l (string-match ".v" n)))
-    (compile (concat "make " (substring n 0 l) ".vo"))))
 
 
 
@@ -1218,7 +1345,7 @@ backends call them."
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
-  (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
+  (setq coq-terminator-insert-function #'proof-electric-terminator)
   (coq-pg-set-backend-functions)
   
   ;; coq-mode colorize errors better than the generic mechanism
@@ -1428,8 +1555,29 @@ shortly before `proof-assert-command-hook', respectively,
 (setq coq-goals-buffer-function (lambda () proof-goals-buffer))
 (setq coq-response-buffer-function (lambda () proof-response-buffer))
 
+(defconst coq-pg-all-buffers-commands
+  (append proof-all-buffers-commands
+          '(coq-toggle-highlight-hyp-at-point))
+  "Commands propagated to Coq output buffers by the PG backend.
+Their bindings in `coq-mode-map' also apply in the Coq goals and
+response buffers managed by the Proof General interaction backend.
+Highlighting a hypothesis depends on point in the current Coq buffer,
+not on point in the active script.")
+
+(defun coq-pg-set-buffer-keys (map generic-map)
+  "Make the keys of `coq-all-buffers-keymap' a parent of MAP.
+Before GENERIC-MAP, the keymap of Proof General, parent of MAP.  MAP
+keeps the priority, with the key bindings of the user there.  Called
+each time the goals or response buffer is set up, for the key bindings
+of the user in `coq-mode-map'."
+  (set-keymap-parent
+   map (make-composed-keymap
+        (coq-all-buffers-keymap coq-pg-all-buffers-commands)
+        generic-map)))
+
 (defun coq-goals-mode-config ()
   (coq-pg-set-backend-functions)
+  (coq-pg-set-buffer-keys coq-goals-mode-map proof-goals-mode-map)
   (setq mode-line-process '(:eval (coq-goals-mode-line)))
   (setq pg-goals-change-goal "Show %s .")
   (setq pg-goals-error-regexp coq-error-regexp)
@@ -1438,6 +1586,7 @@ shortly before `proof-assert-command-hook', respectively,
 
 (defun coq-response-config ()
   (coq-pg-set-backend-functions)
+  (coq-pg-set-buffer-keys coq-response-mode-map proof-response-mode-map)
   (setq proof-response-font-lock-keywords coq-response-font-lock-keywords)
   ;; The line wrapping in this buffer just seems to make it less readable.
   (setq truncate-lines t)
@@ -1968,15 +2117,10 @@ Used for automatic insertion of \"Proof using\" annotations.")
 ;(proof-eval-when-ready-for-assistant
 ; (define-key ??? [(control c) (control a)] (proof-ass keymap)))
 
-;; The keys of the queries and of the display, as in the script buffer.
-(coq-queries-define-keys coq-goals-mode-map)
-;; specific to goals buffer: (un)foldinng and (un)highlighting shortcuts
+;; The keys of the queries and of the display, as in the script buffer,
+;; are in a parent of these keymaps, see `coq-pg-set-buffer-keys'.
+;; Specific to the goals buffer: (un)folding and (un)highlighting.
 (coq-hyps-define-keys coq-goals-mode-map)
-
-(coq-queries-define-keys coq-response-mode-map)
-;; Before C-c C-a r and g, kept for compatibility.
-(define-key coq-response-mode-map (kbd "C-c C-a C-r") #'coq-store-response-win)
-(define-key coq-response-mode-map (kbd "C-c C-a C-g") #'coq-store-goals-win)
 
 ;; The queries at mouse click, see `coq-remap-mouse-1'.
 (coq-mouse-query-add-keymap coq-response-mode-map)
@@ -2268,25 +2412,6 @@ Only when three-buffer-mode is enabled."
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
           #'coq-optimise-resp-windows-if-option)
 
-;;; DOUBLE HIT ELECTRIC TERMINATOR
-;; Double hit on "." behaves like the electric terminator, see
-;; pg-double-hit.el.  The "." is used for records and modules qualified
-;; notations, so the electric terminator is not pertinent.
-
-(defun coq-pg-terminator-insert (&optional count)
-  "A wrapper on `proof-electric-terminator', COUNT is the prefix argument.
-Used to accept double hits instead if enabled, see
-`proof-double-hit-enable'.  If by accident option
-`proof-electric-terminator-enable' and option `proof-double-hit-enable'
-are non-nil at the same time, this gives priority to the former.
-This is `coq-terminator-insert-function' for Proof General."
-  (if (and (not proof-electric-terminator-enable) proof-double-hit-enable)
-      (proof-double-hit-insert #'proof-assert-electric-terminator count
-                               proof-terminal-string)
-    ;; otherwise call this, which checks proof-electric-terminator-enable
-    (proof-electric-terminator count)))
-
-
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;
 
 ;; This originates from background compilation, but it is actually a good idea
@@ -2342,6 +2467,7 @@ Coq from the new opam switch."
 (defun proof-delete-other-frames () (proof-delete-all-associated-windows))
 
 (provide 'coq)
+(provide 'coq-abbrev)                   ; compatibility, see coq-abbrev.el
 
 ;;   Local Variables: ***
 ;;   fill-column: 79 ***

@@ -35,7 +35,7 @@
 ;; (if t (require 'coq nil 'noerror))
 (require 'coq-smie)
 (require 'coq-syntax)                   ;For font-lock-keywords
-(require 'pg-double-hit)
+(require 'pg-terminator)
 (require 'coq-queries)                  ; common to all backends
 (require 'coq-templates)                ; abbrevs and yasnippets, idem
 
@@ -102,7 +102,7 @@ has no effect until Emacs is restarted."
   :type '(choice (const :tag "Proof General" pg)
                  (const :tag "None" nil)))
 
-;; The double hit is generic, see pg-double-hit.el.  Here for both
+;; The double hit is generic, see pg-terminator.el.  Here for both
 ;; backends.
 (define-obsolete-variable-alias 'coq-double-hit-enable
   'proof-double-hit-enable "4.6")

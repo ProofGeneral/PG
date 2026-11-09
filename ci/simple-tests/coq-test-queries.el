@@ -29,6 +29,11 @@
 (defvar proof-response-buffer)
 (defvar proof-goals-buffer)
 (defvar coq-mode-map)
+(defvar proof-mode-map)
+(defvar proof-all-buffers-commands)
+(defvar proof-universal-keys)
+(defvar coq-pg-all-buffers-commands)
+(defvar coq-goals-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
 (defvar coq-show-at-point-function)
@@ -38,9 +43,13 @@
 (defvar coq-processed-end-function)
 (defvar coq-ask-printing-width-function)
 (defvar coq-shell-current-line-width)
+(defvar coq-auto-adapt-printing-width)
 (defvar coq-use-yasnippet)
 (defvar coq-menu-common-entries)
 
+(declare-function coq-Print "coq-queries")
+(declare-function coq-Inspect "coq-queries")
+(declare-function pg-goals-button-action "pg-goals")
 (declare-function proof-shell-exit "proof-shell")
 (declare-function proof-shell-invisible-command "proof-shell")
 (declare-function coq-flag-is-on-p "coq")
@@ -48,8 +57,9 @@
 (declare-function coq-Show "coq-queries")
 (declare-function coq-ask-printing-width "coq-goals")
 (declare-function coq-store-goals-win "coq-goals")
-(declare-function coq-toggle-fold-hyp-at-point "coq-hyps")
+(declare-function coq-toggle-fold-hyp-at-point "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
+(declare-function coq-toggle-highlight-hyp-at-point "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-as-in-next-command "coq-queries")
@@ -73,7 +83,12 @@
 (declare-function coq-unset-printing-notations "coq-queries")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
-(declare-function proof-double-hit-toggle "pg-double-hit")
+(declare-function proof-double-hit-toggle "pg-terminator")
+(declare-function proof-assert-next-command-interactive "pg-user")
+(declare-function proof-assert-until-point-interactive "pg-user")
+(declare-function proof-process-buffer "pg-user")
+(declare-function proof-retract-buffer "pg-user")
+(declare-function proof-undo-last-successful-command "pg-user")
 
 
 ;;; utility functions
@@ -150,6 +165,81 @@ Proof General still work."
     (with-current-buffer proof-response-buffer
       (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win)))))
 
+(ert-deftest coq-test-queries-user-keys ()
+  "The key bindings of the user in `coq-mode-map' apply with Proof General.
+Before those of `proof-mode-map', also on a key of Proof General.  Those
+of `proof-mode-map' apply too.  In the goals and response buffers, those
+of `coq-mode-map' for `coq-all-buffers-commands' apply, after those of
+the user in `coq-goals-mode-map'.  See also
+`coq-test-without-pg-user-keys'."
+  (unwind-protect
+      (progn
+        (dolist (binding proof-universal-keys)
+          (should (memq (cdr binding) proof-all-buffers-commands)))
+        ;; Removing a default key does not make its command invalid in
+        ;; output buffers: key choices and command validity are independent.
+        (let ((proof-universal-keys nil))
+          (should (memq 'proof-assert-next-command-interactive
+                        coq-pg-all-buffers-commands)))
+        (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+        (define-key coq-mode-map (kbd "C-c C-t") #'coq-About)
+        (define-key coq-mode-map (kbd "C-M-<down>")
+                    #'proof-assert-next-command-interactive)
+        (define-key coq-mode-map (kbd "C-M-<up>")
+                    #'proof-undo-last-successful-command)
+        (define-key coq-mode-map (kbd "C-M-b") #'proof-process-buffer)
+        (define-key coq-mode-map (kbd "C-M-r") #'proof-retract-buffer)
+        (define-key coq-mode-map (kbd "<f7>")
+                    #'coq-toggle-highlight-hyp-at-point)
+        ;; This command depends on point in the script buffer: do not
+        ;; propagate its user binding to the output buffers.
+        (define-key coq-mode-map (kbd "C-M-e")
+                    #'proof-assert-until-point-interactive)
+        (define-key proof-mode-map (kbd "C-c x") #'coq-Print)
+        (define-key coq-goals-mode-map (kbd "C-c C-a C-p") #'coq-Inspect)
+        (coq-test-queries-with-file
+          (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+          (should (eq (key-binding (kbd "C-c C-t")) #'coq-About))
+          (should (eq (key-binding (kbd "C-c x")) #'coq-Print))
+          ;; in the goals and response buffers, for the commands of
+          ;; `coq-all-buffers-commands'
+          (dolist (buffer (list proof-goals-buffer proof-response-buffer))
+            (with-current-buffer buffer
+              (should (eq (key-binding (kbd "C-c y")) #'coq-Check))
+              (should-not (eq (key-binding (kbd "C-c x")) #'coq-Print))
+              (should (eq (key-binding (kbd "C-c C-a C-r")) #'coq-store-response-win))
+              (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win))
+              ;; User bindings for commands valid in every PG buffer.
+              (should (eq (key-binding (kbd "C-M-<down>"))
+                          #'proof-assert-next-command-interactive))
+              (should (eq (key-binding (kbd "C-M-<up>"))
+                          #'proof-undo-last-successful-command))
+              (should (eq (key-binding (kbd "C-M-b")) #'proof-process-buffer))
+              (should (eq (key-binding (kbd "C-M-r")) #'proof-retract-buffer))
+              (should (eq (key-binding (kbd "<f7>"))
+                          #'coq-toggle-highlight-hyp-at-point))
+              (should-not (eq (key-binding (kbd "C-M-e"))
+                              #'proof-assert-until-point-interactive))
+              ;; the keys of Proof General there
+              (should (eq (key-binding [mouse-1]) #'pg-goals-button-action))))
+          (with-current-buffer proof-goals-buffer
+            ;; the keys of the user in coq-goals-mode-map have priority
+            (should (eq (key-binding (kbd "C-c C-a C-p")) #'coq-Inspect))
+            (should (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))
+          (with-current-buffer proof-response-buffer
+            (should (eq (key-binding (kbd "C-c C-a C-p")) #'coq-Print))
+            (should-not (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))))
+    (define-key coq-mode-map (kbd "C-c y") nil)
+    (define-key coq-mode-map (kbd "C-c C-t") nil)
+    (define-key coq-mode-map (kbd "C-M-<down>") nil)
+    (define-key coq-mode-map (kbd "C-M-<up>") nil)
+    (define-key coq-mode-map (kbd "C-M-b") nil)
+    (define-key coq-mode-map (kbd "C-M-r") nil)
+    (define-key coq-mode-map (kbd "<f7>") nil)
+    (define-key coq-mode-map (kbd "C-M-e") nil)
+    (define-key proof-mode-map (kbd "C-c x") nil)
+    (define-key coq-goals-mode-map (kbd "C-c C-a C-p") nil)))
+
 (ert-deftest coq-test-queries-function-set ()
   "Proof General sets `coq-query-function' in its buffers."
   (coq-test-queries-with-file
@@ -195,7 +285,38 @@ region, asks for a goal number elsewhere."
     (should (eql coq-shell-current-line-width 51))
     ;; one column less, see `coq-adapt-printing-width'
     (should (string-match-p "\\_<50\\_>"
-                            (coq-query-result "Test Printing Width")))))
+                            (coq-query-result "Test Printing Width")))
+    ;; also when the width is not adapted automatically
+    (let ((coq-auto-adapt-printing-width nil))
+      (cl-letf (((symbol-function 'read-number) (lambda (&rest _) 61)))
+        (coq-ask-printing-width))
+      (coq-test-queries-wait)
+      (should (eql coq-shell-current-line-width 61))
+      (should (string-match-p "\\_<60\\_>"
+                              (coq-query-result "Test Printing Width"))))))
+
+(ert-deftest coq-test-queries-store-same-window ()
+  "Storing again updates the window that displays *response-freeze*.
+For instance with C-c C-a C-r from this buffer: no new frame."
+  (coq-test-queries-with-file
+    (let ((frames 0))
+      (cl-letf (((symbol-function 'display-buffer-other-frame)
+                 (lambda (buffer &rest _)
+                   (setq frames (1+ frames))
+                   (display-buffer buffer))))
+        (unwind-protect
+            (progn
+              (coq-store-goals-win t)
+              (should (= frames 1))
+              (should (get-buffer-window "*response-freeze*" 'visible))
+              (with-current-buffer "*response-freeze*"
+                (coq-store-response-win))
+              (coq-store-goals-win)
+              (should (= frames 1)))
+          (when (get-buffer "*response-freeze*")
+            (with-current-buffer "*response-freeze*"
+              (setq-local kill-buffer-hook nil)
+              (kill-buffer))))))))
 
 (ert-deftest coq-test-queries-store ()
   "`coq-store-goals-win' and `coq-store-response-win' copy the goals and
@@ -338,7 +459,7 @@ query."
 
 (ert-deftest coq-test-queries-menu-commands ()
   "The menu entries of the printing flags run the flag they name."
-  (require 'coq-abbrev)
+  (require 'coq)                       ; the menus, formerly coq-abbrev.el
   (let (entries)
     (cl-labels ((walk (menu)
                   (dolist (item menu)

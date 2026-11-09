@@ -24,6 +24,7 @@
 
 (require 'proof-utils)    ; proof-deftoggle, proof-eval-when-ready-for-assistant
 (require 'proof-useropts)
+(require 'pg-terminator)
 (require 'proof-config)
 (require 'proof-splash)
 
@@ -327,26 +328,7 @@ without adjusting window layout."
 ;; First, make the togglers used in options menu below
 
 (proof-deftoggle proof-script-fly-past-comments)
-(proof-deftoggle proof-delete-empty-windows)
-(proof-deftoggle proof-shrink-windows-tofit)
-(proof-deftoggle proof-multiple-frames-enable proof-multiple-frames-toggle)
-(proof-deftoggle proof-layout-windows-on-visit-file
-		 proof-layout-windows-eagerly-toggle)
-(proof-deftoggle proof-three-window-enable proof-three-window-toggle)
-(proof-deftoggle proof-auto-raise-buffers proof-auto-raise-toggle)
-(proof-deftoggle proof-disappearing-proofs)
-(proof-deftoggle proof-full-annotation)
-(proof-deftoggle proof-colour-locked)
-(proof-deftoggle proof-sticky-errors)
-(proof-deftoggle proof-shell-quiet-errors)
-(proof-deftoggle proof-minibuffer-messages)
-(proof-deftoggle proof-output-tooltips)
-(proof-deftoggle proof-autosend-enable proof-autosend-toggle)
-(proof-deftoggle proof-fast-process-buffer)
-(proof-deftoggle proof-imenu-enable proof-imenu-toggle)
-(proof-deftoggle proof-keep-response-history)
-(proof-deftoggle proof-omit-proofs-option)
-(proof-deftoggle proof-splash-enable)
+;; The togglers of the user options are in proof-useropts.el.
 
 (proof-eval-when-ready-for-assistant
  ;; togglers for settings separately configurable per-prover
@@ -392,6 +374,10 @@ without adjusting window layout."
        :style toggle
        :selected proof-electric-terminator-enable
        :help "Automatically send commands when terminator typed"]
+      ["Double Hit Terminator" proof-double-hit-toggle
+       :style toggle
+       :selected proof-double-hit-enable
+       :help "Send commands when the terminator is typed twice quickly"]
       ["Beep on Errors" proof-shell-quiet-errors-toggle
        :style toggle
        :selected (not proof-shell-quiet-errors)
@@ -602,6 +588,7 @@ without adjusting window layout."
   (list
    'proof-omit-proofs-option
    'proof-electric-terminator-enable
+   'proof-double-hit-enable
    'proof-autosend-enable
    'proof-fast-process-buffer
    'proof-script-fly-past-comments

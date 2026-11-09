@@ -1,4 +1,4 @@
-;;; pg-double-hit.el --- Double hit on the terminator  -*- lexical-binding:t -*-
+;;; pg-terminator.el --- Electric and double-hit terminators  -*- lexical-binding:t -*-
 
 ;; This file is part of Proof General.
 
@@ -8,18 +8,25 @@
 
 ;;; Commentary:
 ;;
-;; Hitting the terminator twice quickly processes the script up to
-;; it, the second hit is not inserted.  A replacement for the electric
-;; terminator, which processes at each hit.
+;; The electric terminator processes the script at each hit of its
+;; terminator.  The double-hit terminator processes it when the
+;; terminator is hit twice quickly; the second hit is not inserted.
+;; Enabling one disables the other.
 ;;
-;; This file depends neither on the prover nor on the proof shell: a
-;; command bound to the terminator calls `proof-double-hit-insert'
-;; with the function processing up to point.  The Coq backends (Proof
-;; General and Eglot) both use it.
+;; `proof-electric-terminator' is the default implementation for the
+;; Proof General backend, with `proof-assert-electric-terminator' as
+;; its processing function.  It gives every proof assistant using that
+;; backend both behaviours.  Another backend can call
+;; `proof-double-hit-insert' with its own processing function.
 
 ;;; Code:
 
 (require 'proof-useropts)               ; `proof-set-value'
+
+(declare-function proof-inside-comment "proof-syntax")
+(declare-function proof-inside-string "proof-syntax")
+(declare-function proof-assert-electric-terminator "proof-script")
+(defvar proof-terminal-string)
 
 (defcustom proof-double-hit-enable nil
   "Whether hitting the terminator twice quickly processes up to it.
@@ -75,6 +82,31 @@ hit.  With COUNT, insert COUNT times the key."
     (self-insert-command (prefix-numeric-value count))
     (setq proof-double-hit--time (and (null count) (current-time)))))
 
-(provide 'pg-double-hit)
+(defun proof-electric-terminator (&optional count)
+  "Insert a terminator, maybe sending the command to the assistant.
+If we are inside a comment or string, insert the terminator.
+Otherwise, if `proof-electric-terminator-enable' is non-nil, process
+the command immediately.  If `proof-double-hit-enable' is non-nil,
+process it on a double hit instead.
 
-;;; pg-double-hit.el ends here
+To side-step either action and possibly insert multiple characters,
+pass a non-nil COUNT argument, for example M-3 <terminator>."
+  (interactive "P")
+  (cond
+   ;; Keep the former electric-terminator behaviour as the priority if
+   ;; both mutually exclusive options somehow become non-nil.
+   ((and (not count)
+         proof-electric-terminator-enable
+         (not (proof-inside-comment (point)))
+         (not (proof-inside-string (point))))
+    (proof-assert-electric-terminator))
+   ((and (not proof-electric-terminator-enable)
+         proof-double-hit-enable)
+    (proof-double-hit-insert #'proof-assert-electric-terminator count
+                             proof-terminal-string))
+   (t
+    (self-insert-command (prefix-numeric-value count)))))
+
+(provide 'pg-terminator)
+
+;;; pg-terminator.el ends here

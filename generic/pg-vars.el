@@ -283,6 +283,27 @@ Internal variable dynamically bound.")
   :type 'string
   :group 'proof-general-internals)
 
+(defconst proof-all-buffers-commands
+  '(proof-next-error
+    proof-interrupt-process
+    proof-assert-next-command-interactive
+    proof-undo-last-successful-command
+    proof-prf
+    proof-layout-windows
+    proof-shell-exit
+    proof-minibuffer-cmd
+    pg-response-clear-displays
+    proof-goto-end-of-locked
+    proof-find-theorems
+    proof-display-some-buffers
+    pg-identifier-under-mouse-query
+    proof-process-buffer
+    proof-retract-buffer)
+  "Commands that can be invoked from every Proof General buffer.
+Independent of their default key bindings in `proof-universal-keys':
+users can remove or replace a default key without making its command
+invalid in a script, goals, response or shell buffer.")
+
 (defcustom proof-universal-keys
   '(([(control c) ?`]		. proof-next-error)
     ([(control c) (control c)]  . proof-interrupt-process)

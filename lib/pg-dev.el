@@ -111,7 +111,7 @@
      pg-thymodes pg-autotest
      ;;
      coq-abbrev coq-db coq-unicode-tokens coq-local-vars coq coq-syntax
-     coq-indent coq-autotest)))
+     coq-indent)))
 
 
 

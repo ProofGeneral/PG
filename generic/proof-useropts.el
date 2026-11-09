@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(require 'pg-pamacs)                    ; proof-deftoggle
+
 (defgroup proof-user-options nil
   "User options for Proof General."
   :group 'proof-general
@@ -525,6 +527,64 @@ screen is shown."
   :group 'proof-user-options)
 
 
+;;
+;; Toggle commands of the user options, for the menus of all backends
+;;
+
+(proof-deftoggle proof-delete-empty-windows)
+(proof-deftoggle proof-shrink-windows-tofit)
+(proof-deftoggle proof-multiple-frames-enable proof-multiple-frames-toggle)
+(proof-deftoggle proof-layout-windows-on-visit-file
+		 proof-layout-windows-eagerly-toggle)
+(proof-deftoggle proof-three-window-enable proof-three-window-toggle)
+(proof-deftoggle proof-auto-raise-buffers proof-auto-raise-toggle)
+(proof-deftoggle proof-disappearing-proofs)
+(proof-deftoggle proof-full-annotation)
+(proof-deftoggle proof-colour-locked)
+(proof-deftoggle proof-sticky-errors)
+(proof-deftoggle proof-shell-quiet-errors)
+(proof-deftoggle proof-minibuffer-messages)
+(proof-deftoggle proof-output-tooltips)
+(proof-deftoggle proof-autosend-enable proof-autosend-toggle)
+(proof-deftoggle proof-fast-process-buffer)
+(proof-deftoggle proof-imenu-enable proof-imenu-toggle)
+(proof-deftoggle proof-keep-response-history)
+(proof-deftoggle proof-omit-proofs-option)
+(proof-deftoggle proof-splash-enable)
+
+;;
+;; Electric terminator mode
+;;
+
+(declare-function proof-double-hit-toggle "pg-terminator")
+(defvar proof-mode-for-script)
+(defvar proof-terminal-string)
+
+;; Register proof-electric-terminator as a minor mode.
+(or (assq 'proof-electric-terminator-enable minor-mode-alist)
+    (setq minor-mode-alist
+	  (append minor-mode-alist
+		  (list '(proof-electric-terminator-enable
+			  (:eval
+			   (if (and (boundp 'proof-mode-for-script)
+                                    (eq major-mode proof-mode-for-script))
+			       proof-terminal-string)))))))
+
+(defun proof-electric-terminator-enable (&optional arg)
+  "Ensure modeline update to display new value for electric terminator.
+This a function is called by the custom-set property \\+`proof-set-value'.
+It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
+  (unless (null arg)
+    (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
+  ;; the double hit is a replacement
+  (when (and proof-electric-terminator-enable
+             (bound-and-true-p proof-double-hit-enable))
+    (proof-double-hit-toggle 0)
+    (message "Hit M-1 . to enter a real \".\"."))
+  (force-mode-line-update))
+
+(proof-deftoggle proof-electric-terminator-enable
+		 proof-electric-terminator-toggle)
 
 (provide 'proof-useropts)
 

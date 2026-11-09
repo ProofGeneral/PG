@@ -44,25 +44,41 @@
   (let ((noext (file-name-base s)))
     (string-match-p "\\`[[:alpha:]_][[:alnum:]_]*\\'" noext)))
 
-;; DEAD CODE?
+;; Also defined, with the same default, by `defpgcustom prog-env' in
+;; pg-custom.el; Proof General passes it to the Coq process.
 (defcustom coq-prog-env nil
   "List of environment settings to pass to Coq process.
 On Windows you might need something like:
   (setq coq-prog-env \\='(\"HOME=C:\\Program Files\\Coq\\\"))"
   :group 'coq)
 
+(defvar coq--rocq-cli-cache nil
+  "Results of `coq-detect-rocq-cli'.
+An alist from (REMOTE COMMAND EXEC-PATH) to the result for COMMAND.")
+
 ;; We just call "rocq" and look the error message that should mention
 ;; subcommands
 (defun coq-detect-rocq-cli (&optional coq-command)
   "Return non nil if the detected Coq/Rocq executable obeys the Rocq CLI.
-If COQ-COMMAND is non nil, test this executable instead."
+If COQ-COMMAND is non nil, test this executable instead.  The result
+is cached for the command, the remote host of `default-directory' and
+`exec-path'; a command that cannot be run is not cached."
   (let* ((coq-command (or coq-command (bound-and-true-p proof-prog-name)
-                              (coq-autodetect-progname))))
-    (condition-case nil
-        (string-match
-         "Supported subcommands:"
-         (with-output-to-string (process-file coq-command nil standard-output)))
-      (error nil))))
+                          (coq-autodetect-progname)))
+         (key (list (file-remote-p default-directory) coq-command exec-path))
+         (cached (assoc key coq--rocq-cli-cache)))
+    (if cached
+        (cdr cached)
+      (condition-case nil
+          (let ((result
+                 (and (string-match-p
+                       "Supported subcommands:"
+                       (with-output-to-string
+                         (process-file coq-command nil standard-output)))
+                      t)))
+            (push (cons key result) coq--rocq-cli-cache)
+            result)
+        (error nil)))))
 
 (defun coq-detect-coqdep ()
   (if (coq-detect-rocq-cli) (coq-detect-prog-gen "rocq")
@@ -187,180 +203,78 @@ If V1 or V2 is not a valid version number, return nil."
                                 ,@version-regexp-alist)))
     (condition-case nil (version< v1 v2) (error nil))))
 
-(defcustom coq-pre-v85 nil
-  "Deprecated.
-Use `coq-pinned-version' if you want to bypass the
-version detection that Proof General does automatically."
-  :type 'boolean
-  :group 'coq)
+(defun coq--version-at-least (version default)
+  "Return non-nil if the auto-detected version of Coq is >= VERSION.
+If the version cannot be detected, use DEFAULT instead.  Return nil if
+it is not a valid version number."
+  (not (coq--version< (or (coq-version t) default) version)))
+
+(defun coq--version-before (version default)
+  "Return non-nil if the auto-detected version of Coq is < VERSION.
+If the version cannot be detected, use DEFAULT instead.  Return nil if
+it is not a valid version number."
+  (coq--version< (or (coq-version t) default) version))
 
 (defun coq--pre-v85 ()
   "Return non-nil if the auto-detected version of Coq is < 8.5.
 Returns nil if the version can't be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.5snapshot")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-before "8.5snapshot" "8.5"))
 
 (defun coq--post-v86 ()
   "Return t if the auto-detected version of Coq is >= 8.6.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.5")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.6"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.6" "8.5"))
 
 (defun coq--post-v809 ()
   "Return t if the auto-detected version of Coq is >= 8.9.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.8")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.10alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.9alpha" "8.8"))
 
 (defun coq--post-v810 ()
   "Return t if the auto-detected version of Coq is >= 8.10.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.9")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.10alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.10alpha" "8.9"))
 
 (defun coq--post-v811 ()
   "Return t if the auto-detected version of Coq is >= 8.11.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.10")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.11"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.11" "8.10"))
 
 (defun coq--post-v814 ()
   "Return t if the auto-detected version of Coq is >= 8.14.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.13")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.14"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.14" "8.13"))
 
 (defun coq--pre-v816 ()
   "Return t if the auto-detected version of Coq is < 8.16.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.16")))
-    (condition-case err
-	(coq--version< coq-version-to-use "8.16")
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-before "8.16" "8.16"))
 
 (defun coq--is-v817 ()
   "Return t if the auto-detected version of Coq is some 8.17 version.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.16")))
-    (condition-case err
-	(and  (not (coq--version< coq-version-to-use "8.17"))
-              (coq--version< coq-version-to-use "8.18alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (and (coq--version-at-least "8.17" "8.16")
+       (coq--version-before "8.18alpha" "8.16")))
 
 (defun coq--post-v818 ()
   "Return t if the auto-detected version of Coq is >= 8.19alpha.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "8.18")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "8.19alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "8.19alpha" "8.18"))
 
 (defun coq--post-v92 ()
   "Return t if the auto-detected version of Coq is >= 9.2+alpha.
 Return nil if the version cannot be detected."
-  (let ((coq-version-to-use (or (coq-version t) "9.1")))
-    (condition-case err
-	(not (coq--version< coq-version-to-use "9.2+alpha"))
-      (error
-       (cond
-	((equal (substring (cadr err) 0 15) "Invalid version")
-	 (signal 'coq-unclassifiable-version  coq-version-to-use))
-	(t (signal (car err) (cdr err))))))))
+  (coq--version-at-least "9.2+alpha" "9.1"))
 
 (defun coq--supports-topfile ()
   "Return t if \"-topfile\" appears in coqtop options."
   (string-match "-topfile" coq-autodetected-help)
 )
 
-(defcustom coq-use-makefile nil
-  "Whether to look for a Makefile to attempt to guess the command line.
-Set to t if you want this feature, but note that it is deprecated."
-  :type 'string
-  :group 'coq)
-
 (defcustom coq-www-home-page "http://coq.inria.fr/"
   "Coq home page URL."
   :type 'string
   :group 'coq)
-
-(defun coq--options-test-roundtrip-1 (coq-project parsed pre-v85)
-  "Run a sanity check on COQ-PROJECT's PARSED options.
-If PRE-V85 is non-nil, use compatibility mode."
-  (let* ((concatenated (apply #'append parsed))
-         (coq-load-path-include-current nil)
-         (extracted (coq--extract-load-path parsed nil))
-         (roundtrip (coq-include-options extracted nil pre-v85)))
-    (princ (format "[%s] with compatibility flag set to %S: " coq-project pre-v85))
-    (if (equal concatenated roundtrip)
-        (princ "OK\n")
-      (princ (format "Failed.\n:: Original:  %S\n:: LoadPath: %S\n:: Roundtrip: %S\n"
-                     concatenated extracted roundtrip)))))
-
-(defun coq--options-test-roundtrip (coq-project &optional v85-only)
-  "Run a sanity check on COQ-PROJECT.
-If V85-ONLY is non-nil, do not check the compatibility code."
-  (let ((parsed (coq--read-options-from-project-file coq-project)))
-    (coq--options-test-roundtrip-1 coq-project parsed nil)
-    (unless v85-only
-      (coq--options-test-roundtrip-1 coq-project parsed t))))
-
-(defun coq--options-test-roundtrips ()
-  "Run sanity tests on coq-project parsing code.
-More precisely, check that parsing and reprinting the include
-options of a few coq-project files does the right thing."
-  (with-output-to-temp-buffer "*tests*"
-    (coq--options-test-roundtrip "-Q /test Test")
-    (coq--options-test-roundtrip "-Q /test \"\"")
-    (coq--options-test-roundtrip "-R /test Test")
-    (coq--options-test-roundtrip "-I /test")))
 
 ;; it is better to inform coqtop of the name of the current module
 ;; using the -topfile option, so that coqtop understands references
@@ -441,8 +355,11 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
   (coq-coqtop-prog-args coq-load-path))
 
 (defun coq--user-set-p (symbol)
-  "Return non-nil if the user set option SYMBOL with customize."
-  (or (get symbol 'saved-value) (get symbol 'customized-value)))
+  "Return non-nil if the user set option SYMBOL.
+With customize, or with a file or directory variable in the current
+buffer."
+  (or (local-variable-p symbol)
+      (get symbol 'saved-value) (get symbol 'customized-value)))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook

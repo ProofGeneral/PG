@@ -79,8 +79,11 @@
 ;;
 ;; TODO: use standard Emacs button behaviour here (cf Info mode)
 (define-key proof-response-mode-map [mouse-1] 'pg-goals-button-action)
-(define-key proof-response-mode-map [q] 'bury-buffer)
-(define-key proof-response-mode-map [c] 'pg-response-clear-displays)
+;; These were bound to [q] and [c], the event symbols q and c, not the
+;; characters: they never worked, the keys q and c are `undefined' here
+;; (see `proof-universal-keys-only-mode').  Are they really useful?
+;; (define-key proof-response-mode-map [?q] 'bury-buffer)
+;; (define-key proof-response-mode-map [?c] 'pg-response-clear-displays)
 
 
 ;;;###autoload

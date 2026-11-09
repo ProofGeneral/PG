@@ -34,14 +34,6 @@
 
 ;;;***
 
-;;;### (autoloads nil "../coq/coq-autotest" "../coq/coq-autotest.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ../coq/coq-autotest.el
-
-(autoload 'coq-autotest "../coq/coq-autotest" nil t nil)
-
-;;;***
-
 ;;;### (autoloads nil "../coq/coq-compile-common" "../coq/coq-compile-common.el"
 ;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ../coq/coq-compile-common.el
@@ -510,13 +502,6 @@ The BODY can contain occurrences of arg.
 CMDVAR is a variable holding a function or string.  Automatically has history.
 
 \(fn FN DOC CMDVAR PROMPT &rest BODY)" nil t)
-
-(autoload 'proof-electric-terminator-enable "pg-user" "\
-Ensure modeline update to display new value for electric terminator.
-This a function is called by the custom-set property 'proof-set-value.
-It can also be used as a minor mode function: with ARG, turn on iff ARG>0
-
-\(fn &optional ARG)" nil nil)
 
 (autoload 'pg-slow-fontify-tracing-hint "pg-user" nil nil nil)
 

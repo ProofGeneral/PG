@@ -27,7 +27,7 @@
 (require 'subr-x)                       ; `string-trim-right'
 (require 'coq-syntax)                   ; `coq-with-altered-syntax-table'
 (require 'coq-db)                       ; `coq-build-command-from-db'
-(require 'coq-hyps)                     ; `coq-highlight-hyps-cited-in-response'
+(require 'coq-goals)                    ; `coq-highlight-hyps-cited-in-response'
 (require 'coq-indent)                   ; `coq-script-parse-cmdend-forward'
 
 (defvar proof-minibuffer-history)
@@ -789,9 +789,9 @@ Also insert holes at insertion positions."
 
 (defun coq-queries-define-keys (map)
   "Bind the keys of the queries and of the display in MAP.
-They are the keys under C-c C-a common to all backends that make sense
-in a goals or response buffer too: `coq-mode-map' has them, with the
-insertion keys."
+They are the default keys under C-c C-a of `coq-mode-map' for the
+commands that make sense in a goals or response buffer too, see
+`coq-all-buffers-commands'."
   ;; Queries, see `coq-query-function'.
   (define-key map (kbd "C-c C-a C-a") #'coq-Search)
   (define-key map (kbd "C-c C-a C-b") #'coq-About)
@@ -812,6 +812,133 @@ insertion keys."
   (define-key map (kbd "C-c C-a C-0") #'coq-unset-printing-parentheses)
   (define-key map (kbd "C-c C-a N") #'coq-set-printing-notations)
   (define-key map (kbd "C-c C-a n") #'coq-unset-printing-notations))
+
+(defvar coq-mode-map)
+
+(defconst coq-all-buffers-commands
+  '(;; queries
+    coq-query coq-About coq-About-with-implicits coq-About-with-all
+    coq-Check coq-Check-show-implicits coq-Check-show-all
+    coq-Print coq-Print-with-implicits coq-Print-with-all coq-Print-implicit
+    coq-Search coq-SearchRewrite coq-SearchIsos
+    coq-change-search-blacklist-interactive
+    coq-LocateConstant coq-LocateLibrary coq-LocateNotation
+    coq-PrintHint coq-PrintScope coq-PrintSection coq-Inspect coq-Pwd
+    coq-Show coq-Show-with-implicits coq-Show-with-all
+    coq-show-tree coq-show-proof coq-show-conjectures
+    ;; display
+    coq-ask-printing-width coq-store-response-win coq-store-goals-win
+    ;; printing options
+    coq-set-printing-all coq-unset-printing-all
+    coq-set-printing-implicit coq-unset-printing-implicit
+    coq-set-printing-parentheses coq-unset-printing-parentheses
+    coq-set-printing-notations coq-unset-printing-notations
+    coq-set-printing-coercions coq-unset-printing-coercions
+    coq-set-printing-compact-contexts coq-unset-printing-compact-contexts
+    coq-set-printing-synth coq-unset-printing-synth
+    coq-set-printing-universes coq-unset-printing-universes
+    coq-set-printing-unfocused coq-unset-printing-unfocused
+    coq-set-printing-wildcards coq-unset-printing-wildcards)
+  "Commands of the script buffer also available in the goals and response buffers.
+Their key bindings in `coq-mode-map', the default ones and those of the
+user, are also in the goals and response buffers of all backends, see
+`coq-all-buffers-keymap'.")
+
+(defun coq-all-buffers-keymap (&optional backend-commands)
+  "Return a new keymap for the goals and response buffers.
+With the key bindings of `coq-mode-map' for `coq-all-buffers-commands',
+the default ones and those of the user, but not those of its parent
+\(in Proof General, `proof-mode-map').  Also C-c C-a C-r and C-c C-a C-g
+for `coq-store-response-win' and `coq-store-goals-win': in the script
+buffer, these keys are insertions.  Each Coq interaction backend makes
+it a parent of the keymaps of the goals and response buffers that it
+manages, when it sets them up, after the configuration of the user.
+BACKEND-COMMANDS are additional commands whose bindings in
+`coq-mode-map' should also apply in these two kinds of output buffer."
+  (let ((map (make-sparse-keymap))
+        (own (copy-keymap coq-mode-map)))
+    (set-keymap-parent own nil)
+    (dolist (command (append coq-all-buffers-commands backend-commands))
+      (dolist (key (where-is-internal command (list own) nil t))
+        (unless (memq (aref key 0) '(menu-bar tool-bar))
+          (define-key map key command))))
+    (define-key map (kbd "C-c C-a C-r") #'coq-store-response-win)
+    (define-key map (kbd "C-c C-a C-g") #'coq-store-goals-win)
+    map))
+
+;;; Menus, common to all Coq backends
+
+(defconst coq-queries-menu-entries
+  '(["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
+    ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]
+    ["About..." coq-About :help "With prefix arg (C-u): Set Printing All first"]
+    ["Other..." coq-query]
+    [ "Store Response" coq-store-response-win :help "Stores the content of response buffer in a dedicated buffer"]
+    [ "Store Goal" coq-store-goals-win  :help "Stores the content of goals buffer in a dedicated buffer"])
+  "Entries of the main queries, common to all Coq backends.
+A list of menu items, not a submenu: Proof General puts them at the top
+level of its Coq menu.")
+
+(defconst coq-other-queries-menu
+  '("OTHER QUERIES"
+    ["Print Hint" coq-PrintHint t]
+    ["Show ith Goal..." coq-Show t]
+    ["Show ith Goal... (show implicits)" coq-Show-with-implicits t]
+    ["Show ith Goal... (show all)" coq-Show-with-all t]
+    ["Show Tree" coq-show-tree t]
+    ["Show Proof" coq-show-proof t]
+    ["Show Conjectures" coq-show-conjectures t];; maybe not so useful with editing in PG?
+    ""
+    ["Print..." coq-Print :help "With prefix arg (C-u): Set Printing All first"]
+    ["Print... (show implicits)" coq-Print-with-implicits t]
+    ["Print... (show all)" coq-Print-with-all t]
+    ["Check..." coq-Check :help "With prefix arg (C-u): Set Printing All first"]
+    ["Check (show implicits)..." coq-Check-show-implicits t]
+    ["Check (show all)..." coq-Check-show-all t]
+    ["About..." coq-About :help "With prefix arg (C-u): Set Printing All first"]
+    ["About...(show implicits)" coq-About-with-implicits t]
+    ["About...(show all)" coq-About-with-all t]
+    ["Search..." coq-Search t]
+    ["SearchRewrite..." coq-SearchRewrite t]
+    ["SearchPattern..." coq-SearchIsos t]
+    ["Search Blacklist..." coq-change-search-blacklist-interactive t]
+    ["Locate constant..." coq-LocateConstant t]
+    ["Locate Library..." coq-LocateLibrary t]
+    ["Pwd" coq-Pwd t]
+    ["Inspect..." coq-Inspect t]
+    ["Print Section..." coq-PrintSection t]
+    ""
+    ["Locate notation..." coq-LocateNotation t]
+    ["Print Implicit..." coq-Print-implicit t]
+    ["Print Scope/Visibility..." coq-PrintScope t])
+  "Menu of the other queries, common to all Coq backends.")
+
+(defconst coq-options-menu
+  '("OPTIONS"
+    ["Set Printing All" coq-set-printing-all t]
+    ["Unset Printing All" coq-unset-printing-all t]
+    ["Set Printing Implicit" coq-set-printing-implicit t]
+    ["Unset Printing Implicit" coq-unset-printing-implicit t]
+    ["Set Printing Parentheses" coq-set-printing-parentheses t]
+    ["Unset Printing Parentheses" coq-unset-printing-parentheses t]
+    ["Set Printing Notations" coq-set-printing-notations t]
+    ["Unset Printing Notations" coq-unset-printing-notations t]
+    ["Set Printing Coercions" coq-set-printing-coercions t]
+    ["Unset Printing Coercions" coq-unset-printing-coercions t]
+    ["Set Printing Compact Contexts" coq-set-printing-compact-contexts t]
+    ["Unset Printing Compact Contexts" coq-unset-printing-compact-contexts t]
+    ["Set Printing Synth" coq-set-printing-synth t]
+    ["Unset Printing Synth" coq-unset-printing-synth t]
+    ["Set Printing Universes" coq-set-printing-universes t]
+    ["Unset Printing Universes" coq-unset-printing-universes t]
+    ["Set Printing Unfocused" coq-set-printing-unfocused t]
+    ["Unset Printing Unfocused" coq-unset-printing-unfocused t]
+    ["Set Printing Wildcards" coq-set-printing-wildcards t]
+    ["Unset Printing Wildcards" coq-unset-printing-wildcards t]
+    ["Set Printing Width" coq-ask-printing-width t])
+  "Menu of the printing options, common to all Coq backends.
+The flags go through `coq-set-flag-function', the width through
+`coq-ask-printing-width-function'.")
 
 (provide 'coq-queries)
 
