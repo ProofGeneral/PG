@@ -24,6 +24,9 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+
+(declare-function package-menu-mark-upgrades "package")
+(declare-function package-menu-execute "package")
 ;;
 ;; Give Emacs version mismatch error here.
 ;;

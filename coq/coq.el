@@ -62,6 +62,7 @@
 (require 'pg-goals-indicators)          ; goals out of view
 
 (defvar prettify-symbols-alist)
+(declare-function yas-expand-snippet "yasnippet")
 
 ;;; The Coq menu of Proof General
 ;; Formerly coq-abbrev.el.  The menus common to all backends are in

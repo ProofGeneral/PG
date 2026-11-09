@@ -19,6 +19,9 @@
 ;; all tests in this file shall run in two-pane mode
 ;;; Code:
 
+(declare-function coq-Search "coq")
+(declare-function coq-Check "coq")
+
 (setq proof-three-window-enable nil)
 ;; Some Emacs versions run with a frame width of 10 in batch mode
 ;; inside the container. The line breaks make some regular expressions

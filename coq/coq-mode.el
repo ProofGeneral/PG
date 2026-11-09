@@ -42,6 +42,8 @@
 (declare-function coq-pg-setup "coq")   ; coq.el requires this file
 (require 'coq-project)                  ; load path and project file, idem
 
+(declare-function coq-pg-setup "coq")   ; coq.el requires this file
+
 (defgroup coq-mode ()
   "Major mode to edit Coq code."
   :group 'programming)

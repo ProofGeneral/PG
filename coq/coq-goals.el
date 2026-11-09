@@ -26,6 +26,7 @@
 (require 'seq)
 (require 'pg-pamacs)                    ; proof-deftoggle
 (require 'coq-db)                       ; faces of the buttons
+(require 'span)                         ; span-make, for the diffs
 (require 'coq-syntax)                   ; coq-detect-hyps-positions
 
 (defcustom coq-prefer-top-of-conclusion nil

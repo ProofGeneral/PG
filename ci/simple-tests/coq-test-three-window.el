@@ -31,6 +31,9 @@
 
 ;;; Code:
 
+(declare-function proof-shell-exit "proof-shell")
+(declare-function proof-toggle-active-scripting "proof-script")
+
 (require 'pg-response)
 
 (defun reset-coq ()
