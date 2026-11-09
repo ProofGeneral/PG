@@ -22,6 +22,24 @@ coq-test-three-window
   are too small for three windows.
 coq-test-proof-stat
 : test proof-check-proofs
+coq-test-time-commands
+: test that `coq-time-commands` prefixes the commands sent to Coq with
+  Time, except bullets and internal commands
+coq-test-silent-option
+: test that `coq-run-completely-silent` is ignored with a warning for
+  Rocq >= 9.2, which does not print goals any more (skipped for older
+  versions)
+coq-test-double-hit
+: test the default double-hit terminator, its Coq use, its exclusion
+  with the unchanged electric terminator, and that the terminator
+  command is common to all backends
+coq-test-queries
+: test that the query commands are common to all backends and that
+  their printing flags are for one query only
+coq-test-without-pg
+: test Coq mode without the Proof General backend: no proof shell is
+  loaded, the abbrevs and the commands common to all backends are there,
+  and the project file sets the load path
 coq-proof-stat-batch-test
 : Batch mode test for proof-check-proofs. There is no Emacs lisp file
   for this test. It is programmed out in the Makefile goal

@@ -27,6 +27,31 @@
 
 (require 'diff-mode)
 
+(declare-function yas-expand-snippet "yasnippet")
+
+(defcustom coq-use-yasnippet (and (not (member 'company-coq-mode
+                                              ;; maybe loaded before coq-mode
+                                              (bound-and-true-p coq-mode-hook)))
+                                  (fboundp 'yas-expand))
+  "Should Coq use yasnippets templates.
+
+Default value is t unless yasnippet is not installed or company-coq
+appears in the hoocoq-mode-hook."
+  :type 'boolean
+  :group 'coq)
+
+;; this is the function called by insertion menus. TODO: separate
+;; these menus from yasnippet templates because this should work even
+;; if the user has its own templates instead of the default ones.
+(defun coq-insert-template (snippet)
+  "Expand template SNIPPET using (by priority) yasnippet, abbrev or just ALT."
+  (when snippet
+    (if (and coq-use-yasnippet (fboundp 'yas-expand))
+        (yas-expand-snippet (coq-yas-snippet-from-db snippet))
+      (let ((start (point)))
+        (insert (coq-simple-abbrev-from-db snippet))
+        (indent-region start (point))))))
+
 (defconst coq-syntax-db nil
   "Documentation-only variable, for Coq keyword databases.
 Each element of a keyword database contains the definition of a \"form\", of the

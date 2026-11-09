@@ -25,6 +25,7 @@
 (require 'scomint)
 
 (require 'proof-script)	        ; we build on proof-script
+(require 'pg-terminator)
 
 ;; For seq-group-by inside `proof-check-report'. This is apparently
 ;; not automatically loaded in Emacs 26.3. In a real PG session it is
@@ -514,52 +515,6 @@ This is intended as a value for `proof-activate-scripting-hook'"
  "Save as" ; Saves always start at a new line
  (let ((proof-next-command-on-new-line t))
    (proof-issue-new-command arg)))
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Electric terminator mode
-;;
-
-;; Register proof-electric-terminator as a minor mode.
-(or (assq 'proof-electric-terminator-enable minor-mode-alist)
-    (setq minor-mode-alist
-	  (append minor-mode-alist
-		  (list '(proof-electric-terminator-enable
-			  (:eval
-			   (if (eq major-mode proof-mode-for-script)
-			       proof-terminal-string)))))))
-
-;;;###autoload
-(defun proof-electric-terminator-enable (&optional arg)
-  "Ensure modeline update to display new value for electric terminator.
-This a function is called by the custom-set property \\+`proof-set-value'.
-It can also be used as a minor mode function: with ARG, turn on iff ARG>0"
-  (unless (null arg)
-    (setq proof-electric-terminator-enable (> (prefix-numeric-value arg) 0)))
-  (force-mode-line-update))
-
-(proof-deftoggle proof-electric-terminator-enable
-		 proof-electric-terminator-toggle)
-
-(defun proof-electric-terminator (&optional count)
-  "Insert terminator char, maybe sending the command to the assistant.
-If we are inside a comment or string, insert the terminator.
-Otherwise, if the variable `proof-electric-terminator-enable'
-is non-nil, the command will be sent to the assistant.
-
-To side-step the electric action and possibly insert multiple characters,
-pass a non-nil COUNT arg, e.g. a numeric prefix such as M-3 <terminator>."
-  (interactive "P")
-  (if (and
-       (not count)
-       proof-electric-terminator-enable
-       (not (proof-inside-comment (point)))
-       (not (proof-inside-string (point))))
-      (proof-assert-electric-terminator)
-    (self-insert-command (prefix-numeric-value count))))
 
 
 
