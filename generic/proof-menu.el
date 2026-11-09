@@ -24,6 +24,7 @@
 
 (require 'proof-utils)    ; proof-deftoggle, proof-eval-when-ready-for-assistant
 (require 'proof-useropts)
+(require 'pg-terminator)
 (require 'proof-config)
 (require 'proof-splash)
 
@@ -373,6 +374,10 @@ without adjusting window layout."
        :style toggle
        :selected proof-electric-terminator-enable
        :help "Automatically send commands when terminator typed"]
+      ["Double Hit Terminator" proof-double-hit-toggle
+       :style toggle
+       :selected proof-double-hit-enable
+       :help "Send commands when the terminator is typed twice quickly"]
       ["Beep on Errors" proof-shell-quiet-errors-toggle
        :style toggle
        :selected (not proof-shell-quiet-errors)
@@ -583,6 +588,7 @@ without adjusting window layout."
   (list
    'proof-omit-proofs-option
    'proof-electric-terminator-enable
+   'proof-double-hit-enable
    'proof-autosend-enable
    'proof-fast-process-buffer
    'proof-script-fly-past-comments

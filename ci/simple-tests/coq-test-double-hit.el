@@ -8,14 +8,22 @@
 ;;
 ;; Test that, with the double hit enabled, hitting "." twice quickly
 ;; processes the script up to it, and that it excludes the electric
-;; terminator.
+;; terminator.  Test also the default implementation shared by all
+;; proof assistants, including the unchanged electric behaviour.
 
 ;;; Code:
 
 (setq proof-three-window-enable nil)
 
+(require 'cl-lib)
 (require 'proof-site)
 (proof-ready-for-assistant 'coq)
+
+(defvar proof-electric-terminator-enable)
+(defvar proof-double-hit-enable)
+(defvar proof-double-hit--time)
+(declare-function proof-electric-terminator "pg-terminator")
+(declare-function proof-double-hit-toggle "pg-terminator")
 
 
 ;;; utility functions
@@ -58,6 +66,55 @@ without its final dot, at the end of the buffer."
 
 
 ;;; tests
+
+(ert-deftest proof-electric-terminator-unchanged ()
+  "The default electric terminator keeps its former behaviour."
+  (with-temp-buffer
+    (let ((proof-electric-terminator-enable t)
+          (proof-double-hit-enable nil)
+          (inside-comment nil)
+          (inside-string nil)
+          (asserted 0)
+          (last-command-event ?.))
+      (cl-letf (((symbol-function 'proof-inside-comment)
+                 (lambda (_pos) inside-comment))
+                ((symbol-function 'proof-inside-string)
+                 (lambda (_pos) inside-string))
+                ((symbol-function 'proof-assert-electric-terminator)
+                 (lambda () (setq asserted (1+ asserted)))))
+        ;; Outside comments and strings it processes without inserting.
+        (proof-electric-terminator)
+        (should (= asserted 1))
+        (should (equal (buffer-string) ""))
+        ;; Inside either one it only inserts the terminator.
+        (setq inside-comment t)
+        (proof-electric-terminator)
+        (should (= asserted 1))
+        (should (equal (buffer-string) "."))
+        (setq inside-comment nil inside-string t)
+        (proof-electric-terminator)
+        (should (= asserted 1))
+        (should (equal (buffer-string) ".."))
+        ;; A prefix argument still bypasses the electric action.
+        (setq inside-string nil)
+        (proof-electric-terminator 3)
+        (should (= asserted 1))
+        (should (equal (buffer-string) "....."))))))
+
+(ert-deftest proof-double-hit-default-implementation ()
+  "The default Proof General terminator implements the double hit."
+  (with-temp-buffer
+    (let ((proof-electric-terminator-enable nil)
+          (proof-double-hit-enable t)
+          (proof-double-hit--time nil)
+          (asserted 0)
+          (last-command-event ?.))
+      (cl-letf (((symbol-function 'proof-assert-electric-terminator)
+                 (lambda () (setq asserted (1+ asserted)))))
+        (proof-electric-terminator)
+        (proof-electric-terminator)
+        (should (= asserted 1))
+        (should (equal (buffer-string) "."))))))
 
 (ert-deftest coq-double-hit-processes ()
   "A quick double hit processes up to the dot, inserted once."
@@ -110,7 +167,7 @@ gives \".\" and processes up to it, a single hit inserts it."
   (with-double-hit-file
     (should (eq (key-binding ".") #'coq-terminator-insert))
     (should (eq (lookup-key coq-mode-map ".") #'coq-terminator-insert))
-    (should (eq coq-terminator-insert-function #'coq-pg-terminator-insert))
+    (should (eq coq-terminator-insert-function #'proof-electric-terminator))
     (unwind-protect
         (progn
           (define-key coq-mode-map (kbd ";") #'coq-terminator-insert)

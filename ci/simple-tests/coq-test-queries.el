@@ -54,7 +54,7 @@
 (declare-function coq-Show "coq-queries")
 (declare-function coq-ask-printing-width "coq-goals")
 (declare-function coq-store-goals-win "coq-goals")
-(declare-function coq-toggle-fold-hyp-at-point "coq-hyps")
+(declare-function coq-toggle-fold-hyp-at-point "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
@@ -79,7 +79,7 @@
 (declare-function coq-unset-printing-notations "coq-queries")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
-(declare-function proof-double-hit-toggle "pg-double-hit")
+(declare-function proof-double-hit-toggle "pg-terminator")
 
 
 ;;; utility functions
@@ -414,7 +414,7 @@ query."
 
 (ert-deftest coq-test-queries-menu-commands ()
   "The menu entries of the printing flags run the flag they name."
-  (require 'coq-abbrev)
+  (require 'coq)                       ; the menus, formerly coq-abbrev.el
   (let (entries)
     (cl-labels ((walk (menu)
                   (dolist (item menu)

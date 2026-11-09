@@ -28,8 +28,16 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     arrows in the fringe, see `proof-goals-indicators-enable'.
     Scrolling the goals stops at their end, see
     `proof-goals-scroll-margin'.
+*** The double-hit terminator is available to every proof assistant:
+    two quick hits process the script, see `proof-double-hit-enable'.
+    It is an alternative to the unchanged electric terminator.
 
 ** Coq changes
+*** Fewer files in coq/: the code of coq-diffs.el is in coq-goals.el,
+    of coq-abbrev.el in coq.el, of coq-local-vars.el in coq-project.el.
+    The old files remain as compatibility files, which will be removed:
+    require the new ones instead.  `with-eval-after-load' of the old
+    features still works.  The unused coq-autotest.el is removed.
 *** Storing the goals or the response again (C-c C-a g, C-c C-a r)
     updates the window that displays *response-freeze*, instead of
     opening a new frame each time.
