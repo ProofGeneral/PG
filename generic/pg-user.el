@@ -25,7 +25,7 @@
 (require 'scomint)
 
 (require 'proof-script)	        ; we build on proof-script
-(require 'pg-double-hit)
+(require 'pg-terminator)
 
 ;; For seq-group-by inside `proof-check-report'. This is apparently
 ;; not automatically loaded in Emacs 26.3. In a real PG session it is
@@ -513,33 +513,6 @@ This is intended as a value for `proof-activate-scripting-hook'"
  "Save as" ; Saves always start at a new line
  (let ((proof-next-command-on-new-line t))
    (proof-issue-new-command arg)))
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; Electric terminator mode
-;;
-
-;; The minor mode, its function and its toggle are in proof-useropts.el.
-
-(defun proof-electric-terminator (&optional count)
-  "Insert terminator char, maybe sending the command to the assistant.
-If we are inside a comment or string, insert the terminator.
-Otherwise, if the variable `proof-electric-terminator-enable'
-is non-nil, the command will be sent to the assistant.
-
-To side-step the electric action and possibly insert multiple characters,
-pass a non-nil COUNT arg, e.g. a numeric prefix such as M-3 <terminator>."
-  (interactive "P")
-  (if (and
-       (not count)
-       proof-electric-terminator-enable
-       (not (proof-inside-comment (point)))
-       (not (proof-inside-string (point))))
-      (proof-assert-electric-terminator)
-    (self-insert-command (prefix-numeric-value count))))
 
 
 

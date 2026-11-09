@@ -30,7 +30,8 @@ coq-test-silent-option
   Rocq >= 9.2, which does not print goals any more (skipped for older
   versions)
 coq-test-double-hit
-: test the double hit electric terminator and that the terminator
+: test the default double-hit terminator, its Coq use, its exclusion
+  with the unchanged electric terminator, and that the terminator
   command is common to all backends
 coq-test-queries
 : test that the query commands are common to all backends and that

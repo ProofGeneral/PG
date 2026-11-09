@@ -60,7 +60,6 @@
 (require 'coq-goals)                    ; folding of the other goals
 (require 'coq-queries)                  ; About, Check, Search etc.
 (require 'pg-goals-indicators)          ; goals out of view
-(require 'pg-double-hit)                ; double hit electric terminator
 
 (defvar prettify-symbols-alist)
 
@@ -1345,7 +1344,7 @@ backends call them."
 ;;;###autoload
 (defun coq-pg-setup ()
   (set-keymap-parent (current-local-map) coq-pg-mode-map)
-  (setq coq-terminator-insert-function #'coq-pg-terminator-insert)
+  (setq coq-terminator-insert-function #'proof-electric-terminator)
   (coq-pg-set-backend-functions)
   
   ;; coq-mode colorize errors better than the generic mechanism
@@ -2400,25 +2399,6 @@ Only when three-buffer-mode is enabled."
 ;; Adapt when displaying an error or interrupt
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
           #'coq-optimise-resp-windows-if-option)
-
-;;; DOUBLE HIT ELECTRIC TERMINATOR
-;; Double hit on "." behaves like the electric terminator, see
-;; pg-double-hit.el.  The "." is used for records and modules qualified
-;; notations, so the electric terminator is not pertinent.
-
-(defun coq-pg-terminator-insert (&optional count)
-  "A wrapper on `proof-electric-terminator', COUNT is the prefix argument.
-Used to accept double hits instead if enabled, see
-`proof-double-hit-enable'.  If by accident option
-`proof-electric-terminator-enable' and option `proof-double-hit-enable'
-are non-nil at the same time, this gives priority to the former.
-This is `coq-terminator-insert-function' for Proof General."
-  (if (and (not proof-electric-terminator-enable) proof-double-hit-enable)
-      (proof-double-hit-insert #'proof-assert-electric-terminator count
-                               proof-terminal-string)
-    ;; otherwise call this, which checks proof-electric-terminator-enable
-    (proof-electric-terminator count)))
-
 
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;
 

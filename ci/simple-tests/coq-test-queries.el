@@ -79,7 +79,7 @@
 (declare-function coq-unset-printing-notations "coq-queries")
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
-(declare-function proof-double-hit-toggle "pg-double-hit")
+(declare-function proof-double-hit-toggle "pg-terminator")
 
 
 ;;; utility functions

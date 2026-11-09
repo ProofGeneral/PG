@@ -556,7 +556,7 @@ screen is shown."
 ;; Electric terminator mode
 ;;
 
-(declare-function proof-double-hit-toggle "pg-double-hit")
+(declare-function proof-double-hit-toggle "pg-terminator")
 (defvar proof-mode-for-script)
 (defvar proof-terminal-string)
 

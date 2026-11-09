@@ -28,6 +28,9 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     arrows in the fringe, see `proof-goals-indicators-enable'.
     Scrolling the goals stops at their end, see
     `proof-goals-scroll-margin'.
+*** The double-hit terminator is available to every proof assistant:
+    two quick hits process the script, see `proof-double-hit-enable'.
+    It is an alternative to the unchanged electric terminator.
 
 ** Coq changes
 *** Fewer files in coq/: the code of coq-diffs.el is in coq-goals.el,
