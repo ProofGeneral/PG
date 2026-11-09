@@ -843,19 +843,21 @@ Their key bindings in `coq-mode-map', the default ones and those of the
 user, are also in the goals and response buffers of all backends, see
 `coq-all-buffers-keymap'.")
 
-(defun coq-all-buffers-keymap ()
+(defun coq-all-buffers-keymap (&optional backend-commands)
   "Return a new keymap for the goals and response buffers.
 With the key bindings of `coq-mode-map' for `coq-all-buffers-commands',
 the default ones and those of the user, but not those of its parent
 \(in Proof General, `proof-mode-map').  Also C-c C-a C-r and C-c C-a C-g
 for `coq-store-response-win' and `coq-store-goals-win': in the script
-buffer, these keys are insertions.  Each backend makes it a parent of
-the keymaps of its goals and response buffers, when it sets them up,
-after the configuration of the user."
+buffer, these keys are insertions.  Each Coq interaction backend makes
+it a parent of the keymaps of the goals and response buffers that it
+manages, when it sets them up, after the configuration of the user.
+BACKEND-COMMANDS are additional commands whose bindings in
+`coq-mode-map' should also apply in these two kinds of output buffer."
   (let ((map (make-sparse-keymap))
         (own (copy-keymap coq-mode-map)))
     (set-keymap-parent own nil)
-    (dolist (command coq-all-buffers-commands)
+    (dolist (command (append coq-all-buffers-commands backend-commands))
       (dolist (key (where-is-internal command (list own) nil t))
         (unless (memq (aref key 0) '(menu-bar tool-bar))
           (define-key map key command))))

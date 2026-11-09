@@ -379,21 +379,28 @@ those of the parent of `coq-mode-map' nor of the insertions."
           (dolist (command coq-all-buffers-commands)
             (should (commandp command)))
           (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
+          (define-key coq-mode-map (kbd "C-c v") #'forward-char)
           (define-key other (kbd "C-c w") #'coq-About)
           (set-keymap-parent coq-mode-map other)
           (let ((map (coq-all-buffers-keymap)))
             (should (eq (lookup-key map (kbd "C-c C-a C-b")) #'coq-About))
             (should (eq (lookup-key map (kbd "C-c C-a g")) #'coq-store-goals-win))
             (should (eq (lookup-key map (kbd "C-c y")) #'coq-Check))
+            (should-not (lookup-key map (kbd "C-c v")))
             (should-not (lookup-key map (kbd "C-c w")))
             (should-not (lookup-key map (kbd "C-c C-a C-i")))
             ;; insertions in the script buffer
             (should (eq (lookup-key map (kbd "C-c C-a C-r")) #'coq-store-response-win))
             (should (eq (lookup-key map (kbd "C-c C-a C-g")) #'coq-store-goals-win))
             (should (eq (lookup-key coq-mode-map (kbd "C-c C-a C-r"))
-                        #'coq-insert-requires))))
+                        #'coq-insert-requires)))
+          ;; An interaction backend extends the commands copied from
+          ;; `coq-mode-map' to the goals and response keymaps it manages.
+          (let ((map (coq-all-buffers-keymap '(forward-char))))
+            (should (eq (lookup-key map (kbd "C-c v")) #'forward-char))))
       (set-keymap-parent coq-mode-map parent)
-      (define-key coq-mode-map (kbd "C-c y") nil))))
+      (define-key coq-mode-map (kbd "C-c y") nil)
+      (define-key coq-mode-map (kbd "C-c v") nil))))
 
 ;; compatibility files of the files merged into others
 

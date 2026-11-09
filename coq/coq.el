@@ -1554,14 +1554,25 @@ shortly before `proof-assert-command-hook', respectively,
 (setq coq-goals-buffer-function (lambda () proof-goals-buffer))
 (setq coq-response-buffer-function (lambda () proof-response-buffer))
 
+(defconst coq-pg-all-buffers-commands
+  (append proof-all-buffers-commands
+          '(coq-toggle-highlight-hyp-at-point))
+  "Commands propagated to Coq output buffers by the PG backend.
+Their bindings in `coq-mode-map' also apply in the Coq goals and
+response buffers managed by the Proof General interaction backend.
+Highlighting a hypothesis depends on point in the current Coq buffer,
+not on point in the active script.")
+
 (defun coq-pg-set-buffer-keys (map generic-map)
   "Make the keys of `coq-all-buffers-keymap' a parent of MAP.
 Before GENERIC-MAP, the keymap of Proof General, parent of MAP.  MAP
 keeps the priority, with the key bindings of the user there.  Called
 each time the goals or response buffer is set up, for the key bindings
 of the user in `coq-mode-map'."
-  (set-keymap-parent map (make-composed-keymap (coq-all-buffers-keymap)
-                                               generic-map)))
+  (set-keymap-parent
+   map (make-composed-keymap
+        (coq-all-buffers-keymap coq-pg-all-buffers-commands)
+        generic-map)))
 
 (defun coq-goals-mode-config ()
   (coq-pg-set-backend-functions)

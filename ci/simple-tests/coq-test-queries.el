@@ -30,6 +30,9 @@
 (defvar proof-goals-buffer)
 (defvar coq-mode-map)
 (defvar proof-mode-map)
+(defvar proof-all-buffers-commands)
+(defvar proof-universal-keys)
+(defvar coq-pg-all-buffers-commands)
 (defvar coq-goals-mode-map)
 (defvar coq-query-function)
 (defvar coq-query-result-function)
@@ -56,6 +59,7 @@
 (declare-function coq-store-goals-win "coq-goals")
 (declare-function coq-toggle-fold-hyp-at-point "coq-goals")
 (declare-function coq-store-response-win "coq-goals")
+(declare-function coq-toggle-highlight-hyp-at-point "coq-goals")
 (declare-function coq-insert-intros "coq")
 (declare-function coq-insert-tactic "coq-templates")
 (declare-function coq-insert-as-in-next-command "coq-queries")
@@ -80,6 +84,11 @@
 (declare-function coq-query-flags-from-prefix "coq-queries")
 (declare-function proof-electric-terminator-toggle "pg-user")
 (declare-function proof-double-hit-toggle "pg-terminator")
+(declare-function proof-assert-next-command-interactive "pg-user")
+(declare-function proof-assert-until-point-interactive "pg-user")
+(declare-function proof-process-buffer "pg-user")
+(declare-function proof-retract-buffer "pg-user")
+(declare-function proof-undo-last-successful-command "pg-user")
 
 
 ;;; utility functions
@@ -165,8 +174,27 @@ the user in `coq-goals-mode-map'.  See also
 `coq-test-without-pg-user-keys'."
   (unwind-protect
       (progn
+        (dolist (binding proof-universal-keys)
+          (should (memq (cdr binding) proof-all-buffers-commands)))
+        ;; Removing a default key does not make its command invalid in
+        ;; output buffers: key choices and command validity are independent.
+        (let ((proof-universal-keys nil))
+          (should (memq 'proof-assert-next-command-interactive
+                        coq-pg-all-buffers-commands)))
         (define-key coq-mode-map (kbd "C-c y") #'coq-Check)
         (define-key coq-mode-map (kbd "C-c C-t") #'coq-About)
+        (define-key coq-mode-map (kbd "C-M-<down>")
+                    #'proof-assert-next-command-interactive)
+        (define-key coq-mode-map (kbd "C-M-<up>")
+                    #'proof-undo-last-successful-command)
+        (define-key coq-mode-map (kbd "C-M-b") #'proof-process-buffer)
+        (define-key coq-mode-map (kbd "C-M-r") #'proof-retract-buffer)
+        (define-key coq-mode-map (kbd "<f7>")
+                    #'coq-toggle-highlight-hyp-at-point)
+        ;; This command depends on point in the script buffer: do not
+        ;; propagate its user binding to the output buffers.
+        (define-key coq-mode-map (kbd "C-M-e")
+                    #'proof-assert-until-point-interactive)
         (define-key proof-mode-map (kbd "C-c x") #'coq-Print)
         (define-key coq-goals-mode-map (kbd "C-c C-a C-p") #'coq-Inspect)
         (coq-test-queries-with-file
@@ -181,6 +209,17 @@ the user in `coq-goals-mode-map'.  See also
               (should-not (eq (key-binding (kbd "C-c x")) #'coq-Print))
               (should (eq (key-binding (kbd "C-c C-a C-r")) #'coq-store-response-win))
               (should (eq (key-binding (kbd "C-c C-a C-g")) #'coq-store-goals-win))
+              ;; User bindings for commands valid in every PG buffer.
+              (should (eq (key-binding (kbd "C-M-<down>"))
+                          #'proof-assert-next-command-interactive))
+              (should (eq (key-binding (kbd "C-M-<up>"))
+                          #'proof-undo-last-successful-command))
+              (should (eq (key-binding (kbd "C-M-b")) #'proof-process-buffer))
+              (should (eq (key-binding (kbd "C-M-r")) #'proof-retract-buffer))
+              (should (eq (key-binding (kbd "<f7>"))
+                          #'coq-toggle-highlight-hyp-at-point))
+              (should-not (eq (key-binding (kbd "C-M-e"))
+                              #'proof-assert-until-point-interactive))
               ;; the keys of Proof General there
               (should (eq (key-binding [mouse-1]) #'pg-goals-button-action))))
           (with-current-buffer proof-goals-buffer
@@ -192,6 +231,12 @@ the user in `coq-goals-mode-map'.  See also
             (should-not (eq (key-binding (kbd "f")) #'coq-toggle-fold-hyp-at-point)))))
     (define-key coq-mode-map (kbd "C-c y") nil)
     (define-key coq-mode-map (kbd "C-c C-t") nil)
+    (define-key coq-mode-map (kbd "C-M-<down>") nil)
+    (define-key coq-mode-map (kbd "C-M-<up>") nil)
+    (define-key coq-mode-map (kbd "C-M-b") nil)
+    (define-key coq-mode-map (kbd "C-M-r") nil)
+    (define-key coq-mode-map (kbd "<f7>") nil)
+    (define-key coq-mode-map (kbd "C-M-e") nil)
     (define-key proof-mode-map (kbd "C-c x") nil)
     (define-key coq-goals-mode-map (kbd "C-c C-a C-p") nil)))
 
