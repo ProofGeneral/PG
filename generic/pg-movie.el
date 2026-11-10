@@ -1,4 +1,4 @@
-;;; pg-movie.el --- Export a processed script buffer for external replay
+;;; pg-movie.el --- Export a processed script buffer for external replay  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

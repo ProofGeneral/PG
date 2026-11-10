@@ -1,4 +1,4 @@
-;;; coq-test-goals-present.el --- Test that Proof General shows goals correctly in various situations
+;;; coq-test-goals-present.el --- Test that Proof General shows goals correctly in various situations  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

@@ -1,4 +1,4 @@
-;;; coq-test-response-after-show.el --- Test messages displayed around the automatic Show
+;;; coq-test-response-after-show.el --- Test messages displayed around the automatic Show  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;;

@@ -1,4 +1,4 @@
-;;; pg-custom.el --- Proof General per-prover settings
+;;; pg-custom.el --- Proof General per-prover settings  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

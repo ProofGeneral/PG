@@ -1,4 +1,4 @@
-;;; pghaskell.el --- Proof General for Haskell scripts.
+;;; pghaskell.el --- Proof General for Haskell scripts.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; pg-fontsets.el --- Define fontsets useful for Proof General
+;;; pg-fontsets.el --- Define fontsets useful for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; proof-menu.el --- Menus, keymaps, misc commands for Proof General
+;;; proof-menu.el --- Menus, keymaps, misc commands for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -1054,28 +1054,31 @@ NB: variable `curvalue' is dynamically scoped (used in `proof-assistant-format')
 (defun proof-assistant-format-lambda (value)
   (funcall value))
 
-(defun proof-assistant-format (string curvalue)
-  "Replace a format characters in STRING by formatted CURVALUE.
+(defun proof-assistant-format (string curvalue-arg)
+  "Replace a format characters in STRING by formatted CURVALUE-ARG.
 Format character is one of %b, %i, %f, %s, or %l.
 Formatting suitable for current proof assistant, controlled by
 `proof-assistant-format-table' which see.
 Finally, apply `proof-assistant-setting-format' if non-nil.
 Alternatively, STRING can be a function which yields a string when applied
-to the CURVALUE.
+to CURVALUE-ARG.
 As another special case for boolean settings: the setting STRING
 can be a cons cell of two strings, the first one for true (non-nil
 value) and the second for false."
   (let ((setting
 	 (cond
 	  ((stringp string)   ;; use % format characters
-           ;; Dynbind for use in proof-assistant-format-table!
+           ;; Dynbind for use in proof-assistant-format-table!  The
+           ;; argument must not have the same name: in interpreted
+           ;; code, the lexical argument would hide the dynamic binding
+           ;; when reading `curvalue' in this function.
            (with-no-warnings (defvar curvalue))
-           (let ((curvalue curvalue))
+           (let ((curvalue curvalue-arg))
 	     (proof-format proof-assistant-format-table string)))
 	  ((functionp string) ;; call the function
-	   (funcall string curvalue))
+	   (funcall string curvalue-arg))
 	  ((consp string)     ;; true/false options
-	   (if curvalue (car string) (cdr string)))
+	   (if curvalue-arg (car string) (cdr string)))
 	  (t ;; no idea what to do
 	   (error "Function proof-assistant-format: called with invalid string arg %s" string)))))
     (if proof-assistant-setting-format

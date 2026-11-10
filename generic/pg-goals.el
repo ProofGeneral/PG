@@ -1,4 +1,4 @@
-;;; pg-goals.el --- Proof General goals buffer mode.
+;;; pg-goals.el --- Proof General goals buffer mode.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

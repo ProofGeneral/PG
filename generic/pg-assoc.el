@@ -1,4 +1,4 @@
-;;; pg-assoc.el --- Functions for associated buffers
+;;; pg-assoc.el --- Functions for associated buffers  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

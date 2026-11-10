@@ -1,4 +1,4 @@
-;;; proof-useropts.el --- Global user options for Proof General
+;;; proof-useropts.el --- Global user options for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

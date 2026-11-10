@@ -1,4 +1,4 @@
-;;; qrhl-test-input.el --- Tests related to the qRHL prover
+;;; qrhl-test-input.el --- Tests related to the qRHL prover  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

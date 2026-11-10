@@ -1,4 +1,4 @@
-;;; coq-test-omit-proofs.el --- Test the omit proofs feature
+;;; coq-test-omit-proofs.el --- Test the omit proofs feature  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

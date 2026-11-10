@@ -1,4 +1,4 @@
-;;; doc/docstring-magic.el --- hack for using texi-docstring-magic.
+;;; doc/docstring-magic.el --- hack for using texi-docstring-magic.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

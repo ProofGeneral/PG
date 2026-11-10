@@ -1,4 +1,4 @@
-;;; coq-test-proof-stat.el --- Tests for proof-check-report and proof-check-annotate
+;;; coq-test-proof-stat.el --- Tests for proof-check-report and proof-check-annotate  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

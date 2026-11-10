@@ -1,4 +1,4 @@
-;;; pgocaml.el --- Proof General for OCaml scripts.
+;;; pgocaml.el --- Proof General for OCaml scripts.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

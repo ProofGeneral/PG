@@ -1,4 +1,4 @@
-;;; pg-response.el --- Proof General response buffer mode.
+;;; pg-response.el --- Proof General response buffer mode.  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
