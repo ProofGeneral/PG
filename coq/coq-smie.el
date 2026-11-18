@@ -646,7 +646,48 @@ The point should be at the beginning of the command name."
           "; equations"
         ";")))))
 
+(defvar coq-smie--tokens nil
+  "Tokens read backward during `coq-smie-indent-region', or nil.
+A hash table from a position to (TOKEN . START): the token before this
+position and where it starts.  Indenting each line reads backward the
+tokens before it: the next lines read them again.")
+
+(defun coq-smie--forget-tokens (beg _end _length)
+  "Forget the tokens cached at BEG or after, the text changed there.
+In `after-change-functions' during `coq-smie-indent-region'."
+  (when coq-smie--tokens
+    (maphash (lambda (pos _token)
+               (when (>= pos beg) (remhash pos coq-smie--tokens)))
+             coq-smie--tokens)))
+
+(defun coq-smie-indent-region (start end)
+  "Indent the lines between START and END, caching the tokens.
+This is `indent-region-function' in Coq mode: each line is indented by
+`indent-line-function', the tokens read for a line are not read again
+for the next ones, see `coq-smie--tokens'."
+  (let ((coq-smie--tokens (make-hash-table :test #'eql)))
+    (add-hook 'after-change-functions #'coq-smie--forget-tokens nil t)
+    (unwind-protect
+        (if (fboundp 'indent-region-line-by-line)
+            (indent-region-line-by-line start end)
+          (let ((indent-region-function nil))
+            (indent-region start end)))
+      (remove-hook 'after-change-functions #'coq-smie--forget-tokens t))))
+
 (defun coq-smie-backward-token ()
+  "Return the token before point, move point before it.
+Cached during `coq-smie-indent-region', see `coq-smie--tokens'."
+  (let ((cached (and coq-smie--tokens (gethash (point) coq-smie--tokens))))
+    (if cached
+        (progn (goto-char (cdr cached)) (car cached))
+      (let ((pos (point))
+            (token (coq-smie--backward-token)))
+        (when coq-smie--tokens
+          (puthash pos (cons token (point)) coq-smie--tokens))
+        token))))
+
+(defun coq-smie--backward-token ()
+  "Return the token before point, move point before it."
   (let ((tok (coq-smie-backward-token-aux)))
     (cond
      ((assoc tok coq-smie-user-tokens)

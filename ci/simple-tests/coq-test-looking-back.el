@@ -21,6 +21,7 @@
 
 (require 'proof-site)
 (require 'ert)
+(require 'cl-lib)
 (with-temp-buffer (coq-mode))           ; loads it, through its autoload
 
 (defvar coq-goal-selector-regexp)

@@ -300,7 +300,8 @@ Near here means PT is either inside or just aside of a comment."
               :backward-token #'coq-smie-backward-token)
   (add-hook 'smie-indent-functions #'coq-smie--args nil t)
   ;; SMIE still gives the moves by sexps and the matching parentheses
-  (unless coq-indent-enable
+  (if coq-indent-enable
+      (setq-local indent-region-function #'coq-smie-indent-region)
     (setq-local indent-line-function #'coq-indent-like-previous-line)
     (setq-local electric-indent-inhibit t))
 
