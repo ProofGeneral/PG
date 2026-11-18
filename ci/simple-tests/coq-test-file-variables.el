@@ -124,8 +124,7 @@ the directory of the file in BODY."
     (coq-test-file-variables-detect
       (setq proof-prog-name "not-a-coq-program")
       (coq-pg-detect-programs)
-      (should (equal proof-prog-name (coq-autodetect-progname)))
-      (should (equal coq-prog-name proof-prog-name)))))
+      (should (equal proof-prog-name (coq-autodetect-progname))))))
 
 (ert-deftest coq-test-file-variables-prog-name-asked ()
   "The Coq program given by the user with `proof-prog-name-ask' is kept."
@@ -134,8 +133,7 @@ the directory of the file in BODY."
       (setq proof-prog-name-ask t)
       (setq proof-prog-name "/asked/rocq")
       (coq-pg-detect-programs)
-      (should (equal proof-prog-name "/asked/rocq"))
-      (should (equal coq-prog-name "/asked/rocq")))))
+      (should (equal proof-prog-name "/asked/rocq")))))
 
 (ert-deftest coq-test-file-variables-prog-name-customized ()
   "A customized Coq program is kept."
@@ -145,10 +143,19 @@ the directory of the file in BODY."
         (unwind-protect
             (progn
               (put 'coq-prog-name 'customized-value '("/customized/rocq"))
-              (setq proof-prog-name "/customized/rocq")
+              (setq coq-prog-name "/customized/rocq")
               (coq-pg-detect-programs)
               (should (equal proof-prog-name "/customized/rocq")))
           (put 'coq-prog-name 'customized-value customized))))))
+
+(ert-deftest coq-test-file-variables-prog-name-setq ()
+  "A Coq program set with `setq' is kept and not overwritten (#869)."
+  (coq-test-file-variables-with-file nil nil
+    (coq-test-file-variables-detect
+      (setq coq-prog-name "/setq/coqtop")
+      (coq-pg-detect-programs)
+      (should (equal proof-prog-name "/setq/coqtop"))
+      (should (equal coq-prog-name "/setq/coqtop")))))
 
 (ert-deftest coq-test-file-variables-prog-name-local ()
   "The Coq program and the compilers given by file variables are kept."
