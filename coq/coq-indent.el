@@ -36,6 +36,17 @@ where the match may start, it may be before `point-min'."
     (signal 'wrong-type-argument (list 'integer-or-marker-p limit)))
   (looking-back regexp limit greedy))
 
+(defconst coq-looking-back-window 200
+  "Characters before point where `coq-looking-back-near' looks.
+More than the constructions it looks for, like a goal selector.")
+
+(defun coq-looking-back-near (regexp &optional greedy)
+  "Like `coq-looking-back' with REGEXP and GREEDY, near point.
+For a REGEXP without maximal length (with *, + ...) matching a short
+construction: the match starts at most `coq-looking-back-window'
+characters before point."
+  (coq-looking-back regexp (- (point) coq-looking-back-window) greedy))
+
 
 ;; debugging
 ;(defmacro measure-time (&rest body)
@@ -394,10 +405,9 @@ Comments are ignored, of course."
   ;; with implicits --> this function is recursive
   (cond
    ;; "{" can be prefixed by a goal selector (coq-8.8).
-   ;; TODO: looking-back is supposed to be slow. Find something else?
-   ((or (and (looking-at "{")(looking-back "[0-9]+\\s-*:\\s-*" nil t))
-        (and (looking-at ":\\s-*{")(looking-back "[0-9]+\\s-*" nil t))
-        (and (looking-at ":\\s-*{")(looking-back "\[[^]]+\]\\s-*" nil t))
+   ((or (and (looking-at "{") (coq-looking-back-near "[0-9]+\\s-*:\\s-*" t))
+        (and (looking-at ":\\s-*{") (coq-looking-back-near "[0-9]+\\s-*" t))
+        (and (looking-at ":\\s-*{") (coq-looking-back-near "\[[^]]+\]\\s-*" t))
         (and (looking-at "[0-9]+:\\s-*{") nil t))
     (goto-char (match-beginning 0))     ; swallow goal selector
     (coq-empty-command-p))
@@ -406,8 +416,10 @@ Comments are ignored, of course."
    ;; vernacular controls Time, Fail, Redirect, Timeout
    ((or (and (looking-at "e\\>") (coq-looking-back "\\<Tim" (- (point) 3)))
         (and (looking-at "l\\>") (coq-looking-back "\\<Fai" (- (point) 3)))
-        (and (looking-at "\"") (looking-back "\\<Redirect\\s-+\"[^\"]+"))
-        (and (looking-at "[[:digit:]]\\_>") (looking-back "\\<Timeout\\s-+[[:digit:]]*")))
+        (and (looking-at "\"")
+             (coq-looking-back-near "\\<Redirect\\s-+\"[^\"]+"))
+        (and (looking-at "[[:digit:]]\\_>")
+             (coq-looking-back-near "\\<Timeout\\s-+[[:digit:]]*")))
     (goto-char (match-beginning 0))
     (coq-empty-command-p))
    ;; not a bullet, we found something else, it should be either a

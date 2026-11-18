@@ -428,7 +428,8 @@ The point should be at the beginning of the command name."
   (save-excursion              ; FIXME Is there other module starting commands?
     (let ((case-fold-search nil))
       (cond
-       ((looking-back "with\\s-+" nil) "module nodecl") ; Module that is not a declaration keyword (like in with Module)
+       ;; Module that is not a declaration keyword (like in with Module)
+       ((coq-looking-back-near "with\\s-+") "module nodecl")
        ((looking-at "\\(Module\\|Section\\)\\>")
         (if (coq-lonely-:=-in-this-command) "Module start" "Module def"))))))
 
@@ -776,14 +777,14 @@ The point should be at the beginning of the command name."
            (save-excursion
              (forward-char -1)
              (if (and (looking-at "{")
-                      (looking-back coq-goal-selector-regexp nil t))
+                      (coq-looking-back-near coq-goal-selector-regexp t))
                  (goto-char (match-beginning 0)))
              (let ((nxttok (coq-smie-backward-token))) ;; recursive call
                (coq-is-cmdend-token nxttok))))
       (forward-char -1)
       (if (looking-at "}") "} subproof"
         (if (and (looking-at "{")
-                 (looking-back coq-goal-selector-regexp nil t))
+                 (coq-looking-back-near coq-goal-selector-regexp t))
             (goto-char (match-beginning 0)))
         "{ subproof"
         ))
