@@ -5534,6 +5534,12 @@ recording it in the script.
 @node Indentation tweaking
 @section Indentation tweaking
 
+@vindex coq-indent-enable
+The indentation follows the syntax of Coq.  If option
+@code{coq-indent-enable} is nil, a line is indented like the previous
+one instead, and the lines are not indented again while typing.  This is
+also much faster on large scripts.
+
 Indentation of Coq script is provided by Proof General, but it may
 behave badly especially if you use syntax extensions. You can sometimes
 fix this problem by telling PG that some token should be considered as

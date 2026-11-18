@@ -26,6 +26,27 @@
 
 (require 'proof-syntax)       ; proof-looking-at etc., no proof shell
 
+(defun coq-looking-back (regexp limit &optional greedy)
+  "Like `looking-back' with REGEXP, LIMIT and GREEDY, but LIMIT is mandatory.
+Without it, `looking-back' tries all the positions back to the beginning
+of the buffer: called for each token, the indentation is quadratic in
+the size of the script (issue #919).  LIMIT is the earliest position
+where the match may start, it may be before `point-min'."
+  (unless (integer-or-marker-p limit)
+    (signal 'wrong-type-argument (list 'integer-or-marker-p limit)))
+  (looking-back regexp limit greedy))
+
+(defconst coq-looking-back-window 200
+  "Characters before point where `coq-looking-back-near' looks.
+More than the constructions it looks for, like a goal selector.")
+
+(defun coq-looking-back-near (regexp &optional greedy)
+  "Like `coq-looking-back' with REGEXP and GREEDY, near point.
+For a REGEXP without maximal length (with *, + ...) matching a short
+construction: the match starts at most `coq-looking-back-window'
+characters before point."
+  (coq-looking-back regexp (- (point) coq-looking-back-window) greedy))
+
 
 ;; debugging
 ;(defmacro measure-time (&rest body)
@@ -384,20 +405,21 @@ Comments are ignored, of course."
   ;; with implicits --> this function is recursive
   (cond
    ;; "{" can be prefixed by a goal selector (coq-8.8).
-   ;; TODO: looking-back is supposed to be slow. Find something else?
-   ((or (and (looking-at "{")(looking-back "[0-9]+\\s-*:\\s-*" nil t))
-        (and (looking-at ":\\s-*{")(looking-back "[0-9]+\\s-*" nil t))
-        (and (looking-at ":\\s-*{")(looking-back "\[[^]]+\]\\s-*" nil t))
+   ((or (and (looking-at "{") (coq-looking-back-near "[0-9]+\\s-*:\\s-*" t))
+        (and (looking-at ":\\s-*{") (coq-looking-back-near "[0-9]+\\s-*" t))
+        (and (looking-at ":\\s-*{") (coq-looking-back-near "\[[^]]+\]\\s-*" t))
         (and (looking-at "[0-9]+:\\s-*{") nil t))
     (goto-char (match-beginning 0))     ; swallow goal selector
     (coq-empty-command-p))
    ;; other bulleting syntax
    ((looking-at "{\\|}\\|-\\|\\+\\|\\*") (coq-empty-command-p))
    ;; vernacular controls Time, Fail, Redirect, Timeout
-   ((or (and (looking-at "e\\>") (looking-back "\\<Tim" (- (point) 3)))
-        (and (looking-at "l\\>") (looking-back "\\<Fai" (- (point) 3)))
-        (and (looking-at "\"") (looking-back "\\<Redirect\\s-+\"[^\"]+"))
-        (and (looking-at "[[:digit:]]\\_>") (looking-back "\\<Timeout\\s-+[[:digit:]]*")))
+   ((or (and (looking-at "e\\>") (coq-looking-back "\\<Tim" (- (point) 3)))
+        (and (looking-at "l\\>") (coq-looking-back "\\<Fai" (- (point) 3)))
+        (and (looking-at "\"")
+             (coq-looking-back-near "\\<Redirect\\s-+\"[^\"]+"))
+        (and (looking-at "[[:digit:]]\\_>")
+             (coq-looking-back-near "\\<Timeout\\s-+[[:digit:]]*")))
     (goto-char (match-beginning 0))
     (coq-empty-command-p))
    ;; not a bullet, we found something else, it should be either a
@@ -409,7 +431,8 @@ Comments are ignored, of course."
 
 ;; Strictly speaking lp:{{ could be a goal selector?
 (defun coq-is-at-elpi-block (pos)
-  (save-excursion (goto-char pos) (and (looking-at "{{") (looking-back "lp:"))))
+  (save-excursion (goto-char pos)
+                  (and (looking-at "{{") (coq-looking-back "lp:" (- (point) 3)))))
 
 (defun coq-in-elpi-block (lopen)
   (cl-find-if 'coq-is-at-elpi-block lopen))
