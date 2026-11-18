@@ -340,10 +340,6 @@ In `proof-shell-before-process-hook'."
     (message "coq-proof-prog-name: %S" proof-prog-name)
     (message "coq-dependency-analyzer: %S"  coq-dependency-analyzer)
     (message "coq-compiler: %S"  coq-compiler))
-  ;; in principe coq-prog-name is only used to set up
-  ;; proof-prog-name, but it may sometimes be used by itself
-  ;; so let us sync them
-  (setq coq-prog-name proof-prog-name)
   ;; now elaborate args
   (setq coq-prog-args (coq-prog-args)))
 
