@@ -1293,6 +1293,30 @@ Typical values are 2 or 4."
   "Return non-nil if PARENT-POS is on same line as CHILD-POS."
   (= (line-number-at-pos parent-pos) (line-number-at-pos child-pos)))
 
+(defcustom coq-indent-enable t
+  "If non-nil, indent Coq scripts according to their syntax.
+If nil, a line is indented like the previous one, by
+\\[indent-for-tab-command] or by a newline, and the lines are not
+indented again while typing, see `electric-indent-inhibit'.  This is
+also much faster on large scripts.  Takes effect when `coq-mode' starts
+in a buffer."
+  :group 'coq-mode
+  :type 'boolean
+  :safe #'booleanp)
+
+(defun coq-indent-like-previous-line ()
+  "Indent the current line like the previous non blank one.
+This is `indent-line-function' when `coq-indent-enable' is nil.  Point
+stays in the text if it is after the indentation."
+  (let ((column (save-excursion
+                  (beginning-of-line)
+                  (if (re-search-backward "^[ \t]*[^ \t\n]" nil t)
+                      (current-indentation)
+                    0))))
+    (if (<= (current-column) (current-indentation))
+        (indent-line-to column)
+      (save-excursion (indent-line-to column)))))
+
 (defcustom coq-indent-basic 2
   "Basic indentation step.
 If nil, default to `proof-indent' if it exists or to `smie-indent-basic'."

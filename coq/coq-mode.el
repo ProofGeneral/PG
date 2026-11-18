@@ -299,6 +299,10 @@ Near here means PT is either inside or just aside of a comment."
               :forward-token #'coq-smie-forward-token
               :backward-token #'coq-smie-backward-token)
   (add-hook 'smie-indent-functions #'coq-smie--args nil t)
+  ;; SMIE still gives the moves by sexps and the matching parentheses
+  (unless coq-indent-enable
+    (setq-local indent-line-function #'coq-indent-like-previous-line)
+    (setq-local electric-indent-inhibit t))
 
   ;; old indentation code.
   ;; (require 'coq-indent)
