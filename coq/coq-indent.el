@@ -26,6 +26,16 @@
 
 (require 'proof-syntax)       ; proof-looking-at etc., no proof shell
 
+(defun coq-looking-back (regexp limit &optional greedy)
+  "Like `looking-back' with REGEXP, LIMIT and GREEDY, but LIMIT is mandatory.
+Without it, `looking-back' tries all the positions back to the beginning
+of the buffer: called for each token, the indentation is quadratic in
+the size of the script (issue #919).  LIMIT is the earliest position
+where the match may start, it may be before `point-min'."
+  (unless (integer-or-marker-p limit)
+    (signal 'wrong-type-argument (list 'integer-or-marker-p limit)))
+  (looking-back regexp limit greedy))
+
 
 ;; debugging
 ;(defmacro measure-time (&rest body)
@@ -394,8 +404,8 @@ Comments are ignored, of course."
    ;; other bulleting syntax
    ((looking-at "{\\|}\\|-\\|\\+\\|\\*") (coq-empty-command-p))
    ;; vernacular controls Time, Fail, Redirect, Timeout
-   ((or (and (looking-at "e\\>") (looking-back "\\<Tim" (- (point) 3)))
-        (and (looking-at "l\\>") (looking-back "\\<Fai" (- (point) 3)))
+   ((or (and (looking-at "e\\>") (coq-looking-back "\\<Tim" (- (point) 3)))
+        (and (looking-at "l\\>") (coq-looking-back "\\<Fai" (- (point) 3)))
         (and (looking-at "\"") (looking-back "\\<Redirect\\s-+\"[^\"]+"))
         (and (looking-at "[[:digit:]]\\_>") (looking-back "\\<Timeout\\s-+[[:digit:]]*")))
     (goto-char (match-beginning 0))
@@ -409,7 +419,8 @@ Comments are ignored, of course."
 
 ;; Strictly speaking lp:{{ could be a goal selector?
 (defun coq-is-at-elpi-block (pos)
-  (save-excursion (goto-char pos) (and (looking-at "{{") (looking-back "lp:"))))
+  (save-excursion (goto-char pos)
+                  (and (looking-at "{{") (coq-looking-back "lp:" (- (point) 3)))))
 
 (defun coq-in-elpi-block (lopen)
   (cl-find-if 'coq-is-at-elpi-block lopen))

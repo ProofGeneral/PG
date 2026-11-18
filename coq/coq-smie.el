@@ -277,7 +277,7 @@ the token of \".\" is simply \".\"."
     ;; skip a regular word + one backslash
     (when (zerop tok-punc)
       (skip-syntax-backward "w_'")
-      (if (looking-back "\\s-\\\\") (forward-char -1)))
+      (if (coq-looking-back "\\s-\\\\" (- (point) 2)) (forward-char -1)))
     ;; Special case: if the symbols found end by "." or ";",
     ;; then consider this last letter alone as a token
     (when (and (not (zerop tok-punc)) (string-match "\\s.+[.;]" str-punc))
@@ -667,7 +667,7 @@ The point should be at the beginning of the command name."
    (let ((dist (skip-syntax-forward ".")))
      
      (when (or (zerop dist)
-               (and (= 1 dist) (looking-back "\\\\")))
+               (and (= 1 dist) (coq-looking-back "\\\\" (1- (point)))))
        (skip-syntax-forward "w_'"))
      (point))))
 
@@ -677,7 +677,7 @@ The point should be at the beginning of the command name."
    (point)
    (progn (when (zerop (skip-syntax-backward "."))
             (skip-syntax-backward "w_'")
-            (if (looking-back "\\s-\\\\") (forward-char -1)))
+            (if (coq-looking-back "\\s-\\\\" (- (point) 2)) (forward-char -1)))
           (point))))
 
 (defun coq-smie-backward-token-aux ()
@@ -796,8 +796,8 @@ The point should be at the beginning of the command name."
      ;;  (forward-char -1)
      ;;  (if (looking-at "{") "{ subproof" "} subproof"))
 
-     ((and (equal tok ":") (looking-back "\\<\\(constr\\|ltac2?\\|uconstr\\)"
-                                         (- (point) 7)))
+     ((and (equal tok ":")
+           (coq-looking-back "\\<\\(constr\\|ltac2?\\|uconstr\\)" (- (point) 7)))
       ": ltacconstr")
 
      ((member tok '(":=" "::="))
