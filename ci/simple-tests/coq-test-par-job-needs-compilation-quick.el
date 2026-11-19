@@ -1,4 +1,4 @@
-;;; test-coq-par-job-needs-compilation-quick.el --- test compilation internals
+;;; test-coq-par-job-needs-compilation-quick.el --- test compilation internals  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

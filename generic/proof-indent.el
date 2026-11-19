@@ -1,4 +1,4 @@
-;;; proof-indent.el --- Generic indentation for proof assistants
+;;; proof-indent.el --- Generic indentation for proof assistants  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

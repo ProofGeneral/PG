@@ -1,4 +1,4 @@
-;;; pg-pgip.el --- PGIP manipulation for Proof General
+;;; pg-pgip.el --- PGIP manipulation for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 
@@ -398,8 +398,7 @@ Also sets local proverid and srcid variables for buffer."
     (find-file file)
     (let ((buffer (get-file-buffer file)))
       (with-current-buffer buffer
-	(make-local-variable 'proverid)
-	(setq proverid proverid))
+	(set (make-local-variable 'proverid) proverid))
       (set pg-pgip-srcids (cl-acons srcid (list buffer file) pg-pgip-srcids)))))
 
 

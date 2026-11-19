@@ -1,4 +1,4 @@
-;;; coq-test-prelude-correct.el --- Test that the Proof General prelude is correct
+;;; coq-test-prelude-correct.el --- Test that the Proof General prelude is correct  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

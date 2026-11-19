@@ -1,4 +1,4 @@
-;;; proof-easy-config.el --- Easy configuration for Proof General
+;;; proof-easy-config.el --- Easy configuration for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

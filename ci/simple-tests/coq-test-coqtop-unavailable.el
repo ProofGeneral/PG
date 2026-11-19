@@ -1,4 +1,4 @@
-;;; coq-test-coqtop-unavailable.el --- Test for when coqtop is unavailable
+;;; coq-test-coqtop-unavailable.el --- Test for when coqtop is unavailable  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

@@ -1,4 +1,4 @@
-;;; easycrypt-keywords.el --- Definition of keywords for EasyCrypt mode
+;;; easycrypt-keywords.el --- Definition of keywords for EasyCrypt mode  -*- lexical-binding: t; -*-
 
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute

@@ -1,4 +1,4 @@
-;;; proof-faces.el --- Faces for Proof General
+;;; proof-faces.el --- Faces for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; Regression testing of indentation.
+;;; Regression testing of indentation.  -*- lexical-binding: t; -*-
 
 ;;; Initially the file is indented as it is supposed to be. Each line
 ;;; is unindented, then indented. If the new indentation differ a
