@@ -91,6 +91,7 @@ is cached for the command, the remote host of `default-directory' and
 ;; (dep, c, top)) triggering the particular tool.
 (defcustom coq-dependency-analyzer (coq-detect-coqdep)
   "Command to invoke coqdep."
+  :initialize #'coq--initialize-detected
   :type 'string
   :safe 'stringp
   :group 'coq)
@@ -98,6 +99,7 @@ is cached for the command, the remote host of `default-directory' and
 (defcustom coq-compiler (coq-detect-coqc)
    ;FIXME
   "Command to invoke the Coq compiler."
+  :initialize #'coq--initialize-detected
   :type 'string
   :safe 'stringp
   :group 'coq)
@@ -356,10 +358,15 @@ LOADPATH, CURRENT-DIRECTORY, PRE-V85: see `coq-coqc-prog-args'."
 
 (defun coq--user-set-p (symbol)
   "Return non-nil if the user set option SYMBOL.
-With customize, or with a file or directory variable in the current
-buffer."
+With customize, with a file or directory variable in the current
+buffer, or with `setq' (before or after loading Proof General): the
+global value differs from the last value detected by Proof General,
+see `coq--set-detected'."
   (or (local-variable-p symbol)
-      (get symbol 'saved-value) (get symbol 'customized-value)))
+      (get symbol 'saved-value) (get symbol 'customized-value)
+      (let ((detected (get symbol 'coq--detected-value)))
+        (not (and detected
+                  (equal (default-value symbol) (car detected)))))))
 
 ;; smie's parenthesis blinking is too slow, let us have the default one back
 (add-hook 'coq-mode-hook
