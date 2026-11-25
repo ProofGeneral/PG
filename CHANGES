@@ -24,6 +24,18 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
 *** Improve splash screen, add menu entry to permanently disable it
     (Proof-General -> Quick Options -> Display -> Disable Splash Screen),
     reduce splash screen time to make it less annoying
+*** The goals and response windows one above the other share their
+    height to fit their contents, for all the provers: each one gets
+    what it needs if they all fit, otherwise a share of the height,
+    see `proof-shrink-windows-tofit' (now on by default),
+    `proof-output-windows-weights' and `proof-shrink-windows-bonus'.
+    The other windows, like the script window, keep their height.
+    `coq-optimise-resp-windows-enable' is an obsolete alias of
+    `proof-shrink-windows-tofit'.
+*** A response too long for its window shows its end, where the
+    error is: an error message often begins with a long context.  See
+    `proof-response-show-end' (menu Proof-General -> Quick Options ->
+    Display -> Response Shows End).
 *** Goals windows tell when the goals continue out of view, with
     arrows in the fringe, see `proof-goals-indicators-enable'.
     Scrolling the goals stops at their end, see
@@ -122,8 +134,7 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `coq-store-goals-win') and the printing flags (C-c C-a C-9, C-0, N
     and n for Printing Parentheses and Notations, and the commands of
     the menu Coq -> OPTIONS).  The options
-    `coq-auto-adapt-printing-width' and
-    `coq-optimise-resp-windows-enable' are common too.
+    `coq-auto-adapt-printing-width' is common too.
 *** The goals and response buffers have the same keys as the script
     buffer for the queries and the display, see
     `coq-queries-define-keys', in particular the printing flags.
