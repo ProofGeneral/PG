@@ -285,10 +285,49 @@ manager instead of within Emacs."
   :type 'boolean
   :group 'proof-user-options)
 
-(defcustom proof-shrink-windows-tofit nil
-  "*If non-nil, automatically shrink output windows to fit contents.
-In single-frame mode, this option will reduce the size of the
-goals and response windows to fit their contents."
+;; Before the option, to keep the value a user set before loading
+;; Proof General, see `define-obsolete-variable-alias'.  The Coq option
+;; was the one resizing the windows by default.
+(define-obsolete-variable-alias 'coq-optimise-resp-windows-enable
+  'proof-shrink-windows-tofit "4.6")
+
+(defcustom proof-shrink-windows-tofit t
+  "*If non-nil, give the output windows the height of their contents.
+The goals and response windows one above the other share their height:
+each one gets what it needs to display its whole content if they all
+fit, otherwise a share of the height, in proportion to its weight in
+`proof-output-windows-weights'.  A window needing a bit more than its
+share gets what it needs, see `proof-shrink-windows-bonus'.  The other
+windows, like the script window, keep their height, and so does an
+output window alone in its column.  Not with
+`proof-multiple-frames-enable'."
+  :type 'boolean
+  :group 'proof-user-options)
+
+(defcustom proof-output-windows-weights '((goals . 1) (response . 1))
+  "*Weights of the output windows sharing their height.
+An alist from the role of an output window, like goals or response, to
+a positive number.  When the windows do not fit, a window gets a share
+of the height in proportion to its weight, and the windows of greater
+weight get the remaining lines first.  A window not listed has weight
+1.  A very large weight, like 100, gives a window the height it needs
+before the others.  See `proof-shrink-windows-tofit'."
+  :type '(alist :key-type symbol :value-type number)
+  :group 'proof-user-options)
+
+(defcustom proof-shrink-windows-bonus 1.5
+  "*How much more than its share an output window may get to fit.
+When the output windows do not fit, a window needing at most this
+number times its share of the height gets what it needs to display its
+whole content, at the expense of the other windows.  1 disables it.
+See `proof-shrink-windows-tofit'."
+  :type 'number
+  :group 'proof-user-options)
+
+(defcustom proof-response-show-end t
+  "*If non-nil, a response too long for its window shows its end.
+The error messages often begin with the context, the error is at the
+end.  If nil, the beginning of the response is displayed."
   :type 'boolean
   :group 'proof-user-options)
 
@@ -533,6 +572,7 @@ screen is shown."
 
 (proof-deftoggle proof-delete-empty-windows)
 (proof-deftoggle proof-shrink-windows-tofit)
+(proof-deftoggle proof-response-show-end)
 (proof-deftoggle proof-multiple-frames-enable proof-multiple-frames-toggle)
 (proof-deftoggle proof-layout-windows-on-visit-file
 		 proof-layout-windows-eagerly-toggle)

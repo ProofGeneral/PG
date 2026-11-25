@@ -459,7 +459,11 @@ without adjusting window layout."
        :active (not proof-multiple-frames-enable)
        :style toggle
        :selected proof-shrink-windows-tofit
-       :help "Dynamically shrink size of output panes to fit contents"]
+       :help "Output panes one above the other share their height to fit their contents"]
+      ["Response Shows End" proof-response-show-end-toggle
+       :style toggle
+       :selected proof-response-show-end
+       :help "A response too long for its pane shows its end"]
       ["Colour Locked" proof-colour-locked-toggle
        :style toggle
        :selected proof-colour-locked
@@ -610,6 +614,7 @@ without adjusting window layout."
    'proof-delete-empty-windows
    'proof-multiple-frames-enable
    'proof-shrink-windows-tofit
+   'proof-response-show-end
    'proof-colour-locked
    'proof-sticky-errors
    'proof-splash-enable

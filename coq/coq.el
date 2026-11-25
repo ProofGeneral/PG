@@ -585,16 +585,6 @@ See also option `coq-hide-additional-subgoals'."
 ;; Auxiliary code for Coq modes
 ;;
 
-;; finding the main frame of pg.
-(defun coq-find-threeb-frames ()
-  "Return a list of frames displaying both response and goals buffers."
-  (let* ((wins-resp (get-buffer-window-list proof-response-buffer nil t))
-         (wins-gls (get-buffer-window-list proof-goals-buffer nil t))
-         (frame-resp (mapcar #'window-frame wins-resp))
-         (frame-gls (mapcar #'window-frame wins-gls)))
-    (filtered-frame-list (lambda (x) (and (member x frame-resp) (member x frame-gls))))))
-
-
 ;; slight modification of proof-script-generic-parse-cmdend (one of the
 ;; candidate for proof-script-parse-function). See its definition in
 ;; coq-indent.el.
@@ -1019,8 +1009,7 @@ Proof General, see it."
         (set-buffer proof-response-buffer)
         (let ((inhibit-read-only 'titi))
           (pg-response-display s)
-          (proof-display-and-keep-buffer proof-response-buffer)
-          (coq-optimise-resp-windows))))
+          (proof-display-and-keep-buffer proof-response-buffer))))
     t))
 
 ;; Since Printing Width is a synchronized option in coq (?) it is retored
@@ -2330,7 +2319,7 @@ buffer (see `coq-start-goals-regexp') is kept."
     (proof-clean-buffer proof-goals-buffer)))
 
 
-;; This hook must be added before coq-optimise-resp-windows, in order to be evaluated
+;; This hook must be added before coq-fit-output-windows, in order to be evaluated
 ;; *after* windows resizing.
 (add-hook 'proof-shell-handle-delayed-output-hook
 	  #'coq-show-first-goal)
@@ -2352,65 +2341,29 @@ See `coq-hyps-mark'.  The goals are new if not marked yet."
 
 
 
-(defun is-not-split-vertic (_selected-window)
-  (<= (- (frame-height) (window-height)) 2))
-
-;; bug fixed in generic ocde, useless now:
-;(add-hook 'proof-activate-scripting-hook (lambda () (when proof-three-window-enable (proof-layout-windows))))
-
-;; *Experimental* auto shrink response buffer in three windows mode. Things get
-;; a bit messed up if the response buffer is not at the right place (below
-;; goals buffer) TODO: Have this linked to proof-resize-window-tofit in
-;; proof-utils.el + customized by the "shrink to fit" menu entry
-;;  + have it on by default when in three windows mode.
-;; The philosophy is that if goals and response are on the same column, their
-;; cumulated size should not change.
-(defun coq-optimise-resp-windows ()
-  "Resize response buffer to optimal size.
-Only when three-buffer-mode is enabled."
+(defun coq-fit-output-windows ()
+  "Fit the goals and response windows to their contents.
+See `proof-fit-output-windows'.  Not after a silent command."
   ;; CPC 2015-12-31: Added the check below: if the command that caused this
   ;; call was silent, we shouldn't touch the response buffer.  See GitHub
   ;; issues https://github.com/cpitclaudel/company-coq/issues/32 and
   ;; https://github.com/cpitclaudel/company-coq/issues/8.
   (unless (memq 'no-response-display proof-shell-delayed-output-flags)
-    ;; If there is no frame with goql+response then do nothing
-    (when proof-three-window-enable
-      (let ((threeb-frames (coq-find-threeb-frames)))
-        (when threeb-frames
-          (let ((pg-frame (car threeb-frames))) ; selecting one adequate frame
-            (with-selected-frame pg-frame
-              (let ((response-window (get-buffer-window proof-response-buffer t))
-                    (goals-window (get-buffer-window proof-goals-buffer t)))
-                (when (and response-window
-                           (> (frame-height) 10))
-                  (with-selected-window response-window
-                    (with-current-buffer proof-response-buffer
-                      (let* ((response-height (window-text-height response-window))
-                             (goals-height (window-text-height goals-window))
-                             (maxhgth (- (+ response-height goals-height)
-                                         window-min-height))
-                             (nline-resp ; number of lines we want for response buffer
-                              (min maxhgth (max window-min-height ; + 1 for comfort
-                                                (+ 1 (count-lines (point-max) (point-min)))))))
-                        (unless (is-not-split-vertic (selected-window))
-                          (shrink-window (- response-height nline-resp)))
-                        (goto-char (point-min))
-                        (recenter)))))))))))))
+    (proof-fit-output-windows)))
 
-;; TODO: remove/add hook instead?
-(defun coq-optimise-resp-windows-if-option ()
-  (when coq-optimise-resp-windows-enable (coq-optimise-resp-windows)))
+(define-obsolete-function-alias 'coq-optimise-resp-windows
+  #'proof-fit-output-windows "4.6")
+(define-obsolete-function-alias 'coq-optimise-resp-windows-if-option
+  #'coq-fit-output-windows "4.6")
 
-;; TODO: I would rather have a response-insert-hook thant this two hooks
-;; Careful: coq-optimise-resp-windows must be called BEFORE proof-show-first-goal,
-;; i.e. added in hook AFTER it.
+;; After the display of the goals and response, before
+;; `coq-show-first-goal' (added before in the hooks).
 
 ;; Adapt when displaying a normal message
-(add-hook 'proof-shell-handle-delayed-output-hook
-          #'coq-optimise-resp-windows-if-option)
+(add-hook 'proof-shell-handle-delayed-output-hook #'coq-fit-output-windows)
 ;; Adapt when displaying an error or interrupt
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
-          #'coq-optimise-resp-windows-if-option)
+          #'coq-fit-output-windows)
 
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;
 

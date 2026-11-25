@@ -62,6 +62,7 @@
 (require 'proof-syntax)			; syntax utils
 (require 'proof-autoloads)		; interface fns
 (require 'scomint)			; for proof-shell-live-buffer
+(require 'pg-output-windows)		; proof-fit-output-windows
 
 ;;
 ;; Handy macros
@@ -306,8 +307,10 @@ Experimentally we display a message from time to time advertising
 (defun proof-display-and-keep-buffer (buffer &optional pos force)
   "Display BUFFER and make window according to display mode.
 If optional POS is present, will set point to POS.
-Otherwise move point to the end of the buffer.
-Ensure that point is visible in window."
+Otherwise move point to the end of the buffer, except in the response
+buffer: see `proof-response-show-end'.
+Ensure that point is visible in window.  Then fit the output windows to
+their contents, see `proof-fit-output-windows'."
   (if (or force proof-auto-raise-buffers)
     (save-excursion
     (save-selected-window
@@ -318,23 +321,22 @@ Ensure that point is visible in window."
 	      (if proof-three-window-enable
 		  (set-window-dedicated-p window proof-three-window-enable))
 	      (select-window window)
-	      (if proof-shrink-windows-tofit
-		  (proof-resize-window-tofit)
-		;; If we're not shrinking to fit, allow the size of
-		;; this window to change.  [NB: might be nicer to
-		;; fix the size based on user choice]
-		(setq window-size-fixed nil))
-	      ;; For various reasons, point may get moved around in
-	      ;; response buffer.  Attempt to normalise its position.
-	      (goto-char (or pos (point-max)))
-	      (if pos
-		  (beginning-of-line)
-		(skip-chars-backward "\n\t "))
-	      ;; Ensure point visible.  Again, window may have died
-	      ;; inside shrink to fit, for some reason
-	      (when (window-live-p window)
-		(unless (pos-visible-in-window-p (point) window)
-		  (recenter -1))))))))))
+	      ;; Allow the size of this window to change.
+	      (setq window-size-fixed nil)
+	      ;; Also places the response, see `proof-show-response'.
+	      (proof-fit-output-windows)
+	      (unless (and (eq buffer proof-response-buffer) (not pos))
+		;; For various reasons, point may get moved around in
+		;; response buffer.  Attempt to normalise its position.
+		(goto-char (or pos (point-max)))
+		(if pos
+		    (beginning-of-line)
+		  (skip-chars-backward "\n\t "))
+		;; Ensure point visible.  Again, window may have died
+		;; inside shrink to fit, for some reason
+		(when (window-live-p window)
+		  (unless (pos-visible-in-window-p (point) window)
+		    (recenter -1)))))))))))
 
 (defun proof-clean-buffer (buffer)
   "Erase BUFFER and hide from display if `proof-delete-empty-windows' set.
@@ -494,6 +496,8 @@ or if the window is the only window of its frame."
 	      ;; which determines window size of buffer.
 	      ;; (setq window-size-fixed (window-height window))
 	      ))))))
+
+(make-obsolete 'proof-resize-window-tofit 'proof-fit-output-windows "4.6")
 
 
 
