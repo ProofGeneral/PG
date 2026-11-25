@@ -31,7 +31,8 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     `proof-output-windows-weights' and `proof-shrink-windows-bonus'.
     The other windows, like the script window, keep their height.
     `coq-optimise-resp-windows-enable' is an obsolete alias of
-    `proof-shrink-windows-tofit'.
+    `proof-shrink-windows-tofit'.  The command
+    `proof-resize-window-tofit' is removed.
 *** A response too long for its window shows its end, where the
     error is: an error message often begins with a long context.  See
     `proof-response-show-end' (menu Proof-General -> Quick Options ->
@@ -133,7 +134,7 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     (C-c C-a r and g, renamed `coq-store-response-win' and
     `coq-store-goals-win') and the printing flags (C-c C-a C-9, C-0, N
     and n for Printing Parentheses and Notations, and the commands of
-    the menu Coq -> OPTIONS).  The options
+    the menu Coq -> OPTIONS).  The option
     `coq-auto-adapt-printing-width' is common too.
 *** The goals and response buffers have the same keys as the script
     buffer for the queries and the display, see

@@ -309,9 +309,9 @@ output window alone in its column.  Not with
 An alist from the role of an output window, like goals or response, to
 a positive number.  When the windows do not fit, a window gets a share
 of the height in proportion to its weight, and the windows of greater
-weight get the remaining lines first.  A window not listed has weight
-1.  A very large weight, like 100, gives a window the height it needs
-before the others.  See `proof-shrink-windows-tofit'."
+weight, then the upper ones, get the remaining lines first.  A window
+not listed has weight 1.  A very large weight, like 100, gives a window
+the height it needs before the others.  See `proof-shrink-windows-tofit'."
   :type '(alist :key-type symbol :value-type number)
   :group 'proof-user-options)
 

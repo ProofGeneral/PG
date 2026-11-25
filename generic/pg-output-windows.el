@@ -23,7 +23,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'seq)
 (require 'pg-vars)                      ; proof-goals-buffer
 (require 'proof-useropts)
 
@@ -67,62 +66,48 @@ smaller than MINIMUM lines per window."
   (let* ((minimum (or minimum window-min-height))
          (count (length needs))
          (weights (or weights (make-list count 1)))
-         (bonus (or bonus 1)))
-    (when (and needs (>= total (* minimum count)))
-      (let* ((excesses (mapcar (lambda (need) (max 0 (- need minimum)))
-                               needs))
-             (room (- total (* minimum count)))
-             (full (make-list count nil))
-             (level-of
-              ;; the level of the windows not full, in what the full
-              ;; ones leave
-              (lambda ()
-                (let ((left room) (open-excesses nil) (open-weights nil))
-                  (cl-mapc (lambda (excess weight fullp)
-                             (if fullp
-                                 (setq left (- left excess))
-                               (push excess open-excesses)
-                               (push weight open-weights)))
-                           excesses weights full)
-                  (cons left (proof--water-level left open-excesses
-                                                 open-weights)))))
-             (level (cdr (funcall level-of))))
+         (bonus (or bonus 1))
+         (room (- total (* minimum count)))
+         (excesses (mapcar (lambda (need) (max 0 (- need minimum))) needs))
+         (full nil)          ; the windows getting their excess with the bonus
+         (level nil))
+    (cl-labels ((open (list) (cl-loop for x in list for i from 0
+                                      unless (memq i full) collect x))
+                (left () (- room (apply #'+ (mapcar (lambda (i) (nth i excesses))
+                                                    full))))
+                (share (i) (* (nth i weights) level)))
+      (when (and needs (>= room 0))
+        (setq level (proof--water-level (left) (open excesses) (open weights)))
         ;; the bonus: one window at a time, the closest to its share
-        (let ((best t))
-          (while (and level best)
-            (setq best nil)
-            (let ((left (car (funcall level-of))) (best-ratio nil))
-              (dotimes (i count)
-                (let* ((share (+ minimum (* (nth i weights) level)))
-                       (need (+ minimum (nth i excesses)))
-                       (ratio (/ need share)))
-                  (when (and (not (nth i full))
-                             (> need share)
-                             (<= ratio bonus)
-                             (<= (nth i excesses) left)
-                             (or (not best-ratio) (< ratio best-ratio)))
-                    (setq best i
-                          best-ratio ratio)))))
-            (when best
-              (setf (nth best full) t)
-              (setq level (cdr (funcall level-of))))))
-        ;; the heights, rounded down for the windows that do not fit
-        (let* ((extras (cl-mapcar (lambda (excess weight fullp)
-                                    (if (or fullp (not level)
-                                            (<= excess (* weight level)))
-                                        excess
-                                      (floor (* weight level))))
-                                  excesses weights full))
-               (left (- room (apply #'+ extras)))
-               (cut (seq-filter (lambda (i) (< (nth i extras)
-                                               (nth i excesses)))
-                                (number-sequence 0 (1- count))))
-               (takers (or cut '(0))))
-          (while (> left 0)
-            (dolist (i takers)
-              (when (> left 0)
-                (setf (nth i extras) (1+ (nth i extras)))
-                (setq left (1- left)))))
+        (while
+            (let* ((left (and level (left)))
+                   (best (cl-loop
+                          for i below count
+                          for excess = (nth i excesses)
+                          for ratio = (and left (/ (+ minimum excess)
+                                                   (+ minimum (share i))))
+                          when (and ratio (not (memq i full))
+                                    (> excess (share i)) (<= ratio bonus)
+                                    (<= excess left))
+                          collect (cons ratio i))))
+              (when best
+                (push (cdar (sort best #'car-less-than-car)) full)
+                (setq level (proof--water-level (left) (open excesses)
+                                                (open weights)))
+                t)))
+        ;; rounded down for the windows that do not fit; they get the
+        ;; lines left, otherwise the first window gets them
+        (let* ((extras (cl-loop for i below count
+                                for excess = (nth i excesses)
+                                collect (if (or (memq i full) (not level)
+                                                (<= excess (share i)))
+                                            excess
+                                          (floor (share i)))))
+               (cut (cl-loop for i below count
+                             unless (= (nth i extras) (nth i excesses))
+                             collect i)))
+          (dotimes (k (- room (apply #'+ extras)))
+            (cl-incf (nth (if cut (nth (mod k (length cut)) cut) 0) extras)))
           (mapcar (lambda (extra) (+ minimum extra)) extras))))))
 
 ;;; Windows
@@ -150,13 +135,6 @@ See `proof-window-lines-function'."
                             (assq role proof-output-windows-weights)))))
     (if (and (numberp weight) (> weight 0)) weight 1)))
 
-(defun proof-output-window-rank (role)
-  "Rank of ROLE in `proof-output-windows-weights', for the ties.
-The roles not listed come after the listed ones."
-  (or (ignore-errors
-        (cl-position role proof-output-windows-weights :key #'car-safe))
-      most-positive-fixnum))
-
 (defun proof-output-window-columns (windows)
   "The WINDOWS adjacent one above the other, by column.
 Lists of at least two windows, from top to bottom."
@@ -176,24 +154,19 @@ Lists of at least two windows, from top to bottom."
 
 (defun proof-resize-output-column (column roles)
   "Give the windows of COLUMN, one above the other, the height they need.
-ROLES maps the windows to their roles, giving their priorities: by
-weight, then by rank.  See `proof-allocate-heights'.  Only the edges
-between the windows move."
-  (let* ((priority (lambda (window)
-                     (let ((role (cdr (assq window roles))))
-                       (cons (proof-output-window-weight role)
-                             (proof-output-window-rank role)))))
-         (by-priority
-          (sort (copy-sequence column)
-                (lambda (a b)
-                  (let ((pa (funcall priority a)) (pb (funcall priority b)))
-                    (or (> (car pa) (car pb))
-                        (and (= (car pa) (car pb)) (< (cdr pa) (cdr pb))))))))
+ROLES maps the windows to their roles, giving their weights.  The
+windows of greater weight, then the upper ones, come first, see
+`proof-allocate-heights'.  Only the edges between the windows move."
+  (let* ((weight (lambda (window)
+                   (proof-output-window-weight (cdr (assq window roles)))))
+         ;; stable: the upper windows first at equal weight
+         (by-priority (sort (copy-sequence column)
+                            (lambda (a b) (> (funcall weight a)
+                                             (funcall weight b)))))
          (heights (proof-allocate-heights
                    (apply #'+ (mapcar #'window-total-height column))
                    (mapcar #'proof-window-need by-priority)
-                   (mapcar (lambda (window) (car (funcall priority window)))
-                           by-priority)
+                   (mapcar weight by-priority)
                    window-min-height
                    (if (and (numberp proof-shrink-windows-bonus)
                             (>= proof-shrink-windows-bonus 1))

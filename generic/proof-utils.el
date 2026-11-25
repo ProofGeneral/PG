@@ -321,8 +321,6 @@ their contents, see `proof-fit-output-windows'."
 	      (if proof-three-window-enable
 		  (set-window-dedicated-p window proof-three-window-enable))
 	      (select-window window)
-	      ;; Allow the size of this window to change.
-	      (setq window-size-fixed nil)
 	      ;; Also places the response, see `proof-show-response'.
 	      (proof-fit-output-windows)
 	      (unless (and (eq buffer proof-response-buffer) (not pos))
@@ -389,118 +387,6 @@ No action if BUF is nil or killed."
 	     (pop-to-buffer buf 'not-this-window 'norecord))))))
 
 
-;; Originally based on `shrink-window-if-larger-than-buffer', which
-;; has a pretty weird implementation.
-;; FIXME: GNU Emacs has useful "window-size-fixed" which we use
-;; HOWEVER, it's still not quite the right thing, it seems to me.
-;; We'd like to specifiy a *minimum size* for a given buffer,
-;; not a maximum.  With a frame split with just goals/response
-;; we'd still get resize errors here using window-size-fixed.
-;; FIXME: shrink-to-fit doesn't really work in three-buffer mode,
-;; since shrinking one of the associated buffers tends to enlarge the
-;; other (rather than just enlarging the proof state)
-(defun proof-resize-window-tofit (&optional window)
-  "Shrink the WINDOW to be as small as possible to display its contents.
-Do not shrink to less than `window-min-height' lines.
-Do nothing if the buffer contains more lines than the present window height,
-or if some of the window's contents are scrolled out of view,
-or if the window is not the full width of the frame,
-or if the window is the only window of its frame."
-;; da: actually seems okay in this case
-  (interactive)
-  (or window (setq window (selected-window)))
-  ;; some checks before resizing to avoid messing custom display
-  ;; [probably somewhat superfluous/extra rare]
-  (if
-      (or
-       ;; The frame must not be minibuffer-only.
-       (eq (frame-parameter (window-frame window) 'minibuffer) 'only)
-       ;; We've got more than one window, right?
-       (= 1 (let ((frame (selected-frame)))
-	      (select-frame (window-frame window))
-	      (unwind-protect ;; [why is this protected?]
-		  (count-windows)
-		(select-frame frame)
-		(select-window window))))
-       ;; the window is the full width, right?
-       ;; [if not, we may be in horiz-split scheme, problematic]
-       (not (zerop (car (window-edges window)))) ;not leftmost
-       (not (>= (nth 2 (window-edges window))    ;not rightmost
-	        (frame-width (window-frame window)))))
-      ;; OK, we're not going to adjust the height here.  Moreover,
-      ;; we'll make sure the height can be changed elsewhere.
-      (setq window-size-fixed nil)
-    (with-current-buffer (window-buffer window)
-      (let*
-	  ;; weird test cases:
-	  ;; cur=45, max=23, desired=121, extraline=0
-	  ;; current height
-	  ;;; (cur-height (window-height window))
-	   ;; Most window is allowed to grow to
-	  ((max-height
-	     (/ (frame-height (window-frame window))
-		(if proof-three-window-enable
-		    ;; we're in three-window-mode with
-		    ;; all horizontal splits, so share the height.
-		    3
-		  ;; Otherwise assume a half-and-half split.
-		  2)))
-	   ;; I find that I'm willing to use a bit more than the max in
-	   ;; those cases where it allows me to see the whole
-	   ;; response/goal.  --Stef
-	   (absolute-max-height
-	    (truncate
-	     (/ (frame-height (window-frame window))
-		(if proof-three-window-enable
-		    ;; we're in three-window-mode with
-		    ;; all horizontal splits, so share the height.
-		    2
-		  ;; Otherwise assume a half-and-half split.
-		  1.5))))
-	   ;; If buffer ends with a newline and point is right after it, then
-	   ;; add a final empty line (to display the cursor).
-	   (extraline (if (and (eobp) (bolp)) 1 0))
-	   ;; (test-pos (- (point-max) extraline))
-	   ;; Direction of resizing based on whether max position is
-	   ;; currently visible.  [ FIXME: not completely sensible:
-	   ;; may be displaying end fraction of buffer! ]
-	   ;; (shrink (pos-visible-in-window-p test-pos window))
-	   ;; Likely desirable height is given by count-lines
-	   (desired-height
-	    ;; FIXME: is count-lines too expensive for v.large
-	    ;; buffers?  Probably not an issue for us, but one
-	    ;; wonders at the shrink to fit strategy.
-	    ;; NB: way to calculate pixel fraction?
-	    (+ extraline (count-lines (point-min) (point-max))))
-	   (safe-desired-height
-	    ;; Under certain circumstances (involving a non-nil
-	    ;; line-spacing), a desired-height of 1 (which happens
-	    ;; quite often, eg for an empty response buffer) gives an
-	    ;; error inside set-window-text-height. The reason for
-	    ;; this is quite complicated, it involves rounding issues
-	    ;; and emacs' habbit to sometimes resize a window by 2
-	    ;; pixels.
-	    (max 2 desired-height)))
-	;; Let's shrink or expand.  Uses new GNU Emacs function.
-	(let ((window-size-fixed nil))
-	  (set-window-text-height window
-				  ;; As explained earlier: use abs-max-height
-				  ;; but only if that makes it display all.
-				  (if (> safe-desired-height absolute-max-height)
-				      max-height safe-desired-height)))
-	(if (window-live-p window)
-	    (progn
-	      (if (>= (window-text-height window) desired-height)
-		  (set-window-start window (point-min)))
-	      ;; window-size-fixed is a GNU Emacs buffer local variable
-	      ;; which determines window size of buffer.
-	      ;; (setq window-size-fixed (window-height window))
-	      ))))))
-
-(make-obsolete 'proof-resize-window-tofit 'proof-fit-output-windows "4.6")
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Function for submitting bug reports.
