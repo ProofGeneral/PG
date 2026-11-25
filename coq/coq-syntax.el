@@ -1565,7 +1565,6 @@ part of another hypothesis.")
     (cons coq-keywords-regexp 'font-lock-keyword-face)
     (cons coq-shell-eager-annotation-start 'proof-warning-face)
     (cons coq-error-regexp 'proof-error-face)
-    (cons (coq--regexp-alt-list-symb (list "In environment" "The term" "has type")) 'proof-error-face)
     (cons (coq--regexp-alt-list-symb (list "Set" "Type" "Prop")) 'font-lock-type-face)
     (list (concat "[?]" coq-id) 0 'coq-question-mark-face) ;; highlight evars and Ltac variables
     (list coq-hyp-name-in-goal-or-response-regexp 2 'proof-declaration-name-face)
