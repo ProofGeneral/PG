@@ -32,6 +32,7 @@
 (defvar proof-window-lines-function)
 (defvar coq-goals-buffer-function)
 (defvar coq-optimise-resp-windows-enable)
+(defvar coq-fold-error-environment)
 (defvar proof-three-window-enable)
 (defvar proof-three-window-mode-policy)
 (defvar proof-second-action-list-active)
@@ -200,8 +201,10 @@ GOALS and RESPONSE are the numbers of lines of the buffers."
           "Abort.\n")
   "An error whose message begins with a long context.")
 
-(ert-deftest output-windows-coq-error-end ()
-  "The response window shows the end of a long error message."
+(defun output-windows-run-error (check)
+  "Run Coq until the error of `output-windows-error-src', then CHECK.
+CHECK is called in the response buffer with its window, in three
+windows mode."
   (let ((proof-three-window-enable t)
         (proof-three-window-mode-policy 'vertical)
         (file (make-temp-file "output_windows" nil ".v"
@@ -225,13 +228,7 @@ GOALS and RESPONSE are the numbers of lines of the buffers."
               (should (string-match-p "In environment" (buffer-string)))
               (goto-char (point-max))
               (skip-chars-backward " \t\n")
-              ;; the context does not fit, the error is visible
-              (should (> (window-start window) (point-min)))
-              (should (= (count-screen-lines (window-start window) (point)
-                                             nil window)
-                         (window-body-height window)))
-              (should (re-search-backward "expected to have type"
-                                          (window-start window) t)))))
+              (funcall check window))))
       (when buffer
         (with-current-buffer buffer
           (set-buffer-modified-p nil))
@@ -239,6 +236,34 @@ GOALS and RESPONSE are the numbers of lines of the buffers."
       (when (proof-shell-live-buffer)
         (proof-shell-exit t))
       (delete-file file))))
+
+(ert-deftest output-windows-coq-error-end ()
+  "The response window shows the end of a long error message."
+  (let ((coq-fold-error-environment nil))
+    (output-windows-run-error
+     (lambda (window)
+       ;; the context does not fit, the error is visible
+       (should (> (window-start window) (point-min)))
+       (should (= (count-screen-lines (window-start window) (point)
+                                      nil window)
+                  (window-body-height window)))
+       (should (re-search-backward "expected to have type"
+                                   (window-start window) t))))))
+
+(ert-deftest output-windows-coq-error-folded ()
+  "The long error message fits, its environment folded."
+  (let ((coq-fold-error-environment t))
+    (output-windows-run-error
+     (lambda (window)
+       (should (seq-some (lambda (ov) (overlay-get ov 'display))
+                         (overlays-in (point-min) (point-max))))
+       ;; in batch mode, the lines on screen ignore the display
+       ;; property, see `vertical-motion': the folded environment does
+       ;; not fit.  Checked with emacs -nw.
+       (unless noninteractive
+         (should (= (window-start window) (point-min)))
+         (should (<= (count-screen-lines (point-min) (point) nil window)
+                     (window-body-height window))))))))
 
 (provide 'coq-test-output-windows)
 
