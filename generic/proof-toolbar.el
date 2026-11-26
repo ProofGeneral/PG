@@ -1,4 +1,4 @@
-;;; proof-toolbar.el --- Toolbar for Proof General
+;;; proof-toolbar.el --- Toolbar for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

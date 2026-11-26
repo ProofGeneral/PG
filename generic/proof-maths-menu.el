@@ -1,4 +1,4 @@
-;;; proof-maths-menu.el --- Support for maths menu mode package
+;;; proof-maths-menu.el --- Support for maths menu mode package  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

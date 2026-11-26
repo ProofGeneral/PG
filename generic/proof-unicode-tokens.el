@@ -1,4 +1,4 @@
-;;; proof-unicode-tokens.el --- Support Unicode tokens package
+;;; proof-unicode-tokens.el --- Support Unicode tokens package  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

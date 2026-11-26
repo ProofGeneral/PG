@@ -1,4 +1,4 @@
-;;; pg-vars.el --- Proof General global variables
+;;; pg-vars.el --- Proof General global variables  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

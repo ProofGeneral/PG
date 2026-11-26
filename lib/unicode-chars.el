@@ -1,4 +1,4 @@
-;;; unicode-chars.el --- table of Unicode characters
+;;; unicode-chars.el --- table of Unicode characters  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; scomint.el --- Simplified comint for less interactive shells
+;;; scomint.el --- Simplified comint for less interactive shells  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

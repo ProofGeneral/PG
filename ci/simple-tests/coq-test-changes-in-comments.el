@@ -1,4 +1,4 @@
-;;; coq-test-changes-in-comments.el --- Test changes inside comments
+;;; coq-test-changes-in-comments.el --- Test changes inside comments  -*- lexical-binding: t; -*-
 ;;
 ;; This file is part of Proof General.
 ;; 

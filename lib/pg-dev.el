@@ -1,4 +1,4 @@
-;;; pg-dev.el --- Developer settings for Proof General
+;;; pg-dev.el --- Developer settings for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; proof-syntax.el --- Functions for dealing with syntax
+;;; proof-syntax.el --- Functions for dealing with syntax  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; proof-auxmodes.el --- Arrange for auxiliary modes to be loaded when required
+;;; proof-auxmodes.el --- Arrange for auxiliary modes to be loaded when required  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

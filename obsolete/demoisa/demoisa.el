@@ -1,4 +1,4 @@
-;;; demoisa.el --- Example Proof General instance for Isabelle
+;;; demoisa.el --- Example Proof General instance for Isabelle  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 1999 LFCS Edinburgh.
 ;;

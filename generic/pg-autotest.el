@@ -1,4 +1,4 @@
-;;; pg-autotest.el --- Simple testing framework for Proof General
+;;; pg-autotest.el --- Simple testing framework for Proof General  -*- lexical-binding: t; -*-
 
 ;; This file is part of Proof General.
 

@@ -1,4 +1,4 @@
-;;; easycrypt-abbrev.el --- Abbrev table and menus for EasyCrypt mode
+;;; easycrypt-abbrev.el --- Abbrev table and menus for EasyCrypt mode  -*- lexical-binding: t; -*-
 
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute

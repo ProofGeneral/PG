@@ -25,6 +25,10 @@ coq-test-proof-stat
 coq-test-time-commands
 : test that `coq-time-commands` prefixes the commands sent to Coq with
   Time, except bullets and internal commands
+coq-test-hook-variables
+: test that the hooks of proof-shell.el can read and modify the
+  variables they share with Proof General through dynamic binding,
+  with proof-shell.el interpreted and byte-compiled
 coq-test-silent-option
 : test that `coq-run-completely-silent` is ignored with a warning for
   Rocq >= 9.2, which does not print goals any more (skipped for older

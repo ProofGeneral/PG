@@ -1,4 +1,4 @@
-;;; easycrypt-hooks.el --- Auxiliary functions for EasyCrypt mode
+;;; easycrypt-hooks.el --- Auxiliary functions for EasyCrypt mode  -*- lexical-binding: t; -*-
 
 ;; --------------------------------------------------------------------
 ;; Copyright (c) - 2012--2016 - IMDEA Software Institute
