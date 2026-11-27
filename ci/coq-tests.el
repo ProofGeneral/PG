@@ -277,14 +277,14 @@ For example, COMMENT could be (*test-definition*)"
          (proof-goto-point)
          (proof-shell-wait)
          (coq-should-buffer-string "Error: Unable to unify \"false\" with \"true\".")
-         ;; checking that there is an overlay with warning face exactly
+         ;; checking that there is an overlay with the error location face exactly
          ;; on "reflexivity". WARNING: this overlat lasts only for 2
          ;; secs, if this test is done in a (very) slow virtual machine
          ;; this may fail.
          (should (equal (point) proof-cmd-point))
          (let ((sp (span-at proof-cmd-point 'face)))
            (should sp)
-           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-property sp 'face) 'coq-error-location-face))
            (should (equal (span-start sp) proof-cmd-point))
            ;; coq-8.11 used to hace ending ps shifted by one
            (should (or (equal (span-end sp) (+ proof-cmd-point (length "reflexivity")))
@@ -321,14 +321,14 @@ For example, COMMENT could be (*test-definition*)"
          (proof-goto-point)
          (proof-shell-wait)
          (coq-should-buffer-string "Error: The proof is not focused")
-         ;; checking that there is an overlay with warning face exactly
+         ;; checking that there is an overlay with the error location face exactly
          ;; on "reflexivity". WARNING: this overlat lasts only for 2
          ;; secs, if this test is done in a (very) slow virtual machine
          ;; this may fail.
          (should (equal (point) proof-cmd-point))
          (let ((sp (span-at proof-cmd-point 'face)))
            (should sp)
-           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-property sp 'face) 'coq-error-location-face))
            (should (equal (span-start sp) proof-cmd-point))
            ;; coq-8.11 used to hace ending ps shifted by one
            (should (or (equal (span-end sp) (+ proof-cmd-point (length "}")))
@@ -490,14 +490,14 @@ For example, COMMENT could be (*test-definition*)"
          (proof-goto-point)
          (proof-shell-wait)
          (coq-should-buffer-string "Error: The reference bar was not found in the current environment.")
-         ;; checking that there is an overlay with warning face
+         ;; checking that there is an overlay with the error location face
          ;; exactly on "bar". WARNING: this overlay lasts only for 12
          ;; secs (thx to the add-timeout above), if this test is done
          ;; in a (very) slow virtual machine this may fail.
          (should (equal (point) proof-cmd-point))
          (let ((sp (span-at proof-cmd-point 'face)))
            (should sp)
-           (should (equal (span-property sp 'face) 'proof-warning-face))
+           (should (equal (span-property sp 'face) 'coq-error-location-face))
            (should (equal (span-start sp) proof-cmd-point))
            ;; coq-8.11 used to hace ending ps shifted by one
            (should (or (equal (span-end sp) (+ proof-cmd-point (length "bar")))

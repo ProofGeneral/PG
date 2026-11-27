@@ -2220,7 +2220,7 @@ Important: Coq gives char positions in bytes instead of chars."
               (let* ((pos (if bug19355 0 pos)) ;; 0 means start of command
                      (beg (goto-char (point-add-bytes pos)))
                      (end (goto-char (point-add-bytes lgth))))
-                (span-make-self-removing-span beg end 'face 'proof-warning-face)
+                (span-make-self-removing-span beg end 'face 'coq-error-location-face)
                 (span-make-self-removing-span cmdstart next-cmd 'face 'proof-boring-face)
                 ;; user usually expect the point to move to the error location
                 (goto-char beg))))))))
