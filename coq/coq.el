@@ -131,6 +131,10 @@
      :style toggle
      :selected coq-fold-other-goals
      :help "Display only the number of the goals after the first one."]
+    ["Fold Error Environments" coq-toggle-error-environment
+     :style toggle
+     :selected coq-fold-error-environment
+     :help "Display only the number of the hypotheses before an error."]
     ,coq-hyps-menu
     ["Double Hit Electric Terminator" proof-double-hit-toggle
      :style toggle
@@ -2364,6 +2368,20 @@ See `proof-fit-output-windows'.  Not after a silent command."
 ;; Adapt when displaying an error or interrupt
 (add-hook 'proof-shell-handle-error-or-interrupt-hook
           #'coq-fit-output-windows)
+
+(defun coq-fold-response-environments ()
+  "Fold the environments of the error messages in the response buffer.
+See `coq-fold-error-environment'."
+  (when (buffer-live-p proof-response-buffer)
+    (with-current-buffer proof-response-buffer
+      (coq-fold-error-environments))))
+
+;; Before `coq-fit-output-windows' (added before in the hooks): the
+;; folded environments take less room.
+(add-hook 'proof-shell-handle-delayed-output-hook
+          #'coq-fold-response-environments)
+(add-hook 'proof-shell-handle-error-or-interrupt-hook
+          #'coq-fold-response-environments)
 
 ;;;;;;;;;;;;;; kill coq background process on different occasions ;;;;;;;;;;;;;;
 

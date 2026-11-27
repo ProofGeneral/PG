@@ -44,6 +44,14 @@ them when clicked, see `coq-toggle-other-goals'."
   :type 'boolean
   :group 'coq)
 
+(defcustom coq-fold-error-environment t
+  "*If non-nil, the environments of the error messages are folded.
+Some error messages give the hypotheses of their context after \"In
+environment\".  Only their number is displayed, on a line that unfolds
+them when clicked, see `coq-toggle-error-environment'."
+  :type 'boolean
+  :group 'coq)
+
 (defcustom coq-auto-adapt-printing-width t
   "If non-nil, adapt the printing width of Coq to the goals window.
 With Proof General, each time the user sends a bunch of commands to
@@ -269,6 +277,89 @@ See `coq-fold-other-goals'."
       (with-current-buffer buffer
         (coq-goals-fold-other-goals))))
   (message "Other goals %s" (if coq-fold-other-goals "folded" "unfolded")))
+
+;;; The environments of the error messages
+
+(defconst coq-error-environment-regexp
+  "\\(?:^\\| \\)\\(\\(?:In\\|in\\) environment:?\\)$"
+  "Header of the hypotheses of an error message, in group 1.
+\"In environment\" alone on its line, or at the end of a line.")
+
+(defconst coq-error-hyp-regexp
+  "\\([^] \t\n:,()\"[]+\\(?:, [^] \t\n:,()\"[]+\\)*\\) :=?\\(?: \\|$\\)"
+  "First line of a hypothesis of an error message, its names in group 1.")
+
+(defvar coq-error-environment-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [mouse-1] #'coq-toggle-error-environment)
+    (define-key map (kbd "RET") #'coq-toggle-error-environment)
+    map)
+  "Keymap of the headers of the environments of the error messages.")
+
+(defun coq-error--hypotheses (start)
+  "The hypotheses from START, the beginning of a line, as (END . COUNT).
+END is the end of the last one, COUNT their number; nil if none.  The
+lines after the first one of a hypothesis are indented."
+  (save-excursion
+    (goto-char start)
+    (let ((count 0) (end nil))
+      (while (cond ((looking-at coq-error-hyp-regexp)
+                    (setq count (+ count (length (split-string (match-string 1)
+                                                               ", ")))))
+                   ((> count 0) (looking-at "[ \t]+[^ \t\n]")))
+        (setq end (line-end-position))
+        (forward-line 1))
+      (and end (cons end count)))))
+
+(defun coq-fold-error-environments ()
+  "Fold the environments of the error messages in the current buffer.
+Or unfold them, see `coq-fold-error-environment'.  In both cases, their
+header is a button folding or unfolding them, and the folded ones give
+the number of their hypotheses."
+  (remove-overlays (point-min) (point-max) 'coq-error-environment t)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward coq-error-environment-regexp nil t)
+      (let ((start (match-beginning 1))
+            (header-end (match-end 1))
+            (header (match-string 1))
+            (hyps (coq-error--hypotheses (line-beginning-position 2))))
+        (when hyps
+          (let ((ov (make-overlay start (if coq-fold-error-environment
+                                            (car hyps)
+                                          header-end)
+                                  nil nil t)))
+            (overlay-put ov 'coq-error-environment t)
+            (overlay-put ov 'evaporate t)
+            (overlay-put ov 'keymap coq-error-environment-map)
+            (overlay-put ov 'mouse-face 'highlight)
+            (overlay-put ov 'help-echo
+                         "mouse-1, RET: show or hide the hypotheses")
+            (if (not coq-fold-error-environment)
+                (overlay-put ov 'before-string "▾ ")
+              (overlay-put ov 'display
+                           (propertize
+                            (format "▸ %s (%d hypothes%s)"
+                                    (string-remove-suffix ":" header)
+                                    (cdr hyps)
+                                    (if (= (cdr hyps) 1) "is" "es"))
+                            'face 'coq-other-goals-face)))))))))
+
+(defun coq-toggle-error-environment ()
+  "Fold or unfold the environments of the error messages.
+See `coq-fold-error-environment'.  Then fit the output windows, see
+`proof-fit-output-windows'."
+  (interactive)
+  (setq coq-fold-error-environment (not coq-fold-error-environment))
+  (let ((buffer (and coq-response-buffer-function
+                     (funcall coq-response-buffer-function))))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (coq-fold-error-environments))
+      ;; the response needs more or less room
+      (proof-fit-output-windows)))
+  (message "Environments of the errors %s"
+           (if coq-fold-error-environment "folded" "unfolded")))
 
 (defvar-local coq-goals-count-function nil
   "Function returning the numbers of goals of the current goals buffer.

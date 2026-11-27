@@ -37,6 +37,13 @@ the Git ChangeLog, the GitHub repo https://github.com/ProofGeneral/PG
     error is: an error message often begins with a long context.  See
     `proof-response-show-end' (menu Proof-General -> Quick Options ->
     Display -> Response Shows End).
+*** Coq: the hypotheses before an error message, after "In
+    environment", are folded to a line giving their number.  Click on
+    the line or type RET on it to unfold them, see
+    `coq-fold-error-environment' (menu Coq -> Settings -> Fold Error
+    Environments).  The words "In environment", "The term" and "has
+    type" are no longer highlighted with `proof-error-face', only the
+    header "Error:".
 *** Goals windows tell when the goals continue out of view, with
     arrows in the fringe, see `proof-goals-indicators-enable'.
     Scrolling the goals stops at their end, see

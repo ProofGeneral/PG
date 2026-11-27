@@ -5706,6 +5706,7 @@ with non-@code{Bg} faces.
 @section Display of the goals
 @cindex goals display
 @vindex coq-fold-other-goals
+@vindex coq-fold-error-environment
 @vindex coq-prefer-top-of-conclusion
 
 When the goals do not fit in their window, Proof General shows the last
@@ -5731,6 +5732,22 @@ If non-nil, the goals other than the first one are folded.@*
 Only their number is displayed, with the number of unfocused goals if
 Coq displays them (see Set Printing Unfocused), on a line that unfolds
 them when clicked, see @code{coq-toggle-other-goals}.
+
+The default value is @code{t}.
+@end defopt
+
+Some error messages begin with the hypotheses of their context, after
+@code{In environment}.  They are folded too: a line gives their number,
+and the error itself remains visible.  Click on this line or type
+@kbd{RET} on it to show or hide them, or use the menu @code{Coq ->
+Settings -> Fold Error Environments}.
+
+@c TEXI DOCSTRING MAGIC: coq-fold-error-environment
+@defopt coq-fold-error-environment 
+If non-nil, the environments of the error messages are folded.@*
+Some error messages give the hypotheses of their context after "In
+environment".  Only their number is displayed, on a line that unfolds
+them when clicked, see @code{coq-toggle-error-environment}.
 
 The default value is @code{t}.
 @end defopt
