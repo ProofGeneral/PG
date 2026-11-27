@@ -28,6 +28,7 @@
 (require 'coq-db)                       ; faces of the buttons
 (require 'span)                         ; span-make, for the diffs
 (require 'coq-syntax)                   ; coq-detect-hyps-positions
+(require 'pg-output-windows)            ; proof-window-lines-function
 
 (defcustom coq-prefer-top-of-conclusion nil
   "Prefer start of the conclusion over its end when displaying large goals.
@@ -72,17 +73,6 @@ It is mostly useful in three window mode, see also
   :group 'coq-auto-compile)
 
 (proof-deftoggle coq-show-proof-stepwise)
-
-(defcustom coq-optimise-resp-windows-enable t
-  "If non-nil (default), resize the goals and response windows to their content.
-After each command, the response window gets the height of its content,
-the goals window the rest, when they are one above the other.
-
-With Proof General, only in three windows mode.  With Eglot, when the
-conclusion is apart (see `coq-eglot-split-goals'), the hypotheses get
-the height they need too, the conclusion window gets the rest."
-  :type 'boolean
-  :group 'coq)
 
 (defface coq-other-goals-face '((t :inherit shadow))
   "Face of the line giving the number of the other goals.
@@ -373,6 +363,22 @@ See `coq-goals-window-start'.  Point does not move, unless it would be
 out of view."
   (dolist (window (get-buffer-window-list buffer nil t))
     (set-window-start window (coq-goals-window-start window))))
+
+(defun coq-goals-window-lines (window)
+  "Number of lines WINDOW needs to display its buffer.
+In the goals buffer, the goals after the first one count for one line,
+the line giving their number: they are displayed only if the other
+windows leave room, see `coq-goals-fold-other-goals'.  This is
+`proof-window-lines-function' for all the Coq backends."
+  (with-current-buffer (window-buffer window)
+    (let ((others (and coq-goals-buffer-function
+                       (eq (current-buffer) (funcall coq-goals-buffer-function))
+                       (coq-goals--other-goals-start))))
+      (if others
+          (1+ (count-screen-lines (point-min) others nil window))
+        (proof-window-lines window)))))
+
+(setq proof-window-lines-function #'coq-goals-window-lines)
 
 
 ;;; Folding and highlighting of the hypotheses
