@@ -59,6 +59,21 @@
 (defun coq-autodetect-progname ()
   (coq-detect-prog-gen "rocq" "coqtop"))
 
+(defun coq--set-detected (symbol value)
+  "Set the default value of SYMBOL to VALUE, detected by Proof General.
+VALUE is remembered, so that `coq--user-set-p' does not mistake it for
+a value set by the user."
+  (set-default symbol value)
+  (put symbol 'coq--detected-value (list value)))
+
+(defun coq--initialize-detected (symbol exp)
+  "Initialize SYMBOL to the value of EXP, unless it is already bound.
+Like `custom-initialize-default', but the value is recorded with
+`coq--set-detected'.  If the user set SYMBOL before loading this file,
+nothing is recorded, so that `coq--user-set-p' returns non-nil."
+  (unless (default-boundp symbol)
+    (coq--set-detected symbol (eval exp t))))
+
 (defcustom coq-prog-name (coq-autodetect-progname)
   "Name of program to run as Coq.
 On Windows with latest Coq package you might need something like:
@@ -68,6 +83,7 @@ This must be a single program name with no arguments.  See option
 `coq-prog-args' to manually adjust the arguments to the Coq process.
 See also `coq-prog-env' to adjust the environment.
 With then 2025 new CLI \\+`rocq', this command only return \\+`rocq'."
+  :initialize #'coq--initialize-detected
   :type 'string
   :group 'coq
   :group 'coq-mode)
